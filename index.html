@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -206,7 +206,7 @@
             vertical-align: baseline;
             background-color: #f9f9f9;
             font-size: 14px;
-            margin-bottom: 0px;
+            margin-bottom: 2px;
             border: 0;
             border-radius: 0;
             max-width: 100%;
@@ -544,7 +544,7 @@
             font-size: 13px;
             min-width: 120px;
             background-color: rgba(255, 255, 255, 0.1);
-            border: 1.5px outset black;
+            
             border-radius: 20px;
             color: white;
             font-weight: bold;
@@ -552,11 +552,15 @@
             outline: none;
             cursor: pointer;
             box-sizing: border-box;
-            
             max-height: 35px !important;
             display: flex;
             align-items: center;
+            border: 2px solid transparent;
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            background: /* Relleno interior: degradado vertical 0% #D5D8D8 → 100% #818C8A */ linear-gradient(to bottom, #373737 0%, #1c1c1c 100%) padding-box, /* Borde: degradado vertical 0% #C9C9C9 → 60% #686A69 → 100% #be8939 */ linear-gradient(to bottom, #454545 0%, #373535 30%, #373535 60%, #000000 100% 100%) border-box;
         }
+        
 
             .filtros .choices__inner:has(input[placeholder]:not(:placeholder-shown)) {
                 height: auto !important;
@@ -623,14 +627,20 @@
         #filterBuscar {
             padding: 8px 12px;
             font-size: 14px;
-            min-width: 140px;
-            max-width: 180px;
+            min-width: 123px;
+            max-width: 129.22px;
             border: 1.5px outset black;
             background-color: rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             color: white;
             font-weight: bold;
             transition: background-color 0.3s, color 0.3s;
+            border: 2px solid transparent;
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            background: /* Relleno interior: degradado vertical 0% #D5D8D8 → 100% #818C8A */ linear-gradient(to bottom, #373737 0%, #1c1c1c 100%) padding-box, /* Borde: degradado vertical 0% #C9C9C9 → 60% #686A69 → 100% #be8939 */ linear-gradient(to bottom, #454545 0%, #373535 30%, #373535 60%, #000000 100% 100%) border-box;
+            height: 35px;
+            
         }
 
             /* 21.1. Placeholder dentro de #filterBuscar            */
@@ -677,7 +687,7 @@
         /* 24. Forzar ancho mínimo para todo en .filtros        */
         /* ================================================= */
         .filtros .choices {
-            min-width: 140px;
+            min-width: 129.22px;
             font-weight: bold;
         }
         /*Número contador*/
@@ -794,7 +804,7 @@
             /* altura solo para el gif, el menú estará fijo y fuera del flujo */
         }
         #filterBuscar {
-            scroll-margin-top: 100px; /* un poco más grande que tu header para respirar */
+            scroll-margin-top: 190px; /* un poco más grande que tu header para respirar */
         }
         /* -------------------------------------------
    Cuando .gif-container tenga .scrolled:
@@ -901,12 +911,12 @@
                 pointer-events: auto;
             }
 
-        @media (max-width: 765px) {
+        @media (max-width: 767px) {
             .fixed-header .logo {
                 height: 53px;
-                top: 55%;
-                left: 120px !important;
-                width: 220px !important;
+                top: 55% !important;
+                left: 110px !important;
+                width: 190px !important;
             }
         }
 
@@ -1099,11 +1109,117 @@
                 color: white;
                 font-size: 15px;
                 font-weight: bold;
-                margin-bottom: 15px;
+                margin-bottom: 10px;
                 margin-left: 10px;
                 margin-top: 10px;
             }
+        /* Asegúrate de incluir esto tras tus otros estilos */
 
+        .ordenar-por select {
+            padding: 0.25em 0.5em;
+            border-radius: 4px;
+            background: #2d2d2d;
+            color: #aeaeae;
+            font-family: "Outfit", sans-serif;
+            border: 1px solid transparent;
+            background: linear-gradient(to bottom, #373737 0%, #1c1c1c 100%) padding-box, linear-gradient(to bottom, #454545 0%, #373535 30%, #373535 60%, #000000 100% 100%) border-box;
+            margin-right: 10px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent !important;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .ordenar-por {
+            -webkit-tap-highlight-color: grey;
+        }
+
+        * {
+            -webkit-tap-highlight-color: grey;
+        }
+
+        option {
+            -webkit-tap-highlight-color: grey;
+        }
+        select option {
+            background-color: #5c5c5c;
+            color: white;
+            font-size: 14px;
+            
+        }
+            select option:checked {
+                background-color: #484444 !important;
+                color: white;
+            }
+            select option:hover {
+                background-color: #484444;
+            }
+            .ordenar-por select:focus {
+                outline: none;
+                border-color: black;
+                box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+            }
+        .ordenar-por {
+            position: relative;
+            display: inline-block;
+            margin-left: 1em;
+        }
+            
+            .ordenar-por label {
+                color: #fff;
+                font-size: 0.9rem;
+                margin-right: .5em;
+            }
+
+        .sort-toggle {
+            padding: 0.2em 0.5em;
+            border-radius: 7px;
+            background: #2d2d2d;
+            color: #aeaeae;
+            font-family: "Outfit", sans-serif;
+            border: 1px solid transparent;
+            background: linear-gradient(to bottom, #373737 0%, #1c1c1c 100%) padding-box, linear-gradient(to bottom, #454545 0%, #373535 30%, #373535 60%, #000000 100% 100%) border-box;
+            margin-right: 10px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent !important;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 136px;
+            font-weight: 400;
+            text-align: center; /* centra en la mayoría de navegadores */
+            text-align-last: center;
+        }
+
+        .sort-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #2d2d2d;
+            list-style: none;
+            margin: 0;
+            padding: .2em 0;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0, .4);
+            z-index: 8;
+        }
+
+            .sort-options.hidden {
+                display: none;
+            }
+
+            .sort-options li {
+                padding: .4em 1em;
+                color: #fff;
+                font-size: .8rem;
+                white-space: nowrap;
+                cursor: pointer;
+                width: 129px;
+            }
+        #sortToggle {
+            font-size: 14px;
+        }
+                .sort-options li:hover {
+                    background: #484444;
+                }
             .noProp {
                 font-size: 1.5rem;
                 color: white;
@@ -1271,7 +1387,7 @@
             .etiquetas {
                 display: flex;
                 flex-wrap: wrap;
-                gap: 6px;
+                gap: 3px;
                 margin-top: auto;
                 margin-bottom: 10px;
             }
@@ -1279,13 +1395,13 @@
             .etiqueta {
                 background-color: #333333;
                 color: #cccccc;
-                padding: 4px 8px;
+                padding: 3px 6px;
                 border-radius: 12px;
                 font-weight: 500;
                 display: inline-flex;
                 align-items: center; /* Centra verticalmente */
-                gap: 0.25rem; /* Espacio entre ícono y texto (opcional) */
-                font-size: 0.7rem; /* Ajusta según tu diseño */
+                gap: 0rem; /* Espacio entre ícono y texto (opcional) */
+                font-size: 0.71rem; /* Ajusta según tu diseño */
                 line-height: 1.25rem;
             }
 
@@ -1463,7 +1579,7 @@
             .modal-contenido {
                 display: flex;
                 flex-wrap: nowrap;
-                gap: 25px;
+                gap: 20px;
                 position: relative;
             }
 
@@ -1649,7 +1765,7 @@
                 cursor: not-allowed;
             }
 
-            .btn-limpiar {
+        /*.btn-limpiar {
                 padding: 8px 16px;
                 background-color: #b1b1b1;
                 color: #2d2d2d;
@@ -1660,7 +1776,61 @@
                 box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
                 transition: background-color 0.3s;
                 height: 32.5px;
+            }*/
+        .btn-limpiar {
+            position: relative;
+            display: inline-block;
+            padding: 14px;
+            width: 129.22px;
+            padding-left: 16px;
+            padding-right: 16px;
+            border-radius: 20px;
+            border: 2px solid transparent;
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            background: /* Relleno interior: degradado vertical 0% #D5D8D8 → 100% #818C8A */ linear-gradient(to bottom, #D5D8D8 0%, #5f5e56 100%) padding-box,
+            /* Borde: degradado vertical 0% #C9C9C9 → 60% #686A69 → 100% #be8939 */ linear-gradient(to bottom, #C9C9C9 0%, #373535 30%, #373535 60%, #929292 100% 100%) border-box;
+            cursor: pointer;
+            height: 33px;
+            line-height: 2.5px;
+            transition: all 0.3s;
+            overflow: visible;
+            font-weight: 600;
+            color: #2f2f2f;
+        }
+
+            /* Texto con degradado vertical 0% #252424 → 100% #3c3c3c */
+            .btn-limpiar span {
+                display: inline-block;
+                /* Para aplicar degradado en texto */
+                background: linear-gradient(to bottom, #252424 0%, #3c3c3c 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                /* Compatibilidad en Firefox: */
+                background-clip: text;
+                color: transparent;
+                font-weight: bold;
+                text-align: center;
+                /* Evitamos que el span ocupe toda la anchura; centrado en el botón por line-height y text-align del botón */
             }
+
+            /* Sombra difusa “bajo” el botón: copiamos la forma redondeada y la enviamos atrás con un degradado y blur */
+            .btn-limpiar::after {
+                content: "";
+                position: absolute;
+                top: 17px;
+                left: 2px;
+                right: 2px;
+                bottom: 0px;
+                border-radius: inherit;
+                background: linear-gradient(to right, #000000 0%, #000000 100%);
+                opacity: 0.5;
+                filter: blur(10px);
+                transform: translateY(1px);
+                z-index: -1;
+            }
+
+
 
                 .btn-limpiar:hover {
                     background-color: rgba(255,255,255,0.2);
@@ -1757,14 +1927,15 @@
                 margin-bottom: 10px;
             }
 
-            .frase-container {
-                display: flex;
-                justify-content: center;
-                margin-top: 10px;
-                text-align: center;
-                height: 70px;
-                padding: 0 1.5rem;
-            }
+        .frase-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 1px;
+            margin-bottom: -14px;
+            text-align: center;
+            height: 70px;
+            padding: 0 1.5rem;
+        }
 
             .frase-text {
                 opacity: 0;
@@ -1967,6 +2138,13 @@
                 }
             }
 
+        @media (max-width: 600px) {
+            .whatsapp-float {
+                position: fixed;
+                bottom: 15px;
+                right: 15px !important;
+            }
+        }
             .whatsapp-float {
                 position: fixed;
                 bottom: 15px;
@@ -2163,19 +2341,20 @@
                     background-color: #eab308;
                 }
 
-            .modal-comparar {
-                background: #1e1e1e;
-                border-radius: 10px;
-                width: 100%; /* 70px margen a ambos lados */
-                max-width: 100%; /* 1365px - 2×70px */
-                max-height: calc(100vh - 140px);
-                overflow-y: auto;
-                position: relative;
-                padding: 10px;
-                display: flex;
-                flex-direction: column;
-                z-index: 10002;
-            }
+        .modal-comparar {
+            background: #1e1e1e;
+            border-radius: 10px;
+            width: 100%; /* 70px margen a ambos lados */
+            max-width: 100%; /* 1365px - 2×70px */
+            max-height: 90%;
+            top: 30px;
+            overflow-y: auto;
+            position: relative;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            z-index: 10002;
+        }
 
                 .modal-comparar::-webkit-scrollbar {
                     width: 2px;
@@ -2491,8 +2670,36 @@
                 right: 25px;
             }
 
+        /* Apunta sólo al filtro “Tipo de propiedad” */
+        /* Detectamos el input clonado por su aria‑label/placeholder */
+        .choices__input--cloned[aria-label="Tipo de inmueble"],
+        .choices__input--cloned[placeholder="Tipo de inmueble"] {
+            min-width: 17.3ch !important;
+            width: 1ch !important;
+        }
 
+        /* Apunta sólo al filtro “Tipo de propiedad” */
+        /* Detectamos el input clonado por su aria‑label/placeholder */
+        .choices__input--cloned[aria-label="Conjunto"],
+        .choices__input--cloned[placeholder="Conjunto"] {
+           
+            width: 1ch !important;
+        }
 
+        .choices__input--cloned[aria-label="Precio"],
+        .choices__input--cloned[placeholder="Precio"],
+        .choices__input--cloned[aria-label="Zona"],
+        .choices__input--cloned[placeholder="Zona"],
+        .choices__input--cloned[aria-label="Estrato"],
+        .choices__input--cloned[placeholder="Estrato"],
+        .choices__input--cloned[aria-label="Barrio"],
+        .choices__input--cloned[placeholder="Barrio"],
+        .choices__input--cloned[aria-label="Garaje"],
+        .choices__input--cloned[placeholder="Garaje"],
+        .choices__input--cloned[aria-label="Pisos"],
+        .choices__input--cloned[placeholder="Pisos"] {
+            width: 13ch !important;
+        }
         .botonescontainer {
             display: flex;
             flex-direction: row;
@@ -2502,7 +2709,8 @@
             align-items: flex-end;
         }
             /* Breakpoints */
-            @media (max-width: 365px) {
+        
+            @media (max-width: 367px) {
                 .logo {
                     filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.9)) brightness(1.1) saturate(1.4);
                     width: 80px !important;
@@ -2510,6 +2718,49 @@
                     left: 50%;
                     transform: translate(-50%, -50%);
                 }
+
+                .choices__input--cloned[aria-label="Conjunto"],
+                .choices__input--cloned[placeholder="Conjunto"] {
+                    min-width: 11.6ch !important;
+                    width: 1ch !important;
+                }
+
+                .choices__input--cloned[aria-label="Precio"],
+                .choices__input--cloned[placeholder="Precio"],
+                .choices__input--cloned[aria-label="Zona"],
+                .choices__input--cloned[placeholder="Zona"],
+                .choices__input--cloned[aria-label="Estrato"],
+                .choices__input--cloned[placeholder="Estrato"],
+                .choices__input--cloned[aria-label="Barrio"],
+                .choices__input--cloned[placeholder="Barrio"],
+                .choices__input--cloned[aria-label="Garaje"],
+                .choices__input--cloned[placeholder="Garaje"],
+                .choices__input--cloned[aria-label="Pisos"],
+                .choices__input--cloned[placeholder="Pisos"]       {
+                    width: 11.7ch !important;
+                }
+
+                .choices__input--cloned[aria-label="Habitaciones"],
+                .choices__input--cloned[placeholder="Habitaciones"] {
+                    min-width: 12.4ch !important;
+                }
+                .btn-limpiar {
+                    position: relative;
+                    display: inline-block;
+                    padding: 13px;
+                    width: 119.09px;
+                }
+                #filterBuscar {
+                    padding: 8px 12px;
+                    font-size: 14px;
+                    min-width: 119.09px;
+                    max-width: 119.09px;
+                }
+                    .filtros .choices {
+                    min-width: 80px;
+                    font-weight: bold;
+                }
+
                 #paginacion button {
                     
                     font-size: 0.5rem;
@@ -2667,7 +2918,7 @@
                     filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.9)) brightness(1.1) saturate(1.4);
                     width: 300px !important;
                     top: 42%; /* Centrar verticalmente */
-                    left: 120px; /* Centrar horizontalmente */
+                    left: 110px; /* Centrar horizontalmente */
                     transform: translate(-50%, -50%);
                     height: 53px;
                 }
@@ -2677,6 +2928,7 @@
                     top: 13px !important;
                     right: 10px !important;
                 }
+
 
                 .menu {
                     top: 55px;
@@ -2738,11 +2990,11 @@
                     max-width: 90vw; /* Menor margen lateral en móviles */
                 }
 
-                .boton-fotos {
+                .modal-comparar .boton-fotos {
                     margin-left: auto;
                     margin-right: auto;
-                    margin-top: 5px;
-                    margin-bottom: 5px;
+                    margin-top: 10px;
+                    margin-bottom: 15px;
                 }
 
                 .modal .boton-fotos {
@@ -2876,8 +3128,8 @@
                 .logo {
                     width: 350px !important;
                 }
-
-                .menu-container {
+               
+                    .menu-container {
                     position: absolute;
                     top: 0;
                     right: 20px;
@@ -2991,266 +3243,267 @@
 
             @media (max-width: 1150px) {
                 .logo {
-                    width: 220px !important;
+                    width: 190px !important;
                 }
+                
 
-                body {
-                    scrollbar-width: none; /* Firefox */
-                    -ms-overflow-style: none; /* IE/Edge */
-                }
+                    body {
+                        scrollbar-width: none; /* Firefox */
+                        -ms-overflow-style: none; /* IE/Edge */
+                    }
 
-                .btn-cerrar {
-                    position: absolute;
-                    top: 45px;
-                }
+                    .btn-cerrar {
+                        position: absolute;
+                        top: 45px;
+                    }
 
-                body::-webkit-scrollbar {
-                    display: none; /* Chrome, Safari, Opera */
-                }
+                    body::-webkit-scrollbar {
+                        display: none; /* Chrome, Safari, Opera */
+                    }
 
-                .menu-container {
-                    top: 20px;
-                    right: 20px;
-                }
+                    .menu-container {
+                        top: 20px;
+                        right: 20px;
+                    }
 
-                .menu-icon {
-                    display: flex;
-                }
+                    .menu-icon {
+                        display: flex;
+                    }
 
-                .menu {
-                    display: none;
-                    position: absolute;
-                    top: 100%;
-                    right: 0;
-                    background-color: rgba(31, 31, 31, 0.8);
-                    flex-direction: column;
-                    align-items: flex-start;
-                    border-radius: 8px;
-                    padding: 10px;
-                    width: 230px !important;
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-                }
+                    .menu {
+                        display: none;
+                        position: absolute;
+                        top: 100%;
+                        right: 0;
+                        background-color: rgba(31, 31, 31, 0.8);
+                        flex-direction: column;
+                        align-items: flex-start;
+                        border-radius: 8px;
+                        padding: 10px;
+                        width: 230px !important;
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+                    }
 
-                    .menu a:hover {
+                        .menu a:hover {
+                            transform: none;
+                        }
+
+                    fixed-header .menu {
+                        position: absolute;
+                        top: 100%;
+                        right: 0;
+                        background-color: rgba(31, 31, 31, 0.8);
+                        flex-direction: column;
+                        align-items: flex-start;
+                        border-radius: 8px;
+                        padding: 10px;
+                        width: 230px !important;
+                    }
+
+
+                    fixed-header .panel2 {
+                        top: 240px; /* Lo coloca debajo del panel 1 */
+                        left: auto;
+                        right: 34px; /* Alineado a la izquierda */
+                        width: 186px; /* Ancho completo */
+                        margin-top: 10px; /* Espacio entre los paneles */
+                        color: white;
+                        background: rgba(0,0,0,0.2);
+                        backdrop-filter: blur(15px);
+                        border-radius: 4px;
+                        padding: 20px;
+                        z-index: 45;
+                        padding-top: 0px;
+                        overflow: hidden;
+                        transition: max-height 0.8s ease-out, opacity 0.5s ease;
+                        transform: none !important; /* Elimina la transformación original */
+                        height: auto; /* Elimina la altura fija */
+                    }
+
+                    .fixed-header .menu {
+                        transform: none !important;
+                    }
+
+                    fixed-header .open-panel2 .services-panel.panel2 {
+                        transform: none !important;
+                    }
+
+                    fixed-header .panel1 {
+                        top: 96px;
+                        width: 186px;
+                        right: 34px;
+                        overflow: hidden;
+                        left: auto;
+                        background: rgba(0,0,0,0.2);
+                        backdrop-filter: blur(15px);
+                        color: white;
+                        background-size: cover;
+                        transition: max-height 0.8s ease-out, opacity 0.5s ease;
+                        z-index: 40;
+                        padding: 20px;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.9);
+                        opacity: 0;
+                    }
+
+                    .menu a {
+                        margin: 5px 0;
+                        width: 200px;
+                        text-align: center;
+                        padding: 8px 12px;
+                    }
+
+                    .menu.active {
+                        display: flex;
+                        background: #333;
+                        width: 200px;
+                        z-index: 10000;
+                    }
+
+                    .frase-text {
+                        font-size: 0.65rem;
+                    }
+
+                        .frase-text h1 {
+                            font-size: 0.95rem;
+                        }
+
+                    #tarjetas {
+                        grid-template-columns: repeat(3, minmax(0, 1fr));
+                    }
+
+                    .tarjeta:hover {
+                        transform: none;
+                        background: #2B2B2B;
+                    }
+
+                    .banner-espejo {
+                        width: 30vw;
+                    }
+
+                    .panel2 {
+                        top: 240px; /* Lo coloca debajo del panel 1 */
+                        left: auto;
+                        right: 34px; /* Alineado a la izquierda */
+                        width: 186px; /* Ancho completo */
+                        margin-top: 10px; /* Espacio entre los paneles */
+                        color: white;
+                        background: rgba(0,0,0,0.2);
+                        backdrop-filter: blur(15px);
+                        border-radius: 4px;
+                        padding: 20px;
+                        z-index: 45;
+                        padding-top: 0px;
+                        overflow: hidden;
+                        transition: max-height 0.8s ease-out, opacity 0.5s ease;
+                        transform: none !important; /* Elimina la transformación original */
+                        height: auto; /* Elimina la altura fija */
+                    }
+
+
+                    .open-panel2 .services-panel.panel2 {
+                        transform: none !important;
+                    }
+
+                    .panel1 {
+                        top: 96px;
+                        width: 186px;
+                        right: 34px;
+                        overflow: hidden;
+                        left: auto;
+                        background: rgba(0,0,0,0.2);
+                        backdrop-filter: blur(15px);
+                        color: white;
+                        background-size: cover;
+                        transition: max-height 0.8s ease-out, opacity 0.5s ease;
+                        z-index: 40;
+                        padding: 20px;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.9);
+                        opacity: 0;
+                    }
+                    /* cuando abra panel1 o panel2, habilita overflow:visible: */
+                    .gif-container.open-panel1,
+                    .gif-container.open-panel2 {
+                        overflow: visible;
+                    }
+
+                    .gif-container.menu-open {
+                        overflow: visible !important;
+                    }
+
+                    /* 1) El contenedor del menú pasa a fixed en vez de absolute */
+                    .gif-container .menu-container {
+                        position: fixed !important;
+                        top: 20px !important;
+                        right: 20px !important;
+                        z-index: 10002 !important; /* por encima de todo */
+                    }
+
+                    /* 2) Asegura que el propio menú y sus paneles no queden recortados */
+                    .gif-container .menu,
+                    .gif-container .services-panel {
+                        overflow: visible !important;
+                    }
+
+                    .gif-container.open-panel1 .panel2 {
+                        max-height: 200px; /* ajusta según tu contenido */
+                        opacity: 1;
+                        pointer-events: auto;
+                        width: 230px;
+                    }
+
+                    .gif-container.open-panel2 .services-panel.panel2 {
+                        transform: none !important;
+                        transition: max-height 0.3s ease, opacity 0.3s ease !important;
+                    }
+                    /* También quita transform en estado base, si no lo has eliminado aún */
+                    .services-panel.panel2 {
+                        transform: none !important;
+                    }
+
+                    .gif-container.open-panel2 .panel2 {
+                        opacity: 1;
+                        pointer-events: auto;
+                        width: 187px;
+                        transform: none !important;
+                    }
+
+                    .gif-container.open-panel1 .toggle-services {
+                        color: #f8c00a;
+                        background-color: rgba(71, 71, 71, 0.25);
                         transform: none;
                     }
 
-                fixed-header .menu {
-                    position: absolute;
-                    top: 100%;
-                    right: 0;
-                    background-color: rgba(31, 31, 31, 0.8);
-                    flex-direction: column;
-                    align-items: flex-start;
-                    border-radius: 8px;
-                    padding: 10px;
-                    width: 230px !important;
-                }
-
-
-                fixed-header .panel2 {
-                    top: 240px; /* Lo coloca debajo del panel 1 */
-                    left: auto;
-                    right: 34px; /* Alineado a la izquierda */
-                    width: 186px; /* Ancho completo */
-                    margin-top: 10px; /* Espacio entre los paneles */
-                    color: white;
-                    background: rgba(0,0,0,0.2);
-                    backdrop-filter: blur(15px);
-                    border-radius: 4px;
-                    padding: 20px;
-                    z-index: 45;
-                    padding-top: 0px;
-                    overflow: hidden;
-                    transition: max-height 0.8s ease-out, opacity 0.5s ease;
-                    transform: none !important; /* Elimina la transformación original */
-                    height: auto; /* Elimina la altura fija */
-                }
-
-                .fixed-header .menu {
-                    transform: none !important;
-                }
-
-                fixed-header .open-panel2 .services-panel.panel2 {
-                    transform: none !important;
-                }
-
-                fixed-header .panel1 {
-                    top: 96px;
-                    width: 186px;
-                    right: 34px;
-                    overflow: hidden;
-                    left: auto;
-                    background: rgba(0,0,0,0.2);
-                    backdrop-filter: blur(15px);
-                    color: white;
-                    background-size: cover;
-                    transition: max-height 0.8s ease-out, opacity 0.5s ease;
-                    z-index: 40;
-                    padding: 20px;
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.9);
-                    opacity: 0;
-                }
-
-                .menu a {
-                    margin: 5px 0;
-                    width: 200px;
-                    text-align: center;
-                    padding: 8px 12px;
-                }
-
-                .menu.active {
-                    display: flex;
-                    background: #333;
-                    width: 200px;
-                    z-index: 10000;
-                }
-
-                .frase-text {
-                    font-size: 0.65rem;
-                }
-
-                    .frase-text h1 {
-                        font-size: 0.95rem;
+                    .services-panel panel1 {
+                        max-width: 120px;
                     }
 
-                #tarjetas {
-                    grid-template-columns: repeat(3, minmax(0, 1fr));
-                }
+                    .salir-servicios2 {
+                        display: block;
+                        position: absolute;
+                        top: 10px;
+                        right: 10px;
+                        font-size: 24px;
+                        font-weight: bold;
+                        color: white;
+                        cursor: pointer;
+                        z-index: 100;
+                        background-color: rgba(0, 0, 0, 0.3);
+                        border-radius: 50%;
+                        width: 32px;
+                        height: 32px;
+                        text-align: center;
+                        line-height: 32px;
+                        transition: background 0.3s ease;
+                    }
 
-                .tarjeta:hover {
-                    transform: none;
-                    background: #2B2B2B;
-                }
+                    .salir-servicios {
+                        display: none
+                    }
 
-                .banner-espejo {
-                    width: 30vw;
+                    .salir-servicios2:hover {
+                        background-color: rgba(255, 255, 255, 0.2);
+                    }
                 }
-
-                .panel2 {
-                    top: 240px; /* Lo coloca debajo del panel 1 */
-                    left: auto;
-                    right: 34px; /* Alineado a la izquierda */
-                    width: 186px; /* Ancho completo */
-                    margin-top: 10px; /* Espacio entre los paneles */
-                    color: white;
-                    background: rgba(0,0,0,0.2);
-                    backdrop-filter: blur(15px);
-                    border-radius: 4px;
-                    padding: 20px;
-                    z-index: 45;
-                    padding-top: 0px;
-                    overflow: hidden;
-                    transition: max-height 0.8s ease-out, opacity 0.5s ease;
-                    transform: none !important; /* Elimina la transformación original */
-                    height: auto; /* Elimina la altura fija */
-                }
-
-
-                .open-panel2 .services-panel.panel2 {
-                    transform: none !important;
-                }
-
-                .panel1 {
-                    top: 96px;
-                    width: 186px;
-                    right: 34px;
-                    overflow: hidden;
-                    left: auto;
-                    background: rgba(0,0,0,0.2);
-                    backdrop-filter: blur(15px);
-                    color: white;
-                    background-size: cover;
-                    transition: max-height 0.8s ease-out, opacity 0.5s ease;
-                    z-index: 40;
-                    padding: 20px;
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.9);
-                    opacity: 0;
-                }
-                /* cuando abra panel1 o panel2, habilita overflow:visible: */
-                .gif-container.open-panel1,
-                .gif-container.open-panel2 {
-                    overflow: visible;
-                }
-
-                .gif-container.menu-open {
-                    overflow: visible !important;
-                }
-
-                /* 1) El contenedor del menú pasa a fixed en vez de absolute */
-                .gif-container .menu-container {
-                    position: fixed !important;
-                    top: 20px !important;
-                    right: 20px !important;
-                    z-index: 10002 !important; /* por encima de todo */
-                }
-
-                /* 2) Asegura que el propio menú y sus paneles no queden recortados */
-                .gif-container .menu,
-                .gif-container .services-panel {
-                    overflow: visible !important;
-                }
-
-                .gif-container.open-panel1 .panel2 {
-                    max-height: 200px; /* ajusta según tu contenido */
-                    opacity: 1;
-                    pointer-events: auto;
-                    width: 230px;
-                }
-
-                .gif-container.open-panel2 .services-panel.panel2 {
-                    transform: none !important;
-                    transition: max-height 0.3s ease, opacity 0.3s ease !important;
-                }
-                /* También quita transform en estado base, si no lo has eliminado aún */
-                .services-panel.panel2 {
-                    transform: none !important;
-                }
-
-                .gif-container.open-panel2 .panel2 {
-                    opacity: 1;
-                    pointer-events: auto;
-                    width: 187px;
-                    transform: none !important;
-                }
-
-                .gif-container.open-panel1 .toggle-services {
-                    color: #f8c00a;
-                    background-color: rgba(71, 71, 71, 0.25);
-                    transform: none;
-                }
-
-                .services-panel panel1 {
-                    max-width: 120px;
-                }
-
-                .salir-servicios2 {
-                    display: block;
-                    position: absolute;
-                    top: 10px;
-                    right: 10px;
-                    font-size: 24px;
-                    font-weight: bold;
-                    color: white;
-                    cursor: pointer;
-                    z-index: 100;
-                    background-color: rgba(0, 0, 0, 0.3);
-                    border-radius: 50%;
-                    width: 32px;
-                    height: 32px;
-                    text-align: center;
-                    line-height: 32px;
-                    transition: background 0.3s ease;
-                }
-
-                .salir-servicios {
-                    display: none
-                }
-
-                .salir-servicios2:hover {
-                    background-color: rgba(255, 255, 255, 0.2);
-                }
-            }
 
             @media (max-width: 480px) {
 
@@ -3285,8 +3538,8 @@
                     width: 220px !important;
                     left: 65px;
                 }
-
-                .menu {
+                
+                    .menu {
                     top: 50%;
                     right: 25px;
                     transform: translateY(60%);
@@ -3379,6 +3632,7 @@
                     width: 50%;
                 }
             }
+        
 
             @media (max-width: 1090px) {
 
@@ -3420,21 +3674,24 @@
 
             @media (max-width: 480px) {
                 .logo {
-                    width: 200px !important;
+                    width: 170px !important;
                     top: 36%;
-                    left: 115px;
+                    left: 100px;
                 }
+
                 .tooltip-miniatura img {
-                display: block;
-                width: 80px !important;
-                height: 60px !important;
+                    display: block;
+                    width: 80px !important;
+                    height: 60px !important;
                 }
+
                 .tooltip-miniatura {
                     min-width: 80px !important;
-                    max-width: 80px !important; 
+                    max-width: 80px !important;
                 }
+
                 .gif-container .menu-container {
-                    top: 17.5px !important;
+                    top: 15px !important;
                     right: 20px !important;
                 }
 
@@ -3443,13 +3700,13 @@
                 }
 
                 .fixed-header .logo {
-                    width: 200px !important;
+                    width: 170px !important;
                     top: 57%;
-                    left: 115px !important;
+                    left: 100px !important;
                 }
 
                 .fixed-header .menu-container {
-                    top: 17.5px !important;
+                    top: 15px !important;
                     right: 20px !important;
                 }
 
@@ -3460,16 +3717,16 @@
                 #btnLimpiarComparar {
                     padding: 7px 10px;
                 }
+
                 #btnComparar {
                     padding: 7px 10px;
                 }
+
                 #bannerComparar {
-                    
                     padding-top: 5px;
                     padding-bottom: 5px;
-                    
                 }
-                }
+            }
 
             
     </style>
@@ -3511,6 +3768,7 @@
                             <p>Avalúos certificados</p>
                             <p>Estudio de títulos</p>
                         </div>
+                        
                         <a href="https://icde.my.canva.site/quienes-somos" target="_blank">Quiénes somos</a>
                         <a href="https://wa.me/573208762117?text=Hola,%20necesito%20más%20información" target="_blank">Contáctanos</a>
                     </nav>
@@ -3569,8 +3827,8 @@
 
     <div class="contenedor-principal">
         <div class="filtros hidden">
-            <select id="filterTipoPropiedad" class="flecha" multiple><option value="" disabled hidden>Tipo de propiedad   </option></select>
-            <select id="filterRangoPrecio" class="flecha" multiple><option value="" disabled hidden>Rango de precio  </option></select>
+            <select id="filterTipoPropiedad" class="flecha" multiple><option value="" disabled hidden>Tipo de inmueble</option></select>
+            <select id="filterRangoPrecio" class="flecha" multiple><option value="" disabled hidden>Precio</option></select>
             <select id="filterZona" class="flecha" multiple><option value="" disabled hidden>Zona </option></select>
             <select id="filterEstrato" multiple><option value="" disabled hidden>Estrato </option></select>
             <select id="filterBarrio" class="flecha" multiple><option value="">Barrio </option></select>
@@ -3582,1479 +3840,1596 @@
             <button id="clearFilters" class="btn-limpiar hidden">Limpiar filtros</button>
         </div>
 
-        <div id="contador" class="contador hidden">
-            0 de 0
-        </div>
+        <div class="contador-wrapper" style="display: flex;justify-content: space-between;align-items: center;padding-top: 6px;padding-bottom: 6px;">
+            <div id="contador" class="contador hidden">
+                0 de 0
+            </div>
+            <!-- Nuevo control “Ordenar por” -->
+            <div id="ordenar-por" class="ordenar-por hidden">
 
-        <div id="spinner" class="spinner-container">
-            <img src="https://i.imgur.com/oQ3uUgP.png" alt="Logo dorado" class="logocarga" />
-            <div class="shine"></div>
-            <span class="loading-text">Cargando propiedades...</span>
+                
+                <div id="sortToggle" class="sort-toggle">
+                    Ordenar por ▾
+                </div>
+                <ul id="sortOptions" class="sort-options hidden">
+                    <li data-value="menorPrecio">Menor precio</li>
+                    <li data-value="mayorPrecio">Mayor precio</li>
+                    <li data-value="rentabilidad">Mayor rentabilidad</li>
+                </ul>
+            </div>
         </div>
-        <a href="https://wa.me/573208762117?text=Hola,%20necesito%20más%20información"
-           class="whatsapp-float"
-           target="_blank"
-           aria-label="WhatsApp">
-            <img src="https://i.imgur.com/xMZuIcG.png" alt="WhatsApp" />
-        </a>
-        <div id="tarjetas"></div>
-        <div id="paginacion" class="paginacion"></div>
+            <div id="spinner" class="spinner-container">
+                <img src="https://i.imgur.com/oQ3uUgP.png" alt="Logo dorado" class="logocarga" />
+                <div class="shine"></div>
+                <span class="loading-text">Cargando propiedades...</span>
+            </div>
+            <a href="https://wa.me/573208762117?text=Hola,%20necesito%20más%20información"
+               class="whatsapp-float"
+               target="_blank"
+               aria-label="WhatsApp">
+                <img src="https://i.imgur.com/xMZuIcG.png" alt="WhatsApp" />
+            </a>
+            <div id="tarjetas"></div>
+            <div id="paginacion" class="paginacion"></div>
 
-        <!-- Modal -->
-        <div id="modalOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1" style="display:none;">
-            <div class="modal">
-                <button class="modal-close" aria-label="Cerrar modal">&times;</button>
-                <div class="modal-contenido">
-                    <div class="modal-columna-izq">
-                        <img id="modalImagen" class="modal-imagen" src="" alt="Imagen inmueble" />
-                        <a id="modalLinkFotos" href="#" target="_blank" class="boton-fotos">Ver más fotos</a>
-                        <div class="modal-bloque-info">
-                            <h2 id="modalTitle" style="margin-top:5px; margin-bottom:5px;"></h2>
-                            <p class="tipo" id="modalTipo"></p>
-                            <p class="modalCodigo"><strong>Código:</strong> <span id="modalCodigo"></span></p>
-                            <p id="modalPrecio" class="precio"></p>
-                            <div class="modal-etiquetas" id="modalEtiquetas"></div>
+            <!-- Modal -->
+            <div id="modalOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1" style="display:none;">
+                <div class="modal">
+                    <button class="modal-close" aria-label="Cerrar modal">&times;</button>
+                    <div class="modal-contenido">
+                        <div class="modal-columna-izq">
+                            <img id="modalImagen" class="modal-imagen" src="" alt="Imagen inmueble" />
+                            <a id="modalLinkFotos" href="#" target="_blank" class="boton-fotos">Ver más fotos</a>
+                            <div class="modal-bloque-info">
+                                <h2 id="modalTitle" style="margin-top:5px; margin-bottom:5px;"></h2>
+                                <p class="tipo" id="modalTipo"></p>
+                                <p class="modalCodigo"><strong>Código:</strong> <span id="modalCodigo"></span></p>
+                                <p id="modalPrecio" class="precio"></p>
+                                <div class="modal-etiquetas" id="modalEtiquetas"></div>
+                            </div>
+                        </div>
+                        <div class="modal-columna-der">
+                            <div class="modal-subtitulo">CARACTERÍSTICAS DETALLADAS</div>
+                            <table class="modal-tabla-caracteristicas" id="modalTablaCaracteristicas">
+                                <!-- Filas se insertan con JS -->
+                            </table>
+                            <h3 class="modal-subtitulo">PUNTOS CLAVES:</h3>
+                            <p id="modalPuntosClave" class="modal-texto"></p>
                         </div>
                     </div>
-                    <div class="modal-columna-der">
-                        <div class="modal-subtitulo">CARACTERÍSTICAS DETALLADAS</div>
-                        <table class="modal-tabla-caracteristicas" id="modalTablaCaracteristicas">
-                            <!-- Filas se insertan con JS -->
-                        </table>
-                        <h3 class="modal-subtitulo">PUNTOS CLAVES:</h3>
-                        <p id="modalPuntosClave" class="modal-texto"></p>
+                    <h3 class="modal-subtitulo">DESCRIPCIÓN</h3>
+                    <p id="modalDescripcion" class="modal-texto"></p>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <a id="modalBotonWhatsapp"
+                           href="#"
+                           target="_blank"
+                           style="background-color: #be8939; color: white; padding: 12px 20px; border-radius: 5px; text-decoration: none; display: inline-block; font-weight: bold;">
+                            ✆ Agendar visita por WhatsApp
+                        </a>
                     </div>
                 </div>
-                <h3 class="modal-subtitulo">DESCRIPCIÓN</h3>
-                <p id="modalDescripcion" class="modal-texto"></p>
-                <div style="text-align: center; margin-top: 20px;">
-                    <a id="modalBotonWhatsapp"
-                       href="#"
-                       target="_blank"
-                       style="background-color: #be8939; color: white; padding: 12px 20px; border-radius: 5px; text-decoration: none; display: inline-block; font-weight: bold;">
-                        ✆ Agendar visita por WhatsApp
+            </div>
+        </div>
+        <!-- NUEVO: Banner inferior de comparación -->
+        <div id="bannerComparar" class="banner-comparar hidden">
+            <!-- Miniaturas a la izquierda -->
+            <div id="miniaturasComparar" class="miniaturas-comparar flex-shrink-0"></div>
+
+            <!-- Texto centrado -->
+            <div class="flex-1 text-center">
+                <span id="textoComparar" class="block">Has seleccionado 0 propiedades</span>
+            </div>
+
+            <!-- Botones a la derecha -->
+            <div class="botonescontainer">
+                <button id="btnComparar" class="btn-comparar flex-1">Comparar</button>
+                <button id="btnLimpiarComparar" class="btn-limpiare flex-1">Limpiar</button>
+            </div>
+        </div>
+
+        <!-- NUEVO: Modal de comparación -->
+        <div id="modalComparacion" class="modal-comparacion hidden" role="dialog" aria-modal="true" style="z-index: 1001;">
+            <button class="modal-close-comparar" aria-label="Cerrar comparación">&times;</button>
+            <div class="contenedor-comparacion">
+                <!-- Aquí se agregan las dos propiedades con JS -->
+            </div>
+        </div>
+
+        <!-- Alerta flotante para comparación -->
+        <div id="alerta-comparacion" class="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg text-sm hidden z-50 transition-all duration-300">
+            Solo puedes comparar 2 propiedades a la vez.
+        </div>
+
+        <footer>
+            <div class="PiePagina-container">
+                <h2 class="PiePagina-titulo">ICDE – NEGOCIOS INMOBILIARIOS</h2>
+                <div class="PiePagina-grid">
+
+                    <!-- Columna izquierda: Título y imagen decorativa -->
+                    <div class="PiePagina-col text-center">
+
+                        <img src="https://i.imgur.com/avRgxTP.jpeg" alt="Decoración oficina" class="PiePagina-img">
+                    </div>
+                    <!-- Columna derecha -->
+                    <div class="PiePagina-col derecha">
+
+
+                        <!-- Contacto -->
+                        <div>
+                            <h3 class="PiePagina-heading">CONTÁCTANOS</h3>
+                            <p>Calle 32 #6-67<br>Barrio Las Granjas<br>Neiva, Huila</p>
+
+                            <p class="mt-2">(320) 876-2117</p>
+                            <p class="mt-2">icdesaladenegocios@gmail.com</p>
+                        </div>
+
+                        <!-- Horarios -->
+                        <div>
+                            <h3 class="PiePagina-heading">HORARIO DE ATENCIÓN</h3>
+                            <p>Lunes a Viernes<br>9:00 am – 6:00 pm</p>
+                            <p class="mt-2">Sábado<br>9:00 am – 12:00 pm</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="PiePagina-mapa">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3984.544382602311!2d-75.29109089999994!3d2.9462962999999984!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e3b7459b0e3c6bf%3A0xd6aa531afbfd1a1d!2sCl.%2032%20%236%20-%2067%2C%20Comuna%202%2C%20Neiva%2C%20Huila!5e0!3m2!1ses!2sco!4v1748238716495!5m2!1ses!2sco" width=100% height=100% style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+            </div>
+
+
+
+            <!-- Redes sociales -->
+
+
+            <div>
+
+                <div class="PiePagina-socials">
+                    <a href="https://www.facebook.com/share/15VK3AyXLC/" target="_blank" aria-label="Facebook">
+                        <img src="https://i.imgur.com/7TywClm.png" alt="Facebook">
+                    </a>
+                    <a href="https://www.instagram.com/icde_agencia_inmobiliaria?igsh=NjRvZmZtN2FrYzln" target="_blank" aria-label="Instagram">
+                        <img src="https://i.imgur.com/eQGkD74.png" alt="Instagram">
+                    </a>
+                    <a href="https://wa.me/573208762117?text=Hola,%20necesito%20m%C3%A1s%20informaci%C3%B3n" target="_blank" aria-label="WhatsApp">
+                        <img src="https://i.imgur.com/MA961il.png" alt="WhatsApp">
                     </a>
                 </div>
             </div>
-        </div>
-    </div>
-    <!-- NUEVO: Banner inferior de comparación -->
-    <div id="bannerComparar" class="banner-comparar hidden">
-        <!-- Miniaturas a la izquierda -->
-        <div id="miniaturasComparar" class="miniaturas-comparar flex-shrink-0"></div>
-
-        <!-- Texto centrado -->
-        <div class="flex-1 text-center">
-            <span id="textoComparar" class="block">Has seleccionado 0 propiedades</span>
-        </div>
-
-        <!-- Botones a la derecha -->
-        <div class="botonescontainer">
-            <button id="btnComparar" class="btn-comparar flex-1">Comparar</button>
-            <button id="btnLimpiarComparar" class="btn-limpiare flex-1">Limpiar</button>
-        </div>
-    </div>
-
-    <!-- NUEVO: Modal de comparación -->
-    <div id="modalComparacion" class="modal-comparacion hidden" role="dialog" aria-modal="true" style="z-index: 1001;">
-        <button class="modal-close-comparar" aria-label="Cerrar comparación">&times;</button>
-        <div class="contenedor-comparacion">
-            <!-- Aquí se agregan las dos propiedades con JS -->
-        </div>
-    </div>
-
-    <!-- Alerta flotante para comparación -->
-    <div id="alerta-comparacion" class="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg text-sm hidden z-50 transition-all duration-300">
-        Solo puedes comparar 2 propiedades a la vez.
-    </div>
-
-    <footer>
-        <div class="PiePagina-container">
-            <h2 class="PiePagina-titulo">ICDE – NEGOCIOS INMOBILIARIOS</h2>
-            <div class="PiePagina-grid">
-
-                <!-- Columna izquierda: Título y imagen decorativa -->
-                <div class="PiePagina-col text-center">
-
-                    <img src="https://i.imgur.com/avRgxTP.jpeg" alt="Decoración oficina" class="PiePagina-img">
-                </div>
-                <!-- Columna derecha -->
-                <div class="PiePagina-col derecha">
 
 
-                    <!-- Contacto -->
-                    <div>
-                        <h3 class="PiePagina-heading">CONTÁCTANOS</h3>
-                        <p>Calle 32 #6-67<br>Barrio Las Granjas<br>Neiva, Huila</p>
+        </footer>
 
-                        <p class="mt-2">(320) 876-2117</p>
-                        <p class="mt-2">icdesaladenegocios@gmail.com</p>
-                    </div>
+        <script>
+            // ─────────────────────────────────────────────────
+            // 1. Variables globales y configuración inicial
+            // ─────────────────────────────────────────────────
+            const API_URL = "https://script.google.com/macros/s/AKfycbyBb5UOS0LIbjJ4yAc3xPH6PGJohWx5RhN-Z0Xl1B7kZs9vTKDpi0TJH9viYNCuh4oE/exec";
 
-                    <!-- Horarios -->
-                    <div>
-                        <h3 class="PiePagina-heading">HORARIO DE ATENCIÓN</h3>
-                        <p>Lunes a Viernes<br>9:00 am – 6:00 pm</p>
-                        <p class="mt-2">Sábado<br>9:00 am – 12:00 pm</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+            let paginaActual = 1;
+            const tarjetasPorPagina = 12;
+            let datos = [];
 
+            let filtros = {
+                "Tipo de inmueble": [],
+                "Rango de precio": [],
+                "Zona": [],
+                "Estrato": [],
+                "Barrio": [],
+                "Conjunto": [],
+                "Habitaciones": [],
+                "Garaje": [],
+                "Pisos": [],
+                "Buscar": ""
+            };
 
-        <div class="PiePagina-mapa">
-            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3984.544382602311!2d-75.29109089999994!3d2.9462962999999984!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e3b7459b0e3c6bf%3A0xd6aa531afbfd1a1d!2sCl.%2032%20%236%20-%2067%2C%20Comuna%202%2C%20Neiva%2C%20Huila!5e0!3m2!1ses!2sco!4v1748238716495!5m2!1ses!2sco" width=100% height=100% style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-        </div>
+            let listaFiltrada = [];
+            let todosBarrios = [];
+            let todosConjuntos = [];
+            const choiceInstances = {};
+            let primeraCarga = true; // Para controlar el primer renderizado de tarjetas
+            let criterioOrden = "";  // "" | "menorPrecio" | "mayorPrecio" | "rentabilidad"
 
-        <!-- Redes sociales -->
-
-
-        <div>
-
-            <div class="PiePagina-socials">
-                <a href="https://www.facebook.com/share/15VK3AyXLC/" target="_blank" aria-label="Facebook">
-                    <img src="https://i.imgur.com/7TywClm.png" alt="Facebook">
-                </a>
-                <a href="https://www.instagram.com/icde_agencia_inmobiliaria?igsh=NjRvZmZtN2FrYzln" target="_blank" aria-label="Instagram">
-                    <img src="https://i.imgur.com/eQGkD74.png" alt="Instagram">
-                </a>
-                <a href="https://wa.me/573208762117?text=Hola,%20necesito%20m%C3%A1s%20informaci%C3%B3n" target="_blank" aria-label="WhatsApp">
-                    <img src="https://i.imgur.com/MA961il.png" alt="WhatsApp">
-                </a>
-            </div>
-        </div>
+            // ─────────────────────────────────────────────────
+            // 2. Función para cargar datos desde tu API
+            // ─────────────────────────────────────────────────
+            function cargarDatos() {
+                const spinner = document.getElementById("spinner");
+                if (spinner) spinner.style.display = "block";
 
 
-    </footer>
+                fetch(API_URL)
+                    .then(res => res.json())
+                    .then(inicializar)
+                    .catch(err => {
+                        console.error("Error al leer datos:", err);
 
-    <script>
-        // ─────────────────────────────────────────────────
-        // 1. Variables globales y configuración inicial
-        // ─────────────────────────────────────────────────
-        const API_URL = "https://script.google.com/macros/s/AKfycbyBb5UOS0LIbjJ4yAc3xPH6PGJohWx5RhN-Z0Xl1B7kZs9vTKDpi0TJH9viYNCuh4oE/exec";
-
-        let paginaActual = 1;
-        const tarjetasPorPagina = 12;
-        let datos = [];
-
-        let filtros = {
-            "Tipo de inmueble": [],
-            "Rango de precio": [],
-            "Zona": [],
-            "Estrato": [],
-            "Barrio": [],
-            "Conjunto": [],
-            "Habitaciones": [],
-            "Garaje": [],
-            "Pisos": [],
-            "Buscar": ""
-        };
-
-        let listaFiltrada = [];
-        let todosBarrios = [];
-        let todosConjuntos = [];
-        const choiceInstances = {};
-        let primeraCarga = true; // Para controlar el primer renderizado de tarjetas
-
-        // ─────────────────────────────────────────────────
-        // 2. Función para cargar datos desde tu API
-        // ─────────────────────────────────────────────────
-        function cargarDatos() {
-            const spinner = document.getElementById("spinner");
-            if (spinner) spinner.style.display = "block";
-
-
-            fetch(API_URL)
-                .then(res => res.json())
-                .then(inicializar)
-                .catch(err => {
-                    console.error("Error al leer datos:", err);
-
-                    if (spinner) spinner.style.display = "none";
-                });
-        }
-
-        // ─────────────────────────────────────────────────
-        // 3. Función de inicialización (después de obtener 'data')
-        // ─────────────────────────────────────────────────
-        function inicializar(data) {
-            datos = data;
-
-            // Asegurarnos de que ciertos filtros sean arrays
-            filtros["Zona"] = filtros["Zona"] || [];
-            filtros["Barrio"] = filtros["Barrio"] || [];
-            filtros["Conjunto"] = filtros["Conjunto"] || [];
-
-            // 3.1. Poblar los <select> iniciales con TODOS los registros (llenarOpcionesFiltros)
-            llenarOpcionesFiltros();
-
-            // 3.2. Guardar listas completas de barrios y conjuntos para dependencia
-            todosBarrios = [...new Set(
-                datos
-                    .map(d => d["Barrio"])
-                    .filter(v => v && v.trim() !== "")
-            )].sort();
-            todosConjuntos = [...new Set(
-                datos
-                    .map(d => d["Conjunto"])
-                    .filter(v => v && v.trim() !== "")
-            )].sort();
-
-            // 3.3. Inicializar Choices en cada <select multiple …>
-            const selects = document.querySelectorAll('.filtros select[multiple]');
-
-
-
-            selects.forEach(select => {
-                const tieneBuscador = ["filterBarrio", "filterConjunto"].includes(select.id);
-
-                const instancia = new Choices(select, {
-                    placeholder: true,
-                    placeholderValue: select.options[0].text,
-                    removeItemButton: true,
-
-                    // → activamos el filtrado sólo donde queremos buscador
-                    searchEnabled: true,
-                    searchChoices: true,
-
-
-                    shouldSort: false,
-                    allowHTML: true,
-
-                    
-                });
-
-
-                const inputClonado = instancia.containerOuter.element.querySelector('.choices__input--cloned');
-                if (inputClonado) {
-                    inputClonado.readOnly = true;   // no editable
-                    inputClonado.tabIndex = -1;      // no se puede enfocar
-                    // opcional: ocultarlo totalmente
-                    // inputClonado.style.display = 'none';
-                }
-
-                choiceInstances[select.id] = instancia;
-
-                actualizarFiltrosIndependientes();
-                // 3.3.1. Cuando se agrega un tag, ocultar dropdown
-                instancia.passedElement.element.addEventListener('addItem', () => {
-                    instancia.hideDropdown();
-                });
-
-                // 3.3.2. Toggle y bloqueo de clic/mousedown en .choices__inner
-                const container = instancia.containerOuter.element;
-                container.addEventListener('mousedown', e => {
-                    if (e.target.closest('.choices__inner')) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        Object.values(choiceInstances).forEach(otherInst => {
-                            if (otherInst !== instancia) otherInst.hideDropdown();
-                        });
-                        if (instancia.dropdown && instancia.dropdown.isActive) {
-                            instancia.hideDropdown();
-                        } else {
-                            instancia.showDropdown();
-                        }
-                    }
-                }, { capture: true });
-                container.addEventListener('click', e => {
-                    if (e.target.closest('.choices__inner')) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                    }
-                }, { capture: true });
-
-                // 3.3.3. Cuando cambia la selección (on change), guardamos el filtro y aplicamos
-                instancia.passedElement.element.addEventListener('change', e => {
-                    const id = e.target.id;
-                    const selected = Array.from(e.target.selectedOptions)
-                        .map(opt => opt.value)
-                        .filter(v => v !== "");
-                    switch (id) {
-                        case "filterTipoPropiedad":
-                            filtros["Tipo de inmueble"] = selected;
-                            break;
-                        case "filterRangoPrecio":
-                            filtros["Rango de precio"] = selected;
-                            break;
-                        case "filterZona":
-                            filtros["Zona"] = selected;
-                            break;
-                        case "filterEstrato":
-                            filtros["Estrato"] = selected;
-                            break;
-                        case "filterHabitaciones":
-                            filtros["Habitaciones"] = selected;
-                            break;
-                        case "filterGaraje":
-                            filtros["Garaje"] = selected;
-                            break;
-                        case "filterPisos":
-                            filtros["Pisos"] = selected;
-                            break;
-                        case "filterBarrio":
-                            filtros["Barrio"] = selected;
-                            break;
-                        case "filterConjunto":
-                            filtros["Conjunto"] = selected;
-                            break;
-                    }
-                    // Al cambiar un filtro independiente, recargamos tarjetas SIN hacer scroll
-                    aplicarFiltros();
-                    
-                });
-            });
-
-            
-
-            // 3.4. Llamada inicial a aplicarFiltros() para mostrar todo
-            aplicarFiltros();
-
-            // 3.5. Ocultar spinner y mostrar filtros + contador
-            document.getElementById("spinner").style.display = "none";
-            document.getElementById("contador").classList.remove("hidden");
-            document.querySelector('.filtros').classList.remove('hidden');
-            document.getElementById("clearFilters").classList.remove("hidden");
-        }
-
-        // ─────────────────────────────────────────────────
-        // 4. Función que llena los <select> iniciales (TODOS los datos)
-        // ─────────────────────────────────────────────────
-        function llenarOpcionesFiltros() {
-            function llenarSelect(id, campo) {
-                const select = document.getElementById(id);
-                if (!select) return;
-
-                let valores = [...new Set(datos.map(d => d[campo]).filter(v => v))];
-                if (["Habitaciones", "Garaje", "Pisos"].includes(campo)) {
-                    valores = valores
-                        .map(v => Number(v))
-                        .filter(v => !isNaN(v))
-                        .sort((a, b) => a - b)
-                        .map(v => String(v));
-                } else {
-                    valores = valores.sort();
-                }
-
-                select.innerHTML = `<option value="">${select.options[0].text}</option>` +
-                    valores.map(v => {
-                        const cantidad = datos.filter(d => String(d[campo]) === v).length;
-                        return `<option value="${v}">${v} (${cantidad})</option>`;
-                    }).join("");
+                        if (spinner) spinner.style.display = "none";
+                    });
             }
 
-            llenarSelect("filterTipoPropiedad", "Tipo de inmueble");
-            llenarSelect("filterRangoPrecio", "Rango de precio");
-            llenarSelect("filterZona", "Zona");
-            llenarSelect("filterBarrio", "Barrio");
-            llenarSelect("filterConjunto", "Conjunto");
-            llenarSelect("filterEstrato", "Estrato");
-            llenarSelect("filterHabitaciones", "Habitaciones");
-            llenarSelect("filterGaraje", "Garaje");
-            llenarSelect("filterPisos", "Pisos");
-        }
+            // ─────────────────────────────────────────────────
+            // 3. Función de inicialización (después de obtener 'data')
+            // ─────────────────────────────────────────────────
+            function inicializar(data) {
+                datos = data;
 
-        // ─────────────────────────────────────────────────
-        // 5. Función que aplica TODOS los filtros (independientes + dependientes)
-        //    y luego vuelve a renderizar (sin scroll)
-        // ─────────────────────────────────────────────────
-        function aplicarFiltros() {
-            // 5.1. Filtramos datos según TODO lo que tenga el objeto filtros
-            const filtrados = datos.filter(d => {
-                if (!filtroIncluye(d["Tipo de inmueble"], filtros["Tipo de inmueble"])) return false;
-                if (!filtroIncluye(d["Rango de precio"], filtros["Rango de precio"])) return false;
-                if (!filtroIncluye(d["Zona"], filtros["Zona"])) return false;
-                if (!filtroIncluye(String(d["Estrato"]), filtros["Estrato"])) return false;
-                if (!filtroIncluye(d["Barrio"], filtros["Barrio"])) return false;
-                if (!filtroIncluye(d["Conjunto"], filtros["Conjunto"])) return false;
-                if (!filtroIncluye(String(d["Habitaciones"]), filtros["Habitaciones"])) return false;
-                if (!filtroIncluye(String(d["Garaje"]), filtros["Garaje"])) return false;
-                if (!filtroIncluye(String(d["Pisos"]), filtros["Pisos"])) return false;
+                // Asegurarnos de que ciertos filtros sean arrays
+                filtros["Zona"] = filtros["Zona"] || [];
+                filtros["Barrio"] = filtros["Barrio"] || [];
+                filtros["Conjunto"] = filtros["Conjunto"] || [];
 
-                if (filtros["Buscar"]) {
-                    const textoRaw = filtros["Buscar"].toLowerCase();
-                    const texto = textoRaw.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                    const combinadoRaw = (d["Nombre"] + " " + d["Código"] + " " + d["Descripción"] + " " + d["Puntos Clave"]).toLowerCase();
-                    const combinado = combinadoRaw.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                    if (!combinado.includes(texto)) return false;
-                }
+                // 3.1. Poblar los <select> iniciales con TODOS los registros (llenarOpcionesFiltros)
+                llenarOpcionesFiltros();
 
-                return true;
-            });
-
-            listaFiltrada = filtrados;
-            paginaActual = 1;
-
-            // 5.2. Volver a renderizar tarjetas SIN scroll (segundo parámetro false)
-            renderizarTarjetas(listaFiltrada, false);
-        }
-
-        // ─────────────────────────────────────────────────
-        // 6. Función auxiliar que comprueba inclusión (multi‐select / single‐select)
-        // ─────────────────────────────────────────────────
-        function filtroIncluye(valorDato, filtro) {
-            if (!filtro || (Array.isArray(filtro) && filtro.length === 0)) return true;
-            if (Array.isArray(filtro)) return filtro.includes(valorDato);
-            return valorDato === filtro;
-        }
-
-        // ─────────────────────────────────────────────────
-        // 7. Función para actualizar los filtros “independientes” (con contadores dinámicos)
-        // ─────────────────────────────────────────────────
-        function actualizarFiltrosIndependientes() {
-            const filtrosInd = [
-                ["filterTipoPropiedad", "Tipo de inmueble"],
-                ["filterRangoPrecio", "Rango de precio"],
-                ["filterZona", "Zona"],
-                ["filterEstrato", "Estrato"],
-                ["filterHabitaciones", "Habitaciones"],
-                ["filterGaraje", "Garaje"],
-                ["filterPisos", "Pisos"],
-                ["filterBarrio", "Barrio"],
-                ["filterConjunto", "Conjunto"]
-            ];
-
-            filtrosInd.forEach(([id, campo]) => {
-                const instancia = choiceInstances[id];
-                if (!instancia) return;
-
-                // 7.1. Filtramos todos los datos según TODO lo que esté seleccionado, excepto el campo actual
-                const subset = datos.filter(d => {
-                    for (const [, campo2] of filtrosInd) {
-                        if (campo2 === campo) continue;
-                        const filtroValores = filtros[campo2];
-                        if (filtroValores && Array.isArray(filtroValores) && filtroValores.length > 0) {
-                            const valorDato = String(d[campo2]);
-                            if (!filtroValores.includes(valorDato)) return false;
-                        }
-                    }
-                    return true;
-                });
-
-                // 7.2. Obtenemos valores únicos de “datos” para este campo (ignoramos vacíos)
-                let valores = [...new Set(
+                // 3.2. Guardar listas completas de barrios y conjuntos para dependencia
+                todosBarrios = [...new Set(
                     datos
-                        .map(d => d[campo])
-                        .filter(v => {
-                            if (["Barrio", "Conjunto"].includes(campo)) {
-                                return v !== undefined && v !== null && String(v).trim() !== "";
+                        .map(d => d["Barrio"])
+                        .filter(v => v && v.trim() !== "")
+                )].sort();
+                todosConjuntos = [...new Set(
+                    datos
+                        .map(d => d["Conjunto"])
+                        .filter(v => v && v.trim() !== "")
+                )].sort();
+
+                // 3.3. Inicializar Choices en cada <select multiple …>
+                const selects = document.querySelectorAll('.filtros select[multiple]');
+
+
+
+                selects.forEach(select => {
+                    const tieneBuscador = ["filterBarrio", "filterConjunto"].includes(select.id);
+
+                    const instancia = new Choices(select, {
+                        placeholder: true,
+                        placeholderValue: select.options[0].text,
+                        removeItemButton: true,
+
+                        // → activamos el filtrado sólo donde queremos buscador
+                        searchEnabled: true,
+                        searchChoices: true,
+
+
+                        shouldSort: false,
+                        allowHTML: true,
+
+
+                    });
+
+
+                    const inputClonado = instancia.containerOuter.element.querySelector('.choices__input--cloned');
+                    if (inputClonado) {
+                        inputClonado.readOnly = true;   // no editable
+                        inputClonado.tabIndex = -1;      // no se puede enfocar
+                        // opcional: ocultarlo totalmente
+                        // inputClonado.style.display = 'none';
+                    }
+
+                    choiceInstances[select.id] = instancia;
+
+                    actualizarFiltrosIndependientes();
+                    // 3.3.1. Cuando se agrega un tag, ocultar dropdown
+                    instancia.passedElement.element.addEventListener('addItem', () => {
+                        instancia.hideDropdown();
+                    });
+
+                    // 3.3.2. Toggle y bloqueo de clic/mousedown en .choices__inner
+                    const container = instancia.containerOuter.element;
+                    container.addEventListener('mousedown', e => {
+                        if (e.target.closest('.choices__inner')) {
+                            e.preventDefault();
+                            e.stopImmediatePropagation();
+                            Object.values(choiceInstances).forEach(otherInst => {
+                                if (otherInst !== instancia) otherInst.hideDropdown();
+                            });
+                            if (instancia.dropdown && instancia.dropdown.isActive) {
+                                instancia.hideDropdown();
+                            } else {
+                                instancia.showDropdown();
                             }
-                            return v !== undefined && v !== null && String(v) !== "";
-                        })
-                )];
-
-                // 7.3. Eliminamos de “valores” los que ya estén seleccionados
-                const seleccionados = filtros[campo] || [];
-                if (Array.isArray(seleccionados) && seleccionados.length > 0) {
-                    valores = valores.filter(v => !seleccionados.includes(String(v)));
-                }
-
-                // 7.4. Ordenamos numérica o alfabéticamente
-                if (["Habitaciones", "Garaje", "Pisos"].includes(campo)) {
-                    valores = valores
-                        .map(v => Number(v))
-                        .filter(v => !isNaN(v))
-                        .sort((a, b) => a - b)
-                        .map(v => String(v));
-                } else {
-                    valores = valores.sort();
-                }
-
-                // 7.5. Construimos las “choices” con contador basándonos en “subset”
-                const opciones = [
-                    {
-                        value: "",
-                        label: instancia.passedElement.element.options[0].text,
-                        selected: false,
-                        disabled: true
-                    },
-                    ...valores.map(v => {
-                        const cuenta = subset.filter(d => String(d[campo]) === v).length;
-                        return {
-                            value: v,
-                            label: `${v} <span class="cuenta">(${cuenta})</span>`,
-                            selected: false,
-                            disabled: false,
-                            cuenta
-                        };
-                    }).filter(obj => obj.cuenta > 0)
-                ];
-
-                instancia.clearChoices();
-                instancia.setChoices(opciones, "value", "label", true);
-
-                // 7.6. Re‐marcar los valores ya seleccionados
-                const actuales = filtros[campo] || [];
-                instancia.removeActiveItems();
-                actuales.forEach(val => instancia.setChoiceByValue(val));
-            });
-        }
-
-        // ─────────────────────────────────────────────────
-        // 8. Función para renderizar las tarjetas (cards) + paginación + listeners
-        // ─────────────────────────────────────────────────
-        function renderizarTarjetas(lista = datos, hacerScroll = false) {
-            const cont = document.getElementById("tarjetas");
-
-            if (!lista.length) {
-                cont.innerHTML = `<div class="noProp">No se encontraron propiedades.</div>`;
-                document.getElementById("paginacion").innerHTML = "";
-                return;
-            }
-
-            const inicio = (paginaActual - 1) * tarjetasPorPagina;
-            const fin = inicio + tarjetasPorPagina;
-            const paginaDatos = lista.slice(inicio, fin);
-
-            cont.innerHTML = paginaDatos.map(d => `
-          <div
-            class="tarjeta ${["Directo", "Verbal"].includes(d["Contrato"]) ? "recomendado" : ""}"
-            tabindex="0"
-            role="button"
-            aria-pressed="false"
-            data-codigo="${d["Código"]}"
-          >
-            ${["Directo", "Verbal"].includes(d["Contrato"])
-                    ? `<div class="ribbon"><span>¡Destacada!</span></div>`
-                    : ``
-                }
-            <img src="${d["Image"]}" alt="Imagen de ${d["Nombre"]}" loading="lazy" />
-            <div class="contenido">
-              <h3 class="titulo">${d["Nombre"]}</h3>
-              <p class="tipo">${d["Tipo de inmueble"]}</p>
-              <p class="codigo">Código: ${d["Código"]}</p>
-              <p class="precio">${formatearPrecio(d["Precio"])}</p>
-              <div class="etiquetas">
-                <span class="etiqueta">
-                  <img src="https://i.imgur.com/ykKdGwE.png" alt="Habitaciones" class="icono-etiqueta" />
-                  Habitaciones ${d["Habitaciones"]}
-                </span>
-                <span class="etiqueta">
-                  <img src="https://i.imgur.com/h9NqA32.png" alt="Baños" class="icono-etiqueta" />
-                  Baños ${d["Baños"]}
-                </span>
-                <span class="etiqueta">
-                  <img src="https://i.imgur.com/4Yixa77.png" alt="Garaje" class="icono-etiqueta" />
-                  Garaje ${d["Garaje"]}
-                </span>
-                <span class="etiqueta">
-                  <img src="https://i.imgur.com/rH6cXMa.png" alt="Cocina" class="icono-etiqueta" />
-                  Cocina ${d["Cocina"]}
-                </span>
-                <span class="etiqueta">
-                  Pisos ${d["Pisos"]}
-                </span>
-                <span class="etiqueta">
-                  <img src="https://i.imgur.com/rz72lGC.png" alt="Área lote" class="icono-etiqueta" />
-                  Lote ${d["Área lote"]} m²
-                </span>
-                <span class="etiqueta">
-                  ${d["Rentabilidad"]}
-                </span>
-              </div>
-              <div class="comparar-container">
-                <label class="comparar-label">
-                  <input
-                    type="checkbox"
-                    class="checkbox-comparar"
-                    data-codigo="${d["Código"]}"
-                    ${comparaciones.includes(d["Código"]) ? 'checked' : ''}
-                  />
-                  Comparar
-                </label>
-              </div>
-            </div>
-          </div>
-        `).join("");
-
-            // ─────────── SCROLL solo si no es la primera carga Y hacerScroll === true ───────────
-            if (!primeraCarga && hacerScroll) {
-                document
-                    .getElementById("filterBuscar")
-                    .scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-            primeraCarga = false;
-
-
-
-            // 8.1. Volver a enlazar listeners para abrir modal al hacer click o Enter
-            document.querySelectorAll(".tarjeta").forEach(card => {
-                card.addEventListener("click", () => abrirModal(card.dataset.codigo));
-                card.addEventListener("keydown", e => {
-                    if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        abrirModal(card.dataset.codigo);
-                    }
-                });
-            });
-
-            // 8.2. Renderizar la paginación y actualizar contador
-            renderizarPaginacion(lista.length);
-            actualizarContador();
-
-            // 8.3. Volver a enlazar la lógica de “comparar”
-            enlazarComparar();
-        }
-
-        // ─────────────────────────────────────────────────
-        // 9. Funciones de banner comparar
-        // ─────────────────────────────────────────────────
-        // Variable global para llevar el conteo de comparaciones
-        let comparaciones = [];
-        const propiedades = {}; // Aquí guardaremos las propiedades por código
-
-        function enlazarComparar() {
-            const banner = document.getElementById('bannerComparar');
-            const texto = document.getElementById('textoComparar');
-            const btn = document.getElementById('btnComparar');
-
-            // Evitar que se abra el modal al hacer clic en checkbox o etiqueta
-            document.querySelectorAll('.checkbox-comparar, .comparar-label').forEach(el => {
-                el.addEventListener('click', e => e.stopPropagation());
-            });
-
-            // Mapear propiedades para fácil acceso por código
-            document.querySelectorAll('.checkbox-comparar').forEach(chk => {
-                const tarjeta = chk.closest('.tarjeta'); // o el contenedor que tenga los datos
-                const codigo = chk.dataset.codigo;
-
-                // Puedes adaptar esto si ya tienes una lista `data` de todas las propiedades
-                propiedades[codigo] = {
-                    codigo,
-                    nombre: tarjeta?.querySelector('.modal-titulo')?.textContent || 'Propiedad',
-                    imagen: tarjeta?.querySelector('img')?.src || '',
-                    tipo: tarjeta?.querySelector('.tipo')?.textContent || 'Inmueble',
-                };
-
-                chk.addEventListener('change', e => {
-                    const id = e.target.dataset.codigo;
-
-                    if (e.target.checked) {
-                        if (comparaciones.length < 2) {
-                            comparaciones.push(id);
-                        } else {
-                            e.target.checked = false;
-                            alert('Solo puedes comparar 2 propiedades.');
                         }
-                    } else {
-                        comparaciones = comparaciones.filter(c => c !== id);
-                    }
+                    }, { capture: true });
+                    container.addEventListener('click', e => {
+                        if (e.target.closest('.choices__inner')) {
+                            e.preventDefault();
+                            e.stopImmediatePropagation();
+                        }
+                    }, { capture: true });
 
-                    actualizarBanner();
-                });
-            });
+                    // 3.3.3. Cuando cambia la selección (on change), guardamos el filtro y aplicamos
+                    instancia.passedElement.element.addEventListener('change', e => {
+                        const id = e.target.id;
+                        const selected = Array.from(e.target.selectedOptions)
+                            .map(opt => opt.value)
+                            .filter(v => v !== "");
+                        switch (id) {
+                            case "filterTipoPropiedad":
+                                filtros["Tipo de inmueble"] = selected;
+                                break;
+                            case "filterRangoPrecio":
+                                filtros["Rango de precio"] = selected;
+                                break;
+                            case "filterZona":
+                                filtros["Zona"] = selected;
+                                break;
+                            case "filterEstrato":
+                                filtros["Estrato"] = selected;
+                                break;
+                            case "filterHabitaciones":
+                                filtros["Habitaciones"] = selected;
+                                break;
+                            case "filterGaraje":
+                                filtros["Garaje"] = selected;
+                                break;
+                            case "filterPisos":
+                                filtros["Pisos"] = selected;
+                                break;
+                            case "filterBarrio":
+                                filtros["Barrio"] = selected;
+                                break;
+                            case "filterConjunto":
+                                filtros["Conjunto"] = selected;
+                                break;
+                        }
+                        // Al cambiar un filtro independiente, recargamos tarjetas SIN hacer scroll
+                        aplicarFiltros();
 
-            btn.onclick = () => mostrarComparacion(comparaciones);
-            document.getElementById('btnLimpiarComparar').addEventListener('click', limpiarComparaciones);
-        }
-
-        function actualizarBanner() {
-            const banner = document.getElementById('bannerComparar');
-            const texto = document.getElementById('textoComparar');
-
-            texto.textContent = `Has seleccionado ${comparaciones.length} propiedad(es)`;
-            banner.classList.toggle('hidden', comparaciones.length === 0);
-
-            actualizarMiniaturas();
-        }
-
-        function actualizarMiniaturas() {
-            const contenedor = document.getElementById('miniaturasComparar');
-            contenedor.innerHTML = '';
-
-            comparaciones.forEach(codigo => {
-                const prop = propiedades[codigo];
-                const div = document.createElement('div');
-                div.className = 'relative group';
-
-                div.innerHTML = `
-                <div class="group relative inline-block">
-                    <!-- TOOLTIP FLOTÁNTE -->
-                    <div class="tooltip-miniatura">
-                        <img src="${prop.imagen}" alt="${prop.nombre}" class="w-24 h-24 object-cover rounded mb-2">
-                    </div>
-                    <!-- CHIP -->
-                    <div class="chip-miniatura flex items-center">
-                        <!-- Bloque imagen + código (en columna) -->
-                        <div class="chip-imagen">
-                            <img src="${prop.imagen}" alt="" class="chip-thumb mb-1" />
-                            <span class="chip-code text-white font-semibold">${codigo}</span>
-                        </div>
-                        <div class="chip-separator"></div>
-                        <button class="btn-x-tooltip ml-2" data-codigo="${codigo}">&times;</button>
-                    </div>
-
-
-                </div>
-                `;
-
-                contenedor.appendChild(div);
-            });
-
-            // Evento para eliminar desde la X
-            contenedor.querySelectorAll('.btn-x-tooltip, .btn-x-tooltip-interno')
-                .forEach(btn => {
-                    btn.addEventListener('click', e => {
-                        const cod = e.target.dataset.codigo;
-                        comparaciones = comparaciones.filter(c => c !== cod);
-                        document.querySelector(`.checkbox-comparar[data-codigo="${cod}"]`).checked = false;
-                        actualizarMiniaturas();
-                        actualizarBanner();
-
-
-
-                        const banner = document.getElementById('bannerComparar');
-                        banner.classList.toggle('hidden', comparaciones.length === 0);
                     });
                 });
-        }
 
-        function mostrarComparacion(ids) {
-            const seleccionadas = datos.filter(d => ids.includes(d["Código"]));
-            const [a, b] = seleccionadas;
+              
 
-            function determinarMejorPropiedad(prop, a, b) {
-                const limpiarNumero = v =>
-                    parseFloat((v || "").toString().replace(/[^\d.]/g, "")) || 0;
-                const prioridadTexto = v => (v || "").toString().toLowerCase();
+                // 3.4. Llamada inicial a aplicarFiltros() para mostrar todo
+                aplicarFiltros();
 
-                const rawA = a[prop];
-                const rawB = b[prop];
-                const normA = prioridadTexto(rawA);
-                const normB = prioridadTexto(rawB);
+                // 3.5. Ocultar spinner y mostrar filtros + contador
+                document.getElementById("spinner").style.display = "none";
+                document.getElementById("contador").classList.remove("hidden");
+                document.querySelector('.filtros').classList.remove('hidden');
+                document.getElementById("clearFilters").classList.remove("hidden");
+                document.getElementById("ordenar-por").classList.remove("hidden");
+            }
+            // ——— Aquí inicializamos nuestro dropdown “fake” de Ordenar por ———
+            const toggle = document.getElementById('sortToggle');
+            const list = document.getElementById('sortOptions');
+            // 1) Al hacer clic en el toggle abrimos/cerramos
+            toggle.addEventListener('click', e => {
+                e.stopPropagation();
+                list.classList.toggle('hidden');
+            });
+            // 2) Si se pulsa fuera, cerramos
+            document.addEventListener('click', () => list.classList.add('hidden'));
+            // 3) Cada opción…
+            list.querySelectorAll('li').forEach(li => {
+                li.addEventListener('click', () => {
+                    // actualizar texto del toggle
+                    toggle.textContent = li.textContent + ' ▼';
+                    // marcarla seleccionada
+                    list.querySelectorAll('li').forEach(x => x.classList.remove('selected'));
+                    li.classList.add('selected');
+                    // guardar criterio y reaplicar filtros
+                    criterioOrden = li.dataset.value;
+                    aplicarFiltros();
+                    // cerrar menú
+                    list.classList.add('hidden');
+                });
+            });
 
-                // ✋ Si alguno es “no aplica”, vacío o inexistente, no comparamos
-                if (
-                    !rawA || !rawB ||
-                    normA === "no aplica" || normB === "no aplica"
-                ) {
-                    return "";
+            // ─────────────────────────────────────────────────
+            // 4. Función que llena los <select> iniciales (TODOS los datos)
+            // ─────────────────────────────────────────────────
+            function llenarOpcionesFiltros() {
+                function llenarSelect(id, campo) {
+                    const select = document.getElementById(id);
+                    if (!select) return;
+
+                    let valores = [...new Set(datos.map(d => d[campo]).filter(v => v))];
+                    if (["Habitaciones", "Garaje", "Pisos"].includes(campo)) {
+                        valores = valores
+                            .map(v => Number(v))
+                            .filter(v => !isNaN(v))
+                            .sort((a, b) => a - b)
+                            .map(v => String(v));
+                    } else {
+                        valores = valores.sort();
+                    }
+
+                    select.innerHTML = `<option value="">${select.options[0].text}</option>` +
+                        valores.map(v => {
+                            const cantidad = datos.filter(d => String(d[campo]) === v).length;
+                            return `<option value="${v}">${v} (${cantidad})</option>`;
+                        }).join("");
                 }
 
-                switch (prop) {
-                    case "Precio":
-                    case "Administración": {
-                        const valA = limpiarNumero(rawA);
-                        const valB = limpiarNumero(rawB);
-                        if (valA < valB) return "a";
-                        if (valB < valA) return "b";
-                        return "";
-                    }
-                    case "Habitaciones":
-                    case "Baños":
-                    case "Garaje":
-                    case "Closet":
-                    case "Área lote":
-                    case "Área Construida": {
-                        const valA = limpiarNumero(rawA);
-                        const valB = limpiarNumero(rawB);
-                        if (valA > valB) return "a";
-                        if (valB > valA) return "b";
-                        return "";
-                    }
-                    case "Cocina": {
-                        const score = txt => {
-                            const t = prioridadTexto(txt);
-                            if (t === "integral") return 3;
-                            if (t === "semi-integral" || t === "semi integral") return 2;
-                            return 1;
+                llenarSelect("filterTipoPropiedad", "Tipo de inmueble");
+                llenarSelect("filterRangoPrecio", "Rango de precio");
+                llenarSelect("filterZona", "Zona");
+                llenarSelect("filterBarrio", "Barrio");
+                llenarSelect("filterConjunto", "Conjunto");
+                llenarSelect("filterEstrato", "Estrato");
+                llenarSelect("filterHabitaciones", "Habitaciones");
+                llenarSelect("filterGaraje", "Garaje");
+                llenarSelect("filterPisos", "Pisos");
+            }
+            // ─────────────────────────────────────────────────
+            //  Función para ordenar lista
+            // ─────────────────────────────────────────────────
+            function ordenarLista(lista) {
+                return lista.sort((a, b) => {
+                    if (criterioOrden === "menorPrecio" || criterioOrden === "mayorPrecio") {
+                        // 1) Quitamos símbolos y puntos, sólo dígitos
+                        const parsePrecio = txt => {
+                            const num = parseFloat((txt || "").toString().replace(/[^\d]/g, "")) || 0;
+                            return num;
                         };
-                        const aScore = score(rawA);
-                        const bScore = score(rawB);
-                        if (aScore > bScore) return "a";
-                        if (bScore > aScore) return "b";
-                        return "";
+                        const pa = parsePrecio(a["Precio"]);
+                        const pb = parsePrecio(b["Precio"]);
+                        return (criterioOrden === "menorPrecio" ? pa - pb : pb - pa);
                     }
-                    case "Piscina": {
-                        const aYes = normA === "sí";
-                        const bYes = normB === "sí";
-                        if (aYes && !bYes) return "a";
-                        if (bYes && !aYes) return "b";
-                        return "";
+
+                    if (criterioOrden === "rentabilidad") {
+                        // 2) “no aplica” o sin datos → tratamiento como Infinity
+                        const parseRet = txt => {
+                            const num = parseFloat((txt || "").toString().replace(/[^\d.]/g, ""));
+                            return isNaN(num) ? Infinity : num;
+                        };
+                        const ra = parseRet(a["Retorno de la Inversión"]);
+                        const rb = parseRet(b["Retorno de la Inversión"]);
+                        return ra - rb;
                     }
-                    case "Ubicación": {
-                        // esquinera > medianera > otro
-                        if (normA.includes("esquinera") && !normB.includes("esquinera")) return "a";
-                        if (normB.includes("esquinera") && !normA.includes("esquinera")) return "b";
-                        if (normA.includes("medianera") && !normB.includes("medianera")) return "a";
-                        if (normB.includes("medianera") && !normA.includes("medianera")) return "b";
-                        return "";
+
+                    // sin orden
+                    return 0;
+                });
+            }
+            // ─────────────────────────────────────────────────
+            // 5. Función que aplica TODOS los filtros (independientes + dependientes)
+            //    y luego vuelve a renderizar (sin scroll)
+            // ─────────────────────────────────────────────────
+            function aplicarFiltros() {
+                // 5.1. Filtramos datos según TODO lo que tenga el objeto filtros
+                let filtrados = datos.filter(d => {
+                    if (!filtroIncluye(d["Tipo de inmueble"], filtros["Tipo de inmueble"])) return false;
+                    if (!filtroIncluye(d["Rango de precio"], filtros["Rango de precio"])) return false;
+                    if (!filtroIncluye(d["Zona"], filtros["Zona"])) return false;
+                    if (!filtroIncluye(String(d["Estrato"]), filtros["Estrato"])) return false;
+                    if (!filtroIncluye(d["Barrio"], filtros["Barrio"])) return false;
+                    if (!filtroIncluye(d["Conjunto"], filtros["Conjunto"])) return false;
+                    if (!filtroIncluye(String(d["Habitaciones"]), filtros["Habitaciones"])) return false;
+                    if (!filtroIncluye(String(d["Garaje"]), filtros["Garaje"])) return false;
+                    if (!filtroIncluye(String(d["Pisos"]), filtros["Pisos"])) return false;
+
+                    if (filtros["Buscar"]) {
+                        const textoRaw = filtros["Buscar"].toLowerCase();
+                        const texto = textoRaw.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        const combinadoRaw = (d["Nombre"] + " " + d["Código"] + " " + d["Descripción"] + " " + d["Puntos Clave"]).toLowerCase();
+                        const combinado = combinadoRaw.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        if (!combinado.includes(texto)) return false;
                     }
-                    case "Retorno de la Inversión": {
-                        const valA = limpiarNumero(rawA);
-                        const valB = limpiarNumero(rawB);
-                        if (valA < valB) return "a"; // menor años es mejor
-                        if (valB < valA) return "b";
-                        return "";
+
+                    return true;
+                });
+                console.log('🔍 Antes de ordenar, criterioOrden=', criterioOrden, 'items=', filtrados.length);
+
+                filtrados = ordenarLista(filtrados);
+                console.log('🔍 Después de ordenar, primeras 3:', filtrados.slice(0, 3).map(d => ({
+                    Precio: d['Precio'],
+                    Retorno: d['Retorno de la Inversión']
+                })));
+                listaFiltrada = filtrados;
+                paginaActual = 1;
+
+                // 5.2. Volver a renderizar tarjetas SIN scroll (segundo parámetro false)
+                renderizarTarjetas(listaFiltrada, false);
+            }
+
+            // ─────────────────────────────────────────────────
+            // 6. Función auxiliar que comprueba inclusión (multi‐select / single‐select)
+            // ─────────────────────────────────────────────────
+            function filtroIncluye(valorDato, filtro) {
+                if (!filtro || (Array.isArray(filtro) && filtro.length === 0)) return true;
+                if (Array.isArray(filtro)) return filtro.includes(valorDato);
+                return valorDato === filtro;
+            }
+
+            // ─────────────────────────────────────────────────
+            // 7. Función para actualizar los filtros “independientes” (con contadores dinámicos)
+            // ─────────────────────────────────────────────────
+            function actualizarFiltrosIndependientes() {
+                const filtrosInd = [
+                    ["filterTipoPropiedad", "Tipo de inmueble"],
+                    ["filterRangoPrecio", "Rango de precio"],
+                    ["filterZona", "Zona"],
+                    ["filterEstrato", "Estrato"],
+                    ["filterHabitaciones", "Habitaciones"],
+                    ["filterGaraje", "Garaje"],
+                    ["filterPisos", "Pisos"],
+                    ["filterBarrio", "Barrio"],
+                    ["filterConjunto", "Conjunto"]
+                ];
+
+                filtrosInd.forEach(([id, campo]) => {
+                    const instancia = choiceInstances[id];
+                    if (!instancia) return;
+
+                    // 7.1. Filtramos todos los datos según TODO lo que esté seleccionado, excepto el campo actual
+                    const subset = datos.filter(d => {
+                        for (const [, campo2] of filtrosInd) {
+                            if (campo2 === campo) continue;
+                            const filtroValores = filtros[campo2];
+                            if (filtroValores && Array.isArray(filtroValores) && filtroValores.length > 0) {
+                                const valorDato = String(d[campo2]);
+                                if (!filtroValores.includes(valorDato)) return false;
+                            }
+                        }
+                        return true;
+                    });
+
+                    // 7.2. Obtenemos valores únicos de “datos” para este campo (ignoramos vacíos)
+                    let valores = [...new Set(
+                        datos
+                            .map(d => d[campo])
+                            .filter(v => {
+                                if (["Barrio", "Conjunto"].includes(campo)) {
+                                    return v !== undefined && v !== null && String(v).trim() !== "";
+                                }
+                                return v !== undefined && v !== null && String(v) !== "";
+                            })
+                    )];
+
+                    // 7.3. Eliminamos de “valores” los que ya estén seleccionados
+                    const seleccionados = filtros[campo] || [];
+                    if (Array.isArray(seleccionados) && seleccionados.length > 0) {
+                        valores = valores.filter(v => !seleccionados.includes(String(v)));
                     }
-                    case "Rentabilidad": {
-                        const valA = limpiarNumero(rawA);
-                        const valB = limpiarNumero(rawB);
-                        if (valA > valB) return "a";
-                        if (valB > valA) return "b";
-                        return "";
+
+                    // 7.4. Ordenamos numérica o alfabéticamente
+                    if (["Habitaciones", "Garaje", "Pisos"].includes(campo)) {
+                        valores = valores
+                            .map(v => Number(v))
+                            .filter(v => !isNaN(v))
+                            .sort((a, b) => a - b)
+                            .map(v => String(v));
+                    } else {
+                        valores = valores.sort();
                     }
-                    default:
-                        return "";
+
+                    // 7.5. Construimos las “choices” con contador basándonos en “subset”
+                    const opciones = [
+                        {
+                            value: "",
+                            label: instancia.passedElement.element.options[0].text,
+                            selected: false,
+                            disabled: true
+                        },
+                        ...valores.map(v => {
+                            const cuenta = subset.filter(d => String(d[campo]) === v).length;
+                            return {
+                                value: v,
+                                label: `${v} <span class="cuenta">(${cuenta})</span>`,
+                                selected: false,
+                                disabled: false,
+                                cuenta
+                            };
+                        }).filter(obj => obj.cuenta > 0)
+                    ];
+
+                    instancia.clearChoices();
+                    instancia.setChoices(opciones, "value", "label", true);
+
+                    // 7.6. Re‐marcar los valores ya seleccionados
+                    const actuales = filtros[campo] || [];
+                    instancia.removeActiveItems();
+                    actuales.forEach(val => instancia.setChoiceByValue(val));
+                });
+            }
+           
+            // ─────────────────────────────────────────────────
+            // 8. Función para renderizar las tarjetas (cards) + paginación + listeners
+            // ─────────────────────────────────────────────────
+            function renderizarTarjetas(lista = datos, hacerScroll = false) {
+                const cont = document.getElementById("tarjetas");
+
+                if (!lista.length) {
+                    cont.innerHTML = `<div class="noProp">No se encontraron propiedades.</div>`;
+                    document.getElementById("paginacion").innerHTML = "";
+                    return;
                 }
+
+                const inicio = (paginaActual - 1) * tarjetasPorPagina;
+                const fin = inicio + tarjetasPorPagina;
+                const paginaDatos = lista.slice(inicio, fin);
+
+                cont.innerHTML = paginaDatos.map(d => `
+                  <div
+                    class="tarjeta ${["Directo", "Verbal"].includes(d["Contrato"]) ? "recomendado" : ""}"
+                    tabindex="0"
+                    role="button"
+                    aria-pressed="false"
+                    data-codigo="${d["Código"]}"
+                  >
+                    ${["Directo", "Verbal"].includes(d["Contrato"])
+                        ? `<div class="ribbon"><span>¡Destacada!</span></div>`
+                        : ``
+                    }
+                    <img src="${d["Image"]}" alt="Imagen de ${d["Nombre"]}" loading="lazy" />
+                    <div class="contenido">
+                      <h3 class="titulo">${d["Nombre"]}</h3>
+                      <p class="tipo">${d["Tipo de inmueble"]}</p>
+                      <p class="codigo">Código: ${d["Código"]}</p>
+                      <p class="precio">${formatearPrecio(d["Precio"])}</p>
+                      <div class="etiquetas">
+                        <span class="etiqueta">
+                          <img src="https://i.imgur.com/ykKdGwE.png" alt="Habitaciones" class="icono-etiqueta" />
+                          Habitaciones ${d["Habitaciones"]}
+                        </span>
+                        <span class="etiqueta">
+                          <img src="https://i.imgur.com/h9NqA32.png" alt="Baños" class="icono-etiqueta" />
+                          Baños ${d["Baños"]}
+                        </span>
+                        <span class="etiqueta">
+                          <img src="https://i.imgur.com/4Yixa77.png" alt="Garaje" class="icono-etiqueta" />
+                          Garaje ${d["Garaje"]}
+                        </span>
+                        <span class="etiqueta">
+                          <img src="https://i.imgur.com/rH6cXMa.png" alt="Cocina" class="icono-etiqueta" />
+                          Cocina ${d["Cocina"]}
+                        </span>
+                        <span class="etiqueta">
+                          Pisos ${d["Pisos"]}
+                        </span>
+                        <span class="etiqueta">
+                          <img src="https://i.imgur.com/rz72lGC.png" alt="Área lote" class="icono-etiqueta" />
+                          Lote ${d["Área lote"]} m²
+                        </span>
+                        <span class="etiqueta">
+                          ${d["Rentabilidad"]}
+                        </span>
+                      </div>
+                      <div class="comparar-container">
+                        <label class="comparar-label">
+                          <input
+                            type="checkbox"
+                            class="checkbox-comparar"
+                            data-codigo="${d["Código"]}"
+                            ${comparaciones.includes(d["Código"]) ? 'checked' : ''}
+                          />
+                          Comparar
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                `).join("");
+
+                // ─────────── SCROLL solo si no es la primera carga Y hacerScroll === true ───────────
+                if (!primeraCarga && hacerScroll) {
+                    document
+                        .getElementById("filterBuscar")
+                        .scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                primeraCarga = false;
+
+
+
+                // 8.1. Volver a enlazar listeners para abrir modal al hacer click o Enter
+                document.querySelectorAll(".tarjeta").forEach(card => {
+                    card.addEventListener("click", () => abrirModal(card.dataset.codigo));
+                    card.addEventListener("keydown", e => {
+                        if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            abrirModal(card.dataset.codigo);
+                        }
+                    });
+                });
+
+                // 8.2. Renderizar la paginación y actualizar contador
+                renderizarPaginacion(lista.length);
+                actualizarContador();
+
+                // 8.3. Volver a enlazar la lógica de “comparar”
+                enlazarComparar();
             }
 
-            const esMovil = window.innerWidth <= 767;
+            // ─────────────────────────────────────────────────
+            // 9. Funciones de banner comparar
+            // ─────────────────────────────────────────────────
+            // Variable global para llevar el conteo de comparaciones
+            let comparaciones = [];
+            const propiedades = {}; // Aquí guardaremos las propiedades por código
 
-            const props = [
-                "Código", "Precio", "Habitaciones", "Baños", "Cocina", "Garaje", "Closet", "Pisos",
-                "Área lote", "Área Construida", "Piscina", "Ubicación",
-                "Conjunto", "Barrio", "Zona", "Estrato", "Rentabilidad", "Retorno de la Inversión",
-                "Puntos Clave", "Administración"
-            ];
+            function enlazarComparar() {
+                const banner = document.getElementById('bannerComparar');
+                const texto = document.getElementById('textoComparar');
+                const btn = document.getElementById('btnComparar');
 
-            let tablaHTML = "";
+                // Evitar que se abra el modal al hacer clic en checkbox o etiqueta
+                document.querySelectorAll('.checkbox-comparar, .comparar-label').forEach(el => {
+                    el.addEventListener('click', e => e.stopPropagation());
+                });
 
-            if (esMovil) {
-                tablaHTML = `
-<thead>
-      <tr class="fila-titulo">
-        <th colspan="2" style="text-align: center; padding: 10px;">
-          <h2 class="modal-comparar-titulo" style="margin-top: 15px;">Compara tu inmueble</h2>
-          <div class="modal-comparar-linea"></div>
-        </th>
-      </tr>
-      <tr class="fila-imagenes" style="width: 100%;">
-        <th style="width: 50%; padding: 5px;">
-          <img src="${a.Image}" alt="${a.Nombre}" class="modal-imagen-comparar" style="max-width: 100%; height: auto; display: block; margin: 0 auto;"/>
-          <div style="text-align: center; margin-top: 5px;">
-            <a href="${a["Google Fotos"]}" target="_blank" class="boton-fotos" style="background-color: #be8939; color: white; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block;">
-              📷 Ver más fotos
-            </a>
-          </div>
-        </th>
-        <th style="width: 50%; padding: 5px;">
-          <img src="${b.Image}" alt="${b.Nombre}" class="modal-imagen-comparar" style="max-width: 100%; height: auto; display: block; margin: 0 auto;"/>
-          <div style="text-align: center; margin-top: 5px;">
-            <a href="${b["Google Fotos"]}" target="_blank" class="boton-fotos" style="background-color: #be8939; color: white; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block;">
-              📷 Ver más fotos
-            </a>
-          </div>
-        </th>
-      </tr>
-      <tr class="fila-codigos">
-        <th style="width: 50%; text-align:center; padding-top: 0px;">
-          ${a.Nombre}
-        </th>
-        <th style="width: 50%; text-align:center; padding-top: 0px;">
-          ${b.Nombre}
-        </th>
-      </tr>
-</thead>
-<tbody>
-      ${props.map(prop => {
-                    const valorA = prop === "Precio" ? formatearPrecio(a[prop]) :
-                        prop === "Administración" ? (a[prop] === "No aplica" ? "No aplica" : formatearPrecio(a[prop])) :
-                            prop === "Área lote" || prop === "Área Construida" ? `${a[prop]} m²` :
-                                prop === "Rentabilidad" ? (a[prop] || "-").replace(/^Rentabilidad:\s*/, "") :
-                                    a[prop] || "-";
-                    const valorB = prop === "Precio" ? formatearPrecio(b[prop]) :
-                        prop === "Administración" ? (b[prop] === "No aplica" ? "No aplica" : formatearPrecio(b[prop])) :
-                            prop === "Área lote" || prop === "Área Construida" ? `${b[prop]} m²` :
-                                prop === "Rentabilidad" ? (b[prop] || "-").replace(/^Rentabilidad:\s*/, "") :
-                                    b[prop] || "-";
+                // Mapear propiedades para fácil acceso por código
+                document.querySelectorAll('.checkbox-comparar').forEach(chk => {
+                    const tarjeta = chk.closest('.tarjeta'); // o el contenedor que tenga los datos
+                    const codigo = chk.dataset.codigo;
 
-                    const mejor = determinarMejorPropiedad(prop, a, b);
+                    // Puedes adaptar esto si ya tienes una lista `data` de todas las propiedades
+                    propiedades[codigo] = {
+                        codigo,
+                        nombre: tarjeta?.querySelector('.modal-titulo')?.textContent || 'Propiedad',
+                        imagen: tarjeta?.querySelector('img')?.src || '',
+                        tipo: tarjeta?.querySelector('.tipo')?.textContent || 'Inmueble',
+                    };
 
-                    return `
-          <tr class="fila-caracteristica">
-            <th colspan="2" style="text-align:center; padding-top: 0px;">${prop}</th>
-          </tr>
-          <tr>
-            <td style="width: 50%; text-align:center; position: relative;">
-              ${mejor === "a" ? `<span class="checkmark">✔</span>` : ""}
-              ${valorA}
+                    chk.addEventListener('change', e => {
+                        const id = e.target.dataset.codigo;
 
-            </td>
-            <td style="width: 50%; text-align:center; position: relative;">
-              ${valorB}
-              ${mejor === "b" ? `<span class="checkmark">✔</span>` : ""}
-            </td>
-          </tr>
-        `;
-                }).join('')}
-</tbody>
-`;
-            } else {
-                tablaHTML = `
-<thead>
-      <tr class="fila-titulo">
-        <th colspan="3" style="text-align: center; padding: 10px;">
-          <h2 class="modal-comparar-titulo">Compara tu inmueble</h2>
-          <div class="modal-comparar-linea"></div>
-        </th>
-      </tr>
-      <tr class="fila-imagenes">
-        <th></th>
-        <th><img src="${a.Image}" alt="${a.Nombre}" class="modal-imagen-comparar"/></th>
-        <th><img src="${b.Image}" alt="${b.Nombre}" class="modal-imagen-comparar"/></th>
-      </tr>
-      <tr class="fila-info">
-        <th></th>
-        <th>
-          <div class="modal-info-bloque modal-info-bloque-comparar">
-            <a href="${a["Google Fotos"]}" target="_blank" class="boton-fotos">📷 Ver más fotos</a>
-          </div>
-        </th>
-        <th>
-          <div class="modal-info-bloque modal-info-bloque-comparar">
-            <a href="${b["Google Fotos"]}" target="_blank" class="boton-fotos">📷 Ver más fotos</a>
-          </div>
-        </th>
-      </tr>
-      <tr>
-        <th>Característica</th>
-        <th>${a.Nombre}</th>
-        <th>${b.Nombre}</th>
-      </tr>
-</thead>
-<tbody>
-      ${props.map(prop => {
-                    const valorA = prop === "Precio" ? formatearPrecio(a[prop]) :
-                        prop === "Administración" ? (a[prop] === "No aplica" ? "No aplica" : formatearPrecio(a[prop])) :
-                            prop === "Área lote" || prop === "Área Construida" ? `${a[prop]} m²` :
-                                prop === "Rentabilidad" ? (a[prop] || "-").replace(/^Rentabilidad:\s*/, "") :
-                                    a[prop] || "-";
-                    const valorB = prop === "Precio" ? formatearPrecio(b[prop]) :
-                        prop === "Administración" ? (b[prop] === "No aplica" ? "No aplica" : formatearPrecio(b[prop])) :
-                            prop === "Área lote" || prop === "Área Construida" ? `${b[prop]} m²` :
-                                prop === "Rentabilidad" ? (b[prop] || "-").replace(/^Rentabilidad:\s*/, "") :
-                                    b[prop] || "-";
+                        if (e.target.checked) {
+                            if (comparaciones.length < 2) {
+                                comparaciones.push(id);
+                            } else {
+                                e.target.checked = false;
+                                alert('Solo puedes comparar 2 propiedades.');
+                            }
+                        } else {
+                            comparaciones = comparaciones.filter(c => c !== id);
+                        }
 
-                    const mejor = determinarMejorPropiedad(prop, a, b);
+                        actualizarBanner();
+                    });
+                });
 
-                    return `
-          <tr>
-            <td class="carac-nombre">${prop}</td>
-            <td style="position: relative;">
-            ${mejor === "a" ? `<span class="checkmark">✔</span>` : ""}
-            ${valorA}
-            </td>
-            <td style="position: relative;">
-              ${valorB}
-              ${mejor === "b" ? `<span class="checkmark">✔</span>` : ""}
-            </td>
-          </tr>
-        `;
-                }).join('')}
-</tbody>
-`;
+                btn.onclick = () => mostrarComparacion(comparaciones);
+                document.getElementById('btnLimpiarComparar').addEventListener('click', limpiarComparaciones);
             }
 
-            const html = `
+            function actualizarBanner() {
+                const banner = document.getElementById('bannerComparar');
+                const texto = document.getElementById('textoComparar');
+
+                texto.textContent = `Has seleccionado ${comparaciones.length} propiedad(es)`;
+                banner.classList.toggle('hidden', comparaciones.length === 0);
+
+                actualizarMiniaturas();
+            }
+
+            function actualizarMiniaturas() {
+                const contenedor = document.getElementById('miniaturasComparar');
+                contenedor.innerHTML = '';
+
+                comparaciones.forEach(codigo => {
+                    const prop = propiedades[codigo];
+                    const div = document.createElement('div');
+                    div.className = 'relative group';
+
+                    div.innerHTML = `
+                        <div class="group relative inline-block">
+                            <!-- TOOLTIP FLOTÁNTE -->
+                            <div class="tooltip-miniatura">
+                                <img src="${prop.imagen}" alt="${prop.nombre}" class="w-24 h-24 object-cover rounded mb-2">
+                            </div>
+                            <!-- CHIP -->
+                            <div class="chip-miniatura flex items-center">
+                                <!-- Bloque imagen + código (en columna) -->
+                                <div class="chip-imagen">
+                                    <img src="${prop.imagen}" alt="" class="chip-thumb mb-1" />
+                                    <span class="chip-code text-white font-semibold">${codigo}</span>
+                                </div>
+                                <div class="chip-separator"></div>
+                                <button class="btn-x-tooltip ml-2" data-codigo="${codigo}">&times;</button>
+                            </div>
+
+
+                        </div>
+                        `;
+
+                    contenedor.appendChild(div);
+                });
+
+                // Evento para eliminar desde la X
+                contenedor.querySelectorAll('.btn-x-tooltip, .btn-x-tooltip-interno')
+                    .forEach(btn => {
+                        btn.addEventListener('click', e => {
+                            const cod = e.target.dataset.codigo;
+                            comparaciones = comparaciones.filter(c => c !== cod);
+                            document.querySelector(`.checkbox-comparar[data-codigo="${cod}"]`).checked = false;
+                            actualizarMiniaturas();
+                            actualizarBanner();
+
+
+
+                            const banner = document.getElementById('bannerComparar');
+                            banner.classList.toggle('hidden', comparaciones.length === 0);
+                        });
+                    });
+            }
+
+            function mostrarComparacion(ids) {
+                const seleccionadas = datos.filter(d => ids.includes(d["Código"]));
+                const [a, b] = seleccionadas;
+
+                function determinarMejorPropiedad(prop, a, b) {
+                    const limpiarNumero = v =>
+                        parseFloat((v || "").toString().replace(/[^\d.]/g, "")) || 0;
+                    const prioridadTexto = v => (v || "").toString().toLowerCase();
+
+                    const rawA = a[prop];
+                    const rawB = b[prop];
+                    const normA = prioridadTexto(rawA);
+                    const normB = prioridadTexto(rawB);
+
+                    // ✋ Si alguno es “no aplica”, vacío o inexistente, no comparamos
+                    if (
+                        !rawA || !rawB ||
+                        normA === "no aplica" || normB === "no aplica"
+                    ) {
+                        return "";
+                    }
+
+                    switch (prop) {
+                        case "Precio":
+                        case "Administración": {
+                            const valA = limpiarNumero(rawA);
+                            const valB = limpiarNumero(rawB);
+                            if (valA < valB) return "a";
+                            if (valB < valA) return "b";
+                            return "";
+                        }
+                        case "Habitaciones":
+                        case "Baños":
+                        case "Garaje":
+                        case "Closet":
+                        case "Área lote":
+                        case "Área Construida": {
+                            const valA = limpiarNumero(rawA);
+                            const valB = limpiarNumero(rawB);
+                            if (valA > valB) return "a";
+                            if (valB > valA) return "b";
+                            return "";
+                        }
+                        case "Cocina": {
+                            const score = txt => {
+                                const t = prioridadTexto(txt);
+                                if (t === "integral") return 3;
+                                if (t === "semi-integral" || t === "semi integral") return 2;
+                                return 1;
+                            };
+                            const aScore = score(rawA);
+                            const bScore = score(rawB);
+                            if (aScore > bScore) return "a";
+                            if (bScore > aScore) return "b";
+                            return "";
+                        }
+                        case "Piscina": {
+                            // Definimos una puntuación según el tipo de piscina:
+                            //   4 = social/jacuzzi
+                            //   3 = privada o jacuzzi
+                            //   2 = solo social
+                            //   1 = no tiene
+                            const scorePiscina = txt => {
+                                const t = prioridadTexto(txt);
+                                if (t.includes("social") && t.includes("jacuzzi")) return 4;
+                                if (t.includes("privada") || t.includes("jacuzzi")) return 3;
+                                if (t.includes("social")) return 2;
+                                return 1; // "no tiene" u otros
+                            };
+                            const aScore = scorePiscina(rawA);
+                            const bScore = scorePiscina(rawB);
+                            if (aScore > bScore) return "a";
+                            if (bScore > aScore) return "b";
+                            return "";
+                        }
+                        case "Ubicación": {
+                            // esquinera > medianera > otro
+                            if (normA.includes("esquinera") && !normB.includes("esquinera")) return "a";
+                            if (normB.includes("esquinera") && !normA.includes("esquinera")) return "b";
+                            if (normA.includes("medianera") && !normB.includes("medianera")) return "a";
+                            if (normB.includes("medianera") && !normA.includes("medianera")) return "b";
+                            return "";
+                        }
+                        case "Retorno de la Inversión": {
+                            const valA = limpiarNumero(rawA);
+                            const valB = limpiarNumero(rawB);
+                            if (valA < valB) return "a"; // menor años es mejor
+                            if (valB < valA) return "b";
+                            return "";
+                        }
+                        case "Rentabilidad": {
+                            const valA = limpiarNumero(rawA);
+                            const valB = limpiarNumero(rawB);
+                            if (valA > valB) return "a";
+                            if (valB > valA) return "b";
+                            return "";
+                        }
+                        default:
+                            return "";
+                    }
+                }
+
+                const esMovil = window.innerWidth <= 767;
+
+                const props = [
+                    "Código", "Precio", "Habitaciones", "Baños", "Cocina", "Garaje", "Closet", "Pisos",
+                    "Área lote", "Área Construida", "Piscina", "Ubicación",
+                    "Conjunto", "Barrio", "Zona", "Estrato", "Rentabilidad", "Retorno de la Inversión",
+                    "Puntos Clave", "Administración"
+                ];
+
+                let tablaHTML = "";
+
+                if (esMovil) {
+                    tablaHTML = `
+<thead>
+              <tr class="fila-titulo">
+                <th colspan="2" style="text-align: center; padding: 10px;">
+                  <h2 class="modal-comparar-titulo" style="margin-top: 15px;">Compara tu inmueble</h2>
+                  <div class="modal-comparar-linea"></div>
+                </th>
+              </tr>
+              <tr class="fila-imagenes" style="width: 100%;">
+                <th style="width: 50%; padding: 5px;">
+                  <img src="${a.Image}" alt="${a.Nombre}" class="modal-imagen-comparar" style="max-width: 100%; height: auto; display: block; margin: 0 auto;"/>
+                  <div style="text-align: center; margin-top: 5px;">
+                    <a href="${a["Google Fotos"]}" target="_blank" class="boton-fotos" style="background-color: #be8939; color: white; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block;">
+                      📷 Ver más fotos
+                    </a>
+                  </div>
+                </th>
+                <th style="width: 50%; padding: 5px;">
+                  <img src="${b.Image}" alt="${b.Nombre}" class="modal-imagen-comparar" style="max-width: 100%; height: auto; display: block; margin: 0 auto;"/>
+                  <div style="text-align: center; margin-top: 5px;">
+                    <a href="${b["Google Fotos"]}" target="_blank" class="boton-fotos" style="background-color: #be8939; color: white; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block;">
+                      📷 Ver más fotos
+                    </a>
+                  </div>
+                </th>
+              </tr>
+              <tr class="fila-codigos">
+                <th style="width: 50%; text-align:center; padding-top: 0px;">
+                  ${a.Nombre}
+                </th>
+                <th style="width: 50%; text-align:center; padding-top: 0px;">
+                  ${b.Nombre}
+                </th>
+              </tr>
+</thead>
+<tbody>
+              ${props.map(prop => {
+                        const valorA = prop === "Precio" ? formatearPrecio(a[prop]) :
+                            prop === "Administración" ? (a[prop] === "No aplica" ? "No aplica" : formatearPrecio(a[prop])) :
+                                prop === "Área lote" || prop === "Área Construida" ? `${a[prop]} m²` :
+                                    prop === "Rentabilidad" ? (a[prop] || "-").replace(/^Rentabilidad:\s*/, "") :
+                                        a[prop] || "-";
+                        const valorB = prop === "Precio" ? formatearPrecio(b[prop]) :
+                            prop === "Administración" ? (b[prop] === "No aplica" ? "No aplica" : formatearPrecio(b[prop])) :
+                                prop === "Área lote" || prop === "Área Construida" ? `${b[prop]} m²` :
+                                    prop === "Rentabilidad" ? (b[prop] || "-").replace(/^Rentabilidad:\s*/, "") :
+                                        b[prop] || "-";
+
+                        const mejor = determinarMejorPropiedad(prop, a, b);
+
+                        return `
+                  <tr class="fila-caracteristica">
+                    <th colspan="2" style="text-align:center; padding-top: 0px;">${prop}</th>
+                  </tr>
+                  <tr>
+                    <td style="width: 50%; text-align:center; position: relative;">
+                      ${mejor === "a" ? `<span class="checkmark">✔</span>` : ""}
+                      ${valorA}
+
+                    </td>
+                    <td style="width: 50%; text-align:center; position: relative;">
+                      ${valorB}
+                      ${mejor === "b" ? `<span class="checkmark">✔</span>` : ""}
+                    </td>
+                  </tr>
+                `;
+                    }).join('')}
+</tbody>
+`;
+                } else {
+                    tablaHTML = `
+<thead>
+              <tr class="fila-titulo">
+                <th colspan="3" style="text-align: center; padding: 10px;">
+                  <h2 class="modal-comparar-titulo">Compara tu inmueble</h2>
+                  <div class="modal-comparar-linea"></div>
+                </th>
+              </tr>
+              <tr class="fila-imagenes">
+                <th></th>
+                <th><img src="${a.Image}" alt="${a.Nombre}" class="modal-imagen-comparar"/></th>
+                <th><img src="${b.Image}" alt="${b.Nombre}" class="modal-imagen-comparar"/></th>
+              </tr>
+              <tr class="fila-info">
+                <th></th>
+                <th>
+                  <div class="modal-info-bloque modal-info-bloque-comparar">
+                    <a href="${a["Google Fotos"]}" target="_blank" class="boton-fotos">📷 Ver más fotos</a>
+                  </div>
+                </th>
+                <th>
+                  <div class="modal-info-bloque modal-info-bloque-comparar">
+                    <a href="${b["Google Fotos"]}" target="_blank" class="boton-fotos">📷 Ver más fotos</a>
+                  </div>
+                </th>
+              </tr>
+              <tr>
+                <th>Característica</th>
+                <th>${a.Nombre}</th>
+                <th>${b.Nombre}</th>
+              </tr>
+</thead>
+<tbody>
+              ${props.map(prop => {
+                        const valorA = prop === "Precio" ? formatearPrecio(a[prop]) :
+                            prop === "Administración" ? (a[prop] === "No aplica" ? "No aplica" : formatearPrecio(a[prop])) :
+                                prop === "Área lote" || prop === "Área Construida" ? `${a[prop]} m²` :
+                                    prop === "Rentabilidad" ? (a[prop] || "-").replace(/^Rentabilidad:\s*/, "") :
+                                        a[prop] || "-";
+                        const valorB = prop === "Precio" ? formatearPrecio(b[prop]) :
+                            prop === "Administración" ? (b[prop] === "No aplica" ? "No aplica" : formatearPrecio(b[prop])) :
+                                prop === "Área lote" || prop === "Área Construida" ? `${b[prop]} m²` :
+                                    prop === "Rentabilidad" ? (b[prop] || "-").replace(/^Rentabilidad:\s*/, "") :
+                                        b[prop] || "-";
+
+                        const mejor = determinarMejorPropiedad(prop, a, b);
+
+                        return `
+                  <tr>
+                    <td class="carac-nombre">${prop}</td>
+                    <td style="position: relative;">
+                    ${mejor === "a" ? `<span class="checkmark">✔</span>` : ""}
+                    ${valorA}
+                    </td>
+                    <td style="position: relative;">
+                      ${valorB}
+                      ${mejor === "b" ? `<span class="checkmark">✔</span>` : ""}
+                    </td>
+                  </tr>
+                `;
+                    }).join('')}
+</tbody>
+`;
+                }
+
+                const html = `
 <div class="modal-comparar">
-      <button class="modal-close btn-cerrar">×</button>
-      <div class="comparar-tabla-wrapper" style="grid-column: 1 / span 3;">
-        <table class="modal-tabla-caracteristicas comparar-tabla">
-          ${tablaHTML}
-          <tfoot>
-            <tr class="fila-botones">
-           <td class="solo-escritorio"></td>
-              <td>
-                <a id="compararWhatsappA"
-                   href="#"
-                   target="_blank"
-                   class="boton-fotos"
-                   style="background-color: #be8939; color: white; padding: 8px 12px;; border-radius: 5px; text-decoration: none; display: inline-block; font-weight: bold;">
-                  ✆ Agendar visita por WhatsApp
-                </a>
-              </td>
+              <button class="modal-close btn-cerrar">×</button>
+              <div class="comparar-tabla-wrapper" style="grid-column: 1 / span 3;">
+                <table class="modal-tabla-caracteristicas comparar-tabla">
+                  ${tablaHTML}
+                  <tfoot>
+                    <tr class="fila-botones">
+                   <td class="solo-escritorio"></td>
+                      <td>
+                        <a id="compararWhatsappA"
+                           href="#"
+                           target="_blank"
+                           class="boton-fotos"
+                           style="background-color: #be8939; color: white; padding: 8px 12px;; border-radius: 5px; text-decoration: none; display: inline-block; font-weight: bold;">
+                          ✆ Agendar visita por WhatsApp
+                        </a>
+                      </td>
 
-              <td>
-                <a id="compararWhatsappB"
-                   href="#"
-                   target="_blank"
-                   class="boton-fotos"
-                   style="background-color: #be8939; color: white; padding: 8px 12px;; border-radius: 5px; text-decoration: none; display: inline-block; font-weight: bold;">
-                  ✆ Agendar visita por WhatsApp
-                </a>
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+                      <td>
+                        <a id="compararWhatsappB"
+                           href="#"
+                           target="_blank"
+                           class="boton-fotos"
+                           style="background-color: #be8939; color: white; padding: 8px 12px;; border-radius: 5px; text-decoration: none; display: inline-block; font-weight: bold;">
+                          ✆ Agendar visita por WhatsApp
+                        </a>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
 </div>
 `;
 
-            const wrapper = document.createElement('div');
-            wrapper.id = 'compararModal';
-            wrapper.classList.add('modal-overlay', 'active');
-            wrapper.innerHTML = html;
-            document.body.appendChild(wrapper);
-            history.pushState({ modalAbierto: true }, '', '');
+                const wrapper = document.createElement('div');
+                wrapper.id = 'compararModal';
+                wrapper.classList.add('modal-overlay', 'active');
+                wrapper.innerHTML = html;
+                document.body.appendChild(wrapper);
+                history.pushState({ modalAbierto: true }, '', '');
 
-            // Cierre del modal
-            wrapper.querySelector('.btn-cerrar').addEventListener('click', cerrarComparar);
+                // Cierre del modal
+                wrapper.querySelector('.btn-cerrar').addEventListener('click', cerrarComparar);
 
-            // 3) Actualizar los href de los botones con tu función existente
-            const mensajeA = `Hola, quiero agendar una visita para ver el inmueble ${a["Código"]} `;
-            const mensajeB = `Hola, quiero agendar una visita para ver el inmueble ${b["Código"]} `;
-            document.getElementById('compararWhatsappA').href =
-                `https://wa.me/573208762117?text=${encodeURIComponent(mensajeA)}`;
-            document.getElementById('compararWhatsappB').href =
-                `https://wa.me/573208762117?text=${encodeURIComponent(mensajeB)}`;
-        }
-
-        function limpiarComparaciones() {
-            comparaciones = [];
-            document.querySelectorAll('.checkbox-comparar').forEach(chk => chk.checked = false);
-            actualizarMiniaturas();
-            actualizarBanner();
-        }
-
-        function cerrarComparar() {
-            history.back();
-            document.getElementById('compararModal')?.remove();
-            // Opcional: resetear checkboxes y banner
-
-            actualizarBanner();
-        }
-
-
-
-
-        // ─────────────────────────────────────────────────
-        // 10. Funciones de modal
-        // ─────────────────────────────────────────────────
-        function abrirModal(codigo) {
-            const inmueble = datos.find(d => d["Código"] === codigo);
-            if (!inmueble) return;
-
-            document.getElementById("modalImagen").src = inmueble["Image"];
-            document.getElementById("modalImagen").alt = "Imagen de " + inmueble["Nombre"];
-            document.getElementById("modalTitle").textContent = inmueble["Nombre"];
-            document.getElementById("modalTipo").textContent = inmueble["Tipo de inmueble"];
-            document.getElementById("modalCodigo").textContent = inmueble["Código"];
-            document.getElementById("modalPrecio").textContent = formatearPrecio(inmueble["Precio"]);
-            document.getElementById("modalDescripcion").textContent = inmueble["Descripción"];
-            document.getElementById("modalPuntosClave").textContent = inmueble["Puntos Clave"];
-            actualizarBotonWhatsapp();
-            // Bloque etiquetas (columna izq)
-            const etiquetasCont = document.getElementById("modalEtiquetas");
-            etiquetasCont.innerHTML = `
-                    <span class="modal-etiqueta">
-      <img src="https://i.imgur.com/ykKdGwE.png" alt="Habitaciones" class="icono-etiqueta" />
-      Habitaciones ${inmueble["Habitaciones"] || '-'}
-</span>
-<span class="modal-etiqueta">
-      <img src="https://i.imgur.com/h9NqA32.png" alt="Baños" class="icono-etiqueta" />
-      Baños ${inmueble["Baños"] || '-'}
-</span>
-<span class="modal-etiqueta">
-      <img src="https://i.imgur.com/4Yixa77.png" alt="Garaje" class="icono-etiqueta" />
-      Garaje ${inmueble["Garaje"] || '-'}
-</span>
-<span class="modal-etiqueta">
-      <img src="https://i.imgur.com/rH6cXMa.png" alt="Cocina" class="icono-etiqueta" />
-      Cocina ${inmueble["Cocina"] || '-'}
-</span>
-<span class="modal-etiqueta">
-      Pisos ${inmueble["Pisos"] || '-'}
-</span>
-<span class="modal-etiqueta">
-      <img src="https://i.imgur.com/rz72lGC.png" alt="Área lote" class="icono-etiqueta" />
-      Lote ${inmueble["Área lote"] || '-'} m²
-</span>
-<span class="modal-etiqueta">
-      ${inmueble["Rentabilidad"] || '-'}
-</span>
-
-                    `;
-
-            // Tabla características (columna derecha)
-            const tabla = document.getElementById("modalTablaCaracteristicas");
-            tabla.innerHTML = `
-                        <tr><td>Ciudad</td><td>${inmueble["Ciudad"] || '-'}</td></tr>
-                    <tr><td>Zona</td><td>${inmueble["Zona"] || '-'}</td></tr>
-                    <tr><td>Estrato</td><td>${inmueble["Estrato"] || '-'}</td></tr>
-                    <tr><td>Ubicación</td><td>${inmueble["Ubicación"] || '-'}</td></tr>
-                    <tr><td>Piscina</td><td>${inmueble["Piscina"] || '-'}</td></tr>
-                    <tr><td>Área construida</td><td>${inmueble["Área Construida"] || '-'} m²</td></tr>
-                    <tr><td>Administración</td><td>${inmueble["Administración"]?.toString().trim().toLowerCase() === "no aplica" ? "No aplica" : formatearPrecio(inmueble["Administración"])}</td></tr>
-                    <tr><td>Retorno de la inversión</td><td>${inmueble["Retorno de la Inversión"] || '-'}</td></tr>
-                    `;
-
-            // Link fotos
-            const linkFotos = document.getElementById("modalLinkFotos");
-            if (inmueble["Google Fotos"]) {
-                linkFotos.href = inmueble["Google Fotos"];
-                linkFotos.style.display = "inline-block";
-            } else {
-                linkFotos.style.display = "none";
+                // 3) Actualizar los href de los botones con tu función existente
+                const mensajeA = `Hola, quiero agendar una visita para ver el inmueble ${a["Código"]} `;
+                const mensajeB = `Hola, quiero agendar una visita para ver el inmueble ${b["Código"]} `;
+                document.getElementById('compararWhatsappA').href =
+                    `https://wa.me/573208762117?text=${encodeURIComponent(mensajeA)}`;
+                document.getElementById('compararWhatsappB').href =
+                    `https://wa.me/573208762117?text=${encodeURIComponent(mensajeB)}`;
             }
 
-            // Mostrar modal
-            const overlay = document.getElementById("modalOverlay");
-            overlay.style.display = "flex";
-            overlay.classList.add("active");
-            overlay.focus();
-            // Empujamos un estado indicando que el modal está abierto
-            history.pushState({ modalAbierto: true }, '', '');
-        }
+            function limpiarComparaciones() {
+                comparaciones = [];
+                document.querySelectorAll('.checkbox-comparar').forEach(chk => chk.checked = false);
+                actualizarMiniaturas();
+                actualizarBanner();
+            }
+
+            function cerrarComparar() {
+                history.back();
+                document.getElementById('compararModal')?.remove();
+                // Opcional: resetear checkboxes y banner
+
+                actualizarBanner();
+            }
 
 
-        // Cerrar modal
-        function cerrarModal() {
-            history.back();
-            const overlay = document.getElementById("modalOverlay");
-            overlay.classList.remove("active");
-            overlay.style.display = "none";
-
-        }
 
 
-        // Eventos para cerrar modal
-        document.querySelector(".modal-close").addEventListener("click", cerrarModal);
-        document.getElementById("modalOverlay").addEventListener("click", e => {
-            if (e.target.id === "modalOverlay") cerrarModal();
-        });
-        document.addEventListener("keydown", e => {
-            if (e.key === "Escape") cerrarModal();
-        });
+            // ─────────────────────────────────────────────────
+            // 10. Funciones de modal
+            // ─────────────────────────────────────────────────
+            function abrirModal(codigo) {
+                const inmueble = datos.find(d => d["Código"] === codigo);
+                if (!inmueble) return;
 
-        window.addEventListener('popstate', event => {
-            // Si al retroceder el estado ahora es modalAbierto:false, cerramos el overlay
-            if (event.state && event.state.modalAbierto === false) {
-                // 1) Cerrar overlay principal si está abierto
+                document.getElementById("modalImagen").src = inmueble["Image"];
+                document.getElementById("modalImagen").alt = "Imagen de " + inmueble["Nombre"];
+                document.getElementById("modalTitle").textContent = inmueble["Nombre"];
+                document.getElementById("modalTipo").textContent = inmueble["Tipo de inmueble"];
+                document.getElementById("modalCodigo").textContent = inmueble["Código"];
+                document.getElementById("modalPrecio").textContent = formatearPrecio(inmueble["Precio"]);
+                document.getElementById("modalDescripcion").textContent = inmueble["Descripción"];
+                document.getElementById("modalPuntosClave").textContent = inmueble["Puntos Clave"];
+                actualizarBotonWhatsapp();
+                // Bloque etiquetas (columna izq)
+                const etiquetasCont = document.getElementById("modalEtiquetas");
+                etiquetasCont.innerHTML = `
+                            <span class="modal-etiqueta">
+              <img src="https://i.imgur.com/ykKdGwE.png" alt="Habitaciones" class="icono-etiqueta" />
+              Habitaciones ${inmueble["Habitaciones"] || '-'}
+</span>
+<span class="modal-etiqueta">
+              <img src="https://i.imgur.com/h9NqA32.png" alt="Baños" class="icono-etiqueta" />
+              Baños ${inmueble["Baños"] || '-'}
+</span>
+<span class="modal-etiqueta">
+              <img src="https://i.imgur.com/4Yixa77.png" alt="Garaje" class="icono-etiqueta" />
+              Garaje ${inmueble["Garaje"] || '-'}
+</span>
+<span class="modal-etiqueta">
+              <img src="https://i.imgur.com/rH6cXMa.png" alt="Cocina" class="icono-etiqueta" />
+              Cocina ${inmueble["Cocina"] || '-'}
+</span>
+<span class="modal-etiqueta">
+              Pisos ${inmueble["Pisos"] || '-'}
+</span>
+<span class="modal-etiqueta">
+              <img src="https://i.imgur.com/rz72lGC.png" alt="Área lote" class="icono-etiqueta" />
+              Lote ${inmueble["Área lote"] || '-'} m²
+</span>
+<span class="modal-etiqueta">
+              ${inmueble["Rentabilidad"] || '-'}
+</span>
+
+                            `;
+
+                // Tabla características (columna derecha)
+                const tabla = document.getElementById("modalTablaCaracteristicas");
+                tabla.innerHTML = `
+                                <tr><td>Ciudad</td><td>${inmueble["Ciudad"] || '-'}</td></tr>
+                            <tr><td>Zona</td><td>${inmueble["Zona"] || '-'}</td></tr>
+                            <tr><td>Estrato</td><td>${inmueble["Estrato"] || '-'}</td></tr>
+                            <tr><td>Ubicación</td><td>${inmueble["Ubicación"] || '-'}</td></tr>
+                            <tr><td>Piscina</td><td>${inmueble["Piscina"] || '-'}</td></tr>
+                            <tr><td>Área construida</td><td>${inmueble["Área Construida"] || '-'} m²</td></tr>
+                            <tr><td>Administración</td><td>${inmueble["Administración"]?.toString().trim().toLowerCase() === "no aplica" ? "No aplica" : formatearPrecio(inmueble["Administración"])}</td></tr>
+                            <tr><td>Retorno de la inversión</td><td>${inmueble["Retorno de la Inversión"] || '-'}</td></tr>
+                            `;
+
+                // Link fotos
+                const linkFotos = document.getElementById("modalLinkFotos");
+                if (inmueble["Google Fotos"]) {
+                    linkFotos.href = inmueble["Google Fotos"];
+                    linkFotos.style.display = "inline-block";
+                } else {
+                    linkFotos.style.display = "none";
+                }
+
+                // Mostrar modal
                 const overlay = document.getElementById("modalOverlay");
-                if (overlay && overlay.classList.contains("active")) {
-                    overlay.classList.remove("active");
-                    overlay.style.display = "none";
+                overlay.style.display = "flex";
+                overlay.classList.add("active");
+                overlay.focus();
+                // Empujamos un estado indicando que el modal está abierto
+                history.pushState({ modalAbierto: true }, '', '');
+            }
+
+
+            // Cerrar modal
+            function cerrarModal() {
+                history.back();
+                const overlay = document.getElementById("modalOverlay");
+                overlay.classList.remove("active");
+                overlay.style.display = "none";
+
+            }
+
+
+            // Eventos para cerrar modal
+            document.querySelector(".modal-close").addEventListener("click", cerrarModal);
+            document.getElementById("modalOverlay").addEventListener("click", e => {
+                if (e.target.id === "modalOverlay") cerrarModal();
+            });
+            document.addEventListener("keydown", e => {
+                if (e.key === "Escape") cerrarModal();
+            });
+
+            window.addEventListener('popstate', event => {
+                // Si al retroceder el estado ahora es modalAbierto:false, cerramos el overlay
+                if (event.state && event.state.modalAbierto === false) {
+                    // 1) Cerrar overlay principal si está abierto
+                    const overlay = document.getElementById("modalOverlay");
+                    if (overlay && overlay.classList.contains("active")) {
+                        overlay.classList.remove("active");
+                        overlay.style.display = "none";
+                    }
+                    // 2) Cerrar modal de comparación si está abierto
+                    const compararModal = document.getElementById("compararModal");
+                    if (compararModal) {
+                        compararModal.remove();
+                    }
                 }
-                // 2) Cerrar modal de comparación si está abierto
-                const compararModal = document.getElementById("compararModal");
-                if (compararModal) {
-                    compararModal.remove();
+            });
+            // ─────────────────────────────────────────────────
+            // 11. Otras funciones
+            // ─────────────────────────────────────────────────
+
+            function cambiarPagina(nuevaPagina) {
+                paginaActual = nuevaPagina;
+                renderizarTarjetas(listaFiltrada.length ? listaFiltrada : datos, true);
+            }
+
+            function renderizarPaginacion(totalItems) {
+                const totalPaginas = Math.ceil(totalItems / tarjetasPorPagina);
+                const paginacion = document.getElementById("paginacion");
+                paginacion.innerHTML = "";
+                if (totalPaginas <= 1) return;
+
+                const crearBoton = (texto, pagina, deshabilitado = false) => {
+                    const btn = document.createElement("button");
+                    btn.textContent = texto;
+                    btn.classList.add("boton-paginacion");
+                    if (deshabilitado) {
+                        btn.disabled = true;
+                        btn.classList.add("boton-deshabilitado");
+                    } else {
+                        btn.onclick = () => cambiarPagina(pagina);
+                    }
+                    return btn;
+                };
+
+                // Anterior
+                paginacion.appendChild(
+                    crearBoton("〈 Anterior", paginaActual - 1, paginaActual === 1)
+                );
+
+                // Página 1 siempre
+                const btn1 = crearBoton("1", 1, false);
+                if (paginaActual === 1) btn1.classList.add("pagina-actual");
+                paginacion.appendChild(btn1);
+
+                // Si estamos en página 3 o más, metemos puntos antes del bloque central
+                if (paginaActual >= 3) {
+                    const dots = document.createElement("span");
+                    dots.textContent = "…";
+                    dots.classList.add("puntos-paginacion");
+                    paginacion.appendChild(dots);
                 }
-            }
-        });
-        // ─────────────────────────────────────────────────
-        // 11. Otras funciones
-        // ─────────────────────────────────────────────────
 
-        function cambiarPagina(nuevaPagina) {
-            paginaActual = nuevaPagina;
-            renderizarTarjetas(listaFiltrada.length ? listaFiltrada : datos, true);
-        }
-
-        function renderizarPaginacion(totalItems) {
-            const totalPaginas = Math.ceil(totalItems / tarjetasPorPagina);
-            const paginacion = document.getElementById("paginacion");
-            paginacion.innerHTML = "";
-            if (totalPaginas <= 1) return;
-
-            const crearBoton = (texto, pagina, deshabilitado = false) => {
-                const btn = document.createElement("button");
-                btn.textContent = texto;
-                btn.classList.add("boton-paginacion");
-                if (deshabilitado) {
-                    btn.disabled = true;
-                    btn.classList.add("boton-deshabilitado");
-                } else {
-                    btn.onclick = () => cambiarPagina(pagina);
+                // Bloque de páginas: vecinos de la actual
+                // Siempre mostramos current-1, current, current+1 si existen y no son 1 ni > total
+                const start = Math.max(2, paginaActual - 1);
+                const end = Math.min(totalPaginas - 1, paginaActual + 1);
+                for (let p = start; p <= end; p++) {
+                    if (p === 1) continue;
+                    const btn = crearBoton(p.toString(), p);
+                    if (p === paginaActual) btn.classList.add("pagina-actual");
+                    paginacion.appendChild(btn);
                 }
-                return btn;
-            };
 
-            // Anterior
-            paginacion.appendChild(
-                crearBoton("〈 Anterior", paginaActual - 1, paginaActual === 1)
-            );
-
-            // Página 1 siempre
-            const btn1 = crearBoton("1", 1, false);
-            if (paginaActual === 1) btn1.classList.add("pagina-actual");
-            paginacion.appendChild(btn1);
-
-            // Si estamos en página 3 o más, metemos puntos antes del bloque central
-            if (paginaActual >= 3) {
-                const dots = document.createElement("span");
-                dots.textContent = "…";
-                dots.classList.add("puntos-paginacion");
-                paginacion.appendChild(dots);
+                // Siguiente
+                paginacion.appendChild(
+                    crearBoton("Siguiente 〉", paginaActual + 1, paginaActual === totalPaginas)
+                );
             }
 
-            // Bloque de páginas: vecinos de la actual
-            // Siempre mostramos current-1, current, current+1 si existen y no son 1 ni > total
-            const start = Math.max(2, paginaActual - 1);
-            const end = Math.min(totalPaginas - 1, paginaActual + 1);
-            for (let p = start; p <= end; p++) {
-                if (p === 1) continue;
-                const btn = crearBoton(p.toString(), p);
-                if (p === paginaActual) btn.classList.add("pagina-actual");
-                paginacion.appendChild(btn);
+            function actualizarContador() {
+                console.log("Contador llamado. listaFiltrada:", listaFiltrada.length, "página:", paginaActual);
+                const total = listaFiltrada.length;
+                if (total === 0) {
+                    document.getElementById('contador').textContent = "0 de 0";
+                    return;
+                }
+
+                const inicio = (paginaActual - 1) * tarjetasPorPagina + 1;
+                const fin = Math.min(paginaActual * tarjetasPorPagina, total);
+
+                document.getElementById('contador').textContent = `${inicio}–${fin} / ${total}`;
             }
 
-            // Siguiente
-            paginacion.appendChild(
-                crearBoton("Siguiente 〉", paginaActual + 1, paginaActual === totalPaginas)
-            );
-        }
-
-        function actualizarContador() {
-            console.log("Contador llamado. listaFiltrada:", listaFiltrada.length, "página:", paginaActual);
-            const total = listaFiltrada.length;
-            if (total === 0) {
-                document.getElementById('contador').textContent = "0 de 0";
-                return;
+            function formatearPrecio(numero) {
+                return "$" + Number(numero).toLocaleString("es-CO").replace(/,/g, "'");
             }
 
-            const inicio = (paginaActual - 1) * tarjetasPorPagina + 1;
-            const fin = Math.min(paginaActual * tarjetasPorPagina, total);
+            function actualizarBotonWhatsapp() {
+                const codigo = document.getElementById("modalCodigo")?.textContent?.trim();
+                if (!codigo) return;
 
-            document.getElementById('contador').textContent = `${inicio}–${fin} / ${total}`;
-        }
+                const mensaje = `Hola, quiero agendar una visita para ver el inmueble ${codigo}`;
+                const url = `https://wa.me/573208762117?text=${encodeURIComponent(mensaje)}`;
 
-        function formatearPrecio(numero) {
-            return "$" + Number(numero).toLocaleString("es-CO").replace(/,/g, "'");
-        }
+                document.getElementById("modalBotonWhatsapp").href = url;
+            }
 
-        function actualizarBotonWhatsapp() {
-            const codigo = document.getElementById("modalCodigo")?.textContent?.trim();
-            if (!codigo) return;
+            function mostrarAlertaComparacion() {
+                const alerta = document.getElementById("alerta-comparacion");
+                alerta.classList.remove("hidden", "opacity-0");
+                alerta.classList.add("opacity-100");
 
-            const mensaje = `Hola, quiero agendar una visita para ver el inmueble ${codigo}`;
-            const url = `https://wa.me/573208762117?text=${encodeURIComponent(mensaje)}`;
-
-            document.getElementById("modalBotonWhatsapp").href = url;
-        }
-
-        function mostrarAlertaComparacion() {
-            const alerta = document.getElementById("alerta-comparacion");
-            alerta.classList.remove("hidden", "opacity-0");
-            alerta.classList.add("opacity-100");
-
-            setTimeout(() => {
-                alerta.classList.remove("opacity-100");
-                alerta.classList.add("opacity-0");
                 setTimeout(() => {
-                    alerta.classList.add("hidden");
-                }, 300);
-            }, 3000);
-        }
+                    alerta.classList.remove("opacity-100");
+                    alerta.classList.add("opacity-0");
+                    setTimeout(() => {
+                        alerta.classList.add("hidden");
+                    }, 300);
+                }, 3000);
+            }
 
-        // ─────────────────────────────────────────────────
-        // 12. CONFIGURACIÓN DE EVENTOS DE FILTROS
-        // ─────────────────────────────────────────────────
+            // ─────────────────────────────────────────────────
+            // 12. CONFIGURACIÓN DE EVENTOS DE FILTROS
+            // ─────────────────────────────────────────────────
 
-        // Eventos de filtros
-        document.querySelectorAll(".filtros select").forEach(select => {
-            select.addEventListener("change", e => {
-                const id = e.target.id;
+            // Eventos de filtros
+            document.querySelectorAll(".filtros select").forEach(select => {
+                select.addEventListener("change", e => {
+                    const id = e.target.id;
 
-                // Aquí detectamos si es múltiple y obtenemos todas las opciones seleccionadas
-                let val;
-                if (e.target.multiple) {
-                    val = Array.from(e.target.selectedOptions).map(opt => opt.value).filter(v => v !== "");
-                } else {
-                    val = e.target.value;
-                }
+                    // Aquí detectamos si es múltiple y obtenemos todas las opciones seleccionadas
+                    let val;
+                    if (e.target.multiple) {
+                        val = Array.from(e.target.selectedOptions).map(opt => opt.value).filter(v => v !== "");
+                    } else {
+                        val = e.target.value;
+                    }
 
-                switch (id) {
-                    case "filterTipoPropiedad": filtros["Tipo de inmueble"] = val; break;
-                    case "filterRangoPrecio": filtros["Rango de precio"] = val; break;
-                    case "filterZona": filtros["Zona"] = val; break;
-                    case "filterEstrato": filtros["Estrato"] = val; break;
-                    case "filterBarrio": filtros["Barrio"] = val; break;
-                    case "filterConjunto": filtros["Conjunto"] = val; break;
-                    case "filterHabitaciones": filtros["Habitaciones"] = val; break;
-                    case "filterGaraje": filtros["Garaje"] = val; break;
-                    case "filterPisos": filtros["Pisos"] = val; break;
-                }
+                    switch (id) {
+                        case "filterTipoPropiedad": filtros["Tipo de inmueble"] = val; break;
+                        case "filterRangoPrecio": filtros["Rango de precio"] = val; break;
+                        case "filterZona": filtros["Zona"] = val; break;
+                        case "filterEstrato": filtros["Estrato"] = val; break;
+                        case "filterBarrio": filtros["Barrio"] = val; break;
+                        case "filterConjunto": filtros["Conjunto"] = val; break;
+                        case "filterHabitaciones": filtros["Habitaciones"] = val; break;
+                        case "filterGaraje": filtros["Garaje"] = val; break;
+                        case "filterPisos": filtros["Pisos"] = val; break;
+                    }
+                    actualizarFiltrosIndependientes();
+                    aplicarFiltros();
+                });
+            });
+
+            document.getElementById("filterBuscar").addEventListener("input", e => {
+                filtros["Buscar"] = e.target.value.trim();
+                aplicarFiltros();
+            });
+
+
+
+            // ─────────────────────────────────────────────────
+            // 13. Listener para el botón “Limpiar filtros”
+            // ─────────────────────────────────────────────────
+
+            document.getElementById('clearFilters').addEventListener('click', () => {
+
+                // 1) Limpiar el objeto global filtros
+                filtros["Tipo de inmueble"] = [];
+                filtros["Rango de precio"] = [];
+                filtros["Zona"] = [];
+                filtros["Barrio"] = [];
+                filtros["Estrato"] = [];
+                filtros["Conjunto"] = [];
+                filtros["Habitaciones"] = [];
+                filtros["Garaje"] = [];
+                filtros["Pisos"] = [];
+                filtros["Buscar"] = "";
+
+                // 2) Limpia visualmente todas las selecciones
+                Object.values(choiceInstances).forEach(instance => {
+                    instance.removeActiveItems(); // borra cada “tag” seleccionado
+                });
+
+                // 3) (Opcional) resetea también el valor interno del select
+                document.querySelectorAll('.filtros select[multiple]').forEach(sel => {
+                    sel.value = [];
+                });
+
+                // 3) Limpia el campo de búsqueda
+                const buscar = document.getElementById('filterBuscar');
+                buscar.value = '';
+
+                // 4) Actualiza dependientes y vuelve a renderizar
                 actualizarFiltrosIndependientes();
                 aplicarFiltros();
             });
-        });
 
-        document.getElementById("filterBuscar").addEventListener("input", e => {
-            filtros["Buscar"] = e.target.value.trim();
-            aplicarFiltros();
-        });
+            // ─────────────────────────────────────────────────
+            // 14. PANEL “GIF CONTAINER” + TOGGLE DE SERVICIOS
+            // ─────────────────────────────────────────────────
+            // Seleccionamos TODOS los toggles y TODOS los contenedores
+            const toggles = document.querySelectorAll('.toggle-services');
+            const containers = {
+                gif: document.querySelector('.gif-container'),
+                fixed: document.querySelector('.fixed-header')
+            };
 
-
-
-        // ─────────────────────────────────────────────────
-        // 13. Listener para el botón “Limpiar filtros”
-        // ─────────────────────────────────────────────────
-        
-        document.getElementById('clearFilters').addEventListener('click', () => {
-
-            // 1) Limpiar el objeto global filtros
-            filtros["Tipo de inmueble"] = [];
-            filtros["Rango de precio"] = [];
-            filtros["Zona"] = [];
-            filtros["Barrio"] = [];
-            filtros["Estrato"] = [];
-            filtros["Conjunto"] = [];
-            filtros["Habitaciones"] = [];
-            filtros["Garaje"] = [];
-            filtros["Pisos"] = [];
-            filtros["Buscar"] = "";
-
-            // 2) Limpia visualmente todas las selecciones
-            Object.values(choiceInstances).forEach(instance => {
-                instance.removeActiveItems(); // borra cada “tag” seleccionado
-            });
-
-            // 3) (Opcional) resetea también el valor interno del select
-            document.querySelectorAll('.filtros select[multiple]').forEach(sel => {
-                sel.value = [];
-            });
-
-            // 3) Limpia el campo de búsqueda
-            const buscar = document.getElementById('filterBuscar');
-            buscar.value = '';
-
-            // 4) Actualiza dependientes y vuelve a renderizar
-            actualizarFiltrosIndependientes();
-            aplicarFiltros();
-        });
-
-        // ─────────────────────────────────────────────────
-        // 14. PANEL “GIF CONTAINER” + TOGGLE DE SERVICIOS
-        // ─────────────────────────────────────────────────
-        // Seleccionamos TODOS los toggles y TODOS los contenedores
-        const toggles = document.querySelectorAll('.toggle-services');
-        const containers = {
-            gif: document.querySelector('.gif-container'),
-            fixed: document.querySelector('.fixed-header')
-        };
-
-        // Función genérica para abrir/cerrar paneles en un contenedor dado
-        function togglePanels(container) {
-            if (!container.classList.contains('open-panel1')) {
-                container.classList.add('open-panel1');
-                setTimeout(() => container.classList.add('open-panel2'), 400);
-            } else {
-                container.classList.remove('open-panel2');
-                setTimeout(() => container.classList.remove('open-panel1'), 300);
+            // Función genérica para abrir/cerrar paneles en un contenedor dado
+            function togglePanels(container) {
+                if (!container.classList.contains('open-panel1')) {
+                    container.classList.add('open-panel1');
+                    setTimeout(() => container.classList.add('open-panel2'), 400);
+                } else {
+                    container.classList.remove('open-panel2');
+                    setTimeout(() => container.classList.remove('open-panel1'), 300);
+                }
             }
-        }
 
-        // Asociamos el evento a cada toggle
-        toggles.forEach(toggle => {
-            toggle.addEventListener('click', e => {
-                e.preventDefault();
-                // Detectamos de cuál contenedor vino el toggle
-                const inGif = !!toggle.closest('.gif-container');
-                const inFix = !!toggle.closest('.fixed-header');
-                if (inGif) {
-                    togglePanels(containers.gif);
-                }
-                if (inFix) {
-                    togglePanels(containers.fixed);
-                }
+            // Asociamos el evento a cada toggle
+            toggles.forEach(toggle => {
+                toggle.addEventListener('click', e => {
+                    e.preventDefault();
+                    // Detectamos de cuál contenedor vino el toggle
+                    const inGif = !!toggle.closest('.gif-container');
+                    const inFix = !!toggle.closest('.fixed-header');
+                    if (inGif) {
+                        togglePanels(containers.gif);
+                    }
+                    if (inFix) {
+                        togglePanels(containers.fixed);
+                    }
+                });
             });
-        });
 
-        // Los mismos cierres con X, duplicándolos para ambos paneles
-        document.querySelectorAll('.salir-servicios, .salir-servicios2').forEach(btn => {
-            btn.addEventListener('click', () => {
-                // cerramos ambos por seguridad
+            // Los mismos cierres con X, duplicándolos para ambos paneles
+            document.querySelectorAll('.salir-servicios, .salir-servicios2').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // cerramos ambos por seguridad
+                    ['gif', 'fixed'].forEach(key => {
+                        const c = containers[key];
+                        c.classList.remove('open-panel2');
+                        setTimeout(() => c.classList.remove('open-panel1'), 300);
+                    });
+                });
+            });
+
+            // Cerrar al hacer clic fuera de cualquiera de los dos contenedores
+            document.addEventListener('click', e => {
                 ['gif', 'fixed'].forEach(key => {
                     const c = containers[key];
-                    c.classList.remove('open-panel2');
-                    setTimeout(() => c.classList.remove('open-panel1'), 300);
+                    if (c.contains(e.target)) return;  // click dentro → no cerramos
+                    if (c.classList.contains('open-panel1')) {
+                        c.classList.remove('open-panel2');
+                        setTimeout(() => c.classList.remove('open-panel1'), 300);
+                    }
                 });
             });
-        });
 
-        // Cerrar al hacer clic fuera de cualquiera de los dos contenedores
-        document.addEventListener('click', e => {
-            ['gif', 'fixed'].forEach(key => {
-                const c = containers[key];
-                if (c.contains(e.target)) return;  // click dentro → no cerramos
-                if (c.classList.contains('open-panel1')) {
-                    c.classList.remove('open-panel2');
-                    setTimeout(() => c.classList.remove('open-panel1'), 300);
-                }
-            });
-        });
 
-       
 
-        // ─────────────────────────────────────────────────
-        // 14. Reemplazamos DOMContentLoaded por window.onload
-        // ─────────────────────────────────────────────────
-        window.addEventListener('load', () => {
-            // 1) Estado inicial en historial
-            history.replaceState({ modalAbierto: false }, '', '');
+            // ─────────────────────────────────────────────────
+            // 14. Reemplazamos DOMContentLoaded por window.onload
+            // ─────────────────────────────────────────────────
+            window.addEventListener('load', () => {
+                // 1) Estado inicial en historial
+                history.replaceState({ modalAbierto: false }, '', '');
 
-            // 2) Inicia carga de datos, menús, etc.
-            cargarDatos();
+                // 2) Inicia carga de datos, menús, etc.
+                cargarDatos();
 
-            // 3) Menú hamburguesa
-            // 1) Para cada menú hamburguesa (tanto en GIF como en fixed)
-            document.querySelectorAll('.menu-container').forEach(container => {
-                const icon = container.querySelector('.menu-icon');
-                const menu = container.querySelector('.menu');
-                if (!icon || !menu) return;
+                // 3) Menú hamburguesa
+                // 1) Para cada menú hamburguesa (tanto en GIF como en fixed)
+                document.querySelectorAll('.menu-container').forEach(container => {
+                    const icon = container.querySelector('.menu-icon');
+                    const menu = container.querySelector('.menu');
+                    if (!icon || !menu) return;
 
-                icon.addEventListener('click', e => {
-                    e.stopPropagation();                    // que no suba al document
-                    // cerramos cualquier otro menú abierto
+                    icon.addEventListener('click', e => {
+                        e.stopPropagation();                    // que no suba al document
+                        // cerramos cualquier otro menú abierto
+                        document.querySelectorAll('.menu-container .menu.active')
+                            .forEach(m => m !== menu && m.classList.remove('active'));
+                        // toggle sólo el nuestro
+                        menu.classList.toggle('active');
+                    });
+                });
+
+                // 4) Listener global: si pinchas FUERA de **cualquiera** de estos contenedores, cerramos todo
+                document.addEventListener('click', e => {
+                    // comprobamos si el click ocurrió _dentro_ de algún menu-container O
+                    // dentro de alguno de los panels de servicios
+                    if (
+                        e.target.closest('.menu-container') ||
+                        e.target.closest('.services-panel')
+                    ) {
+                        return; // no cerramos nada si el click fue dentro
+                    }
+                    // si llegamos aquí, el click fue fuera: cerramos menús y paneles
                     document.querySelectorAll('.menu-container .menu.active')
-                        .forEach(m => m !== menu && m.classList.remove('active'));
-                    // toggle sólo el nuestro
-                    menu.classList.toggle('active');
+                        .forEach(m => m.classList.remove('active'));
+                    document.querySelectorAll('.gif-container.open-panel1, .gif-container.open-panel2')
+                        .forEach(gif => {
+                            gif.classList.remove('open-panel2');
+                            setTimeout(() => gif.classList.remove('open-panel1'), 0);
+                        });
                 });
-            });
+                // ───────────── IntersectionObserver para el banner fijo ─────────────
+                const gifCont = document.querySelector('.gif-container');
+                const fixedHeader = document.querySelector('.fixed-header');
+                const sentinel = document.getElementById('header-sentinel');
 
-            // 2) Listener global: si pinchas FUERA de **cualquiera** de estos contenedores, cerramos todo
-            document.addEventListener('click', e => {
-                // comprobamos si el click ocurrió _dentro_ de algún menu-container O
-                // dentro de alguno de los panels de servicios
-                if (
-                    e.target.closest('.menu-container') ||
-                    e.target.closest('.services-panel')
-                ) {
-                    return; // no cerramos nada si el click fue dentro
+                if (gifCont && fixedHeader && sentinel) {
+                    const io = new IntersectionObserver(entries => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                // → el sentinel está visible → el banner principal sigue en su lugar
+                                gifCont.style.display = '';
+                                fixedHeader.classList.remove('active');
+                            } else {
+                                // → el sentinel ya salió de la vista → hacemos sticky el fixed-header
+                                gifCont.style.display = 'none';
+                                fixedHeader.classList.add('active');
+                            }
+                        });
+                    }, {
+                        root: null,       // viewport
+                        threshold: 0      // dispara apenas el sentinel sale/intra
+                    });
+
+                    io.observe(sentinel);
                 }
-                // si llegamos aquí, el click fue fuera: cerramos menús y paneles
-                document.querySelectorAll('.menu-container .menu.active')
-                    .forEach(m => m.classList.remove('active'));
-                document.querySelectorAll('.gif-container.open-panel1, .gif-container.open-panel2')
-                    .forEach(gif => {
-                        gif.classList.remove('open-panel2');
-                        setTimeout(() => gif.classList.remove('open-panel1'), 0);
-                    });
-            });
-            // ───────────── IntersectionObserver para el banner fijo ─────────────
-            const gifCont = document.querySelector('.gif-container');
-            const fixedHeader = document.querySelector('.fixed-header');
-            const sentinel = document.getElementById('header-sentinel');
+                // 6) Listener para recargar al hacer click en el logo
+                const logoEl = document.querySelector('.logo');
+                if (logoEl) {
+                    logoEl.addEventListener('click', () => location.reload());
+                }
 
-            if (gifCont && fixedHeader && sentinel) {
-                const io = new IntersectionObserver(entries => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            // → el sentinel está visible → el banner principal sigue en su lugar
-                            gifCont.style.display = '';
-                            fixedHeader.classList.remove('active');
-                        } else {
-                            // → el sentinel ya salió de la vista → hacemos sticky el fixed-header
-                            gifCont.style.display = 'none';
-                            fixedHeader.classList.add('active');
-                        }
-                    });
-                }, {
-                    root: null,       // viewport
-                    threshold: 0      // dispara apenas el sentinel sale/intra
+                // 7) Cerrar modalComparacion al hacer clic fuera
+                document.addEventListener('click', e => {
+                    const modal = document.getElementById('modalComparacion');
+                    if (!modal || modal.classList.contains('hidden')) return;
+                    if (
+                        modal.contains(e.target) ||
+                        e.target.closest('#btnComparar') ||
+                        e.target.closest('#btnLimpiarComparar')
+                    ) return;
+                    modal.classList.add('hidden');
                 });
 
-                io.observe(sentinel);
-            }
-        });
-        document.getElementById("logo").addEventListener("click", function () {
-            location.reload();
-        });
-
-    </script>
+                // 8) Listener de ordenación (sortSelect)
+                const sortSelect = document.getElementById('sortSelect');
+                if (!sortSelect) {
+                    console.error('❌ No encontré #sortSelect en el DOM');
+                } else {
+                    sortSelect.addEventListener('change', e => {
+                        criterioOrden = e.target.value;
+                        console.log('🔄 Nuevo criterioOrden:', criterioOrden);
+                        aplicarFiltros();
+                    });
+                }
+            });
+        </script>
 
 </body>
 </html>
