@@ -1,0 +1,2962 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mapa Interactivo Neiva</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/supercluster@7.1.4/dist/supercluster.min.js"></script>
+    <link rel="icon" type="image/png" href="https://i.imgur.com/4TfQXSf.png?v=2" />
+    <style>
+        /* === Reset y body/html === */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Outfit, sans-serif;
+        }
+        .layer-controls label {
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            margin-left: 6px;
+            cursor: pointer;
+        }
+        .layer-controls input[type="checkbox"] {
+            cursor: pointer;
+            transform: scale(1.1);
+        }
+        heatmap-legend {
+            border: none;
+        }
+        .legend-gradient {
+            flex: 1;
+            width: 12px;
+            background: linear-gradient(to top, rgba(255, 0, 0, 1) 0%, rgba(255, 80, 0, 1) 10%, rgba(255, 160, 0, 1) 20%, rgba(255, 220, 0, 1) 30%, rgba(255, 255, 0, 1) 40%, rgba(170, 255, 0, 1) 60%, rgba(0, 255, 0, 1) 80%, rgba(0, 255, 0, 0.2) 90%, rgba(0, 0, 0, 0) 100% );
+            margin-bottom: 6px;
+            border: none; /* 🔥 Esto elimina el borde */
+            border-radius: 4px;
+        }
+        /* === Sección: Layout flex mapa + panel lateral === */
+        #container-principal {
+            display: flex;
+            height: calc(100vh - 65px); /* ocupa el resto de la ventana */
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        h2 {
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            font-size: 20px;
+        }
+
+        h3 {
+            font-weight: 500;
+        }
+        /* === BANNER PRINCIPAL === */
+        #banner {
+            width: 100%;
+            height: 65px; /* ajusta altura a tu gusto */
+            background: url('https://i.imgur.com/kx2n7vi.jpeg') center/cover no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* logo y botón alineados a la derecha */
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+            #banner .logo {
+                height: 40px; /* ajusta según proporción del logo */
+            }
+
+            #banner .btn-inicio {
+                display: inline-block;
+                font-family: Outfit, sans-serif;
+                transition: background-color 0.2s ease;
+                color: white;
+                text-decoration: none;
+                font-weight: 250;
+                background-color: rgba(255, 255, 255, 0.05);
+                padding: 6px 15px;
+                border-radius: 25px;
+                box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.4);
+                transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease-in-out;
+            }
+
+                #banner .btn-inicio:hover {
+                    color: #f8c00a; /* amarillo */
+                    text-decoration: none; /* sin subrayado */
+                    background-color: rgba(071, 071, 071, 0.25);
+                    transform: scale(1.3);
+                }
+
+
+
+        #map {
+            flex: 1;
+            transition: width 0.3s ease;
+        }
+
+        #panel-lateral {
+            width: 50%;
+            max-width: none;
+            min-width: 300px; /* opcional: ajusta según prefieras */
+            background-color: #212121; /* fondo gris sólido detrás de la imagen */
+            color: #ccc; /* texto del panel en color #ccc */
+            border-left: 1px solid #444; /* puedes ajustar el borde un poco más oscuro */
+            height: 100%;
+            overflow-y: auto;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+            position: relative; /* necesario para la pseudo-capa ::before */
+        }
+
+
+
+            /* Asegurar que el contenido del panel (texto, botones, etc.) esté por encima */
+            #panel-lateral > * {
+                position: relative;
+                z-index: 1;
+            }
+
+
+
+
+
+
+
+        .panel-oculto {
+            transform: translateX(100%);
+        }
+
+        .panel-visible {
+            transform: translateX(0);
+        }
+
+        #panel-contenido {
+            padding: 10px;
+            padding-left: 18px;
+            padding-right: 18px;
+        }
+
+        #panel-close-btn {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            margin: 0;
+            padding: 4px 8px; /* ajusta según prefieras */
+            background: transparent; /* o algún color de fondo tenue si quieres */
+            color: #ccc; /* color de la “×” */
+            font-size: 22px; /* ajusta tamaño de la “×” */
+            font-weight: bold; /* negrita */
+            border: none;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+            #panel-close-btn:hover {
+                color: #fff; /* opcional: cambiar color al pasar encima */
+            }
+        /* === Fin sección panel lateral === */
+
+        /* === Sección: Galería amenidades === */
+        .galeria-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        #galeria-amenidades {
+            padding-bottom: 0px;
+        }
+
+        .amenidad-item {
+            width: 100%; /* o un ancho fijo si el grid lo define */
+        }
+
+        .amenidad-img {
+            width: 100%;
+            height: 100px; /* altura fija para que todas sean iguales */
+            object-fit: cover;
+            border-radius: 4px;
+            display: block;
+        }
+
+        .amenidad-item a {
+            text-decoration: none; /* quita subrayado */
+            color: inherit; /* hereda color del p o contenedor */
+        }
+
+        .amenidad-nombre {
+            margin: 4px 0 0;
+            font-size: 0.8em;
+            /* Si quieres se vea como subtítulo, podrías: */
+            font-weight: normal;
+            color: #b9b9b9;
+            text-align: center;
+        }
+        /* === Fin Galería === */
+
+        /* === Sección: Tarjetas de inmuebles === */
+        .grid-inmuebles {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .card-inmueble {
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+            .card-inmueble:hover {
+                transform: scale(1.02);
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            }
+
+        .card-img img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .card-img {
+            height: 150px;
+        }
+
+        .card-info {
+            padding: 8px;
+            flex: 1;
+            background-color: #2b2b2b;
+        }
+
+        .card-nombre {
+            font-weight: 500;
+            font-size: 17px;
+            margin: 0 0 2px 0;
+            color: white;
+        }
+
+        .card-codigo {
+            color: #b1b1b1;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .card-precio {
+            margin: 4px 0;
+            color: #22c55e;
+            font-weight: bold;
+            font-size: 16px;
+            transition: color 0.3s ease;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .card-precio {
+            color: green;
+        }
+
+        .card-etiquetas {
+            margin-top: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .etiqueta {
+            background-color: #333333;
+            color: #cccccc;
+            padding: 3px 6px;
+            border-radius: 12px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0rem;
+            font-size: 0.71rem;
+            line-height: 1.25rem;
+            margin: 2px;
+        }
+        /* === Fin Tarjetas === */
+        /* === Sección: Estilos botones de filtro de tipo de inmueble === */
+        #filtros-tipos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .btn-filtro-tipo {
+            color: #ccc;
+            border-radius: 20px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease;
+            border: 1px solid transparent;
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            font-family: 'Outfit';
+            background: linear-gradient(to bottom, #4f4f4f 0%, #292929 100%) padding-box, linear-gradient(to bottom, #454545 0%, #373535 30%, #373535 60%, #212121 100%) border-box;
+        }
+
+            .btn-filtro-tipo:hover {
+                background-color: #2980b9;
+            }
+
+            .btn-filtro-tipo.active {
+                border: 1px solid transparent;
+                background: linear-gradient(to bottom, #202020 0%, #4c4c4c 100%) padding-box, linear-gradient(to bottom, #393939 0%, #373535 30%, #373535 60%, #454545 100% 100%) border-box;
+            }
+        /* === Fin botones filtro === */
+        .modal-comparar-linea {
+            width: 100%;
+            height: 3px;
+            background-color: #be8939;
+            margin: 8px auto 20px auto;
+            border-radius: 4px;
+        }
+        /* === Sección: Estilos para Promedios y métricas como recuadros === */
+        .promedios-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px; /* espacio entre recuadros */
+            margin-bottom: 16px; /* espacio debajo de la sección */
+        }
+
+        .promedio-item {
+            display: flex;
+            flex-direction: column;
+            background-color: rgba(255, 255, 255, 0.1); /* ligero fondo semitransparente */
+            justify-content: space-evenly;
+            border-radius: 10px;
+            padding: 4px 8px;
+            flex: 1 1 83px; /* se expande, pero mínimo 120px de ancho */
+            max-width: 104px; /* opcional: limita ancho máximo por recuadro */
+            box-sizing: border-box;
+            /* Para texto claro en panel oscuro */
+            color: #ccc;
+            text-align: center;
+        }
+
+        .promedio-label {
+            display: block;
+            font-size: 0.75em;
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+
+        .promedio-valor {
+            display: block;
+            font-size: 0.9em;
+            font-weight: bold;
+            /* color permanece #ccc o puedes destacar con otro color suave */
+            color: #fff;
+        }
+
+        /*tarjeta mapa*/
+        /* ==== Estilos para el InfoWindow ==== */
+        .iw-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0px;
+        }
+
+        .iw-close-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            color: #222;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+
+        .iw-content {
+            font-family: Outfit, sans-serif;
+            font-size: 12px;
+            color: #333;
+        }
+
+            .iw-content h2 {
+                text-align: center;
+                margin: 5px 0;
+                font-size: 14px;
+                color: #222;
+            }
+
+        .gm-style-iw-ch {
+            display: none !important;
+        }
+
+        .gm-style-iw gm-style-iw-c {
+            padding-right: 10px !important;
+            max-width: 331px !important;
+        }
+        /* Oculta el botón de cerrar del InfoWindow */
+        .gm-style .gm-style-iw .gm-ui-hover-effect[aria-label="Cerrar"] {
+            display: none !important;
+        }
+        /* A veces puede haber otro selector, incluimos genérico por si cambia el atributo */
+        .gm-style .gm-style-iw button[title="Cerrar"] {
+            display: none !important;
+        }
+
+        .iw-content .iw-comparar-linea {
+            width: 100%;
+            height: 2px;
+            background: #be8939;
+            margin: 1px auto 4px auto;
+        }
+
+        /* Galería de amenidades en InfoWindow */
+        .iw-content .iw-galeria-seccion h3 {
+            margin: 8px 0 4px 0;
+            font-size: 13px;
+            color: #ffffff;
+            text-align: center;
+            font-weight: 600;
+            background: grey;
+        }
+
+        .iw-content .iw-galeria-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .iw-content .iw-amenidad-item {
+            background: #f9f9f9;
+            border-radius: 4px;
+            overflow: hidden;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            /* Fijamos una altura uniforme; la anchura vendrá dictada por el grid */
+            display: flex;
+            flex-direction: column;
+            /* Ejemplo: altura total (imagen + texto) de 120px */
+            height: 110px;
+        }
+
+            .iw-content .iw-amenidad-item a {
+                display: block;
+                text-decoration: none;
+                color: inherit;
+            }
+
+        .iw-content .iw-amenidad-img {
+            width: 100%;
+            /* Altura fija: por ejemplo 80px (dentro de los 120px del contenedor) */
+            height: 80px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .iw-content .iw-amenidad-nombre {
+            margin: 2px;
+            font-size: 10px;
+            line-height: 1.2;
+            flex: 1; /* para que la etiqueta ocupe el resto de la altura del contenedor */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Para que si el texto es muy largo, no expanda demasiado: */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: pre-wrap;
+            padding: 0 4px;
+        }
+
+        /* Sección de promedios en InfoWindow */
+        .iw-content .iw-promedios-seccion h3 {
+            margin: 8px 0 4px 0;
+            font-size: 13px;
+            color: #ffffff;
+            text-align: center;
+            font-weight: 600;
+            background: grey;
+        }
+
+        .iw-content .iw-promedios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 6px;
+        }
+
+        .iw-content .iw-promedio-item {
+            background: #f0f0f0;
+            border-radius: 4px;
+            padding: 4px 0px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .iw-content .iw-promedio-label {
+            display: block;
+            font-weight: bold;
+            font-size: 10px;
+            color: #555;
+        }
+
+        .iw-content .iw-promedio-valor {
+            display: block;
+            margin-top: 2px;
+            font-size: 10px;
+            font-weight: 550;
+            color: #2a2a2a;
+        }
+        /* Para WebKit (Chrome, Safari, Edge) */
+        .iw-content::-webkit-scrollbar {
+            width: 2px; /* reducir ancho del scrollbar */
+            height: 2px; /* en caso de scrollbar horizontal */
+        }
+
+        .iw-content::-webkit-scrollbar-track {
+            background: transparent; /* o un color tenue, p.ej. rgba(0,0,0,0.1) */
+        }
+
+        .iw-content::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.3); /* color del thumb */
+            border-radius: 3px; /* esquinas redondeadas */
+            /* opcional: border: 1px solid rgba(255,255,255,0.2); */
+        }
+
+        /* Para Firefox */
+        .iw-content {
+            scrollbar-width: thin; /* hace el scrollbar más estrecho */
+            scrollbar-color: rgba(0,0,0,0.3) transparent; /* thumb y track */
+        }
+
+        .gm-style .gm-style-iw.gm-style-iw-c {
+            padding-right: 12px !important;
+            max-width: 350px !important;
+            height: 407px;
+            max-height: 435px !important;
+        }
+
+        .gm-style .gm-style-iw-d {
+            overflow: visible !important;
+            max-height: none !important;
+        }
+
+        .d-none {
+            display: none !important;
+        }
+        /* =====================
+        INICIO: Estilos responsive y pestañas para móvil
+        ===================== */
+        /* Breakpoint para móvil/tablet pequeño */
+        @media (max-width: 768px) {
+            /* 1) Layout principal: columna */
+            #container-principal {
+                flex-direction: column;
+            }
+            /* 2) Mapa arriba con 30% altura de viewport */
+            #map {
+                width: 100%;
+                height: 50vh !important;
+            }
+            /* 3) Panel debajo con 70% de altura y scroll interno */
+            #panel-lateral {
+                width: 100%;
+                max-width: 100%;
+                height: 70vh;
+                overflow-y: auto;
+                /* Mantener fondo y color tal cual */
+                /* Posición relativa ya está definida */
+            }
+            /* 4) Estilos para pestañas en el panel */
+            /* Header de pestañas: horizontal, scroll si cabe ancho */
+            .tabs-header {
+                display: flex;
+                /* Mantener overflow-x en caso de >3 pestañas, pero no es estrictamente necesario */
+                overflow-x: auto;
+                border-bottom: 1px solid #444;
+                position: sticky;
+                top: 0;
+                background-color: #212121;
+                z-index: 10;
+                width: 100%; /* asegurar que ocupe 100% del contenedor */
+                box-sizing: border-box; /* para que padding se incluya en ancho */
+            }
+
+            .tab-btn {
+                flex: 1 1 0; /* crecer y encoger equitativamente, base 0 */
+                /* padding horizontal reducido para más espacio equitativo */
+                padding: 10px 0;
+                margin: 0; /* sin márgenes para que el espacio se reparta */
+                background: #2b2b2b;
+                color: #ccc;
+                border: none;
+                cursor: pointer;
+                font-size: 0.9em;
+                text-align: center; /* centrar texto */
+                box-sizing: border-box;
+                /* white-space: nowrap; */ /* opcional: si permites multi-línea, podrías quitar */
+            }
+
+                .tab-btn.active {
+                    background: #3a3a3a;
+                    font-weight: bold;
+                    color: #fff;
+                }
+            /* Contenido de pestañas */
+            .tabs-content {
+                /* nada especial, el scroll es del panel entero */
+            }
+
+            .tab-content {
+                display: none; /* se mostrará el activo via JS */
+                padding: 1px 0;
+            }
+
+                .tab-content.active {
+                    display: block;
+                }
+            /* 5) Galería amenidades móvil: 2 columnas; si <480px, 1 columna */
+            .galeria-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+            }
+            /* Lista de inmuebles: 1 tarjeta por fila */
+            .grid-inmuebles {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            /* Promedios: auto-fit en 2+ columnas según ancho */
+            .promedios-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 6px;
+            }
+
+            .btn-filtro-tipo-mobile {
+                color: #ccc;
+                border-radius: 20px;
+                padding: 6px 10px;
+                cursor: pointer;
+                font-size: 0.9em;
+                transition: background-color 0.2s ease;
+                border: 1px solid transparent;
+                background-origin: border-box;
+                background-clip: padding-box, border-box;
+                font-family: 'Outfit';
+                background: linear-gradient(to bottom, #4f4f4f 0%, #292929 100%) padding-box, linear-gradient(to bottom, #454545 0%, #373535 30%, #373535 60%, #393939 100% 100%) border-box;
+            }
+
+                .btn-filtro-tipo-mobile:hover {
+                    background-color: #2980b9;
+                }
+
+                .btn-filtro-tipo-mobile.active {
+                    border: 1px solid transparent;
+                    background: linear-gradient(to bottom, #202020 0%, #4c4c4c 100%) padding-box, linear-gradient(to bottom, #393939 0%, #373535 30%, #373535 60%, #454545 100% 100%) border-box;
+                }
+            /* Ajustes muy pequeño */
+            @media (max-width: 480px) {
+                #map {
+                    height: 40vh !important;
+                }
+
+                #panel-lateral {
+                    height: 65vh;
+                }
+
+                .galeria-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+
+            #container-principal.panel-fullmap #map {
+                height: 100vh !important;
+            }
+
+            #container-principal.panel-fullmap #panel-lateral {
+                display: none;
+            }
+        }
+        @media (max-width: 768px) {
+            /* Asegura que este bloque esté al final de tu CSS */
+            #map {
+                /* obligamos a que el mapa mida exactamente 50vh */
+                height: 40vh !important;
+                min-height: 40vh !important;
+                max-height: 40vh !important;
+            }
+        }
+        /* =====================
+        FIN: Estilos responsive y pestañas para móvil
+        ===================== */
+        /*panel instrucciones*/
+        /* Asegura fondo y color de texto en el panel cuando mostramos instrucciones */
+        #panel-lateral {
+            background-color: #212121; /* ya lo tenías */
+            color: #ccc; /* ya lo tenías */
+        }
+
+        /* Ajustes para lista de viñetas con icono */
+        .instrucciones-lista {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+            .instrucciones-lista li {
+                display: flex;
+                align-items: flex-start;
+                margin-bottom: 8px;
+            }
+
+            .instrucciones-lista img.icono-viñeta {
+                width: 20px;
+                height: 20px;
+                margin-right: 8px;
+                flex-shrink: 0;
+                margin-top: 2px; /* para alinear con el texto si es multilinea */
+            }
+
+            .instrucciones-lista .texto-item {
+                font-size: 0.9em;
+                line-height: 1.3em;
+            }
+
+                .instrucciones-lista .texto-item b {
+                    font-weight: bold;
+                    display: block;
+                }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal {
+            background: #1a1a1a;
+            color: #fff;
+            max-width: 800px;
+            width: 90%;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 24px;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* ==============================
+        MODALES (DIRECTO Y EXTERNO)
+        ============================== */
+        /* Overlay general */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: none; /* se muestra vía JS cambiando a flex */
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        #modalTitle {
+            letter-spacing: 0px;
+            text-transform: none;
+            font-weight: bold;
+            font-size: 21px;
+            border-bottom: 0px solid #be8939;
+        }
+
+        #modalTipo {
+            color: #b1b1b1;
+            font-weight: 600;
+        }
+
+        #modalCodigo {
+            color: #b1b1b1;
+            font-weight: bold;
+            font-size: 11px; /* tamaño más pequeño */
+        }
+
+        .modalCodigo {
+            color: #b1b1b1;
+            font-weight: bold !important;
+            font-size: 11px; /* tamaño más pequeño */
+        }
+
+        #modalPrecio {
+            color: #22c55e;
+            font-weight: 700;
+        }
+        /* Contenedor modal */
+        .modal {
+            background: #1a1a1a;
+            color: #fff;
+            max-width: 800px;
+            width: 650%;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            padding: 12px 20px 20px 20px;
+            box-sizing: border-box;
+        }
+        /* Botón de cerrar modal “×” */
+        .modal-close {
+            position: absolute;
+            top: 9px; /* ajustado para coincidir con padding del contenido */
+            right: 18px;
+            font-size: 20px;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            line-height: 1;
+            z-index: 10;
+        }
+        /* Estructura interna del modal */
+        .modal-contenido {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .modal-columna-izq {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* centra el contenido */
+        }
+
+        .modal-columna-izq,
+        .modal-columna-der {
+            flex: 1;
+        }
+
+        .modal-imagen {
+            width: 350px;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+        }
+
+        .boton-fotoswpp {
+            display: inline-block;
+            margin-top: 10px;
+            background: #be8939;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+
+        .modal .boton-fotos {
+            background-color: #dfdfdf;
+            color: #474747;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 12px;
+            text-decoration: none;
+            display: block; /* para que ocupe toda su línea */
+            width: fit-content; /* ajusta ancho al contenido */
+            margin: 12px auto 0 auto; /* 12px arriba, centrado horizontal */
+            transition: background-color 0.3s;
+            margin-bottom: 10px;
+        }
+
+            .modal .boton-fotos:hover {
+                background-color: #be8939;
+                color: #fff;
+            }
+
+        .modal-bloque-info h2, .modal-subtitulo {
+            font-weight: 600;
+            font-size: 18px;
+            color: #cccccc;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #be8939;
+            padding-bottom: 4px;
+            margin-top: 0px;
+        }
+
+        .modal-bloque-info p,
+        .modal-texto {
+            margin: 4px 0;
+            font-weight: 200;
+            color: #b1b1b1;
+        }
+
+        .modal-etiquetas {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            margin-right: 20px;
+        }
+
+        .modal-etiqueta {
+            background-color: #333333;
+            color: #cccccc;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .modal-tabla-caracteristicas {
+            margin-bottom: 64px;
+            border-collapse: collapse;
+            width: 240px;
+            height: 216px;
+            font-size: 14px;
+            margin-bottom: 49px;
+            table-layout: auto;
+            color: #cccccc;
+        }
+
+        #modalPuntosClave {
+            font-size: 14px;
+            width: 90%;
+        }
+
+        .modal-tabla-caracteristicas td {
+            padding: 4px 6px;
+            border: 1px solid #bfbfbf;
+            word-break: break-word;
+            font-weight: 200;
+            color: #bfbfbf;
+        }
+
+        .modal-footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .precio {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .modal-contenido {
+                flex-direction: column;
+            }
+
+            .modal-columna-izq,
+            .modal-columna-der {
+                width: 100%;
+                flex: unset;
+            }
+
+            .modal-imagen {
+                width: 100%;
+                height: auto;
+                max-height: 300px;
+            }
+
+            .modal {
+                width: 95%;
+                padding: 16px;
+                height: 90%;
+                overflow: auto;
+            }
+
+            .modal-overlay {
+                overflow-y: auto;
+            }
+
+            .modal .boton-fotos {
+                margin: 16px auto 8px auto;
+                display: block;
+                text-align: center;
+            }
+
+            .modal-tabla-caracteristicas {
+                width: 100%;
+            }
+
+            .modal-bloque-info {
+                margin-top: 16px;
+            }
+
+            .modal-subtitulo {
+                margin-top: 20px;
+            }
+
+            .modal-close {
+                right: 10px;
+                background: #b6b6b6;
+                color: #525151;
+            }
+
+            #panel-lateral {
+                background-color: #191818;
+                color: #ccc;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mi-video {
+                width: 100% !important; /* ocupa todo el ancho del contenedor */
+                height: 160px !important; /* altura fija para móviles */
+            }
+        }
+
+        /* === Botón Volver a inicio en el mapa === */
+        .map-reset-btn {
+            background: #be8939;
+            color: #fff;
+            font-family: Outfit, sans-serif;
+            font-weight: 600;
+            padding: 6px 12px;
+            margin: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            user-select: none;
+        }
+
+            .map-reset-btn:hover {
+                background: #9f7b45;
+            }
+
+        #ordenarSelect {
+            background-color: #2c2c2c;
+            color: white;
+            font-family: 'Outfit';
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- === BANNER PRINCIPAL === -->
+    <header id="banner">
+        <!-- Logo de la empresa -->
+        <a href="index.html">
+            <img src="https://i.imgur.com/XgfIulc.png" alt="Logo" class="logo" />
+        </a>
+
+        <!-- Botón Inicio -->
+        <a href="index.html" class="btn-inicio">Inicio</a>
+    </header>
+    <!-- Contenedor principal: mapa y panel lateral -->
+    <div id="container-principal">
+        <div id="map"></div>
+        <div id="panel-lateral" class="panel-oculto">
+            <div id="panel-contenido"></div>
+            <button id="panel-close-btn">x</button>
+        </div>
+    </div>
+    <!-- ==== MODAL GENÉRICO ==== -->
+    <div id="modalOverlay" class="modal-overlay" style="display:none;" aria-modal="true" role="dialog" tabindex="-1">
+        <div class="modal">
+            <button class="modal-close" aria-label="Cerrar modal">&times;</button>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+
+    <!-- Carga de la API de Google Maps -->
+    <script async defer
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyClQiZISE5KAMlh3rcQz_dayeZfzfLYZPc&libraries=visualization&callback=initMap">">
+    </script>
+
+    <script>
+        // === Variables globales ===
+        let map;
+        let selectedFeature = null;         // almacena el feature actualmente seleccionado
+        let selectedLabelMarker = null;     // (o si ya no usas Marker para etiqueta, lo puedes remover o dejar por compatibilidad)
+        let selectedCenter = null;          // guardaremos el LatLng del centroide del barrio seleccionado
+        let barrioInfoWindow = null;        // InfoWindow que se mostrará en el mapa
+        let superIndex = null;
+        let markerClusters = [];
+        let allPointFeatures = [];
+        let initialCenter = null;
+        let initialZoom = null;
+        let resetDiv = null;
+        let toggleHeatEl;
+        let commercialLayer, heatmapLayer, poiMarkers = [];
+
+
+        // URL base de tu Apps Script Web App; asegúrate de que sea la versión desplegada
+        const APPSCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwq_HAjIbMwtApn1APwXKwN_zAxakrWjU2wDJ66auiVP7GnlD4C-YfB3M9oW7HvSF6R/exec';
+
+
+
+
+
+        // === Sección: Cargar GeoJSON vía JSONP para barrios y puntos ===
+        function cargarGeoJSONviaJSONP(tipo, callbackName) {
+            const script = document.createElement('script');
+            script.src = APPSCRIPT_URL
+                + '?tipo=' + encodeURIComponent(tipo)
+                + '&callback=' + encodeURIComponent(callbackName);
+            script.onerror = () => {
+                console.error('Error cargando JSONP para', tipo);
+            };
+            document.body.appendChild(script);
+        }
+        function handleBarrios(data) {
+            if (data.error) {
+                console.error('Error al cargar barrios:', data.error);
+                return;
+            }
+            map.data.addGeoJson(data);
+            console.log('Barrios cargados:', data.features ? data.features.length : 'desconocido');
+            createLayerControls();
+        }
+        function handlePuntos(data) {
+            let features = data.features || data;
+            allPointFeatures = features;
+            initializeSuperclusterAndDraw();
+        }
+        // === Fin sección GeoJSON barrios/puntos ===
+
+        // === Sección: JSONP para infoBarrio ===
+        function cargarInfoBarrioJSONP(barrioName) {
+            const callbackName = 'handleInfoBarrio';
+            const url = APPSCRIPT_URL
+                + '?tipo=infoBarrio'
+                + '&barrioName=' + encodeURIComponent(barrioName)
+                + '&callback=' + encodeURIComponent(callbackName);
+            const script = document.createElement('script');
+            script.src = url;
+            script.onerror = () => {
+                console.error('Error cargando JSONP infoBarrio para', barrioName);
+                const panelContenido = document.getElementById('panel-contenido');
+                panelContenido.innerHTML = `<p>Error cargando información de ${barrioName}.</p>`;
+            };
+            script.onload = () => {
+                setTimeout(() => {
+                    document.body.removeChild(script);
+                }, 1000);
+            };
+            document.body.appendChild(script);
+            
+        }
+
+
+        function groupThousands(s) {
+            let result = '';
+            let i = s.length;
+            while (i > 3) {
+                const start = i - 3;
+                const part = s.slice(start, i);
+                result = '.' + part + result;
+                i -= 3;
+            }
+            // Ahora i <= 3, los dígitos restantes al inicio:
+            result = s.slice(0, i) + result;
+            return result;
+        }
+
+
+        function formatPrice(num) {
+            if (num == null || isNaN(num)) return '';
+            const n = Math.round(Number(num));
+            const abs = Math.abs(n);
+            const s = String(abs);
+            const len = s.length;
+            let formatted;
+
+            if (len > 6) {
+
+                const millonesPart = s.slice(0, len - 6);
+                const milesPart = s.slice(len - 6, len - 3);
+                const unidadesPart = s.slice(len - 3);
+
+
+                const millonesStr = groupThousands(millonesPart);
+
+                formatted = millonesStr + "'" + milesPart + "." + unidadesPart;
+            } else if (len > 3) {
+
+                const milesPart = s.slice(0, len - 3);
+                const unidadesPart = s.slice(len - 3);
+                formatted = milesPart + "." + unidadesPart;
+            } else {
+                // Menor de 1000
+                formatted = s;
+            }
+
+            // Anteponer signo y símbolo $
+            return (n < 0 ? '-' : '') + '$' + formatted;
+        }
+
+        // Función para formatear número sin decimales (habitaciones, baños)
+        function formatInteger(num) {
+            if (num == null || isNaN(num)) return '';
+            return String(Math.round(Number(num)));
+        }
+
+        // Función para formatear área con 2 decimales y sufijo m²
+        function formatArea(num) {
+            if (num == null || isNaN(num)) return '';
+            // Convertir a número y formatear con 2 decimales (usando separador decimal según locale)
+            const n = Number(num);
+            // Podemos usar locale 'en-US' para punto decimal: ej. 200.50
+            const formatted = n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return formatted + ' m²';
+        }
+
+        function generarCardInmuebleMinimal(item) {
+            console.log('DEBUG generarCardInmuebleMinimal, item:', item);
+            // Extraemos propiedades clave
+            const codigo = item.Codigo || '';
+            const publicar = String(item['Publicar'] || '').trim().toUpperCase(); // "SI" o distinto
+
+            // Abrimos el div contenedor con data-attributes
+            let html = `<div class="card-inmueble-minimal"
+                       data-codigo="${codigo}"
+                       data-publicar="${publicar}"
+                       style="
+                         border-radius:6px; overflow:hidden;
+                         display:flex; flex-direction:column; background:#262525; color:#ccc;
+                       ">`;
+
+            // Imagen si existe
+            if (item.Image) {
+                html += `<div class="card-img-minimal" style="height:120px; overflow:hidden;">
+                        <img src="${item.Image}" alt="${item.Nombre || 'Inmueble'}" style="width:100%; height:100%; object-fit:cover;" />
+                     </div>`;
+            }
+
+            // Info básica
+            html += `<div class="card-info-minimal" style="padding:8px; display:flex; flex-direction:column; justify-content: space-between;">`;
+            if (item.Nombre) {
+                html += `<p class="card-nombre-minimal" style="margin:0; font-size:16px; font-weight:500; color:#fff;">
+                        ${item.Nombre}
+                     </p>`;
+            }
+            if (item.Precio != null) {
+                html += `<p class="card-precio-minimal" style="margin:4px 0 0 0; font-size:14px; color:#22c55e; font-weight:bold;">
+                        ${formatPrice(item.Precio)}
+                     </p>`;
+            }
+
+            // Botón Ver más para mostrar etiquetas extra
+            html += `<button class="btn-ver-mas" style="
+                        margin-top:8px; align-self:flex-start;
+                        padding:4px 8px; font-size:12px;
+                        background:#444; border:none; border-radius:4px; color:#ccc; cursor:pointer;">
+                    Ver más
+                 </button>`;
+
+            // Contenedor oculto con etiquetas extra (¡¡solo display:none!!)
+            html += `<div class="card-etiquetas-extra" style="display:none; margin-top:8px; font-size:12px; color:#ccc;">`;
+
+            // Ahora generamos todas las etiquetas como <span class="etiqueta">
+            if (item.Estrato != null) {
+                html += `<span class="etiqueta">Estrato: ${item.Estrato}</span>`;
+            }
+            if (item.Habitaciones != null) {
+                html += `<span class="etiqueta">Habitaciones: ${item.Habitaciones}</span>`;
+            }
+            if (item.Baños != null) {
+                html += `<span class="etiqueta">Baños: ${item.Baños}</span>`;
+            }
+            if (item.Closet != null) {
+                html += `<span class="etiqueta">Closet: ${item.Closet}</span>`;
+            }
+            if (item.Cocina != null) {
+                html += `<span class="etiqueta">Cocina: ${item.Cocina}</span>`;
+            }
+            if (item.Garaje != null) {
+                html += `<span class="etiqueta">Garaje: ${item.Garaje}</span>`;
+            }
+            if (item.Ubicacion) {
+                html += `<span class="etiqueta">Ubicación: ${item.Ubicacion}</span>`;
+            }
+            if (item.Pisos != null) {
+                html += `<span class="etiqueta">Pisos: ${item.Pisos}</span>`;
+            }
+            if (item["Área lote"] != null) {
+                html += `<span class="etiqueta">Área lote: ${item["Área lote"]}</span>`;
+            }
+
+            html += `</div>`;                     // cierra card-etiquetas-extra
+            html += `</div>`;                     // cierra card-info-minimal
+            html += `</div>`;                     // cierra card-inmueble-minimal
+            return html;
+        }
+
+
+
+
+
+
+
+
+
+        function handleInfoBarrio(response) {
+
+            const panelElem = document.getElementById('panel-contenido');
+            const inmuebles = Array.isArray(response.inmuebles) ? response.inmuebles : [];
+            let filteredList = inmuebles.slice();
+            let currentPage = 1;
+            const pageSize = 12;
+
+            let filteredListDesk = inmuebles.slice();
+            let currentPageDesk = 1;
+            const pageSizeDesk = 12;
+
+            function renderMobilePage(shouldScroll = false) {
+                const grid = panelElem.querySelector('#grid-inmuebles-mobile');
+                const paginationContainer = panelElem.querySelector('#pagination-mobile');
+                if (!grid || !paginationContainer) return;
+
+                // Paginación
+                const totalItems = filteredList.length;
+                const totalPages = Math.ceil(totalItems / pageSize) || 1;
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+                const start = (currentPage - 1) * pageSize;
+                const end = start + pageSize;
+                const pageItems = filteredList.slice(start, end);
+
+                // Render tarjetas
+                grid.innerHTML = '';
+                pageItems.forEach(item => {
+                    grid.innerHTML += generarCardInmuebleMinimal(item);
+                });
+                // Enganchar “Ver más”
+                attachVerMasListenersMinimal();
+                // Enganchar click para abrir modal
+                attachCardClickListenersMinimal(pageItems);
+                // Scroll solo al cambiar página
+                if (shouldScroll) {
+                    const anchor = document.getElementById('scroll-anchor');
+                    if (anchor) {
+                        anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+
+                // Paginación
+                paginationContainer.innerHTML = '';
+
+                const prevBtn = document.createElement('button');
+                prevBtn.textContent = 'Anterior';
+                prevBtn.disabled = (currentPage <= 1);
+                prevBtn.addEventListener('click', () => {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        renderMobilePage(true);
+                        attachVerMasListenersMinimal();
+                    }
+                });
+
+                const nextBtn = document.createElement('button');
+                nextBtn.textContent = 'Siguiente';
+                nextBtn.disabled = (currentPage >= totalPages);
+                nextBtn.addEventListener('click', () => {
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        renderMobilePage(true);
+                        attachVerMasListenersMinimal();
+                    }
+                });
+
+                const pageInfo = document.createElement('span');
+                pageInfo.textContent = `Página ${currentPage} / ${totalPages}`;
+                pageInfo.style.color = '#ccc';
+
+                paginationContainer.appendChild(prevBtn);
+                paginationContainer.appendChild(pageInfo);
+                paginationContainer.appendChild(nextBtn);
+            }
+
+            function renderDesktopPage(shouldScroll = false) {
+                const grid = panelElem.querySelector('#grid-inmuebles-desk');
+                const paginationContainer = panelElem.querySelector('#pagination-desk');
+                if (!grid || !paginationContainer) return;
+
+                // 1) Cálculo de paginación
+                const totalItems = filteredListDesk.length;
+                const totalPages = Math.ceil(totalItems / pageSizeDesk) || 1;
+                if (currentPageDesk > totalPages) currentPageDesk = totalPages;
+                if (currentPageDesk < 1) currentPageDesk = 1;
+                const start = (currentPageDesk - 1) * pageSizeDesk;
+                const end = start + pageSizeDesk;
+                const pageItems = filteredListDesk.slice(start, end);
+
+                // 2) Render de tarjetas en el grid
+                grid.innerHTML = '';
+                pageItems.forEach(item => {
+                    grid.innerHTML += generarCardInmuebleHTML(item);
+                });
+                attachCardClickListeners(pageItems);
+                // 3) Solo hacer scroll al inicio del grid cuando shouldScroll===true
+                if (shouldScroll) {
+                    // Usamos grid.scrollIntoView, o si prefieres, desplazar el contenedor panel:
+                    // grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // O bien, si el scroll real es en #panel-lateral o #panel-contenido:
+                    // document.getElementById('panel-lateral').scrollTo({ top: 0, behavior: 'smooth' });
+                    grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+
+                // 4) Construir la paginación: botones “Anterior” y “Siguiente”
+                paginationContainer.innerHTML = '';
+
+                const prevBtn = document.createElement('button');
+                prevBtn.textContent = 'Anterior';
+                prevBtn.style.padding = '4px 8px';
+                prevBtn.style.marginRight = '8px';
+                prevBtn.disabled = (currentPageDesk <= 1);
+                prevBtn.addEventListener('click', (evt) => {
+                    evt.preventDefault();
+                    if (currentPageDesk > 1) {
+                        currentPageDesk--;
+                        renderDesktopPage(true);  // al paginar, sí hacemos scroll
+                    }
+                });
+                paginationContainer.appendChild(prevBtn);
+
+                const pageInfo = document.createElement('span');
+                pageInfo.textContent = ` Página ${currentPageDesk} / ${totalPages} `;
+                pageInfo.style.color = '#ccc';
+                paginationContainer.appendChild(pageInfo);
+
+                const nextBtn = document.createElement('button');
+                nextBtn.textContent = 'Siguiente';
+                nextBtn.style.padding = '4px 8px';
+                nextBtn.style.marginLeft = '8px';
+                nextBtn.disabled = (currentPageDesk >= totalPages);
+                nextBtn.addEventListener('click', (evt) => {
+                    evt.preventDefault();
+                    if (currentPageDesk < totalPages) {
+                        currentPageDesk++;
+                        renderDesktopPage(true);  // al paginar, sí hacemos scroll
+                    }
+                });
+                paginationContainer.appendChild(nextBtn);
+            }
+            console.log('handleInfoBarrio invocado, response:', response);
+            try {
+                const panelElem = document.getElementById('panel-contenido');
+                const panelLateral = document.getElementById('panel-lateral');
+                if (!panelElem || !panelLateral) {
+                    console.error('handleInfoBarrio: no existe panel-contenido o panel-lateral');
+                    return;
+                }
+
+                // Validaciones iniciales
+                if (!response) {
+                    panelElem.innerHTML =
+                        `<h2 style="color:#ccc; text-align:center;">Error</h2>
+                             <p style="color:#ccc; text-align:center;">Respuesta vacía del servidor.</p>`;
+                    return;
+                }
+                if (response.error) {
+                    panelElem.innerHTML =
+                        `<h2 style="color:#ccc; text-align:center;">Error</h2>
+                             <p style="color:#ccc; text-align:center;">${response.error}</p>`;
+                    return;
+                }
+
+                // Extraer datos
+                const barrioName = response.barrioName || 'Barrio';
+                const general = response.general || {};
+                const amenidades = Array.isArray(response.amenidades) ? response.amenidades : [];
+                const resumen = response.resumenInmuebles || {};
+                const inmuebles = Array.isArray(response.inmuebles) ? response.inmuebles : [];
+
+                // Construcción de HTML base: título + línea dorada
+                let htmlPanel = '';
+                htmlPanel +=
+                    `<div class="panel-titulo" style="text-align:center; margin:8px 0;">
+                            <h2 style="margin:0; font-size:20px; letter-spacing:6px; text-transform:uppercase; color:#ccc;">
+                                ${barrioName}
+                            </h2>
+                        </div>
+                        <div class="modal-comparar-linea"></div>`;
+
+                // Detectar móvil vs escritorio
+                const esMovil = window.innerWidth <= 768;
+
+                if (esMovil) {
+                    // ======== VERSIÓN MÓVIL ========
+                    htmlPanel += `<div class="tabs-container" style="display:flex; flex-direction:column; height:100%;">`;
+
+                    // Header de pestañas: Inmuebles + Información adicional
+                    htmlPanel += `<div class="tabs-header" style="
+                                            display:flex; overflow-x:auto; border-bottom:1px solid #444;
+                                            position:sticky; top:0; background-color:#212121; z-index:10;
+                                        ">`;
+                    htmlPanel += `<button class="tab-btn active" data-tab="inmuebles">Inmuebles</button>`;
+                    htmlPanel += `<button class="tab-btn" data-tab="info">Información adicional</button>`;
+                    htmlPanel += `</div>`; // cierre tabs-header
+
+                    // Contenido de pestañas
+                    htmlPanel += `<div class="tabs-content" style="padding:8px 0;">`;
+
+                    // --- TAB Inmuebles ---
+                    htmlPanel += `<div class="tab-content active" id="tab-inmuebles">`;
+                    if (inmuebles.length === 0) {
+                        htmlPanel += `<p style="font-size:12px; color:#ccc; text-align:center;">No hay inmuebles para mostrar.</p>`;
+                    } else {
+                        // Total + filtros móvil
+                        const totalInmueblesMobile = (resumen.totalInmuebles != null)
+                            ? resumen.totalInmuebles
+                            : inmuebles.length;
+                        htmlPanel += `<div id="seccion-filtros-mobile" style="margin:8px 0;">`;
+                        htmlPanel += `<h3 style="
+                                                text-align:center;
+                                                padding:6px;
+                                                background:#1d1d1d;
+                                                border-radius:20px;
+                                                color:#ccc;
+                                                font-size:14px;
+                                            ">
+                                            Total de inmuebles: <span style="color:#9f7b45; font-size:20px">${totalInmueblesMobile}</span>
+                                          </h3>`;
+                        htmlPanel += `<div id="filtros-tipos-mobile" style="
+                                                display:flex;
+                                                flex-wrap:wrap;
+                                                gap:6px;
+                                                justify-content:center;
+                                                margin-top:4px;
+                                            ">`;
+                        // Botón "Todos los inmuebles" al inicio
+                        htmlPanel += `<button type="button" class="btn-filtro-tipo-mobile active" data-tipo="all">
+                                                Todos los inmuebles (${inmuebles.length})
+                                          </button>`;
+                        const countsMobile = resumen.countsByTipo || {};
+                        Object.keys(countsMobile).forEach(tipo => {
+                            const count = countsMobile[tipo];
+                            htmlPanel += `<button type="button" class="btn-filtro-tipo-mobile" data-tipo="${tipo}">
+                                                    ${tipo} (${count})
+                                              </button>`;
+                        });
+                        htmlPanel += `</div></div>`; // cierra filtros-tipos-mobile y seccion-filtros-mobile
+                        htmlPanel += `<div id="scroll-anchor" style="height:1px; scroll-margin-top:50px;"></div>`;;
+                        // Contenedor para grid y paginación
+                        htmlPanel += `<div id="ordenamiento-container" style="margin-bottom:13px; margin-top: 13px; text-align:right;">
+     <label for="ordenarSelect" style="color:#ccc; margin-right:6px;">Ordenar por:</label>
+     <select id="ordenarSelect" style="padding:4px 8px; ">
+    <option value="mayorPrecio">Mayor precio</option>
+    <option value="menorPrecio">Menor precio</option>
+    <option value="mejorRentabilidad">Mayor rentabilidad</option>
+  </select>
+</div><div id="grid-inmuebles-mobile" class="grid-inmuebles" style="margin-top:8px;"></div>`;
+                        htmlPanel += `<div id="pagination-mobile" style="display:flex; justify-content:center; align-items:center; margin:8px 0;"></div>`;
+                    }
+                    htmlPanel += `</div>`; // cierre tab-inmuebles
+
+                    // --- TAB Información adicional ---
+                    htmlPanel += `<div class="tab-content" id="tab-info">`;
+                    // Amenidades
+                    htmlPanel += `<section id="galeria-amenidades"><h3 style="color:#ccc; font-size:16px; margin:8px 0; text-align:center;">Sitios representativos</h3>
+                                      <div class="modal-comparar-linea"></div><div class="galeria-grid">`;
+                    if (amenidades.length === 0) {
+                        htmlPanel += `<p style="font-size:12px; color:#ccc; text-align:center; width:100%;">Sin amenidades registradas.</p>`;
+                    } else {
+                        amenidades.forEach(item => {
+                            const nombre = item.nombre || '';
+                            const link = item.link || '#';
+                            const fotoUrl = item.fotoUrl || '';
+                            htmlPanel += `<div class="amenidad-item">
+                                                  <a href="${link}" target="_blank" title="${nombre}">
+                                                    <img src="${fotoUrl}" alt="${nombre}" class="amenidad-img" />
+                                                    <p class="amenidad-nombre">${nombre}</p>
+                                                  </a>
+                                              </div>`;
+                        });
+                    }
+                    htmlPanel += `</div></section>`;
+
+                    // Promedios
+                    htmlPanel += `<section id="seccion-promedios"><h3 style="color:#ccc; font-size:16px; margin:8px 0; text-align:center;">Promedios y métricas</h3>
+                                     <div class="modal-comparar-linea"></div> <div class="promedios-grid">`;
+                    if (general.precioMasBajo != null && general.precioMasBajo !== '') {
+                        htmlPanel += `<div class="promedio-item"><span class="promedio-label">Precio más bajo</span>
+                                             <span class="promedio-valor">${formatPrice(general.precioMasBajo)}</span></div>`;
+                    }
+                    if (general.precioPromedio != null && general.precioPromedio !== '') {
+                        htmlPanel += `<div class="promedio-item"><span class="promedio-label">Precio promedio</span>
+                                             <span class="promedio-valor">${formatPrice(general.precioPromedio)}</span></div>`;
+                    }
+                    if (general.habitacionesPromedio != null && general.habitacionesPromedio !== '') {
+                        htmlPanel += `<div class="promedio-item"><span class="promedio-label">Habitaciones promedio</span>
+                                             <span class="promedio-valor">${formatInteger(general.habitacionesPromedio)}</span></div>`;
+                    }
+                    if (general.banosPromedio != null && general.banosPromedio !== '') {
+                        htmlPanel += `<div class="promedio-item"><span class="promedio-label">Baños promedio</span>
+                                             <span class="promedio-valor">${formatInteger(general.banosPromedio)}</span></div>`;
+                    }
+                    if (general.areaPromedio != null && general.areaPromedio !== '') {
+                        htmlPanel += `<div class="promedio-item"><span class="promedio-label">Área promedio</span>
+                                             <span class="promedio-valor">${formatArea(general.areaPromedio)}</span></div>`;
+                    }
+                    if (general.estrato != null && general.estrato !== '') {
+                        htmlPanel += `<div class="promedio-item"><span class="promedio-label">Estrato</span>
+                                             <span class="promedio-valor">${formatInteger(general.estrato)}</span></div>`;
+                    }
+                    htmlPanel += `</div></section>`;
+                    htmlPanel += `</div>`; // cierre tab-info
+
+                    htmlPanel += `</div>`; // cierre tabs-content
+                    htmlPanel += `</div>`; // cierre tabs-container
+
+                    // Insertar HTML en panel
+                    panelElem.innerHTML = htmlPanel;
+                    // === INICIO: Asociar listener al select de “Ordenar por” === 🟢
+                    // Asociar listener al “Ordenar por”
+                    const ordenarSelect = document.getElementById('ordenarSelect');
+                     if (ordenarSelect) {
+                           ordenarSelect.addEventListener('change', (e) => {
+                                 const criterio = e.target.value;
+                                 console.log('DEBUG: ordenarSelect change →', criterio);
+                            
+                                     // 🔥 REORDENAR filteredList según criterio
+                                     if (window.innerWidth <= 768) {
+                                           // MÓVIL usa filteredList
+                                               filteredList = inmuebles.slice();
+                                           if (criterio === 'mayorPrecio') {
+                                                 filteredList.sort((a, b) => b.Precio - a.Precio);
+                                               } else if (criterio === 'menorPrecio') {
+                                                     filteredList.sort((a, b) => a.Precio - b.Precio);
+                                                  } else if (criterio === 'mejorRentabilidad') {
+                                                         const years = val => {
+                                                               const m = typeof val === 'string' ? val.match(/(\d+)/) : null;
+                                                               return m ? parseInt(m[1]) : Infinity;
+                                                             };
+                                                         filteredList.sort((a, b) =>
+                                                               years(a.RetornoInversion) - years(b.RetornoInversion)
+                                                             );
+                                                       }
+                                           renderMobilePage(true);
+                                         } else {
+                                       // DESKTOP usa filteredListDesk
+                                           filteredListDesk = inmuebles.slice();
+                                       if (criterio === 'mayorPrecio') {
+                                             filteredListDesk.sort((a, b) => b.Precio - a.Precio);
+                                           } else if (criterio === 'menorPrecio') {
+                                                 filteredListDesk.sort((a, b) => a.Precio - b.Precio);
+                                               } else if (criterio === 'mejorRentabilidad') {
+                                                     const years = val => {
+                                                           const m = typeof val === 'string' ? val.match(/(\d+)/) : null;
+                                                           return m ? parseInt(m[1]) : Infinity;
+                                                         };
+                                                     filteredListDesk.sort((a, b) =>
+                                                           years(a.RetornoInversion) - years(b.RetornoInversion)
+                                                         );
+                                                   }
+                                       renderDesktopPage(true);
+                                     }
+                               });
+                         }
+                    
+                           // Render inicial
+                           if (window.innerWidth <= 768) renderMobilePage(false);
+                       else renderDesktopPage(false);
+                            // === FIN: Asociar listener === 🟢
+
+
+                    // Listeners pestañas móvil
+                    const tabButtons = panelElem.querySelectorAll('.tab-btn');
+                    tabButtons.forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            tabButtons.forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            const tab = btn.getAttribute('data-tab');
+                            panelElem.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                            const sel = panelElem.querySelector('#tab-' + tab);
+                            if (sel) sel.classList.add('active');
+                        });
+                    });
+
+                    // Paginación y filtros en móvil
+                    if (inmuebles.length > 0) {
+                        let currentPage = 1;
+                        const pageSize = 12;
+                        let filteredList = inmuebles.slice();
+                        // 🟢 INICIO: Aplicar ordenamiento según selector
+                        const criterioOrden = document.getElementById('ordenarSelect')?.value || 'ninguno';
+                        if (criterioOrden === 'mayorPrecio') {
+                            filteredList.sort((a, b) => b.Precio - a.Precio);
+                        } else if (criterioOrden === 'menorPrecio') {
+                            filteredList.sort((a, b) => a.Precio - b.Precio);
+                        } else if (criterioOrden === 'mejorRentabilidad') {
+                            const convertirAnios = val => {
+                                const m = typeof val === 'string' ? val.match(/(\d+)/) : null;
+                                return m ? parseInt(m[1]) : Infinity;
+                            };
+                            filteredList.sort((a, b) => convertirAnios(a.RetornoInversion) - convertirAnios(b.RetornoInversion));
+                        }
+                        // 🟢 FIN: Ordenamiento
+
+                        
+
+
+
+                        const filtroBtnsMobile = panelElem.querySelectorAll('.btn-filtro-tipo-mobile');
+                        filtroBtnsMobile.forEach(btn => {
+                            btn.addEventListener('click', function () {
+                                filtroBtnsMobile.forEach(b => b.classList.remove('active'));
+                                this.classList.add('active');
+                                const tipoSel = this.getAttribute('data-tipo');
+                                if (tipoSel === 'all') {
+                                    filteredList = inmuebles.slice();
+                                } else {
+                                    filteredList = inmuebles.filter(item => item.TipoDeInmueble === tipoSel);
+                                }
+                                currentPage = 1;
+                                renderMobilePage();
+
+                            });
+                        });
+
+                        // Render inicial móvil
+                        renderMobilePage();
+                        attachVerMasListenersMinimal();
+                    }
+
+                    // No abrir InfoWindow en móvil; cerrar si existía
+                    if (barrioInfoWindow) {
+                        barrioInfoWindow.close();
+                        barrioInfoWindow = null;
+                    }
+
+                } else {
+                    // ======== VERSIÓN DESKTOP ========
+                    panelLateral.style.overflow = '';
+
+                    // Variables paginación escritorio
+                    let currentPageDesk = 1;
+                    const pageSizeDesk = 12;
+                    let filteredListDesk = inmuebles.slice();
+                    // 🟢 INICIO: Aplicar ordenamiento según selector
+                    const criterioOrdenDesk = document.getElementById('ordenarSelect')?.value || 'ninguno';
+                    if (criterioOrdenDesk === 'mayorPrecio') {
+                        filteredListDesk.sort((a, b) => b.Precio - a.Precio);
+                    } else if (criterioOrdenDesk === 'menorPrecio') {
+                        filteredListDesk.sort((a, b) => a.Precio - b.Precio);
+                    } else if (criterioOrdenDesk === 'mejorRentabilidad') {
+                        const convertirAnios = val => {
+                            const m = typeof val === 'string' ? val.match(/(\d+)/) : null;
+                            return m ? parseInt(m[1]) : Infinity;
+                        };
+                        filteredListDesk.sort((a, b) => convertirAnios(a.RetornoInversion) - convertirAnios(b.RetornoInversion));
+                    }
+                    // 🟢 FIN: Ordenamiento
+                    // Construir HTML escritorio
+                    let htmlDesk = '';
+
+                    // Totales y filtros escritorio
+                    const totalInmueblesDesk = (resumen.totalInmuebles != null)
+                        ? resumen.totalInmuebles
+                        : inmuebles.length;
+                    const countsDesk = resumen.countsByTipo || {};
+                    htmlDesk += `<section id="seccion-filtros">
+                            <h3 style="
+                                 text-align:center;
+                                 padding:10px;
+                                 background:#1d1d1d;
+                                 border-radius:52px;
+                                 color:#ccc;
+                             ">
+                                 Total de inmuebles: <span style="color:#9f7b45; font-size:20px;">${totalInmueblesDesk}</span>
+                             </h3>
+                             <div id="filtros-tipos-desk" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:12px;">`;
+
+                    // Botón “Todos los inmuebles”
+                    htmlDesk += `<button type="button" class="btn-filtro-tipo active" data-tipo="all">
+                                         Todos los inmuebles (${inmuebles.length})
+                                     </button>`;
+
+                    // Botones por tipo
+                    Object.keys(countsDesk).forEach(tipo => {
+                        const count = countsDesk[tipo];
+                        htmlDesk += `<button type="button" class="btn-filtro-tipo" data-tipo="${tipo}">
+                                             ${tipo} (${count})
+                                          </button>`;
+                    });
+                    htmlDesk += `</div></section>`;
+
+                    // Lista paginada escritorio
+                    htmlDesk += `<section id="seccion-inmuebles">
+                    <div id="ordenamiento-container" style="margin-bottom:16px; text-align:right;">
+     <label for="ordenarSelect" style="color:#ccc; margin-right:6px;">Ordenar por:</label>
+     <select id="ordenarSelect" style="padding:4px 8px; border-radius:6px;">
+     <option value="ninguno">Sin ordenar</option>
+    <option value="mayorPrecio">Mayor precio</option>
+    <option value="menorPrecio">Menor precio</option>
+    <option value="mejorRentabilidad">Mayor rentabilidad</option>
+  </select>
+</div>
+                                    <h3 style="color:#ccc;">Lista de inmuebles</h3>
+                                    <div id="grid-inmuebles-desk" class="grid-inmuebles" style="margin-top:8px;"></div>
+                                    <div id="pagination-desk" style="display:flex; justify-content:center; align-items:center; margin:8px 0;"></div>
+                                </section>`;
+
+                    // Insertar HTML escritorio
+                    panelElem.innerHTML = htmlPanel + htmlDesk;
+
+                    // Listeners filtros escritorio
+                    const filtroBtnsDesk = panelElem.querySelectorAll('.btn-filtro-tipo');
+                    filtroBtnsDesk.forEach(btn => {
+                        btn.addEventListener('click', evt => {
+                            evt.preventDefault();
+                            filtroBtnsDesk.forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            const tipoSel = btn.getAttribute('data-tipo');
+                            if (tipoSel === 'all') {
+                                filteredListDesk = inmuebles.slice();
+                            } else {
+                                filteredListDesk = inmuebles.filter(item => item.TipoDeInmueble === tipoSel);
+                            }
+                            currentPageDesk = 1;
+                            renderDesktopPage();
+                        });
+                    });
+
+                    // Función para renderizar página escritorio
+                   
+
+                    // === Llamada inicial (al abrir barrio) sin scroll ===
+                    // Asegúrate de inicializar antes estas variables en el mismo scope:
+                    currentPageDesk = 1;
+                    filteredListDesk = inmuebles.slice();  // o tu lista base
+                    renderDesktopPage(false);  // false: no hace scroll en la carga inicial
+
+                    // === Listeners de filtros escritorio ===
+                    // Cuando el usuario cambie el filtro, restablecemos paginación y sí hacemos scroll.
+                    panelElem.querySelectorAll('.btn-filtro-tipo').forEach(btn => {
+                        btn.addEventListener('click', evt => {
+                            evt.preventDefault();
+                            // Marcar activo
+                            panelElem.querySelectorAll('.btn-filtro-tipo').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            // Filtrar lista
+                            const tipoSel = btn.getAttribute('data-tipo');
+                            filteredListDesk = inmuebles.filter(item => item.TipoDeInmueble === tipoSel);
+                            currentPageDesk = 1;
+                            renderDesktopPage(true); // true: sí hace scroll al cambiar filtro
+                        });
+                    });
+                    // InfoWindow en escritorio
+                    if (selectedCenter) {
+                        if (barrioInfoWindow) {
+                            barrioInfoWindow.close();
+                            barrioInfoWindow = null;
+                        }
+                        // Construir contenido InfoWindow
+                        let htmlIW = `<style>
+                /* Scrollbar dentro de InfoWindow */
+                .iw-content::-webkit-scrollbar {
+                    width: 6px;
+                    height: 6px;
+                }
+                .iw-content::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .iw-content::-webkit-scrollbar-thumb {
+                    background-color: rgba(0, 0, 0, 0.3);
+                    border-radius: 3px;
+                }
+                .iw-content {
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(0,0,0,0.3) transparent;
+                }
+              </style>
+<div class="iw-content" style="max-width:300px; max-height:400px; overflow:auto; font-family:Outfit,sans-serif;">
+              <!-- Header con título y botón de cierre -->
+              <div class="iw-header" style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                ">
+                <h2 style="text-align:center; margin:0px; font-size:16px; margin-top:5px; color:#222;">${barrioName}</h2>
+                <button class="iw-close-btn" style="
+                    background:none;
+                    border:none;
+                    font-size:22px;
+                    color:#222;
+                    cursor:pointer;
+                    line-height:1;
+                    font-weight:700;
+                    margin-top:7px;
+                " aria-label="Cerrar ventana">&times;</button>
+              </div>
+              <div class="iw-comparar-linea" style="
+                  width:100%;
+                  height:2px;
+                  background:#be8939;
+                  margin:1px 0 4px 0;
+              "></div>`;
+
+                        // Amenidades en IW
+                        htmlIW += `<section class="iw-galeria-seccion"><h3 style="font-size:13px; color:#fff; text-align:center; background:grey; margin:2px 0 4px;">Amenidades</h3>
+                                       <div class="iw-galeria-grid">`;
+                        if (amenidades.length === 0) {
+                            htmlIW += `<p style="font-size:11px; color:#666; text-align:center;">Sin amenidades.</p>`;
+                        } else {
+                            amenidades.forEach(item => {
+                                const nombre = item.nombre || '';
+                                const link = item.link || '#';
+                                const fotoUrl = item.fotoUrl || '';
+                                htmlIW += `<div class="iw-amenidad-item">
+                                                   <a href="${link}" target="_blank" title="${nombre}">
+                                                     <img src="${fotoUrl}" alt="${nombre}" class="iw-amenidad-img" />
+                                                     <p class="iw-amenidad-nombre">${nombre}</p>
+                                                   </a>
+                                               </div>`;
+                            });
+                        }
+                        htmlIW += `</div></section>`;
+
+                        // Promedios en IW
+                        htmlIW += `<section class="iw-promedios-seccion"><h3 style="font-size:13px; color:#fff; text-align:center; background:grey; margin:3px 0 4px;">Promedios</h3>
+                                       <div class="iw-promedios-grid">`;
+                        if (general.precioMasBajo != null && general.precioMasBajo !== '') {
+                            htmlIW += `<div class="iw-promedio-item"><span class="iw-promedio-label">Precio más bajo</span>
+                                               <span class="iw-promedio-valor">${formatPrice(general.precioMasBajo)}</span></div>`;
+                        }
+                        if (general.precioPromedio != null && general.precioPromedio !== '') {
+                            htmlIW += `<div class="iw-promedio-item"><span class="iw-promedio-label">Precio promedio</span>
+                                               <span class="iw-promedio-valor">${formatPrice(general.precioPromedio)}</span></div>`;
+                        }
+                        if (general.habitacionesPromedio != null && general.habitacionesPromedio !== '') {
+                            htmlIW += `<div class="iw-promedio-item"><span class="iw-promedio-label">Habitaciones promedio</span>
+                                               <span class="iw-promedio-valor">${formatInteger(general.habitacionesPromedio)}</span></div>`;
+                        }
+                        if (general.banosPromedio != null && general.banosPromedio !== '') {
+                            htmlIW += `<div class="iw-promedio-item"><span class="iw-promedio-label">Baños promedio</span>
+                                               <span class="iw-promedio-valor">${formatInteger(general.banosPromedio)}</span></div>`;
+                        }
+                        if (general.areaPromedio != null && general.areaPromedio !== '') {
+                            htmlIW += `<div class="iw-promedio-item"><span class="iw-promedio-label">Área promedio</span>
+                                               <span class="iw-promedio-valor">${formatArea(general.areaPromedio)}</span></div>`;
+                        }
+                        if (general.estrato != null && general.estrato !== '') {
+                            htmlIW += `<div class="iw-promedio-item"><span class="iw-promedio-label">Estrato</span>
+                                               <span class="iw-promedio-valor">${formatInteger(general.estrato)}</span></div>`;
+                        }
+                        htmlIW += `</div></section></div>`;
+
+                        barrioInfoWindow = new google.maps.InfoWindow({
+                            content: htmlIW,
+                            position: selectedCenter,
+                            pixelOffset: new google.maps.Size(0, -10)
+                        });
+                        barrioInfoWindow.open(map);
+                        google.maps.event.addListener(barrioInfoWindow, 'domready', () => {
+                            const closeBtn = document.querySelector('.iw-close-btn');
+                            if (closeBtn) {
+                                closeBtn.onclick = null;
+                                closeBtn.addEventListener('click', () => {
+                                    barrioInfoWindow.close();
+                                    barrioInfoWindow = null;
+                                });
+                            }
+                            const iwOuter = document.querySelector('.gm-style-iw.gm-style-iw-c');
+                            if (iwOuter) {
+                                iwOuter.style.paddingRight = '10px';
+                                iwOuter.style.maxWidth = '350px';
+                            }
+                        });
+                    }
+
+                }
+            } catch (err) {
+                console.error('Excepción en handleInfoBarrio:', err);
+                const panelElem = document.getElementById('panel-contenido');
+                if (panelElem) {
+                    panelElem.innerHTML = `<h2 style="color:#ccc; text-align:center;">Error interno</h2>
+                                               <p style="color:#ccc; text-align:center;">Ocurrió un error al procesar la información del barrio.</p>`;
+                }
+            }
+        }
+
+
+
+
+
+
+
+
+        // === Fin sección JSONP infoBarrio ===
+
+        // === Sección: generación de tarjetas y filtrado ===
+        function filtrarInmueblesPorTipo(tipoSel, inmuebles) {
+            const contenedor = document.getElementById('grid-inmuebles');
+            contenedor.innerHTML = '';
+            const filtrados = inmuebles.filter(item => item.TipoDeInmueble === tipoSel);
+            if (filtrados.length === 0) {
+                contenedor.innerHTML = '<p>No hay inmuebles de este tipo en el barrio.</p>';
+                return;
+            }
+            filtrados.forEach(item => {
+                contenedor.innerHTML += generarCardInmuebleHTML(item);
+            });
+        }
+        function generarCardInmuebleHTML(item) {
+            // Extraemos propiedades clave
+            const codigo = item.Codigo || '';
+            const publicar = String(item['Publicar'] || '').trim().toUpperCase(); // valor esperado "SI" o distinto
+            // Abrimos el div contenedor con atributos data- para uso interno
+            let html = `<div class="card-inmueble"
+                           data-codigo="${codigo}"
+                           data-publicar="${publicar}">`;
+            // Imagen si existe
+            if (item.Image) {
+                html += `<div class="card-img"><img src="${item.Image}" alt="${item.Nombre || 'Inmueble'}" /></div>`;
+            }
+            // Info textual
+            html += `<div class="card-info">
+                        <h4 class="card-nombre">${item.Nombre || ''}</h4>
+                        <p class="card-codigo">Código: ${codigo}</p>
+                        <p class="card-precio">${formatPrice(item.Precio)}</p>
+                        <div class="card-etiquetas">`;
+            // Etiquetas resumidas (ajusta a tus campos)
+            if (item.Estrato !== undefined && item.Estrato !== null) html += `<span class="etiqueta">Estrato: ${item.Estrato}</span>`;
+            if (item.Habitaciones !== undefined && item.Habitaciones !== null) html += `<span class="etiqueta">Habitaciones: ${item.Habitaciones}</span>`;
+            if (item.Baños !== undefined && item.Baños !== null) html += `<span class="etiqueta">Baños: ${item.Baños}</span>`;
+            if (item.Closet !== undefined && item.Closet !== null) html += `<span class="etiqueta">Closet: ${item.Closet}</span>`;
+            if (item.Cocina !== undefined && item.Cocina !== null) html += `<span class="etiqueta">Cocina: ${item.Cocina}</span>`;
+            if (item.Garaje !== undefined && item.Garaje !== null) html += `<span class="etiqueta">Garaje: ${item.Garaje}</span>`;
+            if (item.Ubicacion) html += `<span class="etiqueta">Ubicación: ${item.Ubicacion}</span>`;
+            if (item.Pisos !== undefined && item.Pisos !== null) html += `<span class="etiqueta">Pisos: ${item.Pisos}</span>`;
+            if (item["Área lote"] !== undefined && item["Área lote"] !== null) html += `<span class="etiqueta">Área lote: ${item["Área lote"]}</span>`;
+            // ... añade más etiquetas si quieres ...
+            html += `   </div>
+                     </div>`; // cierra card-info
+            html += `</div>`; // cierra card-inmueble
+            return html;
+        }
+
+        // === Fin sección tarjetas y filtrado ===
+
+        // === Sección: Mostrar/ocultar panel lateral ===
+        function mostrarPanel() {
+            console.log('mostrarPanel llamado, selectedFeature=', selectedFeature);
+            const panel = document.getElementById('panel-lateral');
+            if (!panel) {
+                console.warn('mostrarPanel: no existe #panel-lateral');
+                return;
+            }
+            panel.classList.remove('panel-oculto');
+            panel.classList.add('panel-visible');
+
+            // Obtener referencia al botón de cerrar:
+            const btnCerrar = document.getElementById('panel-close-btn');
+            if (btnCerrar) {
+                if (!selectedFeature) {
+                    // En instrucciones, ocultar botón de cerrar:
+                    btnCerrar.style.display = 'none';
+                } else {
+                    // En estado con barrio seleccionado, mostrar botón:
+                    btnCerrar.style.display = ''; // restablece al estilo por defecto
+                }
+            }
+
+            // Solo recargar instrucciones si NO hay barrio seleccionado:
+            if (!selectedFeature) {
+                mostrarInstrucciones();
+            }
+            // En móvil, fija #map height a 30vh:
+            if (window.innerWidth <= 768) {
+                const mapDiv = document.getElementById('map');
+                if (mapDiv) {
+                    mapDiv.style.height = '50vh';
+                }
+            }
+        }
+
+        function ocultarPanel() {
+            console.log('ocultarPanel: cerrar barrio, volver a instrucciones');
+
+            const panel = document.getElementById('panel-lateral');
+            if (!panel) {
+                console.warn('ocultarPanel: no existe #panel-lateral');
+            }
+            // 1) Revertir estilo del barrio seleccionado
+            if (selectedFeature) {
+                map.data.revertStyle(selectedFeature);
+                selectedFeature = null;
+            }
+            // 2) Eliminar etiqueta o overlay si existe
+            if (selectedLabelMarker) {
+                selectedLabelMarker.setMap(null);
+                selectedLabelMarker = null;
+            }
+            if (typeof selectedLabelOverlay !== 'undefined' && selectedLabelOverlay) {
+                selectedLabelOverlay.setMap(null);
+                selectedLabelOverlay = null;
+            }
+            // 3) Cerrar InfoWindow si estaba abierto
+            if (barrioInfoWindow) {
+                barrioInfoWindow.close();
+                barrioInfoWindow = null;
+            }
+            // 4) Restaurar vista inicial (si guardaste initialCenter/initialZoom)
+            if (typeof initialCenter !== 'undefined' && initialCenter && typeof initialZoom !== 'undefined' && initialZoom !== null) {
+                map.setCenter(initialCenter);
+                map.setZoom(initialZoom);
+            }
+            // 5) Inyectar instrucciones de nuevo
+            mostrarInstrucciones();
+            // 6) Asegurar que el panel esté visible (quitar cualquier clase que lo oculte)
+            if (panel) {
+                panel.classList.remove('panel-oculto');
+                panel.classList.add('panel-visible');
+            }
+            // 7) Ocultar botón cerrar en estado instrucciones
+            const btnCerrar = document.getElementById('panel-close-btn');
+            if (btnCerrar) {
+                btnCerrar.style.display = 'none';
+            }
+            resetDiv.style.display = 'none';
+        }
+
+        // Al cargar la página:
+        document.addEventListener('DOMContentLoaded', () => {
+            selectedFeature = null;
+            // Mostrar panel inicial con instrucciones; ocultará el botón de cerrar en mostrarPanel:
+            mostrarPanel();
+            // Listener para botón cerrar
+            const btnCerrar = document.getElementById('panel-close-btn');
+            if (btnCerrar) {
+                btnCerrar.addEventListener('click', ocultarPanel);
+            }
+           
+        });
+
+        // === Fin sección Mostrar/ocultar panel ===
+
+        // === Sección: Apertura panel con info de barrio y de punto ===
+        function abrirPanelInfoBarrio(feature) {
+            const barrioNameRaw = feature.getProperty('name') || '';
+            const barrioName = barrioNameRaw.trim();
+            if (!barrioName) {
+                console.warn('abrirPanelInfoBarrio: feature sin propiedad name');
+                return;
+            }
+            // Zoom al barrio
+            zoomToFeature(feature);
+            // Mostrar panel y mensaje de carga
+            mostrarPanel();
+            document.getElementById('panel-contenido').innerHTML = `<p>Cargando información de ${barrioName}...</p>`;
+            // Invocar JSONP
+            cargarInfoBarrioJSONP(barrioName);
+        }
+        function seleccionarBarrio(feature) {
+            console.log('seleccionarBarrio: inicio para barrio:', feature.getProperty('name'));
+
+            // 1) Revertir selección previa y estilos asociados
+            if (selectedFeature) {
+                map.data.revertStyle(selectedFeature);
+                // Quitar etiqueta previa si existe
+                if (selectedLabelMarker) {
+                    selectedLabelMarker.setMap(null);
+                    selectedLabelMarker = null;
+                }
+                if (typeof selectedLabelOverlay !== 'undefined' && selectedLabelOverlay) {
+                    selectedLabelOverlay.setMap(null);
+                    selectedLabelOverlay = null;
+                }
+                // Cerrar InfoWindow previo si existía
+                if (barrioInfoWindow) {
+                    barrioInfoWindow.close();
+                    barrioInfoWindow = null;
+                }
+            }
+
+            // 2) Asignar nuevo seleccionado
+            selectedFeature = feature;
+
+            // 3) Abrir panel lateral y mostrar botón cerrar (mostrarPanel maneja ocultar/mostrar botón según selectedFeature)
+            mostrarPanel();
+
+            // 4) Mostrar mensaje de carga en el panel
+            const panelElem = document.getElementById('panel-contenido');
+            if (panelElem) {
+                panelElem.innerHTML = `<p style="color:#ccc; text-align:center;">Cargando información de ${feature.getProperty('name')}...</p>`;
+            }
+
+            // 5) Forzar repaint de estilos: si en initMap definiste `map.data.setStyle(...)` basado en selectedFeature,
+            //    basta con llamar de nuevo a setStyle con la misma función. Si tu initMap guardó la función de estilo, úsala:
+            //    Ejemplo:
+            //    map.data.setStyle(estiloDefinidoEnInitMap);
+            //    O si tu initMap hizo directamente map.data.setStyle(feature => {...}), entonces:
+            map.data.setStyle(map.data.getStyle ? map.data.getStyle() : feature => {
+                // Alternativa: si no guardas la función, repítela aquí de forma similar a initMap.
+                const geomType = feature.getGeometry().getType();
+                if (selectedFeature && feature === selectedFeature) {
+                    return {
+                        fillColor: '#c88b30',
+                        fillOpacity: 0.8,
+                        strokeColor: '#be8939',
+                        strokeWeight: 1
+                    };
+                }
+                if (geomType === 'Polygon' || geomType === 'MultiPolygon') {
+                    const estrato = feature.getProperty('estrato');
+                    let fillColor = '#c88b30';
+                    if (estrato !== undefined) {
+                        switch (Number(estrato)) {
+                            case 1: fillColor = '#e74c3c'; break;
+                            case 2: fillColor = '#f1c40f'; break;
+                            case 3: fillColor = '#2ecc71'; break;
+                            default: fillColor = '#3498db';
+                        }
+                    }
+                    return {
+                        fillColor: fillColor,
+                        fillOpacity: 0.3,
+                        strokeColor: fillColor,
+                        strokeWeight: 2
+                    };
+                } else if (geomType === 'Point' || geomType === 'MultiPoint') {
+                    return {
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 5,
+                            fillColor: '#FF0000',
+                            fillOpacity: 1,
+                            strokeColor: '#FFFFFF',
+                            strokeWeight: 1
+                        }
+                    };
+                }
+                return {};
+            });
+
+            // 6) Calcular centroide y crear etiqueta en mayúsculas
+            const barrioNameRaw = feature.getProperty('name') || '';
+            const barrioName = barrioNameRaw.trim();
+            const isMobile = window.innerWidth <= 768;
+            const labelColor = isMobile ? '#000000' : '#FFFFFF';
+            if (barrioName) {
+                const bounds = new google.maps.LatLngBounds();
+                feature.getGeometry().forEachLatLng(latlng => bounds.extend(latlng));
+                const center = bounds.getCenter();
+                selectedCenter = center;
+                // Crear marcador de etiqueta si así lo deseas; el texto en mayúsculas
+                selectedLabelMarker = new google.maps.Marker({
+                    position: center,
+                    map: map,
+                    label: {
+                        text: barrioName.toUpperCase(),
+                        color: labelColor,
+                        fontWeight: '600',
+                        fontSize: '12px'
+                    },
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 0   // invisible
+                    },
+                    clickable: false,
+                    zIndex: 1000
+                });
+            } else {
+                selectedCenter = null;
+            }
+
+            // 7) Hacer zoom al barrio (opcional, ya en abrirPanelInfoBarrio o aquí):
+            zoomToFeature(feature);
+
+            // 8) Llamar backend para obtener info del barrio vía JSONP
+            cargarInfoBarrioJSONP(feature.getProperty('name'));
+            resetDiv.style.display = '';
+            highlightPOIsInFeature(feature);
+        }
+
+        function highlightPOIsInFeature(feature) {
+            // Obtén bounds del barrio
+            const bounds = new google.maps.LatLngBounds();
+            feature.getGeometry().forEachLatLng(latlng => bounds.extend(latlng));
+
+            poiMarkers.forEach(marker => {
+                const pos = marker.getPosition();
+                if (bounds.contains(pos)) {
+                    marker.setOpacity(1);
+                    marker.setZIndex(google.maps.Marker.MAX_ZINDEX);
+                } else {
+                    marker.setOpacity(0.3);
+                }
+            });
+        }
+
+        function abrirPanelInfoPunto(feature) {
+            // Muestra propiedades básicas de punto en panel
+            const props = feature.getProperty();
+            let html = `<h3 style="text-align:center;">Detalle del Inmueble</h3><ul>`;
+            for (const key in props) {
+                html += `<li><strong>${key}:</strong> ${props[key]}</li>`;
+            }
+            html += `</ul>`;
+            mostrarPanel();
+            document.getElementById('panel-contenido').innerHTML = html;
+        }
+        // === Fin sección Apertura panel ===
+        // Constructor de Overlay personalizado para mostrar nombre con fondo.
+
+        // === Sección: Zoom al feature (polígono) ===
+        function zoomToFeature(feature) {
+            const geometry = feature.getGeometry();
+            const bounds = new google.maps.LatLngBounds();
+            geometry.forEachLatLng(latlng => bounds.extend(latlng));
+            map.fitBounds(bounds);
+        }
+        // === Fin sección Zoom ===
+        // Centros distintos para escritorio y móvil:
+        const desktopCenter = { lat: 2.942, lng: -75.277 };
+        const mobileCenter = { lat: 2.9407, lng: -75.287 }; // Ajusta según convenga en móvil
+
+        // Zooms opcionales:
+        const desktopZoom = 14;
+        const mobileZoom = 13; // o el nivel que consideres apropiado
+
+
+        function estiloDefinidoEnInitMap(feature) {
+            const geomType = feature.getGeometry().getType();
+            // Si está seleccionado, color destacado
+            if (selectedFeature && feature === selectedFeature) {
+                return {
+                    fillColor: '#c88b30',
+                    fillOpacity: 0.8,
+                    strokeColor: '#be8939',
+                    strokeWeight: 1
+                };
+            }
+            // Polígonos: color según estrato (o valor por defecto)
+            if (geomType === 'Polygon' || geomType === 'MultiPolygon') {
+                const estrato = feature.getProperty('estrato');
+                let fillColor = '#3498db';
+                if (estrato !== undefined) {
+                    switch (Number(estrato)) {
+                        case 1: fillColor = '#e74c3c'; break;
+                        case 2: fillColor = '#f1c40f'; break;
+                        case 3: fillColor = '#2ecc71'; break;
+                    }
+                }
+                return {
+                    fillColor,
+                    fillOpacity: 0.3,
+                    strokeColor: fillColor,
+                    strokeWeight: 2
+                };
+            }
+            // Puntos: deja tu icono predeterminado
+            return {};
+        }
+
+        // ————————————————————————————————————————————
+        // 2) Función de “choropleth comercial”
+        // ————————————————————————————————————————————
+        function applyCommercialChoropleth() {
+            // Recorre cada barrio y cuenta cuántos POIs caen dentro
+            map.data.forEach(feature => {
+                if (feature.getGeometry().getType().match(/Polygon/)) {
+                    const bounds = new google.maps.LatLngBounds();
+                    feature.getGeometry().forEachLatLng(latlng => bounds.extend(latlng));
+
+                    // Cuenta markers (poiMarkers) dentro de este barrio
+                    const count = poiMarkers.reduce((acc, m) => {
+                        return acc + (bounds.contains(m.getPosition()) ? 1 : 0);
+                    }, 0);
+
+                    // Define un color de relleno en función de count
+                    // Por ejemplo: 0 → gris claro, >10 → rojo intenso
+                    let color;
+                    if (count === 0) color = '#dddddd';
+                    else if (count <= 5) color = '#ffd54f';
+                    else if (count <= 15) color = '#ffb300';
+                    else color = '#e65100';
+
+                    map.data.overrideStyle(feature, {
+                        fillColor: color,
+                        fillOpacity: 0.6,
+                        strokeColor: color,
+                        strokeWeight: 1
+                    });
+                }
+            });
+        }
+        function getColorPorPrecio(valor, min, max) {
+            if (valor === 0) return "#999"; // gris si no tiene precio válido
+            const porcentaje = Math.pow((valor - min) / (max - min), 0.8); // curva suave
+            const hue = (1 - porcentaje) * 120; // de 120 (verde) a 0 (rojo)
+            return `hsl(${hue}, 100%, 50%)`;
+        }
+        function obtenerRangoPrecios(datos) {
+            const preciosValidos = datos
+                .map(f => f.precioExtraido)
+                .filter(precio => precio > 0);
+
+            const min = Math.min(...preciosValidos);
+            const max = Math.max(...preciosValidos);
+            return { min, max };
+        }
+        // === Extraer precios desde los puntos cargados ===
+        allPointFeatures.forEach(f => {
+            const raw = f.properties?.name || '';
+            const match = raw.match(/\$?(\d+)[\sm]*m/i); // busca "$63m" o "63 m"
+            const precio = match ? parseInt(match[1]) * 1_000_000 : 0;
+            f.precioExtraido = precio;
+        });
+
+        const { min, max } = obtenerRangoPrecios(allPointFeatures);
+        // === Sección initMap: Inicialización del mapa y listeners ===
+        let heatmap;
+        const fixedZoom = 13;
+        function initMap() {
+            // === 1. Crear el mapa ===
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 2.9389, lng: -75.2803 },
+                zoom: 13,
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: false
+            });
+
+            // === 2. Guardar la vista inicial ===
+            initialCenter = map.getCenter();
+            initialZoom = map.getZoom();
+
+            // === 3. Crear control “Volver a inicio” ===
+            resetDiv = document.createElement('div');
+            resetDiv.textContent = 'Volver a inicio';
+            resetDiv.classList.add('map-reset-btn');
+            resetDiv.style.display = 'none';
+            resetDiv.addEventListener('click', () => {
+                ocultarPanel();
+            });
+            map.controls[google.maps.ControlPosition.TOP_LEFT].push(resetDiv);
+
+            
+
+            // === 4. Cargar capas GeoJSON ===
+            cargarGeoJSONviaJSONP('barrios', 'handleBarrios');
+            cargarGeoJSONviaJSONP('puntos', 'handlePuntos');
+
+            // === 5. Estilo de polígonos/puntos ===
+            map.data.setStyle(feature => {
+                const geomType = feature.getGeometry().getType();
+                if (selectedFeature && feature === selectedFeature) {
+                    return {
+                        fillColor: '#c88b30',
+                        fillOpacity: 0.8,
+                        strokeColor: '#be8939',
+                        strokeWeight: 1
+                    };
+                }
+                if (geomType === 'Polygon' || geomType === 'MultiPolygon') {
+                    const estrato = feature.getProperty('estrato');
+                    let fillColor = '#c88b30';
+                    if (estrato !== undefined) {
+                        switch (Number(estrato)) {
+                            case 1: fillColor = '#e74c3c'; break;
+                            case 2: fillColor = '#f1c40f'; break;
+                            case 3: fillColor = '#2ecc71'; break;
+                            default: fillColor = '#3498db';
+                        }
+                    }
+                    return {
+                        fillColor: fillColor,
+                        fillOpacity: 0.3,
+                        strokeColor: fillColor,
+                        strokeWeight: 2
+                    };
+                } else if (geomType === 'Point' || geomType === 'MultiPoint') {
+                    return {
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 5,
+                            fillColor: '#FF0000',
+                            fillOpacity: 1,
+                            strokeColor: '#FFFFFF',
+                            strokeWeight: 1
+                        }
+                    };
+                }
+                return {};
+            });
+
+            // === 6. Crear heatmap con radius ajustable ===
+            heatmap = new google.maps.visualization.HeatmapLayer({
+                data: [],
+                dissipating: false,           // 🔒 fija el "zoom" visual del heatmap
+                radius: 0.0008,               // 🔧 prueba entre 0.0008 y 0.003
+                opacity: 0.6,
+                gradient: [
+                    "rgba(0, 0, 0, 0)",
+                    "rgba(0, 255, 0, 0.2)",
+                    "rgba(0, 255, 0, 1)",
+                    "rgba(85, 255, 0, 1)",
+                    "rgba(170, 255, 0, 1)",
+                    "rgba(220, 255, 0, 1)",
+                    "rgba(255, 255, 0, 1)",
+                    "rgba(255, 220, 0, 1)",
+                    "rgba(255, 190, 0, 1)",
+                    "rgba(255, 160, 0, 1)",
+                    "rgba(255, 120, 0, 1)",
+                    "rgba(255, 80, 0, 1)",
+                    "rgba(255, 40, 0, 1)",
+                    "rgba(255, 0, 0, 1)"
+                ],
+                map: null
+            });
+
+            // que el radio del heatmap se mantenga al hacer zoom
+           
+
+            // === 6. Evento click en barrio ===
+            map.data.addListener('click', evt => {
+                console.log('Polígono clicado:', evt.feature.getProperty('name'));
+                seleccionarBarrio(evt.feature);
+                resetDiv.style.display = '';
+            });
+
+            // === 7. Mostrar instrucciones sin barrio ===
+            mostrarPanel();
+        }
+
+       
+
+        // === Fin sección initMap ===
+       
+        let heatmapLegendEl; // arriba en tu archivo
+
+        function createLayerControls() {
+            const controlDiv = document.createElement('div');
+            controlDiv.classList.add('layer-controls');
+            controlDiv.style.cssText = `
+        background: #fff;
+        padding: 8px;
+        border-radius: 4px;
+        border-bottom-left-radius: 42px;
+        
+        font-size: 12px;
+        display: flex;
+            padding-left: 14px;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    `;
+
+            // === Toggle Heatmap Precios ===
+            const heatToggleContainer = document.createElement('div');
+            heatToggleContainer.style.cssText = 'display:flex;align-items:center;gap:6px;';
+
+            toggleHeatEl = document.createElement('input');
+            toggleHeatEl.type = 'checkbox';
+            toggleHeatEl.id = 'toggleHeat';
+
+            const lblHeat = document.createElement('label');
+            lblHeat.htmlFor = 'toggleHeat';
+            lblHeat.textContent = 'Precios';
+
+            heatToggleContainer.append(toggleHeatEl, lblHeat);
+            controlDiv.appendChild(heatToggleContainer);
+
+            // === Leyenda Compacta ===
+            const legendDiv = document.createElement('div');
+            legendDiv.id = 'heatmap-legend';
+            legendDiv.style.cssText = `
+        display: none;
+        width: 30px;
+        height: 110px;
+        background: white;
+        
+        border-radius: 4px;
+        padding: 4px;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        
+        z-index: 999;
+    `;
+
+            // Etiqueta "Bajo"
+            const lowLabel = document.createElement('span');
+            lowLabel.textContent = 'Menor';
+            lowLabel.style.marginBottom = '4px';
+
+            // Barra
+            const gradientBar = document.createElement('div');
+            gradientBar.classList.add('legend-gradient');
+            gradientBar.style.cssText = `
+        flex: 1;
+        width: 10px;
+        height: 60px;
+        background: linear-gradient(to top,
+            rgba(255, 0, 0, 1) 0%,
+            rgba(255, 80, 0, 1) 10%,
+            rgba(255, 160, 0, 1) 20%,
+            rgba(255, 220, 0, 1) 30%,
+            rgba(255, 255, 0, 1) 40%,
+            rgba(170, 255, 0, 1) 60%,
+            rgba(0, 255, 0, 1) 80%
+        );
+        margin: 2px 0;
+        border-radius: 2px;
+    `;
+
+            // Etiqueta "Alto"
+            const highLabel = document.createElement('span');
+            highLabel.textContent = 'Mayor';
+            highLabel.style.marginTop = '4px';
+
+            legendDiv.appendChild(lowLabel);
+            legendDiv.appendChild(gradientBar);
+            legendDiv.appendChild(highLabel);
+
+            controlDiv.appendChild(legendDiv);
+
+            map.controls[google.maps.ControlPosition.TOP_RIGHT].push(controlDiv);
+
+            toggleHeatEl.addEventListener('change', () => {
+                console.log('toggleHeat cambiado a', toggleHeatEl.checked);
+                updateLayersVisibility();
+                legendDiv.style.display = toggleHeatEl.checked ? 'flex' : 'none';
+            });
+        }
+        // Muestra/oculta capas según toggles
+        function updateLayersVisibility() {
+            console.log('updateLayersVisibility invocado');
+
+            if (!toggleHeatEl) {
+                console.warn('toggleHeatEl aún no existe');
+                return;
+            }
+
+            if (toggleHeatEl.checked) {
+                const heatData = allPointFeatures
+                    .map(f => {
+                        const lat = f.geometry.coordinates[1];
+                        const lng = f.geometry.coordinates[0];
+                        const raw = f.properties?.name || '';
+                        const match = raw.match(/\$?(\d+)[\sm]*m/i);
+                        const price = match ? parseInt(match[1]) * 1_000_000 : 0;
+                        if (!price || isNaN(price)) return null;
+                        return {
+                            location: new google.maps.LatLng(lat, lng),
+                            weight: price
+                        };
+                    })
+                    .filter(Boolean);
+
+                heatmap.setData(heatData);
+                heatmap.setMap(map);
+
+                // ✅ Mostrar leyenda
+                if (heatmapLegendEl) heatmapLegendEl.style.display = 'flex';
+
+                console.log('Heatmap activado, puntos válidos:', heatData.length);
+            } else {
+                heatmap.setMap(null);
+
+                // ❌ Ocultar leyenda
+                if (heatmapLegendEl) heatmapLegendEl.style.display = 'none';
+
+                console.log('Heatmap desactivado');
+            }
+        }
+        // (Opcional) Centrar mapa en todos los datos cargados
+        function centrarMapaEnData() {
+            const bounds = new google.maps.LatLngBounds();
+            map.data.forEach(feature => {
+                const geom = feature.getGeometry();
+                if (geom) {
+                    geom.forEachLatLng(latlng => bounds.extend(latlng));
+                }
+            });
+            map.fitBounds(bounds);
+        }
+        function mostrarInstrucciones() {
+            const panelElem = document.getElementById('panel-contenido');
+            if (!panelElem) return;
+            // (Opcional) console.log para depurar:
+            console.log('mostrarInstrucciones: recargando instrucciones en panel');
+            const html = `
+              <div id="panel-instrucciones" style="padding: 20px;  padding-top: 10px; color: #ccc; font-family: 'Outfit', sans-serif;">
+                <h2 style="font-size: 18px; color: #fff; text-align: center; margin-bottom: 8px; margin-top: 0px;">INVENTARIO POR SECTORES</h2>
+                <div style="width: 100%; height: 2px; background: #be8939; margin-bottom: 16px;"></div>
+                <div style="margin-bottom: 20px;">
+                  <iframe
+                  class="mi-video"
+                    width="90%"
+                    height="300"
+                    src="https://www.youtube.com/embed/WQM2qBT7Krs?vq=hd2160"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                    style="display: block; margin: 0 auto; background: #000;">
+                  </iframe>
+                </div>
+                <h3 style="font-size: 18px; color: #fff; margin-bottom: 21px;">Búsqueda en 3 pasos:</h3>
+                <div style="display: flex; align-items: flex-start; margin-bottom: 10px;">
+                  <img src="https://i.imgur.com/krqM7do.png" alt="Icono mapa" style="width: 27px;height: 27px;margin-right: 10px;margin-top: 3px;">
+                  <div>
+                    <ag>1. Haz clic en el barrio</a><br>
+
+                  </div>
+                </div>
+                <div style="display: flex; align-items: flex-start; margin-bottom: 10px;">
+                  <img src="https://i.imgur.com/uCNDu4n.png" alt="Icono inmueble" style="width: 27px;height: 27px;margin-right: 10px;margin-top: 1px;">
+                  <div>
+                    <a>2. Elige tipo de inmueble</a><br>
+
+                  </div>
+                </div>
+                <div style="display: flex; align-items: flex-start;">
+                  <img src="https://i.imgur.com/SHrjTyY.png" alt="Icono explorar" style="width: 27px;height: 27px;margin-right: 10px;margin-top: 3px;">
+                  <div>
+                    <a>3. Navega y explora las propiedades</a><br>
+
+                  </div>
+                </div>
+              </div>
+`;
+            panelElem.innerHTML = html;
+        }
+        /*** FUNCIONES DE MODAL DIRECTO Y EXTERNO ***/
+
+        // Modal directo: muestra toda la información del inmueble
+        function abrirModalDirecto(item) {
+            const contentDiv = document.getElementById('modalContent');
+            if (!contentDiv) return;
+            console.log("Verificando campos de item:", {
+                "Google Fotos": item["GoogleFotos"],
+                Ciudad: item.Ciudad,
+                Zona: item.Zona,
+                Ubicación: item.Ubicación,
+                Piscina: item.Piscina,
+                "Área Construida": item["ÁreaConstruida"],
+                Administración: item.Administración,
+                "Área lote": item["Árealote"],
+                "Retorno de la Inversión": item["RetornoInversión"],
+                Rentabilidad: item.Rentabilidad
+            });
+            // Construir HTML de modal directo
+            let html = `
+              <div class="modal-contenido">
+                <div class="modal-columna-izq">
+                  ${item.Image ? `<img id="modalImagen" class="modal-imagen" src="${item.Image}" alt="${item.Nombre || ''}" />` : ''}
+                  ${item["GoogleFotos"] ? `<a id="modalLinkFotos" href="${item["GoogleFotos"]}" target="_blank" class="boton-fotos">Ver más fotos</a>` : ''}
+                  <div class="modal-bloque-info">
+                    <h2 id="modalTitle">${item.Nombre || ''}</h2>
+                    <p class="tipo" id="modalTipo">${item["Tipo de inmueble"] || item.TipoDeInmueble || ''}</p>
+                    <p class="modalCodigo"><strong>Código:</strong> <span id="modalCodigo">${item.Codigo || ''}</span></p>
+                    <p id="modalPrecio" class="precio">${formatPrice(item.Precio)}</p>
+                    <div class="modal-etiquetas" id="modalEtiquetas">`;
+            // Etiquetas dinámicas resumidas
+            const etiquetas = [];
+            if (item.Habitaciones != null) etiquetas.push(`Habitaciones: ${item.Habitaciones}`);
+            if (item.Baños != null) etiquetas.push(`Baños: ${item.Baños}`);
+            if (item.Garaje != null) etiquetas.push(`Garaje: ${item.Garaje}`);
+            if (item.Cocina != null) etiquetas.push(`Cocina: ${item.Cocina}`);
+            if (item.Pisos != null) etiquetas.push(`Pisos: ${item.Pisos}`);
+            if (item["Área lote"] != null) etiquetas.push(`Lote: ${item["Área lote"]} m²`);
+            if (item.Rentabilidad) etiquetas.push(`${item.Rentabilidad}`);
+            etiquetas.forEach(t => {
+                html += `<span class="modal-etiqueta">${t}</span>`;
+            });
+            html += `
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-columna-der">
+                  <h3 class="modal-subtitulo">CARACTERÍSTICAS DETALLADAS</h3>
+                  <table id="modalTablaCaracteristicas" class="modal-tabla-caracteristicas">`;
+            const propsMap = {
+                "Ciudad": "Ciudad",
+                "Zona": "Zona",
+                "Estrato": "Estrato",
+                "Ubicación": "Ubicacion",
+                "Piscina": "Piscina",
+                "Área Construida": "AreaConstruida",
+                "Administración": "Administracion",
+                "Retorno de la Inversión": "RetornoInversion"
+            };
+
+            for (const label in propsMap) {
+                const key = propsMap[label];
+                const val = item[key] != null && item[key] !== '' ? item[key] : '-';
+                html += `<tr><td>${label}</td><td>${val}</td></tr>`;
+            }
+            html += `</table>
+                  <h3 class="modal-subtitulo">PUNTOS CLAVE</h3>
+                  <p id="modalPuntosClave" class="modal-texto">${item["PuntosClave"] || ''}</p>
+                </div>
+              </div>
+              <h3 class="modal-subtitulo">DESCRIPCIÓN</h3>
+              <p id="modalDescripcion" class="modal-texto">${item["Descripcion"] || ''}</p>
+              <div class="modal-footer">
+                <a id="modalBotonWhatsapp" href="#" target="_blank" class="boton-fotoswpp">✆ Agendar visita por WhatsApp</a>
+              </div>
+            `;
+            contentDiv.innerHTML = html;
+
+            // Configurar enlace WhatsApp con tu número y el código
+            const codigo = item.Codigo || '';
+            const waNumber = '573208762117';
+            const mensaje = `Hola, quiero agendar una visita para ver el inmueble ${codigo}`;
+            const waLink = `https://wa.me/${waNumber}?text=${encodeURIComponent(mensaje)}`;
+            const botonWA = document.getElementById('modalBotonWhatsapp');
+            if (botonWA) botonWA.href = waLink;
+
+            // Mostrar overlay
+            const overlay = document.getElementById('modalOverlay');
+            if (overlay) overlay.style.display = 'flex';
+        }
+
+        // Modal externo: informa que la información es restringida
+        function abrirModalExterno(item) {
+            const contentDiv = document.getElementById('modalContent');
+            if (!contentDiv) return;
+            const codigo = item.Codigo || '';
+            const waNumber = '573208762117';
+            const mensaje = `Hola, estoy interesado en información del inmueble ${codigo}. Por favor, contáctenme.`;
+            const waLink = `https://wa.me/${waNumber}?text=${encodeURIComponent(mensaje)}`;
+            let html = `
+              <div style="text-align:center; color:#ccc;">
+                <h2 style="color:#fff;">Información premium</h2>
+                <p>Esta información es premium. Contáctanos por WhatsApp para más información.</p>
+                <p><strong>Código:</strong> ${codigo}</p>
+                <a id="modalBotonWhatsapp" href="${waLink}" target="_blank" class="boton-fotos">✆ Contactar por WhatsApp</a>
+              </div>
+            `;
+            contentDiv.innerHTML = html;
+            const overlay = document.getElementById('modalOverlay');
+            if (overlay) overlay.style.display = 'flex';
+        }
+
+        // Cerrar modal (se reutiliza para ambos tipos)
+        function cerrarModal() {
+            const overlay = document.getElementById('modalOverlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        // Inicializar listeners de cierre al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            // Botón × dentro del modal
+            const btnCerrar = document.querySelector('#modalOverlay .modal-close');
+            if (btnCerrar) {
+                btnCerrar.addEventListener('click', cerrarModal);
+            }
+            // Clic fuera del contenido (overlay)
+            const overlay = document.getElementById('modalOverlay');
+            if (overlay) {
+                overlay.addEventListener('click', e => {
+                    if (e.target === overlay) {
+                        cerrarModal();
+                    }
+                });
+            }
+            // Tecla Escape
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape') {
+                    cerrarModal();
+                }
+            });
+            
+        });
+
+        function attachCardClickListeners(inmuebles) {
+            document.querySelectorAll('.card-inmueble').forEach(card => {
+                const codigo = card.dataset.codigo;
+                const publicar = (card.dataset.publicar || '').trim().toUpperCase();
+
+                // Primero removemos listeners previos si fuera necesario:
+                card.onclick = null;
+
+                card.addEventListener('click', () => {
+                    // Buscar objeto en array inmuebles por Código
+                    const item = inmuebles.find(it => String(it.Codigo) === String(codigo));
+                    if (!item) return;
+
+                    if (publicar === 'SI') {
+                        abrirModalDirecto(item);
+                    } else {
+                        abrirModalExterno(item);
+                    }
+                });
+            });
+        }
+
+        // Función de toggle extraída para evitar duplicar código
+        function toggleVerMas(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const btn = e.currentTarget;
+            const card = btn.closest('.card-inmueble-minimal');
+            const extra = card.querySelector('.card-etiquetas-extra');
+            if (!extra) return;
+            if (extra.style.display === 'block') {
+                extra.style.display = 'none';
+                btn.textContent = 'Ver más';
+            } else {
+                extra.style.display = 'block';
+                btn.textContent = 'Ver menos';
+            }
+        }
+
+        // Nueva función unificada
+        function attachVerMasListenersMinimal() {
+            document.querySelectorAll('.card-inmueble-minimal .btn-ver-mas')
+                .forEach(btn => {
+                    // Limpio cualquier listener previo
+                    btn.removeEventListener('click', toggleVerMas);
+                    btn.addEventListener('click', toggleVerMas);
+                });
+        }
+
+        function attachCardClickListenersMinimal(inmuebles) {
+            document.querySelectorAll('.card-inmueble-minimal').forEach(card => {
+                const codigo = card.dataset.codigo;
+                const publicar = (card.dataset.publicar || '').trim().toUpperCase();
+
+                card.onclick = () => {
+                    const item = inmuebles.find(it => String(it.Codigo) === String(codigo));
+                    if (!item) return;
+
+                    if (publicar === 'SI') {
+                        abrirModalDirecto(item);
+                    } else {
+                        abrirModalExterno(item);
+                    }
+                };
+            });
+        }
+
+
+    </script>
+</body>
+</html>
