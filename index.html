@@ -6251,7 +6251,9 @@ font-weight: 500;
                 logo: "https://i.imgur.com/6g9dE1m.png",
                 logonegro: "https://i.imgur.com/NIh6RSO.png",
                 bgClass: "bg-gray",
-                sizePct: 90
+                sizePct: 90,
+                offsetX: -4,   // mueve ~4% hacia la izquierda
+                offsetY: 0
                 // más grande solo este
             },
             {
@@ -6329,7 +6331,7 @@ font-weight: 500;
             wrap.style.display = "grid";
             wrap.style.placeItems = "center";
             wrap.style.zIndex = "1";
-
+            wrap.style.transform = `translate(${offsetX}%, ${offsetY}%)`;
             const size = `${sizePct}%`;
 
             // Base (normal)
@@ -6393,7 +6395,7 @@ font-weight: 500;
             cell.appendChild(overlay);
 
             // Anchor + doble imagen (acepta sizePct)
-            const { anchor, imgBase, imgNegra } = buildAnchor({ name, url, logo, logonegro, sizePct });
+            const { anchor, imgBase, imgNegra } = buildAnchor({ name, url, logo, logonegro, sizePct, offsetX, offsetY });
             cell.appendChild(anchor);
 
             // Hover sin efectos en imágenes (solo opacidad + overlay)
@@ -6565,7 +6567,9 @@ font-weight: 500;
                 name: "Inmobiliaria Rocha",
                 url: "https://www.rochafincaraiz.com/",
                 logo: "https://i.imgur.com/6g9dE1m.png",
-                sizePct: 90
+                sizePct: 90,
+                offsetX: -4,   // mismo nudge que en desktop
+  offsetY: 0
             },
             "m-slot5": {
                 name: "Inmobiliaria Jovel Muñoz",
@@ -6611,7 +6615,7 @@ function currentMobileRotator() {
             });
         }
 
-        function mountCell(cellId, { name, url, logo, sizePct = 72 }) {
+       function mountCell(cellId, { name, url, logo, sizePct = 72, offsetX = 0, offsetY = 0 }) {
   const cell = document.getElementById(cellId);
   if (!cell) return;
   cell.innerHTML = "";
@@ -6619,6 +6623,14 @@ function currentMobileRotator() {
   const a = document.createElement("a");
   a.href = url; a.target = "_blank"; a.rel = "noopener";
   a.setAttribute("aria-label", name);
+
+  const wrap = document.createElement("div");
+  wrap.style.width = "100%";
+  wrap.style.height = "100%";
+  wrap.style.display = "grid";
+  wrap.style.placeItems = "center";
+  // 👇 nudge aquí
+  wrap.style.transform = `translate(${offsetX}%, ${offsetY}%)`;
 
   const img = document.createElement("img");
   img.src = logo;
@@ -6629,7 +6641,8 @@ function currentMobileRotator() {
   img.style.maxHeight = `${sizePct}%`;
   img.style.objectFit = "contain";
 
-  a.appendChild(img);
+  wrap.appendChild(img);
+  a.appendChild(wrap);
   cell.appendChild(a);
 }
 
