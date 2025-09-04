@@ -6577,15 +6577,27 @@ font-weight: 500;
             }
         };
 
-        /* Ítem rotatorio: aparece en una casilla aleatoria */
-        const MOBILE_ROTATOR = {
-            id: "m-slot2", // etiqueta lógica
-            item: {
-                name: "Aliado rotatorio",
-                url: "https://inmobiliariasantamariavera.com/",
-                logo: "https://i.imgur.com/JoMeVmg.png"
-            }
-        };
+       /* Ítems rotatorios: aparecerán uno a la vez, reubicándose aleatoriamente */
+const MOBILE_ROTATORS = [
+  {
+    // (el que ya tenías)
+    name: "Inmobiliaria Santa María Vera",
+    url: "https://inmobiliariasantamariavera.com/",
+    logo: "https://i.imgur.com/JoMeVmg.png"
+  },
+  {
+    // NUEVO ALIADO ROTATORIO — reemplaza con tus datos reales
+    name: "JP",
+    url: "https://www.inmobiliariajpescobar.com.co/",
+    logo: "https://i.imgur.com/qplz1JN.png"
+  }
+];
+
+// índice de rotación
+let MOBILE_ROT_IDX = 0;
+function currentMobileRotator() {
+  return MOBILE_ROTATORS[MOBILE_ROT_IDX % MOBILE_ROTATORS.length];
+}
 
         /* ====== Helpers ====== */
         function applyFixedBackgrounds() {
@@ -6619,28 +6631,28 @@ font-weight: 500;
         /* Reparte el rotatorio en una casilla aleatoria:
            - Por defecto va en m-slot2
            - Si el destino aleatorio NO es m-slot2, intercambia los contenidos */
-        function randomSwapSlot2() {
-            const allSlots = ["m-slot1", "m-slot2", "m-slot3", "m-slot4", "m-slot5", "m-slot6"];
-            const randomTarget = allSlots[Math.floor(Math.random() * allSlots.length)];
+       function randomSwapSlot2(rotatorItem) {
+  const allSlots = ["m-slot1", "m-slot2", "m-slot3", "m-slot4", "m-slot5", "m-slot6"];
+  const randomTarget = allSlots[Math.floor(Math.random() * allSlots.length)];
 
-            // Construimos el mapping de contenidos (sin fondos)
-            const mapping = {
-                "m-slot1": MOBILE_ITEMS["m-slot1"],
-                "m-slot2": MOBILE_ROTATOR.item, // por defecto
-                "m-slot3": MOBILE_ITEMS["m-slot3"],
-                "m-slot4": MOBILE_ITEMS["m-slot4"],
-                "m-slot5": MOBILE_ITEMS["m-slot5"],
-                "m-slot6": MOBILE_ITEMS["m-slot6"]
-            };
+  // Construimos el mapping de contenidos (sin fondos)
+  const mapping = {
+    "m-slot1": MOBILE_ITEMS["m-slot1"],
+    "m-slot2": rotatorItem, // por defecto el rotatorio
+    "m-slot3": MOBILE_ITEMS["m-slot3"],
+    "m-slot4": MOBILE_ITEMS["m-slot4"],
+    "m-slot5": MOBILE_ITEMS["m-slot5"],
+    "m-slot6": MOBILE_ITEMS["m-slot6"]
+  };
 
-            // Intercambio si el destino aleatorio no es m-slot2
-            if (randomTarget !== "m-slot2") {
-                const temp = mapping[randomTarget];
-                mapping[randomTarget] = MOBILE_ROTATOR.item;
-                mapping["m-slot2"] = temp;
-            }
-            return mapping;
-        }
+  // Intercambio si el destino aleatorio no es m-slot2
+  if (randomTarget !== "m-slot2") {
+    const temp = mapping[randomTarget];
+    mapping[randomTarget] = rotatorItem;
+    mapping["m-slot2"] = temp;
+  }
+  return mapping;
+}
 
         /* ==== Animación de entrada (grupal) ==== */
         function setupRevealMobile() {
@@ -6690,11 +6702,12 @@ font-weight: 500;
 
         /* ====== Rotación periódica SOLO de contenidos (no fondos) ====== */
         function startMobileRotation() {
-            setInterval(() => {
-                const mapping = randomSwapSlot2(); // elige nueva casilla para el rotatorio
-                Object.entries(mapping).forEach(([cellId, data]) => mountCell(cellId, data));
-            }, MOBILE_ROTATE_MS);
-        }
+  setInterval(() => {
+    MOBILE_ROT_IDX++; // avanza al siguiente aliado rotatorio
+    const mapping = randomSwapSlot2(currentMobileRotator()); // nuevo aliado + reubicación
+    Object.entries(mapping).forEach(([cellId, data]) => mountCell(cellId, data));
+  }, MOBILE_ROTATE_MS);
+}
 
         /* ====== Render ====== */
         function renderMobileAliados() {
@@ -6702,7 +6715,7 @@ font-weight: 500;
             applyFixedBackgrounds();
 
             // 2) Mapear con el “al azar” para slot2
-            const mapping = randomSwapSlot2();
+           const mapping = randomSwapSlot2(currentMobileRotator());
 
             // 3) Montar contenidos (logos+links)
             Object.entries(mapping).forEach(([cellId, data]) => mountCell(cellId, data));
