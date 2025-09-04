@@ -6564,7 +6564,8 @@ font-weight: 500;
             "m-slot4": {
                 name: "Inmobiliaria Rocha",
                 url: "https://www.rochafincaraiz.com/",
-                logo: "https://i.imgur.com/6g9dE1m.png"
+                logo: "https://i.imgur.com/6g9dE1m.png",
+                sizePct: 90
             },
             "m-slot5": {
                 name: "Inmobiliaria Jovel Muñoz",
@@ -6610,24 +6611,27 @@ function currentMobileRotator() {
             });
         }
 
-        function mountCell(cellId, { name, url, logo }) {
-            const cell = document.getElementById(cellId);
-            if (!cell) return;
-            // NO tocamos el fondo aquí (para que no “rote”)
-            cell.innerHTML = "";
-            const a = document.createElement("a");
-            a.href = url; a.target = "_blank"; a.rel = "noopener";
-            a.setAttribute("aria-label", name);
+        function mountCell(cellId, { name, url, logo, sizePct = 72 }) {
+  const cell = document.getElementById(cellId);
+  if (!cell) return;
+  cell.innerHTML = "";
 
-            const img = document.createElement("img");
-            img.src = logo;
-            img.alt = name;
-            img.loading = "lazy";
-            img.decoding = "async";
+  const a = document.createElement("a");
+  a.href = url; a.target = "_blank"; a.rel = "noopener";
+  a.setAttribute("aria-label", name);
 
-            a.appendChild(img);
-            cell.appendChild(a);
-        }
+  const img = document.createElement("img");
+  img.src = logo;
+  img.alt = name;
+  img.loading = "lazy";
+  img.decoding = "async";
+  img.style.maxWidth = `${sizePct}%`;
+  img.style.maxHeight = `${sizePct}%`;
+  img.style.objectFit = "contain";
+
+  a.appendChild(img);
+  cell.appendChild(a);
+}
 
         /* Reparte el rotatorio en una casilla aleatoria:
            - Por defecto va en m-slot2
