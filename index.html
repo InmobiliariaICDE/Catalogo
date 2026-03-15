@@ -8256,8 +8256,37 @@ font-weight: 500;
                         if (_bn) { _bn.onclick = function(e){ e.stopPropagation(); carruselIr(carruselIdx+1); }; }
                         if (_be) { _be.onclick = function(e){ e.stopPropagation(); window.lbAbrir(carruselFotos, carruselIdx); }; }
                         _dragReady = false; setTimeout(_initCarruselDrag, 50);
+                        // ── Schema dinámico por propiedad ──
+const schemaAnterior = document.getElementById('schema-propiedad-activa');
+if (schemaAnterior) schemaAnterior.remove();
+
+const schemaScript = document.createElement('script');
+schemaScript.type = 'application/ld+json';
+schemaScript.id = 'schema-propiedad-activa';
+schemaScript.textContent = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "RealEstateListing",
+  "name": inmueble["Nombre"],
+  "description": inmueble["Descripción"] || inmueble["Puntos Clave"] || "",
+  "image": fotosCarrusel[0] || inmueble["Image"] || "",
+  "url": "https://icdeinmobiliaria.com/",
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "COP",
+    "price": String(inmueble["Precio"]).replace(/[^0-9]/g, ""),
+    "availability": "https://schema.org/InStock"
+  },
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": inmueble["Barrio"] || "Neiva",
+    "addressRegion": "Huila",
+    "addressCountry": "CO"
+  }
+});
+document.head.appendChild(schemaScript);
                         // Empujamos un estado indicando que el modal está abierto
                         history.pushState({ modalAbierto: true }, '', '');
+                        
                     }
 
 
@@ -8267,6 +8296,8 @@ font-weight: 500;
                         const overlay = document.getElementById("modalOverlay");
                         overlay.classList.remove("active");
                         overlay.style.display = "none";
+                        const s = document.getElementById('schema-propiedad-activa');
+if (s) s.remove();
 
                     }
 
