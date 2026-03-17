@@ -190,7 +190,7 @@
     "@type": "SearchAction",
     "target": {
       "@type": "EntryPoint",
-      "urlTemplate": "https://icdeinmobiliaria.com/buscar?q={search_term_string}"
+      "urlTemplate": "https://icdeinmobiliaria.com/?q={search_term_string}"
     },
     "query-input": "required name=search_term_string"
   }
@@ -10128,7 +10128,60 @@ sizePct: 70
         <button class="lightbox-close" id="lightboxClose">&times;</button>
         <span class="lightbox-counter" id="lightboxCounter">1 / 1</span>
         <div class="lightbox-img-wrap">
-            <img id="lightboxImg" src="" alt="Foto de propiedad ICDE Inmobiliaria Neiva">
-            <div class="lightbox-btns">
-                <button class="lightbox-btn" id="lightboxPrev">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-widt
+            <img id="lightboxImg" src="" alt="Foto propiedad" loading="lazy"/>
+        </div>
+        <button class="lightbox-nav" id="lightboxPrev">&#8249;</button>
+        <button class="lightbox-nav" id="lightboxNext">&#8250;</button>
+        <div class="lightbox-mins-wrap">
+            <div class="lightbox-mins" id="lightboxMins"></div>
+        </div>
+    </div>
+<!-- DETECTAR BÚSQUEDA DESDE GOOGLE -->
+<script>
+(function() {
+    // Leer parámetro ?q= de la URL
+    const params = new URLSearchParams(window.location.search);
+    const terminoBusqueda = params.get('q');
+    
+    if (terminoBusqueda && terminoBusqueda.trim() !== '') {
+        // Esperar a que carguen los datos
+        function intentarBuscar() {
+            // Verificar si existen los elementos necesarios
+            const inputBuscar = document.getElementById('filterBuscarNueva');
+            const inputMovil = document.getElementById('movilBuscar');
+            
+            if (typeof datos !== 'undefined' && datos.length > 0) {
+                // Llenar el campo de búsqueda
+                if (inputBuscar) {
+                    inputBuscar.value = terminoBusqueda;
+                }
+                if (inputMovil) {
+                    inputMovil.value = terminoBusqueda;
+                }
+                
+                // Aplicar filtro
+                filtros['Buscar'] = terminoBusqueda;
+                aplicarFiltros();
+                
+                // Scroll suave a resultados después de un momento
+                setTimeout(() => {
+                    const tarjetas = document.getElementById('tarjetas');
+                    if (tarjetas) {
+                        tarjetas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 800);
+                
+                console.log('🔍 Búsqueda aplicada:', terminoBusqueda);
+            } else {
+                // Reintentar en 500ms si los datos no han cargado
+                setTimeout(intentarBuscar, 500);
+            }
+        }
+        
+        // Iniciar búsqueda
+        intentarBuscar();
+    }
+})();
+</script>
+</body>
+</html>
