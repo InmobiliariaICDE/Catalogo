@@ -14,19 +14,46 @@
     ],
     "redirects": [
       {
-        "source": "https://www.icdeinmobiliaria.com/**",
-        "destination": "https://icdeinmobiliaria.com/:splat",
+        "source": "/blog",
+        "destination": "/blog.html",
         "type": 301
+      }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "X-Frame-Options",
+            "value": "SAMEORIGIN"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
+          }
+        ]
       },
       {
-        "source": "http://www.icdeinmobiliaria.com/**",
-        "destination": "https://icdeinmobiliaria.com/:splat",
-        "type": 301
+        "source": "**/*.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600, stale-while-revalidate=86400"
+          }
+        ]
       },
       {
-        "source": "http://icdeinmobiliaria.com/**",
-        "destination": "https://icdeinmobiliaria.com/:splat",
-        "type": 301
+        "source": "**/*.@(jpg|jpeg|png|gif|webp|svg|ico)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800, stale-while-revalidate=2592000"
+          }
+        ]
       }
     ]
   }
