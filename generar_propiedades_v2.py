@@ -410,6 +410,9 @@ def build_html(p: dict, slug: str) -> str:
     desc = str(p.get("Descripción") or "").strip()
     desc_html = f'<div class="content-section"><h2 class="section-title">DESCRIPCIÓN</h2><p class="content-text">{esc(desc)}</p></div>' if desc else ""
 
+    # ── COMBINADO PUNTOS + DESCRIPCIÓN ──
+    desc_puntos_combined = puntos_html + desc_html
+
     # ── WA TEXT ──
     from urllib.parse import quote as urlquote
     wa_text = urlquote(f"Hola, me interesa la propiedad: {p.get('Nombre','')} (Código {p.get('Código','')})")
@@ -632,7 +635,7 @@ body{{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min
 
       <div class="sec-cta">
         <div class="cta-group">
-          <a href="https://wa.me/{PHONE}?text={wa}"
+          <a href="https://wa.me/{PHONE}?text={wa_text}"
              class="cta-wa"
              target="_blank"
              rel="noopener noreferrer"

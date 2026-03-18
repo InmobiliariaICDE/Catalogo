@@ -69,167 +69,120 @@
 <style>
 :root{
   --gold:#d4a84b;--gold-dim:rgba(212,168,75,.12);--gold-border:rgba(212,168,75,.25);
-  --bg:#0a0a0a;--surface:#111;--surface2:#1a1a1f;--surface3:#222228;
+  --bg:#0a0a0a;--surface:#111;--surface2:#1a1a1f;
   --text:#e4e4e7;--text-muted:#a1a1aa;--text-faint:#52525b;
-  --border:rgba(255,255,255,.07);--radius:12px;
+  --border:rgba(255,255,255,.07);--r:12px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.7}
 
-/* ── HEADER ── */
-.site-header{
-  background:rgba(10,10,10,.96);border-bottom:1px solid var(--border);
-  padding:0 1.5rem;height:60px;display:flex;align-items:center;
-  justify-content:space-between;position:sticky;top:0;z-index:200;
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-}
+.site-header{background:rgba(10,10,10,.96);border-bottom:1px solid var(--border);padding:0 1.25rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 .site-header img{height:34px;display:block}
-.back-btn{
-  display:flex;align-items:center;gap:6px;color:var(--text-muted);
-  text-decoration:none;font-size:13px;border:1px solid var(--border);
-  padding:6px 14px;border-radius:8px;transition:all .15s;white-space:nowrap;
-}
+.back-btn{display:flex;align-items:center;gap:6px;color:var(--text-muted);text-decoration:none;font-size:13px;border:1px solid var(--border);padding:6px 12px;border-radius:8px;transition:all .15s;white-space:nowrap}
 .back-btn:hover{color:var(--gold);border-color:var(--gold-border)}
-.back-btn svg{flex-shrink:0}
 
-/* ── BREADCRUMB ── */
-.breadcrumb{
-  padding:.6rem 1.5rem;font-size:12px;color:var(--text-faint);
-  border-bottom:1px solid var(--border);
-  display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;
-}
-.breadcrumb a{color:var(--text-faint);text-decoration:none;transition:color .15s}
+.breadcrumb{padding:.5rem 1.25rem;font-size:12px;color:var(--text-faint);border-bottom:1px solid var(--border);display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
+.breadcrumb a{color:var(--text-faint);text-decoration:none}
 .breadcrumb a:hover{color:var(--gold)}
 
-/* ── LAYOUT ── */
-.page-grid{
-  display:grid;grid-template-columns:1fr 360px;gap:1.25rem;
-  max-width:1080px;margin:0 auto;padding:1rem 1.25rem;
-}
-@media(max-width:820px){.page-grid{grid-template-columns:1fr;padding:.75rem}}
+/* ── GRID DESKTOP ── */
+.page-wrap{width:100%;padding:1.5rem 2.5rem}
+.page-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:1.25rem;width:100%}
 
 /* ── GALERÍA ── */
-.galeria-wrap{position:relative;background:var(--surface);border-radius:var(--radius);overflow:hidden;aspect-ratio:4/3;}
-.galeria-img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .2s}
-.img-contador{
-  position:absolute;top:12px;left:12px;background:rgba(0,0,0,.65);
-  color:#fff;font-size:12px;padding:3px 10px;border-radius:20px;z-index:2;
-  backdrop-filter:blur(4px);
-}
-.galeria-nav{
-  position:absolute;top:50%;transform:translateY(-50%);
-  background:rgba(0,0,0,.55);border:none;color:#fff;
-  width:36px;height:36px;border-radius:50%;cursor:pointer;
-  font-size:20px;display:flex;align-items:center;justify-content:center;
-  transition:background .15s;z-index:2;backdrop-filter:blur(4px);
-}
+.galeria-wrap{position:relative;background:var(--surface);border-radius:var(--r);overflow:hidden;width:100%}
+.galeria-img{width:100%;height:auto;max-height:460px;object-fit:cover;display:block}
+.img-contador{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.65);color:#fff;font-size:12px;padding:3px 10px;border-radius:20px;z-index:2}
+.galeria-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.55);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;transition:background .15s;z-index:2}
 .galeria-nav:hover{background:rgba(212,168,75,.7)}
 .galeria-nav.prev{left:10px}.galeria-nav.next{right:10px}
-.galeria-expand{
-  position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,.55);
-  border:none;color:#fff;width:32px;height:32px;border-radius:8px;
-  cursor:pointer;font-size:16px;display:flex;align-items:center;
-  justify-content:center;z-index:2;transition:background .15s;
-  backdrop-filter:blur(4px);
-}
+.galeria-expand{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.55);border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;z-index:2;transition:background .15s}
 .galeria-expand:hover{background:rgba(212,168,75,.7)}
-.miniaturas-wrap{margin-top:.6rem;overflow-x:auto;padding-bottom:4px}
-.miniaturas{display:flex;gap:.4rem;width:max-content}
-.miniatura{
-  width:72px;height:54px;object-fit:cover;border-radius:6px;
-  cursor:pointer;opacity:.55;transition:opacity .15s,border-color .15s;
-  border:2px solid transparent;flex-shrink:0;
-}
+.miniaturas-wrap{margin-top:.5rem;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:var(--gold-border) transparent}
+.miniaturas-wrap::-webkit-scrollbar{height:3px}
+.miniaturas-wrap::-webkit-scrollbar-track{background:transparent}
+.miniaturas-wrap::-webkit-scrollbar-thumb{background:var(--gold-border);border-radius:3px}
+.miniaturas{display:flex;gap:.35rem}
+.miniatura{width:68px;height:51px;object-fit:cover;border-radius:6px;flex-shrink:0;cursor:pointer;opacity:.55;transition:opacity .15s,border-color .15s;border:2px solid transparent}
 .miniatura.activa,.miniatura:hover{opacity:1;border-color:var(--gold)}
 
 /* ── LIGHTBOX ── */
-.lightbox{
-  display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);
-  z-index:1000;align-items:center;justify-content:center;
-}
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:1000;align-items:center;justify-content:center}
 .lightbox.open{display:flex}
 .lightbox img{max-width:92vw;max-height:88vh;object-fit:contain;border-radius:8px}
-.lightbox-close{
-  position:absolute;top:16px;right:20px;background:none;border:none;
-  color:#fff;font-size:28px;cursor:pointer;opacity:.7;transition:opacity .15s;
-}
+.lightbox-close{position:absolute;top:16px;right:20px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;opacity:.7}
 .lightbox-close:hover{opacity:1}
-.lightbox-nav{
-  position:absolute;top:50%;transform:translateY(-50%);
-  background:rgba(255,255,255,.1);border:none;color:#fff;
-  width:44px;height:44px;border-radius:50%;cursor:pointer;
-  font-size:22px;display:flex;align-items:center;justify-content:center;
-  transition:background .15s;
-}
+.lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.1);border:none;color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:22px;display:flex;align-items:center;justify-content:center;transition:background .15s}
 .lightbox-nav:hover{background:rgba(212,168,75,.5)}
 .lightbox-nav.prev{left:16px}.lightbox-nav.next{right:16px}
-.lightbox-counter{
-  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
-  color:rgba(255,255,255,.6);font-size:13px;
-}
+.lightbox-counter{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.6);font-size:13px}
 
 /* ── PANEL DERECHO ── */
-.prop-panel{display:flex;flex-direction:column;gap:1rem}
-.prop-nombre{font-size:1.25rem;font-weight:600;color:#fff;line-height:1.3}
-.prop-tipo-badge{
-  font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--gold);background:var(--gold-dim);border:1px solid var(--gold-border);
-  border-radius:4px;padding:.2rem .6rem;display:inline-block;margin-bottom:.5rem;
-}
-.prop-codigo{font-size:12px;color:var(--text-faint);margin-bottom:.25rem}
-.prop-precio{font-size:1.5rem;font-weight:700;color:#22c55e;line-height:1}
+.prop-panel{display:flex;flex-direction:column;gap:.85rem;min-width:0}
+.prop-tipo-badge{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:4px;padding:.2rem .6rem;display:inline-block;margin-bottom:.4rem}
+.prop-codigo{font-size:12px;color:var(--text-faint);margin-bottom:.2rem}
+.prop-nombre{font-size:1.2rem;font-weight:600;color:#fff;line-height:1.3}
+.prop-precio{font-size:1.4rem;font-weight:700;color:#22c55e;line-height:1}
 
 /* ── CHIPS ── */
-.chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.25rem}
-.chip{
-  display:inline-flex;align-items:center;gap:5px;
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:6px;padding:5px 10px;font-size:13px;color:var(--text-muted);
-}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem}
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 9px;font-size:12px;color:var(--text-muted)}
 .chip svg{flex-shrink:0;color:var(--gold)}
 
 /* ── CTA ── */
-.cta-group{display:flex;flex-direction:column;gap:.6rem;margin-top:.25rem}
-.cta-wa{
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  background:var(--gold);color:#000;font-weight:600;font-size:14px;
-  padding:13px 20px;border-radius:10px;text-decoration:none;
-  transition:opacity .15s;
-}
+.cta-group{display:flex;flex-direction:column;gap:.5rem}
+.cta-wa{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--gold);color:#000;font-weight:600;font-size:14px;padding:13px 16px;border-radius:10px;text-decoration:none;transition:opacity .15s}
 .cta-wa:hover{opacity:.88}
-.cta-share{
-  display:flex;align-items:center;justify-content:center;gap:6px;
-  border:1px solid var(--border);color:var(--text-muted);font-size:13px;
-  padding:11px 20px;border-radius:10px;cursor:pointer;background:none;
-  transition:all .15s;font-family:'Outfit',sans-serif;
-}
+.cta-share{display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border);color:var(--text-muted);font-size:13px;padding:10px 16px;border-radius:10px;cursor:pointer;background:none;transition:all .15s;font-family:'Outfit',sans-serif}
 .cta-share:hover{color:var(--gold);border-color:var(--gold-border)}
 .share-confirm{font-size:12px;color:var(--gold);text-align:center;display:none}
 
-/* ── SECCIONES CARACTERÍSTICAS / CONTENIDO ── */
-.char-section,.content-section{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:1.25rem;
-}
-.section-title{
-  font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--gold);margin-bottom:.9rem;
-}
-.char-table{width:100%;border-collapse:collapse;font-size:14px}
+/* ── CARACTERÍSTICAS / CONTENIDO ── */
+.char-section,.content-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem}
+.section-title{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:.75rem}
+.char-table{width:100%;border-collapse:collapse;font-size:13px}
 .char-table tr{border-bottom:1px solid var(--border)}
 .char-table tr:last-child{border-bottom:none}
-.char-label{color:var(--text-muted);padding:.55rem 0;width:50%}
-.char-val{color:var(--text);font-weight:500;text-align:right;padding:.55rem 0}
+.char-label{color:var(--text-muted);padding:.45rem 0;width:50%}
+.char-val{color:var(--text);font-weight:500;text-align:right;padding:.45rem 0}
 .content-text{font-size:14px;color:var(--text-muted);line-height:1.8}
 
+.left-col{display:flex;flex-direction:column;gap:.75rem;min-width:0}
+
 /* ── FOOTER ── */
-.site-footer{
-  text-align:center;padding:2rem 1.5rem;font-size:12px;
-  color:var(--text-faint);border-top:1px solid var(--border);margin-top:2rem;
-}
-.site-footer a{color:var(--text-faint);text-decoration:none;transition:color .15s}
+.site-footer{text-align:center;padding:1.5rem 1rem;font-size:12px;color:var(--text-faint);border-top:1px solid var(--border);margin-top:1.5rem}
+.site-footer a{color:var(--text-faint);text-decoration:none}
 .site-footer a:hover{color:var(--gold)}
+
+/* ── MÓVIL ── */
+@media(max-width:680px){
+  .page-wrap{padding:.75rem}
+  /* Convertir grid en flex column con orden explícito */
+  .page-grid{display:flex;flex-direction:column;gap:.75rem}
+  .left-col,.prop-panel{display:contents}
+  /* Orden en móvil: galería → precio → chips → tabla → cta → desc */
+  .sec-galeria{order:1}
+  .sec-precio{order:2}
+  .sec-chips{order:3}
+  .sec-tabla{order:4}
+  .sec-cta{order:5}
+  .sec-desc{order:6}
+  .sec-nombre{order:7} /* nombre/badge/codigo al final en móvil es raro — lo ponemos antes del precio */
+  /* Reordenar más intuitivo: nombre→precio→galería→chips→tabla→cta→desc */
+  .sec-nombre{order:1}
+  .sec-precio{order:2}
+  .sec-galeria{order:3}
+  .sec-chips{order:4}
+  .sec-tabla{order:5}
+  .sec-desc{order:6}
+  .sec-cta{order:7}
+  .galeria-img{max-height:280px}
+  .miniatura{width:56px;height:42px}
+  .chip{font-size:11px;padding:3px 7px}
+  .prop-nombre{font-size:1.05rem}
+  .prop-precio{font-size:1.25rem}
+}
 </style>
 </head>
 <body>
@@ -266,46 +219,57 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 
 <!-- CONTENIDO PRINCIPAL -->
 <main>
+  <div class="page-wrap">
   <div class="page-grid">
 
-    <!-- COLUMNA IZQUIERDA: galería + características + descripción -->
-    <div>
-      <div class="galeria-wrap"><div class="img-contador"><span id="imgActual">1</span> / 35</div><button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button><button class="galeria-expand" onclick="abrirLightbox(imgIndex)" title="Expandir">&#x26F6;</button><img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczNWN4wvvAThVWbvFnZ-Cu1RpPU4fWYyC4D7yaHpX0Hdqz-4KshhWHEItIDCx1AwRNLKLtmwwiN0dXOEzBrvfLqn-IxMa-zHtadcq82squLz3AE_5y1G=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager" fetchpriority="high"/></div>
-      <div class="miniaturas-wrap"><div class="miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczNWN4wvvAThVWbvFnZ-Cu1RpPU4fWYyC4D7yaHpX0Hdqz-4KshhWHEItIDCx1AwRNLKLtmwwiN0dXOEzBrvfLqn-IxMa-zHtadcq82squLz3AE_5y1G=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 1" class="miniatura activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczONeO2t0RSR-E6hjRWVkVbVKRf4Gmc59e4CWRBtaBzkrv3sZE49zTdzOUQj0px2XrajM7FlM1pX1QzjeO61bpIcuaV4PzwzY5wXivuwK80MhFJEin6v=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 2" class="miniatura" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMcfdwAvERMr59bL7i30dAZXYFUTIU4DQXez5HqvhEMXOLLy1fteYirSgt2E8ZN4-J9F2jGJEoJ3A7CpAfVFyBW_Wzn6KEj3pSFFyQLrCgrNqXr7IHS=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 3" class="miniatura" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPmB-R3-JCyt0UZqhqddjsNjaxfPiy68V8rUNkmcR3d3mTpSW3hcfpJWE7aeT2uxq4MU41MZRGwNu2-mrZznEiijHlzJeTGdZJWqI6jOreSDkZGoqqe=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 4" class="miniatura" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOJZ0BLEttFC13sKGeLDE6QWWafRaYO-dX8PaR_xp_u2neqgMplFKIYWyQ2rESqgbSrd7d65g8UV66ZcjF0dFqVGK7I_zHVvPdjVnIr6BHv_nGGSbpq=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 5" class="miniatura" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPlKIbBODMThGX0kUPOoiHAggsG8V5cRo3iY88dl5aXQVTsr-xn4eXrocYvX1GafM-bh6lH1uXWO8HMGyhDqBFNQRG3JOXj48sptTbkzCs8_qCFf_yH=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 6" class="miniatura" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOpq23qtsAydtO1V92E2wqHgBfE21hLNMLEXIuQosUZuadCS2qpKeW12i_CfivlONptK3OVqKTjU0JDqolzJAXCzUkn97WXHie7QWMxnrs0WEoMIjio=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 7" class="miniatura" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNJqzPhEG_bFyz_GzkwWOypULSNohJVLNfoRgJNlXA9fm5w8pigAFMExyY38W42oLQekpAoADi41IRnYMMH6l5pN6CrDWFDRhnuPCOZ_QDccPb2f2iJ=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 8" class="miniatura" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPr_aiiVVfQ4CjqJIin7hEXg952jVvwSQym0yD6aq7P4Kwp_Eu4ZazBK56qJWX3Z4apPi5nJ6JZrxq-UfoI9UN5KoOiGg1-OQ0OTLEYt9Hz__2dw7wi=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 9" class="miniatura" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPP4_LcswSnbpWuiTsOp2irKhXFjb_LjF-nQk6MdFR9vuZ91t6RNnP5neXVIWbEZOonmjwwgexWqrmHik-IBVb_JpG4UIqF2jyhOumGwZqu0ni_TGRn=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 10" class="miniatura" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO3B1uF8KTywsdlp3sqRUfBEwRfaW0CLG0p-dwlnUqv_RkUG50BqS6jB-4GWNdajHvMvsGzWZ1-9XhzsVbFGiJ_8rtrBMQOZGkvx3nVOi8Kb-qOyDVK=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 11" class="miniatura" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPLa79nZPIwNKrWnmQ63ce7woFNYt8CkcRZbJulhkd_YS9FIK8VZ3NJApqmGHsWzJVGL84owEDgf2LMarI_xGDV0uoB--3SLB6SWnVjE8SdYUrscT8L=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 12" class="miniatura" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM3Wq24d5oNPKpbJORW-sxFHesZOghlfCiIDFOaEoEiSZHKY66o_MF2WvE47ZR2BLaSJTCm_xeQIcHmX2rSWLJYW6vaTczGKEDHsbOgHn6dvETr11X_=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 13" class="miniatura" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNSC-pYsK_Z9FyGwuHSma6TI_hUVggOFgpTkhWokLbg2CHT5MWvmNJ7e_ykvsi5UURzxF7vZE72jv1bea5uj2kHk4NSbMpy0p7cHH0sDYOLDwshBLqk=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 14" class="miniatura" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOmuo4C5QgFuppWJn-kBUXjkVEtLj2_cDxEp5ReVF6TJuXlhEZ4QVyrooiq1s5IOkDgLDw8hOYyLkRb3Cm3COlfNyjvqvF0__wBokkQ9Ljg26UXmG_R=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 15" class="miniatura" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN3N9z_QUP937iWbw5nFXXvooxa6BcsQt8us2c8rHBLqdwK-5z5AN8btk7sotaY-Cfeul7x7Mni8FvsMrAPHEAs9fdO7PtF7-8ZQoOcfVADRouJmpJa=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 16" class="miniatura" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOJZtSINn7mqStZppYEIgQd-oUuPUfZB5SJMSmX8GAuZUe5otKCvDcHo2wVVj6vE79FjqX3XUAi_Z7doxB2e_MiMwMSq0IQutlSL4NttOz2oTgaLhYN=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 17" class="miniatura" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOj8lwf2ZNqRF5T0fyQVx2hF79heFxO0nXvXSz97Ind7nRJwD4hyiq8OjPxm1_xgSXeX-H9taPb2R_zWQ6FXfbSFE9SGOYD6-QcwSNOXLHprBaPpR0_=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 18" class="miniatura" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM7dyex41mhap0bLIy4Q6ifrFlcOfA8eS_beO2OLqDLBXxkS2HgaokcPexkikKtWD3FnFLzZp6HhzIM4XHQb1I6WMl27p42-WWFkscXxIpyNhatTkNZ=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 19" class="miniatura" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNozaRUF2TTtwDuqXl4qhxz8CqXVVd6DmOlbOlqlJRjppC9X08UGrvE96dH16AqPB8Dw267APjmksFR9kv8sGvQaxIBKlqOVZgA-phe-FQmjNA-p9hm=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 20" class="miniatura" onclick="irImg(19)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN-S600IMIdRM2QBlksKxpW6JaWrovea7j8j-2SLC6ocfz16j5-xDGFIxW9MIKDhzgFkfu0fd-n1eDypKfwuCDf9r_Sz3qT1pw_xf8mbcn4_NzdwVmn=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 21" class="miniatura" onclick="irImg(20)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPNFo5JxXrowBoGxjZoEYrtUhmYnID4pmX9fNnq-m_xAN9loaGvyGI0JPJMDmfBqEQnlGoWrmcCAy3MVW9D-Zu-uMQAEX1r0bBlfI9s979iLUg008xt=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 22" class="miniatura" onclick="irImg(21)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPZ5Pb7s1uKyV57snjNo5tpPBXo6c4P3CMXmUmtG0PsUmwiCrCC81ZK6wP3TTbZQgr_88ULwYOYcarytpUEDgdn27VMBUnueiwqlDXJJlASCdjiUcVR=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 23" class="miniatura" onclick="irImg(22)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMvrVuhkc45QF6QY4nPjfL3ZqqeWK0Jyrjr7eW5vRsl4frw8hEMfSagdS4PU30nXupHHDG3UAgBzuFRZntK-FradBbMRPlpklIL8L3OGSL3y5O7tk7E=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 24" class="miniatura" onclick="irImg(23)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP6h_hsKweGvTsPTZc4u2btu-ZKr7lRysl1UmwfUokHSdQlJWVj8ogJ1Ee-zFfWNXARDHj_maCOXXzb0xi0xugfBpsDVykpuv3Vhx57Iv5kVSCFpzEr=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 25" class="miniatura" onclick="irImg(24)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMpz3GunN_jhSvCRJdx3rXTuDZu9LVbyF6D6lockPzfPpXH2cf8-5G6NvsHBAAnkOb1-TgZaUY7FXESYs91wkRLGTL1BSifDZOT2T-48KdNtwx4sssK=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 26" class="miniatura" onclick="irImg(25)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOeurqEFnPdSak-qKVjhr_z-rB5mAdtFDYsnDt0Fu3KTTWHCyaZGEc0v6s8jg0I6x7sR-npXUxVvAcJFRyxoHj6Rl3RpRgsQrhEysyPugWzlX1hRTzM=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 27" class="miniatura" onclick="irImg(26)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPBp93jmynINiul466P5Li5v6UDC-FmgFN339gLIF1O74Ob0ORAvrEgn6K5bxIsm_C_3LzEQO6JJAUbT4B3APl7PRc5S6JzaJzvvJvtHcG96Tgzwobs=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 28" class="miniatura" onclick="irImg(27)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOCaxrKnv4IGa2yOjonRUrG8XMFszRWJYs5oWeFbZ6cp64fcmXTQBjliNuBh4ZifDhC7If6yNc6JGklLhQ0NyyKP-7sKs9ZCLkMLm7_9ha8iRATg1-w=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 29" class="miniatura" onclick="irImg(28)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOh4taigya77OM52t4g7YwALyxvRanYN2TJA1l4hjKt9HXMHKDQw4WSgpFPvtiT5MOE2fC8TLYOHV9fdnVMBeP5qNpERnTNSyW23YQ_plH0RHJXN4ZS=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 30" class="miniatura" onclick="irImg(29)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOlnAO6GsOnQPd8EfXMyjnsRHt6pN4d8bjLSi1gmvEqiPmdXFcUN7IPF8zgXqzZt_U_7fXDOsuM47KtES_F7i6eL2f95633H_bmezjitql2unn1yiu0=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 31" class="miniatura" onclick="irImg(30)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNRWvjlQTCcmBF9SmwTTKYyhGkJx9DPJQK5VodDszCqlLOKyWWGAdF9QpW_LkVK1jwQGlYOe_4YvX7_PM7hC7cWAhlsKjXoKF312AmZMW-dTam0JFv5=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 32" class="miniatura" onclick="irImg(31)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMWBlGCWSlBlWzGFJl7ui5K-vx9B7_1mI459RpgjmLkigrpaQ5VQSYUMFePUPyM-gKW1C6bfNR846-vBMELCw2VV8AuffWVxLw09yzRJwNTuqf5UMOW=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 33" class="miniatura" onclick="irImg(32)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMdwTd3D_PB16JlQs4CaM0ayedCZRa83kwUesAH4GUXvbC-xx5GEmZg7pY44fNtZQOWRS1_iVsCpOTxT3TAMfhXhkvQnWvZBpn8s1IBXTtZZQHsdx1_=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 34" class="miniatura" onclick="irImg(33)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP8ZA-LfP5ExMPLB-0s--txQbe_HfhLAMWVmDqGZt6BWusQeHuPj6JPXGXDYB0tyPKRBGydEYankGBSrOcD1vYULAx1PdKaoh7Mhaf5vb0tycOwfBsk=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 35" class="miniatura" onclick="irImg(34)" loading="lazy"/></div></div>
+    <!-- COLUMNA IZQUIERDA: galería + descripción -->
+    <div class="left-col">
 
-      <div style="margin-top:1.25rem;display:flex;flex-direction:column;gap:1rem;">
-        <div class="content-section"><h2 class="section-title">PUNTOS CLAVE</h2><p class="content-text">Casa con un apartaestudio</p></div>
-        <div class="content-section"><h2 class="section-title">DESCRIPCIÓN</h2><p class="content-text">Área 176 M2, casa remodelada, enrejada, garaje para un vehìculo, sala-comedor, cocina integral, patio interior decorado con piedra, patio de ropas, zona de lavanderìa, instalaciòn para lavadora, tres alcobas con closet y con baño cada una. Estrato 2 Apartaestudio: 50 M2, sala-comedor, alcoba con closet, baño, cocina integral, patio de ropas, zona de lavanderìa, instalaciòn para lavadora. pisos en porcelanato. Estrato 2</p></div>
+      <div class="sec-galeria">
+        <div class="galeria-wrap"><div class="img-contador"><span id="imgActual">1</span> / 35</div><button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button><button class="galeria-expand" onclick="abrirLightbox(imgIndex)" title="Expandir">&#x26F6;</button><img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczNWN4wvvAThVWbvFnZ-Cu1RpPU4fWYyC4D7yaHpX0Hdqz-4KshhWHEItIDCx1AwRNLKLtmwwiN0dXOEzBrvfLqn-IxMa-zHtadcq82squLz3AE_5y1G=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager" fetchpriority="high"/></div>
+        <div class="miniaturas-wrap"><div class="miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczNWN4wvvAThVWbvFnZ-Cu1RpPU4fWYyC4D7yaHpX0Hdqz-4KshhWHEItIDCx1AwRNLKLtmwwiN0dXOEzBrvfLqn-IxMa-zHtadcq82squLz3AE_5y1G=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 1" class="miniatura activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczONeO2t0RSR-E6hjRWVkVbVKRf4Gmc59e4CWRBtaBzkrv3sZE49zTdzOUQj0px2XrajM7FlM1pX1QzjeO61bpIcuaV4PzwzY5wXivuwK80MhFJEin6v=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 2" class="miniatura" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMcfdwAvERMr59bL7i30dAZXYFUTIU4DQXez5HqvhEMXOLLy1fteYirSgt2E8ZN4-J9F2jGJEoJ3A7CpAfVFyBW_Wzn6KEj3pSFFyQLrCgrNqXr7IHS=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 3" class="miniatura" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPmB-R3-JCyt0UZqhqddjsNjaxfPiy68V8rUNkmcR3d3mTpSW3hcfpJWE7aeT2uxq4MU41MZRGwNu2-mrZznEiijHlzJeTGdZJWqI6jOreSDkZGoqqe=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 4" class="miniatura" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOJZ0BLEttFC13sKGeLDE6QWWafRaYO-dX8PaR_xp_u2neqgMplFKIYWyQ2rESqgbSrd7d65g8UV66ZcjF0dFqVGK7I_zHVvPdjVnIr6BHv_nGGSbpq=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 5" class="miniatura" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPlKIbBODMThGX0kUPOoiHAggsG8V5cRo3iY88dl5aXQVTsr-xn4eXrocYvX1GafM-bh6lH1uXWO8HMGyhDqBFNQRG3JOXj48sptTbkzCs8_qCFf_yH=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 6" class="miniatura" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOpq23qtsAydtO1V92E2wqHgBfE21hLNMLEXIuQosUZuadCS2qpKeW12i_CfivlONptK3OVqKTjU0JDqolzJAXCzUkn97WXHie7QWMxnrs0WEoMIjio=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 7" class="miniatura" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNJqzPhEG_bFyz_GzkwWOypULSNohJVLNfoRgJNlXA9fm5w8pigAFMExyY38W42oLQekpAoADi41IRnYMMH6l5pN6CrDWFDRhnuPCOZ_QDccPb2f2iJ=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 8" class="miniatura" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPr_aiiVVfQ4CjqJIin7hEXg952jVvwSQym0yD6aq7P4Kwp_Eu4ZazBK56qJWX3Z4apPi5nJ6JZrxq-UfoI9UN5KoOiGg1-OQ0OTLEYt9Hz__2dw7wi=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 9" class="miniatura" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPP4_LcswSnbpWuiTsOp2irKhXFjb_LjF-nQk6MdFR9vuZ91t6RNnP5neXVIWbEZOonmjwwgexWqrmHik-IBVb_JpG4UIqF2jyhOumGwZqu0ni_TGRn=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 10" class="miniatura" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO3B1uF8KTywsdlp3sqRUfBEwRfaW0CLG0p-dwlnUqv_RkUG50BqS6jB-4GWNdajHvMvsGzWZ1-9XhzsVbFGiJ_8rtrBMQOZGkvx3nVOi8Kb-qOyDVK=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 11" class="miniatura" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPLa79nZPIwNKrWnmQ63ce7woFNYt8CkcRZbJulhkd_YS9FIK8VZ3NJApqmGHsWzJVGL84owEDgf2LMarI_xGDV0uoB--3SLB6SWnVjE8SdYUrscT8L=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 12" class="miniatura" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM3Wq24d5oNPKpbJORW-sxFHesZOghlfCiIDFOaEoEiSZHKY66o_MF2WvE47ZR2BLaSJTCm_xeQIcHmX2rSWLJYW6vaTczGKEDHsbOgHn6dvETr11X_=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 13" class="miniatura" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNSC-pYsK_Z9FyGwuHSma6TI_hUVggOFgpTkhWokLbg2CHT5MWvmNJ7e_ykvsi5UURzxF7vZE72jv1bea5uj2kHk4NSbMpy0p7cHH0sDYOLDwshBLqk=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 14" class="miniatura" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOmuo4C5QgFuppWJn-kBUXjkVEtLj2_cDxEp5ReVF6TJuXlhEZ4QVyrooiq1s5IOkDgLDw8hOYyLkRb3Cm3COlfNyjvqvF0__wBokkQ9Ljg26UXmG_R=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 15" class="miniatura" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN3N9z_QUP937iWbw5nFXXvooxa6BcsQt8us2c8rHBLqdwK-5z5AN8btk7sotaY-Cfeul7x7Mni8FvsMrAPHEAs9fdO7PtF7-8ZQoOcfVADRouJmpJa=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 16" class="miniatura" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOJZtSINn7mqStZppYEIgQd-oUuPUfZB5SJMSmX8GAuZUe5otKCvDcHo2wVVj6vE79FjqX3XUAi_Z7doxB2e_MiMwMSq0IQutlSL4NttOz2oTgaLhYN=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 17" class="miniatura" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOj8lwf2ZNqRF5T0fyQVx2hF79heFxO0nXvXSz97Ind7nRJwD4hyiq8OjPxm1_xgSXeX-H9taPb2R_zWQ6FXfbSFE9SGOYD6-QcwSNOXLHprBaPpR0_=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 18" class="miniatura" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM7dyex41mhap0bLIy4Q6ifrFlcOfA8eS_beO2OLqDLBXxkS2HgaokcPexkikKtWD3FnFLzZp6HhzIM4XHQb1I6WMl27p42-WWFkscXxIpyNhatTkNZ=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 19" class="miniatura" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNozaRUF2TTtwDuqXl4qhxz8CqXVVd6DmOlbOlqlJRjppC9X08UGrvE96dH16AqPB8Dw267APjmksFR9kv8sGvQaxIBKlqOVZgA-phe-FQmjNA-p9hm=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 20" class="miniatura" onclick="irImg(19)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN-S600IMIdRM2QBlksKxpW6JaWrovea7j8j-2SLC6ocfz16j5-xDGFIxW9MIKDhzgFkfu0fd-n1eDypKfwuCDf9r_Sz3qT1pw_xf8mbcn4_NzdwVmn=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 21" class="miniatura" onclick="irImg(20)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPNFo5JxXrowBoGxjZoEYrtUhmYnID4pmX9fNnq-m_xAN9loaGvyGI0JPJMDmfBqEQnlGoWrmcCAy3MVW9D-Zu-uMQAEX1r0bBlfI9s979iLUg008xt=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 22" class="miniatura" onclick="irImg(21)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPZ5Pb7s1uKyV57snjNo5tpPBXo6c4P3CMXmUmtG0PsUmwiCrCC81ZK6wP3TTbZQgr_88ULwYOYcarytpUEDgdn27VMBUnueiwqlDXJJlASCdjiUcVR=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 23" class="miniatura" onclick="irImg(22)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMvrVuhkc45QF6QY4nPjfL3ZqqeWK0Jyrjr7eW5vRsl4frw8hEMfSagdS4PU30nXupHHDG3UAgBzuFRZntK-FradBbMRPlpklIL8L3OGSL3y5O7tk7E=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 24" class="miniatura" onclick="irImg(23)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP6h_hsKweGvTsPTZc4u2btu-ZKr7lRysl1UmwfUokHSdQlJWVj8ogJ1Ee-zFfWNXARDHj_maCOXXzb0xi0xugfBpsDVykpuv3Vhx57Iv5kVSCFpzEr=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 25" class="miniatura" onclick="irImg(24)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMpz3GunN_jhSvCRJdx3rXTuDZu9LVbyF6D6lockPzfPpXH2cf8-5G6NvsHBAAnkOb1-TgZaUY7FXESYs91wkRLGTL1BSifDZOT2T-48KdNtwx4sssK=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 26" class="miniatura" onclick="irImg(25)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOeurqEFnPdSak-qKVjhr_z-rB5mAdtFDYsnDt0Fu3KTTWHCyaZGEc0v6s8jg0I6x7sR-npXUxVvAcJFRyxoHj6Rl3RpRgsQrhEysyPugWzlX1hRTzM=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 27" class="miniatura" onclick="irImg(26)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPBp93jmynINiul466P5Li5v6UDC-FmgFN339gLIF1O74Ob0ORAvrEgn6K5bxIsm_C_3LzEQO6JJAUbT4B3APl7PRc5S6JzaJzvvJvtHcG96Tgzwobs=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 28" class="miniatura" onclick="irImg(27)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOCaxrKnv4IGa2yOjonRUrG8XMFszRWJYs5oWeFbZ6cp64fcmXTQBjliNuBh4ZifDhC7If6yNc6JGklLhQ0NyyKP-7sKs9ZCLkMLm7_9ha8iRATg1-w=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 29" class="miniatura" onclick="irImg(28)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOh4taigya77OM52t4g7YwALyxvRanYN2TJA1l4hjKt9HXMHKDQw4WSgpFPvtiT5MOE2fC8TLYOHV9fdnVMBeP5qNpERnTNSyW23YQ_plH0RHJXN4ZS=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 30" class="miniatura" onclick="irImg(29)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOlnAO6GsOnQPd8EfXMyjnsRHt6pN4d8bjLSi1gmvEqiPmdXFcUN7IPF8zgXqzZt_U_7fXDOsuM47KtES_F7i6eL2f95633H_bmezjitql2unn1yiu0=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 31" class="miniatura" onclick="irImg(30)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNRWvjlQTCcmBF9SmwTTKYyhGkJx9DPJQK5VodDszCqlLOKyWWGAdF9QpW_LkVK1jwQGlYOe_4YvX7_PM7hC7cWAhlsKjXoKF312AmZMW-dTam0JFv5=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 32" class="miniatura" onclick="irImg(31)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMWBlGCWSlBlWzGFJl7ui5K-vx9B7_1mI459RpgjmLkigrpaQ5VQSYUMFePUPyM-gKW1C6bfNR846-vBMELCw2VV8AuffWVxLw09yzRJwNTuqf5UMOW=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 33" class="miniatura" onclick="irImg(32)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMdwTd3D_PB16JlQs4CaM0ayedCZRa83kwUesAH4GUXvbC-xx5GEmZg7pY44fNtZQOWRS1_iVsCpOTxT3TAMfhXhkvQnWvZBpn8s1IBXTtZZQHsdx1_=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 34" class="miniatura" onclick="irImg(33)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP8ZA-LfP5ExMPLB-0s--txQbe_HfhLAMWVmDqGZt6BWusQeHuPj6JPXGXDYB0tyPKRBGydEYankGBSrOcD1vYULAx1PdKaoh7Mhaf5vb0tycOwfBsk=w1200" alt="Casa rentable en venta Cándido Leguízamo Neiva – ICDE Inmobiliaria foto 35" class="miniatura" onclick="irImg(34)" loading="lazy"/></div></div>
       </div>
+
+      <div class="sec-desc"><div class="content-section"><h2 class="section-title">PUNTOS CLAVE</h2><p class="content-text">Casa con un apartaestudio</p></div><div class="content-section"><h2 class="section-title">DESCRIPCIÓN</h2><p class="content-text">Área 176 M2, casa remodelada, enrejada, garaje para un vehìculo, sala-comedor, cocina integral, patio interior decorado con piedra, patio de ropas, zona de lavanderìa, instalaciòn para lavadora, tres alcobas con closet y con baño cada una. Estrato 2 Apartaestudio: 50 M2, sala-comedor, alcoba con closet, baño, cocina integral, patio de ropas, zona de lavanderìa, instalaciòn para lavadora. pisos en porcelanato. Estrato 2</p></div></div>
+
     </div>
 
-    <!-- COLUMNA DERECHA: nombre, precio, chips, tabla, CTA -->
+    <!-- COLUMNA DERECHA: nombre, precio, chips, tabla, cta -->
     <div class="prop-panel">
-      <div>
+
+      <div class="sec-nombre">
         <span class="prop-tipo-badge">Casa rentable</span>
         <p class="prop-codigo">Código: 587 </p>
         <h1 class="prop-nombre">Casa con apartaestudio en barrio Cándido</h1>
       </div>
-      <p class="prop-precio">$280.000.000</p>
-      <div class="chips"><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12V7a1 1 0 011-1h4a1 1 0 011 1v5M3 12h18M3 12v5h18v-5"/><path d="M13 6h4a1 1 0 011 1v5"/></svg>4 hab.</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16v4a4 4 0 01-4 4H8a4 4 0 01-4-4v-4z"/><path d="M6 12V5a2 2 0 012-2h1"/><circle cx="8" cy="3" r="1"/></svg>4 baños</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20M16 7l-1-4H9L8 7"/></svg>1 garaje</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 7l9-4 9 4M4 11v10M20 11v10M8 11v10M16 11v10M12 11v10"/></svg>1 pisos</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M6 7V5a2 2 0 014 0v2M14 7V5a2 2 0 014 0v2"/><circle cx="8" cy="14" r="2"/><circle cx="16" cy="14" r="2"/></svg>Cocina integral</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>176 m²</span></div>
-      <div class="char-section"><h2 class="section-title">CARACTERÍSTICAS</h2><table class="char-table"><tbody><tr><td class="char-label">Ciudad</td><td class="char-val">Neiva</td></tr><tr><td class="char-label">Zona</td><td class="char-val">Norte</td></tr><tr><td class="char-label">Estrato</td><td class="char-val">2</td></tr><tr><td class="char-label">Ubicación</td><td class="char-val">Medianera</td></tr><tr><td class="char-label">Área lote</td><td class="char-val">176</td></tr><tr><td class="char-label">Piscina</td><td class="char-val">No tiene</td></tr><tr><td class="char-label">Administración</td><td class="char-val">No aplica</td></tr><tr><td class="char-label">Retorno de la inversión</td><td class="char-val">23 años</td></tr><tr><td class="char-label">Rentabilidad</td><td class="char-val">Rentabilidad $1,000,000</td></tr></tbody></table></div>
-      <div class="cta-group">
-        <a href="https://wa.me/573208762117?text=Hola%2C%20me%20interesa%20la%20propiedad%3A%20Casa%20con%20apartaestudio%20en%20barrio%20C%C3%A1ndido%20%28C%C3%B3digo%20587%29"
-           class="cta-wa" target="_blank" rel="noopener noreferrer"
-           aria-label="Agendar visita por WhatsApp">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-          Agendar visita por WhatsApp
-        </a>
-        <button class="cta-share" onclick="compartir()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          Compartir
-        </button>
-        <p class="share-confirm" id="shareConfirm">¡Enlace copiado!</p>
-      </div>
 
+      <div class="sec-precio"><p class="prop-precio">$280.000.000</p></div>
+
+      <div class="sec-chips"><div class="chips"><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12V7a1 1 0 011-1h4a1 1 0 011 1v5M3 12h18M3 12v5h18v-5"/><path d="M13 6h4a1 1 0 011 1v5"/></svg>4 hab.</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16v4a4 4 0 01-4 4H8a4 4 0 01-4-4v-4z"/><path d="M6 12V5a2 2 0 012-2h1"/><circle cx="8" cy="3" r="1"/></svg>4 baños</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20M16 7l-1-4H9L8 7"/></svg>1 garaje</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 7l9-4 9 4M4 11v10M20 11v10M8 11v10M16 11v10M12 11v10"/></svg>1 pisos</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M6 7V5a2 2 0 014 0v2M14 7V5a2 2 0 014 0v2"/><circle cx="8" cy="14" r="2"/><circle cx="16" cy="14" r="2"/></svg>Cocina integral</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>176 m²</span></div></div>
+
+      <div class="sec-tabla"><div class="char-section"><h2 class="section-title">CARACTERÍSTICAS</h2><table class="char-table"><tbody><tr><td class="char-label">Ciudad</td><td class="char-val">Neiva</td></tr><tr><td class="char-label">Zona</td><td class="char-val">Norte</td></tr><tr><td class="char-label">Estrato</td><td class="char-val">2</td></tr><tr><td class="char-label">Ubicación</td><td class="char-val">Medianera</td></tr><tr><td class="char-label">Área lote</td><td class="char-val">176</td></tr><tr><td class="char-label">Piscina</td><td class="char-val">No tiene</td></tr><tr><td class="char-label">Administración</td><td class="char-val">No aplica</td></tr><tr><td class="char-label">Retorno de la inversión</td><td class="char-val">23 años</td></tr><tr><td class="char-label">Rentabilidad</td><td class="char-val">Rentabilidad $1,000,000</td></tr></tbody></table></div></div>
+
+      <div class="sec-cta">
+        <div class="cta-group">
+          <a href="https://wa.me/573208762117?text=Hola%2C%20me%20interesa%20la%20propiedad%3A%20Casa%20con%20apartaestudio%20en%20barrio%20C%C3%A1ndido%20%28C%C3%B3digo%20587%29"
+             class="cta-wa"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="Agendar visita por WhatsApp">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            Agendar visita por WhatsApp
+          </a>
+          <button class="cta-share" onclick="compartir()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Compartir
+          </button>
+          <p class="share-confirm" id="shareConfirm">¡Enlace copiado!</p>
+        </div>
+      </div>
 
     </div>
 
+  </div>
   </div>
 </main>
 
@@ -327,9 +291,15 @@ function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
   document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  document.querySelectorAll('.miniatura').forEach(function(m,j){
-    m.classList.toggle('activa', j === imgIndex);
-  });
+  var minis = document.querySelectorAll('.miniatura');
+  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var activa = minis[imgIndex];
+  if (activa) {
+    var wrap = activa.closest('.miniaturas-wrap');
+    if (wrap) {
+      wrap.scrollTo({ left: activa.offsetLeft - (wrap.offsetWidth/2) + (activa.offsetWidth/2), behavior:'smooth' });
+    }
+  }
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

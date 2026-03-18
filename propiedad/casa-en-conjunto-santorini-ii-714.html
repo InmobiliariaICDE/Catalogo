@@ -69,167 +69,120 @@
 <style>
 :root{
   --gold:#d4a84b;--gold-dim:rgba(212,168,75,.12);--gold-border:rgba(212,168,75,.25);
-  --bg:#0a0a0a;--surface:#111;--surface2:#1a1a1f;--surface3:#222228;
+  --bg:#0a0a0a;--surface:#111;--surface2:#1a1a1f;
   --text:#e4e4e7;--text-muted:#a1a1aa;--text-faint:#52525b;
-  --border:rgba(255,255,255,.07);--radius:12px;
+  --border:rgba(255,255,255,.07);--r:12px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.7}
 
-/* ── HEADER ── */
-.site-header{
-  background:rgba(10,10,10,.96);border-bottom:1px solid var(--border);
-  padding:0 1.5rem;height:60px;display:flex;align-items:center;
-  justify-content:space-between;position:sticky;top:0;z-index:200;
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-}
+.site-header{background:rgba(10,10,10,.96);border-bottom:1px solid var(--border);padding:0 1.25rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 .site-header img{height:34px;display:block}
-.back-btn{
-  display:flex;align-items:center;gap:6px;color:var(--text-muted);
-  text-decoration:none;font-size:13px;border:1px solid var(--border);
-  padding:6px 14px;border-radius:8px;transition:all .15s;white-space:nowrap;
-}
+.back-btn{display:flex;align-items:center;gap:6px;color:var(--text-muted);text-decoration:none;font-size:13px;border:1px solid var(--border);padding:6px 12px;border-radius:8px;transition:all .15s;white-space:nowrap}
 .back-btn:hover{color:var(--gold);border-color:var(--gold-border)}
-.back-btn svg{flex-shrink:0}
 
-/* ── BREADCRUMB ── */
-.breadcrumb{
-  padding:.6rem 1.5rem;font-size:12px;color:var(--text-faint);
-  border-bottom:1px solid var(--border);
-  display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;
-}
-.breadcrumb a{color:var(--text-faint);text-decoration:none;transition:color .15s}
+.breadcrumb{padding:.5rem 1.25rem;font-size:12px;color:var(--text-faint);border-bottom:1px solid var(--border);display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
+.breadcrumb a{color:var(--text-faint);text-decoration:none}
 .breadcrumb a:hover{color:var(--gold)}
 
-/* ── LAYOUT ── */
-.page-grid{
-  display:grid;grid-template-columns:1fr 360px;gap:1.25rem;
-  max-width:1080px;margin:0 auto;padding:1rem 1.25rem;
-}
-@media(max-width:820px){.page-grid{grid-template-columns:1fr;padding:.75rem}}
+/* ── GRID DESKTOP ── */
+.page-wrap{width:100%;padding:1.5rem 2.5rem}
+.page-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:1.25rem;width:100%}
 
 /* ── GALERÍA ── */
-.galeria-wrap{position:relative;background:var(--surface);border-radius:var(--radius);overflow:hidden;aspect-ratio:4/3;}
-.galeria-img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .2s}
-.img-contador{
-  position:absolute;top:12px;left:12px;background:rgba(0,0,0,.65);
-  color:#fff;font-size:12px;padding:3px 10px;border-radius:20px;z-index:2;
-  backdrop-filter:blur(4px);
-}
-.galeria-nav{
-  position:absolute;top:50%;transform:translateY(-50%);
-  background:rgba(0,0,0,.55);border:none;color:#fff;
-  width:36px;height:36px;border-radius:50%;cursor:pointer;
-  font-size:20px;display:flex;align-items:center;justify-content:center;
-  transition:background .15s;z-index:2;backdrop-filter:blur(4px);
-}
+.galeria-wrap{position:relative;background:var(--surface);border-radius:var(--r);overflow:hidden;width:100%}
+.galeria-img{width:100%;height:auto;max-height:460px;object-fit:cover;display:block}
+.img-contador{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.65);color:#fff;font-size:12px;padding:3px 10px;border-radius:20px;z-index:2}
+.galeria-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.55);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;transition:background .15s;z-index:2}
 .galeria-nav:hover{background:rgba(212,168,75,.7)}
 .galeria-nav.prev{left:10px}.galeria-nav.next{right:10px}
-.galeria-expand{
-  position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,.55);
-  border:none;color:#fff;width:32px;height:32px;border-radius:8px;
-  cursor:pointer;font-size:16px;display:flex;align-items:center;
-  justify-content:center;z-index:2;transition:background .15s;
-  backdrop-filter:blur(4px);
-}
+.galeria-expand{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.55);border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;z-index:2;transition:background .15s}
 .galeria-expand:hover{background:rgba(212,168,75,.7)}
-.miniaturas-wrap{margin-top:.6rem;overflow-x:auto;padding-bottom:4px}
-.miniaturas{display:flex;gap:.4rem;width:max-content}
-.miniatura{
-  width:72px;height:54px;object-fit:cover;border-radius:6px;
-  cursor:pointer;opacity:.55;transition:opacity .15s,border-color .15s;
-  border:2px solid transparent;flex-shrink:0;
-}
+.miniaturas-wrap{margin-top:.5rem;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:var(--gold-border) transparent}
+.miniaturas-wrap::-webkit-scrollbar{height:3px}
+.miniaturas-wrap::-webkit-scrollbar-track{background:transparent}
+.miniaturas-wrap::-webkit-scrollbar-thumb{background:var(--gold-border);border-radius:3px}
+.miniaturas{display:flex;gap:.35rem}
+.miniatura{width:68px;height:51px;object-fit:cover;border-radius:6px;flex-shrink:0;cursor:pointer;opacity:.55;transition:opacity .15s,border-color .15s;border:2px solid transparent}
 .miniatura.activa,.miniatura:hover{opacity:1;border-color:var(--gold)}
 
 /* ── LIGHTBOX ── */
-.lightbox{
-  display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);
-  z-index:1000;align-items:center;justify-content:center;
-}
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:1000;align-items:center;justify-content:center}
 .lightbox.open{display:flex}
 .lightbox img{max-width:92vw;max-height:88vh;object-fit:contain;border-radius:8px}
-.lightbox-close{
-  position:absolute;top:16px;right:20px;background:none;border:none;
-  color:#fff;font-size:28px;cursor:pointer;opacity:.7;transition:opacity .15s;
-}
+.lightbox-close{position:absolute;top:16px;right:20px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;opacity:.7}
 .lightbox-close:hover{opacity:1}
-.lightbox-nav{
-  position:absolute;top:50%;transform:translateY(-50%);
-  background:rgba(255,255,255,.1);border:none;color:#fff;
-  width:44px;height:44px;border-radius:50%;cursor:pointer;
-  font-size:22px;display:flex;align-items:center;justify-content:center;
-  transition:background .15s;
-}
+.lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.1);border:none;color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:22px;display:flex;align-items:center;justify-content:center;transition:background .15s}
 .lightbox-nav:hover{background:rgba(212,168,75,.5)}
 .lightbox-nav.prev{left:16px}.lightbox-nav.next{right:16px}
-.lightbox-counter{
-  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
-  color:rgba(255,255,255,.6);font-size:13px;
-}
+.lightbox-counter{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.6);font-size:13px}
 
 /* ── PANEL DERECHO ── */
-.prop-panel{display:flex;flex-direction:column;gap:1rem}
-.prop-nombre{font-size:1.25rem;font-weight:600;color:#fff;line-height:1.3}
-.prop-tipo-badge{
-  font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--gold);background:var(--gold-dim);border:1px solid var(--gold-border);
-  border-radius:4px;padding:.2rem .6rem;display:inline-block;margin-bottom:.5rem;
-}
-.prop-codigo{font-size:12px;color:var(--text-faint);margin-bottom:.25rem}
-.prop-precio{font-size:1.5rem;font-weight:700;color:#22c55e;line-height:1}
+.prop-panel{display:flex;flex-direction:column;gap:.85rem;min-width:0}
+.prop-tipo-badge{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:4px;padding:.2rem .6rem;display:inline-block;margin-bottom:.4rem}
+.prop-codigo{font-size:12px;color:var(--text-faint);margin-bottom:.2rem}
+.prop-nombre{font-size:1.2rem;font-weight:600;color:#fff;line-height:1.3}
+.prop-precio{font-size:1.4rem;font-weight:700;color:#22c55e;line-height:1}
 
 /* ── CHIPS ── */
-.chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.25rem}
-.chip{
-  display:inline-flex;align-items:center;gap:5px;
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:6px;padding:5px 10px;font-size:13px;color:var(--text-muted);
-}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem}
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 9px;font-size:12px;color:var(--text-muted)}
 .chip svg{flex-shrink:0;color:var(--gold)}
 
 /* ── CTA ── */
-.cta-group{display:flex;flex-direction:column;gap:.6rem;margin-top:.25rem}
-.cta-wa{
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  background:var(--gold);color:#000;font-weight:600;font-size:14px;
-  padding:13px 20px;border-radius:10px;text-decoration:none;
-  transition:opacity .15s;
-}
+.cta-group{display:flex;flex-direction:column;gap:.5rem}
+.cta-wa{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--gold);color:#000;font-weight:600;font-size:14px;padding:13px 16px;border-radius:10px;text-decoration:none;transition:opacity .15s}
 .cta-wa:hover{opacity:.88}
-.cta-share{
-  display:flex;align-items:center;justify-content:center;gap:6px;
-  border:1px solid var(--border);color:var(--text-muted);font-size:13px;
-  padding:11px 20px;border-radius:10px;cursor:pointer;background:none;
-  transition:all .15s;font-family:'Outfit',sans-serif;
-}
+.cta-share{display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border);color:var(--text-muted);font-size:13px;padding:10px 16px;border-radius:10px;cursor:pointer;background:none;transition:all .15s;font-family:'Outfit',sans-serif}
 .cta-share:hover{color:var(--gold);border-color:var(--gold-border)}
 .share-confirm{font-size:12px;color:var(--gold);text-align:center;display:none}
 
-/* ── SECCIONES CARACTERÍSTICAS / CONTENIDO ── */
-.char-section,.content-section{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:1.25rem;
-}
-.section-title{
-  font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--gold);margin-bottom:.9rem;
-}
-.char-table{width:100%;border-collapse:collapse;font-size:14px}
+/* ── CARACTERÍSTICAS / CONTENIDO ── */
+.char-section,.content-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem}
+.section-title{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:.75rem}
+.char-table{width:100%;border-collapse:collapse;font-size:13px}
 .char-table tr{border-bottom:1px solid var(--border)}
 .char-table tr:last-child{border-bottom:none}
-.char-label{color:var(--text-muted);padding:.55rem 0;width:50%}
-.char-val{color:var(--text);font-weight:500;text-align:right;padding:.55rem 0}
+.char-label{color:var(--text-muted);padding:.45rem 0;width:50%}
+.char-val{color:var(--text);font-weight:500;text-align:right;padding:.45rem 0}
 .content-text{font-size:14px;color:var(--text-muted);line-height:1.8}
 
+.left-col{display:flex;flex-direction:column;gap:.75rem;min-width:0}
+
 /* ── FOOTER ── */
-.site-footer{
-  text-align:center;padding:2rem 1.5rem;font-size:12px;
-  color:var(--text-faint);border-top:1px solid var(--border);margin-top:2rem;
-}
-.site-footer a{color:var(--text-faint);text-decoration:none;transition:color .15s}
+.site-footer{text-align:center;padding:1.5rem 1rem;font-size:12px;color:var(--text-faint);border-top:1px solid var(--border);margin-top:1.5rem}
+.site-footer a{color:var(--text-faint);text-decoration:none}
 .site-footer a:hover{color:var(--gold)}
+
+/* ── MÓVIL ── */
+@media(max-width:680px){
+  .page-wrap{padding:.75rem}
+  /* Convertir grid en flex column con orden explícito */
+  .page-grid{display:flex;flex-direction:column;gap:.75rem}
+  .left-col,.prop-panel{display:contents}
+  /* Orden en móvil: galería → precio → chips → tabla → cta → desc */
+  .sec-galeria{order:1}
+  .sec-precio{order:2}
+  .sec-chips{order:3}
+  .sec-tabla{order:4}
+  .sec-cta{order:5}
+  .sec-desc{order:6}
+  .sec-nombre{order:7} /* nombre/badge/codigo al final en móvil es raro — lo ponemos antes del precio */
+  /* Reordenar más intuitivo: nombre→precio→galería→chips→tabla→cta→desc */
+  .sec-nombre{order:1}
+  .sec-precio{order:2}
+  .sec-galeria{order:3}
+  .sec-chips{order:4}
+  .sec-tabla{order:5}
+  .sec-desc{order:6}
+  .sec-cta{order:7}
+  .galeria-img{max-height:280px}
+  .miniatura{width:56px;height:42px}
+  .chip{font-size:11px;padding:3px 7px}
+  .prop-nombre{font-size:1.05rem}
+  .prop-precio{font-size:1.25rem}
+}
 </style>
 </head>
 <body>
@@ -266,46 +219,57 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 
 <!-- CONTENIDO PRINCIPAL -->
 <main>
+  <div class="page-wrap">
   <div class="page-grid">
 
-    <!-- COLUMNA IZQUIERDA: galería + características + descripción -->
-    <div>
-      <div class="galeria-wrap"><div class="img-contador"><span id="imgActual">1</span> / 37</div><button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button><button class="galeria-expand" onclick="abrirLightbox(imgIndex)" title="Expandir">&#x26F6;</button><img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczMD2-QWkBVltRrgMRgB-CCaQmw6J8VntkbAp7l6DInhYOd_vqbOHPn8pqA35FTts50jemi8YIIFiLj6gebjk8nEQpYP9cGuCm5uED8NyWhTinKyH2TA=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager" fetchpriority="high"/></div>
-      <div class="miniaturas-wrap"><div class="miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczMD2-QWkBVltRrgMRgB-CCaQmw6J8VntkbAp7l6DInhYOd_vqbOHPn8pqA35FTts50jemi8YIIFiLj6gebjk8nEQpYP9cGuCm5uED8NyWhTinKyH2TA=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 1" class="miniatura activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP8PdwEB-1SkEOBeBVLpDnzIWn_Ud1i236w_rgb4BQktAq2q3ewNOy8JZJMQhdI_hY56OJXNRkPWAW2unC6B1nC7ClTWQKWWfSRvj4NuHQxqok7oM0P=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 2" class="miniatura" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPbL6kZdGSsp0Weea7wD7XxFYmApNj-g7bRomZgmVNAX5M8Z9rZfy65-n638TWQn8eBX0bfOwJfe5Y1irlNlcrEPqMVZlnPzCd13n_tX2UpGdD5UEEV=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 3" class="miniatura" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczME5aE1JVEg4PbJLobSYtlloTTixooyXOi9OYSdv46F0MmZIGa7CWUphlvux6zwzQ2XhuwY97xYN9M-1u9w6jbhKbo471n_pw6i_6RPvZTq2sI2UVcf=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 4" class="miniatura" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMHy-EIW21wWXVoqBUIuBgbhx3L9bV2BAEatZozsKjr6DfnXZiDr5SsTBlf4lz4YARM1bG1Rfyt5IVgROwpb1vCPrFoZlT2WV6hepsbxJwsl0KeUB39=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 5" class="miniatura" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPEnIrjIdsReDHML9ZQpI_Vl_hz9_Apni3BlM2R3HIU5_4vZFtEU5p5EP_SE0e84nAIVFjI1F74sBj_oH8lVxHokIa6DQq7EM6gb5b0csCoWrTxIMV7=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 6" class="miniatura" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM2ZpydvQPpgcN2HOyKm9VOOtQERVDK0fOv3GanxFVWHwr6MLtpMzPN0qzGeYM4ioDYo0Xf9qHrv-X49iNXPUCyaWmkxZX_SMasPxpyAorQGk3jlv5v=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 7" class="miniatura" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP2m8Q3HfuSnOSmTGhHst7ZVobjq_VDOympJre87uiBIO2NNnH5vubVz88y1Tr9CiStkKF54V3WqtF5oDPvVE1ABRhXbl1SI-qjmncrqDAYeLy9YSRg=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 8" class="miniatura" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM0DHFnpc_nLQHQwJzyOyr9LjC8Z1jsG3V7Z4y8NAAusuF4xozEuziKPJtoHFxpSm0hCs95NDcA8m2jf7Z4wAcF2ChpMxH4DW2t61_ntooLyX8iGCoP=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 9" class="miniatura" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMkFrU7R-BqGMvadrV9Ca29M9poIrNArrHp579bRDWBOlc295z_zZ8FY7t2cdlxUQ5Vyp_6arNzD2cOvs_CSTM28uj7lP1FcqY2cjVu37OUobXlL2lV=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 10" class="miniatura" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPQQHbH1IgRNjavvqbaida9r_Q1EimvEQVjHWpecfaHOpxcgyKAjCXHDJMc4B9ozaDdfHULIY1E90EjNlyL6UUvmZ_zZVSYy9ClZkMF3cmoE1cxzJa8=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 11" class="miniatura" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMOME253i3UDlZSoAevmhYV9kX9lImvVatZSegBcZ_N_f6_Xr7urXNl1kTY1IgY0WO7reQnb5iFnvSdHsKCEhZukpiJnVGD7ukbdfJEcOW6Ng4Awy5P=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 12" class="miniatura" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMr-H0zf06qWwTo770DpPedcvuRpZB92EI4BM-kakmxWsWzTgciP5hB9_oKNGIQMNZEgK1kqH5q2P9VGK7amvN0Mx8EXJhgTjboJab0UdpLO0i-6rVc=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 13" class="miniatura" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOFnzhh_8fCyhWq9SoWx9tFNO4tFDY-fZyHyu0Nn_WzYMZi0Eu-sl5cFMzmmc7FWrTNgEhrt9je2AyGh5fzw_Ln2nW1X4ijNkLsYkI3MjEn7LQ19dbj=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 14" class="miniatura" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNWh-ViDbaO2dFDMeQsX8zGeZ7oop8krJ6CamHIJl4MgwGWm2l_DGRG3IfCgtp-hrR6lsCAHhiQNntS4rcWTARVYwUQy2kbHv0ScIuh8iPbRw8uEMOA=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 15" class="miniatura" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPsLzm_F4ag09e_hFIcX8i4JcXVIa6WJmazWkcXdOalvThHVdn3szp3bPheBrT4c1g20xwYhvVEeMpdvsgpwRtlNqBWdIjOp4LJbujSHWiclW0FVweG=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 16" class="miniatura" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN-qa2X5t7WPPkTPfp-q0RLtvaMjJAA2udHHikueBQcRJw92VxStIiLFmmXDrrPGdjAbAaAcKha9Na7eM4qocxdZJpc7IaeC5FFv_gAjEBnObH0LKE7=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 17" class="miniatura" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNzxROVRoG49d05Tbneh4J7cOz3LStBwla7WbqBQfCnFo6JN1TfiUO97E9wYIi5m3qFvHnKxlfBbAg38wQiiQZ-5wCbNMbpVQDQM-mp4kUWBhLQ4CH8=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 18" class="miniatura" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPcZyQkvFcWg5KgBmBesy-JcA1xrhKzGlOsfjEGaUKQ0oLBWu5bAzo23aATEpab9tIEqDzOY3UdwoZICMRYi1UeGiJHoCo5xJb_IoRqCFX2oPnFH2hI=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 19" class="miniatura" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM_PSruZCJnRVY43YO3D4TXhbOMAUxiPpQuItagMY2JSZjAFvW868TP_LCl0tNlitN3Rv51IerjMcTU0TQAnGDm6Paow7CxiYT0Ce6-uOyTwkX7wqOP=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 20" class="miniatura" onclick="irImg(19)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPt8B9lKy1l0dkhB4_JGXuoAB5AgVP3LF6lWI4SRr-wdGG06_7SbCH7JPR-F45kxrJbsCsN6lA1GLNt4Auez5_QfKLeTTNck0NjrvO8Ll0pbeXlpgtH=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 21" class="miniatura" onclick="irImg(20)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMhSagUbH4njCPjFnHvlA2hcJo838KShX-yjBdtR8u0DGjxGQUxKhboVwvkKbfi9fXQ6KjFuj5Q6XeKJRLlhskITBsJ1ovDJgEGCU2KriZ4S0WF4Y1z=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 22" class="miniatura" onclick="irImg(21)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOkg-OYOAz1HBbGLA-aNYqPi5UcmKQ32w8y0smxJsxtTJSG835cFsk_6uItxfc1Meiqfdol_HFR6SXXX9t4q90UBTEF3fM_c_ujU3V9edGmHe2aOFSL=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 23" class="miniatura" onclick="irImg(22)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMEV2b5dggeHPaSYp2WNIWvOWP_nvJ2eS3s7f7W-WtcIAy_s7xzsQTxgtU5BcsIKEkOZZ-pYH41Ho89I6ZXW6dADN5aa31s9R9oiaZYuyrCc5A_OU_Q=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 24" class="miniatura" onclick="irImg(23)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOiXr1-2UTd-g4ZyW0voXcd8cHVsC5zG8Nnc2hC60WbSDVTJm4gc3i0nxxL9NKk_VbUfp9Z7xV-YAXYHXWW4YkX0ow1elVpdRxs8mPnCZlQC6PtzUS9=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 25" class="miniatura" onclick="irImg(24)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMBhei8RsWoug7Lt-qNW_qt-s4RHXMLfqxoFDvV_PpAMg3s6quBdBItBKBqz4kbkqgb94RNFo57dK4_9iIAbPVwRVdoeqFMf_TFGRYR0YkVTUF6uDrr=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 26" class="miniatura" onclick="irImg(25)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOWeZOBMoXvKw2swUd5O8A0-9y7-WP2J31_0JovHBcXS8zwsAR084fN1wUlTgFwZbZYefRp7ken7Bo7vnm9NbYc469esCF9DC7QgHbv2uArIkqHwxgQ=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 27" class="miniatura" onclick="irImg(26)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP7WuyQbnM8eMV-pmfgLVKw2pmEFARuFubCj6zgqQmcaN41hets9KGOdTS_ZZ6rRRqNk6m-X9RUv3wcummIRn7Gzzd9ZGWJShCC87Uki6zNpCC-TJKU=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 28" class="miniatura" onclick="irImg(27)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMNSDeN_bvf3FSrscaHVfPVE4Ino4akyyJ1dgNJSqb10qotqm2gT0MtXtaTJoDTlKsG-IAhJNgN5HqvmUpcgxM13VgjzJY8hVCXp7AQ-RZtXGvWhdqH=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 29" class="miniatura" onclick="irImg(28)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMRFtNwON32KtfBisCAPpVp4CMOI6JqI_9FjEk8UgQim5mtsJNWE3hOmvOOfQ3JZVEYntmCSruZP1FQ2TKTH7dujkgopZa-HEHVXaL0_33FFiTrLlgi=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 30" class="miniatura" onclick="irImg(29)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNHzzsB68_erqr4x7r3zf1EsaP4ifAmtnNkX7w4mklhMPxXBFx-CIdIEiS88q3CpZnvw1xifwzmY70_12ewd4szQH9fGAYrcoQIcCOICbMKWCO5S5_m=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 31" class="miniatura" onclick="irImg(30)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOr_4Dq1p-9keYkpTEKsRtpcIwmgVsFYQEuxhDDFPom2ock7gYgM8E3xA3aXCCzygLQYXBtwaHTwavtaSAQG3SdTGax97_ztzAUp_-lOiBMiIU7RnDy=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 32" class="miniatura" onclick="irImg(31)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPu9kbBfmTgfeLDMKnx_2DVyMzy4fzq-4OG-X_ZYuZWr7Fdk0DCHbSG_lTfa2ViUNeJltsXiBG4MZsy15mLwi_R_Zq-CgdzfTpZsyT_rpvjD3aJca8Y=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 33" class="miniatura" onclick="irImg(32)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMOI4NK3LKQ5WF0o5U_NSKEMfsRtZ90oqLkqIR5il_edPTZAtIFWAx2h0iXb9MJFxbEgZqCI-X4ndJnze_1ZAqvDNdqn3v1y3qjQHTJXI2m4Kjo-dSB=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 34" class="miniatura" onclick="irImg(33)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMJ9jL6QfVjeYXhWL1aP2_0vDzV_1937sLFMeHHqsJuRDSQQpZaksz8dUcN5k6oYUibGOcEgjrbY-gkePiA0AoDTq2CkuQBAjcRG7zYX4yTxhcqxGIV=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 35" class="miniatura" onclick="irImg(34)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPc_mXembWg8z2HFUiytsFJGZ8ZB8omB9UqnH8SsbRtWdzhUs7DBOR0XKhGFCbwvcdNOy0O0AHczRZDCTQFUmmICJe8QrORf-il8urJ3uwb_P4Mx4eO=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 36" class="miniatura" onclick="irImg(35)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOf1i6WmAkTTemX-d7QXr82bIkQlP114T_HghJxvFuNKsA5tprPI3JzhT-dYi4vtWQDDnKEHNKHUGi8-bEeALzNkIo8_sTgSHbDQOeUG88HSW6Vdfjs=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 37" class="miniatura" onclick="irImg(36)" loading="lazy"/></div></div>
+    <!-- COLUMNA IZQUIERDA: galería + descripción -->
+    <div class="left-col">
 
-      <div style="margin-top:1.25rem;display:flex;flex-direction:column;gap:1rem;">
-        <div class="content-section"><h2 class="section-title">PUNTOS CLAVE</h2><p class="content-text">Esquinera</p></div>
-        <div class="content-section"><h2 class="section-title">DESCRIPCIÓN</h2><p class="content-text">Área 172 M2 Portería 24 horas, sala de espera, cuatro piscinas (2 para adultos, 2 para niños), dos parques infantiles, polideportivo, tres salones comunales, zonas verdes. garaje techado para dos vehículos, antejardín, Primer piso: comedor amplio con ventilador de techo, y acceso al patio que tiene dos puertas en vidrio y corredizas que da mas amplitud, depósito, sala amplia con baño, cocina integral abierta, alcoba de servicio con baño, zona de lavandería, instalación para lavadora. Segundo piso: tres alcobas con closet y aire acondicionado, alcoba principal con baño privado y balcón que comunica a la alcoba auxiliar, una de las alcobas con terraza, baño de alcobas. pisos en porcelanato. cortinas en toda la casa. Estrato 5. Administración $490.000. Llaves (2) en porteria</p></div>
+      <div class="sec-galeria">
+        <div class="galeria-wrap"><div class="img-contador"><span id="imgActual">1</span> / 37</div><button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button><button class="galeria-expand" onclick="abrirLightbox(imgIndex)" title="Expandir">&#x26F6;</button><img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczMD2-QWkBVltRrgMRgB-CCaQmw6J8VntkbAp7l6DInhYOd_vqbOHPn8pqA35FTts50jemi8YIIFiLj6gebjk8nEQpYP9cGuCm5uED8NyWhTinKyH2TA=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager" fetchpriority="high"/></div>
+        <div class="miniaturas-wrap"><div class="miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczMD2-QWkBVltRrgMRgB-CCaQmw6J8VntkbAp7l6DInhYOd_vqbOHPn8pqA35FTts50jemi8YIIFiLj6gebjk8nEQpYP9cGuCm5uED8NyWhTinKyH2TA=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 1" class="miniatura activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP8PdwEB-1SkEOBeBVLpDnzIWn_Ud1i236w_rgb4BQktAq2q3ewNOy8JZJMQhdI_hY56OJXNRkPWAW2unC6B1nC7ClTWQKWWfSRvj4NuHQxqok7oM0P=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 2" class="miniatura" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPbL6kZdGSsp0Weea7wD7XxFYmApNj-g7bRomZgmVNAX5M8Z9rZfy65-n638TWQn8eBX0bfOwJfe5Y1irlNlcrEPqMVZlnPzCd13n_tX2UpGdD5UEEV=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 3" class="miniatura" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczME5aE1JVEg4PbJLobSYtlloTTixooyXOi9OYSdv46F0MmZIGa7CWUphlvux6zwzQ2XhuwY97xYN9M-1u9w6jbhKbo471n_pw6i_6RPvZTq2sI2UVcf=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 4" class="miniatura" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMHy-EIW21wWXVoqBUIuBgbhx3L9bV2BAEatZozsKjr6DfnXZiDr5SsTBlf4lz4YARM1bG1Rfyt5IVgROwpb1vCPrFoZlT2WV6hepsbxJwsl0KeUB39=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 5" class="miniatura" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPEnIrjIdsReDHML9ZQpI_Vl_hz9_Apni3BlM2R3HIU5_4vZFtEU5p5EP_SE0e84nAIVFjI1F74sBj_oH8lVxHokIa6DQq7EM6gb5b0csCoWrTxIMV7=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 6" class="miniatura" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM2ZpydvQPpgcN2HOyKm9VOOtQERVDK0fOv3GanxFVWHwr6MLtpMzPN0qzGeYM4ioDYo0Xf9qHrv-X49iNXPUCyaWmkxZX_SMasPxpyAorQGk3jlv5v=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 7" class="miniatura" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP2m8Q3HfuSnOSmTGhHst7ZVobjq_VDOympJre87uiBIO2NNnH5vubVz88y1Tr9CiStkKF54V3WqtF5oDPvVE1ABRhXbl1SI-qjmncrqDAYeLy9YSRg=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 8" class="miniatura" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM0DHFnpc_nLQHQwJzyOyr9LjC8Z1jsG3V7Z4y8NAAusuF4xozEuziKPJtoHFxpSm0hCs95NDcA8m2jf7Z4wAcF2ChpMxH4DW2t61_ntooLyX8iGCoP=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 9" class="miniatura" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMkFrU7R-BqGMvadrV9Ca29M9poIrNArrHp579bRDWBOlc295z_zZ8FY7t2cdlxUQ5Vyp_6arNzD2cOvs_CSTM28uj7lP1FcqY2cjVu37OUobXlL2lV=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 10" class="miniatura" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPQQHbH1IgRNjavvqbaida9r_Q1EimvEQVjHWpecfaHOpxcgyKAjCXHDJMc4B9ozaDdfHULIY1E90EjNlyL6UUvmZ_zZVSYy9ClZkMF3cmoE1cxzJa8=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 11" class="miniatura" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMOME253i3UDlZSoAevmhYV9kX9lImvVatZSegBcZ_N_f6_Xr7urXNl1kTY1IgY0WO7reQnb5iFnvSdHsKCEhZukpiJnVGD7ukbdfJEcOW6Ng4Awy5P=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 12" class="miniatura" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMr-H0zf06qWwTo770DpPedcvuRpZB92EI4BM-kakmxWsWzTgciP5hB9_oKNGIQMNZEgK1kqH5q2P9VGK7amvN0Mx8EXJhgTjboJab0UdpLO0i-6rVc=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 13" class="miniatura" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOFnzhh_8fCyhWq9SoWx9tFNO4tFDY-fZyHyu0Nn_WzYMZi0Eu-sl5cFMzmmc7FWrTNgEhrt9je2AyGh5fzw_Ln2nW1X4ijNkLsYkI3MjEn7LQ19dbj=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 14" class="miniatura" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNWh-ViDbaO2dFDMeQsX8zGeZ7oop8krJ6CamHIJl4MgwGWm2l_DGRG3IfCgtp-hrR6lsCAHhiQNntS4rcWTARVYwUQy2kbHv0ScIuh8iPbRw8uEMOA=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 15" class="miniatura" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPsLzm_F4ag09e_hFIcX8i4JcXVIa6WJmazWkcXdOalvThHVdn3szp3bPheBrT4c1g20xwYhvVEeMpdvsgpwRtlNqBWdIjOp4LJbujSHWiclW0FVweG=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 16" class="miniatura" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN-qa2X5t7WPPkTPfp-q0RLtvaMjJAA2udHHikueBQcRJw92VxStIiLFmmXDrrPGdjAbAaAcKha9Na7eM4qocxdZJpc7IaeC5FFv_gAjEBnObH0LKE7=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 17" class="miniatura" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNzxROVRoG49d05Tbneh4J7cOz3LStBwla7WbqBQfCnFo6JN1TfiUO97E9wYIi5m3qFvHnKxlfBbAg38wQiiQZ-5wCbNMbpVQDQM-mp4kUWBhLQ4CH8=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 18" class="miniatura" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPcZyQkvFcWg5KgBmBesy-JcA1xrhKzGlOsfjEGaUKQ0oLBWu5bAzo23aATEpab9tIEqDzOY3UdwoZICMRYi1UeGiJHoCo5xJb_IoRqCFX2oPnFH2hI=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 19" class="miniatura" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM_PSruZCJnRVY43YO3D4TXhbOMAUxiPpQuItagMY2JSZjAFvW868TP_LCl0tNlitN3Rv51IerjMcTU0TQAnGDm6Paow7CxiYT0Ce6-uOyTwkX7wqOP=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 20" class="miniatura" onclick="irImg(19)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPt8B9lKy1l0dkhB4_JGXuoAB5AgVP3LF6lWI4SRr-wdGG06_7SbCH7JPR-F45kxrJbsCsN6lA1GLNt4Auez5_QfKLeTTNck0NjrvO8Ll0pbeXlpgtH=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 21" class="miniatura" onclick="irImg(20)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMhSagUbH4njCPjFnHvlA2hcJo838KShX-yjBdtR8u0DGjxGQUxKhboVwvkKbfi9fXQ6KjFuj5Q6XeKJRLlhskITBsJ1ovDJgEGCU2KriZ4S0WF4Y1z=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 22" class="miniatura" onclick="irImg(21)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOkg-OYOAz1HBbGLA-aNYqPi5UcmKQ32w8y0smxJsxtTJSG835cFsk_6uItxfc1Meiqfdol_HFR6SXXX9t4q90UBTEF3fM_c_ujU3V9edGmHe2aOFSL=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 23" class="miniatura" onclick="irImg(22)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMEV2b5dggeHPaSYp2WNIWvOWP_nvJ2eS3s7f7W-WtcIAy_s7xzsQTxgtU5BcsIKEkOZZ-pYH41Ho89I6ZXW6dADN5aa31s9R9oiaZYuyrCc5A_OU_Q=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 24" class="miniatura" onclick="irImg(23)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOiXr1-2UTd-g4ZyW0voXcd8cHVsC5zG8Nnc2hC60WbSDVTJm4gc3i0nxxL9NKk_VbUfp9Z7xV-YAXYHXWW4YkX0ow1elVpdRxs8mPnCZlQC6PtzUS9=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 25" class="miniatura" onclick="irImg(24)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMBhei8RsWoug7Lt-qNW_qt-s4RHXMLfqxoFDvV_PpAMg3s6quBdBItBKBqz4kbkqgb94RNFo57dK4_9iIAbPVwRVdoeqFMf_TFGRYR0YkVTUF6uDrr=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 26" class="miniatura" onclick="irImg(25)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOWeZOBMoXvKw2swUd5O8A0-9y7-WP2J31_0JovHBcXS8zwsAR084fN1wUlTgFwZbZYefRp7ken7Bo7vnm9NbYc469esCF9DC7QgHbv2uArIkqHwxgQ=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 27" class="miniatura" onclick="irImg(26)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP7WuyQbnM8eMV-pmfgLVKw2pmEFARuFubCj6zgqQmcaN41hets9KGOdTS_ZZ6rRRqNk6m-X9RUv3wcummIRn7Gzzd9ZGWJShCC87Uki6zNpCC-TJKU=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 28" class="miniatura" onclick="irImg(27)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMNSDeN_bvf3FSrscaHVfPVE4Ino4akyyJ1dgNJSqb10qotqm2gT0MtXtaTJoDTlKsG-IAhJNgN5HqvmUpcgxM13VgjzJY8hVCXp7AQ-RZtXGvWhdqH=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 29" class="miniatura" onclick="irImg(28)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMRFtNwON32KtfBisCAPpVp4CMOI6JqI_9FjEk8UgQim5mtsJNWE3hOmvOOfQ3JZVEYntmCSruZP1FQ2TKTH7dujkgopZa-HEHVXaL0_33FFiTrLlgi=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 30" class="miniatura" onclick="irImg(29)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNHzzsB68_erqr4x7r3zf1EsaP4ifAmtnNkX7w4mklhMPxXBFx-CIdIEiS88q3CpZnvw1xifwzmY70_12ewd4szQH9fGAYrcoQIcCOICbMKWCO5S5_m=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 31" class="miniatura" onclick="irImg(30)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOr_4Dq1p-9keYkpTEKsRtpcIwmgVsFYQEuxhDDFPom2ock7gYgM8E3xA3aXCCzygLQYXBtwaHTwavtaSAQG3SdTGax97_ztzAUp_-lOiBMiIU7RnDy=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 32" class="miniatura" onclick="irImg(31)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPu9kbBfmTgfeLDMKnx_2DVyMzy4fzq-4OG-X_ZYuZWr7Fdk0DCHbSG_lTfa2ViUNeJltsXiBG4MZsy15mLwi_R_Zq-CgdzfTpZsyT_rpvjD3aJca8Y=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 33" class="miniatura" onclick="irImg(32)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMOI4NK3LKQ5WF0o5U_NSKEMfsRtZ90oqLkqIR5il_edPTZAtIFWAx2h0iXb9MJFxbEgZqCI-X4ndJnze_1ZAqvDNdqn3v1y3qjQHTJXI2m4Kjo-dSB=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 34" class="miniatura" onclick="irImg(33)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMJ9jL6QfVjeYXhWL1aP2_0vDzV_1937sLFMeHHqsJuRDSQQpZaksz8dUcN5k6oYUibGOcEgjrbY-gkePiA0AoDTq2CkuQBAjcRG7zYX4yTxhcqxGIV=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 35" class="miniatura" onclick="irImg(34)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPc_mXembWg8z2HFUiytsFJGZ8ZB8omB9UqnH8SsbRtWdzhUs7DBOR0XKhGFCbwvcdNOy0O0AHczRZDCTQFUmmICJe8QrORf-il8urJ3uwb_P4Mx4eO=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 36" class="miniatura" onclick="irImg(35)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOf1i6WmAkTTemX-d7QXr82bIkQlP114T_HghJxvFuNKsA5tprPI3JzhT-dYi4vtWQDDnKEHNKHUGi8-bEeALzNkIo8_sTgSHbDQOeUG88HSW6Vdfjs=w1200" alt="Casa en conjunto en venta Ipanema Neiva – ICDE Inmobiliaria foto 37" class="miniatura" onclick="irImg(36)" loading="lazy"/></div></div>
       </div>
+
+      <div class="sec-desc"><div class="content-section"><h2 class="section-title">PUNTOS CLAVE</h2><p class="content-text">Esquinera</p></div><div class="content-section"><h2 class="section-title">DESCRIPCIÓN</h2><p class="content-text">Área 172 M2 Portería 24 horas, sala de espera, cuatro piscinas (2 para adultos, 2 para niños), dos parques infantiles, polideportivo, tres salones comunales, zonas verdes. garaje techado para dos vehículos, antejardín, Primer piso: comedor amplio con ventilador de techo, y acceso al patio que tiene dos puertas en vidrio y corredizas que da mas amplitud, depósito, sala amplia con baño, cocina integral abierta, alcoba de servicio con baño, zona de lavandería, instalación para lavadora. Segundo piso: tres alcobas con closet y aire acondicionado, alcoba principal con baño privado y balcón que comunica a la alcoba auxiliar, una de las alcobas con terraza, baño de alcobas. pisos en porcelanato. cortinas en toda la casa. Estrato 5. Administración $490.000. Llaves (2) en porteria</p></div></div>
+
     </div>
 
-    <!-- COLUMNA DERECHA: nombre, precio, chips, tabla, CTA -->
+    <!-- COLUMNA DERECHA: nombre, precio, chips, tabla, cta -->
     <div class="prop-panel">
-      <div>
+
+      <div class="sec-nombre">
         <span class="prop-tipo-badge">Casa en conjunto</span>
         <p class="prop-codigo">Código: 714 </p>
         <h1 class="prop-nombre">Casa en conjunto Santorini II</h1>
       </div>
-      <p class="prop-precio">$650.000.000</p>
-      <div class="chips"><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12V7a1 1 0 011-1h4a1 1 0 011 1v5M3 12h18M3 12v5h18v-5"/><path d="M13 6h4a1 1 0 011 1v5"/></svg>3 hab.</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16v4a4 4 0 01-4 4H8a4 4 0 01-4-4v-4z"/><path d="M6 12V5a2 2 0 012-2h1"/><circle cx="8" cy="3" r="1"/></svg>3 baños</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20M16 7l-1-4H9L8 7"/></svg>2 garaje</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 7l9-4 9 4M4 11v10M20 11v10M8 11v10M16 11v10M12 11v10"/></svg>2 pisos</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M6 7V5a2 2 0 014 0v2M14 7V5a2 2 0 014 0v2"/><circle cx="8" cy="14" r="2"/><circle cx="16" cy="14" r="2"/></svg>Cocina integral</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>172 m²</span></div>
-      <div class="char-section"><h2 class="section-title">CARACTERÍSTICAS</h2><table class="char-table"><tbody><tr><td class="char-label">Ciudad</td><td class="char-val">Neiva</td></tr><tr><td class="char-label">Zona</td><td class="char-val">Oriente</td></tr><tr><td class="char-label">Estrato</td><td class="char-val">5</td></tr><tr><td class="char-label">Ubicación</td><td class="char-val">Esquinera</td></tr><tr><td class="char-label">Área lote</td><td class="char-val">172</td></tr><tr><td class="char-label">Piscina</td><td class="char-val">Social</td></tr><tr><td class="char-label">Administración</td><td class="char-val">490000</td></tr><tr><td class="char-label">Retorno de la inversión</td><td class="char-val">No aplica</td></tr></tbody></table></div>
-      <div class="cta-group">
-        <a href="https://wa.me/573208762117?text=Hola%2C%20me%20interesa%20la%20propiedad%3A%20Casa%20en%20conjunto%20Santorini%20II%20%28C%C3%B3digo%20714%29"
-           class="cta-wa" target="_blank" rel="noopener noreferrer"
-           aria-label="Agendar visita por WhatsApp">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-          Agendar visita por WhatsApp
-        </a>
-        <button class="cta-share" onclick="compartir()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          Compartir
-        </button>
-        <p class="share-confirm" id="shareConfirm">¡Enlace copiado!</p>
-      </div>
 
+      <div class="sec-precio"><p class="prop-precio">$650.000.000</p></div>
+
+      <div class="sec-chips"><div class="chips"><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12V7a1 1 0 011-1h4a1 1 0 011 1v5M3 12h18M3 12v5h18v-5"/><path d="M13 6h4a1 1 0 011 1v5"/></svg>3 hab.</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16v4a4 4 0 01-4 4H8a4 4 0 01-4-4v-4z"/><path d="M6 12V5a2 2 0 012-2h1"/><circle cx="8" cy="3" r="1"/></svg>3 baños</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20M16 7l-1-4H9L8 7"/></svg>2 garaje</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 7l9-4 9 4M4 11v10M20 11v10M8 11v10M16 11v10M12 11v10"/></svg>2 pisos</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M6 7V5a2 2 0 014 0v2M14 7V5a2 2 0 014 0v2"/><circle cx="8" cy="14" r="2"/><circle cx="16" cy="14" r="2"/></svg>Cocina integral</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>172 m²</span></div></div>
+
+      <div class="sec-tabla"><div class="char-section"><h2 class="section-title">CARACTERÍSTICAS</h2><table class="char-table"><tbody><tr><td class="char-label">Ciudad</td><td class="char-val">Neiva</td></tr><tr><td class="char-label">Zona</td><td class="char-val">Oriente</td></tr><tr><td class="char-label">Estrato</td><td class="char-val">5</td></tr><tr><td class="char-label">Ubicación</td><td class="char-val">Esquinera</td></tr><tr><td class="char-label">Área lote</td><td class="char-val">172</td></tr><tr><td class="char-label">Piscina</td><td class="char-val">Social</td></tr><tr><td class="char-label">Administración</td><td class="char-val">490000</td></tr><tr><td class="char-label">Retorno de la inversión</td><td class="char-val">No aplica</td></tr></tbody></table></div></div>
+
+      <div class="sec-cta">
+        <div class="cta-group">
+          <a href="https://wa.me/573208762117?text=Hola%2C%20me%20interesa%20la%20propiedad%3A%20Casa%20en%20conjunto%20Santorini%20II%20%28C%C3%B3digo%20714%29"
+             class="cta-wa"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="Agendar visita por WhatsApp">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            Agendar visita por WhatsApp
+          </a>
+          <button class="cta-share" onclick="compartir()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Compartir
+          </button>
+          <p class="share-confirm" id="shareConfirm">¡Enlace copiado!</p>
+        </div>
+      </div>
 
     </div>
 
+  </div>
   </div>
 </main>
 
@@ -327,9 +291,15 @@ function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
   document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  document.querySelectorAll('.miniatura').forEach(function(m,j){
-    m.classList.toggle('activa', j === imgIndex);
-  });
+  var minis = document.querySelectorAll('.miniatura');
+  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var activa = minis[imgIndex];
+  if (activa) {
+    var wrap = activa.closest('.miniaturas-wrap');
+    if (wrap) {
+      wrap.scrollTo({ left: activa.offsetLeft - (wrap.offsetWidth/2) + (activa.offsetWidth/2), behavior:'smooth' });
+    }
+  }
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }
