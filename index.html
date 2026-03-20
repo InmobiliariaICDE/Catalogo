@@ -7699,7 +7699,8 @@ font-weight: 500;
                     // 3. Función de inicialización (después de obtener 'data')
                     // ─────────────────────────────────────────────────
                     function inicializar(data) {
-                        datos = data;
+                        // Filtrar solo propiedades con Publicar = SI (defensa en profundidad)
+                        datos = data.filter(d => String(d['Publicar'] || '').trim().toUpperCase() === 'SI');
 
                         // Asegurarnos de que ciertos filtros sean arrays
                         filtros["Zona"] = filtros["Zona"] || [];
@@ -7925,8 +7926,8 @@ font-weight: 500;
                                 return ra - rb;
                             }
 
-                            // sin orden
-                            return 0;
+                            // Sin criterio del usuario → respetar orden del Sheet (campo _sheetOrder)
+                            return (Number(a['_sheetOrder']) || 9999) - (Number(b['_sheetOrder']) || 9999);
                         });
                     }
                     // ─────────────────────────────────────────────────
@@ -8664,42 +8665,43 @@ font-weight: 500;
                     // ─────────────────────────────────────────────────
 
                     // ── CARRUSEL MODAL ──
-                    let carruselFotos = [];
-                    let carruselIdx = 0;
+                    // Expuestas en window para que lbAbrir (en otro <script>) pueda accederlas
+                    window.carruselFotos = [];
+                    window.carruselIdx = 0;
                     let carruselTimer = null;
                     let carruselDragInited = false;
                     let _dragEl = null;
                     const CARRUSEL_DELAY = 5000;
 
                     function carruselIr(idx, reiniciarTimer = true) {
-                        if (!carruselFotos.length) return;
-                        const prev = carruselIdx;
-                        carruselIdx = ((idx % carruselFotos.length) + carruselFotos.length) % carruselFotos.length;
+                        if (!window.carruselFotos.length) return;
+                        const prev = window.carruselIdx;
+                        window.carruselIdx = ((idx % window.carruselFotos.length) + window.carruselFotos.length) % window.carruselFotos.length;
                         // Crossfade slides
                         const principal = document.getElementById('carruselPrincipal');
                         const slides = principal.querySelectorAll('.carrusel-slide');
-                        slides.forEach((s, i) => s.classList.toggle('activa', i === carruselIdx));
+                        slides.forEach((s, i) => s.classList.toggle('activa', i === window.carruselIdx));
                         // Counter
-                        document.getElementById('carruselCounter').textContent = (carruselIdx + 1) + ' / ' + carruselFotos.length;
+                        document.getElementById('carruselCounter').textContent = (window.carruselIdx + 1) + ' / ' + window.carruselFotos.length;
                         // Actualizar 4 miniaturas centradas en la actual
                         carruselActualizarMiniaturas();
                         if (reiniciarTimer) carruselReiniciarProgreso();
                     }
 
                     function carruselActualizarMiniaturas() {
-                        const n = carruselFotos.length;
+                        const n = window.carruselFotos.length;
                         if (n <= 1) return;
                         const minDiv = document.getElementById('carruselMiniaturas');
                         // Calcular ventana de 4 fotos centrada en actual
-                        let start = Math.max(0, carruselIdx - 1);
+                        let start = Math.max(0, window.carruselIdx - 1);
                         if (start + 4 > n) start = Math.max(0, n - 4);
                         const ventana = [];
                         for (let i = start; i < start + 4 && i < n; i++) ventana.push(i);
                         minDiv.innerHTML = '';
                         ventana.forEach(i => {
                             const img = document.createElement('img');
-                            img.src = carruselFotos[i];
-                            img.className = 'carrusel-min' + (i === carruselIdx ? ' activa' : '');
+                            img.src = window.carruselFotos[i];
+                            img.className = 'carrusel-min' + (i === window.carruselIdx ? ' activa' : '');
                             img.loading = 'lazy';
                             img.addEventListener('click', () => carruselIr(i));
                             minDiv.appendChild(img);
@@ -8707,9 +8709,9 @@ font-weight: 500;
                     }
 
                     function carruselReiniciarProgreso() {
-                        if (carruselFotos.length <= 1) return;
+                        if (window.carruselFotos.length <= 1) return;
                         clearTimeout(carruselTimer);
-                        carruselTimer = setTimeout(() => carruselIr(carruselIdx + 1), CARRUSEL_DELAY);
+                        carruselTimer = setTimeout(() => carruselIr(window.carruselIdx + 1), CARRUSEL_DELAY);
                     }
 
                     function carruselDetener() {
@@ -8718,8 +8720,8 @@ font-weight: 500;
 
                     function carruselInit(fotos) {
                         carruselDetener();
-                        carruselFotos = fotos;
-                        carruselIdx = 0;
+                        window.carruselFotos = fotos;
+                        window.carruselIdx = 0;
                         // Construir slides en el principal
                         const principal = document.getElementById('carruselPrincipal');
                         principal.querySelectorAll('.carrusel-slide').forEach(s => s.remove());
@@ -8762,7 +8764,7 @@ font-weight: 500;
                         function pdUp(e) {
                             if (e.pointerId!==_dragPid) return;
                             const d=_dragSx-e.clientX; _dragPid=null;
-                            if (Math.abs(d)>=30) { if(d>0) carruselIr(carruselIdx+1); else carruselIr(carruselIdx-1); }
+                            if (Math.abs(d)>=30) { if(d>0) carruselIr(window.carruselIdx+1); else carruselIr(window.carruselIdx-1); }
                         }
                         el.addEventListener('dragstart', e=>e.preventDefault());
                         el.addEventListener('pointerdown', pdDown);
@@ -8785,7 +8787,7 @@ font-weight: 500;
                             var dy=e.changedTouches[0].clientY-_tSy;
                             _tMoved=false;
                             if (Math.abs(dx)<35 || Math.abs(dy)>Math.abs(dx)) return;
-                            if(dx<0) carruselIr(carruselIdx+1); else carruselIr(carruselIdx-1);
+                            if(dx<0) carruselIr(window.carruselIdx+1); else carruselIr(window.carruselIdx-1);
                         }, {passive:true});
                     }
 
@@ -8887,9 +8889,9 @@ font-weight: 500;
                         var _bp = document.querySelector('.carrusel-prev');
                         var _bn = document.querySelector('.carrusel-next');
                         var _be = document.getElementById('carruselExpand');
-                        if (_bp) { _bp.onclick = function(e){ e.stopPropagation(); carruselIr(carruselIdx-1); }; }
-                        if (_bn) { _bn.onclick = function(e){ e.stopPropagation(); carruselIr(carruselIdx+1); }; }
-                        if (_be) { _be.onclick = function(e){ e.stopPropagation(); window.lbAbrir(carruselFotos, carruselIdx); }; }
+                        if (_bp) { _bp.onclick = function(e){ e.stopPropagation(); carruselIr(window.carruselIdx-1); }; }
+                        if (_bn) { _bn.onclick = function(e){ e.stopPropagation(); carruselIr(window.carruselIdx+1); }; }
+                        if (_be) { _be.onclick = function(e){ e.stopPropagation(); window.lbAbrir(window.carruselFotos, window.carruselIdx); }; }
                         _dragReady = false; setTimeout(_initCarruselDrag, 50);
                         // ── Schema dinámico por propiedad ──
 const schemaAnterior = document.getElementById('schema-propiedad-activa');
@@ -10387,4 +10389,10 @@ sizePct: 70
         <span class="lightbox-counter" id="lightboxCounter">1 / 1</span>
         <div class="lightbox-img-wrap">
             <img id="lightboxImg" src="" alt="Foto propiedad" loading="lazy"/>
-            <button id="lightboxPrev">&#82
+            <button id="lightboxPrev">&#8249;</button>
+            <button id="lightboxNext">&#8250;</button>
+        </div>
+        <div class="lightbox-mins" id="lightboxMins"></div>
+    </div>
+</body>
+</html>
