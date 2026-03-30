@@ -2661,7 +2661,7 @@ font-weight: 500;
             /* Más espacio arriba y abajo para precio */
             .modal-bloque-info > .precio {
                 margin-top: 10px;
-                margin-bottom: 10px;
+                margin-bottom: 4px;
                 color: #22c55e;
                 font-weight: 700;
                 font-size: 22px;
@@ -5512,7 +5512,13 @@ font-weight: 500;
             min-width: 0;
             display: flex;
             flex-direction: column;
+            overflow-y: auto;
+            max-height: 75vh;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(212,168,75,0.3) transparent;
         }
+        .modal-columna-der-nueva::-webkit-scrollbar { width: 3px; }
+        .modal-columna-der-nueva::-webkit-scrollbar-thumb { background: rgba(212,168,75,0.3); border-radius: 2px; }
 
         /* ── Fila acciones ── */
         .modal-acciones {
@@ -5566,6 +5572,66 @@ font-weight: 500;
             background: rgb(151 151 151 / 15%);
             color: #fff;
             border-color: rgb(145 145 145 / 40%);
+        }
+        .modal-btn-comparar.activo {
+            background: rgba(212,168,75,0.15);
+            border-color: rgba(212,168,75,0.5);
+            color: #d4a84b;
+        }
+        .modal-btn-comparar.activo:hover {
+            background: rgba(212,168,75,0.22);
+            border-color: rgba(212,168,75,0.7);
+        }
+        .modal-label-comparar {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+            color: rgba(241,241,241,0.7);
+            font-family: "Outfit", sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .modal-label-comparar:hover {
+            color: #fff;
+        }
+        .modal-chk-comparar {
+            display: none;
+        }
+        .modal-chk-box {
+            width: 17px;
+            height: 17px;
+            border-radius: 4px;
+            border: 1.5px solid rgba(145,145,145,0.4);
+            background: rgba(151,151,151,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.18s;
+        }
+        .modal-chk-box::after {
+            content: '';
+            display: block;
+            width: 5px;
+            height: 9px;
+            border: 2px solid transparent;
+            border-top: none;
+            border-left: none;
+            transform: rotate(45deg) translateY(-1px);
+            transition: border-color 0.15s;
+        }
+        .modal-chk-comparar:checked ~ .modal-chk-box {
+            background: rgba(212,168,75,0.2);
+            border-color: rgba(212,168,75,0.7);
+        }
+        .modal-chk-comparar:checked ~ .modal-chk-box::after {
+            border-color: #d4a84b;
+        }
+        .modal-label-comparar:has(.modal-chk-comparar:checked) {
+            color: #d4a84b;
         }
         /* ── Modal subtitulo nueva versión ── */
         .modal-subtitulo-nuevo {
@@ -6140,7 +6206,7 @@ font-weight: 500;
                             <p class="tipo" id="modalTipo"></p>
                             <p class="modalCodigo" style="color:#c0c0c0;font-size:12px;margin:0;"><strong style="font-weight:500;">Código:</strong> <span id="modalCodigo"></span></p>
                             <p id="modalPrecio" class="precio"></p>
-                            <div class="modal-etiquetas" id="modalEtiquetas" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;"></div>
+                            <div class="modal-etiquetas" id="modalEtiquetas" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"></div>
                         </div>
                     </div>
 
@@ -6168,6 +6234,11 @@ font-weight: 500;
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                         Compartir
                     </button>
+                    <label id="modalLabelComparar" class="modal-label-comparar">
+                        <input type="checkbox" id="modalChkComparar" class="modal-chk-comparar" />
+                        <span class="modal-chk-box"></span>
+                        <span id="modalCompararTexto">Comparar</span>
+                    </label>
                 </div>
 
             </div>
@@ -8147,17 +8218,6 @@ font-weight: 500;
                                                                                               ${d["Rentabilidad"]}
                                                                                             </span>
                                                                                           </div>
-                                                                                          <div class="comparar-container">
-                                                                                            <label class="comparar-label">
-                                                                                              <input
-                                                                                                type="checkbox"
-                                                                                                class="checkbox-comparar"
-                                                                                                data-codigo="${d["Código"]}"
-                                                                                                ${comparaciones.includes(d["Código"]) ? 'checked' : ''}
-                                                                                              />
-                                                                                              Comparar
-                                                                                            </label>
-                                                                                          </div>
                                                                                         </div>
                                                                                       </div>
                                                                                     `).join("");
@@ -8884,6 +8944,35 @@ font-weight: 500;
                                         _compartir.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Compartir';
                                     }, 2000);
                                 });
+                            };
+                        }
+                        // Botón comparar en modal
+                        var _btnComparar = document.getElementById('modalChkComparar');
+                        var _labelComparar = document.getElementById('modalLabelComparar');
+                        var _textoComparar = document.getElementById('modalCompararTexto');
+                        if (_btnComparar && _labelComparar) {
+                            var _codigoActual = codigo;
+                            // Sincronizar estado visual al abrir modal
+                            _btnComparar.checked = comparaciones.includes(_codigoActual);
+                            if (_textoComparar) _textoComparar.textContent = _btnComparar.checked ? 'En comparación' : 'Comparar';
+                            _btnComparar.onchange = function() {
+                                var activo = _btnComparar.checked;
+                                if (activo) {
+                                    if (comparaciones.length >= 2) {
+                                        alert('Solo puedes comparar hasta 2 propiedades a la vez.');
+                                        _btnComparar.checked = false;
+                                        return;
+                                    }
+                                    comparaciones.push(_codigoActual);
+                                } else {
+                                    comparaciones = comparaciones.filter(function(c){ return c !== _codigoActual; });
+                                }
+                                if (_textoComparar) _textoComparar.textContent = _btnComparar.checked ? 'En comparación' : 'Comparar';
+                                // Actualizar banner inferior
+                                var banner = document.getElementById('bannerComparar');
+                                var texto = document.getElementById('textoComparar');
+                                if (texto) texto.textContent = 'Has seleccionado ' + comparaciones.length + ' propiedad(es)';
+                                if (banner) banner.classList.toggle('hidden', comparaciones.length === 0);
                             };
                         }
                         var _bp = document.querySelector('.carrusel-prev');
