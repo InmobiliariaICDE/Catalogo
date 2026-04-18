@@ -217,27 +217,7 @@
   }
 }
 </script>
-    <!-- BÚSQUEDA DESDE GOOGLE - registrar listener temprano antes de que los datos carguen -->
-    <script>
-    (function() {
-        const params = new URLSearchParams(window.location.search);
-        const terminoBusqueda = params.get('q');
-        if (!terminoBusqueda || terminoBusqueda.trim() === '') return;
 
-        window._icdeTerminoBusqueda = terminoBusqueda;
-
-        window.addEventListener('icdeDatosListos', function() {
-            const input = document.getElementById('filterBuscarNueva') || document.getElementById('movilBuscar');
-            if (!input) return;
-            input.value = terminoBusqueda;
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-            setTimeout(() => {
-                const tarjetas = document.getElementById('tarjetas');
-                if (tarjetas) tarjetas.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 400);
-        }, { once: true });
-    })();
-    </script>
     <script type="text/javascript">
     (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -7707,10 +7687,12 @@ font-weight: 500;
                         "Tipo de inmueble": [],
                         "Rango de precio": [],
                         "Zona": [],
-                        "Barrio": [],
+                        "Estrato": [],
                         "Habitaciones": [],
                         "Garaje": [],
                         "Pisos": [],
+                        "Barrio": [],
+                        "Conjunto": [],
                         "Buscar": ""
                     };
 
@@ -7767,7 +7749,7 @@ font-weight: 500;
                     // 3. Función de inicialización (después de obtener 'data')
                     // ─────────────────────────────────────────────────
                     function inicializar(data) {
-                        // Filtrar solo propiedades con Publicar = SI (defensa en profundidad)
+                        console.log('Inicializando con', data.length, 'registros');
                         datos = data.filter(d => String(d['Publicar'] || '').trim().toUpperCase() === 'SI');
 
                         // Asegurarnos de que ciertos filtros sean arrays
@@ -7775,7 +7757,47 @@ font-weight: 500;
                         filtros["Barrio"] = filtros["Barrio"] || [];
                         filtros["Conjunto"] = filtros["Conjunto"] || [];
 
-                        // ── PASO 1: Mostrar primeras 12 tarjetas INMEDIATAMENTE ──
+                        // ── PASO 0: Capturar y aplicar filtros desde URL ──
+                        const params = new URLSearchParams(window.location.search);
+                        const mapParams = {
+                            'q': 'Buscar',
+                            'tipo': 'Tipo de inmueble',
+                            'precio': 'Rango de precio',
+                            'zona': 'Zona',
+                            'estrato': 'Estrato',
+                            'hab': 'Habitaciones',
+                            'garaje': 'Garaje',
+                            'pisos': 'Pisos',
+                            'barrio': 'Barrio',
+                            'conjunto': 'Conjunto',
+                            'orden': 'orden'
+                        };
+
+                        let tieneFiltrosURL = false;
+                        for (const [param, filtroKey] of Object.entries(mapParams)) {
+                            let val = params.get(param);
+                            if (val && val.trim() !== '') {
+                                try { val = decodeURIComponent(val); } catch(e) {}
+                                if (filtroKey === 'orden') {
+                                    criterioOrden = val;
+                                    const sortToggle = document.getElementById('sortToggle');
+                                    if (sortToggle) {
+                                        const options = { 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad', 'destacadas': 'Propiedades destacadas' };
+                                        if (options[val]) sortToggle.textContent = options[val] + ' ▼';
+                                    }
+                                } else if (filtroKey === 'Buscar') {
+                                    filtros['Buscar'] = val;
+                                    const input = document.getElementById('filterBuscarNueva') || document.getElementById('movilBuscar');
+                                    if (input) input.value = val;
+                                } else {
+                                    filtros[filtroKey] = val.split(',').map(v => v.trim());
+                                }
+                                tieneFiltrosURL = true;
+                            }
+                        }
+                        if (tieneFiltrosURL) console.log('Filtros de URL aplicados correctamente:', filtros);
+
+                        // ── PASO 1: Mostrar tarjetas filtradas INMEDIATAMENTE ──
                         document.body.classList.remove('cargando');
                         const sp = document.getElementById('cargandoSpinner');
                         if (sp) sp.style.display = 'none';
@@ -7784,20 +7806,14 @@ font-weight: 500;
                         if (cw) cw.style.display = "flex";
                         document.getElementById("contador")?.classList.remove("hidden");
                         document.getElementById("ordenar-por")?.classList.remove("hidden");
+                        
                         aplicarFiltros();
-                        // Búsqueda desde URL ?q= (Google Search)
-                        if (window._icdeTerminoBusqueda) {
-                            const termino = window._icdeTerminoBusqueda;
-                            filtros['Buscar'] = termino;
-                            const inputBuscar = document.getElementById('filterBuscarNueva');
-                            const inputMovil  = document.getElementById('movilBuscar');
-                            if (inputBuscar) inputBuscar.value = termino;
-                            if (inputMovil)  inputMovil.value  = termino;
-                            aplicarFiltros();
+
+                        if (tieneFiltrosURL) {
                             setTimeout(() => {
                                 const tarjetas = document.getElementById('tarjetas');
                                 if (tarjetas) tarjetas.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            }, 400);
+                            }, 500);
                         }
                         // Notificar que los datos ya están listos
                         window._icdeDatosListos = true;
@@ -8040,8 +8056,11 @@ font-weight: 500;
                     // ─────────────────────────────────────────────────
                     function filtroIncluye(valorDato, filtro) {
                         if (!filtro || (Array.isArray(filtro) && filtro.length === 0)) return true;
-                        if (Array.isArray(filtro)) return filtro.includes(valorDato);
-                        return valorDato === filtro;
+                        const v = String(valorDato || "").trim().toLowerCase();
+                        if (Array.isArray(filtro)) {
+                            return filtro.some(f => String(f).trim().toLowerCase() === v);
+                        }
+                        return v === String(filtro).trim().toLowerCase();
                     }
 
                     // ─────────────────────────────────────────────────
