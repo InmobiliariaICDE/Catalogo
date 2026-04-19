@@ -7683,6 +7683,8 @@ font-weight: 500;
                     const tarjetasPorPagina = 12;
                     let datos = [];
 
+                    const parsePrecio = txt => parseFloat((txt || "").toString().replace(/[^\d]/g, "")) || 0;
+
                     let filtros = {
                         "Tipo de inmueble": [],
                         "Rango de precio": [],
@@ -7693,7 +7695,9 @@ font-weight: 500;
                         "Pisos": [],
                         "Barrio": [],
                         "Conjunto": [],
-                        "Buscar": ""
+                        "Buscar": "",
+                        "minPrice": null,
+                        "maxPrice": null
                     };
 
                     let listaFiltrada = [];
@@ -7770,7 +7774,9 @@ font-weight: 500;
                             'pisos': 'Pisos',
                             'barrio': 'Barrio',
                             'conjunto': 'Conjunto',
-                            'orden': 'orden'
+                            'orden': 'orden',
+                            'min': 'minPrice',
+                            'max': 'maxPrice'
                         };
 
                         let tieneFiltrosURL = false;
@@ -7789,6 +7795,8 @@ font-weight: 500;
                                     filtros['Buscar'] = val;
                                     const input = document.getElementById('filterBuscarNueva') || document.getElementById('movilBuscar');
                                     if (input) input.value = val;
+                                } else if (filtroKey === 'minPrice' || filtroKey === 'maxPrice') {
+                                    filtros[filtroKey] = parseFloat(val);
                                 } else {
                                     filtros[filtroKey] = val.split(',').map(v => v.trim());
                                 }
@@ -7982,7 +7990,6 @@ font-weight: 500;
                     function ordenarLista(lista) {
                         if (criterioOrden === "destacadas") {
                             // Solo propiedades destacadas, ordenadas de mayor a menor precio
-                            const parsePrecio = txt => parseFloat((txt || "").toString().replace(/[^\d]/g, "")) || 0;
                             return lista
                                 .filter(d => ["Directo", "Verbal"].includes(d["Contrato"]))
                                 .sort((a, b) => parsePrecio(b["Precio"]) - parsePrecio(a["Precio"]));
@@ -7990,10 +7997,6 @@ font-weight: 500;
                         return lista.sort((a, b) => {
                             if (criterioOrden === "menorPrecio" || criterioOrden === "mayorPrecio") {
                                 // 1) Quitamos símbolos y puntos, sólo dígitos
-                                const parsePrecio = txt => {
-                                    const num = parseFloat((txt || "").toString().replace(/[^\d]/g, "")) || 0;
-                                    return num;
-                                };
                                 const pa = parsePrecio(a["Precio"]);
                                 const pb = parsePrecio(b["Precio"]);
                                 return (criterioOrden === "menorPrecio" ? pa - pb : pb - pa);
@@ -8023,6 +8026,13 @@ font-weight: 500;
                         let filtrados = datos.filter(d => {
                             if (!filtroIncluye(d["Tipo de inmueble"], filtros["Tipo de inmueble"])) return false;
                             if (!filtroIncluye(d["Rango de precio"], filtros["Rango de precio"])) return false;
+                            
+                            // Filtro numérico de precio (min/max)
+                            if (filtros["minPrice"] || filtros["maxPrice"]) {
+                                const p = parsePrecio(d["Precio"]);
+                                if (filtros["minPrice"] && p < filtros["minPrice"]) return false;
+                                if (filtros["maxPrice"] && p > filtros["maxPrice"]) return false;
+                            }
                             if (!filtroIncluye(d["Zona"], filtros["Zona"])) return false;
                             if (!filtroIncluye(String(d["Estrato"]), filtros["Estrato"])) return false;
                             if (!filtroIncluye(d["Barrio"], filtros["Barrio"])) return false;
