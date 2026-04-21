@@ -1153,6 +1153,23 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               .btn-limpiar-nueva:hover,
             .btn-limpiar-nueva.fn-activo { background: rgba(255,255,255,.1);  color: #fff;   }
 
+            .btn-generar-nueva {
+                flex-shrink: 0;
+                display: none; /* Se muestra via JS si hay filtros */
+                align-items: center; justify-content: center;
+                padding: 0 16px; height: 100%;
+                background: #15803d; 
+                border: none; border-left: 1px solid rgba(255,255,255,.1);
+                color: #fff;
+                font-family: "Outfit",sans-serif;
+                font-weight: 600; font-size: 12.5px;
+                cursor: pointer; white-space: nowrap;
+                transition: background .2s;
+                gap: 6px;
+            }
+            .btn-generar-nueva:hover { background: #166534; }
+            .btn-generar-nueva svg { filter: drop-shadow(0 0 2px rgba(0,0,0,0.2)); }
+
         @media (min-width: 769px) {
             #movilSearchBar {
                 display: none !important;
@@ -7695,6 +7712,9 @@ font-weight: 500;
                         "Pisos": [],
                         "Barrio": [],
                         "Conjunto": [],
+                        "Ubicación": [],
+                        "Piscina": [],
+                        "Cocina": [],
                         "Buscar": "",
                         "minPrice": null,
                         "maxPrice": null
@@ -7774,6 +7794,9 @@ font-weight: 500;
                             'pisos': 'Pisos',
                             'barrio': 'Barrio',
                             'conjunto': 'Conjunto',
+                            'ubicacion': 'Ubicación',
+                            'piscina': 'Piscina',
+                            'cocina': 'Cocina',
                             'orden': 'orden',
                             'min': 'minPrice',
                             'max': 'maxPrice'
@@ -8040,6 +8063,9 @@ font-weight: 500;
                             if (!filtroIncluye(String(d["Habitaciones"]), filtros["Habitaciones"])) return false;
                             if (!filtroIncluye(String(d["Garaje"]), filtros["Garaje"])) return false;
                             if (!filtroIncluye(String(d["Pisos"]), filtros["Pisos"])) return false;
+                            if (!filtroIncluye(d["Ubicación"], filtros["Ubicación"])) return false;
+                            if (!filtroIncluye(d["Piscina"], filtros["Piscina"])) return false;
+                            if (!filtroIncluye(d["Cocina"], filtros["Cocina"])) return false;
 
                             if (filtros["Buscar"]) {
                                 const textoRaw = filtros["Buscar"].toLowerCase();
