@@ -8,7 +8,7 @@
  * 4. Crea una hoja nueva llamada 'CRM_Leads' para guardar los clientes.
  * 5. Haz clic en 'Implementar' > 'Nueva implementación' > 'Aplicación web'.
  * 6. En 'Quién tiene acceso', elige 'Cualquiera'.
- * 7. Copia la URL generada y pégala en la variable CRM_SCRIPT_URL del archivo crm.html.
+ * 7. Copia la URL generada y pégala en la variable CRM_SCRIPT_URL del archivo admin.html.
  */
 
 function doGet(e) {

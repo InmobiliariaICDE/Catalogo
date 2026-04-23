@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>CRM | ICDE Inmobiliaria</title>
+<title>Panel de Control | ICDE Inmobiliaria</title>
 <link rel="icon" type="image/png" href="https://i.imgur.com/4TfQXSf.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
@@ -45,6 +45,97 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .login-box button{background:linear-gradient(135deg,#c9943f,#9a6b20);border:none;border-radius:10px;padding:13px;color:#fff;font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .2s;}
 .login-box button:hover{opacity:.85;}
 .login-error{color:#ef4444;font-size:13px;text-align:center;display:none;}
+
+/* MODAL PROPIEDAD */
+.modal-overlay-prop{position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:10000;display:none;align-items:center;justify-content:center;padding:20px;transition:all 0.3s;}
+.modal-overlay-prop.active{display:flex;}
+.modal-prop{background:#0a0a0a;border:1px solid rgba(212,168,75,0.2);border-radius:24px;width:95%;max-width:1100px;height:96vh;display:flex;flex-direction:column;box-shadow:0 30px 100px rgba(0,0,0,0.9);overflow:hidden;}
+.modal-prop-header{padding:12px 20px;display:flex;justify-content:flex-end;align-items:center;background:transparent;z-index:10;position:absolute;top:10px;right:10px;}
+.modal-prop-close{background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.2);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;cursor:pointer;transition:all 0.2s;backdrop-filter:blur(4px);}
+.modal-prop-close:hover{background:#d4a84b;border-color:#d4a84b;}
+.modal-prop-body{padding:0;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
+.modal-contenido{display:flex;min-height:0;flex:1;}
+.modal-col-izq{flex:1 1 440px;max-width:440px;display:flex;flex-direction:column;padding:0;gap:0;min-width:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(212,168,75,0.2) transparent;}
+.modal-col-der{flex:1;padding:20px 24px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;border-left:1px solid rgba(212,168,75,0.1);min-width:0;scrollbar-width:thin;scrollbar-color:rgba(212,168,75,0.2) transparent;}
+.modal-col-izq::-webkit-scrollbar, .modal-col-der::-webkit-scrollbar { width:4px; }
+.modal-col-izq::-webkit-scrollbar-thumb, .modal-col-der::-webkit-scrollbar-thumb { background:rgba(212,168,75,0.2); border-radius:10px; }
+.modal-subtitulo-nuevo { font-size:9.5px; font-weight:700; letter-spacing:1.5px; color:#d4a84b; text-transform:uppercase; margin-bottom:10px; margin-top:10px; display:flex; align-items:center; gap:8px; font-family:"Outfit", sans-serif; }
+.modal-subtitulo-nuevo::after { content:''; flex:1; height:1px; background:rgba(212,168,75,0.15); }
+.modal-subtitulo-nuevo:first-child { margin-top: 0; }
+.modal-tabla-caracteristicas { width:100%; border-collapse:collapse; margin-bottom:2px; font-size:13px; }
+.modal-tabla-caracteristicas tr { border:1px solid rgba(255,255,255,0.05); }
+.modal-tabla-caracteristicas td { padding:6px 8px; vertical-align:middle; }
+.modal-tabla-caracteristicas td:first-child { color:rgba(192,192,192,0.45); width:45%; font-size:13.5px; border-right:1px solid rgba(255,255,255,0.05); }
+.modal-tabla-caracteristicas td:last-child { color:rgba(255,255,255,0.85); font-weight:500; }
+.modal-texto { color:rgba(192,192,192,0.65); font-size:13px; line-height:1.5; margin-bottom:2px; }
+.modal-prop-info{display:flex;flex-direction:column;gap:4px;padding:20px;}
+.modal-prop-title{font-size:18px;font-weight:700;color:#fff;line-height:1.3;margin:0;}
+.modal-prop-type{font-size:14px;color:#aaa;font-weight:600;margin:0;}
+.modal-prop-code{font-size:13px;color:#888;margin:0;}
+.modal-prop-price{font-size:22px;font-weight:700;color:#22c55e;margin:8px 0;text-shadow:0 0 20px rgba(34,197,94,0.1);}
+.modal-prop-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.modal-prop-tag{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);padding:6px 12px;border-radius:10px;font-size:12px;display:flex;align-items:center;gap:6px;color:#ccc;}
+.modal-prop-tag strong{color:#eee;}
+.modal-prop-footer{padding:16px 24px;border-top:1px solid rgba(212,168,75,0.1);display:flex;align-items:center;gap:15px;background:#0a0a0a;z-index:2;flex-shrink:0;}
+.modal-btn-whatsapp-nuevo { display:inline-flex; align-items:center; gap:9px; background:#d4a84b; color:#fff; font-size:13px; font-weight:700; padding:11px 22px; border-radius:50px; text-decoration:none; border:none; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 18px rgba(212,168,75,0.25); flex:none; }
+.modal-btn-whatsapp-nuevo:hover { background:#c49940; transform:translateY(-1px); }
+.modal-btn-compartir { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px 18px; border-radius:50px; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:13px; transition:all 0.2s; }
+.modal-btn-compartir:hover { background:rgba(255,255,255,0.1); }
+.modal-label-comparar { display:flex; align-items:center; gap:8px; color:#aaa; font-size:13px; cursor:pointer; }
+@media (max-width:850px){ .modal-prop-body{overflow-y:auto;} .modal-contenido{flex-direction:column;} .modal-col-izq{max-width:100%;flex:none;} .modal-col-der{border-left:none;border-top:1px solid rgba(212,168,75,0.1);overflow-y:visible;} }
+
+/* CARRUSEL MODAL PANEL */
+.carrusel-wrapper { width:100%; position:relative; display:flex; flex-direction:column; gap:0; min-width:0; flex-shrink:0; }
+.carrusel-principal { width:100%; height:340px; position:relative; background:#000; border-radius:0; overflow:hidden; border-bottom:1px solid rgba(212,168,75,0.1); }
+.carrusel-slide { position:absolute; inset:0; opacity:0; transition:opacity 0.4s ease; display:flex; align-items:center; justify-content:center; }
+.carrusel-slide.activa { opacity:1; z-index:1; }
+.carrusel-slide img { width:100%; height:100%; object-fit:cover; background:#000; }
+.carrusel-btn { position:absolute; top:50%; transform:translateY(-50%); width:40px; height:40px; background:rgba(0,0,0,0.5); border:none; border-radius:50%; color:#fff; font-size:24px; cursor:pointer; z-index:10; display:flex; align-items:center; justify-content:center; transition:all 0.2s; backdrop-filter:blur(4px); }
+.carrusel-btn:hover { background:var(--gold); }
+.carrusel-prev { left:12px; }
+.carrusel-next { right:12px; }
+.carrusel-counter { position:absolute; bottom:12px; right:12px; background:rgba(0,0,0,0.6); padding:4px 10px; border-radius:20px; color:#fff; font-size:11px; font-weight:600; z-index:10; backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.1); }
+.carrusel-miniaturas { display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; scrollbar-width:thin; }
+.carrusel-miniaturas::-webkit-scrollbar { height:4px; }
+.carrusel-miniaturas::-webkit-scrollbar-thumb { background:rgba(212,168,75,0.3); border-radius:2px; }
+.carrusel-min { width:52px; height:52px; border-radius:8px; object-fit:cover; cursor:pointer; opacity:0.4; transition:all 0.2s; border:2px solid transparent; flex-shrink:0; }
+.carrusel-min:hover { opacity:0.8; }
+.carrusel-min.activa { opacity:1; border-color:var(--gold); }
+.carrusel-expand { position:absolute; top:12px; right:12px; background:rgba(0,0,0,0.6); border:none; border-radius:12px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; color:#fff; transition:all 0.2s; backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.1); }
+.carrusel-expand:hover { background:var(--gold); }
+.carrusel-expand svg { width:20px; height:20px; fill:currentColor; }
+
+/* LIGHTBOX PANEL */
+#lightboxOverlay { position:fixed; inset:0; background:rgba(0,0,0,0.98); z-index:20000; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+#lightboxOverlay.activo { display:flex; }
+.lightbox-img-wrap { position:relative; max-width:100%; max-height:80vh; display:flex; align-items:center; justify-content:center; }
+#lightboxImg { max-width:100%; max-height:100%; object-fit:contain; box-shadow:0 0 50px rgba(0,0,0,0.5); }
+.lightbox-close { position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:32px; cursor:pointer; z-index:20010; transition:all 0.2s; }
+.lightbox-close:hover { background:rgba(239,68,68,0.2); color:#ef4444; }
+.lightbox-counter { position:absolute; top:20px; left:50%; transform:translateX(-50%); color:#fff; font-size:14px; font-weight:600; background:rgba(255,255,255,0.1); padding:6px 16px; border-radius:20px; backdrop-filter:blur(10px); }
+.lightbox-mins { width:100%; max-width:800px; display:flex; gap:10px; overflow-x:auto; padding:20px 0; margin-top:20px; scrollbar-width:none; }
+.lightbox-mins::-webkit-scrollbar { display:none; }
+.lightbox-min { width:60px; height:60px; object-fit:cover; border-radius:8px; opacity:0.3; cursor:pointer; transition:all 0.2s; border:2px solid transparent; flex-shrink:0; }
+.lightbox-min.activa { opacity:1; border-color:var(--gold); transform:scale(1.1); }
+#lightboxPrev, #lightboxNext { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; width:50px; height:50px; border-radius:50%; font-size:30px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(5px); }
+#lightboxPrev:hover, #lightboxNext:hover { background:var(--gold); border-color:var(--gold); }
+#lightboxPrev { left:-70px; }
+#lightboxNext { right:-70px; }
+@media (max-width:1100px){ #lightboxPrev{left:10px;} #lightboxNext{right:10px;} }
+
+
+@media (max-width:768px){ 
+  .modal-prop-body{grid-template-columns:1fr; padding:16px; gap:20px;} 
+  .carrusel-principal { height:200px; }
+  .modal-prop-header { padding:16px; }
+}
+
+
+/* Ajuste en prop-card para el checkbox de selección */
+.prop-card-selector { position: absolute; top: 12px; right: 12px; z-index: 5; width: 24px; height: 24px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; transition: all 0.2s; cursor: pointer; }
+.prop-card.selected .prop-card-selector { background: var(--gold); border-color: var(--gold); }
+.prop-card:hover .prop-card-selector { transform: scale(1.1); }
+
 
 /* LAYOUT */
 #app{display:none;flex-direction:column;height:100vh;}
@@ -172,7 +263,7 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 /* ═══════════════════════════════════════════════════════
    FILTROS — CSS IDÉNTICO AL INDEX.HTML
 ═══════════════════════════════════════════════════════ */
-.crm-filtros-wrapper{position:relative;z-index:50;display:flex;flex-direction:column;gap:10px;margin-bottom:4px;}
+.pc-filtros-wrapper{position:relative;z-index:50;display:flex;flex-direction:column;gap:10px;margin-bottom:4px;}
 
 /* Barra contenedor — copia exacta de .filtros-bar-nueva del index */
 .filtros-bar-nueva{
@@ -220,22 +311,22 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 .fn-count{margin-left:auto;font-size:12px;color:rgba(180,180,180,.55);font-weight:400;}
 .fn-option.fn-sel .fn-count{color:rgba(212,168,75,.6);}
 /* Fila buscar — copia de .buscar-row-nueva */
-.crm-buscar-row{display:flex;align-items:stretch;background:rgba(0,0,0,0.45);backdrop-filter:blur(14px);border:1px solid rgba(200,200,200,0.20);border-radius:var(--icde-radius);height:var(--icde-h);overflow:hidden;}
-.crm-buscar-row .bn-icon{padding:0 10px 0 14px;color:var(--icde-gold);display:flex;align-items:center;flex-shrink:0;}
-.crm-buscar-row input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:400;padding:0;}
-.crm-buscar-row input::placeholder{color:rgba(200,200,200,.45);font-weight:500;letter-spacing:.07em;font-size:12.5px;}
-.btn-limpiar-crm{flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0 18px;height:100%;background:rgba(180,180,180,.12);border:none;border-left:1px solid rgba(200,200,200,.18);color:rgba(220,220,220,.7);font-family:'Outfit',sans-serif;font-weight:500;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:background .2s,color .2s;}
-.btn-limpiar-crm:hover{background:rgba(255,255,255,.1);color:#fff;}
-.btn-generar-crm {
+.pc-buscar-row{display:flex;align-items:stretch;background:rgba(0,0,0,0.45);backdrop-filter:blur(14px);border:1px solid rgba(200,200,200,0.20);border-radius:var(--icde-radius);height:var(--icde-h);overflow:hidden;}
+.pc-buscar-row .bn-icon{padding:0 10px 0 14px;color:var(--icde-gold);display:flex;align-items:center;flex-shrink:0;}
+.pc-buscar-row input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:400;padding:0;}
+.pc-buscar-row input::placeholder{color:rgba(200,200,200,.45);font-weight:500;letter-spacing:.07em;font-size:12.5px;}
+.btn-limpiar-pc{flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0 18px;height:100%;background:rgba(180,180,180,.12);border:none;border-left:1px solid rgba(200,200,200,.18);color:rgba(220,220,220,.7);font-family:'Outfit',sans-serif;font-weight:500;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:background .2s,color .2s;}
+.btn-limpiar-pc:hover{background:rgba(255,255,255,.1);color:#fff;}
+.btn-generar-pc {
   flex-shrink:0; display:none; align-items:center; justify-content:center;
   padding:0 18px; height:100%; background:var(--green); border:none;
   border-left:1px solid rgba(200,200,200,0.18); color:#fff;
   font-family:'Outfit',sans-serif; font-weight:600; font-size:12.5px;
   cursor:pointer; white-space:nowrap; transition:all .2s; gap:6px;
 }
-.btn-generar-crm:hover { background:#16a34a; }
-.crm-count-bar{font-size:13px;color:#888;padding:4px 2px;}
-.crm-count-bar strong{color:var(--icde-gold);}
+.btn-generar-pc:hover { background:#16a34a; }
+.pc-count-bar{font-size:13px;color:#888;padding:4px 2px;}
+.pc-count-bar strong{color:var(--icde-gold);}
 
 /* CHIPS de tabla */
 .chip-filtro{padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#aaa;font-size:13px;cursor:pointer;transition:all .2s;white-space:nowrap;}
@@ -479,7 +570,7 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 <!-- LOGIN -->
 <div id="loginScreen">
   <img src="https://i.imgur.com/YbnRomr.png" alt="ICDE"/>
-  <h1>CRM · ICDE Inmobiliaria</h1>
+  <h1>Panel de Control · ICDE Inmobiliaria</h1>
   <div class="login-box">
     <input type="password" id="passInput" placeholder="Contraseña" autocomplete="current-password"/>
     <button onclick="doLogin()">Ingresar</button>
@@ -491,7 +582,7 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 <div id="app">
   <div class="topbar">
     <img src="https://i.imgur.com/YbnRomr.png" alt="ICDE"/>
-    <div class="brand">ICDE CRM <span>/ Gestión de Clientes</span></div>
+    <div class="brand">ICDE Panel de Control <span>/ Gestión de Clientes</span></div>
     <div class="topbar-right">
       <span id="syncStatus" style="font-size:12px;color:#888;"></span>
       <button class="btn-logout" onclick="doLogout()">Salir</button>
@@ -726,7 +817,7 @@ function buildFiltrosBar(containerId, pfx, initVals){
   const row2 = FCAMPOS.slice(6);
 
   wrap.innerHTML = `
-    <div class="crm-filtros-wrapper">
+    <div class="pc-filtros-wrapper">
       <div class="filtros-bar-nueva" id="fnBar1_${pfx}">
         ${row1.map(c=>`
           <div class="filtro-nuevo" id="fn_${pfx}_${c.key}">
@@ -749,15 +840,15 @@ function buildFiltrosBar(containerId, pfx, initVals){
             <div class="filtro-nuevo-dropdown" id="fnD_${pfx}_${c.key}"></div>
           </div>`).join('')}
       </div>
-      <div class="crm-buscar-row">
+      <div class="pc-buscar-row">
         <span class="bn-icon">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </span>
         <input type="text" id="fnBus_${pfx}" placeholder="Buscar por nombre, código, barrio..." oninput="fnBuscar('${pfx}',this.value)"/>
-        <button class="btn-generar-crm" id="btnGen_${pfx}" onclick="fnGenerarLink('${pfx}', this)">Generar link</button>
-        <button class="btn-limpiar-crm" onclick="fnLimpiar('${pfx}')">Limpiar filtros</button>
+        <button class="btn-generar-pc" id="btnGen_${pfx}" onclick="fnGenerarLink('${pfx}', this)">Generar link</button>
+        <button class="btn-limpiar-pc" onclick="fnLimpiar('${pfx}')">Limpiar filtros</button>
       </div>
-      <div class="crm-count-bar">Propiedades encontradas: <strong id="fnCnt_${pfx}">—</strong></div>
+      <div class="pc-count-bar">Propiedades encontradas: <strong id="fnCnt_${pfx}">—</strong></div>
     </div>`;
 
   // Poblar dropdowns
@@ -783,7 +874,8 @@ function buildFiltrosBar(containerId, pfx, initVals){
   });
 
   // Cerrar al clic fuera
-  document.addEventListener('click', ()=>{
+  document.addEventListener('click', (e)=>{
+    if(e.target.closest('.filtro-nuevo')) return;
     document.querySelectorAll(`.filtro-nuevo.fn-open`).forEach(f=>f.classList.remove('fn-open'));
   });
 
@@ -810,8 +902,8 @@ function fnPoblar(pfx, c){
     drop.innerHTML = `
       <div class="price-slider-wrap">
         <div class="price-inputs">
-          <div class="form-group"><label class="form-label">Min (MM)</label><input type="number" id="inpMin_${pfx}" value="${curMin}" oninput="fnSetPrice('${pfx}','min',this.value,true)"/></div>
-          <div class="form-group"><label class="form-label">Max (MM)</label><input type="number" id="inpMax_${pfx}" value="${curMax}" oninput="fnSetPrice('${pfx}','max',this.value,true)"/></div>
+          <div class="form-group"><label class="form-label">Min (MM)</label><input type="number" id="inpMin_${pfx}" value="${curMin}" oninput="fnSetPrice('${pfx}','min',this.value,true)" onclick="event.stopPropagation()"/></div>
+          <div class="form-group"><label class="form-label">Max (MM)</label><input type="number" id="inpMax_${pfx}" value="${curMax}" oninput="fnSetPrice('${pfx}','max',this.value,true)" onclick="event.stopPropagation()"/></div>
         </div>
         <div class="price-slider-container">
           <div class="price-slider-track"></div>
@@ -1190,7 +1282,7 @@ function renderNuevo(){
           <div style="margin-top:20px;">
             <div class="form-label" style="margin-bottom:12px;">Método de Pago Preferido</div>
             <div class="checklist">
-              ${['Efectivo','Crédito','Caja Honor'].map(m=>`<label class="check-item ${nuevoLead.metodoPago.includes(m)?'active':''}"><input type="checkbox" ${nuevoLead.metodoPago.includes(m)?'checked':''} onchange="toggleMetodo('${m}',this)"/> ${m}</label>`).join('')}
+              ${['Efectivo', 'Crédito', 'Caja Honor'].map(m=>`<label class="check-item ${nuevoLead.metodoPago.includes(m)?'active':''}"><input type="checkbox" ${nuevoLead.metodoPago.includes(m)?'checked':''} onchange="toggleMetodo('${m}',this)"/> ${m}</label>`).join('')}
             </div>
           </div>
         </div>
@@ -1275,8 +1367,10 @@ function renderPropsGrid(listaForzada){
   let html = `<div class="props-grid">${sliced.map(d=>{
     const sel=selectedProps.includes(d['Código']);
     const img=(d['Imagenes']||'').split('|')[0].trim()||d['Image']||'https://i.imgur.com/Pc9M3I8.png';
-    return `<div class="prop-card${sel?' selected':''}" onclick="toggleProp('${eq(d['Código'])}',this)">
-      <div class="prop-card-check">✓</div>
+    return `<div class="prop-card${sel?' selected':''}" onclick="abrirModalProp('${eq(d['Código'])}')">
+      <div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp('${eq(d['Código'])}', this.parentElement)">
+        ${sel?'✓':'+'}
+      </div>
       <img src="${img}" loading="lazy" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
       <div class="prop-card-body">
         <div class="prop-card-code">${d['Código']||''}</div>
@@ -1308,8 +1402,21 @@ function changeNlPage(delta){
 
 function toggleProp(cod,el){
   const idx=selectedProps.indexOf(cod);
-  if(idx>=0){ selectedProps.splice(idx,1); el.classList.remove('selected'); el.querySelector('.prop-card-check').style.display='none'; }
-  else       { selectedProps.push(cod);    el.classList.add('selected');    el.querySelector('.prop-card-check').style.display='flex'; }
+  if(idx>=0){ 
+    selectedProps.splice(idx,1); 
+    if(el) {
+      el.classList.remove('selected'); 
+      const sel = el.querySelector('.prop-card-selector');
+      if(sel) sel.textContent = '+';
+    }
+  } else { 
+    selectedProps.push(cod);    
+    if(el) {
+      el.classList.add('selected');    
+      const sel = el.querySelector('.prop-card-selector');
+      if(sel) sel.textContent = '✓';
+    }
+  }
   const c=document.getElementById('selCnt'); if(c) c.textContent=`${selectedProps.length} seleccionadas`;
 }
 
@@ -2139,7 +2246,7 @@ function renderAdministracion(){
         Aquí podrás gestionar los inmuebles administrados, contratos, arrendamientos y pagos. 
         Estamos preparando las mejores herramientas para tu gestión inmobiliaria.
       </p>
-      <button class="btn btn-gold" style="margin-top:32px;" onclick="showTab('nuevo')">Volver al CRM</button>
+      <button class="btn btn-gold" style="margin-top:32px;" onclick="showTab('nuevo')">Volver al Panel de Control</button>
     </div>
   `;
 }
@@ -2183,7 +2290,7 @@ function renderEstadisticas(){
       <div class="stat-card">
         <div class="stat-label">Leads Activos</div>
         <div class="stat-value">${leadsActivos}</div>
-        <div class="stat-sub">${leads.length} leads totales en CRM</div>
+        <div class="stat-sub">${leads.length} leads totales en el Panel</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Visitas Realizadas</div>
@@ -2409,6 +2516,221 @@ function renderTopProps(){
   }).join('');
 }
 
+</script>
+<!-- MODAL PROPIEDAD -->
+<div class="modal-overlay-prop" id="modalPropOverlay" onclick="if(event.target===this) cerrarModalProp()">
+  <div class="modal-prop">
+    <div class="modal-prop-header">
+      <button class="modal-prop-close" onclick="cerrarModalProp()">×</button>
+    </div>
+    <div class="modal-prop-body">
+      <div class="modal-contenido">
+        <!-- COL IZQ -->
+        <div class="modal-col-izq">
+          <div class="carrusel-wrapper">
+            <div class="carrusel-principal" id="mpCarruselPrincipal">
+              <button class="carrusel-btn carrusel-prev" onclick="mpCarruselIr(-1)">&#8249;</button>
+              <button class="carrusel-btn carrusel-next" onclick="mpCarruselIr(1)">&#8250;</button>
+              <span class="carrusel-counter" id="mpCarruselCounter">1 / 1</span>
+              <button class="carrusel-expand" onclick="lbAbrir(mpCarruselFotos, mpCarruselIdx)" title="Ver pantalla completa">
+                <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+              </button>
+            </div>
+            <div class="carrusel-miniaturas" id="mpCarruselMiniaturas"></div>
+          </div>
+          
+          <div class="modal-prop-info">
+            <div class="modal-prop-title" id="mpTitle">Nombre</div>
+            <div class="modal-prop-type" id="mpType">Tipo</div>
+            <div class="modal-prop-code" id="mpCode">Código: 000</div>
+            <div class="modal-prop-price" id="mpPrice">$0</div>
+            <div class="modal-prop-tags" id="mpTags"></div>
+          </div>
+        </div>
+        
+        <!-- COL DER -->
+        <div class="modal-col-der">
+          <div>
+            <div class="modal-subtitulo-nuevo">Características</div>
+            <table class="modal-tabla-caracteristicas" id="mpSpecsTable"></table>
+          </div>
+          
+          <div>
+            <div class="modal-subtitulo-nuevo">Puntos Clave</div>
+            <div class="modal-texto" id="mpKeyPoints"></div>
+          </div>
+          
+          <div>
+            <div class="modal-subtitulo-nuevo">Descripción</div>
+            <div class="modal-texto" id="mpDesc"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-prop-footer">
+      <button class="modal-btn-whatsapp-nuevo" id="mpBtnWhatsapp">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.846.497 3.576 1.362 5.065L2 22l5.07-1.33A9.953 9.953 0 0012 22c5.522 0 10-4.477 10-10S17.521 2 11.999 2zm.001 18a7.963 7.963 0 01-4.184-1.188l-.3-.178-3.012.79.803-2.93-.196-.31A7.944 7.944 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/></svg>
+        Agendar visita
+      </button>
+      <button class="modal-btn-compartir">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Compartir
+      </button>
+      <label class="modal-label-comparar">
+        <input type="checkbox" id="mpChkSel" style="width:18px;height:18px;cursor:pointer;accent-color:#d4a84b;"/>
+        Comparar
+      </label>
+      <button class="btn btn-secondary" onclick="cerrarModalProp()" style="margin-left:auto;">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div id="lightboxOverlay" onclick="if(event.target===this) lbCerrar()">
+  <button class="lightbox-close" onclick="lbCerrar()">&times;</button>
+  <span class="lightbox-counter" id="lightboxCounter">1 / 1</span>
+  <div class="lightbox-img-wrap">
+    <img id="lightboxImg" src="" />
+    <button id="lightboxPrev" onclick="lbIr(lbIdx-1)">&#8249;</button>
+    <button id="lightboxNext" onclick="lbIr(lbIdx+1)">&#8250;</button>
+  </div>
+  <div class="lightbox-mins" id="lightboxMins"></div>
+</div>
+
+<script>
+let lbIdx = 0;
+let lbFotos = [];
+
+window.lbAbrir = function(fotos, idx){
+  lbFotos = fotos;
+  lbIdx = idx;
+  document.getElementById('lightboxOverlay').classList.add('activo');
+  
+  const mins = document.getElementById('lightboxMins');
+  mins.innerHTML = lbFotos.map((u,i)=>`<img src="${u}" class="lightbox-min ${i===lbIdx?'activa':''}" onclick="lbIr(${i})"/>`).join('');
+  
+  lbIr(lbIdx);
+}
+
+window.lbIr = function(idx){
+  const n = lbFotos.length;
+  if(n<=0) return;
+  lbIdx = (idx + n) % n;
+  
+  const img = document.getElementById('lightboxImg');
+  img.src = lbFotos[lbIdx];
+  
+  document.getElementById('lightboxCounter').textContent = `${lbIdx+1} / ${n}`;
+  
+  const mins = document.querySelectorAll('.lightbox-min');
+  mins.forEach((m,i)=>m.classList.toggle('activa', i===lbIdx));
+  if(mins[lbIdx]) mins[lbIdx].scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+}
+
+window.lbCerrar = function(){
+  document.getElementById('lightboxOverlay').classList.remove('activo');
+}
+
+document.addEventListener('keydown', e => {
+  if(!document.getElementById('lightboxOverlay').classList.contains('activo')) return;
+  if(e.key==='Escape') lbCerrar();
+  if(e.key==='ArrowLeft') lbIr(lbIdx-1);
+  if(e.key==='ArrowRight') lbIr(lbIdx+1);
+});
+
+let mpCarruselFotos = [];
+let mpCarruselIdx = 0;
+
+function abrirModalProp(codigo){
+  const p = allProps.find(x=>x['Código']===codigo);
+  if(!p) return;
+  
+  document.getElementById('mpTitle').textContent = p['Nombre'];
+  document.getElementById('mpType').textContent = p['Tipo de inmueble'] || 'Inmueble';
+  document.getElementById('mpCode').textContent = `Código: ${p['Código']}`;
+  document.getElementById('mpPrice').textContent = formatP(p['Precio']);
+  document.getElementById('mpDesc').textContent = p['Descripción'] || 'Sin descripción';
+  document.getElementById('mpKeyPoints').textContent = p['Puntos Clave'] || 'No especificados';
+  
+  // Fotos
+  mpCarruselFotos = (p['Imagenes']||'').split('|').map(u=>u.trim()).filter(u=>u.length>5);
+  if(!mpCarruselFotos.length) mpCarruselFotos = [p['Image'] || 'https://i.imgur.com/Pc9M3I8.png'];
+  
+  mpCarruselInit();
+  
+  const tags = document.getElementById('mpTags');
+  tags.innerHTML = '';
+  if(p['Habitaciones']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/ykKdGwE.png" width="16"/> <strong>${p['Habitaciones']}</strong> Hab</div>`;
+  if(p['Baños']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/h9NqA32.png" width="16"/> <strong>${p['Baños']}</strong> Baños</div>`;
+  if(p['Garaje'] && p['Garaje']!=='No') tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/4Yixa77.png" width="16"/> <strong>${p['Garaje']}</strong> Garaje</div>`;
+  if(p['Cocina'] && p['Cocina']!=='No') tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/rH6cXMa.png" width="16"/> <strong>${p['Cocina']}</strong> Cocina</div>`;
+  
+  const specsTable = document.getElementById('mpSpecsTable');
+  const items = [
+    ['Ciudad', p['Ciudad']],
+    ['Zona', p['Zona']],
+    ['Estrato', p['Estrato']],
+    ['Ubicación', p['Ubicación']],
+    ['Piscina', p['Piscina']],
+    ['Área construida', p['Área construida']],
+    ['Administración', p['Administración']],
+    ['Retorno de la inversión', p['Retorno de la inversión']]
+  ];
+  specsTable.innerHTML = items.map(([k,v]) => `<tr><td>${k}</td><td>${v||'—'}</td></tr>`).join('');
+  
+  const chk = document.getElementById('mpChkSel');
+  const sel = selectedProps.includes(codigo);
+  chk.checked = sel;
+  chk.onchange = () => toggleProp(codigo);
+  
+  const btnW = document.getElementById('mpBtnWhatsapp');
+  btnW.onclick = () => {
+    const txt = encodeURIComponent(`Hola, estoy interesado en la propiedad ${p['Nombre']} (Código: ${p['Código']})`);
+    window.open(`https://wa.me/573153547141?text=${txt}`, '_blank');
+  };
+  
+  document.getElementById('modalPropOverlay').classList.add('active');
+}
+
+function mpCarruselInit(){
+  mpCarruselIdx = 0;
+  const principal = document.getElementById('mpCarruselPrincipal');
+  principal.querySelectorAll('.carrusel-slide').forEach(s=>s.remove());
+  
+  mpCarruselFotos.forEach((u,i)=>{
+    const slide = document.createElement('div');
+    slide.className = 'carrusel-slide' + (i===0?' activa':'');
+    slide.innerHTML = `<img src="${u}" loading="lazy" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>`;
+    principal.insertBefore(slide, principal.querySelector('.carrusel-prev'));
+  });
+  
+  const mini = document.getElementById('mpCarruselMiniaturas');
+  mini.innerHTML = mpCarruselFotos.map((u,i)=>`<img src="${u}" class="carrusel-min ${i===0?'activa':''}" onclick="mpCarruselIrA(${i})"/>`).join('');
+  
+  document.getElementById('mpCarruselCounter').textContent = `1 / ${mpCarruselFotos.length}`;
+}
+
+function mpCarruselIr(delta){
+  mpCarruselIrA(mpCarruselIdx + delta);
+}
+
+function mpCarruselIrA(idx){
+  const n = mpCarruselFotos.length;
+  if(n<=1) return;
+  mpCarruselIdx = (idx + n) % n;
+  
+  const slides = document.querySelectorAll('#mpCarruselPrincipal .carrusel-slide');
+  slides.forEach((s,i)=>s.classList.toggle('activa', i===mpCarruselIdx));
+  
+  const mins = document.querySelectorAll('#mpCarruselMiniaturas .carrusel-min');
+  mins.forEach((m,i)=>m.classList.toggle('activa', i===mpCarruselIdx));
+  if(mins[mpCarruselIdx]) mins[mpCarruselIdx].scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+  
+  document.getElementById('mpCarruselCounter').textContent = `${mpCarruselIdx+1} / ${n}`;
+}
+
+function cerrarModalProp(){
+  document.getElementById('modalPropOverlay').classList.remove('active');
+}
 </script>
 </body>
 </html>
