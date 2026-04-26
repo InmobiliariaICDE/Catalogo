@@ -1300,14 +1300,14 @@ function renderNuevo(){
         <div class="section-content">
           <div class="form-grid" style="margin-top:4px;">
             <div class="form-group">
-              <label class="form-label">Propiedades por mensaje</label>
-              <input class="form-input" type="number" min="1" max="10" value="${nuevoLead.maxPorEnvio}" oninput="nuevoLead.maxPorEnvio=parseInt(this.value)||4"/>
-            </div>
-            <div class="form-group">
               <label class="form-label">Frecuencia de seguimiento</label>
-              <div class="freq-options">
-                ${['manual','diaria','semanal','quincenal','mensual'].map(f=>`<button class="freq-btn ${nuevoLead.frecuencia===f?'sel':''}" onclick="setFrec('${f}')">${f.charAt(0).toUpperCase()+f.slice(1)}</button>`).join('')}
-              </div>
+              <select class="form-input" onchange="nuevoLead.frecuencia=this.value; updateFrec()">
+                <option value="diaria" ${nuevoLead.frecuencia==='diaria'?'selected':''}>Diaria</option>
+                <option value="semanal" ${nuevoLead.frecuencia==='semanal'?'selected':''}>Semanal</option>
+                <option value="quincenal" ${nuevoLead.frecuencia==='quincenal'?'selected':''}>Quincenal</option>
+                <option value="mensual" ${nuevoLead.frecuencia==='mensual'?'selected':''}>Mensual</option>
+                <option value="manual" ${nuevoLead.frecuencia==='manual'?'selected':''}>Manual</option>
+              </select>
             </div>
           </div>
           <div class="freq-info" id="frecInfo" style="margin-top:20px; ${nuevoLead.frecuencia==='manual'?'display:none':''}">${getFrecInfo()}</div>
@@ -1331,10 +1331,15 @@ function renderNuevo(){
 }
 
 function getFrecInfo(){
-  const cnt=filtrarProps(nuevoLead.filtros).length, max=nuevoLead.maxPorEnvio||4;
-  const lotes=Math.ceil(cnt/max)||0;
+  const cnt=filtrarProps(nuevoLead.filtros).length;
   const ft={diaria:'día',semanal:'semana',quincenal:'15 días',mensual:'mes'}[nuevoLead.frecuencia]||nuevoLead.frecuencia;
-  return `Con <strong>${cnt}</strong> propiedades → <strong>${max}</strong> por <strong>${ft}</strong> → <strong>${lotes} envíos</strong>.`;
+  if(nuevoLead.frecuencia==='manual') return `Con <strong>${cnt}</strong> propiedades → <strong>Envío manual</strong>.`;
+  return `Con <strong>${cnt}</strong> propiedades → Se enviarán todas las propiedades encontradas cada <strong>${ft}</strong>.`;
+}
+
+function updateFrec(){
+  const fi=document.getElementById('frecInfo');
+  if(fi){ fi.style.display=nuevoLead.frecuencia==='manual'?'none':''; fi.innerHTML=getFrecInfo(); }
 }
 
 function setTipo(tipo){
@@ -1347,12 +1352,6 @@ function toggleMetodo(m,el){
   if(el.checked){ if(!nuevoLead.metodoPago.includes(m)) nuevoLead.metodoPago.push(m); }
   else nuevoLead.metodoPago=nuevoLead.metodoPago.filter(x=>x!==m);
   el.closest('.check-item').classList.toggle('active',el.checked);
-}
-function setFrec(f){
-  nuevoLead.frecuencia=f;
-  document.querySelectorAll('.freq-btn').forEach(b=>b.classList.toggle('sel',b.textContent.toLowerCase()===f));
-  const fi=document.getElementById('frecInfo');
-  if(fi){ fi.style.display=f==='manual'?'none':''; fi.innerHTML=getFrecInfo(); }
 }
 function deselProp(cod){ selectedProps=selectedProps.filter(c=>c!==cod); renderNuevo(); }
 
