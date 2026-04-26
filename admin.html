@@ -768,6 +768,8 @@ function filtrarProps(f){
   const parseP = txt => parseFloat(String(txt || "").replace(/[^\d]/g, "")) || 0;
   const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   
+  if(!f) return allProps;
+
   const filtered = allProps.filter(d=>{
     // 1. Categorías (Multi-select)
     if(f.tipoInmueble?.length && !f.tipoInmueble.includes(d['Tipo de inmueble'])) return false;
@@ -1071,14 +1073,11 @@ function fnActualizarConteo(pfx){
 
 }
 
-function fnGenerarLink(pfx, btn){
-  const st = getFSt(pfx);
+function getSearchLinkFromFilters(st){
+  if(!st) return 'https://icdeinmobiliaria.com/';
   const url = new URL('https://icdeinmobiliaria.com/');
   const p = url.searchParams;
-  
-  const bus = (document.getElementById(`fnBus_${pfx}`)?.value || '').trim();
-  if(bus) p.set('q', bus);
-  
+  if(st.buscar) p.set('q', st.buscar.trim());
   if(st.tipoInmueble?.length) p.set('tipo', st.tipoInmueble.join(','));
   if(st.minPrice) p.set('min', st.minPrice);
   if(st.maxPrice) p.set('max', st.maxPrice);
@@ -1091,14 +1090,21 @@ function fnGenerarLink(pfx, btn){
   if(st.cocina?.length)       p.set('cocina', st.cocina.join(','));
   if(st.barrio?.length)       p.set('barrio', st.barrio.join(','));
   if(st.conjunto?.length)     p.set('conjunto', st.conjunto.join(','));
-  
-  const link = url.toString();
+  return url.toString();
+}
+
+function fnGenerarLink(pfx, btn){
+  const st = getFSt(pfx);
+  const busVal = (document.getElementById(`fnBus_${pfx}`)?.value || '').trim();
+  st.buscar = busVal;
+  const link = getSearchLinkFromFilters(st);
   navigator.clipboard.writeText(link).then(() => {
     const original = btn.innerHTML;
     btn.textContent = '¡Copiado!';
     setTimeout(() => { btn.innerHTML = original; }, 2000);
   });
 }
+
 
 /* Sincronizar estado filtros hacia el objeto correspondiente */
 function fnSincronizar(pfx){
@@ -1282,7 +1288,7 @@ function renderNuevo(){
           <div style="margin-top:20px;">
             <div class="form-label" style="margin-bottom:12px;">Método de Pago Preferido</div>
             <div class="checklist">
-              ${['Efectivo', 'Crédito', 'Caja Honor'].map(m=>`<label class="check-item ${nuevoLead.metodoPago.includes(m)?'active':''}"><input type="checkbox" ${nuevoLead.metodoPago.includes(m)?'checked':''} onchange="toggleMetodo('${m}',this)"/> ${m}</label>`).join('')}
+              ${['Efectivo', 'Crédito', 'Caja Honor', 'Permuta'].map(m=>`<label class="check-item ${nuevoLead.metodoPago.includes(m)?'active':''}"><input type="checkbox" ${nuevoLead.metodoPago.includes(m)?'checked':''} onchange="toggleMetodo('${m}',this)"/> ${m}</label>`).join('')}
             </div>
           </div>
         </div>
@@ -1436,11 +1442,14 @@ function guardarLead(enviarAhora){
     frecuencia:nuevoLead.frecuencia, maxPorEnvio:max,
     nombreInmobiliaria:nuevoLead.nombreInmobiliaria, nombreAgente:nuevoLead.nombreAgente,
     propsFiltradas:filtradas.map(d=>d['Código']),
-    propsEnviadas:[], proximosEnvios:generarProximos(filtradas,nuevoLead.frecuencia,max,[]),
+    propsEnviadas:[], proximosEnvios:generarProximosCheck(nuevoLead.frecuencia),
     historialEnvios:[], visitas:[], creadoEn:new Date().toISOString()
   };
   leads.push(lead); saveLeads(); toast('Cliente guardado ✓','success');
-  if(enviarAhora){ const sel=selectedProps.length>0?selectedProps:(lead.proximosEnvios[0]?.codigos||[]); if(sel.length) setTimeout(()=>abrirEnvioModal(lead.id,sel),300); }
+  if(enviarAhora){ 
+    const sel = selectedProps.length > 0 ? selectedProps : null;
+    setTimeout(()=>abrirEnvioModal(lead.id, sel), 300); 
+  }
   resetNuevoLead(); syncSheets(lead);
 }
 
@@ -1468,18 +1477,28 @@ function generarProximos(lista, frec, max, historial){
   return prox;
 }
 
-function formatP(p){
+function formatFullPrice(p){
   if(!p) return '$0';
-  return '$'+Number(p).toLocaleString('es-CO',{maximumFractionDigits:0});
+  let n = parseFloat(String(p).replace(/[^\d]/g, ""));
+  if(isNaN(n)) return String(p);
+  return '$'+n.toLocaleString('es-CO',{maximumFractionDigits:0});
 }
+function formatShortPrice(p){ 
+  if(!p) return ''; 
+  const n=parseFloat(String(p).replace(/[^\d]/g,'')); 
+  if(isNaN(n)) return p; 
+  if(n>=1e9) return `$${(n/1e9).toFixed(1).replace(/\.0$/,'')}MM`; 
+  if(n>=1e6) return `$${Math.round(n/1e6)}M`; 
+  return `$${n.toLocaleString('es-CO')}`; 
+}
+function formatP(p){ return formatFullPrice(p); }
 
 function toast(msg,type='success'){
   const t = document.createElement('div');
-  t.className = `toast toast-${type}`;
+  t.className = `toast ${type}`;
   t.textContent = msg;
   document.body.appendChild(t);
-  setTimeout(()=>t.classList.add('show'),10);
-  setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.remove(),300); },3000);
+  setTimeout(()=>t.remove(), 3000);
 }
 
 function saveLeads(){
@@ -1565,12 +1584,15 @@ function renderLeadsBody(lista){
             <td><span class="estado-badge estado-${l.estado}">${estadoLbl(l.estado)}</span></td>
             <td><span class="badge badge-${l.etiqueta}">${l.etiqueta}</span></td>
             <td style="color:#22c55e;font-weight:700;">${(l.propsEnviadas||[]).length}</td>
-            <td style="color:${pend>0?'#f97316':'#888'}; font-weight:700;">${pend}</td>
+            <td style="color:${pend>0?'#f97316':'#888'}; font-weight:700;">
+              ${pend > 0 ? `<span class="badge badge-tibio" style="font-size:10px;">${pend} NUEVAS</span>` : '0'}
+            </td>
             <td style="font-size:12px;color:#888;">${prox?prox.fecha:'—'}</td>
             <td onclick="event.stopPropagation()"><div style="display:flex;gap:6px;">
-              <button class="btn btn-sm btn-green" onclick="abrirEnvioModal('${l.id}')">📤</button>
+              <button class="btn btn-sm ${pend>0?'btn-green':'btn-secondary'}" onclick="abrirEnvioModal('${l.id}')">${pend>0?'📤':'✓'}</button>
             </div></td>
           </tr>`;
+
         }).join('')}
       </tbody></table>
     </div>`;
@@ -1637,9 +1659,12 @@ function renderSidePanel(lead){
   </div>
 
   <div style="display:flex;gap:10px;margin:10px 0 20px 0;">
-    <button class="btn btn-green btn-sm" style="flex:1;" onclick="abrirEnvioModal('${lead.id}')">📤 Enviar Propuestas</button>
-    <a href="https://wa.me/57${lead.celular}" target="_blank" class="btn btn-secondary btn-sm" style="flex:0.5; text-decoration:none; color:inherit; display:flex; align-items:center; justify-content:center; gap:6px;">💬 WhatsApp Web</a>
+    <button class="btn ${pend.length>0?'btn-green':'btn-primary'} btn-sm" style="flex:1;" onclick="abrirEnvioModal('${lead.id}')">
+      ${pend.length>0 ? `📤 Enviar ${pend.length} Novedades` : '📤 Enviar Propuestas'}
+    </button>
+    <a href="https://wa.me/57${lead.celular}" target="_blank" class="btn btn-secondary btn-sm" style="flex:0.5; text-decoration:none; color:inherit; display:flex; align-items:center; justify-content:center; gap:6px;">💬 WhatsApp</a>
   </div>
+
 
 
   <div class="panel-section collapsible">
@@ -1828,87 +1853,214 @@ function eliminarLead(id){ if(!confirm('¿Eliminar?')) return; leads=leads.filte
    MODAL ENVÍO
 ═══════════════════════════════════════════════ */
 function abrirEnvioModal(leadId, presel){
-  envioLeadId=leadId;
-  const lead=leads.find(l=>l.id===leadId); if(!lead) return;
-  const max=lead.maxPorEnvio||4;
-  const pend=(lead.propsFiltradas||[]).filter(c=>!(lead.propsEnviadas||[]).includes(c));
-  const lote=presel||pend.slice(0,max);
-  const objs=lote.map(c=>allProps.find(d=>d['Código']===c)).filter(Boolean);
-  const dest=lead.tipo==='inmobiliaria'?(lead.nombreAgente||lead.nombre):lead.nombre;
-  
-  const emoHola = "\u{1F44B}";
-  const emoCasa = "\u{1F3E0}";
-  const emoCamara = "\u{1F4F7}";
-  const emoPrecio = "\u{1F4B0}";
-  
-  document.getElementById('envioModalContent').innerHTML=`
-    <div style="font-size:13px;color:#aaa;margin-bottom:10px;">Para: <strong style="color:#fff;">${dest}</strong> · ${lead.celular}</div>
-    ${lead.tipo==='inmobiliaria'?`<div style="font-size:12px;color:#a855f7;background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);border-radius:8px;padding:8px;margin-bottom:10px;">🏢 Envío al agente — no automático</div>`:''}
-    <div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:10px;">Propiedades (${lote.length}):</div>
-    <div id="envioChecks" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
-      ${lote.map(cod=>{ const p=allProps.find(d=>d['Código']===cod); const img=p?((p['Imagenes']||'').split('|')[0].trim()||p['Image']||'https://i.imgur.com/Pc9M3I8.png'):'https://i.imgur.com/Pc9M3I8.png';
-        return `<label style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;cursor:pointer;"><input type="checkbox" checked value="${cod}" style="accent-color:var(--gold);width:16px;height:16px;flex-shrink:0;"/><img src="${img}" style="width:48px;height:40px;object-fit:cover;border-radius:6px;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/><div><div style="font-size:13px;font-weight:600;">${cod}</div><div style="font-size:12px;color:#aaa;">${p?p['Nombre']||'':''} · ${p?formatP(p['Precio']):''}</div></div></label>`;
-      }).join('')}
-    </div>
-    <div style="font-size:12px;color:#888;background:rgba(255,255,255,.03);border-radius:8px;padding:10px;"><strong style="color:#fff;">Vista previa:</strong><br/><br/>
-      <em>Hola ${dest}! ${emoHola} Pensamos que estas casas podrían gustarte:</em><br/><br/>
-      ${objs.map(p=>`
-        ${emoCasa} <strong>${p['Nombre']||p['Código']}</strong> (Cód: ${p['Código']})<br/>
-        ${p['Google Fotos'] ? `${emoCamara} <span style="color:var(--gold);">${p['Google Fotos']}</span><br/>` : ''}
-        ${emoPrecio} ${formatP(p['Precio'])}<br/>
-      `).join('<br/>')}
-      <br/>Para más información: +57 320 876 2117
-    </div>`;
-  document.getElementById('envioModal').classList.add('open');
+  try {
+    envioLeadId = leadId;
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) { console.error("Lead not found:", leadId); return; }
+    
+    // Garantizar que filtros sea un objeto
+    const st = (lead.filtros && typeof lead.filtros === 'object') ? lead.filtros : {};
+    
+    // Detectamos si hay propiedades nuevas
+    const currentMatches = filtrarProps(st).map(d => d['Código']);
+    const enviadas = lead.propsEnviadas || [];
+    const nuevas = currentMatches.filter(c => !enviadas.includes(c));
+    
+    // Lote de propiedades (Individual)
+    const lote = (Array.isArray(presel) && presel.length > 0) ? presel : nuevas;
+    const objs = lote.map(c => allProps.find(d => d['Código'] === c)).filter(Boolean);
+    
+    // Destinatario
+    let dest = "Cliente";
+    if (lead.tipo === 'inmobiliaria') {
+      dest = (lead.nombreAgente || lead.nombre || "Agente").trim().split(' ')[0];
+    } else {
+      dest = (lead.nombre || "Cliente").trim().split(' ')[0];
+    }
+
+    // Emojis (Raw)
+    const emoHola = "👋🏻";
+    const emoCasa = "🏡";
+    const emoLink = "👇🏻";
+    const emoFin = "🏘️✨";
+    
+    const link = getSearchLinkFromFilters(st);
+    const hasSelection = lote.length > 0;
+    const initModo = (Array.isArray(presel) && presel.length > 0) ? 'individual' : 'link';
+
+    let htmlIndividual = "";
+    if (hasSelection) {
+      htmlIndividual = `
+        <div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:10px;">Propiedades seleccionadas (${lote.length}):</div>
+        <div id="envioChecks" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px; max-height:220px; overflow-y:auto; padding-right:5px;">
+          ${lote.map(cod => { 
+            const p = allProps.find(d => d['Código'] === cod); 
+            const img = p ? ((p['Imagenes'] || '').split('|')[0].trim() || p['Image'] || 'https://i.imgur.com/Pc9M3I8.png') : 'https://i.imgur.com/Pc9M3I8.png';
+            return `<label style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;cursor:pointer;">
+              <input type="checkbox" checked value="${cod}" style="accent-color:var(--gold);width:18px;height:18px;flex-shrink:0;"/>
+              <img src="${img}" style="width:50px;height:42px;object-fit:cover;border-radius:8px;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+              <div style="overflow:hidden;">
+                <div style="font-size:13px;font-weight:700;color:#fff;">${cod}</div>
+                <div style="font-size:11px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p ? p['Nombre'] || '' : ''} · <span style="color:var(--gold);">${p ? formatP(p['Precio']) : ''}</span></div>
+              </div>
+            </label>`;
+          }).join('')}
+        </div>
+        <div style="font-size:12px;color:#888;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:15px;">
+           <strong style="color:#fff;display:block;margin-bottom:10px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;opacity:0.6;">Vista previa mensaje:</strong>
+           <div style="line-height:1.5;">
+             ${emoCasa} ¡Hola ${dest}! ${emoHola}<br/><br/>
+             Te comparto estas nuevas opciones que se ajustan a lo que buscas ${emoLink}<br/><br/>
+             ${objs.map(p => `• <strong>${p['Nombre'] || p['Código']}</strong> (${formatP(p['Precio'])})<br/>&nbsp;&nbsp;\u{1F517} ${p['Google Fotos'] || 'Ver fotos'}`).join('<br/><br/>')}
+             <br/><br/>
+             Revísalo y me cuentas que inmueble deseas que visitemos ${emoFin}
+           </div>
+        </div>`;
+    } else {
+      htmlIndividual = `<div class="empty" style="padding:20px;text-align:center;color:#666;">No hay propiedades nuevas para enviar individualmente.</div>`;
+    }
+
+    const content = `
+      <div style="font-size:13px;color:#aaa;margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.05);">Para: <strong style="color:#fff;">${dest}</strong> · ${lead.celular}</div>
+      
+      <div style="display:flex; gap:10px; margin-bottom:20px;">
+        <button id="btnModoLink" class="btn btn-sm ${initModo === 'link' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;" onclick="setEnvioModo('link')">\u{1F517} Enviar Link Catálogo</button>
+        <button id="btnModoInd" class="btn btn-sm ${initModo === 'individual' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;" onclick="setEnvioModo('individual')">\u{1F4CB} Enviar Selección</button>
+      </div>
+
+      <div id="envioModoLink" style="display:${initModo === 'link' ? 'block' : 'none'}">
+         <div style="font-size:12px; color:var(--gold); margin-bottom:12px; font-weight:600; background:rgba(212,168,75,0.1); padding:8px; border-radius:8px;">Se enviará un link dinámico con las ${currentMatches.length} opciones actuales.</div>
+         <div style="font-size:12px;color:#888;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:15px;">
+           <strong style="color:#fff;display:block;margin-bottom:10px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;opacity:0.6;">Vista previa mensaje:</strong>
+           <div style="line-height:1.5;">
+             ${emoCasa} ¡Hola ${dest}! ${emoHola}<br/><br/>
+             Te comparto aquí los inmuebles que se ajustan a tus requerimientos ${emoLink}<br/><br/>
+             <span style="color:var(--gold); word-break:break-all; font-weight:500;">${link}</span><br/><br/>
+             Revísalo y me cuentas que inmueble deseas que visitemos ${emoFin}
+           </div>
+         </div>
+      </div>
+
+      <div id="envioModoIndividual" style="display:${initModo === 'individual' ? 'block' : 'none'}">
+        ${htmlIndividual}
+      </div>
+      <input type="hidden" id="envioModoInput" value="${initModo}"/>
+    `;
+    
+    document.getElementById('envioModalContent').innerHTML = content;
+    document.getElementById('envioModal').classList.add('open');
+  } catch (err) {
+    console.error("Error in abrirEnvioModal:", err);
+    toast("Error al abrir modal de envío", "error");
+  }
 }
 
-function confirmarEnvio(){
-  const lead=leads.find(l=>l.id===envioLeadId); if(!lead) return;
-  const cods=[...document.querySelectorAll('#envioChecks input:checked')].map(c=>c.value);
-  if(!cods.length){ toast('Selecciona al menos una','error'); return; }
-  const objs=cods.map(c=>allProps.find(d=>d['Código']===c)).filter(Boolean);
-  const dest=lead.tipo==='inmobiliaria'?(lead.nombreAgente||lead.nombre):lead.nombre;
-  const emoHola = "\u{1F44B}";
-  const emoCasa = "\u{1F3E0}";
-  const emoCamara = "\u{1F4F7}";
-  const emoPrecio = "\u{1F4B0}";
-  
-  let msg = `Hola ${dest}! ${emoHola} Pensamos que estas casas podrían gustarte:\n\n`;
-  objs.forEach(p => {
-    msg += `${emoCasa} *${p['Nombre'] || p['Código']}* (Cód: ${p['Código']})\n`;
-    if (p['Google Fotos']) msg += `${emoCamara} ${p['Google Fotos']}\n`;
-    msg += `${emoPrecio} ${formatP(p['Precio'])}\n\n`;
-  });
-  msg += `Para más información: +57 320 876 2117`;
-  const hoy=new Date().toISOString().split('T')[0];
-  cods.forEach(c=>{ if(!lead.propsEnviadas.includes(c)) lead.propsEnviadas.push(c); });
-  lead.historialEnvios.push({fecha:hoy,codigos:cods,notas:''});
-  const prox=lead.proximosEnvios?.find(e=>!e.enviado); if(prox) prox.enviado=true;
-  const pend=(lead.propsFiltradas||[]).filter(c=>!lead.propsEnviadas.includes(c));
-  if(pend.length&&lead.frecuencia!=='manual') lead.proximosEnvios=generarProximos(pend.map(c=>({Código:c})),lead.frecuencia,lead.maxPorEnvio,[]);
-  saveLeads(); closeModal('envioModal'); syncSheets(lead);
-  
-  const num=lead.celular.replace(/\D/g,'');
-  if(settings.waApi){
-    // Envío automático vía API
-    fetch(`${settings.waApi}/send-message`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ number: num, message: msg })
-    }).then(r => {
-      if(r.ok) toast(`Enviado automáticamente ✓`,'success');
-      else window.open(`https://wa.me/${num.startsWith('57')?num:'57'+num}?text=${encodeURIComponent(msg)}`,'_blank');
-    }).catch(() => {
-      window.open(`https://wa.me/${num.startsWith('57')?num:'57'+num}?text=${encodeURIComponent(msg)}`,'_blank');
-    });
-  } else {
-    window.open(`https://wa.me/${num.startsWith('57')?num:'57'+num}?text=${encodeURIComponent(msg)}`,'_blank');
-  }
-  
-  toast(`Procesado para ${dest} ✓`,'success');
-  if(currentLeadId===lead.id) renderSidePanel(lead);
-  if(currentTab==='leads') renderLeadsBody(leads);
+function setEnvioModo(modo){
+  document.getElementById('envioModoInput').value = modo;
+  document.getElementById('envioModoLink').style.display = modo==='link'?'block':'none';
+  document.getElementById('envioModoIndividual').style.display = modo==='individual'?'block':'none';
+  // Actualizar botones
+  const btns = document.querySelectorAll('#envioModalContent .btn-sm');
+  btns[0].className = `btn btn-sm ${modo==='link'?'btn-primary':'btn-secondary'}`;
+  btns[1].className = `btn btn-sm ${modo==='individual'?'btn-primary':'btn-secondary'}`;
 }
+
+
+function confirmarEnvio(){
+  try {
+    const lead = leads.find(l => l.id === envioLeadId);
+    if (!lead) { toast("Cliente no encontrado", "error"); return; }
+    const modo = document.getElementById('envioModoInput').value;
+    
+    // Destinatario seguro
+    let dest = "Cliente";
+    if (lead.tipo === 'inmobiliaria') {
+      dest = (lead.nombreAgente || lead.nombre || "Agente").trim().split(' ')[0];
+    } else {
+      dest = (lead.nombre || "Cliente").trim().split(' ')[0];
+    }
+
+    // Emojis (Raw para asegurar envío correcto por WhatsApp)
+    const emoHola = "👋🏻";
+    const emoCasa = "🏡";
+    const emoLink = "👇🏻";
+    const emoFin = "🏘️✨";
+    const emoBullet = "•";
+    const emoClip = "🔗";
+    
+    let msg = "";
+    let cods = [];
+
+    if (modo === 'link') {
+      const st = (lead.filtros && typeof lead.filtros === 'object') ? lead.filtros : {};
+      const link = getSearchLinkFromFilters(st);
+      msg = `${emoCasa} ¡Hola ${dest}! ${emoHola}\n\nTe comparto aquí los inmuebles que se ajustan a tus requerimientos ${emoLink}\n\n${link}\n\nRevísalo y me cuentas que inmueble deseas que visitemos ${emoFin}`;
+      cods = filtrarProps(st).map(d => d['Código']);
+    } else {
+      cods = [...document.querySelectorAll('#envioChecks input:checked')].map(c => c.value);
+      if (!cods.length) { toast('Selecciona al menos una', 'error'); return; }
+      const objs = cods.map(c => allProps.find(d => d['Código'] === c)).filter(Boolean);
+      msg = `${emoCasa} ¡Hola ${dest}! ${emoHola}\n\nTe comparto estas nuevas opciones que se ajustan a lo que buscas ${emoLink}\n\n`;
+      objs.forEach(p => {
+        msg += `${emoBullet} *${p['Nombre'] || p['Código']}* (${formatP(p['Precio'])})\n  ${emoClip} ${p['Google Fotos'] || 'Ver fotos'}\n\n`;
+      });
+      msg += `Revísalo y me cuentas que inmueble deseas que visitemos ${emoFin}`;
+    }
+
+    const hoy = new Date().toISOString().split('T')[0];
+    lead.propsEnviadas = [...new Set([...(lead.propsEnviadas || []), ...cods])];
+    lead.historialEnvios.push({ 
+      fecha: hoy, 
+      codigos: cods, 
+      notas: modo === 'link' ? 'Envío de link catálogo' : 'Envío selección individual' 
+    });
+    
+    lead.proximosEnvios = generarProximosCheck(lead.frecuencia);
+    
+    saveLeads(); 
+    closeModal('envioModal'); 
+    syncSheets(lead);
+    
+    const num = lead.celular.replace(/\D/g, '');
+    const waBase = num.startsWith('57') ? num : '57' + num;
+    
+    if (settings.waApi) {
+      fetch(`${settings.waApi}/send-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number: num, message: msg })
+      }).then(r => {
+        if (r.ok) toast(`Enviado automáticamente ✓`, 'success');
+        else window.open(`https://wa.me/${waBase}?text=${encodeURIComponent(msg)}`, '_blank');
+      }).catch(() => {
+        window.open(`https://wa.me/${waBase}?text=${encodeURIComponent(msg)}`, '_blank');
+      });
+    } else {
+      window.open(`https://wa.me/${waBase}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    if(currentLeadId === lead.id) renderSidePanel(lead);
+    if(currentTab === 'leads') renderLeadsBody(leads);
+
+  } catch (err) {
+    console.error("Error en confirmarEnvio:", err);
+    toast("Error al procesar el envío", "error");
+  }
+}
+
+function generarProximosCheck(frec){
+  if(frec==='manual') return [];
+  const hoy = new Date();
+  const dias = { diaria:1, semanal:7, quincenal:15, mensual:30 }[frec] || 7;
+  const f = new Date(hoy); f.setDate(f.getDate() + dias);
+  return [{
+    fecha: f.toISOString().split('T')[0],
+    codigos: [], // Vacío porque es un check de novedades
+    enviado: false,
+    esCheck: true
+  }];
+}
+
 
 /* ═══════════════════════════════════════════════
    MODAL VISITA
@@ -2002,7 +2154,7 @@ function guardarFiltrosEditados(){
   lead.filtros=JSON.parse(JSON.stringify(tempFiltros));
   lead.propsFiltradas=filtrarProps(lead.filtros).map(d=>d['Código']);
   const pend=lead.propsFiltradas.filter(c=>!(lead.propsEnviadas||[]).includes(c));
-  if(lead.frecuencia!=='manual') lead.proximosEnvios=generarProximos(pend.map(c=>({Código:c})),lead.frecuencia,lead.maxPorEnvio,[]);
+  lead.proximosEnvios=generarProximosCheck(lead.frecuencia);
   saveLeads(); closeModal('editFiltrosModal'); toast('Filtros actualizados ✓','success');
   renderSidePanel(lead);
 }
@@ -2012,9 +2164,9 @@ function guardarFiltrosEditados(){
 ═══════════════════════════════════════════════ */
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open')); });
-function formatP(p){ if(!p) return ''; const n=parseFloat(String(p).replace(/[^\d]/g,'')); if(isNaN(n)) return p; if(n>=1e9) return `$${(n/1e9).toFixed(1).replace(/\.0$/,'')}MM`; if(n>=1e6) return `$${Math.round(n/1e6)}M`; return `$${n.toLocaleString('es-CO')}`; }
+// formatP consolidated above
 function saveLeads(){ localStorage.setItem('icde_leads',JSON.stringify(leads)); localStorage.setItem('icde_citas',JSON.stringify(citas)); }
-function toast(msg,type='success'){ const el=document.createElement('div'); el.className=`toast ${type}`; el.textContent=msg; document.body.appendChild(el); setTimeout(()=>el.remove(),3200); }
+// toast consolidated above
 async function syncSheets(lead){ if(!CRM_SCRIPT_URL) return; try{ await fetch(CRM_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'saveLead',lead:JSON.stringify(lead)})}); }catch(e){} }
 
 /* ═══════════════════════════════════════════════
@@ -2568,18 +2720,10 @@ function renderTopProps(){
       </div>
     </div>
     <div class="modal-prop-footer">
-      <button class="modal-btn-whatsapp-nuevo" id="mpBtnWhatsapp">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.846.497 3.576 1.362 5.065L2 22l5.07-1.33A9.953 9.953 0 0012 22c5.522 0 10-4.477 10-10S17.521 2 11.999 2zm.001 18a7.963 7.963 0 01-4.184-1.188l-.3-.178-3.012.79.803-2.93-.196-.31A7.944 7.944 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/></svg>
-        Agendar visita
-      </button>
       <button class="modal-btn-compartir">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Compartir
       </button>
-      <label class="modal-label-comparar">
-        <input type="checkbox" id="mpChkSel" style="width:18px;height:18px;cursor:pointer;accent-color:#d4a84b;"/>
-        Comparar
-      </label>
       <button class="btn btn-secondary" onclick="cerrarModalProp()" style="margin-left:auto;">Cerrar</button>
     </div>
   </div>
@@ -2637,6 +2781,34 @@ document.addEventListener('keydown', e => {
   if(e.key==='ArrowRight') lbIr(lbIdx+1);
 });
 
+function generarSlugPropiedad(inmueble) {
+  const nombre = (inmueble["Nombre"] || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').substring(0, 60);
+  const codigo = String(inmueble["Código"] || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  return nombre ? nombre + '-' + codigo : 'propiedad-' + codigo;
+}
+
+function compartirPropiedad(codigo, btn){
+  const p = allProps.find(x=>x['Código']===codigo);
+  if(!p) return;
+  const url = p['Google Fotos'] || p['Image'] || '';
+  if(!url){ toast('No hay link de fotos disponible','error'); return; }
+  
+  navigator.clipboard.writeText(url).then(() => {
+    toast('Enlace copiado ✓');
+    if(btn){
+      const original = btn.innerHTML;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Enlace copiado';
+      btn.style.color = '#22c55e';
+      setTimeout(() => {
+        btn.innerHTML = original;
+        btn.style.color = '';
+      }, 2000);
+    }
+  });
+}
+
 let mpCarruselFotos = [];
 let mpCarruselIdx = 0;
 
@@ -2647,7 +2819,7 @@ function abrirModalProp(codigo){
   document.getElementById('mpTitle').textContent = p['Nombre'];
   document.getElementById('mpType').textContent = p['Tipo de inmueble'] || 'Inmueble';
   document.getElementById('mpCode').textContent = `Código: ${p['Código']}`;
-  document.getElementById('mpPrice').textContent = formatP(p['Precio']);
+  document.getElementById('mpPrice').textContent = formatFullPrice(p['Precio']);
   document.getElementById('mpDesc').textContent = p['Descripción'] || 'Sin descripción';
   document.getElementById('mpKeyPoints').textContent = p['Puntos Clave'] || 'No especificados';
   
@@ -2662,7 +2834,7 @@ function abrirModalProp(codigo){
   if(p['Habitaciones']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/ykKdGwE.png" width="16"/> <strong>${p['Habitaciones']}</strong> Hab</div>`;
   if(p['Baños']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/h9NqA32.png" width="16"/> <strong>${p['Baños']}</strong> Baños</div>`;
   if(p['Garaje'] && p['Garaje']!=='No') tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/4Yixa77.png" width="16"/> <strong>${p['Garaje']}</strong> Garaje</div>`;
-  if(p['Cocina'] && p['Cocina']!=='No') tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/rH6cXMa.png" width="16"/> <strong>${p['Cocina']}</strong> Cocina</div>`;
+  if(p['Cocina'] && p['Cocina']!=='No') tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/rH6cXMa.png" width="16"/> <strong>Cocina</strong> ${p['Cocina']}</div>`;
   
   const specsTable = document.getElementById('mpSpecsTable');
   const items = [
@@ -2677,16 +2849,8 @@ function abrirModalProp(codigo){
   ];
   specsTable.innerHTML = items.map(([k,v]) => `<tr><td>${k}</td><td>${v||'—'}</td></tr>`).join('');
   
-  const chk = document.getElementById('mpChkSel');
-  const sel = selectedProps.includes(codigo);
-  chk.checked = sel;
-  chk.onchange = () => toggleProp(codigo);
-  
-  const btnW = document.getElementById('mpBtnWhatsapp');
-  btnW.onclick = () => {
-    const txt = encodeURIComponent(`Hola, estoy interesado en la propiedad ${p['Nombre']} (Código: ${p['Código']})`);
-    window.open(`https://wa.me/573153547141?text=${txt}`, '_blank');
-  };
+  const btnShare = document.querySelector('.modal-btn-compartir');
+  if(btnShare) btnShare.onclick = () => compartirPropiedad(codigo, btnShare);
   
   document.getElementById('modalPropOverlay').classList.add('active');
 }
