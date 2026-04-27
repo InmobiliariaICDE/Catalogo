@@ -691,8 +691,8 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
    CONFIG
 ═══════════════════════════════════════════════ */
 const PASSWORD = 'icde2024';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-HipJ53KIf2JD1q9BUIBFUB45o4wRYcjvlqUbpg9TDAGK0q3hNQcSrV23dMCWaTgXcQ/exec?action=getData';
-const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3J23EaKCPKnHHQVxOmF2hdCZC5JIBsaqGkdD3vrouZ_SER_BzezkCKz3RRF3ggTCGjg/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFUuzwKA_5C35NX7S2eniREyP8AAqqYxz4rUoL195-vfIuiis8KmG3IbKIojfywllI1w/exec?action=getData';
+const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFUuzwKA_5C35NX7S2eniREyP8AAqqYxz4rUoL195-vfIuiis8KmG3IbKIojfywllI1w/exec';
 
 /* ═══════════════════════════════════════════════
    STATE
@@ -1176,6 +1176,22 @@ function doLogout(){
 async function initApp(){
   showTab('nuevo');
   await cargarProps();
+  await cargarLeads();
+}
+async function cargarLeads(){
+  if(!CRM_SCRIPT_URL) return;
+  try {
+    const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads');
+    const data = await res.json();
+    if(Array.isArray(data) && data.length > 0){
+      // Mezclar con locales, el ID manda
+      const cloudIds = data.map(l => l.id);
+      const localesRestantes = leads.filter(l => !cloudIds.includes(l.id));
+      leads = [...data, ...localesRestantes];
+      saveLeads();
+      if(currentTab === 'leads') renderLeadsBody(leads);
+    }
+  } catch(e){ console.error("Error cargando leads:", e); }
 }
 async function cargarProps(){
   try {
@@ -1979,11 +1995,12 @@ function confirmarEnvio(){
       dest = (lead.nombre || "Cliente").trim().split(' ')[0];
     }
 
-    // Emojis (Raw para asegurar envío correcto por WhatsApp)
-    const emoHola = "👋🏻";
+    // Emojis (Simples para asegurar compatibilidad en WhatsApp)
+    const emoHola = "👋";
     const emoCasa = "🏡";
-    const emoLink = "👇🏻";
-    const emoFin = "🏘️✨";
+    const emoLink = "👇";
+    const emoFin = "🏘️";
+    const emoEstrella = "✨";
     const emoBullet = "•";
     const emoClip = "🔗";
     
@@ -1993,7 +2010,7 @@ function confirmarEnvio(){
     if (modo === 'link') {
       const st = (lead.filtros && typeof lead.filtros === 'object') ? lead.filtros : {};
       const link = getSearchLinkFromFilters(st);
-      msg = `${emoCasa} ¡Hola ${dest}! ${emoHola}\n\nTe comparto aquí los inmuebles que se ajustan a tus requerimientos ${emoLink}\n\n${link}\n\nRevísalo y me cuentas que inmueble deseas que visitemos ${emoFin}`;
+      msg = `${emoCasa} ¡Hola ${dest}! ${emoHola}\n\nTe comparto aquí los inmuebles que se ajustan a tus requerimientos ${emoLink}\n\n${link}\n\nRevísalo y me cuentas que inmueble deseas que visitemos ${emoFin}${emoEstrella}`;
       cods = filtrarProps(st).map(d => d['Código']);
     } else {
       cods = [...document.querySelectorAll('#envioChecks input:checked')].map(c => c.value);
@@ -2003,7 +2020,7 @@ function confirmarEnvio(){
       objs.forEach(p => {
         msg += `${emoBullet} *${p['Nombre'] || p['Código']}* (${formatP(p['Precio'])})\n  ${emoClip} ${p['Google Fotos'] || 'Ver fotos'}\n\n`;
       });
-      msg += `Revísalo y me cuentas que inmueble deseas que visitemos ${emoFin}`;
+      msg += `Revísalo y me cuentas que inmueble deseas que visitemos ${emoFin}${emoEstrella}`;
     }
 
     const hoy = new Date().toISOString().split('T')[0];

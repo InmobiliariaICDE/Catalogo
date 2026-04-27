@@ -1,20 +1,16 @@
 /**
  * Google Apps Script para sincronización del CRM ICDE
  * 
- * Instrucciones:
- * 1. En tu Google Sheet, ve a Extensiones > Apps Script.
- * 2. Borra todo el código y pega este.
- * 3. Cambia 'Hoja1' por el nombre de tu hoja de propiedades si es necesario.
- * 4. Crea una hoja nueva llamada 'CRM_Leads' para guardar los clientes.
- * 5. Haz clic en 'Implementar' > 'Nueva implementación' > 'Aplicación web'.
- * 6. En 'Quién tiene acceso', elige 'Cualquiera'.
- * 7. Copia la URL generada y pégala en la variable CRM_SCRIPT_URL del archivo admin.html.
+ * Versión 2.2 - Columnas expandidas para mejor visibilidad en Google Sheets
  */
 
 function doGet(e) {
   const action = e.parameter.action;
   if (action === 'getData') {
     return getData();
+  }
+  if (action === 'getLeads') {
+    return getLeads();
   }
 }
 
@@ -27,8 +23,10 @@ function doPost(e) {
 
 function getData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName('Hoja1'); // Nombre de la hoja de propiedades
+  const sheet = ss.getSheetByName('Hoja1') || ss.getSheetByName('Propiedades') || ss.getSheets()[0]; 
+  
   const data = sheet.getDataRange().getValues();
+  if (data.length === 0) return createJsonResponse([]);
   const headers = data[0];
   const rows = data.slice(1);
   
@@ -38,20 +36,103 @@ function getData() {
     return obj;
   });
   
-  return ContentService.createTextOutput(JSON.stringify(json))
-    .setMimeType(ContentService.MimeType.JSON);
+  return createJsonResponse(json);
+}
+
+function getLeads() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('CRM_Leads');
+  if (!sheet) return createJsonResponse([]);
+  
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return createJsonResponse([]);
+  
+  const headers = data[0];
+  const jsonIdx = headers.indexOf('Full_JSON');
+  
+  const leads = data.slice(1).map(row => {
+    if (jsonIdx !== -1 && row[jsonIdx]) {
+      try {
+        return JSON.parse(row[jsonIdx]);
+      } catch (e) {
+        return { id: row[0], nombre: row[2], celular: row[3] };
+      }
+    }
+    return {
+      id: row[0],
+      fecha: row[1],
+      nombre: row[2],
+      celular: row[3],
+      tipo: row[4],
+      estado: row[6],
+      etiqueta: row[7],
+      notas: row[8]
+    };
+  });
+  
+  return createJsonResponse(leads);
 }
 
 function saveLeadToSheet(lead) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName('CRM_Leads');
   
+  const headers = [
+    'ID', 'Fecha Actualización', 'Nombre', 'Celular', 'Tipo', 
+    'Inmobiliaria/Agente', 'Estado', 'Etiqueta', 'Notas', 
+    'Preferencias (Filtros)', 'Método Pago', 'Frecuencia', 
+    'Total Enviadas', 'Historial (Resumen)', 'Full_JSON'
+  ];
+  
   if (!sheet) {
     sheet = ss.insertSheet('CRM_Leads');
-    sheet.appendRow(['ID', 'Fecha', 'Nombre', 'Celular', 'Tipo', 'Inmobiliaria', 'Estado', 'Etiqueta', 'Notas']);
+    sheet.appendRow(headers);
+    sheet.setFrozenRows(1);
+  } else {
+    // Verificar si faltan columnas nuevas y agregarlas
+    const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
+    headers.forEach((h, i) => {
+      if (currentHeaders.indexOf(h) === -1) {
+        sheet.getRange(1, currentHeaders.length + 1).setValue(h);
+        currentHeaders.push(h);
+      }
+    });
   }
   
-  // Buscar si el lead ya existe para actualizarlo o agregarlo
+  // Formatear filtros para que sean legibles
+  let filtrosTxt = "";
+  if (lead.filtros) {
+    const f = lead.filtros;
+    const parts = [];
+    if (f.tipoInmueble && f.tipoInmueble.length) parts.push("Tipos: " + f.tipoInmueble.join(", "));
+    if (f.zona && f.zona.length) parts.push("Zonas: " + f.zona.join(", "));
+    if (f.minPrice || f.maxPrice) parts.push("Precio: " + (f.minPrice || 0) + " - " + (f.maxPrice || "Max"));
+    if (f.habitaciones && f.habitaciones.length) parts.push("Hab: " + f.habitaciones.join(", "));
+    if (f.barrio && f.barrio.length) parts.push("Barrios: " + f.barrio.join(", "));
+    filtrosTxt = parts.join(" | ");
+  }
+
+  // Formatear historial
+  const historialTxt = (lead.historialEnvios || []).map(h => h.fecha + " (" + (h.codigos || []).length + ")").join(" | ");
+
+  const rowData = [
+    lead.id,
+    new Date().toLocaleString('es-CO'),
+    lead.nombre,
+    lead.celular,
+    lead.tipo,
+    (lead.nombreInmobiliaria || lead.nombreAgente || ''),
+    lead.estado,
+    lead.etiqueta,
+    lead.notas || '',
+    filtrosTxt,
+    (lead.metodoPago || []).join(", "),
+    lead.frecuencia,
+    (lead.propsEnviadas || []).length,
+    historialTxt,
+    JSON.stringify(lead)
+  ];
+  
   const data = sheet.getDataRange().getValues();
   let rowIndex = -1;
   for (let i = 1; i < data.length; i++) {
@@ -61,24 +142,16 @@ function saveLeadToSheet(lead) {
     }
   }
   
-  const rowData = [
-    lead.id,
-    new Date().toISOString(),
-    lead.nombre,
-    lead.celular,
-    lead.tipo,
-    lead.nombreInmobiliaria || '',
-    lead.estado,
-    lead.etiqueta,
-    lead.notas || ''
-  ];
-  
   if (rowIndex > 0) {
     sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
   } else {
     sheet.appendRow(rowData);
   }
   
-  return ContentService.createTextOutput(JSON.stringify({success: true}))
+  return createJsonResponse({success: true});
+}
+
+function createJsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
 }
