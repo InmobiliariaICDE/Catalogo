@@ -1,23 +1,33 @@
 /**
  * Google Apps Script para sincronización del CRM ICDE
  * 
- * Versión 2.2 - Columnas expandidas para mejor visibilidad en Google Sheets
+ * Versión 2.3 - Solución de errores de CORS y Autorización
  */
 
 function doGet(e) {
-  const action = e.parameter.action;
-  if (action === 'getData') {
-    return getData();
-  }
-  if (action === 'getLeads') {
-    return getLeads();
+  try {
+    const action = e.parameter.action;
+    if (action === 'getData') {
+      return getData();
+    }
+    if (action === 'getLeads') {
+      return getLeads();
+    }
+    return createJsonResponse({error: 'Acción no válida'});
+  } catch (err) {
+    return createJsonResponse({error: err.toString()});
   }
 }
 
 function doPost(e) {
-  const params = JSON.parse(e.postData.contents);
-  if (params.action === 'saveLead') {
-    return saveLeadToSheet(JSON.parse(params.lead));
+  try {
+    const params = JSON.parse(e.postData.contents);
+    if (params.action === 'saveLead') {
+      return saveLeadToSheet(JSON.parse(params.lead));
+    }
+    return createJsonResponse({error: 'Acción no válida'});
+  } catch (err) {
+    return createJsonResponse({error: err.toString()});
   }
 }
 
@@ -25,14 +35,19 @@ function getData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Hoja1') || ss.getSheetByName('Propiedades') || ss.getSheets()[0]; 
   
+  if (!sheet) return createJsonResponse({error: 'No se encontró la hoja de propiedades'});
+
   const data = sheet.getDataRange().getValues();
-  if (data.length === 0) return createJsonResponse([]);
+  if (data.length <= 1) return createJsonResponse([]);
+  
   const headers = data[0];
   const rows = data.slice(1);
   
   const json = rows.map(row => {
     let obj = {};
-    headers.forEach((h, i) => obj[h] = row[i]);
+    headers.forEach((h, i) => {
+      if (h) obj[h] = row[i];
+    });
     return obj;
   });
   
@@ -89,7 +104,6 @@ function saveLeadToSheet(lead) {
     sheet.appendRow(headers);
     sheet.setFrozenRows(1);
   } else {
-    // Verificar si faltan columnas nuevas y agregarlas
     const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
     headers.forEach((h, i) => {
       if (currentHeaders.indexOf(h) === -1) {
@@ -99,7 +113,6 @@ function saveLeadToSheet(lead) {
     });
   }
   
-  // Formatear filtros para que sean legibles
   let filtrosTxt = "";
   if (lead.filtros) {
     const f = lead.filtros;
@@ -112,12 +125,11 @@ function saveLeadToSheet(lead) {
     filtrosTxt = parts.join(" | ");
   }
 
-  // Formatear historial
   const historialTxt = (lead.historialEnvios || []).map(h => h.fecha + " (" + (h.codigos || []).length + ")").join(" | ");
 
   const rowData = [
     lead.id,
-    new Date().toLocaleString('es-CO'),
+    new Date().toISOString(), // Usar ISO para evitar problemas de codificación local en la respuesta
     lead.nombre,
     lead.celular,
     lead.tipo,
@@ -151,6 +163,9 @@ function saveLeadToSheet(lead) {
   return createJsonResponse({success: true});
 }
 
+/**
+ * Crea una respuesta JSON compatible con CORS
+ */
 function createJsonResponse(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
