@@ -25,6 +25,9 @@ function doPost(e) {
     if (params.action === 'saveLead') {
       return saveLeadToSheet(JSON.parse(params.lead));
     }
+    if (params.action === 'deleteLead') {
+      return deleteLeadFromSheet(params.id);
+    }
     return createJsonResponse({error: 'Acción no válida'});
   } catch (err) {
     return createJsonResponse({error: err.toString()});
@@ -161,6 +164,25 @@ function saveLeadToSheet(lead) {
   }
   
   return createJsonResponse({success: true});
+}
+
+/**
+ * Elimina un lead de la hoja de cálculo por su ID
+ */
+function deleteLeadFromSheet(id) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('CRM_Leads');
+  if (!sheet) return createJsonResponse({error: 'No se encontró la hoja CRM_Leads'});
+  
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    // Usamos == para comparación agnóstica de tipos (string vs number)
+    if (data[i][0] == id) {
+      sheet.deleteRow(i + 1);
+      return createJsonResponse({success: true});
+    }
+  }
+  return createJsonResponse({success: false, error: 'Lead no encontrado'});
 }
 
 /**

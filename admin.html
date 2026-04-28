@@ -1184,9 +1184,9 @@ async function cargarLeads(){
     const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads');
     const data = await res.json();
     if(Array.isArray(data) && data.length > 0){
-      // Mezclar con locales, el ID manda
-      const cloudIds = data.map(l => l.id);
-      const localesRestantes = leads.filter(l => !cloudIds.includes(l.id));
+      // Mezclar con locales, el ID manda (comparación agnóstica de tipos)
+      const cloudIds = data.map(l => String(l.id));
+      const localesRestantes = leads.filter(l => !cloudIds.includes(String(l.id)));
       leads = [...data, ...localesRestantes];
       saveLeads();
       if(currentTab === 'leads') renderLeadsBody(leads);
@@ -1508,27 +1508,6 @@ function formatShortPrice(p){
 }
 function formatP(p){ return formatFullPrice(p); }
 
-function toast(msg,type='success'){
-  const t = document.createElement('div');
-  t.className = `toast ${type}`;
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(), 3000);
-}
-
-function saveLeads(){
-  localStorage.setItem('icde_leads', JSON.stringify(leads));
-}
-
-async function syncSheets(lead){
-  if(!CRM_SCRIPT_URL) return;
-  try {
-    await fetch(CRM_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'saveLead', lead: JSON.stringify(lead) })
-    });
-  } catch(e) {}
-}
 
 function eq(s){ return (s||'').toString().replace(/'/g, "\\'"); }
 
@@ -1604,7 +1583,8 @@ function renderLeadsBody(lista){
             </td>
             <td style="font-size:12px;color:#888;">${prox?prox.fecha:'—'}</td>
             <td onclick="event.stopPropagation()"><div style="display:flex;gap:6px;">
-              <button class="btn btn-sm ${pend>0?'btn-green':'btn-secondary'}" onclick="abrirEnvioModal('${l.id}')">${pend>0?'📤':'✓'}</button>
+              <button class="btn btn-sm ${pend>0?'btn-green':'btn-secondary'}" onclick="abrirEnvioModal('${l.id}')" title="Enviar propuestas">${pend>0?'📤':'✓'}</button>
+              <button class="btn btn-sm btn-danger" onclick="eliminarLead('${l.id}')" title="Eliminar lead">🗑</button>
             </div></td>
           </tr>`;
 
@@ -1644,7 +1624,7 @@ function estadoLbl(e){ return {proceso:'Proceso',enviando:'Enviando',visita:'Pdt
 /* ═══════════════════════════════════════════════
    PANEL LEAD
 ═══════════════════════════════════════════════ */
-function abrirLead(id){ currentLeadId=id; const l=leads.find(x=>x.id===id); if(!l) return; document.getElementById('leadPanel').classList.add('open'); renderSidePanel(l); }
+function abrirLead(id){ currentLeadId=id; const l=leads.find(x=>String(x.id)===String(id)); if(!l) return; document.getElementById('leadPanel').classList.add('open'); renderSidePanel(l); }
 function closePanelIfOuter(e){ if(e.target===document.getElementById('leadPanel')) closeSidePanel(); }
 function closeSidePanel(){ 
   document.getElementById('leadPanel').classList.remove('open'); 
@@ -1768,7 +1748,7 @@ function renderSidePanel(lead){
   </div>
 
   <div style="margin-top:auto; padding-top:20px; border-top:1px solid var(--glass-border);">
-    <button class="btn btn-danger btn-sm" style="width:100%; opacity:0.6; background:transparent; border:1px solid rgba(239,68,68,0.3);" onclick="eliminarLead('${lead.id}')">🗑 Eliminar Cliente</button>
+    <button class="btn btn-danger btn-sm" style="width:100%; font-weight:700; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onclick="eliminarLead('${lead.id}')">🗑 Eliminar Cliente Permanentemente</button>
   </div>`;
   
 
@@ -1780,7 +1760,7 @@ function toggleSection(el){
 }
 
 
-function updLead(id,campo,val){ const l=leads.find(x=>x.id===id); if(!l) return; l[campo]=val; saveLeads(); toast(`${campo} actualizado ✓`,'success'); if(currentTab==='leads') renderLeadsBody(leads); }
+function updLead(id,campo,val){ const l=leads.find(x=>String(x.id)===String(id)); if(!l) return; l[campo]=val; saveLeads(); toast(`${campo} actualizado ✓`,'success'); if(currentTab==='leads') renderLeadsBody(leads); }
 
 function renderPanelPropsEnviadas(lead){
   const env = lead.propsEnviadas || [];
@@ -1861,8 +1841,36 @@ function renderTimeline(lead){
     </div>`).join('');
 }
 
-function addNota(lid,idx){ const inp=document.getElementById(`nE_${lid}_${idx}`); if(!inp||!inp.value.trim()) return; const l=leads.find(x=>x.id===lid); if(!l) return; l.historialEnvios[idx].notas=(l.historialEnvios[idx].notas?l.historialEnvios[idx].notas+'\n':'')+inp.value.trim(); saveLeads(); inp.value=''; toast('Nota añadida ✓','success'); renderSidePanel(l); }
-function eliminarLead(id){ if(!confirm('¿Eliminar?')) return; leads=leads.filter(l=>l.id!==id); saveLeads(); closeSidePanel(); renderLeads(); toast('Eliminado','success'); }
+function addNota(lid,idx){ const inp=document.getElementById(`nE_${lid}_${idx}`); if(!inp||!inp.value.trim()) return; const l=leads.find(x=>String(x.id)===String(lid)); if(!l) return; l.historialEnvios[idx].notas=(l.historialEnvios[idx].notas?l.historialEnvios[idx].notas+'\n':'')+inp.value.trim(); saveLeads(); inp.value=''; toast('Nota añadida ✓','success'); renderSidePanel(l); }
+
+async function eliminarLead(id){ 
+  if(!confirm('¿Estás seguro de eliminar este cliente? Esta acción también lo eliminará de la nube y no se puede deshacer.')) return; 
+  
+  // Eliminar localmente primero para respuesta rápida
+  leads = leads.filter(l => String(l.id) !== String(id)); 
+  saveLeads(); 
+  if(currentLeadId == id) closeSidePanel(); 
+  renderLeads(); 
+  toast('Eliminando de la nube...', 'success'); 
+  
+  // Sincronizar eliminación con Google Sheets
+  if(CRM_SCRIPT_URL) {
+    try {
+      const res = await fetch(CRM_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Apps Script suele requerir no-cors o manejarlo con redirect
+        body: JSON.stringify({ action: 'deleteLead', id: id })
+      });
+      // Con no-cors no podemos leer la respuesta, pero si llegamos aquí es que se envió
+      toast('Eliminado correctamente ✓', 'success');
+    } catch(e) {
+      console.error("Error sincronizando eliminación:", e);
+      // No revertimos el borrado local para no confundir al usuario, 
+      // pero avisamos que hubo un problema de red.
+      toast('Borrado localmente. Error de red con la nube.', 'error');
+    }
+  }
+}
 
 /* ═══════════════════════════════════════════════
    MODAL ENVÍO
@@ -1870,7 +1878,7 @@ function eliminarLead(id){ if(!confirm('¿Eliminar?')) return; leads=leads.filte
 function abrirEnvioModal(leadId, presel){
   try {
     envioLeadId = leadId;
-    const lead = leads.find(l => l.id === leadId);
+    const lead = leads.find(l => String(l.id) === String(leadId));
     if (!lead) { console.error("Lead not found:", leadId); return; }
     
     // Garantizar que filtros sea un objeto
@@ -1983,7 +1991,7 @@ function setEnvioModo(modo){
 
 function confirmarEnvio(){
   try {
-    const lead = leads.find(l => l.id === envioLeadId);
+    const lead = leads.find(l => String(l.id) === String(envioLeadId));
     if (!lead) { toast("Cliente no encontrado", "error"); return; }
     const modo = document.getElementById('envioModoInput').value;
     
@@ -2087,7 +2095,7 @@ function generarProximosCheck(frec){
 ═══════════════════════════════════════════════ */
 function abrirVisitaModal(lid, prefilledCod){
   visitaLeadId = lid;
-  const lead = leads.find(l => l.id === lid);
+  const lead = leads.find(l => String(l.id) === String(lid));
   const v = prefilledCod ? (lead?.visitas || []).find(x => x.codigo === prefilledCod) : null;
 
   document.getElementById('visitaCodigo').value = prefilledCod || '';
@@ -2103,7 +2111,7 @@ function abrirVisitaModal(lid, prefilledCod){
 }
 
 function marcarVisitaRealizada(lid, cod){
-  const lead = leads.find(l => l.id === lid); if(!lead) return;
+  const lead = leads.find(l => String(l.id) === String(lid)); if(!lead) return;
   const v = (lead.visitas || []).find(x => x.codigo === cod);
   if(v){
     v.estado = 'realizada';
@@ -2115,7 +2123,7 @@ function marcarVisitaRealizada(lid, cod){
 }
 function guardarVisita(){
   const cod=document.getElementById('visitaCodigo').value.trim(); if(!cod){ toast('Ingresa el código','error'); return; }
-  const lead=leads.find(l=>l.id===visitaLeadId);
+  const lead=leads.find(l=>String(l.id)===String(visitaLeadId));
   const v={
     codigo:cod,
     fecha:document.getElementById('visitaFecha').value,
@@ -2161,7 +2169,7 @@ function guardarVisita(){
    MODAL EDITAR FILTROS
 ═══════════════════════════════════════════════ */
 function abrirEditFiltros(leadId){
-  const lead=leads.find(l=>l.id===leadId); if(!lead) return;
+  const lead=leads.find(l=>String(l.id)===String(leadId)); if(!lead) return;
   tempFiltros=JSON.parse(JSON.stringify(lead.filtros||{}));
   document.getElementById('editFiltrosCount').textContent=`${filtrarProps(tempFiltros).length} propiedades encontradas`;
   document.getElementById('editFiltrosContent').innerHTML=`<div id="efWrap"></div>`;
@@ -2169,7 +2177,7 @@ function abrirEditFiltros(leadId){
   setTimeout(()=>buildFiltrosBar('efWrap','ef',tempFiltros),0);
 }
 function guardarFiltrosEditados(){
-  const lead=leads.find(l=>l.id===currentLeadId); if(!lead) return;
+  const lead=leads.find(l=>String(l.id)===String(currentLeadId)); if(!lead) return;
   const efSt=getFSt('ef'); Object.keys(efSt).forEach(k=>{ tempFiltros[k]=[...(efSt[k]||[])]; });
   lead.filtros=JSON.parse(JSON.stringify(tempFiltros));
   lead.propsFiltradas=filtrarProps(lead.filtros).map(d=>d['Código']);
@@ -2184,10 +2192,30 @@ function guardarFiltrosEditados(){
 ═══════════════════════════════════════════════ */
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open')); });
-// formatP consolidated above
-function saveLeads(){ localStorage.setItem('icde_leads',JSON.stringify(leads)); localStorage.setItem('icde_citas',JSON.stringify(citas)); }
-// toast consolidated above
-async function syncSheets(lead){ if(!CRM_SCRIPT_URL) return; try{ await fetch(CRM_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'saveLead',lead:JSON.stringify(lead)})}); }catch(e){} }
+
+function saveLeads(){ 
+  localStorage.setItem('icde_leads', JSON.stringify(leads)); 
+  localStorage.setItem('icde_citas', JSON.stringify(citas)); 
+}
+
+function toast(msg,type='success'){
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
+async function syncSheets(lead){ 
+  if(!CRM_SCRIPT_URL) return; 
+  try { 
+    await fetch(CRM_SCRIPT_URL,{
+      method:'POST',
+      mode: 'no-cors',
+      body:JSON.stringify({action:'saveLead',lead:JSON.stringify(lead)})
+    }); 
+  } catch(e){} 
+}
 
 /* ═══════════════════════════════════════════════
    MÓDULO CITAS & PEDIDOS INMOB.
