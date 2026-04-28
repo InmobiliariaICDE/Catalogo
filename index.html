@@ -7162,7 +7162,15 @@ font-weight: 500;
                     poblarDropdowns();
                     if (typeof window._construirInline === 'function') window._construirInline();
                 }, 800);
-            });
+            // Exponer para sincronización externa
+            window._icdeFiltrosSync = {
+                sel: sel,
+                poblarDropdowns: poblarDropdowns,
+                renderHead: renderHead,
+                refreshLimpiar: refreshLimpiar,
+                MAPA: MAPA,
+                actualizarConteos: actualizarConteos
+            };
 
         })();
     </script>
@@ -7941,7 +7949,51 @@ font-weight: 500;
                                     aplicarFiltros();
                                 });
                             });
+
+                            // ── PASO 3: Sincronizar UI con filtros cargados (URL o iniciales) ──
+                            sincronizarUIViaFiltros();
                         }, 0); // setTimeout 0 = cede el hilo al navegador para pintar primero
+                    }
+
+                    function sincronizarUIViaFiltros() {
+                        // 1. Sincronizar UI del Hero (IIFE interna)
+                        const sync = window._icdeFiltrosSync;
+                        if (sync) {
+                            Object.keys(sync.MAPA).forEach(campo => {
+                                if (filtros[campo]) {
+                                    sync.sel[campo] = Array.isArray(filtros[campo]) ? [...filtros[campo]] : [filtros[campo]];
+                                }
+                            });
+                            sync.poblarDropdowns();
+                            document.querySelectorAll('.filtros-wrapper.solo-desktop .filtro-nuevo').forEach(f => sync.renderHead(f));
+                            sync.actualizarConteos();
+                            sync.refreshLimpiar();
+                        }
+
+                        // 2. Sincronizar Choices.js (Panel avanzado)
+                        Object.entries(choiceInstances).forEach(([id, instance]) => {
+                            let key = "";
+                            switch(id) {
+                                case "filterTipoPropiedad": key = "Tipo de inmueble"; break;
+                                case "filterRangoPrecio":   key = "Rango de precio"; break;
+                                case "filterZona":          key = "Zona"; break;
+                                case "filterEstrato":       key = "Estrato"; break;
+                                case "filterHabitaciones":  key = "Habitaciones"; break;
+                                case "filterGaraje":        key = "Garaje"; break;
+                                case "filterPisos":         key = "Pisos"; break;
+                                case "filterBarrio":        key = "Barrio"; break;
+                                case "filterConjunto":      key = "Conjunto"; break;
+                            }
+                            if (key && filtros[key]) {
+                                instance.setChoiceByValue(filtros[key]);
+                            }
+                        });
+                        
+                        // 3. Sincronizar Input Buscar
+                        if (filtros['Buscar']) {
+                            const input = document.getElementById('filterBuscarNueva') || document.getElementById('movilBuscar');
+                            if (input) input.value = filtros['Buscar'];
+                        }
                     }
                     // ——— Aquí inicializamos nuestro dropdown “fake” de Ordenar por ———
                     const toggle = document.getElementById('sortToggle');

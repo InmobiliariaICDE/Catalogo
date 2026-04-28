@@ -13,6 +13,9 @@ function doGet(e) {
     if (action === 'getLeads') {
       return getLeads();
     }
+    if (action === 'getCitas') {
+      return getCitas();
+    }
     return createJsonResponse({error: 'Acción no válida'});
   } catch (err) {
     return createJsonResponse({error: err.toString()});
@@ -28,10 +31,66 @@ function doPost(e) {
     if (params.action === 'deleteLead') {
       return deleteLeadFromSheet(params.id);
     }
+    if (params.action === 'saveCita') {
+      return saveCitaToSheet(JSON.parse(params.cita));
+    }
     return createJsonResponse({error: 'Acción no válida'});
   } catch (err) {
     return createJsonResponse({error: err.toString()});
   }
+}
+
+
+function getCitas() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('CRM_Citas');
+  if (!sheet) return createJsonResponse([]);
+  
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return createJsonResponse([]);
+  
+  const headers = data[0];
+  const citas = data.slice(1).map(row => {
+    let obj = {};
+    headers.forEach((h, i) => { obj[h] = row[i]; });
+    return obj;
+  });
+  
+  return createJsonResponse(citas);
+}
+
+function saveCitaToSheet(cita) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('CRM_Citas');
+  
+  const headers = ['id', 'codigo', 'fecha', 'hora', 'estado', 'oferto', 'oferta', 'notas', 'cliente', 'celular', 'inmobiliaria'];
+  
+  if (!sheet) {
+    sheet = ss.insertSheet('CRM_Citas');
+    sheet.appendRow(headers);
+    sheet.setFrozenRows(1);
+  }
+  
+  const rowData = headers.map(h => cita[h] || '');
+  
+  const data = sheet.getDataRange().getValues();
+  let rowIndex = -1;
+  if (cita.id) {
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] == cita.id) {
+        rowIndex = i + 1;
+        break;
+      }
+    }
+  }
+  
+  if (rowIndex > 0) {
+    sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+  } else {
+    sheet.appendRow(rowData);
+  }
+  
+  return createJsonResponse({success: true});
 }
 
 function getData() {

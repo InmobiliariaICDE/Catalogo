@@ -26,9 +26,12 @@ function saveMessages() {
     fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messageHistory, null, 2));
 }
 
+let sock; // Socket global
+
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info');
-    const sock = makeWASocket({
+    
+    sock = makeWASocket({
         auth: state,
         printQRInTerminal: true,
         logger: pino({ level: 'silent' }),
@@ -86,46 +89,41 @@ async function connectToWhatsApp() {
                     if (messageHistory[phone].length > 100) messageHistory[phone].shift();
                     
                     saveMessages();
-                    console.log(`📩 Nuevo mensaje de ${phone}: ${text.substring(0, 30)}...`);
+                    console.log(`📩 [${fromMe ? 'OUT' : 'IN'}] Mensaje de/para ${phone}: ${text.substring(0, 30)}...`);
                 }
             }
         }
     });
-
-    app.post('/send-message', async (req, res) => {
-        try {
-            const { number, message } = req.body;
-            let cleanNumber = number.replace(/\D/g, '');
-            if (!cleanNumber.startsWith('57')) cleanNumber = '57' + cleanNumber;
-            const jid = `${cleanNumber}@s.whatsapp.net`;
-            
-            const sent = await sock.sendMessage(jid, { text: message });
-            
-            // Guardar en el historial inmediatamente
-            if (!messageHistory[cleanNumber]) messageHistory[cleanNumber] = [];
-            messageHistory[cleanNumber].push({
-                id: sent.key.id,
-                fromMe: true,
-                pushName: 'Yo',
-                text: message,
-                timestamp: Math.floor(Date.now() / 1000)
-            });
-            saveMessages();
-
-            res.send({ status: 'sent', to: jid, messageId: sent.key.id });
-            console.log(`📤 Mensaje enviado a: ${cleanNumber}`);
-        } catch (err) {
-            console.error('❌ Error al enviar:', err.message);
-            res.status(500).send({ error: err.message });
-        }
-    });
-
-    app.get('/messages/:number', (req, res) => {
-        let phone = req.params.number.replace(/\D/g, '');
-        if (!phone.startsWith('57')) phone = '57' + phone;
-        res.send(messageHistory[phone] || []);
-    });
 }
+
+// Rutas API fuera de connectToWhatsApp para evitar duplicación
+app.post('/send-message', async (req, res) => {
+    try {
+        if (!sock) {
+            return res.status(503).send({ error: 'WhatsApp no está conectado' });
+        }
+        
+        const { number, message } = req.body;
+        let cleanNumber = number.replace(/\D/g, '');
+        if (!cleanNumber.startsWith('57')) cleanNumber = '57' + cleanNumber;
+        const jid = `${cleanNumber}@s.whatsapp.net`;
+        
+        const sent = await sock.sendMessage(jid, { text: message });
+        
+        // No guardamos en historial aquí; dejamos que messages.upsert lo haga de forma unificada
+        res.send({ status: 'sent', to: jid, messageId: sent.key.id });
+        console.log(`📤 Mensaje enviado a: ${cleanNumber}`);
+    } catch (err) {
+        console.error('❌ Error al enviar:', err.message);
+        res.status(500).send({ error: err.message });
+    }
+});
+
+app.get('/messages/:number', (req, res) => {
+    let phone = req.params.number.replace(/\D/g, '');
+    if (!phone.startsWith('57')) phone = '57' + phone;
+    res.send(messageHistory[phone] || []);
+});
 
 connectToWhatsApp();
 

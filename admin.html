@@ -563,6 +563,112 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 .funnel-stage span { z-index: 2; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
 .funnel-stage .stage-label { position: absolute; right: -120px; color: var(--muted); font-size: 11px; width: 100px; text-align: left; }
 @media (max-width: 600px) { .funnel-stage .stage-label { display: none; } }
+
+  /* ═══════════════════════════════════════════════════════
+     SORTING & RIBBON — REPLICATED FROM INDEX.HTML
+     ═══════════════════════════════════════════════════════ */
+  .ordenar-por {
+    position: relative;
+    z-index: 100;
+    margin-bottom: 12px;
+  }
+  .sort-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 35px;
+    padding: 0 14px;
+    background: rgba(8, 6, 3, 0.45);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(200, 200, 200, 0.20);
+    border-radius: 14px;
+    color: #c0c0c0;
+    font-family: "Outfit", sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .15s;
+    user-select: none;
+  }
+  .sort-toggle:hover {
+    color: #fff;
+    background: rgba(255,255,255,.04);
+  }
+  .sort-toggle .st-arrow {
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid #d4a84b;
+    transition: transform .2s;
+  }
+  .sort-toggle.st-open .st-arrow { transform: rotate(180deg); }
+  .sort-toggle.st-open { color: #fff; background: rgba(255,255,255,.05); }
+
+  .sort-options {
+    position: absolute;
+    top: 38px;
+    left: 0;
+    background: rgba(14,12,9,0.98);
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+    border-radius: 10px;
+    border: 1px solid rgba(200, 200, 200, 0.12);
+    box-shadow: 0 16px 40px rgba(0,0,0,.7);
+    z-index: 9999;
+    min-width: 180px;
+  }
+  .sort-options.hidden { display: none; }
+  .sort-options li {
+    padding: 10px 18px;
+    color: #c0c0c0;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: all .1s;
+  }
+  .sort-options li:hover { background: rgba(255,255,255,.05); color: #fff; }
+  .sort-options li.st-selected { color: var(--gold); }
+
+  /* RIBBON */
+  .prop-card.recomendado::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: radial-gradient(circle at bottom left, transparent 85%, rgba(98, 175, 0, 0.4) 100%);
+    transition: height 0.3s ease;
+  }
+  .ribbon {
+    width: 80px;
+    height: 80px;
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .ribbon span {
+    position: absolute;
+    display: block;
+    width: 120px;
+    padding: 4px 0;
+    background: #62af00;
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    font-size: 10px;
+    transform: rotate(45deg);
+    top: 14px;
+    right: -32px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
 </style>
 </head>
 <body>
@@ -611,6 +717,8 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     <div class="modal-title">🏠 Añadir Visita</div>
     <div class="form-grid">
       <div class="form-group"><label class="form-label">Código Casa</label><input class="form-input" id="visitaCodigo" placeholder="ej: 222"/></div>
+      <div class="form-group"><label class="form-label">Cliente</label><input class="form-input" id="visitaCliente" placeholder="Nombre del cliente"/></div>
+      <div class="form-group"><label class="form-label">WhatsApp / Celular</label><input class="form-input" id="visitaCelular" placeholder="3001234567"/></div>
       <div class="form-group"><label class="form-label">Fecha</label><input class="form-input" type="date" id="visitaFecha"/></div>
       <div class="form-group"><label class="form-label">Hora</label><input class="form-input" type="time" id="visitaHora"/></div>
       <div class="form-group"><label class="form-label">Estado</label>
@@ -668,7 +776,7 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     <div id="envioModalContent"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('envioModal')">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmarEnvio()">Enviar por WhatsApp</button>
+      <button class="btn btn-primary" id="btnConfirmarEnvio" onclick="confirmarEnvio(this)">Enviar por WhatsApp</button>
     </div>
   </div>
 </div>
@@ -700,6 +808,7 @@ const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFUuzwKA_5C35NX
 let allProps = [];
 let leads = JSON.parse(localStorage.getItem('icde_leads') || '[]');
 let citas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
+if (!Array.isArray(citas)) citas = []; // Ensure it's always an array
 let settings = JSON.parse(localStorage.getItem('icde_settings') || '{"waApi":"","geminiKey":"AIzaSyALjX93RBFLp7AFEC-oK271rf3B1T3UpXo"}');
 let currentTab = 'nuevo';
 let selectedProps = [];
@@ -708,8 +817,11 @@ let visitaLeadId = null;
 let envioLeadId = null;
 let tempFiltros = {};
 let leadViewMode = localStorage.getItem('icde_lead_view') || 'table';
+let searchTermLeads = '';
+let currentLeadFilter = 'todos';
 let nlPage = 0;
 const PAGE_SIZE = 20;
+let criterioOrden = 'destacadas'; // Default sort
 
 
 function freshLead(){
@@ -803,8 +915,74 @@ function filtrarProps(f){
     
     return true;
   });
-  return filtered;
+  return ordenarLista(filtered);
 }
+
+function parseP(txt){ return parseFloat(String(txt || "").replace(/[^\d]/g, "")) || 0; }
+
+function ordenarLista(lista) {
+  if (!criterioOrden) return lista;
+  
+  if (criterioOrden === "destacadas") {
+    // Solo propiedades destacadas, ordenadas de mayor a menor precio
+    return lista
+      .filter(d => ["Directo", "Verbal"].includes(d["Contrato"]))
+      .sort((a, b) => parseP(b["Precio"]) - parseP(a["Precio"]));
+  }
+
+  return lista.sort((a, b) => {
+    if (criterioOrden === "menorPrecio" || criterioOrden === "mayorPrecio") {
+      const pa = parseP(a["Precio"]);
+      const pb = parseP(b["Precio"]);
+      return (criterioOrden === "menorPrecio" ? pa - pb : pb - pa);
+    }
+    if (criterioOrden === "rentabilidad") {
+      const parseRet = txt => {
+        const num = parseFloat((txt || "").toString().replace(/[^\d.]/g, ""));
+        return isNaN(num) ? Infinity : num;
+      };
+      const ra = parseRet(a["Retorno de la Inversión"]);
+      const rb = parseRet(b["Retorno de la Inversión"]);
+      return ra - rb;
+    }
+    return 0;
+  });
+}
+
+function getSortLabel(crit){
+  const labels = { 'destacadas': 'Destacadas', 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad' };
+  return labels[crit] || 'Ordenar por';
+}
+
+function toggleSortMenu(e){
+  e.stopPropagation();
+  const list = document.getElementById('sortOptions');
+  const toggle = document.getElementById('sortToggle');
+  if(!list || !toggle) return;
+  list.classList.toggle('hidden');
+  toggle.classList.toggle('st-open');
+}
+
+function setSort(crit){
+  criterioOrden = crit;
+  const list = document.getElementById('sortOptions');
+  const toggle = document.getElementById('sortToggle');
+  if(list) list.classList.add('hidden');
+  if(toggle) {
+    toggle.classList.remove('st-open');
+    toggle.innerHTML = `${getSortLabel(crit)} <span class="st-arrow"></span>`;
+  }
+  nlPage = 0; // Reset pagination
+  renderPropsGrid();
+}
+
+// Cerrar menú al hacer clic fuera
+document.addEventListener('click', () => {
+  const list = document.getElementById('sortOptions');
+  const toggle = document.getElementById('sortToggle');
+  if(list) list.classList.add('hidden');
+  if(toggle) toggle.classList.remove('st-open');
+});
 
 // Escapa comillas simples para usar dentro de onclick
 function eq(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
@@ -1183,15 +1361,56 @@ async function cargarLeads(){
   try {
     const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads');
     const data = await res.json();
-    if(Array.isArray(data) && data.length > 0){
-      // Mezclar con locales, el ID manda (comparación agnóstica de tipos)
-      const cloudIds = data.map(l => String(l.id));
-      const localesRestantes = leads.filter(l => !cloudIds.includes(String(l.id)));
-      leads = [...data, ...localesRestantes];
+    if(Array.isArray(data)){
+      // Inteligente: Mezclar nubes y locales
+      const mergedLeads = [...leads];
+      data.forEach(cloudLead => {
+        const index = mergedLeads.findIndex(l => String(l.id) === String(cloudLead.id));
+        if (index === -1) {
+          mergedLeads.push(cloudLead);
+        } else {
+          const localLead = mergedLeads[index];
+          // Criterio: quedarnos con el que tenga más historial o más enviadas
+          const cloudTotal = (cloudLead.historialEnvios || []).length + (cloudLead.propsEnviadas || []).length;
+          const localTotal = (localLead.historialEnvios || []).length + (localLead.propsEnviadas || []).length;
+          
+          if (localTotal > cloudTotal) {
+            // Mantener local (posiblemente tiene cambios que no han subido)
+          } else {
+            mergedLeads[index] = cloudLead;
+          }
+        }
+      });
+      leads = mergedLeads;
+      rebuildCitas();
       saveLeads();
       if(currentTab === 'leads') renderLeadsBody(leads);
+      if(currentTab === 'citas') renderCitas();
     }
   } catch(e){ console.error("Error cargando leads:", e); }
+}
+
+function rebuildCitas() {
+  const allVisitas = [];
+  leads.forEach(l => {
+    if (Array.isArray(l.visitas)) {
+      l.visitas.forEach(v => {
+        // Ensure visit has lead info
+        const cita = { 
+          ...v, 
+          cliente: v.cliente || l.nombre, 
+          celular: v.celular || l.celular,
+          id: v.id || `${l.id}_${v.codigo}_${v.fecha}`
+        };
+        allVisitas.push(cita);
+      });
+    }
+  });
+  
+  // Merge with generic citas (those not linked to a lead)
+  const genericCitas = citas.filter(c => !leads.some(l => (l.visitas || []).some(v => v.id === c.id || (v.codigo === c.codigo && v.celular === c.celular))));
+  
+  citas = [...allVisitas, ...genericCitas];
 }
 async function cargarProps(){
   try {
@@ -1251,6 +1470,19 @@ function renderNuevo(){
         </div>
         <div class="section-content">
           <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Puedes marcar casas específicas para enviar hoy mismo.</p>
+          
+          <div id="ordenar-por" class="ordenar-por">
+            <div id="sortToggle" class="sort-toggle" onclick="toggleSortMenu(event)">
+              ${getSortLabel(criterioOrden)} <span class="st-arrow"></span>
+            </div>
+            <ul id="sortOptions" class="sort-options hidden">
+              <li onclick="setSort('destacadas')" class="${criterioOrden==='destacadas'?'st-selected':''}">Destacadas</li>
+              <li onclick="setSort('menorPrecio')" class="${criterioOrden==='menorPrecio'?'st-selected':''}">Menor precio</li>
+              <li onclick="setSort('mayorPrecio')" class="${criterioOrden==='mayorPrecio'?'st-selected':''}">Mayor precio</li>
+              <li onclick="setSort('rentabilidad')" class="${criterioOrden==='rentabilidad'?'st-selected':''}">Mayor rentabilidad</li>
+            </ul>
+          </div>
+
           ${selectedProps.length?`<div class="selected-bar" style="margin-bottom:20px;"><div class="selected-chips">${selectedProps.map(c=>`<span class="sel-chip">${c}<button onclick="deselProp('${c}')">×</button></span>`).join('')}</div></div>`:''}
           <div id="propsGrid"></div>
         </div>
@@ -1329,10 +1561,10 @@ function renderNuevo(){
           <div class="freq-info" id="frecInfo" style="margin-top:20px; ${nuevoLead.frecuencia==='manual'?'display:none':''}">${getFrecInfo()}</div>
 
           <div style="margin-top:32px; display:flex; gap:12px; flex-wrap:wrap; padding-top:24px; border-top:1px solid rgba(255,255,255,0.05);">
-            <button class="btn btn-primary" style="flex:1;" onclick="guardarLead(false)">💾 Solo Guardar</button>
+            <button class="btn btn-primary" style="flex:1;" onclick="guardarLead(false, this)">💾 Solo Guardar</button>
             ${nuevoLead.tipo==='cliente'
-              ? `<button class="btn btn-green" style="flex:1.2; font-weight:700;" onclick="guardarLead(true)">💾 Guardar y Enviar WhatsApp ➜</button>`
-              : `<button class="btn btn-gold" style="flex:1.2; font-weight:700;" onclick="guardarLead(true)">💾 Guardar y Msg. Agente ➜</button>`}
+              ? `<button class="btn btn-green" style="flex:1.2; font-weight:700;" onclick="guardarLead(true, this)">💾 Guardar y Enviar WhatsApp ➜</button>`
+              : `<button class="btn btn-gold" style="flex:1.2; font-weight:700;" onclick="guardarLead(true, this)">💾 Guardar y Msg. Agente ➜</button>`}
             <button class="btn btn-secondary" onclick="resetNuevoLead()">🗑 Limpiar</button>
           </div>
         </div>
@@ -1388,7 +1620,9 @@ function renderPropsGrid(listaForzada){
   let html = `<div class="props-grid">${sliced.map(d=>{
     const sel=selectedProps.includes(d['Código']);
     const img=(d['Imagenes']||'').split('|')[0].trim()||d['Image']||'https://i.imgur.com/Pc9M3I8.png';
-    return `<div class="prop-card${sel?' selected':''}" onclick="abrirModalProp('${eq(d['Código'])}')">
+    const isDestacada = ["Directo", "Verbal"].includes(d["Contrato"]);
+    return `<div class="prop-card${sel?' selected':''}${isDestacada?' recomendado':''}" onclick="abrirModalProp('${eq(d['Código'])}')">
+      ${isDestacada ? `<div class="ribbon"><span>¡Destacada!</span></div>` : ''}
       <div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp('${eq(d['Código'])}', this.parentElement)">
         ${sel?'✓':'+'}
       </div>
@@ -1444,10 +1678,11 @@ function toggleProp(cod,el){
 /* ═══════════════════════════════════════════════
    GUARDAR LEAD
 ═══════════════════════════════════════════════ */
-function guardarLead(enviarAhora){
+function guardarLead(enviarAhora, btn){
   if(!nuevoLead.nombre.trim() && nuevoLead.tipo !== 'inmobiliaria'){ toast('Ingresa el nombre','error'); return; }
   if(nuevoLead.tipo === 'inmobiliaria' && !nuevoLead.nombreInmobiliaria.trim()){ toast('Ingresa nombre de inmobiliaria','error'); return; }
   if(!nuevoLead.celular.trim()){ toast('Ingresa el celular','error'); return; }
+  if(btn) btn.disabled = true;
   const filtradas=filtrarProps(nuevoLead.filtros), max=nuevoLead.maxPorEnvio||4;
   const lead={
     id:Date.now().toString(), tipo:nuevoLead.tipo, nombre:nuevoLead.nombre.trim(),
@@ -1465,7 +1700,10 @@ function guardarLead(enviarAhora){
     const sel = selectedProps.length > 0 ? selectedProps : null;
     setTimeout(()=>abrirEnvioModal(lead.id, sel), 300); 
   }
-  resetNuevoLead(); syncSheets(lead);
+  resetNuevoLead(); 
+  syncSheets(lead).finally(() => {
+    if(btn) btn.disabled = false;
+  });
 }
 
 function resetNuevoLead(){
@@ -1524,7 +1762,14 @@ function renderLeads(){
   document.getElementById('mainContent').innerHTML=`
   <div class="section-header">
     <div class="section-title">👥 Leads (${leads.length})</div>
-    <div style="display:flex;gap:10px;">
+    <div style="display:flex;gap:10px;align-items:center;">
+      <div class="pc-buscar-row" style="height:36px; border-radius:10px; width:300px; margin-right:10px;">
+        <span class="bn-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" id="searchLeadsInput" placeholder="Buscar por nombre o celular..." value="${searchTermLeads}" oninput="buscarLeads(this.value)"/>
+        ${searchTermLeads ? `<button class="btn-limpiar-pc" style="padding:0 10px; border-radius:0 10px 10px 0;" onclick="buscarLeads(''); document.getElementById('searchLeadsInput').value=''">✕</button>` : ''}
+      </div>
       <div class="btn-group" style="background:rgba(255,255,255,0.05);padding:4px;border-radius:10px;display:flex;">
         <button class="btn btn-sm ${leadViewMode==='table'?'btn-primary':'btn-secondary'}" style="padding:6px 10px;box-shadow:none;" onclick="setLeadView('table')">📋 Tabla</button>
         <button class="btn btn-sm ${leadViewMode==='cards'?'btn-primary':'btn-secondary'}" style="padding:6px 10px;box-shadow:none;" onclick="setLeadView('cards')">📇 Tarjetas</button>
@@ -1533,14 +1778,41 @@ function renderLeads(){
     </div>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
-    <button class="chip-filtro sel" id="fA" onclick="filtTabla('todos',this)">Todos</button>
-    <button class="chip-filtro" id="fAc" onclick="filtTabla('activo',this)">🟢 Activos</button>
-    <button class="chip-filtro" id="fTi" onclick="filtTabla('tibio',this)">🟡 Tibios</button>
-    <button class="chip-filtro" id="fIn" onclick="filtTabla('inactivo',this)">⚫ Inactivos</button>
-    <button class="chip-filtro" id="fIm" onclick="filtTabla('inmobiliaria',this)">🏢 Inmobiliarias</button>
+    <button class="chip-filtro ${currentLeadFilter==='todos'?'sel':''}" id="fA" onclick="filtTabla('todos',this)">Todos</button>
+    <button class="chip-filtro ${currentLeadFilter==='activo'?'sel':''}" id="fAc" onclick="filtTabla('activo',this)">🟢 Activos</button>
+    <button class="chip-filtro ${currentLeadFilter==='tibio'?'sel':''}" id="fTi" onclick="filtTabla('tibio',this)">🟡 Tibios</button>
+    <button class="chip-filtro ${currentLeadFilter==='inactivo'?'sel':''}" id="fIn" onclick="filtTabla('inactivo',this)">⚫ Inactivos</button>
+    <button class="chip-filtro ${currentLeadFilter==='inmobiliaria'?'sel':''}" id="fIm" onclick="filtTabla('inmobiliaria',this)">🏢 Inmobiliarias</button>
   </div>
   <div id="leadsContainer"></div>`;
-  renderLeadsBody(leads);
+
+  let lista = leads;
+  if(currentLeadFilter==='inmobiliaria') lista=leads.filter(l=>l.tipo==='inmobiliaria');
+  else if(currentLeadFilter!=='todos')   lista=leads.filter(l=>l.etiqueta===currentLeadFilter);
+
+  renderLeadsBody(lista);
+}
+
+function buscarLeads(val){
+  searchTermLeads = val.trim().toLowerCase();
+  // Al buscar, forzamos el filtro de "Todos" para que la búsqueda sea global
+  // o podemos dejar el filtro actual. Lo ideal es que se aplique sobre el filtro actual.
+  // Re-renderizamos la tabla con los leads actuales (que ya podrían estar filtrados por chip)
+  // Pero filtTabla ya llama a renderLeadsBody(lista).
+  // Vamos a modificar renderLeadsBody para que SIEMPRE aplique el searchTermLeads.
+  
+  // Re-renderizar la cabecera para mostrar/ocultar el botón de limpiar si cambió el estado de vacío
+  const container = document.getElementById('searchLeadsInput')?.parentElement;
+  if (container) {
+    // Si queremos actualizar el botón de limpiar sin re-renderizar todo el tab:
+    renderLeads(); 
+    document.getElementById('searchLeadsInput').focus();
+    // Movemos el cursor al final
+    const input = document.getElementById('searchLeadsInput');
+    input.setSelectionRange(input.value.length, input.value.length);
+  } else {
+    renderLeadsBody(leads);
+  }
 }
 
 function setLeadView(mode){
@@ -1549,6 +1821,7 @@ function setLeadView(mode){
   renderLeads();
 }
 function filtTabla(f,btn){
+  currentLeadFilter = f;
   document.querySelectorAll('[id^=f]').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel');
   let lista=leads;
   if(f==='inmobiliaria') lista=leads.filter(l=>l.tipo==='inmobiliaria');
@@ -1557,6 +1830,15 @@ function filtTabla(f,btn){
 }
 function renderLeadsBody(lista){
   const container=document.getElementById('leadsContainer'); if(!container) return;
+  
+  // Aplicar filtro de búsqueda si existe
+  if(searchTermLeads){
+    lista = lista.filter(l => 
+      (l.nombre || '').toLowerCase().includes(searchTermLeads) || 
+      (l.celular || '').toLowerCase().includes(searchTermLeads)
+    );
+  }
+
   if(!lista.length){ container.innerHTML=`<div class="empty">No hay leads que coincidan</div>`; return; }
   
   const orden = { activo: 1, tibio: 2, inactivo: 3 };
@@ -1570,7 +1852,8 @@ function renderLeadsBody(lista){
         <th>Enviadas</th><th>Pendientes</th><th>Próx. Envío</th><th>Acciones</th>
       </tr></thead><tbody id="leadsBody">
         ${lista.map(l=>{
-          const pend=(l.propsFiltradas||[]).length-(l.propsEnviadas||[]).length;
+          const currentMatches = filtrarProps(l.filtros);
+          const pend = currentMatches.filter(d => !(l.propsEnviadas || []).includes(d['Código'])).length;
           const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
           return `<tr class="clickable" onclick="abrirLead('${l.id}')">
             <td><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">📱 ${l.celular}</div></td>
@@ -1594,7 +1877,8 @@ function renderLeadsBody(lista){
   } else {
     container.innerHTML=`<div class="lead-cards-grid">
       ${lista.map(l=>{
-        const pend=(l.propsFiltradas||[]).length-(l.propsEnviadas||[]).length;
+        const currentMatches = filtrarProps(l.filtros);
+        const pend = currentMatches.filter(d => !(l.propsEnviadas || []).includes(d['Código'])).length;
         const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
         return `
         <div class="lead-card" onclick="abrirLead('${l.id}')">
@@ -1635,10 +1919,11 @@ function closeSidePanel(){
 }
 
 function renderSidePanel(lead){
-  const pend=(lead.propsFiltradas||[]).filter(c=>!(lead.propsEnviadas||[]).includes(c));
-  const ftxt=Object.entries(lead.filtros||{}).filter(([,v])=>v&&v.length).map(([k,v])=>`${k}: ${v.join(', ')}`).join(' · ')||'Sin filtros';
-  const total=(lead.propsFiltradas||[]).length, env=(lead.propsEnviadas||[]).length;
-  const pct=total>0?Math.round(env/total*100):0;
+  const currentMatches = filtrarProps(lead.filtros);
+  const pend = currentMatches.filter(d => !(lead.propsEnviadas || []).includes(d['Código']));
+  const total = currentMatches.length, env = (lead.propsEnviadas || []).length;
+  const ftxt = Object.entries(lead.filtros||{}).filter(([,v])=>v&&v.length).map(([k,v])=>`${k}: ${v.join(', ')}`).join(' · ')||'Sin filtros';
+  const pct = total > 0 ? Math.round(env / total * 100) : 0;
   
   document.getElementById('sidePanelContent').innerHTML=`
   <div class="panel-header">
@@ -1827,11 +2112,14 @@ function renderTimeline(lead){
   return hEnv.map((en,i)=>`
     <div class="envio-item" style="background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:12px; margin-bottom:10px;">
       <div class="envio-header" style="display:flex;justify-content:space-between;margin-bottom:8px;">
-        <span style="font-size:13px;font-weight:700;color:var(--gold);">Envío #${i+1}</span>
+        <span style="font-size:13px;font-weight:700;color:var(--gold);">
+          ${en.tipoEnvio === 'link' ? '🔗 Envío de Link' : '📄 Envío Individual'}
+        </span>
         <span class="envio-fecha" style="font-size:11px;color:#666;">${en.fecha}</span>
       </div>
       <div class="envio-props" style="display:flex;gap:4px;flex-wrap:wrap;">
         ${(en.codigos||[]).map(c=>`<span class="envio-prop-tag" style="background:rgba(212,168,75,0.1); border:1px solid var(--border); border-radius:4px; padding:2px 6px; font-size:11px; color:var(--gold);">${c}</span>`).join('')}
+        ${en.tipoEnvio === 'link' && (en.totalCods > (en.codigos||[]).length) ? `<span style="font-size:10px; color:#666; align-self:center;">+${en.totalCods - (en.codigos||[]).length} más</span>` : ''}
       </div>
       ${en.notas?`<div style="margin-top:8px;font-size:12px;color:#aaa;">📝 ${en.notas}</div>`:''}
       <div class="nota-input-wrap" style="margin-top:10px;display:flex;gap:6px;">
@@ -1989,7 +2277,8 @@ function setEnvioModo(modo){
 }
 
 
-function confirmarEnvio(){
+function confirmarEnvio(btn){
+  if(btn) btn.disabled = true;
   try {
     const lead = leads.find(l => String(l.id) === String(envioLeadId));
     if (!lead) { toast("Cliente no encontrado", "error"); return; }
@@ -2036,10 +2325,15 @@ function confirmarEnvio(){
     }
 
     const hoy = new Date().toISOString().split('T')[0];
-    lead.propsEnviadas = [...new Set([...(lead.propsEnviadas || []), ...cods])];
+    const prevEnviadas = lead.propsEnviadas || [];
+    const nuevasCods = cods.filter(c => !prevEnviadas.includes(c));
+    
+    lead.propsEnviadas = [...new Set([...prevEnviadas, ...cods])];
     lead.historialEnvios.push({ 
       fecha: hoy, 
-      codigos: cods, 
+      codigos: nuevasCods, 
+      totalCods: cods.length,
+      tipoEnvio: modo,
       notas: modo === 'link' ? 'Envío de link catálogo' : 'Envío selección individual' 
     });
     
@@ -2058,13 +2352,21 @@ function confirmarEnvio(){
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ number: num, message: msg })
       }).then(r => {
-        if (r.ok) toast(`Enviado automáticamente ✓`, 'success');
-        else window.open(`https://wa.me/${waBase}?text=${encodeURIComponent(msg)}`, '_blank');
+        if (r.ok) {
+          toast(`Enviado automáticamente ✓`, 'success');
+        } else {
+          // Si el bridge falló con error controlado, permitimos el fallback manual
+          window.open(`https://wa.me/${waBase}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
       }).catch(() => {
+        // En caso de error de red (bridge offline)
         window.open(`https://wa.me/${waBase}?text=${encodeURIComponent(msg)}`, '_blank');
+      }).finally(() => {
+        if(btn) btn.disabled = false;
       });
     } else {
       window.open(`https://wa.me/${waBase}?text=${encodeURIComponent(msg)}`, '_blank');
+      if(btn) btn.disabled = false;
     }
 
     if(currentLeadId === lead.id) renderSidePanel(lead);
@@ -2099,6 +2401,8 @@ function abrirVisitaModal(lid, prefilledCod){
   const v = prefilledCod ? (lead?.visitas || []).find(x => x.codigo === prefilledCod) : null;
 
   document.getElementById('visitaCodigo').value = prefilledCod || '';
+  document.getElementById('visitaCliente').value = v ? v.cliente : (lead ? lead.nombre : '');
+  document.getElementById('visitaCelular').value = v ? v.celular : (lead ? lead.celular : '');
   document.getElementById('visitaFecha').value = v ? v.fecha : new Date().toISOString().split('T')[0];
   document.getElementById('visitaHora').value = v ? v.hora : '';
   document.getElementById('visitaEstado').value = v ? v.estado : 'agendada';
@@ -2122,47 +2426,67 @@ function marcarVisitaRealizada(lid, cod){
   }
 }
 function guardarVisita(){
-  const cod=document.getElementById('visitaCodigo').value.trim(); if(!cod){ toast('Ingresa el código','error'); return; }
-  const lead=leads.find(l=>String(l.id)===String(visitaLeadId));
-  const v={
-    codigo:cod,
-    fecha:document.getElementById('visitaFecha').value,
-    hora:document.getElementById('visitaHora').value,
-    estado:document.getElementById('visitaEstado').value,
-    oferto:document.getElementById('visitaOferto').value,
-    oferta:document.getElementById('visitaOferta').value.trim(),
-    notas:document.getElementById('visitaNotas').value.trim(),
-    cliente: lead ? lead.nombre : '',
-    celular: lead ? lead.celular : '',
-    inmobiliaria: lead && lead.tipo==='inmobiliaria' ? lead.nombreInmobiliaria : '',
-  };
-  
-  if(lead){
-    if(!lead.visitas) lead.visitas=[];
-    const idx = lead.visitas.findIndex(x => x.codigo === cod);
-    if(idx >= 0) lead.visitas[idx] = v;
-    else lead.visitas.push(v);
+  try {
+    const cod=document.getElementById('visitaCodigo').value.trim(); if(!cod){ toast('Ingresa el código','error'); return; }
+    const lead=leads.find(l=>String(l.id)===String(visitaLeadId));
+    
+    // Si estamos editando una cita existente, buscamos su ID
+    let existingId = null;
+    if (visitaLeadId) {
+      const v = lead?.visitas?.find(x => x.codigo === cod);
+      if (v) existingId = v.id;
+    } else {
+      const v = citas.find(x => x.codigo === cod && x.celular === document.getElementById('visitaCelular').value.trim());
+      if (v) existingId = v.id;
+    }
+
+    const v={
+      id: existingId || Date.now().toString(), // Mantener ID o crear uno nuevo
+      codigo:cod,
+      fecha:document.getElementById('visitaFecha').value,
+      hora:document.getElementById('visitaHora').value,
+      estado:document.getElementById('visitaEstado').value,
+      oferto:document.getElementById('visitaOferto').value,
+      oferta:document.getElementById('visitaOferta').value.trim(),
+      notas:document.getElementById('visitaNotas').value.trim(),
+      cliente: document.getElementById('visitaCliente').value.trim(),
+      celular: document.getElementById('visitaCelular').value.trim(),
+      inmobiliaria: lead && lead.tipo==='inmobiliaria' ? lead.nombreInmobiliaria : '',
+    };
+    
+    if(lead){
+      if(!lead.visitas) lead.visitas=[];
+      const idx = lead.visitas.findIndex(x => x.id === v.id || (x.codigo === cod && !x.id));
+      if(idx >= 0) lead.visitas[idx] = v;
+      else lead.visitas.push(v);
+    }
+    
+    // Actualizar en agenda global
+    const cIdx = citas.findIndex(x => x.id === v.id || (x.codigo === cod && x.celular === v.celular && !x.id));
+    if(cIdx >= 0) citas[cIdx] = v;
+    else citas.push(v);
+    
+    saveLeads();
+    
+    if(document.getElementById('visitaCalendar').checked){ 
+      const fd=v.fecha.replace(/-/g,''); 
+      const time = v.hora ? `T${v.hora.replace(':','') }00` : '';
+      const dateStr = time ? `${fd}${time}/${fd}${time}` : `${fd}/${fd}`;
+      window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Visita '+cod+' - '+(v.cliente||''))}&dates=${dateStr}&details=${encodeURIComponent(v.notas)}`,'_blank'); 
+    }
+    
+    closeModal('visitaModal'); 
+    toast('Visita registrada ✓','success'); 
+    
+    if(lead) syncSheets(lead);
+    else syncCita(v); // Sincronizar cita genérica si no tiene lead
+    
+    if(currentLeadId && lead && currentLeadId===lead.id) renderSidePanel(lead);
+    if(currentTab==='citas') renderCitas();
+  } catch (err) {
+    console.error("Error en guardarVisita:", err);
+    toast("Error al guardar la visita", "error");
   }
-  
-  // Actualizar en agenda global
-  const cIdx = citas.findIndex(x => x.codigo === cod && x.celular === v.celular);
-  if(cIdx >= 0) citas[cIdx] = v;
-  else citas.push(v);
-  
-  saveLeads();
-  
-  if(document.getElementById('visitaCalendar').checked){ 
-    const fd=v.fecha.replace(/-/g,''); 
-    const time = v.hora ? `T${v.hora.replace(':','') }00` : '';
-    const dateStr = time ? `${fd}${time}/${fd}${time}` : `${fd}/${fd}`;
-    window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Visita '+cod+' - '+(v.cliente||''))}&dates=${dateStr}&details=${encodeURIComponent(v.notas)}`,'_blank'); 
-  }
-  
-  closeModal('visitaModal'); toast('Visita registrada ✓','success'); 
-  if(lead) syncSheets(lead);
-  
-  if(currentLeadId && lead && currentLeadId===lead.id) renderSidePanel(lead);
-  if(currentTab==='citas') renderCitas();
 }
 
 /* ═══════════════════════════════════════════════
@@ -2194,8 +2518,17 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open')); });
 
 function saveLeads(){ 
-  localStorage.setItem('icde_leads', JSON.stringify(leads)); 
-  localStorage.setItem('icde_citas', JSON.stringify(citas)); 
+  try {
+    localStorage.setItem('icde_leads', JSON.stringify(leads)); 
+    localStorage.setItem('icde_citas', JSON.stringify(citas)); 
+  } catch (e) {
+    console.error("Error saving to localStorage:", e);
+    if (e.name === 'QuotaExceededError') {
+      toast('Error: Almacenamiento lleno. Elimina leads antiguos.', 'error');
+    } else {
+      toast('Error al guardar datos localmente', 'error');
+    }
+  }
 }
 
 function toast(msg,type='success'){
@@ -2215,6 +2548,17 @@ async function syncSheets(lead){
       body:JSON.stringify({action:'saveLead',lead:JSON.stringify(lead)})
     }); 
   } catch(e){} 
+}
+
+async function syncCita(cita){
+  if(!CRM_SCRIPT_URL) return;
+  try {
+    await fetch(CRM_SCRIPT_URL,{
+      method:'POST',
+      mode: 'no-cors',
+      body:JSON.stringify({action:'saveCita',cita:JSON.stringify(cita)})
+    });
+  } catch(e){}
 }
 
 /* ═══════════════════════════════════════════════
@@ -2247,12 +2591,19 @@ function renderCitas(){
 function renderCitasBody(lista){
   const b = document.getElementById('citasBody'); if(!b) return;
   const diasSem = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-  lista.sort((a,b) => new Date(a.fecha+' '+a.hora) - new Date(b.fecha+' '+b.hora));
-  b.innerHTML = lista.map(c => {
+  
+  // Clonar y ordenar de forma robusta
+  const ordenada = [...lista].sort((a,b) => {
+    const da = a.fecha + (a.hora ? 'T' + a.hora : 'T00:00');
+    const db = b.fecha + (b.hora ? 'T' + b.hora : 'T00:00');
+    return da.localeCompare(db);
+  });
+
+  b.innerHTML = ordenada.map(c => {
     const d = new Date(c.fecha + 'T12:00:00');
     const p = allProps.find(x => x['Código'] === c.codigo);
     return `<tr>
-      <td><div class="citas-time">${c.hora || '--:--'}</div><div class="citas-weekday">${diasSem[d.getDay()]} ${c.fecha}</div></td>
+      <td><div class="citas-time">${c.hora || '--:--'}</div><div class="citas-weekday">${isNaN(d.getDay()) ? '—' : diasSem[d.getDay()]} ${c.fecha}</div></td>
       <td><div style="font-weight:600;color:var(--gold);">${c.codigo}</div><div style="font-size:11px;color:#aaa;">${p?p['Nombre']:''}</div></td>
       <td style="font-size:12px;">${c.inmobiliaria || 'Directo'}</td>
       <td><div style="font-weight:600;">${c.cliente || '—'}</div><div style="font-size:11px;color:#888;">${c.celular || ''}</div></td>
