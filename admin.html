@@ -821,7 +821,7 @@ let searchTermLeads = '';
 let currentLeadFilter = 'todos';
 let nlPage = 0;
 const PAGE_SIZE = 20;
-let criterioOrden = 'destacadas'; // Default sort
+let criterioOrden = ''; // Default sort (no filter)
 
 
 function freshLead(){
@@ -1421,15 +1421,8 @@ async function cargarProps(){
     
     const res = await fetch(urlBusca);
     const data = await res.json();
-    
     const rawData = Array.isArray(data) ? data : [];
     
-    // LOG DE DEPURACIÓN: ¿Qué estamos recibiendo realmente?
-    console.log("DEBUG ADMIN:", {
-      totalRecibido: rawData.length,
-      primeros5: rawData.slice(0,5).map(p => p['Código'] || p['Cdigo'])
-    });
-
     allProps = rawData.filter(d => {
       const pub = String(d['Publicar'] || '').trim().toUpperCase();
       return pub === 'SI';
