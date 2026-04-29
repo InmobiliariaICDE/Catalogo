@@ -8123,7 +8123,14 @@ font-weight: 500;
                             if (filtros["Buscar"]) {
                                 const textoRaw = filtros["Buscar"].toLowerCase();
                                 const texto = textoRaw.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                                const combinadoRaw = (d["Nombre"] + " " + d["Código"] + " " + d["Descripción"] + " " + d["Puntos Clave"]).toLowerCase();
+                                const combinadoRaw = (
+                                    (d["Nombre"] || "") + " " + 
+                                    (d["Código"] || "") + " " + 
+                                    (d["Zona"] || "") + " " + 
+                                    (d["Barrio"] || "") + " " + 
+                                    (d["Descripción"] || "") + " " + 
+                                    (d["Puntos Clave"] || "")
+                                ).toLowerCase();
                                 const combinado = combinadoRaw.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                                 if (!combinado.includes(texto)) return false;
                             }
