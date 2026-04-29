@@ -1415,12 +1415,32 @@ function rebuildCitas() {
 async function cargarProps(){
   try {
     document.getElementById('syncStatus').textContent='⟳ Cargando...';
-    const res = await fetch(APPS_SCRIPT_URL);
+    
+    // Forzamos la URL exacta de index.html con un "cache buster" para evitar datos viejos
+    const urlBusca = "https://script.google.com/macros/s/AKfycbz-HipJ53KIf2JD1q9BUIBFUB45o4wRYcjvlqUbpg9TDAGK0q3hNQcSrV23dMCWaTgXcQ/exec?action=getData&t=" + Date.now();
+    
+    const res = await fetch(urlBusca);
     const data = await res.json();
-    allProps = Array.isArray(data) ? data.filter(d=>String(d['Publicar']||'').trim().toUpperCase()==='SI') : [];
+    
+    const rawData = Array.isArray(data) ? data : [];
+    
+    // LOG DE DEPURACIÓN: ¿Qué estamos recibiendo realmente?
+    console.log("DEBUG ADMIN:", {
+      totalRecibido: rawData.length,
+      primeros5: rawData.slice(0,5).map(p => p['Código'] || p['Cdigo'])
+    });
+
+    allProps = rawData.filter(d => {
+      const pub = String(d['Publicar'] || '').trim().toUpperCase();
+      return pub === 'SI';
+    });
+    
     document.getElementById('syncStatus').textContent=`✓ ${allProps.length} propiedades`;
+    
   } catch(e){
-    document.getElementById('syncStatus').textContent='⚠ Sin conexión'; allProps=[];
+    console.error("Error cargando propiedades:", e);
+    document.getElementById('syncStatus').textContent='⚠ Sin conexión'; 
+    allProps=[];
   }
   if(currentTab==='nuevo') renderNuevo();
 }
