@@ -787,9 +787,10 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     <div class="modal-title">🔧 Editar Filtros del Cliente</div>
     <div id="editFiltrosCount" style="font-size:13px;color:var(--gold);margin-bottom:14px;"></div>
     <div id="editFiltrosContent"></div>
-    <div class="modal-footer">
+    <div class="modal-footer" style="display:flex; gap:10px; width:100%;">
       <button class="btn btn-secondary" onclick="closeModal('editFiltrosModal')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarFiltrosEditados()">Guardar Filtros</button>
+      <button class="btn btn-gold" style="flex:1;" onclick="guardarFiltrosEditados(true)">🤫 Guardar sin encolar envíos</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="guardarFiltrosEditados(false)">💾 Guardar y preparar envío</button>
     </div>
   </div>
 </div>
@@ -1517,9 +1518,10 @@ function renderNuevo(){
             <button id="btnTC" class="btn ${nuevoLead.tipo==='cliente'?'btn-primary':'btn-secondary'}" onclick="setTipo('cliente')">👤 Cliente</button>
             <button id="btnTI" class="btn ${nuevoLead.tipo==='inmobiliaria'?'btn-gold':'btn-secondary'}"   onclick="setTipo('inmobiliaria')">🏢 Inmobiliaria</button>
           </div>
+          <div id="nlDuplicateWarning" style="display:none; margin-bottom:15px; padding:12px 15px; background-color:rgba(249, 115, 22, 0.1); border:1px solid rgba(249, 115, 22, 0.3); border-radius:8px; color:#f97316; font-size:13px; align-items:center; justify-content:space-between;"></div>
           <div class="form-grid">
-            <div class="form-group"><label class="form-label">Nombre Completo *</label><input class="form-input" id="nlN" value="${nuevoLead.nombre}" placeholder="Ej: Maria Perez" oninput="nuevoLead.nombre=this.value"/></div>
-            <div class="form-group"><label class="form-label">WhatsApp / Celular *</label><input class="form-input" id="nlC" value="${nuevoLead.celular}" placeholder="3001234567" oninput="nuevoLead.celular=this.value"/></div>
+            <div class="form-group"><label class="form-label">Nombre Completo *</label><input class="form-input" id="nlN" value="${nuevoLead.nombre}" placeholder="Ej: Maria Perez" oninput="nuevoLead.nombre=this.value; checkDuplicateLead()"/></div>
+            <div class="form-group"><label class="form-label">WhatsApp / Celular *</label><input class="form-input" id="nlC" value="${nuevoLead.celular}" placeholder="3001234567" oninput="nuevoLead.celular=this.value; checkDuplicateLead()"/></div>
             <div class="form-group full"><label class="form-label">Notas u Observaciones</label><textarea class="form-input" oninput="nuevoLead.notas=this.value" placeholder="¿Qué detalles adicionales tiene este cliente?">${nuevoLead.notas}</textarea></div>
             <div class="form-group">
               <label class="form-label">Estado Inicial</label>
@@ -1592,6 +1594,7 @@ function renderNuevo(){
   // Construir barra de filtros al siguiente tick
   if(allProps.length) setTimeout(()=> buildFiltrosBar('nlFiltrosWrap','nl',nuevoLead.filtros), 0);
   renderPropsGrid();
+  setTimeout(()=> checkDuplicateLead(), 0);
 }
 
 function getFrecInfo(){
@@ -1604,6 +1607,27 @@ function getFrecInfo(){
 function updateFrec(){
   const fi=document.getElementById('frecInfo');
   if(fi){ fi.style.display=nuevoLead.frecuencia==='manual'?'none':''; fi.innerHTML=getFrecInfo(); }
+}
+
+function checkDuplicateLead(){
+  const w = document.getElementById('nlDuplicateWarning');
+  if(!w) return;
+  const num = (nuevoLead.celular||'').trim();
+  const nom = (nuevoLead.nombre||'').trim().toLowerCase();
+  
+  if(!num && !nom) { w.style.display='none'; return; }
+
+  const dup = leads.find(l => 
+    (num && l.celular && String(l.celular).trim() === num) || 
+    (nom && l.nombre && l.nombre.trim().toLowerCase() === nom)
+  );
+
+  if(dup){
+    w.style.display='flex';
+    w.innerHTML = `<div>⚠️ <b>Atención:</b> Ya existe un cliente con este ${num && dup.celular===num ? 'celular' : 'nombre'} (${dup.nombre}).</div> <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="showTab('leads'); abrirLead('${dup.id}', '${dup.celular}')">Ver Cliente</button>`;
+  } else {
+    w.style.display='none';
+  }
 }
 
 function setTipo(tipo){
@@ -1849,10 +1873,20 @@ function renderLeadsBody(lista){
 
   // Aplicar filtro de búsqueda si existe
   if(searchTermLeads){
-    listaFiltrada = listaFiltrada.filter(l => 
-      (l.nombre || '').toLowerCase().includes(searchTermLeads) || 
-      (l.celular || '').toLowerCase().includes(searchTermLeads)
-    );
+    listaFiltrada = listaFiltrada.filter(l => {
+      const basicStr = String(l.nombre || '') + ' ' + String(l.celular || '');
+      if(basicStr.toLowerCase().includes(searchTermLeads)) return true;
+      
+      // Buscar también en los inmuebles enviados a este cliente
+      if(l.propsEnviadas && Array.isArray(l.propsEnviadas)){
+        for(let cod of l.propsEnviadas){
+          if(String(cod).toLowerCase().includes(searchTermLeads)) return true;
+          const prop = allProps.find(p => p['Código'] === cod);
+          if(prop && String(prop['Nombre'] || '').toLowerCase().includes(searchTermLeads)) return true;
+        }
+      }
+      return false;
+    });
   }
 
   if(!listaFiltrada.length){ container.innerHTML=`<div class="empty">No hay leads que coincidan</div>`; return; }
@@ -2522,11 +2556,23 @@ function abrirEditFiltros(leadId){
   document.getElementById('editFiltrosModal').classList.add('open');
   setTimeout(()=>buildFiltrosBar('efWrap','ef',tempFiltros),0);
 }
-function guardarFiltrosEditados(){
+function guardarFiltrosEditados(marcarComoEnviadas = false){
   const lead=leads.find(l=>String(l.id)===String(currentLeadId)); if(!lead) return;
   const efSt=getFSt('ef'); Object.keys(efSt).forEach(k=>{ tempFiltros[k]=[...(efSt[k]||[])]; });
   lead.filtros=JSON.parse(JSON.stringify(tempFiltros));
   lead.propsFiltradas=filtrarProps(lead.filtros).map(d=>d['Código']);
+  
+  if(marcarComoEnviadas){
+    lead.propsEnviadas = [...new Set([...(lead.propsEnviadas||[]), ...lead.propsFiltradas])];
+    lead.historialEnvios.push({
+      fecha: new Date().toISOString().split('T')[0],
+      codigos: lead.propsFiltradas,
+      totalCods: lead.propsFiltradas.length,
+      tipoEnvio: 'silencioso',
+      notas: 'Filtros actualizados (propiedades marcadas como vistas sin enviar WhatsApp)'
+    });
+  }
+
   const pend=lead.propsFiltradas.filter(c=>!(lead.propsEnviadas||[]).includes(c));
   lead.proximosEnvios=generarProximosCheck(lead.frecuencia);
   saveLeads(); closeModal('editFiltrosModal'); toast('Filtros actualizados ✓','success');
