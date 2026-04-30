@@ -807,6 +807,7 @@ const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFUuzwKA_5C35NX
 ═══════════════════════════════════════════════ */
 let allProps = [];
 let leads = JSON.parse(localStorage.getItem('icde_leads') || '[]');
+let deletedLeads = JSON.parse(localStorage.getItem('icde_deleted_leads') || '[]');
 let citas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
 if (!Array.isArray(citas)) citas = []; // Ensure it's always an array
 let settings = JSON.parse(localStorage.getItem('icde_settings') || '{"waApi":"","geminiKey":"AIzaSyALjX93RBFLp7AFEC-oK271rf3B1T3UpXo"}');
@@ -1365,6 +1366,8 @@ async function cargarLeads(){
       // Inteligente: Mezclar nubes y locales
       const mergedLeads = [...leads];
       data.forEach(cloudLead => {
+        if (deletedLeads.includes(String(cloudLead.id))) return;
+        
         const index = mergedLeads.findIndex(l => String(l.id) === String(cloudLead.id));
         if (index === -1) {
           mergedLeads.push(cloudLead);
@@ -1808,24 +1811,22 @@ function renderLeads(){
 
 function buscarLeads(val){
   searchTermLeads = val.trim().toLowerCase();
-  // Al buscar, forzamos el filtro de "Todos" para que la búsqueda sea global
-  // o podemos dejar el filtro actual. Lo ideal es que se aplique sobre el filtro actual.
-  // Re-renderizamos la tabla con los leads actuales (que ya podrían estar filtrados por chip)
-  // Pero filtTabla ya llama a renderLeadsBody(lista).
-  // Vamos a modificar renderLeadsBody para que SIEMPRE aplique el searchTermLeads.
   
-  // Re-renderizar la cabecera para mostrar/ocultar el botón de limpiar si cambió el estado de vacío
   const container = document.getElementById('searchLeadsInput')?.parentElement;
   if (container) {
-    // Si queremos actualizar el botón de limpiar sin re-renderizar todo el tab:
-    renderLeads(); 
-    document.getElementById('searchLeadsInput').focus();
-    // Movemos el cursor al final
-    const input = document.getElementById('searchLeadsInput');
-    input.setSelectionRange(input.value.length, input.value.length);
-  } else {
-    renderLeadsBody(leads);
+    let btnLimpiar = container.querySelector('.btn-limpiar-pc');
+    if (searchTermLeads && !btnLimpiar) {
+      container.insertAdjacentHTML('beforeend', `<button class="btn-limpiar-pc" style="padding:0 10px; border-radius:0 10px 10px 0;" onclick="buscarLeads(''); document.getElementById('searchLeadsInput').value=''">✕</button>`);
+    } else if (!searchTermLeads && btnLimpiar) {
+      btnLimpiar.remove();
+    }
   }
+
+  let lista = leads;
+  if(currentLeadFilter==='inmobiliaria') lista=leads.filter(l=>l.tipo==='inmobiliaria');
+  else if(currentLeadFilter!=='todos')   lista=leads.filter(l=>l.etiqueta===currentLeadFilter);
+  
+  renderLeadsBody(lista);
 }
 
 function setLeadView(mode){
@@ -1844,18 +1845,20 @@ function filtTabla(f,btn){
 function renderLeadsBody(lista){
   const container=document.getElementById('leadsContainer'); if(!container) return;
   
+  let listaFiltrada = [...lista];
+
   // Aplicar filtro de búsqueda si existe
   if(searchTermLeads){
-    lista = lista.filter(l => 
+    listaFiltrada = listaFiltrada.filter(l => 
       (l.nombre || '').toLowerCase().includes(searchTermLeads) || 
       (l.celular || '').toLowerCase().includes(searchTermLeads)
     );
   }
 
-  if(!lista.length){ container.innerHTML=`<div class="empty">No hay leads que coincidan</div>`; return; }
+  if(!listaFiltrada.length){ container.innerHTML=`<div class="empty">No hay leads que coincidan</div>`; return; }
   
   const orden = { activo: 1, tibio: 2, inactivo: 3 };
-  lista.sort((a,b) => (orden[a.etiqueta] || 99) - (orden[b.etiqueta] || 99));
+  listaFiltrada.sort((a,b) => (orden[a.etiqueta] || 99) - (orden[b.etiqueta] || 99));
 
   if(leadViewMode === 'table'){
     container.innerHTML=`
@@ -1864,11 +1867,11 @@ function renderLeadsBody(lista){
         <th>Cliente</th><th>Tipo</th><th>Estado</th><th>Etiqueta</th>
         <th>Enviadas</th><th>Pendientes</th><th>Próx. Envío</th><th>Acciones</th>
       </tr></thead><tbody id="leadsBody">
-        ${lista.map(l=>{
+        ${listaFiltrada.map(l=>{
           const currentMatches = filtrarProps(l.filtros);
           const pend = currentMatches.filter(d => !(l.propsEnviadas || []).includes(d['Código'])).length;
           const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
-          return `<tr class="clickable" onclick="abrirLead('${l.id}')">
+          return `<tr class="clickable" onclick="abrirLead('${l.id}', '${l.celular}')">
             <td><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">📱 ${l.celular}</div></td>
             <td>${l.tipo==='inmobiliaria'?'<span class="badge badge-inmobiliaria">🏢</span>':'<span style="opacity:0.5;">👤</span>'}</td>
             <td><span class="estado-badge estado-${l.estado}">${estadoLbl(l.estado)}</span></td>
@@ -1889,12 +1892,12 @@ function renderLeadsBody(lista){
     </div>`;
   } else {
     container.innerHTML=`<div class="lead-cards-grid">
-      ${lista.map(l=>{
+      ${listaFiltrada.map(l=>{
         const currentMatches = filtrarProps(l.filtros);
         const pend = currentMatches.filter(d => !(l.propsEnviadas || []).includes(d['Código'])).length;
         const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
         return `
-        <div class="lead-card" onclick="abrirLead('${l.id}')">
+        <div class="lead-card" onclick="abrirLead('${l.id}', '${l.celular}')">
           <div class="lc-header">
             <div>
               <div class="lc-name">${l.nombre}</div>
@@ -1921,7 +1924,7 @@ function estadoLbl(e){ return {proceso:'Proceso',enviando:'Enviando',visita:'Pdt
 /* ═══════════════════════════════════════════════
    PANEL LEAD
 ═══════════════════════════════════════════════ */
-function abrirLead(id){ currentLeadId=id; const l=leads.find(x=>String(x.id)===String(id)); if(!l) return; document.getElementById('leadPanel').classList.add('open'); renderSidePanel(l); }
+function abrirLead(id, celular){ currentLeadId=id; let l=leads.find(x=>String(x.id)===String(id) && String(x.celular)===String(celular)); if(!l) l=leads.find(x=>String(x.celular)===String(celular)); if(!l) l=leads.find(x=>String(x.id)===String(id)); if(!l) return; document.getElementById('leadPanel').classList.add('open'); renderSidePanel(l); }
 function closePanelIfOuter(e){ if(e.target===document.getElementById('leadPanel')) closeSidePanel(); }
 function closeSidePanel(){ 
   document.getElementById('leadPanel').classList.remove('open'); 
@@ -2147,6 +2150,12 @@ function addNota(lid,idx){ const inp=document.getElementById(`nE_${lid}_${idx}`)
 async function eliminarLead(id){ 
   if(!confirm('¿Estás seguro de eliminar este cliente? Esta acción también lo eliminará de la nube y no se puede deshacer.')) return; 
   
+  // Registrar el ID eliminado para evitar que vuelva a aparecer
+  if(!deletedLeads.includes(String(id))) {
+    deletedLeads.push(String(id));
+    localStorage.setItem('icde_deleted_leads', JSON.stringify(deletedLeads));
+  }
+
   // Eliminar localmente primero para respuesta rápida
   leads = leads.filter(l => String(l.id) !== String(id)); 
   saveLeads(); 
