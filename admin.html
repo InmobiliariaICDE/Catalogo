@@ -895,9 +895,7 @@ function filtrarProps(f){
     if(f.piscina?.length      && !f.piscina.includes(String(d['Piscina'])))       return false;
     if(f.cocina?.length       && !f.cocina.includes(String(d['Cocina'])))         return false;
     if(f.barrio?.length       && !f.barrio.includes(String(d['Barrio'])))         return false;
-
     if(f.conjunto?.length     && !f.conjunto.includes(String(d['Conjunto'])))     return false;
-
 
     
     // 2. Rango de Precio (Numérico)
@@ -1428,8 +1426,7 @@ function normalizarPropiedades(data) {
     const nuevo = {};
     for (let key in obj) {
       let k = key;
-      // Normalización agresiva: quitamos acentos y pasamos a minúsculas para comparar
-      const nk = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const nk = key.toLowerCase().normalize("NFD").normalize("NFC").replace(/[\u0300-\u036f]/g, "").trim();
       
       if (nk.includes('codigo') || nk.includes('digo')) k = 'Código';
       else if (nk.includes('nombre')) k = 'Nombre';
@@ -1447,6 +1444,11 @@ function normalizarPropiedades(data) {
       
       nuevo[k] = obj[key];
     }
+    // Fallback manual para Código si falló la normalización
+    if (!nuevo['Código']) {
+        const altKey = Object.keys(obj).find(x => x.toLowerCase().includes('codigo') || x.toLowerCase().includes('digo'));
+        if (altKey) nuevo['Código'] = obj[altKey];
+    }
     return nuevo;
   });
 }
@@ -1454,20 +1456,18 @@ function normalizarPropiedades(data) {
 async function cargarProps(){
   try {
     document.getElementById('syncStatus').textContent='⟳ Cargando...';
-    
-    // Forzamos la URL exacta de index.html con un "cache buster" para evitar datos viejos
     const urlBusca = "https://script.google.com/macros/s/AKfycbz-HipJ53KIf2JD1q9BUIBFUB45o4wRYcjvlqUbpg9TDAGK0q3hNQcSrV23dMCWaTgXcQ/exec?action=getData&t=" + Date.now();
-    
     const res = await fetch(urlBusca);
     const data = await res.json();
     const rawData = normalizarPropiedades(Array.isArray(data) ? data : []);
     
-    // Filtramos filas que no tengan Nombre (para evitar filas vacías)
-    allProps = rawData.filter(d => d['Nombre']);
+    // No filtramos por Nombre para no perder registros incompletos, solo por Publicar si existe el campo
+    allProps = rawData.filter(d => {
+        const pub = String(d['Publicar'] || '').toLowerCase();
+        return pub === 'si' || pub === 'sí' || !d['Publicar']; // Por defecto mostrar si no existe campo publicar
+    });
     
-    console.log("Admin: Datos recibidos:", rawData.length);
-    console.log("Admin: Propiedades procesadas:", allProps.length);
-    
+    console.log("Admin: Raw:", rawData.length, "Filtradas:", allProps.length);
     document.getElementById('syncStatus').textContent=`✓ ${allProps.length} propiedades`;
     
   } catch(e){
@@ -1694,17 +1694,18 @@ function renderPropsGrid(listaForzada){
   const maxPage = Math.ceil(total / PAGE_SIZE) - 1;
 
   let html = `<div class="props-grid">${sliced.map(d=>{
-    const sel=selectedProps.includes(d['Código']);
+    const cod = String(d['Código'] || d['Cdigo'] || '');
+    const sel=selectedProps.includes(cod);
     const img=(d['Imagenes']||'').split('|')[0].trim()||d['Image']||'https://i.imgur.com/Pc9M3I8.png';
     const isDestacada = ["Directo", "Verbal"].includes(d["Contrato"]);
-    return `<div class="prop-card${sel?' selected':''}${isDestacada?' recomendado':''}" onclick="abrirModalProp('${eq(d['Código'])}')">
+    return `<div class="prop-card${sel?' selected':''}${isDestacada?' recomendado':''}" onclick="abrirModalProp('${eq(cod)}')">
       ${isDestacada ? `<div class="ribbon"><span>¡Destacada!</span></div>` : ''}
-      <div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp('${eq(d['Código'])}', this.parentElement)">
+      <div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp('${eq(cod)}', this.parentElement)">
         ${sel?'✓':'+'}
       </div>
       <img src="${img}" loading="lazy" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
       <div class="prop-card-body">
-        <div class="prop-card-code">${d['Código']||''}</div>
+        <div class="prop-card-code" style="font-weight:bold; color:var(--gold);">Cód: ${cod}</div>
         <div class="prop-card-name">${d['Nombre']||''}</div>
         <div class="prop-card-price">${formatP(d['Precio'])}</div>
         <div style="font-size:11px;color:#666;margin-top:2px;">${d['Zona']||''} · ${d['Habitaciones']||''}hab</div>
@@ -1821,9 +1822,6 @@ function formatShortPrice(p){
   return `$${n.toLocaleString('es-CO')}`; 
 }
 function formatP(p){ return formatFullPrice(p); }
-
-
-function eq(s){ return (s||'').toString().replace(/'/g, "\\'"); }
 
 function estadoLbl(e){
   const map = { enviando:'Enviando propuestas', proceso:'Venta en proceso', visita:'Visita pendiente', banco:'Referido banco', inactivo:'Inactivo' };
@@ -2040,7 +2038,11 @@ function renderSidePanel(lead){
         <div><div class="form-label">Teléfono</div><div style="margin-top:4px; font-weight:600;">📱 ${lead.celular}</div></div>
         <div><div class="form-label">Método Pago</div><div style="margin-top:4px; font-weight:600;">${(lead.metodoPago||[]).join(', ')||'—'}</div></div>
         ${lead.tipo==='inmobiliaria'?`<div><div class="form-label">Agente Aliado</div><div style="margin-top:4px; font-weight:600;">${lead.nombreAgente||'—'}</div></div>`:''}
-        <div class="full"><div class="form-label">Notas del Cliente</div><div style="margin-top:6px;color:#aaa;line-height:1.5;background:rgba(255,255,255,0.03);padding:12px;border-radius:12px;border:1px solid var(--glass-border);">${lead.notas||'Sin notas adicionales'}</div></div>
+        <div class="full">
+          <div class="form-label">Notas del Cliente</div>
+          <textarea class="form-input" style="margin-top:6px; min-height:80px; resize:vertical; background:rgba(255,255,255,0.03);" 
+            onblur="updLead('${lead.id}','notas',this.value)" placeholder="Añadir notas sobre el cliente...">${lead.notas || ''}</textarea>
+        </div>
       </div>
       <div class="form-grid" style="margin-top:20px; padding-top:20px; border-top:1px solid var(--glass-border);">
         <div class="form-group"><label class="form-label">Estado</label>
@@ -2207,7 +2209,10 @@ function renderTimeline(lead){
         ${(en.codigos||[]).map(c=>`<span class="envio-prop-tag" style="background:rgba(212,168,75,0.1); border:1px solid var(--border); border-radius:4px; padding:2px 6px; font-size:11px; color:var(--gold);">${c}</span>`).join('')}
         ${en.tipoEnvio === 'link' && (en.totalCods > (en.codigos||[]).length) ? `<span style="font-size:10px; color:#666; align-self:center;">+${en.totalCods - (en.codigos||[]).length} más</span>` : ''}
       </div>
-      ${en.notas?`<div style="margin-top:8px;font-size:12px;color:#aaa;">📝 ${en.notas}</div>`:''}
+      <div style="margin-top:8px;">
+        <textarea class="form-input" style="font-size:12px; width:100%; min-height:40px; background:transparent; border:1px dashed rgba(212,168,75,0.2); padding:5px; color:#aaa;" 
+          onblur="updTimelineNota('${lead.id}', ${i}, this.value)" placeholder="Sin notas...">${en.notas || ''}</textarea>
+      </div>
       <div class="nota-input-wrap" style="margin-top:10px;display:flex;gap:6px;">
         <input class="form-input" style="font-size:12px;padding:6px 10px;flex:1;" placeholder="Añadir nota..." id="nE_${lead.id}_${i}"/>
         <button class="btn btn-sm btn-secondary" style="padding:6px 10px;" onclick="addNota('${lead.id}',${i})">+</button>
@@ -2309,7 +2314,7 @@ function abrirEnvioModal(leadId, presel){
             </label>`;
           }).join('')}
         </div>
-        <div style="font-size:12px;color:#888;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:15px;">
+        <div style="font-size:12px;color:#888;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:15px;">
            <strong style="color:#fff;display:block;margin-bottom:10px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;opacity:0.6;">Vista previa mensaje:</strong>
            <div style="line-height:1.5;">
              ${emoCasa} ¡Hola ${dest}! ${emoHola}<br/><br/>
@@ -2333,7 +2338,7 @@ function abrirEnvioModal(leadId, presel){
 
       <div id="envioModoLink" style="display:${initModo === 'link' ? 'block' : 'none'}">
          <div style="font-size:12px; color:var(--gold); margin-bottom:12px; font-weight:600; background:rgba(212,168,75,0.1); padding:8px; border-radius:8px;">Se enviará un link dinámico con las ${currentMatches.length} opciones actuales.</div>
-         <div style="font-size:12px;color:#888;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:15px;">
+         <div style="font-size:12px;color:#888;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:15px;">
            <strong style="color:#fff;display:block;margin-bottom:10px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;opacity:0.6;">Vista previa mensaje:</strong>
            <div style="line-height:1.5;">
              ${emoCasa} ¡Hola ${dest}! ${emoHola}<br/><br/>
@@ -3397,6 +3402,13 @@ function mpCarruselIrA(idx){
 
 function cerrarModalProp(){
   document.getElementById('modalPropOverlay').classList.remove('active');
+}
+function updTimelineNota(leadId, idx, val) {
+  const l = leads.find(x => String(x.id) === String(leadId));
+  if (!l || !l.historialEnvios || !l.historialEnvios[idx]) return;
+  l.historialEnvios[idx].notas = val;
+  saveLeads();
+  toast('Nota actualizada', 'success');
 }
 </script>
 </body>
