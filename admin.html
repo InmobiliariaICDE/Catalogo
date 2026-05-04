@@ -1428,14 +1428,23 @@ function normalizarPropiedades(data) {
     const nuevo = {};
     for (let key in obj) {
       let k = key;
-      // Corregir codificación de llaves comunes de la API
-      if (key.toLowerCase().includes('digo')) k = 'Código';
-      else if (key.toLowerCase().includes('ba') && key.toLowerCase().includes('os')) k = 'Baños';
-      else if (key.toLowerCase().includes('descrip')) k = 'Descripción';
-      else if (key.toLowerCase().includes('ubicaci')) k = 'Ubicación';
-      else if (key.toLowerCase().includes('puntos') && key.toLowerCase().includes('clave')) k = 'Puntos Clave';
-      else if (key.toLowerCase().includes('area')) k = 'Área';
-      else if (key.toLowerCase().includes('imgenes') || key.toLowerCase().includes('imagenes')) k = 'Imagenes';
+      // Normalización agresiva: quitamos acentos y pasamos a minúsculas para comparar
+      const nk = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      
+      if (nk.includes('codigo') || nk.includes('digo')) k = 'Código';
+      else if (nk.includes('nombre')) k = 'Nombre';
+      else if (nk.includes('precio')) k = 'Precio';
+      else if (nk.includes('zona')) k = 'Zona';
+      else if (nk.includes('barrio')) k = 'Barrio';
+      else if (nk.includes('descrip')) k = 'Descripción';
+      else if (nk.includes('ba') && nk.includes('os')) k = 'Baños';
+      else if (nk.includes('ubicaci')) k = 'Ubicación';
+      else if (nk.includes('puntos') && nk.includes('clave')) k = 'Puntos Clave';
+      else if (nk.includes('area')) k = 'Área';
+      else if (nk.includes('imagen')) k = 'Imagenes';
+      else if (nk.includes('contrato')) k = 'Contrato';
+      else if (nk.includes('publicar')) k = 'Publicar';
+      
       nuevo[k] = obj[key];
     }
     return nuevo;
