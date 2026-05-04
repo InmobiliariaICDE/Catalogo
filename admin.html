@@ -774,10 +774,11 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
   <div class="modal-box">
     <div class="modal-title">📤 Enviar Propuestas</div>
     <div id="envioModalContent"></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('envioModal')">Cancelar</button>
-      <button class="btn btn-primary" id="btnConfirmarEnvio" onclick="confirmarEnvio(this)">Enviar por WhatsApp</button>
-    </div>
+    <div class="modal-footer" style="display:flex; gap:10px; width:100%;">
+        <button class="btn btn-secondary" onclick="closeModal('envioModal')">Cancelar</button>
+        <button class="btn btn-gold" onclick="guardarSinEnviar()">🤫 Guardar sin enviar</button>
+        <button class="btn btn-primary" id="btnConfirmarEnvio" style="flex:1;" onclick="confirmarEnvio(this)">Enviar por WhatsApp</button>
+      </div> 
   </div>
 </div>
 
@@ -824,7 +825,12 @@ let currentLeadFilter = 'todos';
 let nlPage = 0;
 const PAGE_SIZE = 20;
 let criterioOrden = ''; // Default sort (no filter)
+let currentEnvioLeadId = null;
+let currentEnvioLote = [];
 
+/* ═══════════════════════════════════════════════
+   HELPERS & UTILS
+═══════════════════════════════════════════════ */
 
 function freshLead(){
   return {
@@ -909,8 +915,9 @@ function filtrarProps(f){
     const bus = f.buscar || f.buscarVal;
     if(bus){
       const txt = norm(bus);
-      const combinado = norm((d['Nombre']||'') + ' ' + (d['Código']||'') + ' ' + (d['Zona']||'') + ' ' + (d['Barrio']||'') + ' ' + (d['Descripción']||'') + ' ' + (d['Puntos Clave']||''));
-      if(!combinado.includes(txt)) return false;
+      const codStr = String(d['Código'] || d['Cdigo'] || '');
+      const combinado = norm((d['Nombre']||'') + ' ' + codStr + ' ' + (d['Zona']||'') + ' ' + (d['Barrio']||'') + ' ' + (d['Descripción']||'') + ' ' + (d['Puntos Clave']||''));
+      if(!combinado.includes(txt) && !codStr.toLowerCase().includes(txt.toLowerCase())) return false;
     }
     
     return true;
@@ -1426,11 +1433,11 @@ function normalizarPropiedades(data) {
     const nuevo = {};
     for (let key in obj) {
       let k = key;
-      const nk = key.toLowerCase().normalize("NFD").normalize("NFC").replace(/[\u0300-\u036f]/g, "").trim();
+      const nk = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
       
-      if (nk.includes('codigo') || nk.includes('digo')) k = 'Código';
-      else if (nk.includes('nombre')) k = 'Nombre';
-      else if (nk.includes('precio')) k = 'Precio';
+      if (nk === 'codigo' || nk === 'cdigo' || nk.includes('codigo') || nk === 'cod' || nk === 'id') k = 'Código';
+      else if (nk.includes('nombre') || nk === 'titulo') k = 'Nombre';
+      else if (nk.includes('precio') || nk === 'valor') k = 'Precio';
       else if (nk.includes('zona')) k = 'Zona';
       else if (nk.includes('barrio')) k = 'Barrio';
       else if (nk.includes('descrip')) k = 'Descripción';
@@ -1444,10 +1451,15 @@ function normalizarPropiedades(data) {
       
       nuevo[k] = obj[key];
     }
-    // Fallback manual para Código si falló la normalización
+    // Forzamos que Código sea string y siempre exista
     if (!nuevo['Código']) {
-        const altKey = Object.keys(obj).find(x => x.toLowerCase().includes('codigo') || x.toLowerCase().includes('digo'));
-        if (altKey) nuevo['Código'] = obj[altKey];
+      const altKey = Object.keys(obj).find(x => {
+        const nx = x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        return nx.includes('codigo') || nx.includes('digo') || nx === 'cod';
+      });
+      nuevo['Código'] = altKey ? String(obj[altKey]) : "";
+    } else {
+      nuevo['Código'] = String(nuevo['Código']);
     }
     return nuevo;
   });
@@ -1694,7 +1706,7 @@ function renderPropsGrid(listaForzada){
   const maxPage = Math.ceil(total / PAGE_SIZE) - 1;
 
   let html = `<div class="props-grid">${sliced.map(d=>{
-    const cod = String(d['Código'] || d['Cdigo'] || '');
+    const cod = String(d['Código'] || "");
     const sel=selectedProps.includes(cod);
     const img=(d['Imagenes']||'').split('|')[0].trim()||d['Image']||'https://i.imgur.com/Pc9M3I8.png';
     const isDestacada = ["Directo", "Verbal"].includes(d["Contrato"]);
@@ -2262,7 +2274,7 @@ async function eliminarLead(id){
 ═══════════════════════════════════════════════ */
 function abrirEnvioModal(leadId, presel){
   try {
-    envioLeadId = leadId;
+    currentEnvioLeadId = leadId;
     const lead = leads.find(l => String(l.id) === String(leadId));
     if (!lead) { console.error("Lead not found:", leadId); return; }
     
@@ -2276,6 +2288,7 @@ function abrirEnvioModal(leadId, presel){
     
     // Lote de propiedades (Individual)
     const lote = (Array.isArray(presel) && presel.length > 0) ? presel : nuevas;
+    currentEnvioLote = lote;
     const objs = lote.map(c => allProps.find(d => d['Código'] === c)).filter(Boolean);
     
     // Destinatario
@@ -2373,6 +2386,33 @@ function setEnvioModo(modo){
   btns[1].className = `btn btn-sm ${modo==='individual'?'btn-primary':'btn-secondary'}`;
 }
 
+
+function guardarSinEnviar(){
+  const lead = leads.find(l => String(l.id) === String(currentEnvioLeadId));
+  if(!lead) return;
+  
+  if(!lead.propsEnviadas) lead.propsEnviadas = [];
+  let count = 0;
+  currentEnvioLote.forEach(cod => {
+    if(!lead.propsEnviadas.includes(cod)){
+      lead.propsEnviadas.push(cod);
+      count++;
+    }
+  });
+  
+  if(count > 0){
+    const msg = `Se marcaron ${count} propiedades como enviadas (sin WhatsApp).`;
+    if(!lead.historialEnvios) lead.historialEnvios = [];
+    lead.historialEnvios.unshift({ fecha: new Date().toISOString().split('T')[0], codigos: currentEnvioLote, notas: msg });
+    saveLeads();
+    toast("✅ Propiedades marcadas como enviadas","success");
+    closeModal('envioModal');
+    if(currentTab==='leads') renderLeadsBody(leads);
+  } else {
+    toast("No había propiedades nuevas para marcar","warning");
+    closeModal('envioModal');
+  }
+}
 
 function confirmarEnvio(btn){
   if(btn) btn.disabled = true;
