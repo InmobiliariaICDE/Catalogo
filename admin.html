@@ -1428,39 +1428,89 @@ function rebuildCitas() {
 
 function normalizarPropiedades(data) {
   if (!Array.isArray(data)) return [];
-  return data.map(obj => {
-    const nuevo = {};
+  return data.map((obj, i) => {
+    const nuevo = { _sheetOrder: i + 1 };
+    
+    // Primero extraemos las llaves originales
     for (let key in obj) {
-      let k = key;
+      const val = obj[key];
       const nk = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-      
-      if (nk === 'codigo' || nk === 'cdigo' || nk.includes('codigo') || nk === 'cod' || nk === 'id') k = 'Código';
-      else if (nk.includes('nombre') || nk === 'titulo') k = 'Nombre';
+      let k = null;
+
+      // Reglas de mapeo por prioridad
+      if (nk === 'codigo' || nk === 'cdigo' || nk === 'cod' || nk === 'id') k = 'Código';
+      else if (nk === 'nombre' || nk === 'titulo' || nk === 'propiedad') k = 'Nombre';
       else if (nk === 'precio' || nk === 'valor' || nk === 'precio venta' || nk === 'precio renta' || nk === 'valor venta') k = 'Precio';
-      else if (nk.includes('precio') && !nk.includes('rango') && !nk.includes('administracion') && !nk.includes('otros')) k = 'Precio';
-      else if (nk.includes('zona')) k = 'Zona';
-      else if (nk.includes('barrio')) k = 'Barrio';
-      else if (nk.includes('descrip')) k = 'Descripción';
-      else if (nk.includes('ba') && nk.includes('os')) k = 'Baños';
-      else if (nk.includes('ubicaci')) k = 'Ubicación';
-      else if (nk.includes('puntos') && nk.includes('clave')) k = 'Puntos Clave';
-      else if (nk.includes('area')) k = 'Área';
-      else if (nk.includes('imagen')) k = 'Imagenes';
-      else if (nk.includes('contrato')) k = 'Contrato';
-      else if (nk.includes('publicar')) k = 'Publicar';
-      
-      nuevo[k] = obj[key];
+      else if (nk === 'tipo' || nk === 'tipo de inmueble' || nk === 'clase') k = 'Tipo de inmueble';
+      else if (nk === 'zona' || nk === 'sector') k = 'Zona';
+      else if (nk === 'barrio') k = 'Barrio';
+      else if (nk === 'ubicacion' || nk === 'direccion' || nk === 'ciudad') k = 'Ubicación';
+      else if (nk === 'habitaciones' || nk === 'alcobas' || nk === 'cuartos') k = 'Habitaciones';
+      else if (nk === 'banos' || nk === 'sanitarios') k = 'Baños';
+      else if (nk === 'garaje' || nk === 'parqueadero' || nk === 'garajes') k = 'Garaje';
+      else if (nk === 'pisos' || nk === 'niveles') k = 'Pisos';
+      else if (nk === 'piscina') k = 'Piscina';
+      else if (nk === 'cocina') k = 'Cocina';
+      else if (nk === 'conjunto' || nk === 'edificio' || nk === 'unidad') k = 'Conjunto';
+      else if (nk === 'descripcion' || nk === 'detalle') k = 'Descripción';
+      else if (nk === 'puntos clave' || nk === 'caracteristicas' || nk === 'highlights') k = 'Puntos Clave';
+      else if (nk === 'area' || nk === 'mt2' || nk === 'superficie') k = 'Área';
+      else if (nk === 'imagenes' || nk === 'fotos' || nk === 'imagen' || nk === 'galeria') k = 'Imagenes';
+      else if (nk === 'contrato') k = 'Contrato';
+      else if (nk === 'publicar') k = 'Publicar';
+      else if (nk === 'destacada' || nk === 'destacado') k = 'Destacada';
+      else if (nk === 'rentabilidad' || nk === 'retorno') k = 'Rentabilidad';
+      else if (nk === 'administracion' || nk === 'admin') k = 'Administración';
+
+      // Fallbacks para términos que contienen la palabra pero no son exactos
+      if (!k) {
+        if (nk.includes('codigo')) k = 'Código';
+        else if (nk.includes('nombre')) k = 'Nombre';
+        else if (nk.includes('tipo')) k = 'Tipo de inmueble';
+        else if (nk.includes('zona')) k = 'Zona';
+        else if (nk.includes('barrio')) k = 'Barrio';
+        else if (nk.includes('ubicaci')) k = 'Ubicación';
+        else if (nk.includes('habitaci')) k = 'Habitaciones';
+        else if (nk.includes('garaje') || nk.includes('parquea')) k = 'Garaje';
+        else if (nk.includes('piscina')) k = 'Piscina';
+        else if (nk.includes('cocina')) k = 'Cocina';
+        else if (nk.includes('conjunto')) k = 'Conjunto';
+        else if (nk.includes('descrip')) k = 'Descripción';
+        else if (nk.includes('puntos') && nk.includes('clave')) k = 'Puntos Clave';
+        else if (nk.includes('area')) k = 'Área';
+        else if (nk.includes('imagen') || nk.includes('foto')) k = 'Imagenes';
+        else if (nk.includes('precio') && !nk.includes('rango') && !nk.includes('administracion')) k = 'Precio';
+      }
+
+      // Evitamos sobrescribir con valores vacíos si ya tenemos algo
+      if (k) {
+        if (!nuevo[k] || (val && String(val).trim() !== "")) {
+           // Si es Precio, solo sobrescribimos si el nuevo valor parece un precio real (numérico)
+           if (k === 'Precio' && nuevo[k]) {
+             const vNew = parseFloat(String(val).replace(/[^\d]/g, ""));
+             const vOld = parseFloat(String(nuevo[k]).replace(/[^\d]/g, ""));
+             if (!isNaN(vNew) && vNew > 0) nuevo[k] = val;
+           } else {
+             nuevo[k] = val;
+           }
+        }
+      } else {
+        nuevo[key] = val;
+      }
     }
+
     // Forzamos que Código sea string y siempre exista
     if (!nuevo['Código']) {
-      const altKey = Object.keys(obj).find(x => {
-        const nx = x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        return nx.includes('codigo') || nx.includes('digo') || nx === 'cod';
-      });
-      nuevo['Código'] = altKey ? String(obj[altKey]) : "";
-    } else {
-      nuevo['Código'] = String(nuevo['Código']);
+      nuevo['Código'] = nuevo['Cdigo'] || nuevo['Id'] || "";
     }
+    nuevo['Código'] = String(nuevo['Código'] || "").trim();
+    
+    // Limpieza de precios
+    if (nuevo['Precio']) {
+      const p = String(nuevo['Precio']).replace(/[^\d]/g, "");
+      if (p) nuevo['Precio'] = p;
+    }
+
     return nuevo;
   });
 }
