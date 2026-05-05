@@ -790,8 +790,8 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     <div id="editFiltrosContent"></div>
     <div class="modal-footer" style="display:flex; gap:10px; width:100%;">
       <button class="btn btn-secondary" onclick="closeModal('editFiltrosModal')">Cancelar</button>
-      <button class="btn btn-gold" style="flex:1;" onclick="guardarFiltrosEditados(true)">🤫 Guardar sin encolar envíos</button>
-      <button class="btn btn-primary" style="flex:1;" onclick="guardarFiltrosEditados(false)">💾 Guardar y preparar envío</button>
+      <button class="btn btn-gold" style="flex:1;" onclick="guardarFiltrosEditados(false)">Guardar</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="guardarFiltrosEditados(true)">💾 Guardar y marcar como enviadas</button>
     </div>
   </div>
 </div>
@@ -2438,6 +2438,7 @@ function guardarSinEnviar(){
     toast("✅ Propiedades marcadas como enviadas","success");
     closeModal('envioModal');
     if(currentTab==='leads') renderLeadsBody(leads);
+    renderSidePanel(lead);
   } else {
     toast("No había propiedades nuevas para marcar","warning");
     closeModal('envioModal');
@@ -2665,6 +2666,7 @@ function guardarVisita(){
    MODAL EDITAR FILTROS
 ═══════════════════════════════════════════════ */
 function abrirEditFiltros(leadId){
+  currentLeadId = leadId;
   const lead=leads.find(l=>String(l.id)===String(leadId)); if(!lead) return;
   tempFiltros=JSON.parse(JSON.stringify(lead.filtros||{}));
   document.getElementById('editFiltrosCount').textContent=`${filtrarProps(tempFiltros).length} propiedades encontradas`;
