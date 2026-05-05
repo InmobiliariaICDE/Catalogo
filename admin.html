@@ -818,6 +818,7 @@ let selectedProps = [];
 let currentLeadId = null;
 let visitaLeadId = null;
 let envioLeadId = null;
+let envioLote = [];
 let tempFiltros = {};
 let leadViewMode = localStorage.getItem('icde_lead_view') || 'table';
 let searchTermLeads = '';
@@ -825,8 +826,6 @@ let currentLeadFilter = 'todos';
 let nlPage = 0;
 const PAGE_SIZE = 20;
 let criterioOrden = ''; // Default sort (no filter)
-let currentEnvioLeadId = null;
-let currentEnvioLote = [];
 
 /* ═══════════════════════════════════════════════
    HELPERS & UTILS
@@ -835,7 +834,7 @@ let currentEnvioLote = [];
 function freshLead(){
   return {
     tipo:'cliente', nombre:'', celular:'', notas:'', metodoPago:[], estado:'enviando', etiqueta:'activo',
-    buscar:'', filtros:{tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[]},
+    buscar:'', filtros:{tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null},
     frecuencia:'semanal', maxPorEnvio:4, nombreInmobiliaria:'', nombreAgente:'',
     propsFiltradas:[], propsEnviadas:[], proximosEnvios:[], historialEnvios:[], visitas:[]
   };
@@ -905,10 +904,10 @@ function filtrarProps(f){
 
     
     // 2. Rango de Precio (Numérico)
-    if(f.minPrice || f.maxPrice){
+    if(f.minPrice !== null || f.maxPrice !== null){
       const p = parseP(d['Precio']);
-      if(f.minPrice && p < f.minPrice) return false;
-      if(f.maxPrice && p > f.maxPrice) return false;
+      if(f.minPrice !== null && p < f.minPrice) return false;
+      if(f.maxPrice !== null && p > f.maxPrice) return false;
     }
 
     // 3. Búsqueda de Texto
@@ -2004,7 +2003,14 @@ function estadoLbl(e){ return {proceso:'Proceso',enviando:'Enviando',visita:'Pdt
 /* ═══════════════════════════════════════════════
    PANEL LEAD
 ═══════════════════════════════════════════════ */
-function abrirLead(id, celular){ currentLeadId=id; let l=leads.find(x=>String(x.id)===String(id) && String(x.celular)===String(celular)); if(!l) l=leads.find(x=>String(x.celular)===String(celular)); if(!l) l=leads.find(x=>String(x.id)===String(id)); if(!l) return; document.getElementById('leadPanel').classList.add('open'); renderSidePanel(l); }
+function abrirLead(id, celular){ 
+  currentLeadId = id; 
+  let l = leads.find(x => String(x.id) === String(id));
+  if(!l && celular) l = leads.find(x => String(x.celular) === String(celular));
+  if(!l) return;
+  document.getElementById('leadPanel').classList.add('open'); 
+  renderSidePanel(l); 
+}
 function closePanelIfOuter(e){ if(e.target===document.getElementById('leadPanel')) closeSidePanel(); }
 function closeSidePanel(){ 
   document.getElementById('leadPanel').classList.remove('open'); 
@@ -2145,7 +2151,15 @@ function toggleSection(el){
 }
 
 
-function updLead(id,campo,val){ const l=leads.find(x=>String(x.id)===String(id)); if(!l) return; l[campo]=val; saveLeads(); toast(`${campo} actualizado ✓`,'success'); if(currentTab==='leads') renderLeadsBody(leads); }
+function updLead(id,campo,val){ 
+  const l=leads.find(x=>String(x.id)===String(id)); 
+  if(!l) return; 
+  l[campo]=val; 
+  saveLeads(); 
+  syncSheets(l);
+  toast(`${campo} actualizado ✓`,'success'); 
+  if(currentTab==='leads') renderLeadsBody(leads); 
+}
 
 function renderPanelPropsEnviadas(lead){
   const env = lead.propsEnviadas || [];
@@ -2232,7 +2246,18 @@ function renderTimeline(lead){
     </div>`).join('');
 }
 
-function addNota(lid,idx){ const inp=document.getElementById(`nE_${lid}_${idx}`); if(!inp||!inp.value.trim()) return; const l=leads.find(x=>String(x.id)===String(lid)); if(!l) return; l.historialEnvios[idx].notas=(l.historialEnvios[idx].notas?l.historialEnvios[idx].notas+'\n':'')+inp.value.trim(); saveLeads(); inp.value=''; toast('Nota añadida ✓','success'); renderSidePanel(l); }
+function addNota(lid,idx){ 
+  const inp=document.getElementById(`nE_${lid}_${idx}`); 
+  if(!inp||!inp.value.trim()) return; 
+  const l=leads.find(x=>String(x.id)===String(lid)); 
+  if(!l) return; 
+  l.historialEnvios[idx].notas=(l.historialEnvios[idx].notas?l.historialEnvios[idx].notas+'\n':'')+inp.value.trim(); 
+  saveLeads(); 
+  syncSheets(l);
+  inp.value=''; 
+  toast('Nota añadida ✓','success'); 
+  renderSidePanel(l); 
+}
 
 async function eliminarLead(id){ 
   if(!confirm('¿Estás seguro de eliminar este cliente? Esta acción también lo eliminará de la nube y no se puede deshacer.')) return; 
@@ -2274,7 +2299,7 @@ async function eliminarLead(id){
 ═══════════════════════════════════════════════ */
 function abrirEnvioModal(leadId, presel){
   try {
-    currentEnvioLeadId = leadId;
+    envioLeadId = leadId;
     const lead = leads.find(l => String(l.id) === String(leadId));
     if (!lead) { console.error("Lead not found:", leadId); return; }
     
@@ -2288,7 +2313,7 @@ function abrirEnvioModal(leadId, presel){
     
     // Lote de propiedades (Individual)
     const lote = (Array.isArray(presel) && presel.length > 0) ? presel : nuevas;
-    currentEnvioLote = lote;
+    envioLote = lote;
     const objs = lote.map(c => allProps.find(d => d['Código'] === c)).filter(Boolean);
     
     // Destinatario
@@ -2388,12 +2413,12 @@ function setEnvioModo(modo){
 
 
 function guardarSinEnviar(){
-  const lead = leads.find(l => String(l.id) === String(currentEnvioLeadId));
+  const lead = leads.find(l => String(l.id) === String(envioLeadId));
   if(!lead) return;
   
   if(!lead.propsEnviadas) lead.propsEnviadas = [];
   let count = 0;
-  currentEnvioLote.forEach(cod => {
+  envioLote.forEach(cod => {
     if(!lead.propsEnviadas.includes(cod)){
       lead.propsEnviadas.push(cod);
       count++;
@@ -2403,8 +2428,12 @@ function guardarSinEnviar(){
   if(count > 0){
     const msg = `Se marcaron ${count} propiedades como enviadas (sin WhatsApp).`;
     if(!lead.historialEnvios) lead.historialEnvios = [];
-    lead.historialEnvios.unshift({ fecha: new Date().toISOString().split('T')[0], codigos: currentEnvioLote, notas: msg });
+    lead.historialEnvios.unshift({ fecha: new Date().toISOString().split('T')[0], codigos: envioLote, notas: msg });
+    
+    lead.proximosEnvios = generarProximosCheck(lead.frecuencia);
     saveLeads();
+    syncSheets(lead);
+    
     toast("✅ Propiedades marcadas como enviadas","success");
     closeModal('envioModal');
     if(currentTab==='leads') renderLeadsBody(leads);
@@ -2532,12 +2561,18 @@ function generarProximosCheck(frec){
 /* ═══════════════════════════════════════════════
    MODAL VISITA
 ═══════════════════════════════════════════════ */
-function abrirVisitaModal(lid, prefilledCod){
+function abrirVisitaModal(lid, prefilledCod, citaId){
   visitaLeadId = lid;
-  const lead = leads.find(l => String(l.id) === String(lid));
-  const v = prefilledCod ? (lead?.visitas || []).find(x => x.codigo === prefilledCod) : null;
+  let v = null;
+  const lead = lid ? leads.find(l => String(l.id) === String(lid)) : null;
+  
+  if (citaId) {
+    v = citas.find(c => String(c.id) === String(citaId));
+  } else if (prefilledCod && lead) {
+    v = (lead.visitas || []).find(x => x.codigo === prefilledCod);
+  }
 
-  document.getElementById('visitaCodigo').value = prefilledCod || '';
+  document.getElementById('visitaCodigo').value = v ? v.codigo : (prefilledCod || '');
   document.getElementById('visitaCliente').value = v ? v.cliente : (lead ? lead.nombre : '');
   document.getElementById('visitaCelular').value = v ? v.celular : (lead ? lead.celular : '');
   document.getElementById('visitaFecha').value = v ? v.fecha : new Date().toISOString().split('T')[0];
@@ -2565,20 +2600,19 @@ function marcarVisitaRealizada(lid, cod){
 function guardarVisita(){
   try {
     const cod=document.getElementById('visitaCodigo').value.trim(); if(!cod){ toast('Ingresa el código','error'); return; }
-    const lead=leads.find(l=>String(l.id)===String(visitaLeadId));
+    const cliente = document.getElementById('visitaCliente').value.trim();
+    const celular = document.getElementById('visitaCelular').value.trim();
     
-    // Si estamos editando una cita existente, buscamos su ID
+    let lead = leads.find(l=>String(l.id)===String(visitaLeadId));
+    if(!lead && celular) lead = leads.find(l => String(l.celular) === String(celular));
+
     let existingId = null;
-    if (visitaLeadId) {
-      const v = lead?.visitas?.find(x => x.codigo === cod);
-      if (v) existingId = v.id;
-    } else {
-      const v = citas.find(x => x.codigo === cod && x.celular === document.getElementById('visitaCelular').value.trim());
-      if (v) existingId = v.id;
-    }
+    const vInLead = lead?.visitas?.find(x => x.codigo === cod);
+    const vInCitas = citas.find(x => x.codigo === cod && x.celular === celular);
+    existingId = vInLead?.id || vInCitas?.id;
 
     const v={
-      id: existingId || Date.now().toString(), // Mantener ID o crear uno nuevo
+      id: existingId || Date.now().toString(),
       codigo:cod,
       fecha:document.getElementById('visitaFecha').value,
       hora:document.getElementById('visitaHora').value,
@@ -2586,8 +2620,8 @@ function guardarVisita(){
       oferto:document.getElementById('visitaOferto').value,
       oferta:document.getElementById('visitaOferta').value.trim(),
       notas:document.getElementById('visitaNotas').value.trim(),
-      cliente: document.getElementById('visitaCliente').value.trim(),
-      celular: document.getElementById('visitaCelular').value.trim(),
+      cliente: cliente,
+      celular: celular,
       inmobiliaria: lead && lead.tipo==='inmobiliaria' ? lead.nombreInmobiliaria : '',
     };
     
@@ -2639,7 +2673,14 @@ function abrirEditFiltros(leadId){
 }
 function guardarFiltrosEditados(marcarComoEnviadas = false){
   const lead=leads.find(l=>String(l.id)===String(currentLeadId)); if(!lead) return;
-  const efSt=getFSt('ef'); Object.keys(efSt).forEach(k=>{ tempFiltros[k]=[...(efSt[k]||[])]; });
+  const efSt=getFSt('ef'); 
+  Object.keys(efSt).forEach(k => { 
+    if (Array.isArray(efSt[k])) {
+      tempFiltros[k] = [...efSt[k]]; 
+    } else {
+      tempFiltros[k] = efSt[k];
+    }
+  });
   lead.filtros=JSON.parse(JSON.stringify(tempFiltros));
   lead.propsFiltradas=filtrarProps(lead.filtros).map(d=>d['Código']);
   
@@ -2656,7 +2697,10 @@ function guardarFiltrosEditados(marcarComoEnviadas = false){
 
   const pend=lead.propsFiltradas.filter(c=>!(lead.propsEnviadas||[]).includes(c));
   lead.proximosEnvios=generarProximosCheck(lead.frecuencia);
-  saveLeads(); closeModal('editFiltrosModal'); toast('Filtros actualizados ✓','success');
+  saveLeads(); 
+  syncSheets(lead);
+  closeModal('editFiltrosModal'); 
+  toast('Filtros actualizados ✓','success');
   renderSidePanel(lead);
 }
 
@@ -2751,7 +2795,7 @@ function renderCitasBody(lista){
   b.innerHTML = ordenada.map(c => {
     const d = new Date(c.fecha + 'T12:00:00');
     const p = allProps.find(x => x['Código'] === c.codigo);
-    return `<tr>
+    return `<tr class="clickable" onclick="abrirEditarCita('${c.id}')">
       <td><div class="citas-time">${c.hora || '--:--'}</div><div class="citas-weekday">${isNaN(d.getDay()) ? '—' : diasSem[d.getDay()]} ${c.fecha}</div></td>
       <td><div style="font-weight:600;color:var(--gold);">${c.codigo}</div><div style="font-size:11px;color:#aaa;">${p?p['Nombre']:''}</div></td>
       <td style="font-size:12px;">${c.inmobiliaria || 'Directo'}</td>
@@ -2760,6 +2804,16 @@ function renderCitasBody(lista){
       <td style="font-size:12px;color:#aaa;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${c.notas||''}">${c.notas || ''}</td>
     </tr>`;
   }).join('');
+}
+
+function abrirEditarCita(citaId) {
+  const cita = citas.find(c => String(c.id) === String(citaId));
+  if (!cita) return;
+  
+  // Buscar si esta cita pertenece a algún lead
+  let lead = leads.find(l => (l.visitas || []).some(v => v.id === citaId || (v.codigo === cita.codigo && v.fecha === cita.fecha && v.celular === cita.celular)));
+  
+  abrirVisitaModal(lead ? lead.id : null, cita.codigo, citaId);
 }
 
 function filterCitas(tipo){
@@ -3448,6 +3502,7 @@ function updTimelineNota(leadId, idx, val) {
   if (!l || !l.historialEnvios || !l.historialEnvios[idx]) return;
   l.historialEnvios[idx].notas = val;
   saveLeads();
+  syncSheets(l);
   toast('Nota actualizada', 'success');
 }
 </script>
