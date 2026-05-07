@@ -1,0 +1,80 @@
+# ============================================================
+#  INSTRUCCIONES CRÍTICAS PARA EL ASISTENTE DE IA
+# ============================================================
+# ¡IMPORTANTE! Antes de realizar cualquier cambio, leer este documento.
+# Este archivo contiene la arquitectura y el flujo de trabajo del sitio.
+# No modifiques la estructura de sincronización sin entender los 
+# disparadores (triggers) de Google Apps Script y Firebase.
+
+# ============================================================
+#  GUÍA DE ADMINISTRACIÓN - ICDE INMOBILIARIA
+# ============================================================
+
+Este documento es una guía paso a paso para que el propietario pueda gestionar el sitio web y para que cualquier IA asistente entienda cómo está construido el sistema.
+
+---
+## 1. ARQUITECTURA DEL SISTEMA
+El sitio web funciona como un ecosistema conectado:
+1. **Google Sheets (Cerebro):** Donde se gestionan todas las propiedades.
+2. **Google Apps Script:** Automatiza la extracción de fotos y la sincronización con la base de datos.
+3. **Firebase Firestore:** Base de datos en la nube que recibe la información del Sheet y la sirve a la web.
+4. **GitHub:** Repositorio donde reside el código fuente (HTML, JS, CSS).
+5. **Hosting:** El dominio está configurado para apuntar a los archivos servidos desde el servidor de producción.
+
+---
+## 2. GESTIÓN DE PROPIEDADES (Paso a Paso)
+
+### Paso A: Agregar Propiedad en Google Sheets
+1. Abre la hoja de cálculo "Base de Datos".
+2. Ingresa los datos en una nueva fila.
+3. **Mapeo Automático:** Al escribir el "Barrio" o "Conjunto", el script `SugerirCampos` autocompletará Zona, Comuna, Ciudad y Estrato si ya existen en la base de datos.
+4. **Nombre Automático:** El script generará un nombre profesional (ej: "Apartamento en barrio El Ingenio") basándose en el tipo y la ubicación.
+
+### Paso B: Procesar Imágenes
+1. Pega el link de un álbum de Google Photos en la columna **"Google Fotos"**.
+2. El script detectará el cambio y pondrá la celda en "⏳ Extrayendo...".
+3. **Menú "📷 ICDE Fotos":** 
+   - Usa "1. Extraer URLs de álbumes" para procesar filas pendientes.
+   - Usa "2. Detectar videos" si quieres que el sistema identifique cuáles enlaces son videos para mostrarlos correctamente en la web.
+
+### Paso C: Publicar en la Web
+1. En la columna **"Publicar"**, escribe **"SI"** (en mayúsculas).
+2. El script enviará automáticamente la información a **Firebase Firestore**.
+3. Si cambias de "SI" a "NO", la propiedad se borrará automáticamente de la web.
+
+---
+## 3. CONFIGURACIÓN TÉCNICA
+
+### Google Apps Script (Servidores de Google)
+Hay dos scripts principales funcionando en el "Editor de secuencias de comandos" del Sheet:
+- **Script 1 (Extractor v4):** 
+  - ID de Proyecto Firebase: `inmobiliariaicde`
+  - Función: Extrae fotos de álbumes, detecta videos y sincroniza cada edición con Firestore mediante `FIREBASE_onEdit`.
+- **Script 2 (SugerirCampos):**
+  - Función: Mantiene una caché de barrios/conjuntos para autocompletar datos y estandarizar los títulos de las propiedades.
+
+### Firebase / Firestore
+- **Base de datos:** Se utiliza la colección `propiedades`.
+- **Orden:** El campo `_sheetOrder` mantiene el mismo orden que ves en el Excel para que la web se vea igual.
+
+### GitHub & Despliegue (GitHub Desktop)
+Si realizas cambios en el diseño o funciones de la web (archivos .html, .css, .js):
+1. Abre **GitHub Desktop**.
+2. Verás los archivos modificados en la columna de la izquierda.
+3. Escribe un resumen del cambio en el cuadro de texto (ej: "Ajuste de colores").
+4. Haz clic en **"Commit to main"**.
+5. Haz clic en **"Push origin"** en la parte superior. Esto subirá los cambios a la nube.
+
+---
+## 4. INSTRUCCIONES PARA LA IA (MANTENIMIENTO)
+Si estás ayudando al propietario a hacer cambios:
+1. **No toques las llaves de Firebase** dentro del código a menos que sea necesario.
+2. Si vas a modificar `normalizarPropiedades` en `admin.html`, asegúrate de que coincida con los nombres de columna de `CAMPOS_FB` definidos en el Apps Script.
+3. Mantén siempre el formato de moneda y las validaciones de seguridad para los precios.
+4. Antes de cada sesión de codificación, verifica la integridad del archivo `index.html` y `admin.html`.
+
+# ============================================================
+#  DOCUMENTACIÓN DE SEGURIDAD
+# ============================================================
+- El dominio icdeinmobiliaria.com está gestionado desde el panel del registrador y apunta a Firebase Hosting.
+- La comunicación Sheet -> Firebase usa un Service Account con una llave privada (Private Key) incrustada en el Apps Script para evitar pedir login constante.

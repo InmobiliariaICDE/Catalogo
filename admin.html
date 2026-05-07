@@ -715,6 +715,7 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 <div class="modal-overlay" id="visitaModal">
   <div class="modal-box">
     <div class="modal-title">🏠 Añadir Visita</div>
+    <input type="hidden" id="visitaId"/>
     <div class="form-grid">
       <div class="form-group"><label class="form-label">Código Casa</label><input class="form-input" id="visitaCodigo" placeholder="ej: 222"/></div>
       <div class="form-group"><label class="form-label">Cliente</label><input class="form-input" id="visitaCliente" placeholder="Nombre del cliente"/></div>
@@ -737,9 +738,12 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
       <div class="form-group full"><label class="form-label">Notas</label><textarea class="form-input" id="visitaNotas" placeholder="Observaciones..."></textarea></div>
       <div class="form-group full"><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#aaa;cursor:pointer;"><input type="checkbox" id="visitaCalendar" style="accent-color:var(--gold);"/> Agregar a Google Calendar</label></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('visitaModal')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarVisita()">Guardar</button>
+    <div class="modal-footer" style="display:flex; justify-content:space-between; width:100%;">
+      <button class="btn btn-danger" id="btnEliminarVisita" style="display:none;" onclick="eliminarVisita()">🗑 Eliminar</button>
+      <div style="display:flex; gap:10px; margin-left:auto;">
+        <button class="btn btn-secondary" onclick="closeModal('visitaModal')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarVisita()">Guardar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2634,6 +2638,8 @@ function abrirVisitaModal(lid, prefilledCod, citaId){
   document.getElementById('visitaOferta').value = v ? v.oferta : '';
   document.getElementById('visitaNotas').value = v ? v.notas : '';
   document.getElementById('visitaCalendar').checked = false;
+  document.getElementById('visitaId').value = v ? v.id : '';
+  document.getElementById('btnEliminarVisita').style.display = v ? 'block' : 'none';
 
   document.getElementById('visitaModal').classList.add('open');
 }
@@ -2805,6 +2811,51 @@ async function syncCita(cita){
       body:JSON.stringify({action:'saveCita',cita:JSON.stringify(cita)})
     });
   } catch(e){}
+}
+
+async function syncDeleteCita(id){
+  if(!CRM_SCRIPT_URL) return;
+  try {
+    await fetch(CRM_SCRIPT_URL,{
+      method:'POST',
+      mode: 'no-cors',
+      body:JSON.stringify({action:'deleteCita',id:id})
+    });
+  } catch(e){}
+}
+
+function eliminarVisita(){
+  const id = document.getElementById('visitaId').value;
+  if(!id) return;
+  if(!confirm('¿Estás seguro de eliminar esta cita?')) return;
+
+  // 1. Eliminar de la agenda global
+  const cIdx = citas.findIndex(x => String(x.id) === String(id));
+  if(cIdx >= 0) citas.splice(cIdx, 1);
+
+  // 2. Eliminar del lead (si existe)
+  let leadTarget = null;
+  leads.forEach(l => {
+    if(l.visitas){
+      const vIdx = l.visitas.findIndex(x => String(x.id) === String(id));
+      if(vIdx >= 0){
+        l.visitas.splice(vIdx, 1);
+        leadTarget = l;
+      }
+    }
+  });
+
+  saveLeads();
+  closeModal('visitaModal');
+  toast('Cita eliminada ✓', 'success');
+
+  // 3. Sincronizar
+  if(leadTarget) syncSheets(leadTarget);
+  else syncDeleteCita(id);
+
+  // 4. Refrescar UI
+  if(currentTab === 'citas') renderCitas();
+  if(currentLeadId && leadTarget && String(currentLeadId) === String(leadTarget.id)) renderSidePanel(leadTarget);
 }
 
 /* ═══════════════════════════════════════════════
