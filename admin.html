@@ -890,15 +890,15 @@ function getUniqueVals(campo){
 function getUniqueNums(campo){
   return [...new Set(allProps.map(d=>d[campo]).filter(v=>v&&String(v).trim()!=''))].map(Number).filter(v=>!isNaN(v)).sort((a,b)=>a-b).map(String);
 }
-function filtrarProps(f){
+function filtrarProps(f, returnAllIfEmpty = false){
   const parseP = txt => parseFloat(String(txt || "").replace(/[^\d]/g, "")) || 0;
   const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   
   if(!f) return allProps;
 
-  // Si el filtro no tiene nada seleccionado (está "vacío"), devolvemos [] para no marcar "495 NUEVAS"
+  // Si el filtro está "vacío"
   const isEmpty = !f.buscar && !f.minPrice && !f.maxPrice && !Object.values(f).some(v => Array.isArray(v) && v.length > 0);
-  if(isEmpty) return [];
+  if(isEmpty) return returnAllIfEmpty ? allProps : [];
 
   const filtered = allProps.filter(d=>{
     // 1. Categorías (Multi-select)
@@ -1799,7 +1799,7 @@ function renderNuevo(){
 }
 
 function getFrecInfo(){
-  const cnt=filtrarProps(nuevoLead.filtros).length;
+  const cnt=filtrarProps(nuevoLead.filtros, true).length;
   const ft={diaria:'día',semanal:'semana',quincenal:'15 días',mensual:'mes'}[nuevoLead.frecuencia]||nuevoLead.frecuencia;
   if(nuevoLead.frecuencia==='manual') return `Con <strong>${cnt}</strong> propiedades → <strong>Envío manual</strong>.`;
   return `Con <strong>${cnt}</strong> propiedades → Se enviarán todas las propiedades encontradas cada <strong>${ft}</strong>.`;
@@ -1849,7 +1849,7 @@ function deselProp(cod){ selectedProps=selectedProps.filter(c=>c!==cod); renderN
 ═══════════════════════════════════════════════ */
 function renderPropsGrid(listaForzada){
   const el=document.getElementById('propsGrid'); if(!el) return;
-  let lista = listaForzada || filtrarProps(nuevoLead.filtros);
+  let lista = listaForzada || filtrarProps(nuevoLead.filtros, true);
   const total = lista.length;
 
   if(!total){ el.innerHTML='<div class="empty">No hay propiedades con estos filtros</div>'; return; }
@@ -1925,7 +1925,7 @@ function guardarLead(enviarAhora, btn){
   if(nuevoLead.tipo === 'inmobiliaria' && !nuevoLead.nombreInmobiliaria.trim()){ toast('Ingresa nombre de inmobiliaria','error'); return; }
   if(!nuevoLead.celular.trim()){ toast('Ingresa el celular','error'); return; }
   if(btn) btn.disabled = true;
-  const filtradas=filtrarProps(nuevoLead.filtros), max=nuevoLead.maxPorEnvio||4;
+  const filtradas=filtrarProps(nuevoLead.filtros, true), max=nuevoLead.maxPorEnvio||4;
   const lead={
     id:'U-'+Date.now()+Math.floor(Math.random()*1000), 
     tipo:nuevoLead.tipo, nombre:nuevoLead.nombre.trim(),
