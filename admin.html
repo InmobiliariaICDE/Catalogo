@@ -681,6 +681,9 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     <input type="password" id="passInput" placeholder="Contraseña" autocomplete="current-password"/>
     <button onclick="doLogin()">Ingresar</button>
     <div class="login-error" id="loginError">Contraseña incorrecta</div>
+    <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.05); padding-top:15px; text-align:center;">
+       <button onclick="hardResetData()" style="background:none; border:none; color:#666; font-size:12px; cursor:pointer; text-decoration:underline;">🧹 Limpiar memoria (Si se queda trabado)</button>
+    </div>
   </div>
 </div>
 
@@ -1357,6 +1360,12 @@ function doLogin(){
     document.getElementById('passInput').value='';
   }
 }
+function hardResetData() {
+  if (confirm("¿Estás seguro? Esto borrará la memoria local del navegador (caché) y recargará todo desde la nube. Úsalo si la página se queda trabada.")) {
+    localStorage.clear();
+    location.reload();
+  }
+}
 function doLogout(){
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('app').style.display='none';
@@ -1420,7 +1429,8 @@ async function cargarLeads(){
         // Si no tiene ID, crear uno basado en nombre y celular para que sea estable y no se duplique cada vez
         if(!id || id === 'undefined' || id === 'null') {
            const hash = (l.nombre || '') + (l.celular || '');
-           id = 'C-' + btoa(hash).slice(0,12); 
+           // Generar un ID simple y seguro (sin btoa que falla con acentos)
+           id = 'C-' + hash.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0).toString(16);
         }
         return { ...l, id: id };
       });
