@@ -1442,51 +1442,59 @@ async function cargarLeads(){
         return { ...l, id: id };
       });
 
-      // 2. Mezclar inteligentemente usando Map para garantizar UNICIDAD absoluta por ID
+      // 2. MERGE AGRESIVO: Unir por Teléfono o por ID para eliminar "fantasmas"
       const mergedMap = new Map();
-      
-      // Cargar local primero (prioridad a cambios pendientes)
+      const phoneMap = new Map();
+
+      // Procesar primero locales (U-) para darles prioridad
       leads.forEach(l => {
         const id = String(l.id || '').trim();
-        if (id && id.startsWith('U-')) mergedMap.set(id, l);
-      });
-
-      // Integrar nube
-      cloudData.forEach(cloudLead => {
-        const id = String(cloudLead.id).trim();
-        if (deletedLeads.includes(id)) return;
-        
-        if (!mergedMap.has(id)) {
-          mergedMap.set(id, cloudLead);
-        } else {
-          const localLead = mergedMap.get(id);
-          const cloudTotal = (cloudLead.historialEnvios || []).length + (cloudLead.propsEnviadas || []).length;
-          const localTotal = (localLead.historialEnvios || []).length + (localLead.propsEnviadas || []).length;
-          
-          if (cloudTotal >= localTotal) {
-            mergedMap.set(id, cloudLead);
-          }
+        const phone = String(l.celular || '').replace(/[^\d]/g, "");
+        if (id && id.startsWith('U-')) {
+          mergedMap.set(id, l);
+          if (phone) phoneMap.set(phone, id);
         }
       });
 
-      // 3. Resultado final sin duplicados de ID y limpieza por celular
-      const finalLeads = [];
-      const seenIds = new Set();
-      const seenPhones = new Set();
-      
-      Array.from(mergedMap.values()).forEach(l => {
-        const id = String(l.id || '').trim();
-        const phone = String(l.celular || '').trim();
-        if (!id || seenIds.has(id)) return;
+      // Procesar nube (C-) con unión por teléfono
+      cloudData.forEach(cloudLead => {
+        const id = String(cloudLead.id).trim();
+        const phone = String(cloudLead.celular || '').replace(/[^\d]/g, "");
         
-        if (phone && phone !== '' && phone !== '0' && seenPhones.has(phone)) return;
+        if (deletedLeads.includes(id)) return;
 
-        seenIds.add(id);
-        if (phone && phone !== '') seenPhones.add(phone);
-        finalLeads.push(l);
+        // Si ya existe un lead con este teléfono, lo unimos
+        let targetId = id;
+        if (phone && phoneMap.has(phone)) {
+           targetId = phoneMap.get(phone);
+        }
+
+        if (!mergedMap.has(targetId)) {
+          mergedMap.set(targetId, cloudLead);
+          if (phone) phoneMap.set(phone, targetId);
+        } else {
+          const localLead = mergedMap.get(targetId);
+          // Unimos historiales para no perder nada
+          const combinedHist = [...(localLead.historialEnvios || []), ...(cloudLead.historialEnvios || [])];
+          const seenHist = new Set();
+          const cleanHist = combinedHist.filter(h => {
+             const key = h.fecha + h.codigo;
+             if(seenHist.has(key)) return false;
+             seenHist.add(key);
+             return true;
+          });
+
+          mergedMap.set(targetId, {
+             ...cloudLead,
+             ...localLead,
+             id: targetId,
+             historialEnvios: cleanHist,
+             propsEnviadas: Array.from(new Set([...(localLead.propsEnviadas || []), ...(cloudLead.propsEnviadas || [])]))
+          });
+        }
       });
 
-      leads = finalLeads;
+      leads = Array.from(mergedMap.values());
       rebuildCitas();
       saveLeads();
       if(currentTab === 'leads') renderLeadsBody(leads);
@@ -2152,15 +2160,29 @@ function estadoLbl(e){ return {proceso:'Proceso',enviando:'Enviando',visita:'Pdt
 ═══════════════════════════════════════════════ */
 function abrirLead(id, celular){ 
   id = String(id || '').trim();
+  
+  // Limpieza visual previa para evitar efecto "un paso atrás"
+  const panel = document.getElementById('sidePanelContent');
+  if(panel) panel.innerHTML = '<div class="loading"><div class="spinner"></div> Cargando datos...</div>';
+  
   currentLeadId = id; 
   
-  // BÚSQUEDA ESTRICTA POR ID
+  // BÚSQUEDA POR ID
   let l = leads.find(x => String(x.id || '').trim() === id);
   
-  // NUNCA usar celular como fallback si el ID existe, para evitar cruces accidentales
+  // Si no se encuentra por ID exacto, intentamos por teléfono (último recurso por desincronización)
+  if(!l && celular) {
+     const normPhone = String(celular).replace(/[^\d]/g, "");
+     l = leads.find(x => String(x.celular || '').replace(/[^\d]/g, "") === normPhone);
+     if(l) {
+        console.warn("Lead recuperado por teléfono:", celular);
+        currentLeadId = l.id;
+     }
+  }
+  
   if(!l) {
-    console.error("Lead no encontrado por ID:", id);
-    toast('Cliente no encontrado. Refresca la página.', 'error');
+    console.error("Lead no encontrado:", id);
+    toast('Cliente no encontrado en la lista actual', 'error');
     return;
   }
   document.getElementById('leadPanel').classList.add('open'); 
