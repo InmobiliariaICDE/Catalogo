@@ -1368,6 +1368,14 @@ function doLogout(){
 ═══════════════════════════════════════════════ */
 async function initApp(){
   showTab('nuevo');
+  
+  // Seguridad: Si hay demasiados leads (bug previo), limpiar cache
+  if (leads.length > 5000) {
+    console.warn("Too many leads, clearing local cache to un-stuck UI.");
+    leads = [];
+    saveLeads();
+  }
+
   cleanupLocalData();
   await cargarProps();
   await cargarLeads();
@@ -1406,11 +1414,13 @@ async function cargarLeads(){
     const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads');
     const data = await res.json();
     if(Array.isArray(data)){
-      // 1. Normalizar IDs de la nube y asignar si faltan
+      // 1. Normalizar IDs de la nube de forma ESTABLE
       const cloudData = data.map(l => {
         let id = String(l.id || '').trim();
-        if(!id || id === 'undefined' || id === 'null' || !id.startsWith('U-')) {
-           id = 'U-' + (l.celular || Date.now()) + Math.floor(Math.random()*1000);
+        // Si no tiene ID, crear uno basado en nombre y celular para que sea estable y no se duplique cada vez
+        if(!id || id === 'undefined' || id === 'null') {
+           const hash = (l.nombre || '') + (l.celular || '');
+           id = 'C-' + btoa(hash).slice(0,12); 
         }
         return { ...l, id: id };
       });
@@ -1470,23 +1480,26 @@ async function cargarLeads(){
 
 function rebuildCitas() {
   const allVisitas = [];
+  const seenCitaIds = new Set();
+  
   leads.forEach(l => {
     if (Array.isArray(l.visitas)) {
       l.visitas.forEach(v => {
-        // Ensure visit has lead info
+        const id = v.id || `${l.id}_${v.codigo}_${v.fecha}`;
         const cita = { 
           ...v, 
           cliente: v.cliente || l.nombre, 
           celular: v.celular || l.celular,
-          id: v.id || `${l.id}_${v.codigo}_${v.fecha}`
+          id: id
         };
         allVisitas.push(cita);
+        seenCitaIds.add(String(id));
       });
     }
   });
   
-  // Merge with generic citas (those not linked to a lead)
-  const genericCitas = citas.filter(c => !leads.some(l => (l.visitas || []).some(v => v.id === c.id || (v.codigo === c.codigo && v.celular === c.celular))));
+  // Merge con citas genéricas (optimizando con Set)
+  const genericCitas = citas.filter(c => !seenCitaIds.has(String(c.id)));
   
   citas = [...allVisitas, ...genericCitas];
 }
