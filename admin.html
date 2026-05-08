@@ -2201,7 +2201,10 @@ function renderSidePanel(lead){
   const currentMatches = filtrarProps(lead.filtros);
   const pend = currentMatches.filter(d => !(lead.propsEnviadas || []).includes(d['Código']));
   const total = currentMatches.length, env = (lead.propsEnviadas || []).length;
-  const ftxt = Object.entries(lead.filtros||{}).filter(([,v])=>v&&v.length).map(([k,v])=>`${k}: ${v.join(', ')}`).join(' · ')||'Sin filtros';
+  const ftxt = Object.entries(lead.filtros||{}).filter(([,v])=>v!==undefined && v!==null && String(v).length).map(([k,v])=>{
+    const val = Array.isArray(v) ? v.join(', ') : v;
+    return `${k}: ${val}`;
+  }).join(' · ')||'Sin filtros';
   const pct = total > 0 ? Math.round(env / total * 100) : 0;
   
   document.getElementById('sidePanelContent').innerHTML=`
