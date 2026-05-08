@@ -1434,19 +1434,28 @@ async function cargarLeads(){
         }
       });
 
-      leads = Array.from(mergedMap.values());
-      
-      // 3. Limpieza final de seguridad (evitar duplicados por celular si el ID falló)
+      // 3. Limpieza final de seguridad (unicidad por ID y luego por Celular si es necesario)
       const finalLeads = [];
+      const seenIds = new Set();
       const seenPhones = new Set();
+      
       leads.forEach(l => {
+        const id = String(l.id || '').trim();
         const phone = String(l.celular || '').trim();
-        if (phone && seenPhones.has(phone)) {
-           // Si el celular está repetido, ignoramos el duplicado a menos que sea un ID diferente legítimo
-           // Pero por ahora, para limpiar el "desorden", preferimos unicidad por celular
-           return; 
+        
+        if (!id || seenIds.has(id)) return;
+        
+        // Si el celular está repetido (y no es vacío), lo marcamos pero permitimos si el ID es distinto
+        // para no borrar clientes legítimos que comparten número (ej. esposos)
+        // Pero para el "desorden", vamos a ser estrictos: si el ID es nuevo pero el celular ya existe, 
+        // probablemente sea un duplicado mal sincronizado.
+        if (phone && phone !== '' && phone !== '0' && seenPhones.has(phone)) {
+           // Opcional: Loguear duplicado
+           return;
         }
-        if (phone) seenPhones.add(phone);
+
+        seenIds.add(id);
+        if (phone && phone !== '') seenPhones.add(phone);
         finalLeads.push(l);
       });
       leads = finalLeads;
@@ -1778,7 +1787,7 @@ function checkDuplicateLead(){
 
   if(dup){
     w.style.display='flex';
-    w.innerHTML = `<div>⚠️ <b>Atención:</b> Ya existe un cliente con este ${num && dup.celular===num ? 'celular' : 'nombre'} (${dup.nombre}).</div> <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="showTab('leads'); abrirLead('${dup.id}', '${dup.celular}')">Ver Cliente</button>`;
+    w.innerHTML = `<div>⚠️ <b>Atención:</b> Ya existe un cliente con este ${num && dup.celular===num ? 'celular' : 'nombre'} (${dup.nombre}).</div> <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="showTab('leads'); abrirLead('${String(dup.id).trim()}', '${String(dup.celular).trim()}')">Ver Cliente</button>`;
   } else {
     w.style.display='none';
   }
@@ -2083,7 +2092,7 @@ function renderLeadsBody(lista){
         const pend = currentMatches.filter(d => !(l.propsEnviadas || []).includes(d['Código'])).length;
         const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
         return `
-        <div class="lead-card" onclick="abrirLead('${l.id}', '${l.celular}')">
+        <div class="lead-card" onclick="abrirLead('${String(l.id).trim()}', '${String(l.celular).trim()}')">
           <div class="lc-header">
             <div>
               <div class="lc-name">${l.nombre}</div>
@@ -2098,7 +2107,7 @@ function renderLeadsBody(lista){
           </div>
           <div class="lc-footer">
             <div style="font-size:11px;color:#666;">Próximo: ${prox?prox.fecha:'—'}</div>
-            <button class="btn btn-sm btn-green" style="padding:6px 10px;" onclick="event.stopPropagation(); abrirEnvioModal('${l.id}')">📤 Enviar</button>
+            <button class="btn btn-sm btn-green" style="padding:6px 10px;" onclick="event.stopPropagation(); abrirEnvioModal('${String(l.id).trim()}')">📤 Enviar</button>
           </div>
         </div>`;
       }).join('')}
@@ -2419,8 +2428,9 @@ async function eliminarLead(id){
 ═══════════════════════════════════════════════ */
 function abrirEnvioModal(leadId, presel){
   try {
-    envioLeadId = leadId;
-    const lead = leads.find(l => String(l.id) === String(leadId));
+    const tid = String(leadId || '').trim();
+    envioLeadId = tid;
+    const lead = leads.find(l => String(l.id || '').trim() === tid);
     if (!lead) { console.error("Lead not found:", leadId); return; }
     
     // Garantizar que filtros sea un objeto
@@ -3006,12 +3016,12 @@ function renderPedidosInmob(){
       <table class="leads-table">
         <thead><tr><th>Inmobiliaria / Agente</th><th>Celular</th><th>Requerimiento</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody>${peds.map(l => `
-          <tr class="clickable" onclick="abrirLead('${l.id}')">
+          <tr class="clickable" onclick="abrirLead('${String(l.id).trim()}')">
             <td><div class="leads-row-name">${l.nombreInmobiliaria || l.nombre}</div><div style="font-size:11px;color:#888;">Agente: ${l.nombreAgente || '—'}</div></td>
             <td>${l.celular}</td>
             <td><div style="font-size:12px;color:#aaa;max-width:300px;">${l.notas || 'Sin detalles'}</div></td>
             <td><span class="badge badge-${l.etiqueta}">${l.etiqueta}</span></td>
-            <td><button class="btn btn-sm btn-secondary" onclick="abrirLead('${l.id}')">Ver</button></td>
+            <td><button class="btn btn-sm btn-secondary" onclick="abrirLead('${String(l.id).trim()}')">Ver</button></td>
           </tr>
         `).join('')}</tbody>
       </table>
