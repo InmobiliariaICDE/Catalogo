@@ -1368,8 +1368,34 @@ function doLogout(){
 ═══════════════════════════════════════════════ */
 async function initApp(){
   showTab('nuevo');
+  cleanupLocalData();
   await cargarProps();
   await cargarLeads();
+}
+
+function cleanupLocalData() {
+  // Eliminar duplicados por ID y asegurar que todos tengan ID
+  const unique = new Map();
+  let changed = false;
+  
+  leads.forEach(l => {
+    if (!l.id || l.id === 'undefined') {
+      l.id = 'L' + Date.now() + Math.floor(Math.random()*1000);
+      changed = true;
+    }
+    const id = String(l.id);
+    if (!unique.has(id)) {
+      unique.set(id, l);
+    } else {
+      changed = true; // Duplicate found and will be removed by Map
+    }
+  });
+  
+  if (changed) {
+    leads = Array.from(unique.values());
+    saveLeads();
+    console.log("Cleanup: Leads deduplicated and IDs fixed.");
+  }
 }
 async function cargarLeads(){
   if(!CRM_SCRIPT_URL) return;
@@ -1377,28 +1403,54 @@ async function cargarLeads(){
     const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads');
     const data = await res.json();
     if(Array.isArray(data)){
-      // Inteligente: Mezclar nubes y locales
-      const mergedLeads = [...leads];
-      data.forEach(cloudLead => {
-        if (deletedLeads.includes(String(cloudLead.id))) return;
+      // 1. Normalizar IDs de la nube
+      const cloudData = data.map(l => ({ ...l, id: String(l.id || l.celular || Date.now() + Math.random()) }));
+
+      // 2. Mezclar inteligentemente
+      const mergedMap = new Map();
+      
+      // Primero cargamos lo local
+      leads.forEach(l => {
+        const id = String(l.id);
+        if (id && id !== 'undefined') mergedMap.set(id, l);
+      });
+
+      // Luego integramos lo de la nube
+      cloudData.forEach(cloudLead => {
+        const id = String(cloudLead.id);
+        if (deletedLeads.includes(id)) return;
         
-        const index = mergedLeads.findIndex(l => String(l.id) === String(cloudLead.id));
-        if (index === -1) {
-          mergedLeads.push(cloudLead);
+        if (!mergedMap.has(id)) {
+          mergedMap.set(id, cloudLead);
         } else {
-          const localLead = mergedLeads[index];
-          // Criterio: quedarnos con el que tenga más historial o más enviadas
+          const localLead = mergedMap.get(id);
+          // Criterio: quedarnos con el que tenga más historial o más reciente
           const cloudTotal = (cloudLead.historialEnvios || []).length + (cloudLead.propsEnviadas || []).length;
           const localTotal = (localLead.historialEnvios || []).length + (localLead.propsEnviadas || []).length;
           
-          if (localTotal > cloudTotal) {
-            // Mantener local (posiblemente tiene cambios que no han subido)
-          } else {
-            mergedLeads[index] = cloudLead;
+          if (cloudTotal >= localTotal) {
+            mergedMap.set(id, cloudLead);
           }
         }
       });
-      leads = mergedLeads;
+
+      leads = Array.from(mergedMap.values());
+      
+      // 3. Limpieza final de seguridad (evitar duplicados por celular si el ID falló)
+      const finalLeads = [];
+      const seenPhones = new Set();
+      leads.forEach(l => {
+        const phone = String(l.celular || '').trim();
+        if (phone && seenPhones.has(phone)) {
+           // Si el celular está repetido, ignoramos el duplicado a menos que sea un ID diferente legítimo
+           // Pero por ahora, para limpiar el "desorden", preferimos unicidad por celular
+           return; 
+        }
+        if (phone) seenPhones.add(phone);
+        finalLeads.push(l);
+      });
+      leads = finalLeads;
+
       rebuildCitas();
       saveLeads();
       if(currentTab === 'leads') renderLeadsBody(leads);
