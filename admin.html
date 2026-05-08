@@ -2057,7 +2057,7 @@ function renderLeadsBody(lista){
           const currentMatches = filtrarProps(l.filtros);
           const pend = currentMatches.filter(d => !(l.propsEnviadas || []).includes(d['Código'])).length;
           const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
-          return `<tr class="clickable" onclick="abrirLead('${l.id}', '${l.celular}')">
+          return `<tr class="clickable" onclick="abrirLead('${String(l.id).trim()}', '${String(l.celular).trim()}')">
             <td><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">📱 ${l.celular}</div></td>
             <td>${l.tipo==='inmobiliaria'?'<span class="badge badge-inmobiliaria">🏢</span>':'<span style="opacity:0.5;">👤</span>'}</td>
             <td><span class="estado-badge estado-${l.estado}">${estadoLbl(l.estado)}</span></td>
@@ -2111,10 +2111,21 @@ function estadoLbl(e){ return {proceso:'Proceso',enviando:'Enviando',visita:'Pdt
    PANEL LEAD
 ═══════════════════════════════════════════════ */
 function abrirLead(id, celular){ 
+  id = String(id || '').trim();
+  celular = String(celular || '').trim();
   currentLeadId = id; 
-  let l = leads.find(x => String(x.id) === String(id));
-  if(!l && celular) l = leads.find(x => String(x.celular) === String(celular));
-  if(!l) return;
+  
+  let l = leads.find(x => String(x.id || '').trim() === id);
+  
+  // Si no se encuentra por ID, intentar por celular SOLO si el ID estaba vacío o era inválido
+  if(!l && (id === '' || id === 'undefined') && celular && celular !== '') {
+    l = leads.find(x => String(x.celular || '').trim() === celular);
+  }
+  
+  if(!l) {
+    toast('No se encontró el cliente', 'error');
+    return;
+  }
   document.getElementById('leadPanel').classList.add('open'); 
   renderSidePanel(l); 
 }
@@ -2138,6 +2149,7 @@ function renderSidePanel(lead){
   <div class="panel-header">
     <div>
       <div class="panel-name">${lead.nombre}</div>
+      <div style="font-size:10px; color:#555; margin-top:2px;">ID: ${lead.id}</div>
       <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
         <span class="badge badge-${lead.etiqueta}">${lead.etiqueta}</span>
         <span class="estado-badge estado-${lead.estado}">${estadoLbl(lead.estado)}</span>
@@ -2259,7 +2271,8 @@ function toggleSection(el){
 
 
 function updLead(id,campo,val){ 
-  const l=leads.find(x=>String(x.id)===String(id)); 
+  const tid = String(id || '').trim();
+  const l=leads.find(x=>String(x.id || '').trim()===tid); 
   if(!l) return; 
   l[campo]=val; 
   saveLeads(); 
