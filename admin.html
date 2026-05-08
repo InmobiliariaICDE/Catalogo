@@ -1374,57 +1374,65 @@ async function initApp(){
 }
 
 function cleanupLocalData() {
-  // Eliminar duplicados por ID y asegurar que todos tengan ID
   const unique = new Map();
   let changed = false;
   
   leads.forEach(l => {
-    if (!l.id || l.id === 'undefined') {
-      l.id = 'L' + Date.now() + Math.floor(Math.random()*1000);
+    // Si el ID es inválido, vacío o no tiene el prefijo de seguridad U-, generar uno nuevo
+    let id = String(l.id || '').trim();
+    if (!id || id === 'undefined' || id === 'null' || !id.startsWith('U-')) {
+      id = 'U-' + Date.now() + Math.floor(Math.random()*1000);
+      l.id = id;
       changed = true;
     }
-    const id = String(l.id);
+    
     if (!unique.has(id)) {
       unique.set(id, l);
     } else {
-      changed = true; // Duplicate found and will be removed by Map
+      changed = true; // Duplicado encontrado, se elimina al usar Map
     }
   });
   
   if (changed) {
     leads = Array.from(unique.values());
     saveLeads();
-    console.log("Cleanup: Leads deduplicated and IDs fixed.");
+    console.log("Deep Cleanup: IDs normalized and duplicates removed.");
   }
 }
+
 async function cargarLeads(){
   if(!CRM_SCRIPT_URL) return;
   try {
     const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads');
     const data = await res.json();
     if(Array.isArray(data)){
-      // 1. Normalizar IDs de la nube
-      const cloudData = data.map(l => ({ ...l, id: String(l.id || l.celular || Date.now() + Math.random()) }));
-
-      // 2. Mezclar inteligentemente
-      const mergedMap = new Map();
-      
-      // Primero cargamos lo local
-      leads.forEach(l => {
-        const id = String(l.id);
-        if (id && id !== 'undefined') mergedMap.set(id, l);
+      // 1. Normalizar IDs de la nube y asignar si faltan
+      const cloudData = data.map(l => {
+        let id = String(l.id || '').trim();
+        if(!id || id === 'undefined' || id === 'null' || !id.startsWith('U-')) {
+           id = 'U-' + (l.celular || Date.now()) + Math.floor(Math.random()*1000);
+        }
+        return { ...l, id: id };
       });
 
-      // Luego integramos lo de la nube
+      // 2. Mezclar inteligentemente usando Map para garantizar UNICIDAD absoluta por ID
+      const mergedMap = new Map();
+      
+      // Cargar local primero (prioridad a cambios pendientes)
+      leads.forEach(l => {
+        const id = String(l.id || '').trim();
+        if (id && id.startsWith('U-')) mergedMap.set(id, l);
+      });
+
+      // Integrar nube
       cloudData.forEach(cloudLead => {
-        const id = String(cloudLead.id);
+        const id = String(cloudLead.id).trim();
         if (deletedLeads.includes(id)) return;
         
         if (!mergedMap.has(id)) {
           mergedMap.set(id, cloudLead);
         } else {
           const localLead = mergedMap.get(id);
-          // Criterio: quedarnos con el que tenga más historial o más reciente
           const cloudTotal = (cloudLead.historialEnvios || []).length + (cloudLead.propsEnviadas || []).length;
           const localTotal = (localLead.historialEnvios || []).length + (localLead.propsEnviadas || []).length;
           
@@ -1434,32 +1442,24 @@ async function cargarLeads(){
         }
       });
 
-      // 3. Limpieza final de seguridad (unicidad por ID y luego por Celular si es necesario)
+      // 3. Resultado final sin duplicados de ID y limpieza por celular
       const finalLeads = [];
       const seenIds = new Set();
       const seenPhones = new Set();
       
-      leads.forEach(l => {
+      Array.from(mergedMap.values()).forEach(l => {
         const id = String(l.id || '').trim();
         const phone = String(l.celular || '').trim();
-        
         if (!id || seenIds.has(id)) return;
         
-        // Si el celular está repetido (y no es vacío), lo marcamos pero permitimos si el ID es distinto
-        // para no borrar clientes legítimos que comparten número (ej. esposos)
-        // Pero para el "desorden", vamos a ser estrictos: si el ID es nuevo pero el celular ya existe, 
-        // probablemente sea un duplicado mal sincronizado.
-        if (phone && phone !== '' && phone !== '0' && seenPhones.has(phone)) {
-           // Opcional: Loguear duplicado
-           return;
-        }
+        if (phone && phone !== '' && phone !== '0' && seenPhones.has(phone)) return;
 
         seenIds.add(id);
         if (phone && phone !== '') seenPhones.add(phone);
         finalLeads.push(l);
       });
-      leads = finalLeads;
 
+      leads = finalLeads;
       rebuildCitas();
       saveLeads();
       if(currentTab === 'leads') renderLeadsBody(leads);
@@ -1889,7 +1889,8 @@ function guardarLead(enviarAhora, btn){
   if(btn) btn.disabled = true;
   const filtradas=filtrarProps(nuevoLead.filtros), max=nuevoLead.maxPorEnvio||4;
   const lead={
-    id:Date.now().toString(), tipo:nuevoLead.tipo, nombre:nuevoLead.nombre.trim(),
+    id:'U-'+Date.now()+Math.floor(Math.random()*1000), 
+    tipo:nuevoLead.tipo, nombre:nuevoLead.nombre.trim(),
     celular:nuevoLead.celular.trim(), notas:nuevoLead.notas, metodoPago:[...nuevoLead.metodoPago],
     estado:nuevoLead.estado, etiqueta:nuevoLead.etiqueta,
     filtros:JSON.parse(JSON.stringify(nuevoLead.filtros)),
@@ -2121,18 +2122,15 @@ function estadoLbl(e){ return {proceso:'Proceso',enviando:'Enviando',visita:'Pdt
 ═══════════════════════════════════════════════ */
 function abrirLead(id, celular){ 
   id = String(id || '').trim();
-  celular = String(celular || '').trim();
   currentLeadId = id; 
   
+  // BÚSQUEDA ESTRICTA POR ID
   let l = leads.find(x => String(x.id || '').trim() === id);
   
-  // Si no se encuentra por ID, intentar por celular SOLO si el ID estaba vacío o era inválido
-  if(!l && (id === '' || id === 'undefined') && celular && celular !== '') {
-    l = leads.find(x => String(x.celular || '').trim() === celular);
-  }
-  
+  // NUNCA usar celular como fallback si el ID existe, para evitar cruces accidentales
   if(!l) {
-    toast('No se encontró el cliente', 'error');
+    console.error("Lead no encontrado por ID:", id);
+    toast('Cliente no encontrado. Refresca la página.', 'error');
     return;
   }
   document.getElementById('leadPanel').classList.add('open'); 
@@ -2158,7 +2156,7 @@ function renderSidePanel(lead){
   <div class="panel-header">
     <div>
       <div class="panel-name">${lead.nombre}</div>
-      <div style="font-size:10px; color:#555; margin-top:2px;">ID: ${lead.id}</div>
+      <div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px; opacity:0.8;">Ref: ${lead.id}</div>
       <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
         <span class="badge badge-${lead.etiqueta}">${lead.etiqueta}</span>
         <span class="estado-badge estado-${lead.estado}">${estadoLbl(lead.estado)}</span>
