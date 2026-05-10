@@ -2094,12 +2094,17 @@ function renderLeadsBody(lista){
   const ordenEstado = { visita: 1, enviando: 2, proceso: 3, banco: 4, inactivo: 5 };
   
   listaFiltrada.sort((a,b) => {
-    // 1. Primero por etiqueta (Activo > Tibio > Inactivo)
+    // 1. Primario: Etiqueta (Activo > Tibio > Inactivo)
     const oEtA = ordenEtiqueta[a.etiqueta] || 99;
     const oEtB = ordenEtiqueta[b.etiqueta] || 99;
     if (oEtA !== oEtB) return oEtA - oEtB;
     
-    // 2. Luego por estado (Pdte. visita > Enviando > ...)
+    // 2. Secundario: Presupuesto (Mayor a Menor)
+    const pA = a.filtros?.maxPrice || 0;
+    const pB = b.filtros?.maxPrice || 0;
+    if (pA !== pB) return pB - pA;
+    
+    // 3. Terciario: Estado (Pdte. visita > Enviando > ...)
     const oEsA = ordenEstado[a.estado] || 99;
     const oEsB = ordenEstado[b.estado] || 99;
     return oEsA - oEsB;
@@ -2109,7 +2114,7 @@ function renderLeadsBody(lista){
     container.innerHTML=`
     <div class="leads-table-wrap panel-section" style="padding:0; overflow:hidden;">
       <table class="leads-table"><thead><tr>
-        <th>Cliente</th><th>Tipo</th><th>Estado</th><th>Etiqueta</th>
+        <th>Cliente</th><th>Tipo</th><th>Estado</th><th>Etiqueta</th><th>Presupuesto</th>
         <th>Enviadas</th><th>Pendientes</th><th>Próx. Envío</th><th>Acciones</th>
       </tr></thead><tbody id="leadsBody">
         ${listaFiltrada.map(l=>{
@@ -2121,6 +2126,7 @@ function renderLeadsBody(lista){
             <td>${l.tipo==='inmobiliaria'?'<span class="badge badge-inmobiliaria">🏢</span>':'<span style="opacity:0.5;">👤</span>'}</td>
             <td><span class="estado-badge estado-${l.estado}">${estadoLbl(l.estado)}</span></td>
             <td><span class="badge badge-${l.etiqueta}">${l.etiqueta}</span></td>
+            <td><div style="font-weight:700; color:var(--gold);">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div></td>
             <td style="color:#22c55e;font-weight:700;">${(l.propsEnviadas||[]).length}</td>
             <td style="color:${pend>0?'#f97316':'#888'}; font-weight:700;">
               ${pend > 0 ? `<span class="badge badge-tibio" style="font-size:10px;">${pend} NUEVAS</span>` : '0'}
@@ -2153,6 +2159,7 @@ function renderLeadsBody(lista){
           <div style="margin-bottom:12px;"><span class="estado-badge estado-${l.estado}">${estadoLbl(l.estado)}</span></div>
           <div class="lc-stats">
             <div><div class="lc-stat-val">${(l.propsEnviadas||[]).length}</div><div class="lc-stat-lbl">Enviadas</div></div>
+            <div><div class="lc-stat-val" style="color:var(--gold); font-size:13px;">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div><div class="lc-stat-lbl">Presupuesto</div></div>
             <div><div class="lc-stat-val" style="color:${pend>0?'#f97316':''}">${pend}</div><div class="lc-stat-lbl">Pendientes</div></div>
           </div>
           <div class="lc-footer">
