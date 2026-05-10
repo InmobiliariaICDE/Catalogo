@@ -495,12 +495,12 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 .price-slider-wrap { padding: 16px; }
 .price-inputs { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 .price-inputs input { width: 100%; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 6px 10px; color: #fff; font-family: 'Outfit',sans-serif; font-size: 13px; text-align: center; }
-.price-slider-container { position: relative; height: 40px; display: flex; align-items: center; margin: 0 10px; }
-.price-slider-container input[type="range"] { position: absolute; width: 100%; pointer-events: none; -webkit-appearance: none; background: none; z-index: 2; margin: 0; }
-.price-slider-container input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: var(--gold); pointer-events: auto; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5); transition: transform .15s; }
+.price-slider-container { position: relative; height: 32px; display: flex; align-items: center; margin: 10px 0; }
+.price-slider-container input[type="range"] { position: absolute; width: 100%; pointer-events: auto; -webkit-appearance: none; background: none; z-index: 5; margin: 0; outline: none; }
+.price-slider-container input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: var(--gold); cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5); transition: transform .15s; position: relative; z-index: 10; }
 .price-slider-container input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.1); }
-.price-slider-track { position: absolute; width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; z-index: 1; }
-.price-slider-fill { position: absolute; height: 6px; background: var(--gold); border-radius: 3px; z-index: 1; }
+.price-slider-track { position: absolute; width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; z-index: 1; top: 50%; transform: translateY(-50%); }
+.price-slider-fill { position: absolute; height: 6px; background: var(--gold); border-radius: 3px; z-index: 2; top: 50%; transform: translateY(-50%); }
 /* COLLAPSIBLE SECTIONS */
 .collapsible .panel-section-title {
   cursor: pointer;
@@ -1093,26 +1093,22 @@ function fnPoblar(pfx, c){
   const st = getFSt(pfx);
 
   if(c.slider){
-    const minVal = st.minPrice || 0;
     const maxVal = st.maxPrice || MAX_CATALOG_PRICE;
-    const curMin = Math.round(minVal/1e6);
     const curMax = Math.round(maxVal/1e6);
     const topM = Math.round(MAX_CATALOG_PRICE/1e6);
     
     // Funciones de mapeo bilineal
     const valToPos = v => (v <= 1000) ? (v/1000)*70 : 70 + ((v-1000)/(topM-1000))*30;
 
-    drop.style.minWidth = '300px'; // Más ancho para precisión
+    drop.style.minWidth = '280px';
     drop.innerHTML = `
       <div class="price-slider-wrap">
-        <div class="price-inputs">
-          <div class="form-group"><label class="form-label">Min (MM)</label><input type="number" id="inpMin_${pfx}" value="${curMin}" oninput="fnSetPrice('${pfx}','min',this.value,true)" onclick="event.stopPropagation()"/></div>
-          <div class="form-group"><label class="form-label">Max (MM)</label><input type="number" id="inpMax_${pfx}" value="${curMax}" oninput="fnSetPrice('${pfx}','max',this.value,true)" onclick="event.stopPropagation()"/></div>
+        <div class="price-inputs" style="justify-content:center;">
+          <div class="form-group" style="width:100%;"><label class="form-label" style="text-align:center;">PRESUPUESTO MÁXIMO (MM)</label><input type="number" id="inpMax_${pfx}" value="${curMax}" oninput="fnSetPrice('${pfx}','max',this.value,true)" onclick="event.stopPropagation()"/></div>
         </div>
         <div class="price-slider-container">
           <div class="price-slider-track"></div>
           <div class="price-slider-fill" id="sldFill_${pfx}"></div>
-          <input type="range" min="0" max="100" step="0.1" value="${valToPos(curMin)}" id="sldMin_${pfx}" oninput="fnSetPrice('${pfx}','min',this.value)"/>
           <input type="range" min="0" max="100" step="0.1" value="${valToPos(curMax)}" id="sldMax_${pfx}" oninput="fnSetPrice('${pfx}','max',this.value)"/>
         </div>
         <div style="font-size:11px;color:#888;margin-top:14px;text-align:center;">Valores en Millones de Pesos (MM)<br/>Escala optimizada para rangos bajos</div>
@@ -1149,14 +1145,9 @@ function fnSetPrice(pfx, type, val, isDirect){
   if(!isDirect) v = Math.round(posToVal(v));
   
   if(type === 'min'){
-    const maxVal = Math.round((st.maxPrice || MAX_CATALOG_PRICE)/1e6);
-    if(v > maxVal) v = maxVal;
     st.minPrice = v * 1e6;
-    const sld = document.getElementById(`sldMin_${pfx}`); if(sld) sld.value = valToPos(v);
     const inp = document.getElementById(`inpMin_${pfx}`); if(inp) inp.value = v;
   } else {
-    const minVal = Math.round((st.minPrice || 0)/1e6);
-    if(v < minVal) v = minVal;
     st.maxPrice = v * 1e6;
     const sld = document.getElementById(`sldMax_${pfx}`); if(sld) sld.value = valToPos(v);
     const inp = document.getElementById(`inpMax_${pfx}`); if(inp) inp.value = v;
@@ -1169,17 +1160,17 @@ function fnSetPrice(pfx, type, val, isDirect){
 
 function fnUpdateSliderTrack(pfx){
   const st = getFSt(pfx);
-  const valToPos = v => (v <= 1000) ? (v/1000)*70 : 70 + ((v-1000)/4000)*30;
+  const topM = Math.round(MAX_CATALOG_PRICE/1e6);
+  const valToPos = v => (v <= 1000) ? (v/1000)*70 : 70 + ((v-1000)/(topM-1000))*30;
   
-  const min = Math.round((st.minPrice || 0)/1e6);
-  const max = Math.round((st.maxPrice || 5000000000)/1e6);
+  const max = Math.round((st.maxPrice || MAX_CATALOG_PRICE)/1e6);
   const fill = document.getElementById(`sldFill_${pfx}`);
   if(!fill) return;
   
-  const left = valToPos(min);
-  const right = 100 - valToPos(max);
-  fill.style.left = left + '%';
-  fill.style.right = right + '%';
+  const pos = valToPos(max);
+  fill.style.left = '0%';
+  fill.style.width = pos + '%';
+  fill.style.right = 'auto';
 }
 
 /* Toggle de una opción */
