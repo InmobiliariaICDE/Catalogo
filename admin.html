@@ -1580,7 +1580,7 @@ function normalizarPropiedades(data) {
       else if (nk === 'destacada' || nk === 'destacado') k = 'Destacada';
       else if (nk === 'rentabilidad' || nk === 'retorno') k = 'Rentabilidad';
       else if (nk === 'administracion' || nk === 'admin') k = 'Administración';
-      else if (nk === 'inmobiliaria' || nk === 'aliado' || nk === 'fuente') k = 'Inmobiliaria';
+      else if (nk === 'inmobiliaria' || nk === 'aliado' || nk === 'fuente' || nk === 'inmob') k = 'Inmobiliaria';
 
       // Fallbacks para términos que contienen la palabra pero no son exactos
       if (!k) {
@@ -1600,7 +1600,7 @@ function normalizarPropiedades(data) {
         else if (nk.includes('area')) k = 'Área';
         else if (nk.includes('imagen') || nk.includes('foto')) k = 'Imagenes';
         else if (nk.includes('precio') && !nk.includes('rango') && !nk.includes('administracion')) k = 'Precio';
-        else if (nk.includes('inmobiliaria')) k = 'Inmobiliaria';
+        else if (nk.includes('inmobiliaria') || nk.includes('inmob')) k = 'Inmobiliaria';
       }
 
       // Evitamos sobrescribir con valores vacíos si ya tenemos algo
@@ -1882,26 +1882,31 @@ function renderPropsGrid(listaForzada){
   const sliced = lista.slice(start, start + PAGE_SIZE);
   const maxPage = Math.ceil(total / PAGE_SIZE) - 1;
 
-  let html = `<div class="props-grid">${sliced.map(d=>{
+  let html = `<div class="props-grid">`;
+  sliced.forEach(d => {
     const cod = String(d['Código'] || "");
     const sel=selectedProps.includes(cod);
     const img=(d['Imagenes']||'').split('|')[0].trim()||d['Image']||'https://i.imgur.com/Pc9M3I8.png';
     const isDestacada = ["Directo", "Verbal"].includes(d["Contrato"]);
-    return `<div class="prop-card${sel?' selected':''}${isDestacada?' recomendado':''}" onclick="abrirModalProp('${eq(cod)}')">
-      ${isDestacada ? `<div class="ribbon"><span>¡Destacada!</span></div>` : ''}
-      <div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp('${eq(cod)}', this.parentElement)">
-        ${sel?'✓':'+'}
-      </div>
-      <img src="${img}" loading="lazy" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
-      <div class="prop-card-body">
-        <div class="prop-card-code" style="font-weight:bold; color:var(--gold);">Cód: ${cod}</div>
-        <div class="prop-card-name">${d['Nombre']||''}</div>
-        <div class="prop-card-price">${formatP(d['Precio'])}</div>
-        <div style="font-size:11px;color:#666;margin-top:2px;">${d['Zona']||''} · ${d['Habitaciones']||''}hab</div>
-      </div>
-      ${d['Inmobiliaria'] ? `<div class="prop-card-inmobiliaria" title="${eq(d['Inmobiliaria'])}">${d['Inmobiliaria']}</div>` : ''}
-    </div>`;
-  }).join('')}</div>`;
+    const inmob = d['Inmobiliaria'] || '';
+    
+    html += `
+      <div class="prop-card${sel?' selected':''}${isDestacada?' recomendado':''}" onclick="abrirModalProp('${eq(cod)}')">
+        ${isDestacada ? `<div class="ribbon"><span>¡Destacada!</span></div>` : ''}
+        <div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp('${eq(cod)}', this.parentElement)">
+          ${sel?'✓':'+'}
+        </div>
+        <img src="${img}" loading="lazy" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+        <div class="prop-card-body">
+          <div class="prop-card-code" style="font-weight:bold; color:var(--gold);">Cód: ${cod}</div>
+          <div class="prop-card-name">${d['Nombre']||''}</div>
+          <div class="prop-card-price">${formatP(d['Precio'])}</div>
+          <div style="font-size:11px;color:#666;margin-top:2px;">${d['Zona']||''} · ${d['Habitaciones']||''}hab</div>
+        </div>
+        ${inmob ? `<div class="prop-card-inmobiliaria" title="${eq(inmob)}">${inmob}</div>` : ''}
+      </div>`;
+  });
+  html += `</div>`;
 
   if(total > PAGE_SIZE){
     html += `
