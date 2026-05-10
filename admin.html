@@ -267,44 +267,44 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 
 .filtros-grid-nueva{
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
   width: 100%;
   position: relative;
   z-index: 20;
+  border: 1px solid rgba(212, 168, 75, 0.25);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.2);
 }
 
 .filtro-nuevo{
   position: relative;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(212,168,75,0.15);
-  border-radius: 12px;
+  border: 0.5px solid rgba(212, 168, 75, 0.12);
   cursor: pointer;
   user-select: none;
   transition: all 0.2s;
-  min-height: 42px;
+  min-height: 44px;
 }
 .filtro-nuevo:hover, .filtro-nuevo.fn-open {
-  background: rgba(212,168,75,0.08);
-  border-color: rgba(212,168,75,0.4);
+  background: rgba(212, 168, 75, 0.08);
 }
 
 .filtro-nuevo-head{
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 42px;
+  height: 44px;
   padding: 0 12px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   color: #c0c0c0;
 }
 .filtro-nuevo.fn-open .filtro-nuevo-head { color: #fff; }
 
-.fn-ico{ flex-shrink: 0; color: var(--icde-gold); font-size: 14px; }
-.fn-lbl{ flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fn-arrow{ flex-shrink: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--icde-gold); transition: transform 0.2s; }
-.filtro-nuevo.fn-open .fn-arrow { transform: rotate(180deg); }
+.fn-ico{ flex-shrink: 0; color: var(--icde-gold); font-size: 13px; opacity: 0.8; }
+.fn-lbl{ flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0.02em; }
+.fn-arrow{ flex-shrink: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--icde-gold); opacity: 0.5; transition: transform 0.2s; }
+.filtro-nuevo.fn-open .fn-arrow { transform: rotate(180deg); opacity: 1; }
 
 .fn-tags{ display: flex; flex-wrap: nowrap; gap: 4px; overflow: hidden; flex: 1; align-items: center; }
 .fn-tag{ background: rgba(212, 168, 75, 0.2); border: 1px solid rgba(212, 168, 75, 0.3); color: #fff; border-radius: 4px; font-size: 10px; padding: 1px 6px; white-space: nowrap; }
@@ -312,23 +312,27 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 .filtro-nuevo-dropdown{
   display: none;
   position: absolute;
-  top: calc(100% + 5px);
+  top: 100%;
   left: 0;
-  min-width: 220px;
-  background: rgba(18, 16, 13, 0.98);
-  border: 1px solid rgba(212, 168, 75, 0.25);
-  border-radius: 12px;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+  min-width: 240px;
+  background: #12100d;
+  border: 1px solid rgba(212, 168, 75, 0.3);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.9);
   z-index: 9999;
   padding: 8px 0;
-  max-height: 300px;
+  max-height: 320px;
   overflow-y: auto;
 }
 .filtro-nuevo.fn-open .filtro-nuevo-dropdown{ display: block; }
-/* Si la celda está muy a la derecha, ajustar el dropdown */
-.filtro-nuevo:nth-child(3n) .filtro-nuevo-dropdown { left: auto; right: 0; }
 
-.fn-option{ display: flex; align-items: center; gap: 10px; padding: 10px 18px; font-size: 13.5px; color: #c0c0c0; cursor: pointer; transition: all 0.1s; }
+/* Alineación inteligente para evitar desbordes */
+.filtro-nuevo:nth-child(4n) .filtro-nuevo-dropdown,
+.filtro-nuevo:nth-child(4n-1) .filtro-nuevo-dropdown { 
+  left: auto; 
+  right: 0; 
+}
+
+.fn-option{ display: flex; align-items: center; gap: 10px; padding: 10px 18px; font-size: 13px; color: #c0c0c0; cursor: pointer; transition: all 0.1s; }
 .fn-option:hover{ background: rgba(255, 255, 255, 0.06); color: #fff; }
 .fn-option.fn-sel{ color: var(--gold); background: rgba(212, 168, 75, 0.05); }
 .st-selected{ color: var(--gold) !important; background: rgba(212, 168, 75, 0.1) !important; font-weight: 600 !important; }
