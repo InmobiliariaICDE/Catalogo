@@ -890,7 +890,7 @@ function getUniqueVals(campo){
 function getUniqueNums(campo){
   return [...new Set(allProps.map(d=>d[campo]).filter(v=>v&&String(v).trim()!=''))].map(Number).filter(v=>!isNaN(v)).sort((a,b)=>a-b).map(String);
 }
-function filtrarProps(f, returnAllIfEmpty = false){
+function filtrarProps(f, returnAllIfEmpty = true){
   const parseP = txt => parseFloat(String(txt || "").replace(/[^\d]/g, "")) || 0;
   const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   
@@ -1125,7 +1125,7 @@ function fnPoblar(pfx, c){
   // Para conteos dinámicos: filtramos ignorando el campo actual
   const stBase = JSON.parse(JSON.stringify(st));
   delete stBase[c.key];
-  const subset = filtrarProps(stBase);
+  const subset = filtrarProps(stBase, true);
 
   drop.innerHTML = vals.map(v => {
     const cnt = subset.filter(d=>String(d[c.campo])===v).length;
