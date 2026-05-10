@@ -2159,15 +2159,18 @@ function renderLeadsBody(lista){
   if(!listaFiltrada.length){ container.innerHTML=`<div class="empty">No hay leads que coincidan</div>`; return; }
   
   const ordenEtiqueta = { activo: 1, tibio: 2, inactivo: 3 };
+  const ordenEstado = { visita: 1, enviando: 2, proceso: 3, banco: 4, inactivo: 5 };
+  
   listaFiltrada.sort((a,b) => {
-    // 1. Prioridad: "Pdte. visita" (estado: 'visita') siempre arriba
-    const isAvisita = a.estado === 'visita';
-    const isBvisita = b.estado === 'visita';
-    if (isAvisita && !isBvisita) return -1;
-    if (!isAvisita && isBvisita) return 1;
+    // 1. Primero por etiqueta (Activo > Tibio > Inactivo)
+    const oEtA = ordenEtiqueta[a.etiqueta] || 99;
+    const oEtB = ordenEtiqueta[b.etiqueta] || 99;
+    if (oEtA !== oEtB) return oEtA - oEtB;
     
-    // 2. Respetar el orden actual de etiquetas
-    return (ordenEtiqueta[a.etiqueta] || 99) - (ordenEtiqueta[b.etiqueta] || 99);
+    // 2. Luego por estado (Pdte. visita > Enviando > ...)
+    const oEsA = ordenEstado[a.estado] || 99;
+    const oEsB = ordenEstado[b.estado] || 99;
+    return oEsA - oEsB;
   });
 
   if(leadViewMode === 'table'){
