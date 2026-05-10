@@ -2164,7 +2164,7 @@ function renderLeadsBody(lista){
     container.innerHTML=`
     <div class="leads-table-wrap panel-section" style="padding:0; overflow:hidden;">
       <table class="leads-table"><thead><tr>
-        <th>Cliente</th><th>Tipo</th><th>Estado</th><th>Etiqueta</th><th>Presupuesto</th>
+        <th>Cliente</th><th>Tipo</th><th>Estado</th><th>Etiqueta</th><th>Presupuesto</th><th>Método Pago</th>
         <th>Enviadas</th><th>Pendientes</th><th>Próx. Envío</th><th>Acciones</th>
       </tr></thead><tbody id="leadsBody">
         ${listaFiltrada.map(l=>{
@@ -2177,6 +2177,7 @@ function renderLeadsBody(lista){
             <td><span class="estado-badge estado-${l.estado}">${estadoLbl(l.estado)}</span></td>
             <td><span class="badge badge-${l.etiqueta}">${l.etiqueta}</span></td>
             <td><div style="font-weight:700; color:var(--gold);">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div></td>
+            <td style="font-size:11px;color:#888;">${(l.metodoPago || []).join(', ') || '—'}</td>
             <td style="color:#22c55e;font-weight:700;">${(l.propsEnviadas||[]).length}</td>
             <td style="color:${pend>0?'#f97316':'#888'}; font-weight:700;">
               ${pend > 0 ? `<span class="badge badge-tibio" style="font-size:10px;">${pend} NUEVAS</span>` : '0'}
@@ -2210,6 +2211,7 @@ function renderLeadsBody(lista){
           <div class="lc-stats">
             <div><div class="lc-stat-val">${(l.propsEnviadas||[]).length}</div><div class="lc-stat-lbl">Enviadas</div></div>
             <div><div class="lc-stat-val" style="color:var(--gold); font-size:13px;">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div><div class="lc-stat-lbl">Presupuesto</div></div>
+            <div><div class="lc-stat-val" style="font-size:11px;">${(l.metodoPago || []).join(',') || '—'}</div><div class="lc-stat-lbl">Pago</div></div>
             <div><div class="lc-stat-val" style="color:${pend>0?'#f97316':''}">${pend}</div><div class="lc-stat-lbl">Pendientes</div></div>
           </div>
           <div class="lc-footer">
