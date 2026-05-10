@@ -833,6 +833,7 @@ let currentLeadFilter = 'todos';
 let nlPage = 0;
 const PAGE_SIZE = 20;
 let criterioOrden = ''; // Default sort (no filter)
+let MAX_CATALOG_PRICE = 5000000000; // Valor por defecto
 
 /* ═══════════════════════════════════════════════
    HELPERS & UTILS
@@ -1093,12 +1094,13 @@ function fnPoblar(pfx, c){
 
   if(c.slider){
     const minVal = st.minPrice || 0;
-    const maxVal = st.maxPrice || 5000000000;
+    const maxVal = st.maxPrice || MAX_CATALOG_PRICE;
     const curMin = Math.round(minVal/1e6);
     const curMax = Math.round(maxVal/1e6);
+    const topM = Math.round(MAX_CATALOG_PRICE/1e6);
     
     // Funciones de mapeo bilineal
-    const valToPos = v => (v <= 1000) ? (v/1000)*70 : 70 + ((v-1000)/4000)*30;
+    const valToPos = v => (v <= 1000) ? (v/1000)*70 : 70 + ((v-1000)/(topM-1000))*30;
 
     drop.style.minWidth = '300px'; // Más ancho para precisión
     drop.innerHTML = `
@@ -1139,14 +1141,15 @@ function fnPoblar(pfx, c){
 
 function fnSetPrice(pfx, type, val, isDirect){
   const st = getFSt(pfx);
-  const posToVal = p => (p <= 70) ? (p/70)*1000 : 1000 + ((p-70)/30)*4000;
-  const valToPos = v => (v <= 1000) ? (v/1000)*70 : 70 + ((v-1000)/4000)*30;
+  const topM = Math.round(MAX_CATALOG_PRICE/1e6);
+  const posToVal = p => (p <= 70) ? (p/70)*1000 : 1000 + ((p-70)/30)*(topM-1000);
+  const valToPos = v => (v <= 1000) ? (v/1000)*70 : 70 + ((v-1000)/(topM-1000))*30;
 
   let v = parseFloat(val) || 0;
   if(!isDirect) v = Math.round(posToVal(v));
   
   if(type === 'min'){
-    const maxVal = Math.round((st.maxPrice || 5000000000)/1e6);
+    const maxVal = Math.round((st.maxPrice || MAX_CATALOG_PRICE)/1e6);
     if(v > maxVal) v = maxVal;
     st.minPrice = v * 1e6;
     const sld = document.getElementById(`sldMin_${pfx}`); if(sld) sld.value = valToPos(v);
@@ -1633,6 +1636,12 @@ async function cargarProps(){
     
     console.log("Admin: Raw:", rawData.length, "Filtradas:", allProps.length);
     document.getElementById('syncStatus').textContent=`✓ ${allProps.length} propiedades`;
+    
+    // Actualizar el precio máximo dinámico
+    if(allProps.length > 0){
+      const prices = allProps.map(p => parseP(p['Precio'])).filter(p => p > 0);
+      if(prices.length > 0) MAX_CATALOG_PRICE = Math.max(...prices);
+    }
     
   } catch(e){
     console.error("Error cargando propiedades:", e);
