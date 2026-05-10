@@ -1370,8 +1370,9 @@ function fnLimpiar(pfx){
    LOGIN
 ═══════════════════════════════════════════════ */
 document.getElementById('passInput').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
-function doLogin(){
-  if(document.getElementById('passInput').value===PASSWORD){
+window.doLogin = function(){
+  const pass = document.getElementById('passInput').value;
+  if(pass === PASSWORD){
     document.getElementById('loginScreen').style.display='none';
     const app=document.getElementById('app'); app.style.display='flex'; app.style.flexDirection='column';
     initApp();
@@ -1379,7 +1380,7 @@ function doLogin(){
     document.getElementById('loginError').style.display='block';
     document.getElementById('passInput').value='';
   }
-}
+};
 function hardResetData() {
   if (confirm("¿Estás seguro? Esto borrará la memoria local del navegador (caché) y recargará todo desde la nube. Úsalo si la página se queda trabada.")) {
     localStorage.clear();
@@ -1882,40 +1883,36 @@ function renderPropsGrid(listaForzada){
   const sliced = lista.slice(start, start + PAGE_SIZE);
   const maxPage = Math.ceil(total / PAGE_SIZE) - 1;
 
-  let html = `<div class="props-grid">`;
-  sliced.forEach(d => {
+  let html = '<div class="props-grid">';
+  for (let i = 0; i < sliced.length; i++) {
+    const d = sliced[i];
     const cod = String(d['Código'] || "");
-    const sel=selectedProps.includes(cod);
-    const img=(d['Imagenes']||'').split('|')[0].trim()||d['Image']||'https://i.imgur.com/Pc9M3I8.png';
+    const sel = selectedProps.includes(cod);
+    const img = (d['Imagenes']||'').split('|')[0].trim() || d['Image'] || 'https://i.imgur.com/Pc9M3I8.png';
     const isDestacada = ["Directo", "Verbal"].includes(d["Contrato"]);
     const inmob = d['Inmobiliaria'] || '';
     
-    html += `
-      <div class="prop-card${sel?' selected':''}${isDestacada?' recomendado':''}" onclick="abrirModalProp('${eq(cod)}')">
-        ${isDestacada ? `<div class="ribbon"><span>¡Destacada!</span></div>` : ''}
-        <div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp('${eq(cod)}', this.parentElement)">
-          ${sel?'✓':'+'}
-        </div>
-        <img src="${img}" loading="lazy" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
-        <div class="prop-card-body">
-          <div class="prop-card-code" style="font-weight:bold; color:var(--gold);">Cód: ${cod}</div>
-          <div class="prop-card-name">${d['Nombre']||''}</div>
-          <div class="prop-card-price">${formatP(d['Precio'])}</div>
-          <div style="font-size:11px;color:#666;margin-top:2px;">${d['Zona']||''} · ${d['Habitaciones']||''}hab</div>
-        </div>
-        ${inmob ? `<div class="prop-card-inmobiliaria" title="${eq(inmob)}">${inmob}</div>` : ''}
-      </div>`;
-  });
-  html += `</div>`;
+    html += '<div class="prop-card' + (sel?' selected':'') + (isDestacada?' recomendado':'') + '" onclick="abrirModalProp(\'' + eq(cod) + '\')">';
+    if(isDestacada) html += '<div class="ribbon"><span>¡Destacada!</span></div>';
+    html += '<div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp(\'' + eq(cod) + '\', this.parentElement)">' + (sel?'✓':'+') + '</div>';
+    html += '<img src="' + img + '" loading="lazy" onerror="this.src=\'https://i.imgur.com/Pc9M3I8.png\'"/>';
+    html += '<div class="prop-card-body">';
+    html += '<div class="prop-card-code" style="font-weight:bold; color:var(--gold);">Cód: ' + cod + '</div>';
+    html += '<div class="prop-card-name">' + (d['Nombre']||'') + '</div>';
+    html += '<div class="prop-card-price">' + formatP(d['Precio']) + '</div>';
+    html += '<div style="font-size:11px;color:#666;margin-top:2px;">' + (d['Zona']||'') + ' · ' + (d['Habitaciones']||'') + 'hab</div>';
+    html += '</div>';
+    if(inmob) html += '<div class="prop-card-inmobiliaria" title="' + eq(inmob) + '">' + inmob + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
 
   if(total > PAGE_SIZE){
-    html += `
-      <div class="pagination" style="display:flex; align-items:center; justify-content:center; gap:16px; margin-top:24px; padding:16px 0; border-top:1px solid rgba(212,168,75,0.1);">
-        <button class="btn btn-sm ${nlPage===0?'btn-secondary':'btn-gold'}" ${nlPage===0?'disabled':''} onclick="changeNlPage(-1)">« Anterior</button>
-        <span style="font-size:13px; color:var(--muted); font-weight:500;">Página <strong>${nlPage+1}</strong> de ${maxPage+1}</span>
-        <button class="btn btn-sm ${nlPage===maxPage?'btn-secondary':'btn-gold'}" ${nlPage===maxPage?'disabled':''} onclick="changeNlPage(1)">Siguiente »</button>
-      </div>
-    `;
+    html += '<div class="pagination" style="display:flex; align-items:center; justify-content:center; gap:16px; margin-top:24px; padding:16px 0; border-top:1px solid rgba(212,168,75,0.1);">';
+    html += '<button class="btn btn-sm ' + (nlPage===0?'btn-secondary':'btn-gold') + '" ' + (nlPage===0?'disabled':'') + ' onclick="changeNlPage(-1)">« Anterior</button>';
+    html += '<span style="font-size:13px; color:var(--muted); font-weight:500;">Página <strong>' + (nlPage+1) + '</strong> de ' + (maxPage+1) + '</span>';
+    html += '<button class="btn btn-sm ' + (nlPage===maxPage?'btn-secondary':'btn-gold') + '" ' + (nlPage===maxPage?'disabled':'') + ' onclick="changeNlPage(1)">Siguiente »</button>';
+    html += '</div>';
   }
   el.innerHTML = html;
 }
