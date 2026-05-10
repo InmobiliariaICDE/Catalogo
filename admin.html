@@ -2099,15 +2099,15 @@ function renderLeadsBody(lista){
     const oEtB = ordenEtiqueta[b.etiqueta] || 99;
     if (oEtA !== oEtB) return oEtA - oEtB;
     
-    // 2. Secundario: Presupuesto (Mayor a Menor)
-    const pA = a.filtros?.maxPrice || 0;
-    const pB = b.filtros?.maxPrice || 0;
-    if (pA !== pB) return pB - pA;
-    
-    // 3. Terciario: Estado (Pdte. visita > Enviando > ...)
+    // 2. Secundario: Estado (Pdte. visita > Enviando > ...)
     const oEsA = ordenEstado[a.estado] || 99;
     const oEsB = ordenEstado[b.estado] || 99;
-    return oEsA - oEsB;
+    if (oEsA !== oEsB) return oEsA - oEsB;
+    
+    // 3. Terciario: Presupuesto (Mayor a Menor)
+    const pA = a.filtros?.maxPrice || 0;
+    const pB = b.filtros?.maxPrice || 0;
+    return pB - pA;
   });
 
   if(leadViewMode === 'table'){
