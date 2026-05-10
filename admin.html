@@ -344,6 +344,7 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 .prop-card-price{font-size:12px;color:var(--gold);font-weight:600;}
 .prop-card-check{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:var(--gold);display:none;align-items:center;justify-content:center;color:#000;font-size:13px;font-weight:700;}
 .prop-card.selected .prop-card-check{display:flex;}
+.prop-card-inmobiliaria { position: absolute; bottom: 8px; right: 8px; background: rgba(13, 11, 8, 0.85); color: var(--gold); padding: 3px 8px; border-radius: 6px; font-size: 9.5px; font-weight: 700; text-transform: uppercase; border: 1px solid rgba(212, 168, 75, 0.2); backdrop-filter: blur(4px); z-index: 5; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* SELECTED BAR */
 .selected-bar{background:rgba(212,168,75,.1);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
@@ -1567,6 +1568,7 @@ function normalizarPropiedades(data) {
       else if (nk === 'destacada' || nk === 'destacado') k = 'Destacada';
       else if (nk === 'rentabilidad' || nk === 'retorno') k = 'Rentabilidad';
       else if (nk === 'administracion' || nk === 'admin') k = 'Administración';
+      else if (nk === 'inmobiliaria' || nk === 'aliado' || nk === 'fuente') k = 'Inmobiliaria';
 
       // Fallbacks para términos que contienen la palabra pero no son exactos
       if (!k) {
@@ -1586,6 +1588,7 @@ function normalizarPropiedades(data) {
         else if (nk.includes('area')) k = 'Área';
         else if (nk.includes('imagen') || nk.includes('foto')) k = 'Imagenes';
         else if (nk.includes('precio') && !nk.includes('rango') && !nk.includes('administracion')) k = 'Precio';
+        else if (nk.includes('inmobiliaria')) k = 'Inmobiliaria';
       }
 
       // Evitamos sobrescribir con valores vacíos si ya tenemos algo
@@ -1884,6 +1887,7 @@ function renderPropsGrid(listaForzada){
         <div class="prop-card-price">${formatP(d['Precio'])}</div>
         <div style="font-size:11px;color:#666;margin-top:2px;">${d['Zona']||''} · ${d['Habitaciones']||''}hab</div>
       </div>
+      ${d['Inmobiliaria'] ? `<div class="prop-card-inmobiliaria" title="${eq(d['Inmobiliaria'])}">${d['Inmobiliaria']}</div>` : ''}
     </div>`;
   }).join('')}</div>`;
 
@@ -2409,6 +2413,7 @@ function renderPanelPendientes(lead, pend){
           <div class="prop-card" style="pointer-events:none; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:8px; overflow:hidden;">
             <img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
             <div style="padding:6px; font-size:11px; text-align:center; color:var(--gold); font-weight:700;">${cod}</div>
+            ${p && p['Inmobiliaria'] ? `<div class="prop-card-inmobiliaria" style="bottom:4px; right:4px; font-size:8px;">${p['Inmobiliaria']}</div>` : ''}
           </div>`;
       }).join('')}
     </div>`;
