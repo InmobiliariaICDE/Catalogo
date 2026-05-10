@@ -331,6 +331,7 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 .fn-option{ display: flex; align-items: center; gap: 10px; padding: 10px 18px; font-size: 13.5px; color: #c0c0c0; cursor: pointer; transition: all 0.1s; }
 .fn-option:hover{ background: rgba(255, 255, 255, 0.06); color: #fff; }
 .fn-option.fn-sel{ color: var(--gold); background: rgba(212, 168, 75, 0.05); }
+.st-selected{ color: var(--gold) !important; background: rgba(212, 168, 75, 0.1) !important; font-weight: 600 !important; }
 .fn-option.fn-zero{opacity:.35;pointer-events:none;}
 .fn-chk{width:14px;height:14px;flex-shrink:0;border:1px solid rgba(200,200,200,.25);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--icde-gold);}
 .fn-option.fn-sel .fn-chk{background:rgba(212,168,75,.25);border-color:var(--icde-gold);}
@@ -927,7 +928,7 @@ function filtrarProps(f, returnAllIfEmpty = true){
 
   // Si el filtro está "vacío"
   const isEmpty = !f.buscar && !f.minPrice && !f.maxPrice && !Object.values(f).some(v => Array.isArray(v) && v.length > 0);
-  if(isEmpty) return returnAllIfEmpty ? allProps : [];
+  if(isEmpty) return returnAllIfEmpty ? ordenarLista([...allProps]) : [];
 
   const filtered = allProps.filter(d=>{
     // 1. Categorías (Multi-select)
@@ -1000,25 +1001,18 @@ function ordenarLista(lista) {
   });
 }
 
-function getSortLabel(crit){
-  const labels = { 'destacadas': 'Destacadas', 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad' };
-  return labels[crit] || 'Ordenar por';
-}
-
-function toggleSortMenu(e){
-  e.stopPropagation();
-  const list = document.getElementById('sortOptions');
-  const toggle = document.getElementById('sortToggle');
-  if(!list || !toggle) return;
-  list.classList.toggle('hidden');
-  toggle.classList.toggle('st-open');
-}
-
 function setSort(crit){
   criterioOrden = crit;
   const list = document.getElementById('sortOptions');
   const toggle = document.getElementById('sortToggle');
-  if(list) list.classList.add('hidden');
+  if(list) {
+    list.classList.add('hidden');
+    // Marcar el seleccionado visualmente
+    list.querySelectorAll('li').forEach(li => {
+      if(li.getAttribute('onclick')?.includes(`'${crit}'`)) li.classList.add('st-selected');
+      else li.classList.remove('st-selected');
+    });
+  }
   if(toggle) {
     toggle.classList.remove('st-open');
     toggle.innerHTML = `${getSortLabel(crit)} <span class="st-arrow"></span>`;
@@ -1027,13 +1021,45 @@ function setSort(crit){
   renderPropsGrid();
 }
 
-// Cerrar menú al hacer clic fuera
-document.addEventListener('click', () => {
+function getSortLabel(crit){
+  const labels = { 'destacadas': 'Destacadas', 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad' };
+  return labels[crit] || 'Ordenar por';
+}
+
+// Gestión de menús y clics globales (Única vez)
+document.addEventListener('click', e => {
+  // Cerrar Sort Menu
+  const sortList = document.getElementById('sortOptions');
+  const sortToggle = document.getElementById('sortToggle');
+  if(sortList && !e.target.closest('#ordenar-por')) {
+    sortList.classList.add('hidden');
+    if(sortToggle) sortToggle.classList.remove('st-open');
+  }
+
+  // Cerrar Filtros
+  if(!e.target.closest('.filtro-nuevo')){
+    document.querySelectorAll('.filtro-nuevo.fn-open').forEach(f=>f.classList.remove('fn-open'));
+  }
+});
+
+function toggleSortMenu(e){
+  e.stopPropagation();
   const list = document.getElementById('sortOptions');
   const toggle = document.getElementById('sortToggle');
-  if(list) list.classList.add('hidden');
-  if(toggle) toggle.classList.remove('st-open');
-});
+  if(!list || !toggle) return;
+  const isHidden = list.classList.contains('hidden');
+  
+  // Cerrar filtros si hubiera
+  document.querySelectorAll('.filtro-nuevo.fn-open').forEach(f=>f.classList.remove('fn-open'));
+  
+  if(isHidden){
+    list.classList.remove('hidden');
+    toggle.classList.add('st-open');
+  } else {
+    list.classList.add('hidden');
+    toggle.classList.remove('st-open');
+  }
+}
 
 // Escapa comillas simples para usar dentro de onclick
 function eq(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
@@ -1048,13 +1074,13 @@ function buildFiltrosBar(containerId, pfx, initVals){
     <div class="pc-filtros-wrapper">
       <div class="filtros-grid-nueva" id="fnGrid_${pfx}">
         ${FCAMPOS.map(c=>`
-          <div class="filtro-nuevo" id="fn_${pfx}_${c.key}">
+          <div class="filtro-nuevo" id="fn_${pfx}_${c.key}" onclick="fnToggleFilter(this, event)">
             <div class="filtro-nuevo-head" id="fnH_${pfx}_${c.key}">
               ${c.ico}
               <span class="fn-lbl" id="fnL_${pfx}_${c.key}">${c.lbl}</span>
               <span class="fn-arrow"></span>
             </div>
-            <div class="filtro-nuevo-dropdown" id="fnD_${pfx}_${c.key}"></div>
+            <div class="filtro-nuevo-dropdown" id="fnD_${pfx}_${c.key}" onclick="event.stopPropagation()"></div>
           </div>`).join('')}
       </div>
       <div class="pc-buscar-row">
@@ -1074,29 +1100,22 @@ function buildFiltrosBar(containerId, pfx, initVals){
   // Cabeceras con los valores iniciales
   FCAMPOS.forEach(c => fnRenderHead(pfx, c.key));
 
-  // Listener para abrir/cerrar
-  const grid = document.getElementById(`fnGrid_${pfx}`);
-  if(grid){
-    grid.addEventListener('click', e => {
-      const head = e.target.closest('.filtro-nuevo-head');
-      if(!head) return;
-      if(e.target.closest('.fn-tag-x')) return;
-      const fn = head.closest('.filtro-nuevo');
-      const was = fn.classList.contains('fn-open');
-      document.querySelectorAll(`#fnGrid_${pfx} .filtro-nuevo.fn-open`).forEach(f=>f.classList.remove('fn-open'));
-      if(!was) fn.classList.add('fn-open');
-      e.stopPropagation();
-    });
-  }
-
-  // Cerrar al clic fuera
-  document.addEventListener('click', (e)=>{
-    if(e.target.closest('.filtro-nuevo')) return;
-    document.querySelectorAll(`.filtro-nuevo.fn-open`).forEach(f=>f.classList.remove('fn-open'));
-  });
-
-
   fnActualizarConteo(pfx);
+}
+
+function fnToggleFilter(el, e){
+  if(e.target.closest('.fn-tag-x')) return;
+  const was = el.classList.contains('fn-open');
+  // Cerrar otros filtros
+  document.querySelectorAll('.filtro-nuevo.fn-open').forEach(f=>{
+    if(f !== el) f.classList.remove('fn-open');
+  });
+  // Cerrar Sort Menu
+  const sortList = document.getElementById('sortOptions');
+  if(sortList) sortList.classList.add('hidden');
+
+  if(was) el.classList.remove('fn-open');
+  else el.classList.add('fn-open');
 }
 
 /* Poblar un dropdown con las opciones de un campo */
