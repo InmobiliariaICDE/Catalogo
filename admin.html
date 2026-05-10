@@ -263,47 +263,74 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 /* ═══════════════════════════════════════════════════════
    FILTROS — CSS IDÉNTICO AL INDEX.HTML
 ═══════════════════════════════════════════════════════ */
-.pc-filtros-wrapper{position:relative;z-index:50;display:flex;flex-direction:column;gap:10px;margin-bottom:4px;}
+.pc-filtros-wrapper{position:relative;z-index:50;display:flex;flex-direction:column;gap:12px;margin-bottom:12px;}
 
-/* Barra contenedor — copia exacta de .filtros-bar-nueva del index */
-.filtros-bar-nueva{
-  width:100%;display:flex;align-items:stretch;
-  background:rgba(0,0,0,0.45);
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  border:1px solid rgba(200,200,200,0.20);
-  border-radius:var(--icde-radius);
-  overflow:visible;position:relative;z-index:20;
+.filtros-grid-nueva{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  width: 100%;
+  position: relative;
+  z-index: 20;
 }
-.filtros-bar-nueva:first-of-type{z-index:21;}
 
-/* Cada filtro */
-.filtro-nuevo{flex:1 1 0;min-width:0;position:relative;cursor:pointer;user-select:none;-webkit-user-select:none;}
-.filtro-nuevo:not(:last-child)::after{content:'';position:absolute;right:0;top:18%;bottom:18%;width:1px;background:rgba(200,200,200,0.22);}
-/* Cabecera */
-.filtro-nuevo-head{display:flex;align-items:center;gap:6px;height:var(--icde-h);padding:0 10px;font-size:12.5px;font-weight:500;color:#c0c0c0;white-space:nowrap;transition:color .15s,background .15s;border-radius:var(--icde-radius);}
-.filtro-nuevo:first-child .filtro-nuevo-head{border-radius:var(--icde-radius) 0 0 var(--icde-radius);}
-.filtro-nuevo:last-child  .filtro-nuevo-head{border-radius:0 var(--icde-radius) var(--icde-radius) 0;}
-.filtro-nuevo:hover .filtro-nuevo-head,.filtro-nuevo.fn-open .filtro-nuevo-head{color:#fff;background:rgba(255,255,255,.04);}
-.fn-ico{flex-shrink:0;color:var(--icde-gold);}
-.fn-lbl{flex:1;overflow:hidden;text-overflow:ellipsis;}
-.fn-arrow{flex-shrink:0;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--icde-gold);margin-left:2px;transition:transform .2s;}
-.filtro-nuevo.fn-open .fn-arrow{transform:rotate(180deg);}
-/* Tags activos */
-.fn-tags{display:flex;flex-wrap:nowrap;gap:3px;overflow:hidden;flex:1;align-items:center;}
-.fn-tag{display:inline-flex;align-items:center;gap:3px;background:rgb(33 32 30/68%);border:1px solid rgb(35 34 32);color:#fff;border-radius:4px;font-size:11px;padding:2px 5px;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis;}
-.fn-tag-x{cursor:pointer;opacity:.7;font-size:10px;flex-shrink:0;}
-.fn-tag-x:hover{opacity:1;}
-/* Dropdown */
-.filtro-nuevo-dropdown{display:none;position:absolute;top:calc(var(--icde-h) + 4px);left:0;min-width:200px;background:rgba(18,16,13,0.99);border:1px solid rgba(200,200,200,0.15);border-radius:10px;box-shadow:0 20px 50px rgba(0,0,0,.85);z-index:9999;padding:6px 0;max-height:280px;overflow-y:auto;}
-.filtro-nuevo.fn-open .filtro-nuevo-dropdown{display:block;}
-.filtro-nuevo:nth-last-child(-n+2) .filtro-nuevo-dropdown{left:auto;right:0;}
-.filtro-nuevo-dropdown::-webkit-scrollbar{width:4px;}
-.filtro-nuevo-dropdown::-webkit-scrollbar-track{background:#141414;}
-.filtro-nuevo-dropdown::-webkit-scrollbar-thumb{background:rgba(212,168,75,.4);border-radius:2px;}
-/* Opciones */
-.fn-option{display:flex;align-items:center;gap:10px;padding:10px 18px;font-size:13.5px;font-weight:400;color:#c0c0c0;cursor:pointer;transition:background .1s,color .1s;white-space:nowrap;}
-.fn-option:hover{background:rgba(255,255,255,.07);color:#fff;}
-.fn-option.fn-sel{color:var(--icde-gold-light);}
+.filtro-nuevo{
+  position: relative;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(212,168,75,0.15);
+  border-radius: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+  min-height: 42px;
+}
+.filtro-nuevo:hover, .filtro-nuevo.fn-open {
+  background: rgba(212,168,75,0.08);
+  border-color: rgba(212,168,75,0.4);
+}
+
+.filtro-nuevo-head{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #c0c0c0;
+}
+.filtro-nuevo.fn-open .filtro-nuevo-head { color: #fff; }
+
+.fn-ico{ flex-shrink: 0; color: var(--icde-gold); font-size: 14px; }
+.fn-lbl{ flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fn-arrow{ flex-shrink: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--icde-gold); transition: transform 0.2s; }
+.filtro-nuevo.fn-open .fn-arrow { transform: rotate(180deg); }
+
+.fn-tags{ display: flex; flex-wrap: nowrap; gap: 4px; overflow: hidden; flex: 1; align-items: center; }
+.fn-tag{ background: rgba(212, 168, 75, 0.2); border: 1px solid rgba(212, 168, 75, 0.3); color: #fff; border-radius: 4px; font-size: 10px; padding: 1px 6px; white-space: nowrap; }
+
+.filtro-nuevo-dropdown{
+  display: none;
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  min-width: 220px;
+  background: rgba(18, 16, 13, 0.98);
+  border: 1px solid rgba(212, 168, 75, 0.25);
+  border-radius: 12px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+  z-index: 9999;
+  padding: 8px 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.filtro-nuevo.fn-open .filtro-nuevo-dropdown{ display: block; }
+/* Si la celda está muy a la derecha, ajustar el dropdown */
+.filtro-nuevo:nth-child(3n) .filtro-nuevo-dropdown { left: auto; right: 0; }
+
+.fn-option{ display: flex; align-items: center; gap: 10px; padding: 10px 18px; font-size: 13.5px; color: #c0c0c0; cursor: pointer; transition: all 0.1s; }
+.fn-option:hover{ background: rgba(255, 255, 255, 0.06); color: #fff; }
+.fn-option.fn-sel{ color: var(--gold); background: rgba(212, 168, 75, 0.05); }
 .fn-option.fn-zero{opacity:.35;pointer-events:none;}
 .fn-chk{width:14px;height:14px;flex-shrink:0;border:1px solid rgba(200,200,200,.25);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--icde-gold);}
 .fn-option.fn-sel .fn-chk{background:rgba(212,168,75,.25);border-color:var(--icde-gold);}
@@ -1016,24 +1043,10 @@ function buildFiltrosBar(containerId, pfx, initVals){
   const wrap = document.getElementById(containerId);
   if(!wrap) return;
 
-  const row1 = FCAMPOS.slice(0, 6);
-  const row2 = FCAMPOS.slice(6);
-
   wrap.innerHTML = `
     <div class="pc-filtros-wrapper">
-      <div class="filtros-bar-nueva" id="fnBar1_${pfx}">
-        ${row1.map(c=>`
-          <div class="filtro-nuevo" id="fn_${pfx}_${c.key}">
-            <div class="filtro-nuevo-head" id="fnH_${pfx}_${c.key}">
-              ${c.ico}
-              <span class="fn-lbl" id="fnL_${pfx}_${c.key}">${c.lbl}</span>
-              <span class="fn-arrow"></span>
-            </div>
-            <div class="filtro-nuevo-dropdown" id="fnD_${pfx}_${c.key}"></div>
-          </div>`).join('')}
-      </div>
-      <div class="filtros-bar-nueva" id="fnBar2_${pfx}">
-        ${row2.map(c=>`
+      <div class="filtros-grid-nueva" id="fnGrid_${pfx}">
+        ${FCAMPOS.map(c=>`
           <div class="filtro-nuevo" id="fn_${pfx}_${c.key}">
             <div class="filtro-nuevo-head" id="fnH_${pfx}_${c.key}">
               ${c.ico}
@@ -1060,11 +1073,10 @@ function buildFiltrosBar(containerId, pfx, initVals){
   // Cabeceras con los valores iniciales
   FCAMPOS.forEach(c => fnRenderHead(pfx, c.key));
 
-  // Listener para abrir/cerrar — delegado en ambas barras
-  [`fnBar1_${pfx}`, `fnBar2_${pfx}`].forEach(id => {
-    const bar = document.getElementById(id);
-    if(!bar) return;
-    bar.addEventListener('click', e => {
+  // Listener para abrir/cerrar
+  const grid = document.getElementById(`fnGrid_${pfx}`);
+  if(grid){
+    grid.addEventListener('click', e => {
       const head = e.target.closest('.filtro-nuevo-head');
       if(!head) return;
       if(e.target.closest('.fn-tag-x')) return;
