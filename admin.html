@@ -7,7 +7,9 @@
 <link rel="icon" type="image/png" href="https://i.imgur.com/4TfQXSf.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/supercluster@7.1.2/dist/supercluster.min.js"></script>
 <style>
 :root {
   --gold: #d4a84b; 
@@ -453,10 +455,79 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:rgba(212,168,75,.25);border-radius:2px;}
 .nuevo-lead-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Map & Grid Container */
+.nl-split-view {
   display: grid;
-  grid-template-columns: 65% 35%;
-  gap: 24px;
-  align-items: start;
+  grid-template-columns: 1fr 400px;
+  gap: 20px;
+  height: 650px;
+  margin-top: 15px;
+}
+
+.nl-map-container {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.nl-grid-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.nl-props-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Zillow-style custom markers */
+.z-marker {
+  background: #fff;
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.z-marker:hover, .z-marker.active {
+  background: var(--gold);
+  color: #fff;
+  transform: scale(1.1);
+  z-index: 1000;
+}
+.z-marker::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #fff;
+}
+.z-marker:hover::after, .z-marker.active::after {
+  border-top-color: var(--gold);
 }
 
 
@@ -833,6 +904,8 @@ let currentLeadFilter = 'todos';
 let nlPage = 0;
 const PAGE_SIZE = 20;
 let criterioOrden = ''; // Default sort (no filter)
+let map = null;
+let mapMarkers = {};
 
 /* ═══════════════════════════════════════════════
    HELPERS & UTILS
@@ -1269,8 +1342,8 @@ function fnActualizarConteo(pfx){
   if(pfx==='nl') {
     nlPage = 0; // Reset pagination on filter change
     renderPropsGrid();
+    updateMapMarkers();
   }
-
 }
 
 function getSearchLinkFromFilters(st){
@@ -1564,6 +1637,8 @@ function normalizarPropiedades(data) {
       else if (nk === 'destacada' || nk === 'destacado') k = 'Destacada';
       else if (nk === 'rentabilidad' || nk === 'retorno') k = 'Rentabilidad';
       else if (nk === 'administracion' || nk === 'admin') k = 'Administración';
+      else if (nk === 'latitud' || nk === 'lat') k = 'Latitud';
+      else if (nk === 'longitud' || nk === 'lng' || nk === 'lon') k = 'Longitud';
 
       // Fallbacks para términos que contienen la palabra pero no son exactos
       if (!k) {
@@ -1670,130 +1745,119 @@ function renderNuevo(){
   </div>
 
   <div class="nuevo-lead-layout">
-    <!-- COLUMNA 1: FILTROS E INMUEBLES (30%) -->
-    <div class="nl-col-1">
-      <div class="panel-section">
-        <div class="form-section-header">
-          <div class="panel-section-title">Intereses y Filtros</div>
-        </div>
-        <div class="section-content">
-          <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Selecciona los filtros para encontrar las propiedades ideales automáticamente.</p>
-          ${allProps.length ? `<div id="nlFiltrosWrap"></div>` : `<div class="loading"><div class="spinner"></div> Cargando catálogo...</div>`}
-        </div>
+    <!-- FILTROS (FULL WIDTH) -->
+    <div class="panel-section">
+      <div class="form-section-header">
+        <div class="panel-section-title">Encuentra Propiedades Ideales</div>
+      </div>
+      <div class="section-content">
+        ${allProps.length ? `<div id="nlFiltrosWrap"></div>` : `<div class="loading"><div class="spinner"></div> Cargando catálogo...</div>`}
+      </div>
+    </div>
 
-        <div style="height:32px;"></div>
-        <div class="form-section-header" style="border-top:1px solid rgba(255,255,255,0.05); padding-top:24px; display:flex; justify-content:space-between; align-items:center;">
-          <div class="panel-section-title">Selección de Propiedades</div>
-          <span style="font-size:12px;color:var(--gold);" id="selCnt">${selectedProps.length} seleccionadas</span>
-        </div>
-        <div class="section-content">
-          <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Puedes marcar casas específicas para enviar hoy mismo.</p>
-          
-          <div id="ordenar-por" class="ordenar-por">
-            <div id="sortToggle" class="sort-toggle" onclick="toggleSortMenu(event)">
-              ${getSortLabel(criterioOrden)} <span class="st-arrow"></span>
-            </div>
-            <ul id="sortOptions" class="sort-options hidden">
-              <li onclick="setSort('destacadas')" class="${criterioOrden==='destacadas'?'st-selected':''}">Destacadas</li>
-              <li onclick="setSort('menorPrecio')" class="${criterioOrden==='menorPrecio'?'st-selected':''}">Menor precio</li>
-              <li onclick="setSort('mayorPrecio')" class="${criterioOrden==='mayorPrecio'?'st-selected':''}">Mayor precio</li>
-              <li onclick="setSort('rentabilidad')" class="${criterioOrden==='rentabilidad'?'st-selected':''}">Mayor rentabilidad</li>
-            </ul>
+    <!-- ZILLOW VIEW: MAP & GRID -->
+    <div class="nl-split-view">
+      <div class="nl-map-container">
+        <div id="map"></div>
+      </div>
+      <div class="nl-grid-panel">
+        <div id="ordenar-por" class="ordenar-por">
+          <div id="sortToggle" class="sort-toggle" onclick="toggleSortMenu(event)">
+            ${getSortLabel(criterioOrden)} <span class="st-arrow"></span>
           </div>
-
-          ${selectedProps.length?`<div class="selected-bar" style="margin-bottom:20px;"><div class="selected-chips">${selectedProps.map(c=>`<span class="sel-chip">${c}<button onclick="deselProp('${c}')">×</button></span>`).join('')}</div></div>`:''}
+          <ul id="sortOptions" class="sort-options hidden">
+            <li onclick="setSort('destacadas')" class="${criterioOrden==='destacadas'?'st-selected':''}">Destacadas</li>
+            <li onclick="setSort('menorPrecio')" class="${criterioOrden==='menorPrecio'?'st-selected':''}">Menor precio</li>
+            <li onclick="setSort('mayorPrecio')" class="${criterioOrden==='mayorPrecio'?'st-selected':''}">Mayor precio</li>
+            <li onclick="setSort('rentabilidad')" class="${criterioOrden==='rentabilidad'?'st-selected':''}">Mayor rentabilidad</li>
+          </ul>
+        </div>
+        <div class="nl-props-scroll">
           <div id="propsGrid"></div>
         </div>
       </div>
     </div>
 
-    <!-- COLUMNA 2: DATOS Y PLAN (60%) -->
-    <div class="nl-col-2">
-      <div class="panel-section">
-        <!-- BLOQUE 1: DATOS -->
-        <div class="form-section-header">
-          <div class="panel-section-title">Datos del Cliente</div>
-        </div>
-        <div class="section-content">
-          <div style="display:flex;gap:12px;margin-bottom:20px;margin-top:10px;">
-            <button id="btnTC" class="btn ${nuevoLead.tipo==='cliente'?'btn-primary':'btn-secondary'}" onclick="setTipo('cliente')">👤 Cliente</button>
-            <button id="btnTI" class="btn ${nuevoLead.tipo==='inmobiliaria'?'btn-gold':'btn-secondary'}"   onclick="setTipo('inmobiliaria')">🏢 Inmobiliaria</button>
-          </div>
-          <div id="nlDuplicateWarning" style="display:none; margin-bottom:15px; padding:12px 15px; background-color:rgba(249, 115, 22, 0.1); border:1px solid rgba(249, 115, 22, 0.3); border-radius:8px; color:#f97316; font-size:13px; align-items:center; justify-content:space-between;"></div>
-          <div class="form-grid">
-            <div class="form-group"><label class="form-label">Nombre Completo *</label><input class="form-input" id="nlN" value="${nuevoLead.nombre}" placeholder="Ej: Maria Perez" oninput="nuevoLead.nombre=this.value; checkDuplicateLead()"/></div>
-            <div class="form-group"><label class="form-label">WhatsApp / Celular *</label><input class="form-input" id="nlC" value="${nuevoLead.celular}" placeholder="3001234567" oninput="nuevoLead.celular=this.value; checkDuplicateLead()"/></div>
-            <div class="form-group full"><label class="form-label">Notas u Observaciones</label><textarea class="form-input" oninput="nuevoLead.notas=this.value" placeholder="¿Qué detalles adicionales tiene este cliente?">${nuevoLead.notas}</textarea></div>
-            <div class="form-group">
-              <label class="form-label">Estado Inicial</label>
-              <select class="form-input" onchange="nuevoLead.estado=this.value">
-                <option value="enviando" ${nuevoLead.estado==='enviando'?'selected':''}>Enviando propuestas</option>
-                <option value="proceso"  ${nuevoLead.estado==='proceso'?'selected':''}>Proceso de venta</option>
-                <option value="visita"   ${nuevoLead.estado==='visita'?'selected':''}>Pendiente visita</option>
-                <option value="banco"    ${nuevoLead.estado==='banco'?'selected':''}>Referido al banco</option>
-                <option value="inactivo" ${nuevoLead.estado==='inactivo'?'selected':''}>Inactivo</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Prioridad / Etiqueta</label>
-              <select class="form-input" onchange="nuevoLead.etiqueta=this.value">
-                <option value="activo"   ${nuevoLead.etiqueta==='activo'?'selected':''}>Activo (Interesado)</option>
-                <option value="tibio"    ${nuevoLead.etiqueta==='tibio'?'selected':''}>Tibio (Explorando)</option>
-                <option value="inactivo" ${nuevoLead.etiqueta==='inactivo'?'selected':''}>Inactivo (No responde)</option>
-              </select>
-            </div>
-          </div>
-          <div id="inmobExtra" style="display:${nuevoLead.tipo==='inmobiliaria'?'block':'none'}">
-            <div class="inmob-section">
-              <div class="inmob-title">🏢 Datos de la Inmobiliaria Aliada</div>
-              <div class="form-grid">
-                <div class="form-group"><label class="form-label">Nombre Inmobiliaria</label><input class="form-input" value="${nuevoLead.nombreInmobiliaria}" placeholder="Nombre" oninput="nuevoLead.nombreInmobiliaria=this.value"/></div>
-                <div class="form-group"><label class="form-label">Nombre del Agente</label><input class="form-input" value="${nuevoLead.nombreAgente}" placeholder="Agente" oninput="nuevoLead.nombreAgente=this.value"/></div>
+    <!-- FORMULARIO CLIENTE -->
+    <div class="panel-section">
+      <div class="form-section-header">
+        <div class="panel-section-title">Datos del Cliente y Plan de Envío</div>
+        <span style="font-size:12px;color:var(--gold);" id="selCnt">${selectedProps.length} seleccionadas</span>
+      </div>
+      <div class="section-content">
+        <div style="display:flex; gap:24px;">
+           <!-- Datos -->
+           <div style="flex:1.5;">
+              <div style="display:flex;gap:12px;margin-bottom:20px;">
+                <button id="btnTC" class="btn ${nuevoLead.tipo==='cliente'?'btn-primary':'btn-secondary'}" onclick="setTipo('cliente')">👤 Cliente</button>
+                <button id="btnTI" class="btn ${nuevoLead.tipo==='inmobiliaria'?'btn-gold':'btn-secondary'}"   onclick="setTipo('inmobiliaria')">🏢 Inmobiliaria</button>
               </div>
-            </div>
-          </div>
-          <div style="margin-top:20px;">
-            <div class="form-label" style="margin-bottom:12px;">Método de Pago Preferido</div>
-            <div class="checklist">
-              ${['Efectivo', 'Crédito', 'Caja Honor', 'Permuta'].map(m=>`<label class="check-item ${nuevoLead.metodoPago.includes(m)?'active':''}"><input type="checkbox" ${nuevoLead.metodoPago.includes(m)?'checked':''} onchange="toggleMetodo('${m}',this)"/> ${m}</label>`).join('')}
-            </div>
-          </div>
-        </div>
+              <div id="nlDuplicateWarning" style="display:none; margin-bottom:15px; padding:12px 15px; background-color:rgba(249, 115, 22, 0.1); border:1px solid rgba(249, 115, 22, 0.3); border-radius:8px; color:#f97316; font-size:13px;"></div>
+              <div class="form-grid">
+                <div class="form-group"><label class="form-label">Nombre Completo *</label><input class="form-input" id="nlN" value="${nuevoLead.nombre}" placeholder="Ej: Maria Perez" oninput="nuevoLead.nombre=this.value; checkDuplicateLead()"/></div>
+                <div class="form-group"><label class="form-label">WhatsApp / Celular *</label><input class="form-input" id="nlC" value="${nuevoLead.celular}" placeholder="3001234567" oninput="nuevoLead.celular=this.value; checkDuplicateLead()"/></div>
+                <div class="form-group full"><label class="form-label">Notas u Observaciones</label><textarea class="form-input" oninput="nuevoLead.notas=this.value" placeholder="¿Qué detalles adicionales tiene este cliente?">${nuevoLead.notas}</textarea></div>
+                <div class="form-group">
+                  <label class="form-label">Estado Inicial</label>
+                  <select class="form-input" onchange="nuevoLead.estado=this.value">
+                    <option value="enviando" ${nuevoLead.estado==='enviando'?'selected':''}>Enviando propuestas</option>
+                    <option value="proceso"  ${nuevoLead.estado==='proceso'?'selected':''}>Proceso de venta</option>
+                    <option value="visita"   ${nuevoLead.estado==='visita'?'selected':''}>Pendiente visita</option>
+                    <option value="banco"    ${nuevoLead.estado==='banco'?'selected':''}>Referido al banco</option>
+                    <option value="inactivo" ${nuevoLead.estado==='inactivo'?'selected':''}>Inactivo</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Prioridad</label>
+                  <select class="form-input" onchange="nuevoLead.etiqueta=this.value">
+                    <option value="activo"   ${nuevoLead.etiqueta==='activo'?'selected':''}>🟢 Activo</option>
+                    <option value="tibio"    ${nuevoLead.etiqueta==='tibio'?'selected':''}>🟡 Tibio</option>
+                    <option value="inactivo" ${nuevoLead.etiqueta==='inactivo'?'selected':''}>⚫ Inactivo</option>
+                  </select>
+                </div>
+              </div>
+           </div>
+           
+           <!-- Plan -->
+           <div style="flex:1; border-left:1px solid rgba(255,255,255,0.05); padding-left:24px;">
+              <div id="inmobExtra" style="display:${nuevoLead.tipo==='inmobiliaria'?'block':'none'}; margin-bottom:20px;">
+                <div class="inmob-section">
+                  <div class="inmob-title">🏢 Datos de la Inmobiliaria</div>
+                  <div class="form-grid">
+                    <div class="form-group"><label class="form-label">Inmobiliaria</label><input class="form-input" value="${nuevoLead.nombreInmobiliaria}" oninput="nuevoLead.nombreInmobiliaria=this.value"/></div>
+                    <div class="form-group"><label class="form-label">Agente</label><input class="form-input" value="${nuevoLead.nombreAgente}" oninput="nuevoLead.nombreAgente=this.value"/></div>
+                  </div>
+                </div>
+              </div>
 
-        <div style="height:32px;"></div>
-        <div class="form-section-header" style="border-top:1px solid rgba(255,255,255,0.05); padding-top:24px;">
-          <div class="panel-section-title">Plan de Envío y Finalización</div>
-        </div>
-        <div class="section-content">
-          <div class="form-grid" style="margin-top:4px;">
-            <div class="form-group">
-              <label class="form-label">Frecuencia de seguimiento</label>
-              <select class="form-input" onchange="nuevoLead.frecuencia=this.value; updateFrec()">
-                <option value="diaria" ${nuevoLead.frecuencia==='diaria'?'selected':''}>Diaria</option>
-                <option value="semanal" ${nuevoLead.frecuencia==='semanal'?'selected':''}>Semanal</option>
-                <option value="quincenal" ${nuevoLead.frecuencia==='quincenal'?'selected':''}>Quincenal</option>
-                <option value="mensual" ${nuevoLead.frecuencia==='mensual'?'selected':''}>Mensual</option>
-                <option value="manual" ${nuevoLead.frecuencia==='manual'?'selected':''}>Manual</option>
-              </select>
-            </div>
-          </div>
-          <div class="freq-info" id="frecInfo" style="margin-top:20px; ${nuevoLead.frecuencia==='manual'?'display:none':''}">${getFrecInfo()}</div>
+              <div class="form-group">
+                <label class="form-label">Frecuencia de seguimiento</label>
+                <select class="form-input" onchange="nuevoLead.frecuencia=this.value; updateFrec()">
+                  <option value="diaria" ${nuevoLead.frecuencia==='diaria'?'selected':''}>Diaria</option>
+                  <option value="semanal" ${nuevoLead.frecuencia==='semanal'?'selected':''}>Semanal</option>
+                  <option value="quincenal" ${nuevoLead.frecuencia==='quincenal'?'selected':''}>Quincenal</option>
+                  <option value="mensual" ${nuevoLead.frecuencia==='mensual'?'selected':''}>Mensual</option>
+                  <option value="manual" ${nuevoLead.frecuencia==='manual'?'selected':''}>Manual</option>
+                </select>
+              </div>
+              <div class="freq-info" id="frecInfo" style="margin-top:12px; ${nuevoLead.frecuencia==='manual'?'display:none':''}">${getFrecInfo()}</div>
 
-          <div style="margin-top:32px; display:flex; gap:12px; flex-wrap:wrap; padding-top:24px; border-top:1px solid rgba(255,255,255,0.05);">
-            <button class="btn btn-primary" style="flex:1;" onclick="guardarLead(false, this)">💾 Solo Guardar</button>
-            ${nuevoLead.tipo==='cliente'
-              ? `<button class="btn btn-green" style="flex:1.2; font-weight:700;" onclick="guardarLead(true, this)">💾 Guardar y Enviar WhatsApp ➜</button>`
-              : `<button class="btn btn-gold" style="flex:1.2; font-weight:700;" onclick="guardarLead(true, this)">💾 Guardar y Msg. Agente ➜</button>`}
-            <button class="btn btn-secondary" onclick="resetNuevoLead()">🗑 Limpiar</button>
-          </div>
+              <div style="margin-top:24px; display:flex; flex-direction:column; gap:10px;">
+                <button class="btn btn-primary" onclick="guardarLead(false, this)">💾 Guardar Cliente</button>
+                <button class="btn btn-green" onclick="guardarLead(true, this)">💾 Guardar y Enviar Props ➜</button>
+              </div>
+           </div>
         </div>
       </div>
     </div>
   </div>`;
 
-
-  // Construir barra de filtros al siguiente tick
-  if(allProps.length) setTimeout(()=> buildFiltrosBar('nlFiltrosWrap','nl',nuevoLead.filtros), 0);
+  if(allProps.length) {
+    setTimeout(()=> {
+      buildFiltrosBar('nlFiltrosWrap','nl',nuevoLead.filtros);
+      initMap();
+    }, 0);
+  }
   renderPropsGrid();
   setTimeout(()=> checkDuplicateLead(), 0);
 }
@@ -1863,7 +1927,10 @@ function renderPropsGrid(listaForzada){
     const sel=selectedProps.includes(cod);
     const img=(d['Imagenes']||'').split('|')[0].trim()||d['Image']||'https://i.imgur.com/Pc9M3I8.png';
     const isDestacada = ["Directo", "Verbal"].includes(d["Contrato"]);
-    return `<div class="prop-card${sel?' selected':''}${isDestacada?' recomendado':''}" onclick="abrirModalProp('${eq(cod)}')">
+    return `<div class="prop-card${sel?' selected':''}${isDestacada?' recomendado':''}" 
+      onclick="abrirModalProp('${eq(cod)}')"
+      onmouseenter="focusProperty('${eq(cod)}')"
+      data-code="${cod}">
       ${isDestacada ? `<div class="ribbon"><span>¡Destacada!</span></div>` : ''}
       <div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp('${eq(cod)}', this.parentElement)">
         ${sel?'✓':'+'}
@@ -2091,8 +2158,17 @@ function renderLeadsBody(lista){
 
   if(!listaFiltrada.length){ container.innerHTML=`<div class="empty">No hay leads que coincidan</div>`; return; }
   
-  const orden = { activo: 1, tibio: 2, inactivo: 3 };
-  listaFiltrada.sort((a,b) => (orden[a.etiqueta] || 99) - (orden[b.etiqueta] || 99));
+  const ordenEtiqueta = { activo: 1, tibio: 2, inactivo: 3 };
+  listaFiltrada.sort((a,b) => {
+    // 1. Prioridad: "Pdte. visita" (estado: 'visita') siempre arriba
+    const isAvisita = a.estado === 'visita';
+    const isBvisita = b.estado === 'visita';
+    if (isAvisita && !isBvisita) return -1;
+    if (!isAvisita && isBvisita) return 1;
+    
+    // 2. Respetar el orden actual de etiquetas
+    return (ordenEtiqueta[a.etiqueta] || 99) - (ordenEtiqueta[b.etiqueta] || 99);
+  });
 
   if(leadViewMode === 'table'){
     container.innerHTML=`
@@ -3737,6 +3813,111 @@ function updTimelineNota(leadId, idx, val) {
   syncSheets(l);
   toast('Nota actualizada', 'success');
 }
+/* ═══════════════════════════════════════════════
+   SISTEMA DE MAPA (ZILLOW STYLE)
+   ═══════════════════════════════════════════════ */
+function initMap() {
+  const mapEl = document.getElementById('map');
+  if (!mapEl) return;
+  
+  // Si ya existe, invalidar tamaño y retornar
+  if (map) {
+    setTimeout(() => map.invalidateSize(), 100);
+    return;
+  }
+
+  // Neiva coords por defecto
+  map = L.map('map', {
+    zoomControl: false,
+    scrollWheelZoom: true
+  }).setView([2.9273, -75.2819], 13);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO'
+  }).addTo(map);
+
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  updateMapMarkers();
+}
+
+function updateMapMarkers() {
+  if (!map) return;
+  
+  const props = filtrarProps(nuevoLead.filtros, true);
+  
+  // Limpiar marcadores anteriores
+  Object.values(mapMarkers).forEach(m => map.removeLayer(m));
+  mapMarkers = {};
+
+  const bounds = [];
+  props.forEach(p => {
+    const lat = parseFloat(String(p.Latitud || '').replace(',','.'));
+    const lng = parseFloat(String(p.Longitud || '').replace(',','.'));
+    const code = String(p.Código || '');
+    
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0) {
+      const price = formatShortPrice(p.Precio);
+      const icon = L.divIcon({
+        className: 'z-marker-wrap',
+        html: `<div class="z-marker" id="m-${code}" title="${p.Nombre}">${price}</div>`,
+        iconSize: [60, 25],
+        iconAnchor: [30, 25]
+      });
+
+      const marker = L.marker([lat, lng], { icon }).addTo(map);
+      
+      marker.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        abrirModalProp(code);
+      });
+
+      mapMarkers[code] = marker;
+      bounds.push([lat, lng]);
+    }
+  });
+
+  if (bounds.length > 0 && currentTab === 'nuevo') {
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+  }
+}
+
+function focusProperty(code) {
+  if (!map || !mapMarkers[code]) return;
+  
+  const marker = mapMarkers[code];
+  const latlng = marker.getLatLng();
+  
+  map.flyTo(latlng, 17, {
+    animate: true,
+    duration: 0.8
+  });
+
+  // Resaltar visualmente
+  document.querySelectorAll('.z-marker').forEach(m => m.classList.remove('active'));
+  const el = document.getElementById(`m-${code}`);
+  if (el) el.classList.add('active');
+
+  // Resaltar en la lista (scroll)
+  const card = document.querySelector(`.prop-card[data-code="${code}"]`);
+  if (card && !isElementInViewport(card)) {
+     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function isElementInViewport(el) {
+  const rect = el.getBoundingClientRect();
+  return (
+    rect.top >= 0 &&
+    rect.left >= 0 &&
+    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+  );
+}
+
+// Re-vincular eventos al redimensionar o cambiar pestañas
+window.addEventListener('resize', () => { if(map) map.invalidateSize(); });
+
 </script>
 </body>
 </html>
