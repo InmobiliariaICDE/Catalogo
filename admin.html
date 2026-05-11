@@ -2165,7 +2165,7 @@ function renderLeadsBody(lista){
     <div class="leads-table-wrap panel-section" style="padding:0; overflow:hidden;">
       <table class="leads-table"><thead><tr>
         <th>Cliente</th><th>Tipo</th><th>Estado</th><th>Etiqueta</th><th>Presupuesto</th><th>Método Pago</th>
-        <th>Enviadas</th><th>Pendientes</th><th>Próx. Envío</th><th>Acciones</th>
+        <th>Enviadas</th><th>Ofertas</th><th>Pendientes</th><th>Próx. Envío</th><th>Acciones</th>
       </tr></thead><tbody id="leadsBody">
         ${listaFiltrada.map(l=>{
           const currentMatches = filtrarProps(l.filtros);
@@ -2179,6 +2179,7 @@ function renderLeadsBody(lista){
             <td><div style="font-weight:700; color:var(--gold);">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div></td>
             <td style="font-size:11px;color:#888;">${(l.metodoPago || []).join(', ') || '—'}</td>
             <td style="color:#22c55e;font-weight:700;">${(l.propsEnviadas||[]).length}</td>
+            <td>${(l.visitas||[]).filter(v=>v.oferto==='si').length > 0 ? `<span class="badge badge-oferta">${(l.visitas||[]).filter(v=>v.oferto==='si').length}</span>` : '<span style="opacity:0.2;">0</span>'}</td>
             <td style="color:${pend>0?'#f97316':'#888'}; font-weight:700;">
               ${pend > 0 ? `<span class="badge badge-tibio" style="font-size:10px;">${pend} NUEVAS</span>` : '0'}
             </td>
@@ -2212,6 +2213,7 @@ function renderLeadsBody(lista){
             <div><div class="lc-stat-val">${(l.propsEnviadas||[]).length}</div><div class="lc-stat-lbl">Enviadas</div></div>
             <div><div class="lc-stat-val" style="color:var(--gold); font-size:13px;">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div><div class="lc-stat-lbl">Presupuesto</div></div>
             <div><div class="lc-stat-val" style="font-size:11px;">${(l.metodoPago || []).join(',') || '—'}</div><div class="lc-stat-lbl">Pago</div></div>
+            <div><div class="lc-stat-val" style="color:#a855f7;">${(l.visitas||[]).filter(v=>v.oferto==='si').length}</div><div class="lc-stat-lbl">Ofertas</div></div>
             <div><div class="lc-stat-val" style="color:${pend>0?'#f97316':''}">${pend}</div><div class="lc-stat-lbl">Pendientes</div></div>
           </div>
           <div class="lc-footer">
