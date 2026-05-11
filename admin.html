@@ -701,6 +701,22 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     right: -32px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   }
+
+  /* CALENDAR */
+  .calendar-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; margin-top: 10px; }
+  .calendar-header { display: flex; align-items: center; justify-content: space-between; padding: 20px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); }
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--border); gap: 1px; }
+  .cal-day-head { padding: 12px; text-align: center; font-size: 11px; font-weight: 700; color: var(--gold); text-transform: uppercase; background: var(--bg2); }
+  .cal-day { min-height: 120px; background: var(--bg2); padding: 8px; position: relative; transition: background 0.2s; }
+  .cal-day.today { background: rgba(212, 168, 75, 0.05); }
+  .cal-day.empty { background: rgba(0,0,0,0.15); }
+  .cal-num { font-size: 14px; font-weight: 600; color: #666; margin-bottom: 8px; display: block; }
+  .cal-day.today .cal-num { color: var(--gold); }
+  .cal-events { display: flex; flex-direction: column; gap: 4px; }
+  .cal-event { font-size: 10px; padding: 4px 8px; border-radius: 6px; background: rgba(212,168,75,0.15); border: 1px solid var(--border); color: #fff; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: all 0.2s; }
+  .cal-event:hover { transform: scale(1.02); background: var(--gold); color: #000; }
+  .cal-event.realizada { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.3); color: #4ade80; }
+  .cal-event.cancelada { opacity: 0.5; text-decoration: line-through; }
 </style>
 </head>
 <body>
@@ -779,6 +795,34 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
         <button class="btn btn-secondary" onclick="closeModal('visitaModal')">Cancelar</button>
         <button class="btn btn-primary" onclick="guardarVisita()">Guardar</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FEEDBACK CITAS -->
+<div class="modal-overlay" id="feedbackModal">
+  <div class="modal-box" style="width:min(450px, 100%); border: 1px solid var(--gold);">
+    <div class="modal-title" style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+      <span style="font-size:24px;">🤔</span> ¿Cómo te fue en la cita?
+    </div>
+    <div id="feedbackCitaInfo" style="background:rgba(212,168,75,0.08); padding:15px; border-radius:12px; margin-bottom:20px; border:1px solid rgba(212,168,75,0.15);">
+    </div>
+    <input type="hidden" id="feedbackCitaId"/>
+    <div class="form-group full">
+      <label class="form-label">Resultado / Notas</label>
+      <textarea class="form-input" id="feedbackNotas" placeholder="Cuéntanos qué pasó, si le gustó, si hará oferta..." style="min-height:100px; background:rgba(255,255,255,0.03);"></textarea>
+    </div>
+    <div class="form-group full" style="margin-top:15px;">
+      <label class="form-label">Actualizar Estado</label>
+      <select class="form-input" id="feedbackEstado">
+        <option value="realizada">✅ Realizada</option>
+        <option value="cancelada">❌ Cancelada</option>
+        <option value="agendada">⏳ Sigue pendiente</option>
+      </select>
+    </div>
+    <div class="modal-footer" style="margin-top:24px; display:flex; gap:10px;">
+      <button class="btn btn-secondary" style="flex:0.4;" onclick="omitirFeedback()">Más tarde</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="guardarFeedback()">Guardar Resultado</button>
     </div>
   </div>
 </div>
@@ -874,6 +918,9 @@ let MAX_CATALOG_PRICE = 5000000000; // Valor por defecto
 /* ═══════════════════════════════════════════════
    HELPERS & UTILS
 ═══════════════════════════════════════════════ */
+
+let citasViewMode = localStorage.getItem('icde_citas_view') || 'lista';
+let calDate = new Date();
 
 function freshLead(){
   return {
@@ -1462,6 +1509,12 @@ async function initApp(){
   cleanupLocalData();
   await cargarProps();
   await cargarLeads();
+  rebuildCitas();
+  renderNuevo();
+  
+  // Feedback de citas
+  setTimeout(checkCitasFeedback, 3000);
+  setInterval(checkCitasFeedback, 1000 * 60 * 5); // Cada 5 mins
 }
 
 function cleanupLocalData() {
@@ -3116,28 +3169,160 @@ function eliminarVisita(){
 /* ═══════════════════════════════════════════════
    MÓDULO CITAS & PEDIDOS INMOB.
 ═══════════════════════════════════════════════ */
+function setCitasView(mode){
+  citasViewMode = mode;
+  localStorage.setItem('icde_citas_view', mode);
+  renderCitas();
+}
+
 function renderCitas(){
-  const diasSem = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   document.getElementById('mainContent').innerHTML=`
     <div class="section-header">
       <div class="section-title">🗓 Agenda de Citas</div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary btn-sm" onclick="filterCitas('semana')">Esta Semana</button>
-        <button class="btn btn-secondary btn-sm" onclick="filterCitas('mes')">Este Mes</button>
+      <div style="display:flex;gap:12px; align-items:center;">
+        <div style="display:flex; background:rgba(255,255,255,0.05); border-radius:10px; padding:3px; border:1px solid var(--glass-border);">
+          <button class="tab-sm ${citasViewMode==='lista'?'active':''}" onclick="setCitasView('lista')" style="padding:6px 12px; font-size:12px; border:none; border-radius:8px; cursor:pointer; background:transparent; color:#888;">Lista</button>
+          <button class="tab-sm ${citasViewMode==='calendario'?'active':''}" onclick="setCitasView('calendario')" style="padding:6px 12px; font-size:12px; border:none; border-radius:8px; cursor:pointer; background:transparent; color:#888;">Calendario</button>
+        </div>
         <button class="btn btn-primary btn-sm" onclick="abrirVisitaModal()">+ Nueva Cita</button>
       </div>
     </div>
-    <div class="citas-table-wrap">
-      <table class="citas-table">
-        <thead>
-          <tr>
-            <th>Día / Hora</th><th>Código / Inmueble</th><th>Inmobiliaria</th><th>Cliente</th><th>Pago / Origen</th><th>Observaciones</th>
-          </tr>
-        </thead>
-        <tbody id="citasBody"></tbody>
-      </table>
-    </div>`;
-  renderCitasBody(citas);
+    <style>
+      .tab-sm.active { background: var(--gold) !important; color: #000 !important; font-weight:700; }
+    </style>
+    <div id="citasContent"></div>`;
+  
+  if(citasViewMode === 'calendario') renderCalendario();
+  else {
+    document.getElementById('citasContent').innerHTML = `
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <button class="chip-filtro sel" onclick="filterCitas('semana',this)">Esta Semana</button>
+        <button class="chip-filtro" onclick="filterCitas('mes',this)">Este Mes</button>
+        <button class="chip-filtro" onclick="filterCitas('todas',this)">Todas</button>
+      </div>
+      <div class="citas-table-wrap">
+        <table class="citas-table">
+          <thead><tr><th>Día / Hora</th><th>Código / Inmueble</th><th>Inmobiliaria</th><th>Cliente</th><th>Pago / Origen</th><th>Observaciones</th></tr></thead>
+          <tbody id="citasBody"></tbody>
+        </table>
+      </div>`;
+    renderCitasBody(citas);
+  }
+}
+
+function changeCalMonth(delta){
+  calDate.setMonth(calDate.getMonth() + delta);
+  renderCalendario();
+}
+
+function renderCalendario(){
+  const container = document.getElementById('citasContent'); if(!container) return;
+  const year = calDate.getFullYear();
+  const month = calDate.getMonth();
+  const monthNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  let html = `
+    <div class="calendar-wrap">
+      <div class="calendar-header">
+        <button class="btn btn-secondary btn-sm" onclick="changeCalMonth(-1)">« Anterior</button>
+        <div style="font-size:18px; font-weight:700; color:#fff; display:flex; align-items:center; gap:10px;">
+          <span style="color:var(--gold);">${monthNames[month]}</span> ${year}
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="changeCalMonth(1)">Siguiente »</button>
+      </div>
+      <div class="calendar-grid">
+        <div class="cal-day-head">Dom</div><div class="cal-day-head">Lun</div><div class="cal-day-head">Mar</div>
+        <div class="cal-day-head">Mié</div><div class="cal-day-head">Jue</div><div class="cal-day-head">Vie</div>
+        <div class="cal-day-head">Sáb</div>`;
+        
+  for(let i=0; i<firstDay; i++) html += '<div class="cal-day empty"></div>';
+  
+  const today = new Date().toISOString().split('T')[0];
+  
+  for(let d=1; d<=daysInMonth; d++){
+    const curDate = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayEvents = citas.filter(c => c.fecha === curDate);
+    const isToday = curDate === today;
+    
+    html += `
+      <div class="cal-day ${isToday?'today':''}">
+        <span class="cal-num">${d}</span>
+        <div class="cal-events">
+          ${dayEvents.map(c => `
+            <div class="cal-event ${c.estado}" onclick="abrirEditarCita('${c.id}')" title="${c.hora} - ${c.cliente}">
+              <span style="font-weight:700;">${c.hora||'--'}</span> ${c.cliente}
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  }
+  
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+
+let feedbackOmitidos = [];
+function checkCitasFeedback(){
+  if(document.querySelector('.modal-overlay.open')) return; // No interrumpir si hay modal abierto
+  const now = new Date();
+  const pendientes = citas.filter(c => {
+    if(c.estado !== 'agendada') return false;
+    if(feedbackOmitidos.includes(String(c.id))) return false;
+    const citaDate = new Date(c.fecha + (c.hora ? 'T' + c.hora : 'T23:59'));
+    return (now - citaDate) > (30 * 60 * 1000); // 30 mins después de la cita
+  });
+  if(pendientes.length > 0) abrirFeedbackModal(pendientes[0]);
+}
+
+function abrirFeedbackModal(cita){
+  document.getElementById('feedbackCitaId').value = cita.id;
+  document.getElementById('feedbackCitaInfo').innerHTML = `
+    <div style="font-weight:700; color:#fff; font-size:15px;">${cita.cliente}</div>
+    <div style="font-size:12px; color:var(--gold); margin-top:4px; font-weight:600;">📍 Inmueble: ${cita.codigo}</div>
+    <div style="font-size:12px; color:#888; margin-top:2px;">📅 Fecha: ${cita.fecha} a las ${cita.hora || '--:--'}</div>
+  `;
+  document.getElementById('feedbackNotas').value = cita.observaciones || '';
+  document.getElementById('feedbackEstado').value = 'realizada';
+  document.getElementById('feedbackModal').classList.add('open');
+}
+
+function omitirFeedback(){
+  const id = document.getElementById('feedbackCitaId').value;
+  feedbackOmitidos.push(String(id));
+  closeModal('feedbackModal');
+  setTimeout(checkCitasFeedback, 1000);
+}
+
+async function guardarFeedback(){
+  const id = document.getElementById('feedbackCitaId').value;
+  const notas = document.getElementById('feedbackNotas').value;
+  const estado = document.getElementById('feedbackEstado').value;
+  const cita = citas.find(c => String(c.id) === String(id));
+  if(cita){
+    cita.observaciones = notas;
+    cita.estado = estado;
+    const lead = leads.find(l => String(l.id) === String(cita.leadId));
+    if(lead && lead.visitas){
+      const v = lead.visitas.find(x => x.codigo === cita.codigo && x.fecha === cita.fecha);
+      if(v) {
+        v.estado = estado;
+        v.notas = notas;
+      }
+    }
+    saveLeads();
+    syncCita(cita);
+    if(currentTab === 'citas') renderCitas();
+    toast('Feedback guardado ✓');
+  }
+  closeModal('feedbackModal');
+  setTimeout(checkCitasFeedback, 1500);
 }
 
 function renderCitasBody(lista){
