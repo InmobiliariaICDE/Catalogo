@@ -702,21 +702,22 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   }
 
-  /* CALENDAR */
-  .calendar-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; margin-top: 10px; }
-  .calendar-header { display: flex; align-items: center; justify-content: space-between; padding: 20px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); }
+  /* CALENDAR COMPACT */
+  .calendar-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  .calendar-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); }
   .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--border); gap: 1px; }
-  .cal-day-head { padding: 12px; text-align: center; font-size: 11px; font-weight: 700; color: var(--gold); text-transform: uppercase; background: var(--bg2); }
-  .cal-day { min-height: 120px; background: var(--bg2); padding: 8px; position: relative; transition: background 0.2s; }
-  .cal-day.today { background: rgba(212, 168, 75, 0.05); }
+  .cal-day-head { padding: 8px; text-align: center; font-size: 10px; font-weight: 700; color: var(--gold); text-transform: uppercase; background: var(--bg2); }
+  .cal-day { min-height: 45px; background: var(--bg2); padding: 4px; position: relative; transition: background 0.2s; cursor: pointer; }
+  .cal-day:hover { background: rgba(255,255,255,0.03); }
+  .cal-day.today { background: rgba(212, 168, 75, 0.1); }
   .cal-day.empty { background: rgba(0,0,0,0.15); }
-  .cal-num { font-size: 14px; font-weight: 600; color: #666; margin-bottom: 8px; display: block; }
+  .cal-num { font-size: 12px; font-weight: 600; color: #666; display: block; text-align: center; margin-bottom: 2px; }
   .cal-day.today .cal-num { color: var(--gold); }
-  .cal-events { display: flex; flex-direction: column; gap: 4px; }
-  .cal-event { font-size: 10px; padding: 4px 8px; border-radius: 6px; background: rgba(212,168,75,0.15); border: 1px solid var(--border); color: #fff; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: all 0.2s; }
-  .cal-event:hover { transform: scale(1.02); background: var(--gold); color: #000; }
-  .cal-event.realizada { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.3); color: #4ade80; }
-  .cal-event.cancelada { opacity: 0.5; text-decoration: line-through; }
+  .cal-dots { display: flex; justify-content: center; gap: 2px; flex-wrap: wrap; height: 12px; }
+  .cal-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--gold); }
+  .cal-dot.realizada { background: var(--green); }
+  .cal-dot.agendada { background: var(--gold); }
+  .cal-dot.cancelada { background: var(--red); }
 </style>
 </head>
 <body>
@@ -3179,44 +3180,48 @@ function renderCitas(){
   document.getElementById('mainContent').innerHTML=`
     <div class="section-header">
       <div class="section-title">🗓 Agenda de Citas</div>
-      <div style="display:flex;gap:12px; align-items:center;">
-        <div style="display:flex; background:rgba(255,255,255,0.05); border-radius:10px; padding:3px; border:1px solid var(--glass-border);">
-          <button class="tab-sm ${citasViewMode==='lista'?'active':''}" onclick="setCitasView('lista')" style="padding:6px 12px; font-size:12px; border:none; border-radius:8px; cursor:pointer; background:transparent; color:#888;">Lista</button>
-          <button class="tab-sm ${citasViewMode==='calendario'?'active':''}" onclick="setCitasView('calendario')" style="padding:6px 12px; font-size:12px; border:none; border-radius:8px; cursor:pointer; background:transparent; color:#888;">Calendario</button>
+      <button class="btn btn-primary btn-sm" onclick="abrirVisitaModal()">+ Nueva Cita</button>
+    </div>
+    
+    <div class="citas-layout-nuevo" style="display:grid; grid-template-columns: 320px 1fr; gap:24px; align-items:start;">
+      <div id="calendarContainer"></div>
+      <div id="listContainer">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div style="display:flex; gap:8px;">
+            <button class="chip-filtro sel" onclick="filterCitas('semana',this)">Semana</button>
+            <button class="chip-filtro" onclick="filterCitas('mes',this)">Mes</button>
+            <button class="chip-filtro" onclick="filterCitas('todas',this)">Todas</button>
+          </div>
+          <div id="citasSelFecha" style="font-size:12px; color:var(--gold); font-weight:600;"></div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="abrirVisitaModal()">+ Nueva Cita</button>
+        <div class="citas-table-wrap">
+          <table class="citas-table">
+            <thead><tr><th>Día / Hora</th><th>Inmueble</th><th>Cliente</th><th>Observaciones</th></tr></thead>
+            <tbody id="citasBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
     <style>
-      .tab-sm.active { background: var(--gold) !important; color: #000 !important; font-weight:700; }
-    </style>
-    <div id="citasContent"></div>`;
+      @media(max-width:900px){ .citas-layout-nuevo { grid-template-columns: 1fr !important; } }
+    </style>`;
   
-  if(citasViewMode === 'calendario') renderCalendario();
-  else {
-    document.getElementById('citasContent').innerHTML = `
-      <div style="display:flex; gap:8px; margin-bottom:16px;">
-        <button class="chip-filtro sel" onclick="filterCitas('semana',this)">Esta Semana</button>
-        <button class="chip-filtro" onclick="filterCitas('mes',this)">Este Mes</button>
-        <button class="chip-filtro" onclick="filterCitas('todas',this)">Todas</button>
-      </div>
-      <div class="citas-table-wrap">
-        <table class="citas-table">
-          <thead><tr><th>Día / Hora</th><th>Código / Inmueble</th><th>Inmobiliaria</th><th>Cliente</th><th>Pago / Origen</th><th>Observaciones</th></tr></thead>
-          <tbody id="citasBody"></tbody>
-        </table>
-      </div>`;
-    renderCitasBody(citas);
-  }
+  renderCalendario();
+  renderCitasBody(citas);
 }
 
-function changeCalMonth(delta){
-  calDate.setMonth(calDate.getMonth() + delta);
-  renderCalendario();
+function selectCalDate(fecha){
+  const filtradas = citas.filter(c => c.fecha === fecha);
+  document.getElementById('citasSelFecha').textContent = `Filtrado por: ${fecha}`;
+  renderCitasBody(filtradas);
+  
+  // Highlight selected day
+  document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('today'));
+  // (We don't want to lose today's visual, so maybe a separate class)
 }
 
 function renderCalendario(){
-  const container = document.getElementById('citasContent'); if(!container) return;
+  const container = document.getElementById('calendarContainer'); if(!container) return;
   const year = calDate.getFullYear();
   const month = calDate.getMonth();
   const monthNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -3227,16 +3232,16 @@ function renderCalendario(){
   let html = `
     <div class="calendar-wrap">
       <div class="calendar-header">
-        <button class="btn btn-secondary btn-sm" onclick="changeCalMonth(-1)">« Anterior</button>
-        <div style="font-size:18px; font-weight:700; color:#fff; display:flex; align-items:center; gap:10px;">
+        <button class="btn btn-secondary btn-sm" style="padding:4px 8px;" onclick="changeCalMonth(-1)">«</button>
+        <div style="font-size:14px; font-weight:700; color:#fff;">
           <span style="color:var(--gold);">${monthNames[month]}</span> ${year}
         </div>
-        <button class="btn btn-secondary btn-sm" onclick="changeCalMonth(1)">Siguiente »</button>
+        <button class="btn btn-secondary btn-sm" style="padding:4px 8px;" onclick="changeCalMonth(1)">»</button>
       </div>
       <div class="calendar-grid">
-        <div class="cal-day-head">Dom</div><div class="cal-day-head">Lun</div><div class="cal-day-head">Mar</div>
-        <div class="cal-day-head">Mié</div><div class="cal-day-head">Jue</div><div class="cal-day-head">Vie</div>
-        <div class="cal-day-head">Sáb</div>`;
+        <div class="cal-day-head">D</div><div class="cal-day-head">L</div><div class="cal-day-head">M</div>
+        <div class="cal-day-head">M</div><div class="cal-day-head">J</div><div class="cal-day-head">V</div>
+        <div class="cal-day-head">S</div>`;
         
   for(let i=0; i<firstDay; i++) html += '<div class="cal-day empty"></div>';
   
@@ -3248,14 +3253,11 @@ function renderCalendario(){
     const isToday = curDate === today;
     
     html += `
-      <div class="cal-day ${isToday?'today':''}">
+      <div class="cal-day ${isToday?'today':''}" onclick="selectCalDate('${curDate}')">
         <span class="cal-num">${d}</span>
-        <div class="cal-events">
-          ${dayEvents.map(c => `
-            <div class="cal-event ${c.estado}" onclick="abrirEditarCita('${c.id}')" title="${c.hora} - ${c.cliente}">
-              <span style="font-weight:700;">${c.hora||'--'}</span> ${c.cliente}
-            </div>
-          `).join('')}
+        <div class="cal-dots">
+          ${dayEvents.slice(0,4).map(c => `<div class="cal-dot ${c.estado}"></div>`).join('')}
+          ${dayEvents.length > 4 ? '<div style="font-size:8px; color:var(--gold);">+</div>' : ''}
         </div>
       </div>`;
   }
@@ -3334,14 +3336,11 @@ function renderCitasBody(lista){
 
   b.innerHTML = ordenada.map(c => {
     const d = new Date(c.fecha + 'T12:00:00');
-    const p = allProps.find(x => x['Código'] === c.codigo);
     return `<tr class="clickable" onclick="abrirEditarCita('${c.id}')">
       <td><div class="citas-time">${c.hora || '--:--'}</div><div class="citas-weekday">${isNaN(d.getDay()) ? '—' : diasSem[d.getDay()]} ${c.fecha}</div></td>
-      <td><div style="font-weight:600;color:var(--gold);">${c.codigo}</div><div style="font-size:11px;color:#aaa;">${p?p['Nombre']:''}</div></td>
-      <td style="font-size:12px;">${c.inmobiliaria || 'Directo'}</td>
+      <td><div style="font-weight:600;color:var(--gold);">${c.codigo}</div></td>
       <td><div style="font-weight:600;">${c.cliente || '—'}</div><div style="font-size:11px;color:#888;">${c.celular || ''}</div></td>
-      <td><div style="font-size:12px;">${c.pago || ''}</div><div style="font-size:11px;color:var(--gold);">${c.origen || ''}</div></td>
-      <td style="font-size:12px;color:#aaa;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${c.notas||''}">${c.notas || ''}</td>
+      <td style="font-size:12px;color:#aaa;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${c.observaciones||c.notas||''}">${c.observaciones || c.notas || ''}</td>
     </tr>`;
   }).join('');
 }
