@@ -3348,7 +3348,10 @@ function renderCitasBody(lista){
     const d = new Date(c.fecha + 'T12:00:00');
     return `<tr class="clickable" onclick="abrirEditarCita('${c.id}')">
       <td><div class="citas-time">${c.hora || '--:--'}</div><div class="citas-weekday">${isNaN(d.getDay()) ? '—' : diasSem[d.getDay()]} ${c.fecha}</div></td>
-      <td><div style="font-weight:600;color:var(--gold);">${c.codigo}</div></td>
+      <td>
+        <div style="font-weight:600;color:var(--gold);">${c.codigo}</div>
+        <div style="font-size:10px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;">${c.inmobiliaria || 'Directo'}</div>
+      </td>
       <td><div style="font-weight:600;">${c.cliente || '—'}</div><div style="font-size:11px;color:#888;">${c.celular || ''}</div></td>
       <td style="font-size:12px;color:#aaa;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${c.observaciones||c.notas||''}">${c.observaciones || c.notas || ''}</td>
     </tr>`;
