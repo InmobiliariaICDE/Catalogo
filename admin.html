@@ -2460,11 +2460,13 @@ function renderPanelPropsEnviadas(lead){
       if(v.oferto==='si') badges += ` <span class="badge badge-oferta">Oferta</span>`;
     }
     return `
-      <div class="enviada-item" style="display:flex; gap:12px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:10px; margin-bottom:8px;">
-        <img src="${img}" style="width:60px; height:60px; object-fit:cover; border-radius:8px;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
-        <div style="flex:1; min-width:0;">
-          <div style="font-weight:700; color:#fff; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cod} ${p ? `· ${p['Nombre']}` : ''}</div>
-          <div style="display:flex; gap:4px; margin-top:4px;">${badges}</div>
+      <div class="enviada-item" style="display:flex; gap:12px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:10px; margin-bottom:8px; transition: all 0.2s;">
+        <div style="display:flex; flex:1; align-items:center; gap:12px; cursor:pointer; min-width:0;" onclick="abrirModalProp('${eq(cod)}')">
+          <img src="${img}" style="width:60px; height:60px; object-fit:cover; border-radius:8px;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:700; color:#fff; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cod} ${p ? `· ${p['Nombre']}` : ''}</div>
+            <div style="display:flex; gap:4px; margin-top:4px;">${badges}</div>
+          </div>
         </div>
         <div style="display:flex; gap:6px;">
           <button class="btn btn-sm ${v?'btn-secondary':'btn-primary'}" style="padding:6px; min-width:32px;" onclick="event.stopPropagation();abrirVisitaModal('${lead.id}','${cod}')" title="${v ? 'Editar visita' : 'Agendar visita'}">
@@ -2486,7 +2488,7 @@ function renderPanelPendientes(lead, pend){
         const p = allProps.find(d => d['Código'] === cod);
         const img = p ? ((p['Imagenes']||'').split('|')[0].trim()||p['Image']||'https://i.imgur.com/Pc9M3I8.png') : 'https://i.imgur.com/Pc9M3I8.png';
         return `
-          <div class="prop-card" style="pointer-events:none; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:8px; overflow:hidden;">
+          <div class="prop-card" style="cursor:pointer; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:8px; overflow:hidden;" onclick="abrirModalProp('${eq(cod)}')">
             <img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
             <div style="padding:6px; font-size:11px; text-align:center; color:var(--gold); font-weight:700;">${cod}</div>
             ${p && p['Inmobiliaria'] ? `<div class="prop-card-inmobiliaria" style="bottom:4px; right:4px; font-size:8px;">${p['Inmobiliaria']}</div>` : ''}
