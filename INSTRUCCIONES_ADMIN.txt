@@ -1,0 +1,39 @@
+# INSTRUCCIONES DE USO - MÓDULO ADMINISTRACIÓN (ICDE INMOBILIARIA)
+
+Este módulo permite gestionar los pagos de inmuebles administrados, sincronizar fechas con Google Calendar y enviar recordatorios por WhatsApp.
+
+## 1. ACTUALIZACIÓN DE DATOS (EXCEL)
+La información se extrae directamente de tus archivos Excel. Cada vez que hagas cambios en tus archivos Excel, debes actualizar el sistema:
+1. Asegúrate de que los archivos 'Pagos - Control.xlsx' y 'Edif. Silvia...' estén en la carpeta raíz del proyecto.
+2. Ejecuta el script de actualización:
+   > python actualizar_admin.py
+3. Esto generará el archivo 'admin_data.json' que el Panel de Control lee automáticamente.
+
+## 2. CONFIGURACIÓN DE WHATSAPP (BAILEYS)
+Para enviar recordatorios automáticos:
+1. Abre una terminal en la carpeta 'whatsapp-bridge'.
+2. Instala las dependencias (solo la primera vez):
+   > npm install
+3. Inicia el servidor:
+   > node server.js
+4. Escanea el código QR que aparecerá en la terminal con tu WhatsApp (Vinculación de dispositivos).
+5. En el Panel de Control (admin.html), ve a 'Settings' y asegúrate de que la URL de WhatsApp sea: http://localhost:3000
+
+## 3. SINCRONIZACIÓN CON GOOGLE CALENDAR
+Para usar esta función, necesitas configurar las credenciales de Google:
+1. Ve a Google Cloud Console (https://console.cloud.google.com/).
+2. Crea un proyecto y habilita la 'Google Calendar API'.
+3. Crea un 'Client ID de OAuth 2.0'.
+4. En el Panel de Control, el sistema te pedirá iniciar sesión con tu cuenta de Google la primera vez que intentes sincronizar.
+
+## 4. ENVÍO DE RECORDATORIOS
+- En la pestaña 'Administración', verás una tabla con tus propiedades.
+- Haz clic en el icono de WhatsApp (💬) al lado de cada propiedad para enviar un recordatorio individual.
+- El sistema buscará el número de teléfono en tu lista de 'Leads'. Si no lo encuentra, te pedirá ingresarlo manualmente.
+- Los recordatorios individuales usan un formato profesional y amable.
+
+## 5. SOPORTE Y MANTENIMIENTO
+Si el sistema deja de cargar los datos, verifica que 'admin_data.json' exista y tenga un formato válido. Si tienes problemas con WhatsApp, reinicia el servidor en la carpeta 'whatsapp-bridge'.
+
+---
+Desarrollado por Antigravity para ICDE Inmobiliaria.
