@@ -2529,13 +2529,37 @@ function toggleProp(cod,el){
     if(el) {
       el.classList.add('selected');    
       const sel = el.querySelector('.prop-card-selector');
-      if(sel) sel.textContent = '✓';
+      if(sel) sel.textContent = '\u2713';
     }
   }
-  const c=document.getElementById('selCnt'); if(c) c.textContent=`${selectedProps.length} seleccionadas`;
+
+  // Actualizar contador
+  const c=document.getElementById('selCnt'); 
+  if(c) c.textContent=`${selectedProps.length} seleccionadas`;
   
-  // Actualizar visibilidad del botón "Generar link" en la barra de filtros
-  fnActualizarConteo('nl');
+  // Actualizar chips bar directamente sin re-renderizar la grilla
+  const bar = document.querySelector('.selected-bar');
+  if(selectedProps.length > 0){
+    const chipsHtml = selectedProps.map(s=>`<span class="sel-chip">${s}<button onclick="deselProp('${s}')">\u00d7</button></span>`).join('');
+    if(bar){
+      bar.querySelector('.selected-chips').innerHTML = chipsHtml;
+    } else {
+      const grid = document.getElementById('propsGrid');
+      if(grid){
+        const newBar = document.createElement('div');
+        newBar.className = 'selected-bar';
+        newBar.style.marginBottom = '20px';
+        newBar.innerHTML = `<div class="selected-chips">${chipsHtml}</div>`;
+        grid.parentElement.insertBefore(newBar, grid);
+      }
+    }
+  } else {
+    if(bar) bar.remove();
+  }
+
+  // Mostrar/ocultar bot\u00f3n "Generar link"
+  const btnGen = document.getElementById('btnGen_nl');
+  if(btnGen) btnGen.style.display = selectedProps.length > 0 ? 'flex' : 'none';
 }
 
 /* ═══════════════════════════════════════════════
