@@ -910,6 +910,7 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     <div class="brand">ICDE Panel de Control <span>/ Gestión de Clientes</span></div>
     <div class="topbar-right">
       <span id="syncStatus" style="font-size:12px;color:#888;"></span>
+      <button class="settings-btn" onclick="refreshData()" title="Sincronizar Datos" style="background:rgba(212,168,75,0.1); border-color:var(--border);">🔄</button>
       <button class="btn-logout" onclick="doLogout()">Salir</button>
     </div>
   </div>
@@ -1361,6 +1362,7 @@ function buildFiltrosBar(containerId, pfx, initVals){
   FCAMPOS.forEach(c => fnRenderHead(pfx, c.key));
 
   fnActualizarConteo(pfx);
+  renderKmzCategories(pfx);
 }
 
 function fnToggleFilter(el, e){
@@ -1721,168 +1723,66 @@ function doLogout(){
 ═══════════════════════════════════════════════ */
 async function cargarKmz() {
   try {
-    const response = await fetch('Mapa Interactivo ICDE 🌎🔍.kmz');
-    const blob = await response.blob();
-    const zip = await JSZip.loadAsync(blob);
+    const res = await fetch('propiedades_kmz.json');
+    if (!res.ok) throw new Error('No se pudo cargar propiedades_kmz.json');
+    const data = await res.json();
     
-    // Buscar el archivo KML principal (usualmente doc.kml)
-    let kmlFile = zip.file("doc.kml");
-    if (!kmlFile) {
-      const files = Object.keys(zip.files).filter(f => f.endsWith(".kml"));
-      if (files.length > 0) kmlFile = zip.file(files[0]);
-    }
-
-    if (!kmlFile) {
-      console.warn("No KML file found in KMZ");
-      return;
-    }
-
-    const kmlText = await kmlFile.async("text");
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(kmlText, "text/xml");
+    kmzProps = data;
     
-    // Verificar si es un NetworkLink (el caso del archivo actual)
-    const networkLink = xmlDoc.querySelector("NetworkLink Link href");
-    if (networkLink) {
-      console.log("KMZ contains a NetworkLink, attempting to follow:", networkLink.textContent);
-      // Nota: Esto podría fallar por CORS en el navegador. 
-      // Si falla, el usuario debería exportar el KML completo.
-      try {
-        const res2 = await fetch(networkLink.textContent);
-        const kmlText2 = await res2.text();
-        parseKML(kmlText2);
-      } catch (e) {
-        console.warn("Failed to fetch NetworkLink via CORS. Please export the full KMZ from My Maps.", e);
-        // Intentar con el archivo que descargué yo si existe (esto es para mi prueba)
-        const resFallback = await fetch('real_mapa.kmz').catch(() => null);
-        if(resFallback) {
-           const blob2 = await resFallback.blob();
-           const zip2 = await JSZip.loadAsync(blob2);
-           const kmlFile2 = zip2.file("doc.kml") || zip2.file(Object.keys(zip2.files).find(f => f.endsWith(".kml")));
-           if(kmlFile2) parseKML(await kmlFile2.async("text"));
-        }
-      }
-    } else {
-      parseKML(kmlText);
-    }
+    // Extraer categorías únicas
+    kmzCategories = [...new Set(kmzProps.map(p => p['Categoría']))].filter(Boolean).sort();
+    activeKmzCategories = [...kmzCategories];
+    
+    console.log(`Cargadas ${kmzProps.length} propiedades desde KMZ en ${kmzCategories.length} categorías.`);
+    
+    correlacionarKmzConCatalogo();
+    renderKmzCategories('nl');
   } catch (e) {
-    console.error("Error loading KMZ:", e);
+    console.error("Error cargando KMZ JSON:", e);
   }
-}
-
-function parseKML(kmlText) {
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(kmlText, "text/xml");
-  const folders = xmlDoc.querySelectorAll("Folder");
-  
-  kmzProps = [];
-  kmzCategories = [];
-
-  folders.forEach(folder => {
-    const categoryName = folder.querySelector("name")?.textContent || "Sin Categoría";
-    kmzCategories.push(categoryName);
-    
-    const placemarks = folder.querySelectorAll("Placemark");
-    placemarks.forEach(pm => {
-      const name = pm.querySelector("name")?.textContent || "";
-      const coords = pm.querySelector("coordinates")?.textContent?.trim().split(",") || [];
-      const lat = parseFloat(coords[1]);
-      const lng = parseFloat(coords[0]);
-      
-      if (isNaN(lat) || isNaN(lng)) return;
-
-      // Parsear nombre: [codigo]-✅$[precio]-[nombre]
-      // Ejemplo: 539-✅$150mlls-CONJ. RES. BRISAS DEL MAGDALENA
-      let code = "";
-      let price = "";
-      let propName = name;
-
-      const nameParts = name.split("-");
-      if (nameParts.length >= 2) {
-        code = nameParts[0].trim();
-        const pricePart = nameParts[1].trim();
-        if (pricePart.includes("✅")) {
-          price = pricePart.replace("✅", "").replace("$", "").trim();
-          // Normalizar "mlls" a valor numérico si es posible
-          if (price.toLowerCase().includes("mlls")) {
-            let num = parseFloat(price.replace(/mlls/gi, "").replace(",", ".").trim());
-            if (!isNaN(num)) price = num * 1000000;
-          }
-        }
-
-        if (nameParts.length >= 3) {
-          propName = nameParts.slice(2).join("-").trim();
-        }
-      }
-
-      // Extraer datos extendidos
-      const extendedData = {};
-      pm.querySelectorAll("Data").forEach(data => {
-        const key = data.getAttribute("name")?.replace(":", "").trim();
-        const val = data.querySelector("value")?.textContent?.trim();
-        if (key && val) extendedData[key] = val;
-      });
-
-      const prop = {
-        code,
-        price,
-        name: propName,
-        lat,
-        lng,
-        category: categoryName,
-        rooms: parseInt(extendedData["Habitaciones"]) || extendedData["Habitaciones"] || "",
-        bathrooms: parseInt(extendedData["Baños"]) || extendedData["Baños"] || "",
-        floors: parseInt(extendedData["Pisos"]) || extendedData["Pisos"] || "",
-        garage: parseInt(extendedData["Garaje"]) || extendedData["Garaje"] || "",
-        area: extendedData["Área de lote"] || "",
-        description: extendedData["Descripción"] || "",
-        isKmzOnly: true
-      };
-
-
-      kmzProps.push(prop);
-    });
-  });
-
-  activeKmzCategories = [...kmzCategories];
-  console.log(`Parsed ${kmzProps.length} points from KMZ across ${kmzCategories.length} categories.`);
-  
-  correlacionarKmzConCatalogo();
-  renderKmzCategories('nl');
 }
 
 function correlacionarKmzConCatalogo() {
   if (!allProps.length || !kmzProps.length) return;
 
   kmzProps.forEach(kp => {
-    const existing = allProps.find(p => String(p['Código']).trim() === String(kp.code).trim());
+    const codeStr = String(kp['Código']).trim();
+    const existing = allProps.find(p => String(p['Código']).trim() === codeStr);
     
     if (existing) {
       // Correlacionar: Actualizar coordenadas si no las tiene o son 0
-      if (!existing['Latitud'] || existing['Latitud'] == 0) existing['Latitud'] = kp.lat;
-      if (!existing['Longitud'] || existing['Longitud'] == 0) existing['Longitud'] = kp.lng;
+      if (!existing['Latitud'] || existing['Latitud'] == 0) existing['Latitud'] = kp['Latitud'];
+      if (!existing['Longitud'] || existing['Longitud'] == 0) existing['Longitud'] = kp['Longitud'];
       
       // Guardar categoría KMZ en el objeto del catálogo
-      existing._kmzCategory = kp.category;
-      kp.isKmzOnly = false;
+      existing._kmzCategory = kp['Categoría'];
+      
+      // Si el catálogo no tiene imagen, intentar usar la del KMZ
+      if (!existing['Imagenes'] && kp['Imagenes']) {
+         existing['Imagenes'] = kp['Imagenes'];
+      }
     } else {
       // No está en el catálogo, crear entrada virtual
       const virtualProp = {
-        'Código': kp.code,
-        'Nombre': kp.name,
-        'Precio': kp.price, // Debería ser normalizado a número si es posible
-        'Latitud': kp.lat,
-        'Longitud': kp.lng,
-        'Habitaciones': kp.rooms,
-        'Baños': kp.bathrooms,
-        'Pisos': kp.floors,
-        'Garaje': kp.garage,
-        'Área': kp.area,
+        'Código': kp['Código'],
+        'Nombre': kp['Nombre_KMZ'],
+        'Precio': kp['Precio_KMZ'] ? parseKmzPrice(kp['Precio_KMZ']) : 0,
+        'Latitud': kp['Latitud'],
+        'Longitud': kp['Longitud'],
+        'Habitaciones': kp['Habitaciones'],
+        'Baños': kp['Baños'],
+        'Pisos': kp['Pisos'],
+        'Garaje': kp['Garaje'],
+        'Ubicación': kp['Ubicación'],
+        'Área': kp['Área'],
         'Tipo de inmueble': 'Casa (KMZ)',
         'Image': 'https://i.imgur.com/YbnRomr.png', // Logo ICDE
-        'Imagenes': 'https://i.imgur.com/YbnRomr.png',
+        'Imagenes': kp['Imagenes'] || 'https://i.imgur.com/YbnRomr.png',
         'isKmzOnly': true,
-        '_kmzCategory': kp.category
+        '_kmzCategory': kp['Categoría'],
+        'Descripción': kp['KMZ_Data']?.['Descripción'] || '',
+        'Renta': kp['KMZ_Data']?.['Renta'] || '',
+        'Retorno de la inversión': kp['KMZ_Data']?.['Retorno de Inversión'] || ''
       };
       allProps.push(virtualProp);
     }
@@ -1893,6 +1793,15 @@ function correlacionarKmzConCatalogo() {
     fnActualizarConteo('nl');
   }
 }
+
+function parseKmzPrice(priceStr) {
+  if (!priceStr) return 0;
+  // Convertir "150mlls" -> 150000000
+  let num = parseFloat(String(priceStr).replace(/mlls/gi, "").replace(",", ".").trim());
+  if (!isNaN(num)) return num * 1000000;
+  return 0;
+}
+
 
 function updateMapBoundsFilter(pfx) {
   if (!leafletMap || !mapViewportFilterActive) return;
@@ -1955,6 +1864,15 @@ function toggleKmzCategory(pfx, cat, checked) {
 
   fnActualizarConteo(pfx);
   actualizarPinesMapa(pfx);
+}
+
+async function refreshData() {
+  const btn = document.querySelector('.topbar-right .settings-btn');
+  if(btn) btn.classList.add('listening'); 
+  await cargarProps();
+  await cargarKmz();
+  if(btn) btn.classList.remove('listening');
+  toast('Datos sincronizados ✓', 'success');
 }
 
 async function initApp(){
