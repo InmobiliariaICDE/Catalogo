@@ -1192,6 +1192,7 @@ function filtrarProps(f, returnAllIfEmpty = true){
     if(f.barrio?.length       && !f.barrio.includes(String(d['Barrio'])))         return false;
     if(f.conjunto?.length     && !f.conjunto.includes(String(d['Conjunto'])))     return false;
     if(f.kmzCategory?.length  && !f.kmzCategory.includes(String(d['_kmzCategory']))) return false;
+    if(!f.mapActive && d.isKmzOnly) return false;
 
 
     
@@ -1317,7 +1318,7 @@ function eq(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 
 /* Construye la barra de filtros completa dentro de #containerId */
 function buildFiltrosBar(containerId, pfx, initVals){
-  setFSt(pfx, initVals || {tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[]});
+  setFSt(pfx, initVals || {tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[], mapActive: false});
   const wrap = document.getElementById(containerId);
   if(!wrap) return;
 
@@ -4277,6 +4278,9 @@ function toggleMapa(pfx) {
   const toggle = document.getElementById(`btnToggleMapa_${pfx}`);
   if(!container || !toggle) return;
   
+  const st = getFSt(pfx);
+  st.mapActive = toggle.checked;
+
   if(!toggle.checked) {
     container.classList.remove('open');
   } else {
@@ -4290,6 +4294,8 @@ function toggleMapa(pfx) {
       }, 300);
     }
   }
+  
+  fnActualizarConteo(pfx);
 }
 
 function initMapa(pfx) {
