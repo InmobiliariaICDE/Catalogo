@@ -2252,7 +2252,7 @@ function renderLeadsBody(lista){
     <div class="leads-table-wrap panel-section" style="padding:0; overflow:hidden;">
       <table class="leads-table"><thead><tr>
         <th>Cliente</th><th>Tipo</th><th>Estado</th><th>Etiqueta</th><th>Presupuesto</th>
-        <th>Enviadas</th><th>Propuestas</th><th>Pendientes</th><th>Próx. Envío</th><th>Acciones</th>
+        <th>Enviadas</th><th>Ofertas</th><th>Pendientes</th><th>Próx. Envío</th><th>Acciones</th>
       </tr></thead><tbody id="leadsBody">
         ${listaFiltrada.map(l=>{
           const currentMatches = filtrarProps(l.filtros);
@@ -2298,7 +2298,7 @@ function renderLeadsBody(lista){
           <div class="lc-stats">
             <div><div class="lc-stat-val">${(l.propsEnviadas||[]).length}</div><div class="lc-stat-lbl">Enviadas</div></div>
             <div><div class="lc-stat-val" style="color:var(--gold); font-size:13px;">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div><div class="lc-stat-lbl">Presupuesto</div><div style="font-size:9px;color:#888;margin-top:1px;">${(l.metodoPago||[]).join(', ')||'—'}</div></div>
-            <div><div class="lc-stat-val" style="color:#a855f7;">${(l.visitas||[]).filter(v=>v.oferto==='si').length}</div><div class="lc-stat-lbl">Propuestas</div></div>
+            <div><div class="lc-stat-val" style="color:#a855f7;">${(l.visitas||[]).filter(v=>v.oferto==='si').length}</div><div class="lc-stat-lbl">Ofertas</div></div>
             <div><div class="lc-stat-val" style="color:${pend>0?'#f97316':''}">${pend}</div><div class="lc-stat-lbl">Pendientes</div></div>
           </div>
           <div class="lc-footer">
@@ -2511,7 +2511,7 @@ function renderPanelPropsEnviadas(lead){
     if(v){
       if(v.estado==='realizada') badges = `<span class="badge badge-visita">Visitada</span>`;
       else badges = `<span class="badge badge-agendada">Agendada</span>`;
-      if(v.oferto==='si') badges += ` <span class="badge badge-oferta">Propuesta</span>`;
+      if(v.oferto==='si') badges += ` <span class="badge badge-oferta">Oferta</span>`;
     }
     return `
       <div class="enviada-item" style="display:flex; gap:12px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:10px; margin-bottom:8px; transition: all 0.2s;">
