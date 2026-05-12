@@ -355,7 +355,7 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 .btn-limpiar-pc{flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0 18px;height:100%;background:rgba(180,180,180,.12);border:none;border-left:1px solid rgba(200,200,200,.18);color:rgba(220,220,220,.7);font-family:'Outfit',sans-serif;font-weight:500;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:background .2s,color .2s;}
 .btn-limpiar-pc:hover{background:rgba(255,255,255,.1);color:#fff;}
 .btn-generar-pc {
-  flex-shrink:0; display:none; align-items:center; justify-content:center;
+  flex-shrink:0; display:flex; align-items:center; justify-content:center;
   padding:0 18px; height:100%; background:var(--green); border:none;
   border-left:1px solid rgba(200,200,200,0.18); color:#fff;
   font-family:'Outfit',sans-serif; font-weight:600; font-size:12.5px;
@@ -1608,12 +1608,9 @@ function fnActualizarConteo(pfx){
   const el = document.getElementById(`fnCnt_${pfx}`);
   if(el) el.textContent = f.length;
 
+  // El botón Generar link siempre visible
   const btnGen = document.getElementById(`btnGen_${pfx}`);
-  if(btnGen){
-    const hasSelection = (pfx === 'nl' && window.selectedProps && selectedProps.length > 0);
-    const active = busVal !== '' || st.minPrice || st.maxPrice || Object.values(st).some(v => Array.isArray(v) && v.length > 0) || hasSelection;
-    btnGen.style.display = active ? 'flex' : 'none';
-  }
+  if(btnGen) btnGen.style.display = 'flex';
 
   // Actualizar todos los dropdowns para reflejar conteos dinámicos
   FCAMPOS.forEach(c => {
