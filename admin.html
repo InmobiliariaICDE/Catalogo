@@ -1506,8 +1506,22 @@ function renderEditFiltrosGrid(lista){
         <img src="${img}" style="height:110px; width:100%; object-fit:cover; border-radius:8px;"/>
         <div class="prop-card-body" style="padding:8px 0;">
           <div style="font-weight:bold; color:var(--gold); font-size:11px;">Cód: ${cod}</div>
-          <div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d['Nombre']||''}</div>
-          <div style="font-weight:700; font-size:11px;">${formatP(d['Precio'])}</div>
+          <div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px;">${d['Nombre']||''}</div>
+          <div style="font-weight:700; font-size:13px; margin-bottom:6px;">${formatP(d['Precio'])}</div>
+          
+          <div class="prop-card-features" style="display:flex; flex-direction:column; gap:4px;">
+            <div style="display:flex; flex-wrap:wrap; gap:8px; font-size:9px; color:#ccc;">
+              ${d['Habitaciones'] ? `<span><span style="opacity:0.7;">🛏</span> ${d['Habitaciones']}</span>` : ''}
+              ${d['Baños'] ? `<span><span style="opacity:0.7;">🛁</span> ${d['Baños']}</span>` : ''}
+              ${d['Garaje'] ? `<span><span style="opacity:0.7;">🚗</span> ${d['Garaje']}</span>` : ''}
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; font-size:9px; color:#ccc;">
+              ${d['Cocina'] ? `<span><span style="opacity:0.7;">🍳</span> ${d['Cocina']}</span>` : ''}
+              ${d['Pisos'] ? `<span>Pisos ${d['Pisos']}</span>` : ''}
+              ${d['Área'] ? `<span><span style="opacity:0.7;">📐</span> Lote ${d['Área']} m²</span>` : ''}
+            </div>
+            ${d['Rentabilidad'] ? `<div style="font-size:10px; font-weight:700; color:var(--gold); margin-top:2px;">Rentabilidad ${formatP(d['Rentabilidad'])}</div>` : ''}
+          </div>
         </div>
       </div>`;
   }
