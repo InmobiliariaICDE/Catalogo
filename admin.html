@@ -770,6 +770,36 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
   .z-marker:hover::after, .z-marker.active::after {
     border-top-color: var(--gold);
   }
+  /* === TOGGLE SWITCH === */
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 32px;
+    height: 18px;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(255,255,255,0.1);
+    transition: .4s;
+    border-radius: 20px;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 12px;
+    width: 12px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+  input:checked + .slider { background-color: var(--gold); }
+  input:checked + .slider:before { transform: translateX(14px); }
+
   .map-toggle-btn {
     background: rgba(212, 168, 75, 0.1);
     color: var(--gold);
@@ -1232,7 +1262,13 @@ function buildFiltrosBar(containerId, pfx, initVals){
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 4px;">
         <div class="pc-count-bar" style="padding:0; margin:0;">Propiedades encontradas: <strong id="fnCnt_${pfx}">—</strong></div>
-        <button class="map-toggle-btn" id="btnToggleMapa_${pfx}" onclick="toggleMapa('${pfx}')" style="padding: 6px 12px; font-size: 12px;">🗺 Mostrar Mapa</button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 11px; color: var(--muted); font-weight: 500;">🗺 MAPA</span>
+          <label class="switch">
+            <input type="checkbox" id="btnToggleMapa_${pfx}" onclick="toggleMapa('${pfx}')">
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
       <div id="mapaContenedor_${pfx}">
         <div id="mapaLeaflet_${pfx}" style="width:100%; height:100%; border-radius:12px; z-index:1;"></div>
@@ -3919,20 +3955,20 @@ let mapMarkersObj = {};
 
 function toggleMapa(pfx) {
   const container = document.getElementById(`mapaContenedor_${pfx}`);
-  const btn = document.getElementById(`btnToggleMapa_${pfx}`);
-  if(!container) return;
+  const toggle = document.getElementById(`btnToggleMapa_${pfx}`);
+  if(!container || !toggle) return;
   
-  const isOpen = container.classList.contains('open');
-  if(isOpen) {
+  if(!toggle.checked) {
     container.classList.remove('open');
-    btn.innerHTML = '🗺 Mostrar Mapa';
   } else {
     container.classList.add('open');
-    btn.innerHTML = '🗺 Ocultar Mapa';
     if(!leafletMap) {
       setTimeout(() => initMapa(pfx), 300); // Esperar animación
     } else {
-      setTimeout(() => { leafletMap.invalidateSize(); actualizarPinesMapa(pfx); }, 300);
+      setTimeout(() => { 
+        leafletMap.invalidateSize(); 
+        actualizarPinesMapa(pfx); 
+      }, 300);
     }
   }
 }
