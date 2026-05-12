@@ -119,6 +119,25 @@ app.post('/send-message', async (req, res) => {
     }
 });
 
+// Nuevo: Enviar recordatorio con formato profesional
+app.post('/send-reminder', async (req, res) => {
+    try {
+        if (!sock) return res.status(503).send({ error: 'WhatsApp no conectado' });
+        
+        const { number, name, property, amount, dueDate } = req.body;
+        let cleanNumber = number.replace(/\D/g, '');
+        if (!cleanNumber.startsWith('57')) cleanNumber = '57' + cleanNumber;
+        
+        const message = `*Recordatorio de Pago - ICDE Inmobiliaria*\n\nHola ${name},\n\nTe recordamos que el pago del canon de arrendamiento para *${property}* por valor de *${amount}* vence el día *${dueDate}*.\n\nPor favor, realiza el pago a tiempo para evitar recargos. Si ya lo realizaste, por favor ignora este mensaje.\n\n¡Feliz día!`;
+        
+        await sock.sendMessage(`${cleanNumber}@s.whatsapp.net`, { text: message });
+        res.send({ status: 'reminder_sent' });
+        console.log(`🔔 Recordatorio enviado a ${name} (${cleanNumber})`);
+    } catch (err) {
+        res.status(500).send({ error: err.message });
+    }
+});
+
 app.get('/messages/:number', (req, res) => {
     let phone = req.params.number.replace(/\D/g, '');
     if (!phone.startsWith('57')) phone = '57' + phone;

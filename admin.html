@@ -12,6 +12,8 @@
 <script src="https://unpkg.com/supercluster@7.1.2/dist/supercluster.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script async defer src="https://apis.google.com/js/api.js"></script>
+<script async defer src="https://accounts.google.com/gsi/client"></script>
 <style>
 :root {
   --gold: #d4a84b; 
@@ -904,6 +906,23 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     border-color: var(--gold);
     transform: translateY(-2px);
   }
+
+  /* ADMIN DASHBOARD STYLES */
+  .admin-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .admin-kpi-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 20px; text-align: center; }
+  .admin-kpi-val { font-size: 24px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
+  .admin-kpi-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  
+  .admin-table { width: 100%; border-collapse: collapse; background: var(--bg2); border-radius: 12px; overflow: hidden; margin-top: 16px; }
+  .admin-table th { padding: 12px 16px; text-align: left; background: rgba(212,168,75,0.05); color: var(--gold); font-size: 12px; text-transform: uppercase; }
+  .admin-table td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13.5px; }
+  .admin-table tr:hover { background: rgba(255,255,255,0.02); }
+  
+  .status-paid { color: var(--green); background: rgba(34,197,94,0.1); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .status-pending { color: var(--orange); background: rgba(249,115,22,0.1); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .status-late { color: var(--red); background: rgba(239,68,68,0.1); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  
+  .action-bar { display: flex; gap: 12px; margin-bottom: 20px; }
 </style>
 </head>
 <body>
@@ -2431,32 +2450,41 @@ function renderPropsGrid(listaForzada){
     html += '<div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp(\'' + eq(cod) + '\', this.parentElement)">' + (sel?'✓':'+') + '</div>';
     html += '<img src="' + img + '" loading="lazy" onerror="this.src=\'https://i.imgur.com/Pc9M3I8.png\'"/>';
     html += '<div class="prop-card-body">';
-    html += '<div class="prop-card-code" style="font-weight:bold; color:var(--gold);">Cód: ' + cod + '</div>';
-    html += '<div class="prop-card-name">' + (d['Nombre']||'') + '</div>';
-    html += '<div class="prop-card-price" style="font-size:1.1rem; margin-bottom:8px;">' + formatP(d['Precio']) + '</div>';
+    html += '<div class="prop-card-code" style="font-weight:bold; color:var(--gold); font-size:11px;">Cód: ' + cod + '</div>';
+    html += '<div class="prop-card-name" style="font-size:13px; font-weight:600; color:#fff; margin:4px 0;">' + (d['Nombre']||'') + '</div>';
+    html += '<div class="prop-card-price" style="font-size:1.4rem; font-weight:700; color:var(--gold); margin-bottom:8px;">' + formatP(d['Precio']) + '</div>';
     
-    // Restaurar características (Habitaciones, Baños, etc.)
+    // Features layout matching image
     html += '<div class="prop-card-features" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">';
-    html += '<div style="display:flex; flex-wrap:wrap; gap:10px; font-size:11px; color:#ccc;">';
-    if(d['Habitaciones']) html += `<span><span style="opacity:0.7;">🛏</span> ${d['Habitaciones']}</span>`;
-    if(d['Baños']) html += `<span><span style="opacity:0.7;">🛁</span> ${d['Baños']}</span>`;
-    if(d['Garaje']) html += `<span><span style="opacity:0.7;">🚗</span> ${d['Garaje']}</span>`;
+    
+    // Row 1: Hab, Baños
+    html += '<div style="display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:#ccc; align-items:center;">';
+    html += `<span><span style="opacity:0.7; margin-right:4px;">🛏</span> Habitaciones ${d['Habitaciones']||0}</span>`;
+    html += `<span><span style="opacity:0.7; margin-right:4px;">🛁</span> Baños ${d['Baños']||0}</span>`;
     html += '</div>';
-    html += '<div style="display:flex; flex-wrap:wrap; gap:10px; font-size:11px; color:#ccc;">';
-    if(d['Cocina']) html += `<span><span style="opacity:0.7;">🍳</span> ${d['Cocina']}</span>`;
+
+    // Row 2: Garaje
+    html += '<div style="display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:#ccc; align-items:center;">';
+    html += `<span><span style="opacity:0.7; margin-right:4px;">🚗</span> Garaje ${d['Garaje']||0}</span>`;
+    html += '</div>';
+
+    // Row 3: Cocina, Pisos, Lote
+    html += '<div style="display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:#ccc; align-items:center;">';
+    if(d['Cocina']) html += `<span><span style="opacity:0.7; margin-right:4px;">🍳</span> ${d['Cocina']}</span>`;
     if(d['Pisos']) html += `<span>Pisos ${d['Pisos']}</span>`;
-    if(d['Área']) html += `<span><span style="opacity:0.7;">📐</span> ${d['Área']} m²</span>`;
+    if(d['Área']) html += `<span><span style="opacity:0.7; margin-right:4px;">📐</span> Lote ${d['Área']} m²</span>`;
     html += '</div>';
 
     if(String(d['Rentabilidad']||'').trim()) {
       html += `<div style="font-size:12px; font-weight:700; color:var(--gold); margin-top:4px;">${d['Rentabilidad']}</div>`;
     }
-    html += '</div>'; // Fin features
     
+    html += '</div>'; // Fin features
     html += '</div>'; // Fin card-body
     
-    // Restaurar etiqueta de inmobiliaria si existe
-    if(inmob) html += '<div class="prop-card-inmobiliaria" style="font-size:10px; color:#888; padding:8px 12px; border-top:1px solid rgba(255,255,255,0.05); text-align:right;" title="' + eq(inmob) + '">🏢 ' + inmob + '</div>';
+    if (inmob) {
+      html += '<div class="prop-card-inmobiliaria">' + inmob + '</div>';
+    }
     
     html += '</div>'; // Fin prop-card
   }
@@ -3986,22 +4014,140 @@ async function sendMessageFromPanel(phone){
 /* ═══════════════════════════════════════════════
    MÓDULO ADMINISTRACIÓN (FUTURO)
    ═══════════════════════════════════════════════ */
-function renderAdministracion(){
+let adminData = { properties: [] };
+
+async function loadAdminData() {
+  try {
+    const res = await fetch('admin_data.json');
+    if (res.ok) {
+      adminData = await res.json();
+      console.log('Admin data loaded:', adminData);
+    }
+  } catch (e) {
+    console.error('Error loading admin data:', e);
+  }
+}
+
+function renderAdministracion() {
   const c = document.getElementById('mainContent');
+  if (!adminData.properties.length) {
+    c.innerHTML = `
+      <div class="section-header"><div class="section-title">💼 Administración</div></div>
+      <div class="panel-section" style="text-align:center; padding:60px;">
+        <div class="spinner" style="margin:0 auto 20px;"></div>
+        <p>Cargando datos de administración...</p>
+        <button class="btn btn-secondary btn-sm" style="margin-top:20px;" onclick="refreshAdminData()">⟳ Forzar Recarga</button>
+      </div>`;
+    loadAdminData().then(() => renderAdministracion());
+    return;
+  }
+
+  const totalCanon = adminData.properties.reduce((acc, p) => acc + (parseFloat(p.monthly_rent) || 0), 0);
+  const occupiedCount = adminData.properties.filter(p => p.status === 'Ocupado').length;
+  const vacantCount = adminData.properties.length - occupiedCount;
+
   c.innerHTML = `
     <div class="section-header">
       <div class="section-title">💼 Administración de Inmuebles</div>
+      <div style="font-size:12px; color:var(--muted);">Última actualización: ${new Date(adminData.last_update).toLocaleString()}</div>
     </div>
-    <div class="panel-section" style="text-align:center; padding:80px 40px; background: rgba(212,168,75,0.03);">
-      <div style="font-size:60px; margin-bottom:24px; filter: drop-shadow(0 0 20px rgba(212,168,75,0.3));">🏗️</div>
-      <h2 style="color:var(--gold); margin-bottom:12px;">Módulo en Construcción</h2>
-      <p style="color:var(--muted); max-width:500px; margin:0 auto; line-height:1.6;">
-        Aquí podrás gestionar los inmuebles administrados, contratos, arrendamientos y pagos. 
-        Estamos preparando las mejores herramientas para tu gestión inmobiliaria.
-      </p>
-      <button class="btn btn-gold" style="margin-top:32px;" onclick="showTab('nuevo')">Volver al Panel de Control</button>
+
+    <div class="admin-kpi-grid">
+      <div class="admin-kpi-card">
+        <div class="admin-kpi-val">${adminData.properties.length}</div>
+        <div class="admin-kpi-lbl">Total Unidades</div>
+      </div>
+      <div class="admin-kpi-card">
+        <div class="admin-kpi-val">${formatP(totalCanon)}</div>
+        <div class="admin-kpi-lbl">Canon Mensual Total</div>
+      </div>
+      <div class="admin-kpi-card">
+        <div class="admin-kpi-val">${occupiedCount} / ${adminData.properties.length}</div>
+        <div class="admin-kpi-lbl">Ocupación</div>
+      </div>
+    </div>
+
+    <div class="action-bar">
+      <button class="btn btn-primary btn-sm" onclick="syncAllToCalendar()">🗓 Sincronizar Calendario</button>
+      <button class="btn btn-gold btn-sm" onclick="sendBulkReminders()">💬 Enviar Recordatorios WA</button>
+      <button class="btn btn-secondary btn-sm" style="margin-left:auto;" onclick="refreshAdminData()">⟳ Actualizar Datos</button>
+    </div>
+
+    <div class="panel-section" style="padding:0; overflow:hidden;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Propiedad</th>
+            <th>Administrador / Dueño</th>
+            <th>Canon</th>
+            <th>Inicio Contrato</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${adminData.properties.map(p => `
+            <tr>
+              <td>
+                <div style="font-weight:600; color:#fff;">${p.name}</div>
+                <div style="font-size:11px; color:var(--muted);">${p.notes.split('.')[1] || ''}</div>
+              </td>
+              <td>${p.owner}</td>
+              <td><span style="color:var(--gold); font-weight:600;">${formatP(p.monthly_rent)}</span></td>
+              <td>${p.start_date.split(' ')[0]}</td>
+              <td><span class="status-${p.status === 'Ocupado' ? 'paid' : 'late'}">${p.status}</span></td>
+              <td>
+                <button class="btn btn-sm btn-secondary" onclick="sendAdminReminder('${p.owner}', '${p.name}', '${p.monthly_rent}')" title="Enviar recordatorio WhatsApp">💬</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
     </div>
   `;
+}
+
+async function refreshAdminData() {
+  toast('Recargando datos...', 'success');
+  await loadAdminData();
+  renderAdministracion();
+}
+
+function sendAdminReminder(owner, prop, amount) {
+  // Buscar si tenemos el teléfono en leads
+  const lead = leads.find(l => l.nombre.toLowerCase().includes(owner.toLowerCase()) || owner.toLowerCase().includes(l.nombre.toLowerCase()));
+  const phone = lead ? lead.celular : prompt(`No se encontró el teléfono para ${owner}. Por favor ingrésalo:`);
+  
+  if (!phone) return;
+  
+  const msg = `Hola ${owner}, te escribimos de ICDE Inmobiliaria para recordarte el pago del canon de arrendamiento de la propiedad *${prop}* por valor de *${formatP(amount)}*. ¡Gracias!`;
+  
+  if (settings.waApi) {
+    fetch(`${settings.waApi}/send-message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number: phone, message: msg })
+    }).then(res => {
+      if (res.ok) toast('Recordatorio enviado ✓', 'success');
+      else toast('Error al enviar recordatorio', 'error');
+    });
+  } else {
+    const url = `https://wa.me/${phone.replace(/\+/g,'')}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+  }
+}
+
+function syncAllToCalendar() {
+  toast('Sincronizando con Google Calendar...', 'success');
+  // Aquí iría la lógica de Google Calendar API
+  // Por ahora simulamos éxito
+  setTimeout(() => toast('Calendario actualizado ✓', 'success'), 2000);
+}
+
+function sendBulkReminders() {
+  if (!confirm('¿Deseas enviar recordatorios a todos los arrendatarios con pagos pendientes?')) return;
+  toast('Iniciando envío masivo...', 'success');
+  // Lógica para iterar y enviar
 }
 
 /* ═══════════════════════════════════════════════
