@@ -1665,11 +1665,14 @@ function renderEditFiltrosGrid(lista){
 }
 
 function getSearchLinkFromFilters(st, ids){
-  if(!st) return 'https://icdeinmobiliaria.com/';
+  if(!st && (!ids || !ids.length)) return 'https://icdeinmobiliaria.com/';
   const url = new URL('https://icdeinmobiliaria.com/');
   const p = url.searchParams;
   
-  if(ids && ids.length) p.set('ids', ids.join(','));
+  if(ids && ids.length) {
+    p.set('ids', ids.join(','));
+    return url.toString(); // Si hay IDs, priorizamos mostrar solo esos
+  }
   
   if(st.buscar) p.set('q', st.buscar.trim());
   if(st.tipoInmueble?.length) p.set('tipo', st.tipoInmueble.join(','));

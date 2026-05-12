@@ -8099,9 +8099,9 @@ font-weight: 500;
                     function aplicarFiltros() {
                         // 5.1. Filtramos datos según TODO lo que tenga el objeto filtros
                         let filtrados = datos.filter(d => {
-                            // Filtro por IDs específicos
+                            // Filtro por IDs específicos (Prioridad absoluta)
                             if (filtros["ids"] && filtros["ids"].length > 0) {
-                                if (!filtros["ids"].includes(String(d["Código"]))) return false;
+                                return filtros["ids"].includes(String(d["Código"]));
                             }
 
                             if (!filtroIncluye(d["Tipo de inmueble"], filtros["Tipo de inmueble"])) return false;
