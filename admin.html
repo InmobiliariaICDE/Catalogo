@@ -1695,8 +1695,8 @@ function fnGenerarLink(pfx, btn){
   const busVal = (document.getElementById(`fnBus_${pfx}`)?.value || '').trim();
   st.buscar = busVal;
   
-  // Si es Nuevo Lead, incluimos seleccionados
-  const ids = (pfx === 'nl' && typeof selectedProps !== 'undefined' && selectedProps.length > 0) ? selectedProps : null;
+  // Si es Nuevo Lead o Editar Filtros, incluimos seleccionados
+  const ids = ((pfx === 'nl' || pfx === 'ef') && typeof selectedProps !== 'undefined' && selectedProps.length > 0) ? selectedProps : null;
   
   const link = getSearchLinkFromFilters(st, ids);
   navigator.clipboard.writeText(link).then(() => {
@@ -2537,29 +2537,32 @@ function toggleProp(cod,el){
   const c=document.getElementById('selCnt'); 
   if(c) c.textContent=`${selectedProps.length} seleccionadas`;
   
-  // Actualizar chips bar directamente sin re-renderizar la grilla
-  const bar = document.querySelector('.selected-bar');
-  if(selectedProps.length > 0){
-    const chipsHtml = selectedProps.map(s=>`<span class="sel-chip">${s}<button onclick="deselProp('${s}')">\u00d7</button></span>`).join('');
-    if(bar){
-      bar.querySelector('.selected-chips').innerHTML = chipsHtml;
-    } else {
-      const grid = document.getElementById('propsGrid');
-      if(grid){
+  // Actualizar chips bar en todos los lugares donde haya una grilla activa (tab principal o modal)
+  const grids = ['propsGrid', 'editFiltrosGrid'];
+  grids.forEach(gid => {
+    const grid = document.getElementById(gid);
+    if(!grid) return;
+    let bar = grid.parentElement.querySelector('.selected-bar');
+    if(selectedProps.length > 0){
+      const chipsHtml = selectedProps.map(s=>`<span class="sel-chip">${s}<button onclick="deselProp('${s}')">\u00d7</button></span>`).join('');
+      if(bar){
+        bar.querySelector('.selected-chips').innerHTML = chipsHtml;
+      } else {
         const newBar = document.createElement('div');
         newBar.className = 'selected-bar';
         newBar.style.marginBottom = '20px';
         newBar.innerHTML = `<div class="selected-chips">${chipsHtml}</div>`;
         grid.parentElement.insertBefore(newBar, grid);
       }
+    } else {
+      if(bar) bar.remove();
     }
-  } else {
-    if(bar) bar.remove();
-  }
+  });
 
-  // Mostrar/ocultar bot\u00f3n "Generar link"
-  const btnGen = document.getElementById('btnGen_nl');
-  if(btnGen) btnGen.style.display = selectedProps.length > 0 ? 'flex' : 'none';
+  // Mostrar/ocultar bot\u00f3n "Generar link" en todas las barras visibles
+  document.querySelectorAll('.btn-generar-pc').forEach(btn => {
+    // Ya est\u00e1n visibles por CSS, pero esto asegura compatibilidad
+  });
 }
 
 /* ═══════════════════════════════════════════════
