@@ -1520,7 +1520,7 @@ function renderEditFiltrosGrid(lista){
               ${d['Pisos'] ? `<span>Pisos ${d['Pisos']}</span>` : ''}
               ${d['Área'] ? `<span><span style="opacity:0.7;">📐</span> Lote ${d['Área']} m²</span>` : ''}
             </div>
-            ${(d['Rentabilidad'] && String(d['Rentabilidad']).trim() !== '0') ? `<div style="font-size:10px; font-weight:700; color:var(--gold); margin-top:2px;">Rentabilidad ${formatP(d['Rentabilidad'])}</div>` : ''}
+            ${String(d['Rentabilidad']||'').trim() ? `<div style="font-size:10px; font-weight:700; color:var(--gold); margin-top:2px;">${d['Rentabilidad']}</div>` : ''}
           </div>
         </div>
       </div>`;
@@ -2167,9 +2167,9 @@ function renderPropsGrid(listaForzada){
     if(d['Área']) html += `<span><span style="opacity:0.7;">📐</span> Lote ${d['Área']} m²</span>`;
     html += '</div>';
 
-    // Row 3: Rentabilidad (ocultar solo si está vacío o es literalmente '0')
-    if(d['Rentabilidad'] && String(d['Rentabilidad']).trim() !== '0') {
-      html += `<div style="font-size:12px; font-weight:700; color:var(--gold); margin-top:4px;">Rentabilidad ${formatP(d['Rentabilidad'])}</div>`;
+    // Row 3: Rentabilidad (el valor ya viene formateado desde la hoja, ej: "Rentabilidad $14,000,000" o " " si está vacío)
+    if(String(d['Rentabilidad']||'').trim()) {
+      html += `<div style="font-size:12px; font-weight:700; color:var(--gold); margin-top:4px;">${d['Rentabilidad']}</div>`;
     }
     
     html += '</div>';
