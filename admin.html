@@ -11,6 +11,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/supercluster@7.1.2/dist/supercluster.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root {
   --gold: #d4a84b; 
@@ -401,6 +402,45 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 .leads-table td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;}
 .leads-table tr:hover td{background:rgba(255,255,255,.02);}
 .leads-table tr.clickable{cursor:pointer;}
+/* MAP MARKERS & CONTROLS */
+.z-marker-wrap { pointer-events: none; }
+.z-marker {
+  pointer-events: auto;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 11px;
+  white-space: nowrap;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  transition: all 0.2s;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+}
+.z-marker:hover, .z-marker.active {
+  background: var(--gold);
+  color: #000;
+  transform: scale(1.15);
+  z-index: 1000;
+  border-color: #fff;
+}
+.map-control-card {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.map-control-card .check-item {
+  border-color: rgba(255,255,255,0.05);
+}
+.map-control-card .check-item:hover {
+  background: rgba(212,168,75,0.1);
+  border-color: var(--border);
+}
+
 .leads-row-name{font-weight:600;color:#fff;}
 .leads-row-phone{color:#aaa;font-size:12.5px;}
 
@@ -439,6 +479,19 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 .tl-date{font-size:12px;color:#888;margin-bottom:3px;}
 .tl-props{display:flex;flex-wrap:wrap;gap:5px;}
 .tl-prop{background:rgba(255,255,255,0.05);border-radius:6px;padding:2px 8px;font-size:12px;color:#ccc;}
+[id^=mapaContenedor] {
+  height: 0;
+  overflow: hidden;
+  transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: 0;
+}
+[id^=mapaContenedor].open {
+  height: 450px;
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
 .prog-bar-wrap{background:rgba(255,255,255,.06);border-radius:6px;height:6px;margin-top:8px;}
 .prog-bar{height:6px;border-radius:6px;background:linear-gradient(90deg,#c9943f,#d4a84b);transition:width .4s;}
 .prog-label{font-size:11px;color:#888;margin-top:4px;}
@@ -1029,6 +1082,11 @@ let nlPage = 0;
 const PAGE_SIZE = 20;
 let criterioOrden = ''; // Default sort (no filter)
 let MAX_CATALOG_PRICE = 5000000000; // Valor por defecto
+let kmzProps = [];
+let kmzCategories = [];
+let activeKmzCategories = [];
+let mapViewportFilterActive = true; 
+
 
 /* ═══════════════════════════════════════════════
    HELPERS & UTILS
@@ -1040,7 +1098,7 @@ let calDate = new Date();
 function freshLead(){
   return {
     tipo:'cliente', nombre:'', celular:'', notas:'', metodoPago:[], estado:'enviando', etiqueta:'activo',
-    buscar:'', filtros:{tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null},
+    buscar:'', filtros:{tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[]},
     frecuencia:'semanal', maxPorEnvio:4, nombreInmobiliaria:'', nombreAgente:'',
     propsFiltradas:[], propsEnviadas:[], proximosEnvios:[], historialEnvios:[], visitas:[]
   };
@@ -1074,6 +1132,8 @@ const FCAMPOS = [
     ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21v-4a4 4 0 118 0v4M13 21v-7a4 4 0 118 0v7M2 21h20"/></svg>' },
   { key:'conjunto', campo:'Conjunto', lbl:'Conjunto',
     ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V9l9-7 9 7v12M9 21v-6h6v6"/></svg>' },
+  { key:'kmzCategory', campo:'_kmzCategory', lbl:'Categoría KMZ',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' },
 ];
 
 
@@ -1111,6 +1171,8 @@ function filtrarProps(f, returnAllIfEmpty = true){
     if(f.cocina?.length       && !f.cocina.includes(String(d['Cocina'])))         return false;
     if(f.barrio?.length       && !f.barrio.includes(String(d['Barrio'])))         return false;
     if(f.conjunto?.length     && !f.conjunto.includes(String(d['Conjunto'])))     return false;
+    if(f.kmzCategory?.length  && !f.kmzCategory.includes(String(d['_kmzCategory']))) return false;
+
 
     
     // 2. Rango de Precio (Numérico)
@@ -1235,7 +1297,7 @@ function eq(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 
 /* Construye la barra de filtros completa dentro de #containerId */
 function buildFiltrosBar(containerId, pfx, initVals){
-  setFSt(pfx, initVals || {tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null});
+  setFSt(pfx, initVals || {tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[]});
   const wrap = document.getElementById(containerId);
   if(!wrap) return;
 
@@ -1270,8 +1332,25 @@ function buildFiltrosBar(containerId, pfx, initVals){
           </label>
         </div>
       </div>
-      <div id="mapaContenedor_${pfx}">
+      <div id="mapaContenedor_${pfx}" style="position: relative;">
         <div id="mapaLeaflet_${pfx}" style="width:100%; height:100%; border-radius:12px; z-index:1;"></div>
+        
+        <!-- Controles flotantes sobre el mapa -->
+        <div class="map-floating-controls" style="position: absolute; top: 10px; right: 10px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none;">
+          <div class="map-control-card" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 10px; pointer-events: auto; box-shadow: var(--shadow); min-width: 150px;">
+            <div style="font-size: 10px; font-weight: 700; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+              Vista del Mapa 
+              <label class="switch" style="transform: scale(0.8);">
+                <input type="checkbox" checked onchange="mapViewportFilterActive = this.checked; updateMapBoundsFilter('${pfx}')">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div id="kmzCategoryToggle_${pfx}" style="display: flex; flex-direction: column; gap: 4px; max-height: 150px; overflow-y: auto; padding-right: 4px;">
+              <!-- Se puebla dinámicamente con las categorías del KMZ -->
+              <div style="font-size: 11px; color: #888; text-align: center; padding: 10px;">Cargando categorías...</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>`;
 
@@ -1637,6 +1716,247 @@ function doLogout(){
 /* ═══════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   KMZ INTEGRATION
+═══════════════════════════════════════════════ */
+async function cargarKmz() {
+  try {
+    const response = await fetch('Mapa Interactivo ICDE 🌎🔍.kmz');
+    const blob = await response.blob();
+    const zip = await JSZip.loadAsync(blob);
+    
+    // Buscar el archivo KML principal (usualmente doc.kml)
+    let kmlFile = zip.file("doc.kml");
+    if (!kmlFile) {
+      const files = Object.keys(zip.files).filter(f => f.endsWith(".kml"));
+      if (files.length > 0) kmlFile = zip.file(files[0]);
+    }
+
+    if (!kmlFile) {
+      console.warn("No KML file found in KMZ");
+      return;
+    }
+
+    const kmlText = await kmlFile.async("text");
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(kmlText, "text/xml");
+    
+    // Verificar si es un NetworkLink (el caso del archivo actual)
+    const networkLink = xmlDoc.querySelector("NetworkLink Link href");
+    if (networkLink) {
+      console.log("KMZ contains a NetworkLink, attempting to follow:", networkLink.textContent);
+      // Nota: Esto podría fallar por CORS en el navegador. 
+      // Si falla, el usuario debería exportar el KML completo.
+      try {
+        const res2 = await fetch(networkLink.textContent);
+        const kmlText2 = await res2.text();
+        parseKML(kmlText2);
+      } catch (e) {
+        console.warn("Failed to fetch NetworkLink via CORS. Please export the full KMZ from My Maps.", e);
+        // Intentar con el archivo que descargué yo si existe (esto es para mi prueba)
+        const resFallback = await fetch('real_mapa.kmz').catch(() => null);
+        if(resFallback) {
+           const blob2 = await resFallback.blob();
+           const zip2 = await JSZip.loadAsync(blob2);
+           const kmlFile2 = zip2.file("doc.kml") || zip2.file(Object.keys(zip2.files).find(f => f.endsWith(".kml")));
+           if(kmlFile2) parseKML(await kmlFile2.async("text"));
+        }
+      }
+    } else {
+      parseKML(kmlText);
+    }
+  } catch (e) {
+    console.error("Error loading KMZ:", e);
+  }
+}
+
+function parseKML(kmlText) {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(kmlText, "text/xml");
+  const folders = xmlDoc.querySelectorAll("Folder");
+  
+  kmzProps = [];
+  kmzCategories = [];
+
+  folders.forEach(folder => {
+    const categoryName = folder.querySelector("name")?.textContent || "Sin Categoría";
+    kmzCategories.push(categoryName);
+    
+    const placemarks = folder.querySelectorAll("Placemark");
+    placemarks.forEach(pm => {
+      const name = pm.querySelector("name")?.textContent || "";
+      const coords = pm.querySelector("coordinates")?.textContent?.trim().split(",") || [];
+      const lat = parseFloat(coords[1]);
+      const lng = parseFloat(coords[0]);
+      
+      if (isNaN(lat) || isNaN(lng)) return;
+
+      // Parsear nombre: [codigo]-✅$[precio]-[nombre]
+      // Ejemplo: 539-✅$150mlls-CONJ. RES. BRISAS DEL MAGDALENA
+      let code = "";
+      let price = "";
+      let propName = name;
+
+      const nameParts = name.split("-");
+      if (nameParts.length >= 2) {
+        code = nameParts[0].trim();
+        const pricePart = nameParts[1].trim();
+        if (pricePart.includes("✅")) {
+          price = pricePart.replace("✅", "").replace("$", "").trim();
+          // Normalizar "mlls" a valor numérico si es posible
+          if (price.toLowerCase().includes("mlls")) {
+            let num = parseFloat(price.replace(/mlls/gi, "").replace(",", ".").trim());
+            if (!isNaN(num)) price = num * 1000000;
+          }
+        }
+
+        if (nameParts.length >= 3) {
+          propName = nameParts.slice(2).join("-").trim();
+        }
+      }
+
+      // Extraer datos extendidos
+      const extendedData = {};
+      pm.querySelectorAll("Data").forEach(data => {
+        const key = data.getAttribute("name")?.replace(":", "").trim();
+        const val = data.querySelector("value")?.textContent?.trim();
+        if (key && val) extendedData[key] = val;
+      });
+
+      const prop = {
+        code,
+        price,
+        name: propName,
+        lat,
+        lng,
+        category: categoryName,
+        rooms: parseInt(extendedData["Habitaciones"]) || extendedData["Habitaciones"] || "",
+        bathrooms: parseInt(extendedData["Baños"]) || extendedData["Baños"] || "",
+        floors: parseInt(extendedData["Pisos"]) || extendedData["Pisos"] || "",
+        garage: parseInt(extendedData["Garaje"]) || extendedData["Garaje"] || "",
+        area: extendedData["Área de lote"] || "",
+        description: extendedData["Descripción"] || "",
+        isKmzOnly: true
+      };
+
+
+      kmzProps.push(prop);
+    });
+  });
+
+  activeKmzCategories = [...kmzCategories];
+  console.log(`Parsed ${kmzProps.length} points from KMZ across ${kmzCategories.length} categories.`);
+  
+  correlacionarKmzConCatalogo();
+  renderKmzCategories('nl');
+}
+
+function correlacionarKmzConCatalogo() {
+  if (!allProps.length || !kmzProps.length) return;
+
+  kmzProps.forEach(kp => {
+    const existing = allProps.find(p => String(p['Código']).trim() === String(kp.code).trim());
+    
+    if (existing) {
+      // Correlacionar: Actualizar coordenadas si no las tiene o son 0
+      if (!existing['Latitud'] || existing['Latitud'] == 0) existing['Latitud'] = kp.lat;
+      if (!existing['Longitud'] || existing['Longitud'] == 0) existing['Longitud'] = kp.lng;
+      
+      // Guardar categoría KMZ en el objeto del catálogo
+      existing._kmzCategory = kp.category;
+      kp.isKmzOnly = false;
+    } else {
+      // No está en el catálogo, crear entrada virtual
+      const virtualProp = {
+        'Código': kp.code,
+        'Nombre': kp.name,
+        'Precio': kp.price, // Debería ser normalizado a número si es posible
+        'Latitud': kp.lat,
+        'Longitud': kp.lng,
+        'Habitaciones': kp.rooms,
+        'Baños': kp.bathrooms,
+        'Pisos': kp.floors,
+        'Garaje': kp.garage,
+        'Área': kp.area,
+        'Tipo de inmueble': 'Casa (KMZ)',
+        'Image': 'https://i.imgur.com/YbnRomr.png', // Logo ICDE
+        'Imagenes': 'https://i.imgur.com/YbnRomr.png',
+        'isKmzOnly': true,
+        '_kmzCategory': kp.category
+      };
+      allProps.push(virtualProp);
+    }
+  });
+
+  // Re-filtrar y re-renderizar si es necesario
+  if (currentTab === 'nuevo') {
+    fnActualizarConteo('nl');
+  }
+}
+
+function updateMapBoundsFilter(pfx) {
+  if (!leafletMap || !mapViewportFilterActive) return;
+  
+  const bounds = leafletMap.getBounds();
+  const filtered = filtrarProps(getFSt(pfx), true).filter(p => {
+    let lat = parseFloat(String(p['Latitud'] || p['Lat']).replace(',','.'));
+    let lng = parseFloat(String(p['Longitud'] || p['Lng']).replace(',','.'));
+    if (isNaN(lat) || isNaN(lng) || lat === 0) return false;
+    return bounds.contains([lat, lng]);
+  });
+
+  // Actualizar la grilla de propiedades con las que están en el viewport
+  renderPropsGrid(filtered);
+  
+  // Actualizar conteo visual
+  const cntEl = document.getElementById(`fnCnt_${pfx}`);
+  if (cntEl) cntEl.innerHTML = `${filtered.length} <span style="font-size:10px; opacity:0.7;">(en vista)</span>`;
+}
+
+function renderKmzCategories(pfx) {
+  const container = document.getElementById(`kmzCategoryToggle_${pfx}`);
+  if (!container) return;
+
+  if (kmzCategories.length === 0) {
+    container.innerHTML = '<div style="font-size:11px; color:#888; text-align:center; padding:10px;">Sin categorías KMZ</div>';
+    return;
+  }
+
+  container.innerHTML = kmzCategories.map(cat => `
+    <label class="check-item" style="padding: 4px 8px; font-size: 11px; border-radius: 6px; background: rgba(255,255,255,0.03);">
+      <input type="checkbox" checked onchange="toggleKmzCategory('${pfx}', '${eq(cat)}', this.checked)">
+      <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${cat}</span>
+    </label>
+  `).join('');
+}
+
+function toggleKmzCategory(pfx, cat, checked) {
+  const st = getFSt(pfx);
+  if (!st.kmzCategory) st.kmzCategory = [];
+  
+  // Nota: En nuestro filtro, si kmzCategory está vacío, muestra todo.
+  // Pero aquí queremos que las categorías del KMZ funcionen como "exclusión" o "inclusión".
+  // Para que sea intuitivo, si el usuario desmarca una, la agregamos a una lista de "ocultos"
+  // o simplemente manejamos kmzCategory como la lista de permitidos.
+  
+  if (checked) {
+    if (!activeKmzCategories.includes(cat)) activeKmzCategories.push(cat);
+  } else {
+    activeKmzCategories = activeKmzCategories.filter(c => c !== cat);
+  }
+
+  // Sincronizar con el filtro global kmzCategory
+  // Si todas están activas, dejamos el filtro vacío para mostrar todo (incluyendo las que no tienen categoría)
+  if (activeKmzCategories.length === kmzCategories.length) {
+    st.kmzCategory = [];
+  } else {
+    st.kmzCategory = [...activeKmzCategories];
+  }
+
+  fnActualizarConteo(pfx);
+  actualizarPinesMapa(pfx);
+}
+
 async function initApp(){
   showTab('nuevo');
   
@@ -1649,6 +1969,7 @@ async function initApp(){
 
   cleanupLocalData();
   await cargarProps();
+  await cargarKmz();
   await cargarLeads();
   rebuildCitas();
   renderNuevo();
@@ -2146,6 +2467,12 @@ function renderPropsGrid(listaForzada){
     html += '<div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp(\'' + eq(cod) + '\', this.parentElement)">' + (sel?'✓':'+') + '</div>';
     html += '<img src="' + img + '" loading="lazy" onerror="this.src=\'https://i.imgur.com/Pc9M3I8.png\'"/>';
     html += '<div class="prop-card-body">';
+    if (d.isKmzOnly) {
+      html += '<div style="background:rgba(59, 130, 246, 0.1); color:#3b82f6; font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px; display:inline-block; margin-bottom:6px; border:1px solid rgba(59, 130, 246, 0.2);">PROPIEDAD EXTERNA (KMZ)</div>';
+    }
+    if (d._kmzCategory) {
+      html += `<div style="background:rgba(212,168,75,0.08); color:var(--gold); font-size:8px; font-weight:700; padding:1px 5px; border-radius:4px; display:inline-block; margin-left:4px; border:1px solid rgba(212,168,75,0.15);">${d._kmzCategory}</div>`;
+    }
     html += '<div class="prop-card-code" style="font-weight:bold; color:var(--gold);">Cód: ' + cod + '</div>';
     html += '<div class="prop-card-name">' + (d['Nombre']||'') + '</div>';
     html += '<div class="prop-card-price" style="font-size:1.1rem; margin-bottom:8px;">' + formatP(d['Precio']) + '</div>';
@@ -4018,6 +4345,11 @@ function initMapa(pfx) {
     subdomains: 'abcd',
     maxZoom: 19
   }).addTo(leafletMap);
+
+  // Viewport filtering listeners
+  leafletMap.on('moveend', () => updateMapBoundsFilter(pfx));
+  leafletMap.on('zoomend', () => updateMapBoundsFilter(pfx));
+
   actualizarPinesMapa(pfx);
 }
 
@@ -4070,6 +4402,11 @@ function actualizarPinesMapa(pfx) {
   
   if(bounds.length > 0) {
     leafletMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+  }
+
+  // Si el filtro de viewport está activo, actualizar la grilla ahora
+  if (mapViewportFilterActive) {
+    setTimeout(() => updateMapBoundsFilter(pfx), 500); // Dar tiempo a que el mapa se estabilice
   }
 }
 
