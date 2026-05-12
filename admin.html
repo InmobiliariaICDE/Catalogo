@@ -2001,7 +2001,7 @@ function renderPropsGrid(listaForzada){
     const isDestacada = ["Directo", "Verbal"].includes(d["Contrato"]);
     const inmob = d['Inmobiliaria'] || '';
     
-    html += '<div class="prop-card' + (sel?' selected':'') + (isDestacada?' recomendado':'') + '" onclick="abrirModalProp(\'' + eq(cod) + '\')">';
+    html += '<div class="prop-card' + (sel?' selected':'') + (isDestacada?' recomendado':'') + '" onclick="abrirModalProp(\'' + eq(cod) + '\')" onmouseenter="focusProperty(\'' + eq(cod) + '\')">';
     if(isDestacada) html += '<div class="ribbon"><span>¡Destacada!</span></div>';
     html += '<div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp(\'' + eq(cod) + '\', this.parentElement)">' + (sel?'✓':'+') + '</div>';
     html += '<img src="' + img + '" loading="lazy" onerror="this.src=\'https://i.imgur.com/Pc9M3I8.png\'"/>';
@@ -3821,6 +3821,114 @@ function renderTopProps(){
       </div>
     `;
   }).join('');
+}
+
+// === MAPA INTERACTIVO ===
+let leafletMap = null;
+let mapMarkersObj = {};
+
+function toggleMapa(pfx) {
+  const container = document.getElementById(`mapaContenedor_${pfx}`);
+  const btn = document.getElementById(`btnToggleMapa_${pfx}`);
+  if(!container) return;
+  
+  const isOpen = container.classList.contains('open');
+  if(isOpen) {
+    container.classList.remove('open');
+    btn.innerHTML = '🗺 Mostrar Mapa';
+  } else {
+    container.classList.add('open');
+    btn.innerHTML = '🗺 Ocultar Mapa';
+    if(!leafletMap) {
+      setTimeout(() => initMapa(pfx), 300); // Esperar animación
+    } else {
+      setTimeout(() => { leafletMap.invalidateSize(); actualizarPinesMapa(pfx); }, 300);
+    }
+  }
+}
+
+function initMapa(pfx) {
+  // Centro por defecto: Neiva
+  leafletMap = L.map(`mapaLeaflet_${pfx}`).setView([2.9273, -75.2819], 13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(leafletMap);
+  actualizarPinesMapa(pfx);
+}
+
+function actualizarPinesMapa(pfx) {
+  if(!leafletMap) return;
+  
+  // Limpiar marcadores
+  Object.values(mapMarkersObj).forEach(m => leafletMap.removeLayer(m));
+  mapMarkersObj = {};
+  
+  let propsToShow = [];
+  if(pfx === 'nl') {
+    propsToShow = filtrarProps(nuevoLead.filtros);
+  } else if (pfx === 'ef') {
+    propsToShow = filtrarProps(tempFiltros);
+  } else {
+    propsToShow = filtrarProps(fSt[pfx]);
+  }
+  
+  if(propsToShow.length === 0) return;
+
+  const bounds = [];
+  
+  propsToShow.forEach((p, idx) => {
+    let lat = parseFloat(String(p['Latitud'] || p['Lat']).replace(',','.'));
+    let lng = parseFloat(String(p['Longitud'] || p['Lng']).replace(',','.'));
+    const code = String(p['Código'] || '');
+    
+    // Si no tiene coordenadas reales, no la mostramos para evitar amontonar en un punto falso
+    if(isNaN(lat) || isNaN(lng) || lat === 0) return;
+    
+    const price = p['Precio'] ? formatShortPrice(p['Precio']) : 'N/A';
+    const icon = L.divIcon({
+      className: 'z-marker-wrap',
+      html: `<div class="z-marker" id="m-${code}" title="${p['Nombre']}">${price}</div>`,
+      iconSize: [60, 25],
+      iconAnchor: [30, 25]
+    });
+
+    const marker = L.marker([lat, lng], { icon }).addTo(leafletMap);
+    
+    marker.on('click', (e) => {
+      L.DomEvent.stopPropagation(e);
+      abrirModalProp(code);
+    });
+
+    mapMarkersObj[code] = marker;
+    bounds.push([lat, lng]);
+  });
+  
+  if(bounds.length > 0) {
+    leafletMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+  }
+}
+
+function focusProperty(code) {
+  if (!leafletMap || !mapMarkersObj[code]) return;
+  
+  // Solo hacer zoom si el contenedor del mapa está visible
+  const container = leafletMap.getContainer().parentElement;
+  if (!container || !container.classList.contains('open')) return;
+
+  const marker = mapMarkersObj[code];
+  const latlng = marker.getLatLng();
+  
+  leafletMap.flyTo(latlng, 17, {
+    animate: true,
+    duration: 0.8
+  });
+
+  // Resaltar visualmente
+  document.querySelectorAll('.z-marker').forEach(m => m.classList.remove('active'));
+  const el = document.getElementById(`m-${code}`);
+  if (el) el.classList.add('active');
 }
 
 </script>
