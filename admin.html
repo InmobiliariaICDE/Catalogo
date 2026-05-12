@@ -2431,41 +2431,14 @@ function renderPropsGrid(listaForzada){
     html += '<div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp(\'' + eq(cod) + '\', this.parentElement)">' + (sel?'✓':'+') + '</div>';
     html += '<img src="' + img + '" loading="lazy" onerror="this.src=\'https://i.imgur.com/Pc9M3I8.png\'"/>';
     html += '<div class="prop-card-body">';
-    if (d.isKmzOnly) {
-      html += '<div style="background:rgba(59, 130, 246, 0.1); color:#3b82f6; font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px; display:inline-block; margin-bottom:6px; border:1px solid rgba(59, 130, 246, 0.2);">PROPIEDAD EXTERNA (KMZ)</div>';
-    }
-    if (d._kmzCategory) {
-      html += `<div style="background:rgba(212,168,75,0.08); color:var(--gold); font-size:8px; font-weight:700; padding:1px 5px; border-radius:4px; display:inline-block; margin-left:4px; border:1px solid rgba(212,168,75,0.15);">${d._kmzCategory}</div>`;
-    }
     html += '<div class="prop-card-code" style="font-weight:bold; color:var(--gold);">Cód: ' + cod + '</div>';
     html += '<div class="prop-card-name">' + (d['Nombre']||'') + '</div>';
     html += '<div class="prop-card-price" style="font-size:1.1rem; margin-bottom:8px;">' + formatP(d['Precio']) + '</div>';
     
-    // Features layout matching website style
-    html += '<div class="prop-card-features" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">';
-    
-    // Row 1: Hab, Baños, Garaje
-    html += '<div style="display:flex; flex-wrap:wrap; gap:10px; font-size:11px; color:#ccc;">';
-    if(d['Habitaciones']) html += `<span><span style="opacity:0.7;">🛏</span> Habitaciones ${d['Habitaciones']}</span>`;
-    if(d['Baños']) html += `<span><span style="opacity:0.7;">🛁</span> Baños ${d['Baños']}</span>`;
-    if(d['Garaje']) html += `<span><span style="opacity:0.7;">🚗</span> Garaje ${d['Garaje']}</span>`;
-    html += '</div>';
-
-    // Row 2: Cocina, Pisos, Lote
-    html += '<div style="display:flex; flex-wrap:wrap; gap:10px; font-size:11px; color:#ccc;">';
-    if(d['Cocina']) html += `<span><span style="opacity:0.7;">🍳</span> Cocina ${d['Cocina']}</span>`;
-    if(d['Pisos']) html += `<span>Pisos ${d['Pisos']}</span>`;
-    if(d['Área']) html += `<span><span style="opacity:0.7;">📐</span> Lote ${d['Área']} m²</span>`;
-    html += '</div>';
-
-    // Row 3: Rentabilidad (el valor ya viene formateado desde la hoja, ej: "Rentabilidad $14,000,000" o " " si está vacío)
     if(String(d['Rentabilidad']||'').trim()) {
       html += `<div style="font-size:12px; font-weight:700; color:var(--gold); margin-top:4px;">${d['Rentabilidad']}</div>`;
     }
-    
     html += '</div>';
-    html += '</div>';
-    if(inmob) html += '<div class="prop-card-inmobiliaria" title="' + eq(inmob) + '">' + inmob + '</div>';
     html += '</div>';
   }
   html += '</div>';
