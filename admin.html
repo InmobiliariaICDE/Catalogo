@@ -1666,10 +1666,13 @@ function renderEditFiltrosGrid(lista){
   el.innerHTML = html;
 }
 
-function getSearchLinkFromFilters(st){
+function getSearchLinkFromFilters(st, ids){
   if(!st) return 'https://icdeinmobiliaria.com/';
   const url = new URL('https://icdeinmobiliaria.com/');
   const p = url.searchParams;
+  
+  if(ids && ids.length) p.set('ids', ids.join(','));
+  
   if(st.buscar) p.set('q', st.buscar.trim());
   if(st.tipoInmueble?.length) p.set('tipo', st.tipoInmueble.join(','));
   if(st.minPrice) p.set('min', st.minPrice);
@@ -1690,7 +1693,11 @@ function fnGenerarLink(pfx, btn){
   const st = getFSt(pfx);
   const busVal = (document.getElementById(`fnBus_${pfx}`)?.value || '').trim();
   st.buscar = busVal;
-  const link = getSearchLinkFromFilters(st);
+  
+  // Si es Nuevo Lead, incluimos seleccionados
+  const ids = (pfx === 'nl' && window.selectedProps && selectedProps.length) ? selectedProps : null;
+  
+  const link = getSearchLinkFromFilters(st, ids);
   navigator.clipboard.writeText(link).then(() => {
     const original = btn.innerHTML;
     btn.textContent = '¡Copiado!';
@@ -3168,7 +3175,7 @@ function abrirEnvioModal(leadId, presel){
     const emoLink = "\uD83D\uDC47";      // 👇
     const emoFin = "\u2705";            // ✅
     
-    const link = getSearchLinkFromFilters(st);
+    const link = getSearchLinkFromFilters(st, lote);
     const hasSelection = lote.length > 0;
     const initModo = (Array.isArray(presel) && presel.length > 0) ? 'individual' : 'link';
 
