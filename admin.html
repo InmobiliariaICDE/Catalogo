@@ -885,6 +885,25 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
   .leaflet-container a.leaflet-popup-close-button {
     color: var(--gold) !important;
   }
+  .btn-map-control {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 16px;
+  }
+  .btn-map-control:hover {
+    background: rgba(212, 168, 75, 0.1);
+    border-color: var(--gold);
+    transform: translateY(-2px);
+  }
 </style>
 </head>
 <body>
@@ -1346,10 +1365,18 @@ function buildFiltrosBar(containerId, pfx, initVals){
                 <span class="slider"></span>
               </label>
             </div>
-            <div id="kmzCategoryToggle_${pfx}" style="display: flex; flex-direction: column; gap: 4px; max-height: 150px; overflow-y: auto; padding-right: 4px;">
+            <div style="font-size: 10px; font-weight: 700; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleCategoriasMap('${pfx}')">
+              <span>📂 Categorías</span>
+              <span id="kmzCatArrow_${pfx}" style="transition: transform 0.3s;">▼</span>
+            </div>
+            <div id="kmzCategoryToggle_${pfx}" style="display: flex; flex-direction: column; gap: 4px; max-height: 150px; overflow-y: auto; padding-right: 4px; transition: all 0.3s ease;">
               <!-- Se puebla dinámicamente con las categorías del KMZ -->
               <div style="font-size: 11px; color: #888; text-align: center; padding: 10px;">Cargando categorías...</div>
             </div>
+          </div>
+          <div class="map-control-card" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 8px; pointer-events: auto; box-shadow: var(--shadow); display: flex; gap: 8px; align-items: center; justify-content: center;">
+            <button class="btn-map-control" onclick="actualizarPinesMapa('${pfx}', true)" title="Recentrar mapa">🎯</button>
+            <button class="btn-map-control" onclick="refreshData()" title="Actualizar datos">🔄</button>
           </div>
         </div>
       </div>
@@ -1864,6 +1891,16 @@ function toggleKmzCategory(pfx, cat, checked) {
 
   fnActualizarConteo(pfx);
   actualizarPinesMapa(pfx);
+}
+
+function toggleCategoriasMap(pfx) {
+  const el = document.getElementById(`kmzCategoryToggle_${pfx}`);
+  const arrow = document.getElementById(`kmzCatArrow_${pfx}`);
+  if (!el || !arrow) return;
+  
+  const isHidden = el.style.display === 'none';
+  el.style.display = isHidden ? 'flex' : 'none';
+  arrow.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
 }
 
 async function refreshData() {
@@ -4257,7 +4294,15 @@ function toggleMapa(pfx) {
 
 function initMapa(pfx) {
   // Centro por defecto: Neiva
-  leafletMap = L.map(`mapaLeaflet_${pfx}`).setView([2.9273, -75.2819], 13);
+  leafletMap = L.map(`mapaLeaflet_${pfx}`, {
+    scrollWheelZoom: false, // Evitar zoom accidental al hacer scroll en la página
+    smoothWheelZoom: true,
+    smoothSensitivity: 1
+  }).setView([2.9273, -75.2819], 13);
+  
+  // Habilitar zoom con scroll solo si se presiona Ctrl (opcional, mejor desactivar por ahora para evitar confusión)
+  // leafletMap.on('focus', () => { leafletMap.scrollWheelZoom.enable(); });
+  // leafletMap.on('blur', () => { leafletMap.scrollWheelZoom.disable(); });
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap &copy; CARTO',
     subdomains: 'abcd',
@@ -4271,7 +4316,7 @@ function initMapa(pfx) {
   actualizarPinesMapa(pfx);
 }
 
-function actualizarPinesMapa(pfx) {
+function actualizarPinesMapa(pfx, forceFit = false) {
   if(!leafletMap) return;
   
   // Limpiar marcadores
@@ -4284,7 +4329,7 @@ function actualizarPinesMapa(pfx) {
   } else if (pfx === 'ef') {
     propsToShow = filtrarProps(tempFiltros);
   } else {
-    propsToShow = filtrarProps(fSt[pfx]);
+    propsToShow = filtrarProps(_fst[pfx]);
   }
   
   if(propsToShow.length === 0) return;
@@ -4318,7 +4363,8 @@ function actualizarPinesMapa(pfx) {
     bounds.push([lat, lng]);
   });
   
-  if(bounds.length > 0) {
+  // Solo ajustar vista si es la primera vez (forceFit) o si el filtro de viewport NO está activo
+  if(bounds.length > 0 && (forceFit || !mapViewportFilterActive)) {
     leafletMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
   }
 
