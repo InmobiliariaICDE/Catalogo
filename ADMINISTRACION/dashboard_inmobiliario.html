@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Administrativo Inmobiliario - Propuesta y Plan de Implementacion</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* ========== RESET & BASE ========== */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.65;
+    color: #2d3748;
+    text-align: justify;
+    text-align-last: left;
+}
+
+/* ========== PAGE SETUP ========== */
+@page {
+    size: A4;
+    margin: 2.2cm 2cm 2.5cm 2cm;
+    @top-center { content: string(doctitle); font-size: 8pt; color: #718096; }
+    @bottom-center { content: counter(page); font-size: 8pt; color: #718096; }
+}
+@page cover { @top-center { content: none; } @bottom-center { content: none; } }
+@page toc { @top-center { content: none; } @bottom-center { content: none; } }
+
+body { string-set: doctitle ""; }
+h1 { string-set: doctitle content(); }
+
+/* ========== COVER - SWISS STYLE ========== */
+.cover {
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    position: relative;
+    overflow: hidden;
+    page: cover;
+    page-break-after: always;
+    background: #f7f9fc;
+}
+.cover::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 45%; height: 100%;
+    background: linear-gradient(160deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    clip-path: polygon(25% 0, 100% 0, 100% 100%, 0% 100%);
+}
+.cover::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: 35%;
+    background: linear-gradient(0deg, rgba(102,126,234,0.06) 0%, transparent 100%);
+}
+.cover-grid {
+    position: absolute;
+    top: 60px; left: 60px;
+    display: grid;
+    grid-template-columns: repeat(4, 30px);
+    grid-template-rows: repeat(6, 30px);
+    gap: 8px;
+}
+.cover-grid span {
+    width: 30px; height: 30px;
+    background: rgba(102,126,234,0.15);
+    border-radius: 2px;
+}
+.cover-grid span:nth-child(3n) { background: rgba(118,75,162,0.2); }
+.cover-grid span:nth-child(5n) { background: rgba(102,126,234,0.08); width: 20px; }
+
+.cover-accent-bar {
+    position: absolute;
+    top: 0; left: 0;
+    width: 6px; height: 100%;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+}
+
+.cover-content {
+    position: absolute;
+    top: 50%;
+    left: 60px;
+    transform: translateY(-50%);
+    width: 55%;
+    z-index: 10;
+}
+.cover-tag {
+    display: inline-block;
+    padding: 6px 16px;
+    background: rgba(102,126,234,0.1);
+    color: #667eea;
+    font-size: 9pt;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 20px;
+    margin-bottom: 24px;
+}
+.cover-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 32pt;
+    font-weight: 800;
+    color: #1a202c;
+    line-height: 1.15;
+    margin-bottom: 16px;
+}
+.cover-subtitle {
+    font-size: 13pt;
+    color: #4a5568;
+    font-weight: 400;
+    line-height: 1.5;
+    margin-bottom: 48px;
+}
+.cover-meta {
+    font-size: 9.5pt;
+    color: #718096;
+    line-height: 2;
+}
+.cover-meta strong {
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.cover-decoration {
+    position: absolute;
+    bottom: 80px; right: 80px;
+    width: 120px; height: 120px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    z-index: 10;
+}
+.cover-decoration::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px; height: 80px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 50%;
+}
+
+/* ========== TOC ========== */
+.toc-page {
+    page: toc;
+    page-break-after: always;
+}
+.toc-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 22pt;
+    font-weight: 700;
+    color: #1a202c;
+    margin-bottom: 32px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #667eea;
+}
+.toc { list-style: none; padding: 0; margin: 0; }
+.toc li { margin-bottom: 10px; }
+.toc a {
+    color: #2d3748;
+    text-decoration: none;
+    font-size: 10.5pt;
+    display: flex;
+    align-items: baseline;
+}
+.toc a::after {
+    content: leader('.') target-counter(attr(href url), page);
+    flex: 1;
+    text-align: right;
+    color: #718096;
+}
+.toc .toc-h1 { font-weight: 700; font-size: 11.5pt; margin-top: 16px; }
+.toc .toc-h2 { padding-left: 20px; font-weight: 400; color: #4a5568; }
+.toc .toc-h3 { padding-left: 40px; font-size: 9.5pt; color: #718096; }
+
+/* ========== HEADINGS ========== */
+h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 20pt;
+    font-weight: 700;
+    color: #1a202c;
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #667eea;
+    page-break-after: avoid;
+}
+h2 {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #2d3748;
+    margin-top: 28px;
+    margin-bottom: 12px;
+    padding-left: 12px;
+    border-left: 3px solid #667eea;
+    page-break-after: avoid;
+}
+h3 {
+    font-size: 11pt;
+    font-weight: 600;
+    color: #4a5568;
+    margin-top: 18px;
+    margin-bottom: 8px;
+    page-break-after: avoid;
+}
+
+/* ========== PARAGRAPHS & LISTS ========== */
+p { margin-bottom: 10px; }
+ul, ol { margin-bottom: 12px; padding-left: 24px; }
+li { margin-bottom: 4px; }
+
+/* ========== TABLES ========== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 9pt;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+thead { display: table-header-group; }
+thead tr {
+    border-top: 2px solid #2d3748;
+    border-bottom: 1px solid #2d3748;
+}
+th {
+    padding: 10px 8px;
+    text-align: left;
+    font-weight: 600;
+    color: #1a202c;
+    background: #f7f9fc;
+}
+td {
+    padding: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+}
+tbody tr:last-child { border-bottom: 2px solid #2d3748; }
+tr { page-break-inside: avoid; }
+caption {
+    caption-side: top;
+    text-align: left;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #2d3748;
+}
+caption::before { content: attr(data-label) "  "; font-weight: 700; }
+
+/* ========== FIGURES & IMAGES ========== */
+figure {
+    margin: 20px 0;
+    page-break-inside: avoid;
+    text-align: center;
+}
+figure img {
+    max-width: 85%;
+    max-height: 38vh;
+    height: auto;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+figcaption {
+    font-size: 9pt;
+    color: #718096;
+    margin-top: 8px;
+    text-align: center;
+}
+figcaption::before { content: attr(data-label) ": "; font-weight: 600; color: #4a5568; }
+
+/* ========== INFO BOXES ========== */
+.info-box {
+    background: #f7f9fc;
+    border-left: 4px solid #667eea;
+    padding: 14px 18px;
+    margin: 16px 0;
+    border-radius: 0 6px 6px 0;
+}
+.info-box-title {
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 6px;
+    font-size: 10pt;
+}
+
+.highlight-box {
+    background: linear-gradient(135deg, #667eea08 0%, #764ba208 100%);
+    border: 1px solid #e2e8f0;
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-radius: 8px;
+}
+
+/* ========== PHASE BOXES (Implementation Plan) ========== */
+.phase-box {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    page-break-inside: avoid;
+}
+.phase-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.phase-number {
+    width: 28px; height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 700;
+    font-size: 11pt;
+    border-radius: 50%;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+.phase-title {
+    font-weight: 700;
+    font-size: 11.5pt;
+    color: #1a202c;
+}
+.phase-duration {
+    margin-left: auto;
+    font-size: 8.5pt;
+    color: #718096;
+    background: #f7f9fc;
+    padding: 3px 10px;
+    border-radius: 12px;
+}
+
+/* ========== TIMELINE ========== */
+.timeline {
+    position: relative;
+    margin: 20px 0;
+    padding-left: 28px;
+}
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+}
+.timeline-item {
+    position: relative;
+    margin-bottom: 16px;
+    padding-left: 16px;
+}
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #667eea;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #667eea;
+}
+.timeline-item.current::before { background: #764ba2; }
+
+/* ========== KPI GRID ========== */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 14px 0;
+}
+.kpi-card {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 14px;
+    text-align: center;
+}
+.kpi-value {
+    font-size: 16pt;
+    font-weight: 800;
+    color: #667eea;
+    display: block;
+}
+.kpi-label {
+    font-size: 8pt;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+}
+
+/* ========== PREVENT OVERFLOW ========== */
+pre, table, figure, img, svg, blockquote {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+pre { overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+a { word-break: break-all; color: #667eea; }
+
+/* ========== SECTION BREAK ========== */
+.section-break {
+    page-break-before: always;
+}
+
+/* ========== REFERENCE IMAGES ROW ========== */
+.img-row {
+    display: flex;
+    gap: 10px;
+    margin: 14px 0;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.img-row img {
+    max-width: 48%;
+    max-height: 22vh;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+</style>
+</head>
+<body>
+
+<!-- ========== COVER ========== -->
+<div class="cover">
+    <div class="cover-accent-bar"></div>
+    <div class="cover-grid">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+    </div>
+    <div class="cover-content">
+        <div class="cover-tag">Propuesta Estrategica</div>
+        <h1 class="cover-title" style="border:none; padding:0; margin-bottom:16px; font-size:32pt;">Dashboard Administrativo Inmobiliario</h1>
+        <p class="cover-subtitle">Analisis de operacion actual, investigacion de mejores practicas y plan de implementacion detallado para transformacion digital de la gestion de propiedades</p>
+        <div class="cover-meta">
+            <strong>Documento preparado para:</strong> Antigravity (Desarrollo)<br>
+            <strong>Fecha:</strong> Mayo 2026<br>
+            <strong>Tipo:</strong> Especificacion funcional y plan de implementacion
+        </div>
+    </div>
+    <div class="cover-decoration"></div>
+</div>
+
+<!-- ========== TABLE OF CONTENTS ========== -->
+<div class="toc-page">
+    <div class="toc-title">Contenido</div>
+    <ul class="toc">
+        <li class="toc-h1"><a href="#sec1">1. Resumen Ejecutivo</a></li>
+        <li class="toc-h1"><a href="#sec2">2. Analisis del Estado Actual</a></li>
+        <li class="toc-h2"><a href="#sec2-1">2.1 Estructura del Control Actual (Excel)</a></li>
+        <li class="toc-h2"><a href="#sec2-2">2.2 Inventario de Inmuebles Administrados</a></li>
+        <li class="toc-h2"><a href="#sec2-3">2.3 Procesos Identificados y Sus Fricciones</a></li>
+        <li class="toc-h2"><a href="#sec2-4">2.4 Limitaciones del Sistema Actual</a></li>
+        <li class="toc-h1"><a href="#sec3">3. Investigacion: Mejores Dashboards Inmobiliarios</a></li>
+        <li class="toc-h2"><a href="#sec3-1">3.1 Referencias del Mercado Global</a></li>
+        <li class="toc-h2"><a href="#sec3-2">3.2 Referencias del Mercado Latinoamericano</a></li>
+        <li class="toc-h2"><a href="#sec3-3">3.3 KPIs Clave para Administracion de Propiedades</a></li>
+        <li class="toc-h2"><a href="#sec3-4">3.4 Mejores Practicas de Diseno UI/UX</a></li>
+        <li class="toc-h1"><a href="#sec4">4. Propuesta de Dashboard</a></li>
+        <li class="toc-h2"><a href="#sec4-1">4.1 Vision General del Sistema</a></li>
+        <li class="toc-h2"><a href="#sec4-2">4.2 Modulos Principales</a></li>
+        <li class="toc-h2"><a href="#sec4-3">4.3 Especificacion de Widgets y Componentes</a></li>
+        <li class="toc-h1"><a href="#sec5">5. Plan de Implementacion</a></li>
+        <li class="toc-h2"><a href="#sec5-1">5.1 Fase 1: Fundacion y Datos</a></li>
+        <li class="toc-h2"><a href="#sec5-2">5.2 Fase 2: Dashboard Core</a></li>
+        <li class="toc-h2"><a href="#sec5-3">5.3 Fase 3: Modulos Avanzados</a></li>
+        <li class="toc-h2"><a href="#sec5-4">5.4 Fase 4: Optimizacion y Escalamiento</a></li>
+        <li class="toc-h2"><a href="#sec5-5">5.5 Cronograma y Recursos</a></li>
+        <li class="toc-h1"><a href="#sec6">6. Conclusiones y Recomendaciones</a></li>
+    </ul>
+</div>
+
+<!-- ========== SECTION 1 ========== -->
+<h1 id="sec1">1. Resumen Ejecutivo</h1>
+
+<p>Este documento presenta un analisis completo de la operacion actual de administracion de propiedades y una propuesta detallada para desarrollar un <strong>dashboard administrativo inmobiliario</strong> que transforme la gestion manual basada en Excel en un sistema digital centralizado, moderno y escalable.</p>
+
+<div class="info-box">
+    <div class="info-box-title">Oportunidad Clave</div>
+    <p>La operacion actual gestiona <strong>19 inmuebles</strong> (apartamentos, casas, habitaciones y locales) mediante hojas de calculo Excel. Este modelo, funcional en etapas iniciales, presenta limitaciones criticas en escalabilidad, visibilidad de datos y automatizacion que afectan directamente la rentabilidad y el crecimiento del negocio.</p>
+</div>
+
+<p>La investigacion abarco mas de 15 plataformas de referencia global (AppFolio, Buildium, TenantCloud, Yardi, Rentec Direct, OhMyRent, BReal, entre otras) y analisis de KPIs estandar de la industria inmobiliaria. A partir de este analisis, se define una propuesta funcional especifica y un plan de implementacion por fases de 16 semanas.</p>
+
+<div class="highlight-box">
+    <strong>Objetivo del documento:</strong> Servir como especificacion funcional completa para que Antigravity desarrolle el dashboard administrativo inmobiliario, eliminando ambiguedades y acelerando el proceso de desarrollo.
+</div>
+
+<!-- ========== SECTION 2 ========== -->
+<h1 id="sec2" class="section-break">2. Analisis del Estado Actual</h1>
+
+<h2 id="sec2-1">2.1 Estructura del Control Actual (Excel)</h2>
+
+<p>El sistema actual se compone de dos hojas de Excel interconectadas que sirven como fuente unica de verdad para toda la operacion:</p>
+
+<table>
+    <caption data-label="Tabla 1">Estructura del archivo de control actual</caption>
+    <thead>
+        <tr>
+            <th>Hoja</th>
+            <th>Proposito</th>
+            <th>Datos Clave</th>
+            <th>Dimension Aprox.</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>ADMINISTRACION DETALLADA</strong></td>
+            <td>Control maestro de propiedades, contratos y canones</td>
+            <td>19 inmuebles, propietarios, arrendatarios, depositos, fechas contrato, canones mensuales por mes (2023-2027), estados de ocupacion, gastos fijos oficina</td>
+            <td>44 filas x 76 columnas</td>
+        </tr>
+        <tr>
+            <td><strong>CUENTAS EDIFICIO + ADMT</strong></td>
+            <td>Registro contable detallado de transacciones</td>
+            <td>Fechas, descripciones, ingresos, gastos por categoria (Casa Azul, Habitacion Azul, Apto Azul, Edificio, Otros), totales y diferencias</td>
+            <td>116 filas x 13 columnas</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="sec2-2">2.2 Inventario de Inmuebles Administrados</h2>
+
+<p>El portafolio actual comprende 19 unidades distribuidas en 9 tipologias diferentes, administradas principalmente por Silvia con apoyo de otros administradores:</p>
+
+<table>
+    <caption data-label="Tabla 2">Inventario de inmuebles administrados</caption>
+    <thead>
+        <tr>
+            <th>Inmueble</th>
+            <th>Tipo</th>
+            <th>Propietario</th>
+            <th>Canon Mensual (COP)</th>
+            <th>Duracion Contrato</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>Limonar</td><td>Casa/Apartamento</td><td>Jorge Luis</td><td>$530.000</td><td>12 meses</td></tr>
+        <tr><td>Apto Marcos-Granjas</td><td>Apartamento</td><td>Marcos</td><td>$630.000</td><td>12 meses</td></tr>
+        <tr><td>Apto Chapinero Angela</td><td>Apartamento</td><td>Angela</td><td>$1.260.000</td><td>12 meses</td></tr>
+        <tr><td>Habitacion Azul</td><td>Habitacion</td><td>Silvia</td><td>$370.000</td><td>5 meses</td></tr>
+        <tr><td>Apto 302</td><td>Apartamento</td><td>Silvia</td><td>$520.000</td><td>12 meses</td></tr>
+        <tr><td>Casa Marcos-Granjas</td><td>Casa</td><td>Marcos</td><td>$1.000.000</td><td>12 meses</td></tr>
+        <tr><td>Apto 101</td><td>Apartamento</td><td>Silvia</td><td>$550.000</td><td>12 meses</td></tr>
+        <tr><td>Casa Manzanares V Etapa</td><td>Casa</td><td>Nini Johana y Sandra</td><td>$900.000</td><td>12 meses</td></tr>
+        <tr><td>Apto 202</td><td>Apartamento</td><td>Silvia</td><td>$600.000</td><td>12 meses</td></tr>
+        <tr><td>Lilola 302</td><td>Apartamento</td><td>Nohora</td><td>$850.000</td><td>12 meses</td></tr>
+        <tr><td>Goya T-33 Apto 102</td><td>Apartamento</td><td>Eduard</td><td>$850.000</td><td>12 meses</td></tr>
+        <tr><td>Apto Azul</td><td>Apartamento</td><td>Silvia</td><td>$585.000</td><td>6 meses</td></tr>
+        <tr><td>Apto 201</td><td>Apartamento</td><td>Silvia</td><td>$550.000</td><td>12 meses</td></tr>
+        <tr><td>Casa Azul</td><td>Casa</td><td>Silvia</td><td>$945.000</td><td>12 meses</td></tr>
+        <tr><td>Apto 301</td><td>Apartamento</td><td>Silvia</td><td>$560.000</td><td>12 meses</td></tr>
+        <tr><td>Local 1</td><td>Local Comercial</td><td>Silvia</td><td>$535.000</td><td>6 meses</td></tr>
+        <tr><td>Goya B-10 Apto 101</td><td>Apartamento</td><td>Giovany</td><td>$740.000</td><td>12 meses</td></tr>
+        <tr><td>Apto 102</td><td>Apartamento</td><td>Silvia</td><td>$400.000</td><td>12 meses</td></tr>
+        <tr><td>Apto 303 / Apto 203</td><td>Apartamento</td><td>Silvia</td><td>$450.000</td><td>12 meses</td></tr>
+    </tbody>
+</table>
+
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <span class="kpi-value">19</span>
+        <span class="kpi-label">Inmuebles Activos</span>
+    </div>
+    <div class="kpi-card">
+        <span class="kpi-value">~$11M</span>
+        <span class="kpi-label">Canon Mensual Total</span>
+    </div>
+    <div class="kpi-card">
+        <span class="kpi-value">6</span>
+        <span class="kpi-label">Administradores</span>
+    </div>
+    <div class="kpi-card">
+        <span class="kpi-value">$1.29M</span>
+        <span class="kpi-label">Gastos Fijos Oficina</span>
+    </div>
+    <div class="kpi-card">
+        <span class="kpi-value">5</span>
+        <span class="kpi-label">Tipologias</span>
+    </div>
+    <div class="kpi-card">
+        <span class="kpi-value">4</span>
+        <span class="kpi-label">Anos de Historia</span>
+    </div>
+</div>
+
+<h2 id="sec2-3">2.3 Procesos Identificados y Sus Fricciones</h2>
+
+<p>A partir del analisis del Excel se identificaron los siguientes procesos operativos y sus puntos de friccion:</p>
+
+<table>
+    <caption data-label="Tabla 3">Procesos y fricciones identificadas</caption>
+    <thead>
+        <tr>
+            <th>Proceso</th>
+            <th>Como se hace hoy</th>
+            <th>Friccion principal</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Control de canones mensuales</strong></td>
+            <td>Matriz mensual por inmueble en celdas individuales (2023-2027)</td>
+            <td>Manual, propenso a errores, sin alertas de aumento ni vencimiento</td>
+        </tr>
+        <tr>
+            <td><strong>Seguimiento de contratos</strong></td>
+            <td>Fecha inicio, duracion y notas de "PREAVISO" escritas a mano</td>
+            <td>Sin alertas automaticas de vencimiento, renovacion depende de memoria</td>
+        </tr>
+        <tr>
+            <td><strong>Registro de transacciones</strong></td>
+            <td>Lista cronologica en segunda hoja con descripcion libre</td>
+            <td>Sin categorizacion automatica, busqueda dificil, sin conciliacion</td>
+        </tr>
+        <tr>
+            <td><strong>Gestion de depositos</strong></td>
+            <td>Columna individual con monto, sin historial ni estados</td>
+            <td>Sin trazabilidad de devolucion ni relacion con contrato</td>
+        </tr>
+        <tr>
+            <td><strong>Gastos de oficina</strong></td>
+            <td>Lista fija mensual (arriendo, luz, gas, agua, etc.)</td>
+            <td>Sin comparativa historica, sin alertas de aumentos de servicios</td>
+        </tr>
+        <tr>
+            <td><strong>Control de ocupacion</strong></td>
+            <td>Etiquetas manuales "DESOCUPADO", "PREAVISO", "CONTRATO NUEVO"</td>
+            <td>Sin indicador visual, sin metrica de vacancia, sin forecast</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="sec2-4">2.4 Limitaciones del Sistema Actual</h2>
+
+<div class="info-box">
+    <div class="info-box-title">Limitaciones Criticas Identificadas</div>
+    <ul>
+        <li><strong>No hay visibilidad en tiempo real:</strong> Los datos se actualizan manualmente, generando retrasos y versiones desactualizadas.</li>
+        <li><strong>Sin alertas ni notificaciones:</strong> Los aumentos de canon, vencimientos de contrato y pagos pendientes dependen 100% de la memoria del equipo.</li>
+        <li><strong>Sin metricas ni KPIs:</strong> No es posible calcular rapidamente tasa de ocupacion, rentabilidad neta, morosidad o tendencias de ingresos.</li>
+        <li><strong>Escalabilidad limitada:</strong> Cada nuevo inmueble agrega complejidad exponencial a las hojas de calculo.</li>
+        <li><strong>Riesgo de datos:</strong> Sin respaldo automatico, sin control de acceso, sin historial de cambios.</li>
+        <li><strong>Sin portales para propietarios ni arrendatarios:</strong> Toda comunicacion es manual (WhatsApp, llamadas).</li>
+        <li><strong>Conciliacion bancaria manual:</strong> Cada transaccion se registra a mano, sin importacion bancaria.</li>
+    </ul>
+</div>
+
+<!-- ========== SECTION 3 ========== -->
+<h1 id="sec3" class="section-break">3. Investigacion: Mejores Dashboards Inmobiliarios</h1>
+
+<h2 id="sec3-1">3.1 Referencias del Mercado Global</h2>
+
+<p>Se analizaron 15 plataformas de property management lideres a nivel global para identificar funcionalidades, patrones de diseno y mejores practicas. A continuacion, las plataformas mas relevantes:</p>
+
+<table>
+    <caption data-label="Tabla 4">Plataformas de referencia globales analizadas</caption>
+    <thead>
+        <tr>
+            <th>Plataforma</th>
+            <th>Fortalezas Clave</th>
+            <th>Precio Referencia</th>
+            <th>Ideal Para</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>AppFolio</strong></td>
+            <td>Dashboard centralizado, 100+ reportes, AI analytics, owner portal, mobile app</td>
+            <td>$1.25-3.00/unidad/mes</td>
+            <td>50-5,000 unidades residenciales</td>
+        </tr>
+        <tr>
+            <td><strong>Buildium</strong></td>
+            <td>Analytics Hub con benchmarking, owner portal, contabilidad integrada, work orders</td>
+            <td>$58-375/mes</td>
+            <td>1-500 unidades</td>
+        </tr>
+        <tr>
+            <td><strong>TenantCloud</strong></td>
+            <td>Low-cost, online rent collection, tenant screening, QuickBooks integration</td>
+            <td>$15-55/mes</td>
+            <td>Propietarios independientes</td>
+        </tr>
+        <tr>
+            <td><strong>Yardi Breeze/Voyager</strong></td>
+            <td>La mas completa del mercado, reporting avanzado, workflow automation, revenue management</td>
+            <td>$100-400+/mes</td>
+            <td>Enterprise 1,000+ unidades</td>
+        </tr>
+        <tr>
+            <td><strong>DoorLoop</strong></td>
+            <td>Automation workflows, maintenance management, compliance tools, multi-property</td>
+            <td>$69-79+/mes</td>
+            <td>Portfolios en crecimiento</td>
+        </tr>
+        <tr>
+            <td><strong>Propertyware</strong></td>
+            <td>Owner reports visuales, lead management, maintenance tracking, API abierto</td>
+            <td>$1-2/unidad/mes</td>
+            <td>Single-family 100-2,000</td>
+        </tr>
+        <tr>
+            <td><strong>Property Aura</strong></td>
+            <td>Contabilidad-first, blitz documentation, mobile-first, AI landlord assistant</td>
+            <td>Precio fijo</td>
+            <td>1-50 propiedades</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="sec3-2">3.2 Referencias del Mercado Latinoamericano</h2>
+
+<table>
+    <caption data-label="Tabla 5">Soluciones de referencia en Latinoamerica</caption>
+    <thead>
+        <tr>
+            <th>Plataforma</th>
+            <th>Pais/Region</th>
+            <th>Fortalezas Clave</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>OhMyRent</strong></td>
+            <td>Espana/LATAM</td>
+            <td>Panel de gestion centralizado, division automatica de gastos, agenda de inquilinos, calendario de contratos, control de fianzas</td>
+        </tr>
+        <tr>
+            <td><strong>BReal</strong></td>
+            <td>Chile</td>
+            <td>Liquidacion de garantias, control de vacancia grafico, ajustes de pagos por inflacion/UF, portales para duenos y arrendatarios</td>
+        </tr>
+        <tr>
+            <td><strong>Rentary</strong></td>
+            <td>Espana</td>
+            <td>Contratos con firma digital, cobros automaticos Stripe, plan de pagos, centralizacion de expedientes</td>
+        </tr>
+        <tr>
+            <td><strong>Rentger</strong></td>
+            <td>Espana</td>
+            <td>Dashboard de pagos y gastos, notificaciones automaticas, seguimiento 24/7, recordatorios de cobro</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="sec3-3">3.3 KPIs Clave para Administracion de Propiedades</h2>
+
+<p>Segun la investigacion de la industria (IREM, NAA, NMHC), estos son los KPIs que todo dashboard inmobiliario debe monitorear:</p>
+
+<table>
+    <caption data-label="Tabla 6">KPIs fundamentales para dashboards inmobiliarios</caption>
+    <thead>
+        <tr>
+            <th>KPI</th>
+            <th>Formula</th>
+            <th>Por que importa</th>
+            <th>Frecuencia</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Tasa de Ocupacion</strong></td>
+            <td>(Unidades ocupadas / Unidades totales) x 100</td>
+            <td>Indicador primario de salud financiera. < 90% requiere accion inmediata</td>
+            <td>Diaria/Semanal</td>
+        </tr>
+        <tr>
+            <td><strong>Tasa de Recaudacion</strong></td>
+            <td>(Canon recaudado / Canon debido) x 100</td>
+            <td>Mide eficiencia de cobro. Ideal >95%. Afecta flujo de caja directamente</td>
+            <td>Mensual</td>
+        </tr>
+        <tr>
+            <td><strong>Ingreso Neto de Operacion (NOI)</strong></td>
+            <td>Ingresos totales - Gastos operativos</td>
+            <td>Margen de rentabilidad real. Base para valuacion de propiedades</td>
+            <td>Mensual/Trimestral</td>
+        </tr>
+        <tr>
+            <td><strong>Tasa de Renovacion</strong></td>
+            <td>(Renovaciones / Contratos por vencer) x 100</td>
+            <td>Costo de rotacion: $2,500-4,000 por unidad. Alta retencion = mayor profit</td>
+            <td>Mensual</td>
+        </tr>
+        <tr>
+            <td><strong>Dias Promedio para Arrendar</strong></td>
+            <td>Dias totales vacantes / Unidades arrendadas</td>
+            <td>Mide eficiencia de marketing y precios. Menor = mejor</td>
+            <td>Mensual</td>
+        </tr>
+        <tr>
+            <td><strong>Tasa de Morosidad</strong></td>
+            <td>(Canon en mora / Canon total) x 100</td>
+            <td>Alerta temprana de problemas de cobro o calidad de inquilinos</td>
+            <td>Semanal</td>
+        </tr>
+        <tr>
+            <td><strong>Costo de Mantenimiento por Unidad</strong></td>
+            <td>Gastos mantenimiento / Unidades totales</td>
+            <td>Identifica propiedades con problemas recurrentes de infraestructura</td>
+            <td>Mensual</td>
+        </tr>
+        <tr>
+            <td><strong>Crecimiento de Canon Efectivo</strong></td>
+            <td>Variacion canon promedio mes actual vs mismo mes ano anterior</td>
+            <td>Mide si los aumentos estan alineados con inflacion y mercado</td>
+            <td>Trimestral</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="sec3-4">3.4 Mejores Practicas de Diseno UI/UX</h2>
+
+<p>El analisis de templates y UI kits de property management revelo patrones consistentes en los mejores dashboards:</p>
+
+<figure id="fig-1">
+    <img src="/mnt/agents/output/images/0_c86c8b88.png" alt="Property Management Dashboard UI Kit">
+    <figcaption data-label="Figura 1">Property Management Dashboard UI Kit - Paperpillar (Figma). Patron de widgets modulares con KPIs en cards, graficos de barras y lista de transacciones recientes.</figcaption>
+</figure>
+
+<figure id="fig-2">
+    <img src="/mnt/agents/output/images/3_d3a9bfb8.png" alt="Real Estate Dashboard con KPIs">
+    <figcaption data-label="Figura 2">Dashboard inmobiliario con metricas de ingresos, propiedades y ordenes recientes. Layout de sidebar + contenido principal con cards de KPIs en la parte superior.</figcaption>
+</figure>
+
+<div class="highlight-box">
+    <strong>Patrones de diseno identificados:</strong>
+    <ul>
+        <li><strong>KPI Cards superiores:</strong> Fila de 3-4 cards con metricas principales (ocupacion, recaudacion, NOI, propiedades activas)</li>
+        <li><strong>Graficos temporales:</strong> Barras o lineas mostrando tendencias de ingresos, gastos y ocupacion</li>
+        <li><strong>Lista de transacciones recientes:</strong> Tabla con las ultimas transacciones, pagos y alertas</li>
+        <li><strong>Calendario de eventos:</strong> Contratos por vencer, aumentos de canon, pagos pendientes</li>
+        <li><strong>Estados visuales:</strong> Semaforos para ocupacion (verde/amarillo/rojo), badges para estados de contrato</li>
+        <li><strong>Filtros por propiedad/tiempo:</strong> Selectores para cambiar vista entre inmuebles, periodos y categorias</li>
+        <li><strong>Sidebar navigation:</strong> Menu lateral con Dashboard, Propiedades, Arrendatarios, Finanzas, Reportes, Configuracion</li>
+    </ul>
+</div>
+
+<!-- ========== SECTION 4 ========== -->
+<h1 id="sec4" class="section-break">4. Propuesta de Dashboard</h1>
+
+<h2 id="sec4-1">4.1 Vision General del Sistema</h2>
+
+<p>El dashboard propuesto es un <strong>sistema web de administracion de propiedades</strong> disenado especificamente para la operacion identificada. Reemplaza el Excel con una plataforma centralizada que automatiza procesos, genera alertas inteligentes y proporciona visibilidad total del portafolio en tiempo real.</p>
+
+<div class="info-box">
+    <div class="info-box-title">Principios de Diseno</div>
+    <ul>
+        <li><strong>Simplicidad operativa:</strong> Cada pantalla debe resolver una tarea especifica sin sobrecarga cognitiva</li>
+        <li><strong>Visibilidad inmediata:</strong> Los KPIs criticos deben estar siempre visibles en menos de 3 segundos</li>
+        <li><strong>Accionable:</strong> Cada alerta debe tener una accion clara asociada</li>
+        <li><strong>Escalable:</strong> El sistema debe funcionar igual de bien con 19 o 100 propiedades</li>
+        <li><strong>Mobile-first:</strong> Acceso desde cualquier dispositivo, especialmente celular</li>
+    </ul>
+</div>
+
+<h2 id="sec4-2">4.2 Modulos Principales</h2>
+
+<table>
+    <caption data-label="Tabla 7">Modulos del sistema propuesto</caption>
+    <thead>
+        <tr>
+            <th>Modulo</th>
+            <th>Descripcion</th>
+            <th>Funcionalidades Clave</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>1. Dashboard Principal</strong></td>
+            <td>Vista general del portafolio</td>
+            <td>KPIs en tiempo real, graficos de tendencia, alertas, actividad reciente, calendario de eventos</td>
+        </tr>
+        <tr>
+            <td><strong>2. Inmuebles</strong></td>
+            <td>Gestion del catalogo de propiedades</td>
+            <td>CRUD de inmuebles, galeria de fotos, documentos adjuntos, historial de arrendatarios, estado de ocupacion</td>
+        </tr>
+        <tr>
+            <td><strong>3. Arrendatarios</strong></td>
+            <td>Base de datos de inquilinos</td>
+            <td>Perfiles, historial de pagos, contratos activos, documentos, comunicaciones</td>
+        </tr>
+        <tr>
+            <td><strong>4. Contratos</strong></td>
+            <td>Administracion de contratos de arrendamiento</td>
+            <td>CRUD de contratos, alertas de vencimiento, aumentos programados, renovaciones, preavisos</td>
+        </tr>
+        <tr>
+            <td><strong>5. Finanzas</strong></td>
+            <td>Control contable completo</td>
+            <td>Registro de ingresos/gastos, categorizacion automatica, conciliacion, reportes P&L, flujo de caja</td>
+        </tr>
+        <tr>
+            <td><strong>6. Cobros</strong></td>
+            <td>Gestion de canon mensual</td>
+            <td>Fichas de pago automaticas, recordatorios, seguimiento de morosidad, historial de pagos por inmueble</td>
+        </tr>
+        <tr>
+            <td><strong>7. Mantenimiento</strong></td>
+            <td>Ordenes de trabajo y reparaciones</td>
+            <td>Tickets de mantenimiento, asignacion a proveedores, seguimiento de costos, historial por propiedad</td>
+        </tr>
+        <tr>
+            <td><strong>8. Reportes</strong></td>
+            <td>Informes para propietarios y administracion</td>
+            <td>Rent roll, estado de resultados, ocupacion, liquidacion a propietarios, reportes personalizados</td>
+        </tr>
+        <tr>
+            <td><strong>9. Configuracion</strong></td>
+            <td>Parametros del sistema</td>
+            <td>Gastos fijos oficina, porcentaje de administracion, usuarios, categorias de gasto, plantillas</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="sec4-3">4.3 Especificacion de Widgets y Componentes</h2>
+
+<h3>4.3.1 Dashboard Principal - Vista Detallada</h3>
+
+<p>El dashboard principal es la pantalla de inicio y debe mostrar la siguiente informacion organizada en secciones:</p>
+
+<p><strong>Fila 1: KPI Cards (4 cards)</strong></p>
+<ul>
+    <li><strong>Total Inmuebles:</strong> Numero con variacion vs mes anterior (ej: "19 / 0%")</li>
+    <li><strong>Tasa de Ocupacion:</strong> Porcentaje con barra de progreso visual (ej: "89% / 17 ocupados de 19")</li>
+    <li><strong>Recaudacion Mes:</strong> Valor en COP con meta vs real (ej: "$9.8M recaudado / $11M meta")</li>
+    <li><strong>NOI Mes:</strong> Ingreso neto con tendencia (ej: "$6.2M / +3.2% vs mes anterior")</li>
+</ul>
+
+<p><strong>Fila 2: Graficos (2 columnas)</strong></p>
+<ul>
+    <li><strong>Grafico de Ingresos vs Gastos (ultimos 12 meses):</strong> Barras agrupadas mostrando ingresos por canon vs gastos operativos + gastos oficina</li>
+    <li><strong>Grafico de Ocupacion (ultimos 12 meses):</strong> Linea mostrando % de ocupacion mes a mes con meta del 95%</li>
+</ul>
+
+<p><strong>Fila 3: Alertas y Actividad (2 columnas)</strong></p>
+<ul>
+    <li><strong>Panel de Alertas:</strong> Lista de alertas prioritarias ordenadas por urgencia:
+        <ul>
+            <li>Contratos por vencer en los proximos 60 dias</li>
+            <li>Canones pendientes de pago (morosidad)</li>
+            <li>Aumentos de canon programados para este mes</li>
+            <li>Depositos pendientes de devolucion</li>
+        </ul>
+    </li>
+    <li><strong>Actividad Reciente:</strong> Ultimas 10 transacciones registradas con fecha, descripcion, monto e inmueble asociado</li>
+</ul>
+
+<p><strong>Fila 4: Calendario y Mapa (2 columnas)</strong></p>
+<ul>
+    <li><strong>Calendario de Eventos:</strong> Vista mensual con indicadores de colores para: inicios de contrato, vencimientos, aumentos de canon, pagos programados</li>
+    <li><strong>Resumen por Propiedad:</strong> Tabla compacta con cada inmueble, estado (ocupado/desocupado/preaviso), canon actual y proximo evento</li>
+</ul>
+
+<h3>4.3.2 Pantalla de Detalle por Inmueble</h3>
+
+<p>Al seleccionar un inmueble del catalogo, se muestra:</p>
+<ul>
+    <li>Info basica: direccion, tipo, propietario, administrador asignado</li>
+    <li>Estado actual: ocupado/desocupado, arrendatario actual, canon mensual</li>
+    <li>Contrato activo: fecha inicio, duracion, fecha vencimiento, deposito, dias restantes</li>
+    <li>Historial financiero: grafico de ingresos/gastos de los ultimos 12 meses</li>
+    <li>Historial de arrendatarios: lista de inquilinos anteriores con fechas</li>
+    <li>Documentos: fotos del inmueble, contratos PDF, inventarios, certificados</li>
+    <li>Mantenimiento: tickets historicos y activos con costos</li>
+</ul>
+
+<h3>4.3.3 Pantalla de Finanzas</h3>
+
+<ul>
+    <li><strong>Registro de transacciones:</strong> Tabla filtrable con fecha, descripcion, categoria, inmueble, tipo (ingreso/gasto), monto</li>
+    <li><strong>Categorias:</strong> Casa Azul, Habitacion Azul, Apto Azul, Edificio, Otros (igual que el Excel actual) + subcategorias</li>
+    <li><strong>Grafico de gastos por categoria:</strong> Torta o barras horizontales</li>
+    <li><strong>Comparativa mes a mes:</strong> Tabla de doble entrada (meses x categorias)</li>
+    <li><strong>Exportacion:</strong> PDF y Excel para contador/propietarios</li>
+</ul>
+
+<h3>4.3.4 Alertas Inteligentes del Sistema</h3>
+
+<table>
+    <caption data-label="Tabla 8">Alertas configurables del sistema</caption>
+    <thead>
+        <tr>
+            <th>Alerta</th>
+            <th>Disparador</th>
+            <th>Accion Sugerida</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>Contrato por vencer</td><td>Faltan 60 dias para fin de contrato</td><td>Iniciar negociacion de renovacion o buscar nuevo arrendatario</td></tr>
+        <tr><td>Aumento de canon programado</td><td>Mes del aumento configurado</td><td>Notificar arrendatario y actualizar ficha de pago</td></tr>
+        <tr><td>Canon pendiente</td><td>Paso el dia 5 del mes sin registro de pago</td><td>Enviar recordatorio al arrendatario</td></tr>
+        <tr><td>Morosidad critica</td><td>Canon pendiente por mas de 15 dias</td><td>Notificar administrador para accion legal/preaviso</td></tr>
+        <tr><td>Propiedad desocupada</td><td>+30 dias sin arrendatario</td><td>Revisar precio, marketing, reparaciones necesarias</td></tr>
+        <tr><td>Deposito por devolver</td><td>Contrato terminado, deposito sin liquidar</td><td>Realizar inventario final y devolver deposito</td></tr>
+        <tr><td>Gasto atipico</td><td>Gasto en un inmueble supera promedio mensual x2</td><td>Revisar si es reparacion mayor o error de registro</td></tr>
+    </tbody>
+</table>
+
+<!-- ========== SECTION 5 ========== -->
+<h1 id="sec5" class="section-break">5. Plan de Implementacion</h1>
+
+<p>El plan de implementacion se estructura en <strong>4 fases</strong> con una duracion total estimada de <strong>16 semanas</strong> (4 meses). Cada fase tiene entregables definidos, criterios de aceptacion y dependencias claras.</p>
+
+<h2 id="sec5-1">5.1 Fase 1: Fundacion y Datos (Semanas 1-3)</h2>
+
+<div class="phase-box">
+    <div class="phase-header">
+        <span class="phase-number">1</span>
+        <span class="phase-title">Fundacion y Migracion de Datos</span>
+        <span class="phase-duration">Semanas 1-3</span>
+    </div>
+    <p><strong>Objetivo:</strong> Tener la base de datos operativa con toda la informacion historica migrada desde Excel.</p>
+    
+    <table>
+        <thead>
+            <tr><th>Tarea</th><th>Descripcion</th><th>Duracion</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>1.1 Setup proyecto</td><td>Configurar repo, CI/CD, ambientes (dev/staging/prod), base de datos</td><td>2 dias</td></tr>
+            <tr><td>1.2 Modelo de datos</td><td>Diseñar e implementar schema: inmuebles, arrendatarios, contratos, transacciones, usuarios</td><td>3 dias</td></tr>
+            <tr><td>1.3 Migracion Excel</td><td>Script de importacion de ambas hojas del Excel a la base de datos</td><td>3 dias</td></tr>
+            <tr><td>1.4 Auth y usuarios</td><td>Sistema de autenticacion, roles (admin, viewer), control de acceso</td><td>2 dias</td></tr>
+            <tr><td>1.5 Layout base</td><td>Sidebar, header, rutas principales, tema visual</td><td>3 dias</td></tr>
+            <tr><td>1.6 Validacion datos</td><td>Revision con equipo de los datos migrados, correcciones</td><td>2 dias</td></tr>
+        </tbody>
+    </table>
+    
+    <p><strong>Entregable:</strong> Ambiente funcional con datos reales migrados, login operativo y navegacion basica.</p>
+</div>
+
+<h2 id="sec5-2">5.2 Fase 2: Dashboard Core (Semanas 4-8)</h2>
+
+<div class="phase-box">
+    <div class="phase-header">
+        <span class="phase-number">2</span>
+        <span class="phase-title">Dashboard Principal y Modulos Base</span>
+        <span class="phase-duration">Semanas 4-8</span>
+    </div>
+    <p><strong>Objetivo:</strong> Tener el dashboard principal funcional con KPIs reales, gestion de inmuebles y arrendatarios operativa.</p>
+    
+    <table>
+        <thead>
+            <tr><th>Tarea</th><th>Descripcion</th><th>Duracion</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>2.1 KPI Cards</td><td>Implementar cards de KPIs con datos reales de la BD</td><td>2 dias</td></tr>
+            <tr><td>2.2 Graficos</td><td>Graficos de ingresos/gastos y ocupacion (biblioteca Chart.js o similar)</td><td>3 dias</td></tr>
+            <tr><td>2.3 Panel alertas</td><td>Sistema de alertas con logica de negocio (vencimientos, morosidad)</td><td>3 dias</td></tr>
+            <tr><td>2.4 Modulo Inmuebles</td><td>CRUD completo, galeria de fotos, filtros, busqueda</td><td>4 dias</td></tr>
+            <tr><td>2.5 Modulo Arrendatarios</td><td>CRUD, perfiles, historial de pagos, vinculacion con inmuebles</td><td>4 dias</td></tr>
+            <tr><td>2.6 Modulo Contratos</td><td>CRUD, fechas, depositos, aumentos programados, alertas automaticas</td><td>5 dias</td></tr>
+            <tr><td>2.7 Actividad reciente</td><td>Feed de ultimas transacciones y eventos</td><td>2 dias</td></tr>
+            <tr><td>2.8 Calendario</td><td>Vista mensual con eventos de contratos y pagos</td><td>3 dias</td></tr>
+        </tbody>
+    </table>
+    
+    <p><strong>Entregable:</strong> Dashboard principal funcional, modulo de inmuebles, arrendatarios y contratos operativos.</p>
+</div>
+
+<h2 id="sec5-3">5.3 Fase 3: Modulos Avanzados (Semanas 9-13)</h2>
+
+<div class="phase-box">
+    <div class="phase-header">
+        <span class="phase-number">3</span>
+        <span class="phase-title">Finanzas, Cobros y Mantenimiento</span>
+        <span class="phase-duration">Semanas 9-13</span>
+    </div>
+    <p><strong>Objetivo:</strong> Completar la gestion operativa con control financiero, fichas de cobro y mantenimiento.</p>
+    
+    <table>
+        <thead>
+            <tr><th>Tarea</th><th>Descripcion</th><th>Duracion</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>3.1 Modulo Finanzas</td><td>Registro de transacciones, categorizacion, filtros, tabla doble entrada</td><td>5 dias</td></tr>
+            <tr><td>3.2 Graficos financieros</td><td>Gastos por categoria, comparativa mensual, tendencias</td><td>3 dias</td></tr>
+            <tr><td>3.3 Modulo Cobros</td><td>Fichas de pago automaticas, recordatorios, seguimiento de morosidad</td><td>4 dias</td></tr>
+            <tr><td>3.4 Estados de cuenta</td><td>Generacion de estados de cuenta por inmueble/arrendatario</td><td>3 dias</td></tr>
+            <tr><td>3.5 Modulo Mantenimiento</td><td>Tickets de trabajo, asignacion, seguimiento de costos</td><td>4 dias</td></tr>
+            <tr><td>3.6 Notificaciones</td><td>Sistema de notificaciones in-app y por email para alertas clave</td><td>3 dias</td></tr>
+            <tr><td>3.7 Exportaciones</td><td>Exportar reportes a PDF y Excel</td><td>2 dias</td></tr>
+        </tbody>
+    </table>
+    
+    <p><strong>Entregable:</strong> Sistema financiero operativo, modulo de cobros y mantenimiento funcionando.</p>
+</div>
+
+<h2 id="sec5-4">5.4 Fase 4: Optimizacion y Escalamiento (Semanas 14-16)</h2>
+
+<div class="phase-box">
+    <div class="phase-header">
+        <span class="phase-number">4</span>
+        <span class="phase-title">Reportes, Testing y Lanzamiento</span>
+        <span class="phase-duration">Semanas 14-16</span>
+    </div>
+    <p><strong>Objetivo:</strong> Sistema listo para produccion con reportes, testing completo y capacitacion.</p>
+    
+    <table>
+        <thead>
+            <tr><th>Tarea</th><th>Descripcion</th><th>Duracion</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>4.1 Modulo Reportes</td><td>Rent roll, P&L, liquidacion a propietarios, reportes personalizados</td><td>4 dias</td></tr>
+            <tr><td>4.2 Testing QA</td><td>Pruebas funcionales, de usabilidad y de datos con usuarios reales</td><td>4 dias</td></tr>
+            <tr><td>4.3 Performance</td><td>Optimizacion de queries, carga de datos, cache de KPIs</td><td>2 dias</td></tr>
+            <tr><td>4.4 Capacitacion</td><td>Sesion de capacitacion con el equipo administrativo</td><td>2 dias</td></tr>
+            <tr><td>4.5 Deploy produccion</td><td>Despliegue a produccion, configuracion de dominio, SSL, backups</td><td>2 dias</td></tr>
+            <tr><td>4.6 Soporte inicial</td><td>Soporte las primeras 2 semanas post-lanzamiento</td><td>Ongoing</td></tr>
+        </tbody>
+    </table>
+    
+    <p><strong>Entregable:</strong> Sistema en produccion, equipo capacitado, documentacion basica.</p>
+</div>
+
+<h2 id="sec5-5">5.5 Cronograma y Recursos</h2>
+
+<table>
+    <caption data-label="Tabla 9">Resumen del cronograma y recursos</caption>
+    <thead>
+        <tr>
+            <th>Fase</th>
+            <th>Semanas</th>
+            <th>Duracion</th>
+            <th>Rol Principal</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>Fase 1: Fundacion y Datos</td><td>1-3</td><td>3 semanas</td><td>Backend Dev</td></tr>
+        <tr><td>Fase 2: Dashboard Core</td><td>4-8</td><td>5 semanas</td><td>Fullstack Dev + UI/UX</td></tr>
+        <tr><td>Fase 3: Modulos Avanzados</td><td>9-13</td><td>5 semanas</td><td>Fullstack Dev</td></tr>
+        <tr><td>Fase 4: Optimizacion</td><td>14-16</td><td>3 semanas</td><td>QA + DevOps</td></tr>
+        <tr style="background:#f7f9fc;"><td><strong>TOTAL</strong></td><td><strong>1-16</strong></td><td><strong>16 semanas</strong></td><td><strong>2-3 personas</strong></td></tr>
+    </tbody>
+</table>
+
+<div class="highlight-box">
+    <strong>Stack Tecnologico Recomendado:</strong>
+    <ul>
+        <li><strong>Frontend:</strong> React + TypeScript + Tailwind CSS + Chart.js/Recharts para graficos</li>
+        <li><strong>Backend:</strong> Node.js/Express o framework similar</li>
+        <li><strong>Base de datos:</strong> PostgreSQL (relacional, ideal para datos financieros y contractuales)</li>
+        <li><strong>Auth:</strong> JWT + bcrypt</li>
+        <li><strong>Hosting:</strong> Vercel/Netlify (frontend) + Railway/Render (backend + BD)</li>
+        <li><strong>Notificaciones:</strong> SendGrid o similar para emails automaticos</li>
+    </ul>
+</div>
+
+<!-- ========== SECTION 6 ========== -->
+<h1 id="sec6" class="section-break">6. Conclusiones y Recomendaciones</h1>
+
+<p>La transformacion del sistema actual basado en Excel hacia un dashboard administrativo inmobiliario representa una <strong>oportunidad de crecimiento significativa</strong> para la operacion. Los beneficios esperados incluyen:</p>
+
+<table>
+    <caption data-label="Tabla 10">Beneficios esperados del nuevo sistema</caption>
+    <thead>
+        <tr>
+            <th>Area</th>
+            <th>Beneficio</th>
+            <th>Impacto Estimado</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td><strong>Productividad</strong></td><td>Eliminacion de tareas manuales de registro y calculo</td><td>-70% tiempo en tareas administrativas</td></tr>
+        <tr><td><strong>Cobro</strong></td><td>Alertas tempranas de morosidad y recordatorios automaticos</td><td>+15% tasa de recaudacion puntual</td></tr>
+        <tr><td><strong>Vacancia</strong></td><td>Alertas de vencimiento y preaviso con 60 dias de anticipacion</td><td>-30% dias promedio de vacancia</td></tr>
+        <tr><td><strong>Decisiones</strong></td><td>KPIs en tiempo real para ajustes de precio y estrategia</td><td>Mayor rentabilidad neta del portafolio</td></tr>
+        <tr><td><strong>Propietarios</strong></td><td>Reportes automaticos y portal de transparencia</td><td>+40% satisfaccion del cliente</td></tr>
+        <tr><td><strong>Escalabilidad</strong></td><td>Capacidad de crecer sin aumentar proporcionalmente el equipo</td><td>De 19 a 50+ inmuebles sin friccion</td></tr>
+    </tbody>
+</table>
+
+<div class="info-box">
+    <div class="info-box-title">Recomendacion Prioritaria</div>
+    <p>Iniciar inmediatamente con la <strong>Fase 1 (Fundacion y Datos)</strong>. La migracion de datos desde Excel es el cuello de botella critico: mientras mas tiempo pase sin migrar, mas desactualizados quedaran los datos y mayor sera el esfuerzo de sincronizacion. Una vez los datos esten en la base de datos, el desarrollo de las interfaces es iterativo y puede mostrar progreso visible semana a semana.</p>
+</div>
+
+<p>El equipo de desarrollo debe priorizar la <strong>exactitud de los datos financieros</strong> sobre la estetica. Un dashboard con KPIs correctos y alertas puntuales genera mas valor operativo que uno visualmente sofisticado pero con datos inconsistentes. La recomendacion es validar cada interfaz con datos reales antes de avanzar al siguiente modulo.</p>
+
+<div class="highlight-box">
+    <strong>Proximos pasos sugeridos:</strong>
+    <ol>
+        <li><strong>Semana 0:</strong> Kickoff con Antigravity, acceso al Excel completo, definicion de stack tecnologico</li>
+        <li><strong>Semana 1:</strong> Inicio Fase 1 - Modelo de datos y migracion</li>
+        <li><strong>Revision semanal:</strong> Demos cada viernes con el equipo administrativo para validar avances</li>
+        <li><strong>Go-live parcial:</strong> Al finalizar Fase 2, usar el sistema en paralelo con Excel por 2 semanas</li>
+        <li><strong>Go-live total:</strong> Al finalizar Fase 4, Excel como respaldo unicamente</li>
+    </ol>
+</div>
+
+</body>
+</html>

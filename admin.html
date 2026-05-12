@@ -2435,11 +2435,30 @@ function renderPropsGrid(listaForzada){
     html += '<div class="prop-card-name">' + (d['Nombre']||'') + '</div>';
     html += '<div class="prop-card-price" style="font-size:1.1rem; margin-bottom:8px;">' + formatP(d['Precio']) + '</div>';
     
+    // Restaurar características (Habitaciones, Baños, etc.)
+    html += '<div class="prop-card-features" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">';
+    html += '<div style="display:flex; flex-wrap:wrap; gap:10px; font-size:11px; color:#ccc;">';
+    if(d['Habitaciones']) html += `<span><span style="opacity:0.7;">🛏</span> ${d['Habitaciones']}</span>`;
+    if(d['Baños']) html += `<span><span style="opacity:0.7;">🛁</span> ${d['Baños']}</span>`;
+    if(d['Garaje']) html += `<span><span style="opacity:0.7;">🚗</span> ${d['Garaje']}</span>`;
+    html += '</div>';
+    html += '<div style="display:flex; flex-wrap:wrap; gap:10px; font-size:11px; color:#ccc;">';
+    if(d['Cocina']) html += `<span><span style="opacity:0.7;">🍳</span> ${d['Cocina']}</span>`;
+    if(d['Pisos']) html += `<span>Pisos ${d['Pisos']}</span>`;
+    if(d['Área']) html += `<span><span style="opacity:0.7;">📐</span> ${d['Área']} m²</span>`;
+    html += '</div>';
+
     if(String(d['Rentabilidad']||'').trim()) {
       html += `<div style="font-size:12px; font-weight:700; color:var(--gold); margin-top:4px;">${d['Rentabilidad']}</div>`;
     }
-    html += '</div>';
-    html += '</div>';
+    html += '</div>'; // Fin features
+    
+    html += '</div>'; // Fin card-body
+    
+    // Restaurar etiqueta de inmobiliaria si existe
+    if(inmob) html += '<div class="prop-card-inmobiliaria" style="font-size:10px; color:#888; padding:8px 12px; border-top:1px solid rgba(255,255,255,0.05); text-align:right;" title="' + eq(inmob) + '">🏢 ' + inmob + '</div>';
+    
+    html += '</div>'; // Fin prop-card
   }
   html += '</div>';
 
