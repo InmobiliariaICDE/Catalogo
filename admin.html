@@ -1520,7 +1520,7 @@ function renderEditFiltrosGrid(lista){
               ${d['Pisos'] ? `<span>Pisos ${d['Pisos']}</span>` : ''}
               ${d['Área'] ? `<span><span style="opacity:0.7;">📐</span> Lote ${d['Área']} m²</span>` : ''}
             </div>
-            ${parseP(d['Rentabilidad']) > 0 ? `<div style="font-size:10px; font-weight:700; color:var(--gold); margin-top:2px;">Rentabilidad ${formatP(d['Rentabilidad'])}</div>` : ''}
+            ${(()=>{ const _r=String(d['Rentabilidad']||'').trim().replace(/[$\s]/g,''); return (_r && _r!=='0' && _r!=='0.0') ? `<div style="font-size:10px; font-weight:700; color:var(--gold); margin-top:2px;">Rentabilidad ${formatP(d['Rentabilidad'])}</div>` : ''; })()} 
           </div>
         </div>
       </div>`;
@@ -2167,8 +2167,9 @@ function renderPropsGrid(listaForzada){
     if(d['Área']) html += `<span><span style="opacity:0.7;">📐</span> Lote ${d['Área']} m²</span>`;
     html += '</div>';
 
-    // Row 3: Rentabilidad (solo si tiene valor numérico real > 0)
-    if(parseP(d['Rentabilidad']) > 0) {
+    // Row 3: Rentabilidad (solo si tiene valor real, no vacío ni cero)
+    const _rentVal = String(d['Rentabilidad']||'').trim().replace(/[$\s]/g,'');
+    if(_rentVal && _rentVal !== '0' && _rentVal !== '0.0') {
       html += `<div style="font-size:12px; font-weight:700; color:var(--gold); margin-top:4px;">Rentabilidad ${formatP(d['Rentabilidad'])}</div>`;
     }
     
