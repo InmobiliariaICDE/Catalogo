@@ -1610,7 +1610,8 @@ function fnActualizarConteo(pfx){
 
   const btnGen = document.getElementById(`btnGen_${pfx}`);
   if(btnGen){
-    const active = busVal !== '' || st.minPrice || st.maxPrice || Object.values(st).some(v => Array.isArray(v) && v.length > 0);
+    const hasSelection = (pfx === 'nl' && window.selectedProps && selectedProps.length > 0);
+    const active = busVal !== '' || st.minPrice || st.maxPrice || Object.values(st).some(v => Array.isArray(v) && v.length > 0) || hasSelection;
     btnGen.style.display = active ? 'flex' : 'none';
   }
 
@@ -2532,6 +2533,9 @@ function toggleProp(cod,el){
     }
   }
   const c=document.getElementById('selCnt'); if(c) c.textContent=`${selectedProps.length} seleccionadas`;
+  
+  // Actualizar visibilidad del botón "Generar link" en la barra de filtros
+  fnActualizarConteo('nl');
 }
 
 /* ═══════════════════════════════════════════════
