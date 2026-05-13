@@ -1260,10 +1260,15 @@ function getFSt(pfx){ return _fst[pfx] || (_fst[pfx] = {}); }
 function setFSt(pfx, obj){ _fst[pfx] = JSON.parse(JSON.stringify(obj)); }
 
 function getUniqueVals(campo){
-  return [...new Set(allProps.map(d=>d[campo]).filter(v=>v&&String(v).trim()!=''))].sort();
+  const vals = allProps.map(d => String(d[campo] || "").trim()).filter(v => v !== "");
+  return [...new Set(vals)].sort();
 }
 function getUniqueNums(campo){
-  return [...new Set(allProps.map(d=>d[campo]).filter(v=>v&&String(v).trim()!=''))].map(Number).filter(v=>!isNaN(v)).sort((a,b)=>a-b).map(String);
+  const nums = allProps.map(d => {
+    const v = String(d[campo] || "").trim();
+    return v === "" ? NaN : Number(v);
+  }).filter(v => !isNaN(v));
+  return [...new Set(nums)].sort((a,b) => a - b).map(String);
 }
 function filtrarProps(f, returnAllIfEmpty = true){
   const parseP = txt => parseFloat(String(txt || "").replace(/[^\d]/g, "")) || 0;
@@ -1286,17 +1291,17 @@ function filtrarProps(f, returnAllIfEmpty = true){
 
   const filtered = base.filter(d=>{
     // 1. Categorías (Multi-select)
-    if(f.tipoInmueble?.length && !f.tipoInmueble.includes(d['Tipo de inmueble'])) return false;
-    if(f.zona?.length         && !f.zona.includes(d['Zona']))                     return false;
-    if(f.habitaciones?.length && !f.habitaciones.includes(String(d['Habitaciones']))) return false;
-    if(f.garaje?.length       && !f.garaje.includes(String(d['Garaje'])))         return false;
-    if(f.pisos?.length        && !f.pisos.includes(String(d['Pisos'])))           return false;
-    if(f.ubicacion?.length    && !f.ubicacion.includes(String(d['Ubicación'])))   return false;
-    if(f.piscina?.length      && !f.piscina.includes(String(d['Piscina'])))       return false;
-    if(f.cocina?.length       && !f.cocina.includes(String(d['Cocina'])))         return false;
-    if(f.barrio?.length       && !f.barrio.includes(String(d['Barrio'])))         return false;
-    if(f.conjunto?.length     && !f.conjunto.includes(String(d['Conjunto'])))     return false;
-    if(f.kmzCategory?.length  && !f.kmzCategory.includes(String(d['_kmzCategory']))) return false;
+    if(f.tipoInmueble?.length && !f.tipoInmueble.includes(String(d['Tipo de inmueble'] || "").trim())) return false;
+    if(f.zona?.length         && !f.zona.includes(String(d['Zona'] || "").trim()))                     return false;
+    if(f.habitaciones?.length && !f.habitaciones.includes(String(d['Habitaciones'] || "").trim()))     return false;
+    if(f.garaje?.length       && !f.garaje.includes(String(d['Garaje'] || "").trim()))             return false;
+    if(f.pisos?.length        && !f.pisos.includes(String(d['Pisos'] || "").trim()))               return false;
+    if(f.ubicacion?.length    && !f.ubicacion.includes(String(d['Ubicación'] || "").trim()))       return false;
+    if(f.piscina?.length      && !f.piscina.includes(String(d['Piscina'] || "").trim()))           return false;
+    if(f.cocina?.length       && !f.cocina.includes(String(d['Cocina'] || "").trim()))             return false;
+    if(f.barrio?.length       && !f.barrio.includes(String(d['Barrio'] || "").trim()))             return false;
+    if(f.conjunto?.length     && !f.conjunto.includes(String(d['Conjunto'] || "").trim()))         return false;
+    if(f.kmzCategory?.length  && !f.kmzCategory.includes(String(d['_kmzCategory'] || "").trim()))     return false;
 
 
     
@@ -1556,7 +1561,7 @@ function fnPoblar(pfx, c){
   const subset = filtrarProps(stBase, true);
 
   drop.innerHTML = vals.map(v => {
-    const cnt = subset.filter(d=>String(d[c.campo])===v).length;
+    const cnt = subset.filter(d=>String(d[c.campo] || "").trim()===v).length;
     const sel = (st[c.key]||[]).includes(v);
     return `<div class="fn-option${sel?' fn-sel':''}${cnt===0 && !sel?' fn-zero':''}" data-v="${eq(v)}"
       onclick="fnToggle('${pfx}','${c.key}','${eq(v)}',this);event.stopPropagation()">
