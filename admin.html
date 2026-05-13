@@ -1211,6 +1211,9 @@ let mapViewportFilterActive = true;
 let citasViewMode = localStorage.getItem('icde_citas_view') || 'lista';
 let calDate = new Date();
 
+// Helper de normalización global para evitar duplicados por acentos, mayúsculas, espacios o puntos
+const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.,]/g, "").trim();
+
 function freshLead(){
   return {
     tipo:'cliente', nombre:'', celular:'', notas:'', metodoPago:[], estado:'enviando', etiqueta:'activo',
@@ -1260,8 +1263,16 @@ function getFSt(pfx){ return _fst[pfx] || (_fst[pfx] = {}); }
 function setFSt(pfx, obj){ _fst[pfx] = JSON.parse(JSON.stringify(obj)); }
 
 function getUniqueVals(campo){
-  const vals = allProps.map(d => String(d[campo] || "").trim()).filter(v => v !== "");
-  return [...new Set(vals)].sort();
+  const consolidated = new Map();
+  allProps.forEach(d => {
+    const raw = String(d[campo] || "").trim();
+    if (!raw) return;
+    const n = norm(raw);
+    if (!consolidated.has(n)) {
+      consolidated.set(n, raw); // Guardamos la primera versión encontrada como "etiqueta"
+    }
+  });
+  return Array.from(consolidated.values()).sort((a,b) => a.localeCompare(b));
 }
 function getUniqueNums(campo){
   const nums = allProps.map(d => {
@@ -1272,7 +1283,6 @@ function getUniqueNums(campo){
 }
 function filtrarProps(f, returnAllIfEmpty = true){
   const parseP = txt => parseFloat(String(txt || "").replace(/[^\d]/g, "")) || 0;
-  const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   
   if(!f) return allProps;
 
@@ -1291,16 +1301,16 @@ function filtrarProps(f, returnAllIfEmpty = true){
 
   const filtered = base.filter(d=>{
     // 1. Categorías (Multi-select)
-    if(f.tipoInmueble?.length && !f.tipoInmueble.includes(String(d['Tipo de inmueble'] || "").trim())) return false;
-    if(f.zona?.length         && !f.zona.includes(String(d['Zona'] || "").trim()))                     return false;
+    if(f.tipoInmueble?.length && !f.tipoInmueble.some(v => norm(v) === norm(d['Tipo de inmueble']))) return false;
+    if(f.zona?.length         && !f.zona.some(v => norm(v) === norm(d['Zona'])))                     return false;
     if(f.habitaciones?.length && !f.habitaciones.includes(String(d['Habitaciones'] || "").trim()))     return false;
     if(f.garaje?.length       && !f.garaje.includes(String(d['Garaje'] || "").trim()))             return false;
     if(f.pisos?.length        && !f.pisos.includes(String(d['Pisos'] || "").trim()))               return false;
     if(f.ubicacion?.length    && !f.ubicacion.includes(String(d['Ubicación'] || "").trim()))       return false;
     if(f.piscina?.length      && !f.piscina.includes(String(d['Piscina'] || "").trim()))           return false;
     if(f.cocina?.length       && !f.cocina.includes(String(d['Cocina'] || "").trim()))             return false;
-    if(f.barrio?.length       && !f.barrio.includes(String(d['Barrio'] || "").trim()))             return false;
-    if(f.conjunto?.length     && !f.conjunto.includes(String(d['Conjunto'] || "").trim()))         return false;
+    if(f.barrio?.length       && !f.barrio.some(v => norm(v) === norm(d['Barrio'])))               return false;
+    if(f.conjunto?.length     && !f.conjunto.some(v => norm(v) === norm(d['Conjunto'])))           return false;
     if(f.kmzCategory?.length  && !f.kmzCategory.includes(String(d['_kmzCategory'] || "").trim()))     return false;
 
 
@@ -1561,8 +1571,9 @@ function fnPoblar(pfx, c){
   const subset = filtrarProps(stBase, true);
 
   drop.innerHTML = vals.map(v => {
-    const cnt = subset.filter(d=>String(d[c.campo] || "").trim()===v).length;
-    const sel = (st[c.key]||[]).includes(v);
+    const nv = norm(v);
+    const cnt = subset.filter(d=>norm(d[c.campo])===nv).length;
+    const sel = (st[c.key]||[]).some(x => norm(x) === nv);
     return `<div class="fn-option${sel?' fn-sel':''}${cnt===0 && !sel?' fn-zero':''}" data-v="${eq(v)}"
       onclick="fnToggle('${pfx}','${c.key}','${eq(v)}',this);event.stopPropagation()">
       <span class="fn-chk"></span>${v}<span class="fn-count">(${cnt})</span>
@@ -1617,10 +1628,16 @@ function fnUpdateSliderTrack(pfx){
 /* Toggle de una opción */
 function fnToggle(pfx, key, val, el){
   const st = getFSt(pfx);
-  if(!st[key]) st[key]=[];
-  const idx = st[key].indexOf(val);
-  if(idx>=0){ st[key].splice(idx,1); el.classList.remove('fn-sel'); }
-  else      { st[key].push(val);     el.classList.add('fn-sel'); }
+  const nv = norm(val);
+  if(!st[key]) st[key] = [];
+  const idx = st[key].findIndex(x => norm(x) === nv);
+  if(idx >= 0){
+    st[key].splice(idx, 1);
+    if(el) el.classList.remove('fn-sel');
+  } else {
+    st[key].push(val);
+    if(el) el.classList.add('fn-sel');
+  }
   fnRenderHead(pfx, key);
   fnActualizarConteo(pfx);
   fnSincronizar(pfx);
@@ -1630,8 +1647,11 @@ function fnToggle(pfx, key, val, el){
 function fnQuitarTag(pfx, key, val, e){
   e.stopPropagation();
   const st = getFSt(pfx);
-  st[key]=(st[key]||[]).filter(v=>v!==val);
-  document.querySelectorAll(`#fnD_${pfx}_${key} [data-v="${eq(val)}"]`).forEach(o=>o.classList.remove('fn-sel'));
+  const nv = norm(val);
+  st[key] = (st[key] || []).filter(v => norm(v) !== nv);
+  document.querySelectorAll(`#fnD_${pfx}_${key} [data-v]`).forEach(o => {
+    if(norm(o.getAttribute('data-v')) === nv) o.classList.remove('fn-sel');
+  });
   fnRenderHead(pfx, key);
   fnActualizarConteo(pfx);
   fnSincronizar(pfx);
