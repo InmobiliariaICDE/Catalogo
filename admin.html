@@ -3832,10 +3832,15 @@ async function guardarFeedback(){
     cita.estado = estado;
     const lead = leads.find(l => String(l.id) === String(cita.leadId));
     if(lead && lead.visitas){
-      const v = lead.visitas.find(x => x.codigo === cita.codigo && x.fecha === cita.fecha);
+      // Buscar por id primero, luego por codigo+fecha como fallback
+      const v = lead.visitas.find(x => String(x.id) === String(id)) ||
+                lead.visitas.find(x => x.codigo === cita.codigo && x.fecha === cita.fecha);
       if(v) {
         v.estado = estado;
         v.notas = notas;
+        v.observaciones = notas;
+        // Asegurar que el ID esté guardado para futuros matches
+        if(!v.id) v.id = id;
       }
     }
     saveLeads();
@@ -3844,7 +3849,8 @@ async function guardarFeedback(){
     toast('Feedback guardado ✓');
   }
   closeModal('feedbackModal');
-  setTimeout(checkCitasFeedback, 1500);
+  // Solo volver a revisar si hay más citas pendientes (con delay para que el save se propague)
+  setTimeout(checkCitasFeedback, 3000);
 }
 
 function renderCitasBody(lista){
