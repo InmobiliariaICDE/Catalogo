@@ -381,7 +381,7 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 .prop-card-price{font-size:12px;color:var(--gold);font-weight:600;}
 .prop-card-check{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:var(--gold);display:none;align-items:center;justify-content:center;color:#000;font-size:13px;font-weight:700;}
 .prop-card.selected .prop-card-check{display:flex;}
-.prop-card-inmobiliaria { position: absolute; bottom: 8px; right: 8px; background: rgba(13, 11, 8, 0.85); color: var(--gold); padding: 3px 8px; border-radius: 6px; font-size: 9.5px; font-weight: 700; text-transform: uppercase; border: 1px solid rgba(212, 168, 75, 0.2); backdrop-filter: blur(4px); z-index: 5; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prop-card-inmobiliaria { background: rgba(212, 168, 75, 0.15); color: var(--gold); padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; border: 1px solid rgba(212, 168, 75, 0.3); white-space: nowrap; max-width: 80px; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: middle; }
 
 /* SELECTED BAR */
 .selected-bar{background:rgba(212,168,75,.1);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
@@ -1740,7 +1740,10 @@ function renderEditFiltrosGrid(lista){
         <div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp('${eq(cod)}', this.parentElement)">${sel?'✓':'+'}</div>
         <img src="${img}" style="height:110px; width:100%; object-fit:cover; border-radius:8px;"/>
         <div class="prop-card-body" style="padding:8px 0;">
-          <div style="font-weight:bold; color:var(--gold); font-size:14px;">Cód: ${cod}</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+            <div style="font-weight:bold; color:var(--gold); font-size:14px;">Cód: ${cod}</div>
+            ${d['Inmobiliaria'] ? `<div class="prop-card-inmobiliaria" title="${eq(d['Inmobiliaria'])}">${d['Inmobiliaria']}</div>` : ''}
+          </div>
           <div style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px;">${d['Nombre']||''}</div>
           <div style="font-weight:700; font-size:11px; margin-bottom:6px;">${formatP(d['Precio'])}</div>
           
@@ -1758,7 +1761,6 @@ function renderEditFiltrosGrid(lista){
             ${String(d['Rentabilidad']||'').trim() ? `<div style="font-size:11px; font-weight:700; color:var(--gold); margin-top:2px;">${d['Rentabilidad']}</div>` : ''}
           </div>
         </div>
-        ${d['Inmobiliaria'] ? `<div class="prop-card-inmobiliaria" title="${eq(d['Inmobiliaria'])}">${d['Inmobiliaria']}</div>` : ''}
       </div>`;
   }
   html += '</div>';
@@ -2573,8 +2575,11 @@ function renderPropsGrid(listaForzada){
     if(isDestacada) html += '<div class="ribbon"><span>¡Destacada!</span></div>';
     html += '<div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp(\'' + eq(cod) + '\', this.parentElement)">' + (sel?'✓':'+') + '</div>';
     html += '<img src="' + img + '" loading="lazy" onerror="this.src=\'https://i.imgur.com/Pc9M3I8.png\'"/>';
-    html += '<div class="prop-card-body" style="padding:10px 10px 30px 10px;">';
+    html += '<div class="prop-card-body" style="padding:10px 10px 10px 10px;">';
+    html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">';
     html += '<div class="prop-card-code" style="font-weight:bold; color:var(--gold); font-size:14px;">Cód: ' + cod + '</div>';
+    if(inmob) html += '<div class="prop-card-inmobiliaria" title="' + eq(inmob) + '">' + inmob + '</div>';
+    html += '</div>';
     html += '<div class="prop-card-name" style="font-size:14px; font-weight:600; color:#fff; margin:2px 0;">' + (d['Nombre']||'') + '</div>';
     html += '<div class="prop-card-price" style="font-size:0.9rem; font-weight:700; color:var(--gold); margin-bottom:4px;">' + formatP(d['Precio']) + '</div>';
     
@@ -2605,11 +2610,6 @@ function renderPropsGrid(listaForzada){
     
     html += '</div>'; // Fin features
     html += '</div>'; // Fin card-body
-    
-    if (inmob) {
-      html += '<div class="prop-card-inmobiliaria" title="' + eq(inmob) + '">' + inmob + '</div>';
-    }
-    
     html += '</div>'; // Fin prop-card
   }
   html += '</div>';
