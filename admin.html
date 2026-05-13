@@ -3349,7 +3349,9 @@ function confirmarEnvio(btn){
 
     if (modo === 'link') {
       const st = (lead.filtros && typeof lead.filtros === 'object') ? lead.filtros : {};
-      const link = getSearchLinkFromFilters(st);
+      // Usar los IDs del lote (preselección) si existen, igual que en la vista previa
+      const idsParaLink = (envioLote && envioLote.length > 0) ? envioLote : null;
+      const link = getSearchLinkFromFilters(st, idsParaLink);
       msg = emoCasa + " \u00A1Hola " + dest + "! " + emoHola + "\r\n\r\n" +
             "Te comparto aqu\u00ED los inmuebles que se ajustan a tus requerimientos " + emoLink + "\r\n\r\n" +
             link + "\r\n\r\n" +
