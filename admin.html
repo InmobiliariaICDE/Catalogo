@@ -1211,8 +1211,8 @@ let mapViewportFilterActive = true;
 let citasViewMode = localStorage.getItem('icde_citas_view') || 'lista';
 let calDate = new Date();
 
-// Helper de normalización global para evitar duplicados por acentos, mayúsculas, espacios o puntos
-const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.,]/g, "").trim();
+// Helper de normalización global para evitar duplicados por acentos, mayúsculas, espacios, puntos o caracteres especiales
+const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, "").replace(/\s+/g, " ").trim();
 
 function freshLead(){
   return {
@@ -1250,9 +1250,7 @@ const FCAMPOS = [
   { key:'barrio', campo:'Barrio', lbl:'Barrio',
     ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21v-4a4 4 0 118 0v4M13 21v-7a4 4 0 118 0v7M2 21h20"/></svg>' },
   { key:'conjunto', campo:'Conjunto', lbl:'Conjunto',
-    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V9l9-7 9 7v12M9 21v-6h6v6"/></svg>' },
-  { key:'kmzCategory', campo:'_kmzCategory', lbl:'Categoría KMZ',
-    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' },
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V9l9-7 9 7v12M9 21v-6h6v6"/></svg>' }
 ];
 
 
@@ -1264,18 +1262,19 @@ function setFSt(pfx, obj){ _fst[pfx] = JSON.parse(JSON.stringify(obj)); }
 
 function getUniqueVals(campo){
   const consolidated = new Map();
-  allProps.forEach(d => {
+  // Filtramos isKmzOnly para que el menú de filtros solo muestre datos reales del catálogo Excel
+  allProps.filter(d => !d.isKmzOnly).forEach(d => {
     const raw = String(d[campo] || "").trim();
     if (!raw) return;
     const n = norm(raw);
     if (!consolidated.has(n)) {
-      consolidated.set(n, raw); // Guardamos la primera versión encontrada como "etiqueta"
+      consolidated.set(n, raw); 
     }
   });
   return Array.from(consolidated.values()).sort((a,b) => a.localeCompare(b));
 }
 function getUniqueNums(campo){
-  const nums = allProps.map(d => {
+  const nums = allProps.filter(d => !d.isKmzOnly).map(d => {
     const v = String(d[campo] || "").trim();
     return v === "" ? NaN : Number(v);
   }).filter(v => !isNaN(v));
