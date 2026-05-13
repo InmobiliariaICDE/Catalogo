@@ -2459,6 +2459,20 @@ function renderNuevo(){
   if(allProps.length) setTimeout(()=> buildFiltrosBar('nlFiltrosWrap','nl',nuevoLead.filtros), 0);
   renderPropsGrid();
   setTimeout(()=> checkDuplicateLead(), 0);
+
+  // ── RESTORE MAP: después de reconstruir el DOM, re-adjuntar el mapa si estaba activo ──
+  if(getFSt('nl').mapActive) {
+    setTimeout(() => {
+      const mapCont = document.getElementById('mapaContenedor_nl');
+      const mapToggle = document.getElementById('btnToggleMapa_nl');
+      if(mapCont && mapToggle) {
+        mapToggle.checked = true;
+        mapCont.classList.add('open');
+        leafletMap = null; // El DOM fue destruido; forzar re-init
+        setTimeout(() => initMapa('nl'), 150);
+      }
+    }, 80);
+  }
 }
 
 function getFrecInfo(){
@@ -4555,8 +4569,18 @@ function toggleMapa(pfx) {
     container.classList.remove('open');
   } else {
     container.classList.add('open');
+
+    // ── Si leafletMap existe pero su contenedor ya no está en el DOM
+    //    (ocurre cuando renderNuevo() reconstruyó el HTML), forzar re-init ──
+    if(leafletMap) {
+      try {
+        const mc = leafletMap.getContainer();
+        if(!mc || !document.body.contains(mc)) { leafletMap = null; }
+      } catch(e) { leafletMap = null; }
+    }
+
     if(!leafletMap) {
-      setTimeout(() => initMapa(pfx), 300); // Esperar animación
+      setTimeout(() => initMapa(pfx), 300);
     } else {
       setTimeout(() => { 
         leafletMap.invalidateSize(); 
