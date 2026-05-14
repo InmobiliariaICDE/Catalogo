@@ -1156,7 +1156,20 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     <div id="editFiltrosCount" style="font-size:13px;color:var(--gold);margin-bottom:14px;"></div>
     <div id="editFiltrosContent"></div>
     
-    <div class="modal-title" style="margin-top:24px; font-size:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:20px;">🏠 Vista Previa del Catálogo</div>
+    <div class="modal-title" style="margin-top:24px; font-size:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:20px; display:flex; justify-content:space-between; align-items:center;">
+      <span>🏠 Vista Previa del Catálogo</span>
+      <div class="ordenar-por" style="margin:0;">
+        <div class="sort-toggle" onclick="toggleSortMenu(event)">
+          ${getSortLabel(criterioOrden)} <span class="st-arrow"></span>
+        </div>
+        <ul class="sort-options hidden">
+          <li onclick="setSort('destacadas')" class="${criterioOrden==='destacadas'?'st-selected':''}">Destacadas</li>
+          <li onclick="setSort('menorPrecio')" class="${criterioOrden==='menorPrecio'?'st-selected':''}">Menor precio</li>
+          <li onclick="setSort('mayorPrecio')" class="${criterioOrden==='mayorPrecio'?'st-selected':''}">Mayor precio</li>
+          <li onclick="setSort('rentabilidad')" class="${criterioOrden==='rentabilidad'?'st-selected':''}">Mayor rentabilidad</li>
+        </ul>
+      </div>
+    </div>
     <div id="editFiltrosGrid" style="margin-top:12px; max-height:350px; overflow-y:auto; padding-right:8px;"></div>
 
     <div class="modal-footer" style="display:flex; gap:10px; width:100%; margin-top:20px;">
@@ -1371,26 +1384,6 @@ function ordenarLista(lista) {
   });
 }
 
-function setSort(crit){
-  criterioOrden = crit;
-  const list = document.getElementById('sortOptions');
-  const toggle = document.getElementById('sortToggle');
-  if(list) {
-    list.classList.add('hidden');
-    // Marcar el seleccionado visualmente
-    list.querySelectorAll('li').forEach(li => {
-      if(li.getAttribute('onclick')?.includes(`'${crit}'`)) li.classList.add('st-selected');
-      else li.classList.remove('st-selected');
-    });
-  }
-  if(toggle) {
-    toggle.classList.remove('st-open');
-    toggle.innerHTML = `${getSortLabel(crit)} <span class="st-arrow"></span>`;
-  }
-  nlPage = 0; // Reset pagination
-  renderPropsGrid();
-}
-
 function getSortLabel(crit){
   const labels = { 'destacadas': 'Destacadas', 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad' };
   return labels[crit] || 'Ordenar por';
@@ -1398,12 +1391,10 @@ function getSortLabel(crit){
 
 // Gestión de menús y clics globales (Única vez)
 document.addEventListener('click', e => {
-  // Cerrar Sort Menu
-  const sortList = document.getElementById('sortOptions');
-  const sortToggle = document.getElementById('sortToggle');
-  if(sortList && !e.target.closest('#ordenar-por')) {
-    sortList.classList.add('hidden');
-    if(sortToggle) sortToggle.classList.remove('st-open');
+  // Cerrar Sort Menus
+  if(!e.target.closest('.ordenar-por')) {
+    document.querySelectorAll('.sort-options').forEach(o => o.classList.add('hidden'));
+    document.querySelectorAll('.sort-toggle').forEach(t => t.classList.remove('st-open'));
   }
 
   // Cerrar Filtros
@@ -1414,13 +1405,16 @@ document.addEventListener('click', e => {
 
 function toggleSortMenu(e){
   e.stopPropagation();
-  const list = document.getElementById('sortOptions');
-  const toggle = document.getElementById('sortToggle');
+  const wrap = e.currentTarget.closest('.ordenar-por');
+  const list = wrap.querySelector('.sort-options');
+  const toggle = wrap.querySelector('.sort-toggle');
   if(!list || !toggle) return;
   const isHidden = list.classList.contains('hidden');
   
   // Cerrar filtros si hubiera
   document.querySelectorAll('.filtro-nuevo.fn-open').forEach(f=>f.classList.remove('fn-open'));
+  // Cerrar otros menús de orden
+  document.querySelectorAll('.sort-options').forEach(o => o.classList.add('hidden'));
   
   if(isHidden){
     list.classList.remove('hidden');
@@ -1428,6 +1422,35 @@ function toggleSortMenu(e){
   } else {
     list.classList.add('hidden');
     toggle.classList.remove('st-open');
+  }
+}
+
+function setSort(crit){
+  criterioOrden = crit;
+  localStorage.setItem('icde_sort', crit);
+  
+  // Actualizar TODOS los dropdowns de orden
+  document.querySelectorAll('.ordenar-por').forEach(wrap => {
+    const list = wrap.querySelector('.sort-options');
+    const toggle = wrap.querySelector('.sort-toggle');
+    if(list) {
+      list.querySelectorAll('li').forEach(li => {
+        if(li.getAttribute('onclick')?.includes(`'${crit}'`)) li.classList.add('st-selected');
+        else li.classList.remove('st-selected');
+      });
+    }
+    if(toggle) {
+      toggle.classList.remove('st-open');
+      toggle.innerHTML = `${getSortLabel(crit)} <span class="st-arrow"></span>`;
+    }
+  });
+  
+  nlPage = 0; 
+  renderPropsGrid();
+  const efGrid = document.getElementById('editFiltrosGrid');
+  if(efGrid) {
+    const efSt = getFSt('ef');
+    renderEditFiltrosGrid(filtrarProps(efSt));
   }
 }
 
@@ -2374,22 +2397,23 @@ function renderNuevo(){
         <div style="height:32px;"></div>
         <div class="form-section-header" style="border-top:1px solid rgba(255,255,255,0.05); padding-top:24px; display:flex; justify-content:space-between; align-items:center;">
           <div class="panel-section-title">Selección de Propiedades</div>
-          <span style="font-size:12px;color:var(--gold);" id="selCnt">${selectedProps.length} seleccionadas</span>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+            <span style="font-size:12px;color:var(--gold);" id="selCnt">${selectedProps.length} seleccionadas</span>
+            <div class="ordenar-por" style="margin:0;">
+              <div class="sort-toggle" onclick="toggleSortMenu(event)">
+                ${getSortLabel(criterioOrden)} <span class="st-arrow"></span>
+              </div>
+              <ul class="sort-options hidden">
+                <li onclick="setSort('destacadas')" class="${criterioOrden==='destacadas'?'st-selected':''}">Destacadas</li>
+                <li onclick="setSort('menorPrecio')" class="${criterioOrden==='menorPrecio'?'st-selected':''}">Menor precio</li>
+                <li onclick="setSort('mayorPrecio')" class="${criterioOrden==='mayorPrecio'?'st-selected':''}">Mayor precio</li>
+                <li onclick="setSort('rentabilidad')" class="${criterioOrden==='rentabilidad'?'st-selected':''}">Mayor rentabilidad</li>
+              </ul>
+            </div>
+          </div>
         </div>
         <div class="section-content">
           <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Puedes marcar casas específicas para enviar hoy mismo.</p>
-          
-          <div id="ordenar-por" class="ordenar-por">
-            <div id="sortToggle" class="sort-toggle" onclick="toggleSortMenu(event)">
-              ${getSortLabel(criterioOrden)} <span class="st-arrow"></span>
-            </div>
-            <ul id="sortOptions" class="sort-options hidden">
-              <li onclick="setSort('destacadas')" class="${criterioOrden==='destacadas'?'st-selected':''}">Destacadas</li>
-              <li onclick="setSort('menorPrecio')" class="${criterioOrden==='menorPrecio'?'st-selected':''}">Menor precio</li>
-              <li onclick="setSort('mayorPrecio')" class="${criterioOrden==='mayorPrecio'?'st-selected':''}">Mayor precio</li>
-              <li onclick="setSort('rentabilidad')" class="${criterioOrden==='rentabilidad'?'st-selected':''}">Mayor rentabilidad</li>
-            </ul>
-          </div>
 
           ${selectedProps.length?`<div class="selected-bar" style="margin-bottom:20px;"><div class="selected-chips">${selectedProps.map(c=>`<span class="sel-chip">${c}<button onclick="deselProp('${c}')">×</button></span>`).join('')}</div></div>`:''}
           <div id="propsGrid"></div>
