@@ -4802,6 +4802,12 @@ function focusProperty(code) {
             <div class="modal-subtitulo-nuevo">Descripción</div>
             <div class="modal-texto" id="mpDesc"></div>
           </div>
+
+          <div style="margin-top:24px;">
+            <div class="modal-subtitulo-nuevo">Ubicación en Mapa</div>
+            <div id="mpMapa" style="width:100%; height:350px; border-radius:12px; border:1px solid var(--border); background:var(--bg2); position:relative; overflow:hidden; z-index:5;"></div>
+            <div id="mpMapaError" style="display:none; color:var(--muted); font-size:12px; margin-top:8px; text-align:center;">Coordenadas no disponibles para este inmueble</div>
+          </div>
         </div>
       </div>
     </div>
@@ -4897,6 +4903,8 @@ function compartirPropiedad(codigo, btn){
 
 let mpCarruselFotos = [];
 let mpCarruselIdx = 0;
+let mpMapaInstance = null;
+let mpMapaMarker = null;
 
 function abrirModalProp(codigo){
   const p = allProps.find(x=>x['Código']===codigo);
@@ -4939,6 +4947,54 @@ function abrirModalProp(codigo){
   if(btnShare) btnShare.onclick = () => compartirPropiedad(codigo, btnShare);
   
   document.getElementById('modalPropOverlay').classList.add('active');
+
+  // Inicializar/Actualizar Mapa
+  setTimeout(() => {
+    initMpMapa(p);
+  }, 300); // Esperar a que el modal sea visible
+}
+
+function initMpMapa(p) {
+  const container = document.getElementById('mpMapa');
+  const errorMsg = document.getElementById('mpMapaError');
+  if(!container) return;
+
+  let lat = parseFloat(String(p['Latitud'] || p['Lat'] || '').replace(',','.'));
+  let lng = parseFloat(String(p['Longitud'] || p['Lng'] || '').replace(',','.'));
+
+  if(isNaN(lat) || isNaN(lng) || lat === 0) {
+    container.style.display = 'none';
+    if(errorMsg) errorMsg.style.display = 'block';
+    return;
+  }
+
+  container.style.display = 'block';
+  if(errorMsg) errorMsg.style.display = 'none';
+
+  if(!mpMapaInstance) {
+    mpMapaInstance = L.map('mpMapa', { zoomControl: false }).setView([lat, lng], 16);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; CARTO',
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(mpMapaInstance);
+    L.control.zoom({ position: 'bottomright' }).addTo(mpMapaInstance);
+  } else {
+    mpMapaInstance.setView([lat, lng], 16);
+    mpMapaInstance.invalidateSize();
+  }
+
+  if(mpMapaMarker) mpMapaInstance.removeLayer(mpMapaMarker);
+
+  const price = p['Precio'] ? formatShortPrice(p['Precio']) : 'N/A';
+  const icon = L.divIcon({
+    className: 'z-marker-wrap',
+    html: `<div class="z-marker active" style="transform: scale(1.2);">${price}</div>`,
+    iconSize: [60, 25],
+    iconAnchor: [30, 25]
+  });
+
+  mpMapaMarker = L.marker([lat, lng], { icon }).addTo(mpMapaInstance);
 }
 
 function mpCarruselInit(){
@@ -4980,6 +5036,7 @@ function mpCarruselIrA(idx){
 
 function cerrarModalProp(){
   document.getElementById('modalPropOverlay').classList.remove('active');
+  // No destruimos la instancia para reutilizarla, pero podemos limpiar el marcador si queremos
 }
 function updTimelineNota(leadId, idx, val) {
   const l = leads.find(x => String(x.id) === String(leadId));
