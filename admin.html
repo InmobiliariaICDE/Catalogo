@@ -1761,8 +1761,10 @@ function renderEditFiltrosGrid(lista){
     const cod = String(d['Código']||'');
     const sel = selectedProps.includes(cod);
     const img = (d['Imagenes']||'').split('|')[0].trim() || d['Image'] || 'https://i.imgur.com/Pc9M3I8.png';
+    const isDestacada = ["Directo", "Verbal"].includes(d["Contrato"]);
     html += `
-      <div class="prop-card ${sel?'selected':''}" style="min-height:auto;" onclick="abrirModalProp('${eq(cod)}')">
+      <div class="prop-card ${sel?'selected':''} ${isDestacada?'recomendado':''}" style="min-height:auto;" onclick="abrirModalProp('${eq(cod)}')">
+        ${isDestacada ? '<div class="ribbon"><span>¡Destacada!</span></div>' : ''}
         <div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp('${eq(cod)}', this.parentElement)">${sel?'✓':'+'}</div>
         <img src="${img}" style="height:110px; width:100%; object-fit:cover; border-radius:8px;"/>
         <div class="prop-card-body" style="padding:8px 0;">
