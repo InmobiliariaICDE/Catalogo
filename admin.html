@@ -1985,11 +1985,20 @@ async function cargarKmz() {
     
     // Extraer categorías únicas
     kmzCategories = [...new Set(kmzProps.map(p => p['Categoría']))].filter(Boolean).sort();
-    activeKmzCategories = [...kmzCategories];
+    
+    // Por defecto, todas activas EXCEPTO Inventario Barrios
+    activeKmzCategories = kmzCategories.filter(cat => !cat.toUpperCase().includes("INVENTARIO BARRIOS"));
     
     console.log(`Cargadas ${kmzProps.length} propiedades desde KMZ en ${kmzCategories.length} categorías.`);
     
     correlacionarKmzConCatalogo();
+    
+    // Inicializar el filtro de categorías en el estado global de 'nl'
+    const stNl = getFSt('nl');
+    if (activeKmzCategories.length !== kmzCategories.length) {
+      stNl.kmzCategory = [...activeKmzCategories];
+    }
+
     renderKmzCategories('nl');
   } catch (e) {
     console.error("Error cargando KMZ JSON:", e);
@@ -2085,12 +2094,14 @@ function renderKmzCategories(pfx) {
     return;
   }
 
-  container.innerHTML = kmzCategories.map(cat => `
-    <label class="check-item" style="padding: 4px 8px; font-size: 11px; border-radius: 6px; background: rgba(255,255,255,0.03);">
-      <input type="checkbox" checked onchange="toggleKmzCategory('${pfx}', '${eq(cat)}', this.checked)">
-      <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${cat}</span>
-    </label>
-  `).join('');
+  container.innerHTML = kmzCategories.map(cat => {
+    const isChecked = activeKmzCategories.includes(cat);
+    return `
+      <label class="check-item" style="padding: 4px 8px; font-size: 11px; border-radius: 6px; background: rgba(255,255,255,0.03);">
+        <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleKmzCategory('${pfx}', '${eq(cat)}', this.checked)">
+        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${cat}</span>
+      </label>`;
+  }).join('');
 }
 
 function toggleKmzCategory(pfx, cat, checked) {
