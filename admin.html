@@ -1000,6 +1000,25 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
   .status-late { color: var(--red); background: rgba(239,68,68,0.1); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
   
   .action-bar { display: flex; gap: 12px; margin-bottom: 20px; }
+  /* --- Editor de Propiedad --- */
+  #modalEditorProp .form-grid { grid-template-columns: repeat(3, 1fr); gap: 15px; }
+  #modalEditorProp .form-group.full { grid-column: 1 / -1; }
+  .modal-box.large { width: min(900px, 95vw); max-height: 95vh; }
+  .img-preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
+  .img-preview-item { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  .img-preview-item img { width: 100%; height: 100%; object-fit: cover; }
+  .img-preview-item .remove-btn { position: absolute; top: 5px; right: 5px; background: rgba(239, 68, 68, 0.8); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+
+  .btn-map-add-mode {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border: 1px solid #22c55e;
+  }
+  .btn-map-add-mode.active {
+    background: #22c55e;
+    color: #fff;
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+  }
 </style>
 </head>
 <body>
@@ -1520,6 +1539,7 @@ function buildFiltrosBar(containerId, pfx, initVals){
             </div>
           </div>
           <div class="map-control-card" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 8px; pointer-events: auto; box-shadow: var(--shadow); display: flex; gap: 8px; align-items: center; justify-content: center;">
+            <button class="btn-map-control btn-map-add-mode" id="btnAddProp_${pfx}" onclick="toggleMapAddMode('${pfx}')" title="Agregar propiedad en el mapa">➕</button>
             <button class="btn-map-control" onclick="actualizarPinesMapa('${pfx}', true)" title="Recentrar mapa">🎯</button>
             <button class="btn-map-control" onclick="refreshData()" title="Actualizar datos">🔄</button>
           </div>
@@ -2339,12 +2359,22 @@ async function cargarProps(){
     const rawData = normalizarPropiedades(Array.isArray(data) ? data : []);
     
     // No filtramos por Nombre para no perder registros incompletos, solo por Publicar si existe el campo
-    allProps = rawData.filter(d => {
+    let remoteProps = rawData.filter(d => {
         const pub = String(d['Publicar'] || '').toLowerCase();
         return pub === 'si' || pub === 'sí' || !d['Publicar']; // Por defecto mostrar si no existe campo publicar
     });
+
+    // Cargar propiedades personalizadas de localStorage
+    const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
     
-    console.log("Admin: Raw:", rawData.length, "Filtradas:", allProps.length);
+    // Unir (sobrescribir remotas con locales si coinciden por código)
+    const propsMap = new Map();
+    remoteProps.forEach(p => propsMap.set(p['Código'], p));
+    customProps.forEach(p => propsMap.set(p['Código'], p));
+    
+    allProps = Array.from(propsMap.values());
+    
+    console.log("Admin: Remote:", remoteProps.length, "Custom:", customProps.length, "Total:", allProps.length);
     document.getElementById('syncStatus').textContent=`✓ ${allProps.length} propiedades`;
     
     // Actualizar el precio máximo dinámico
@@ -4736,6 +4766,7 @@ function actualizarPinesMapa(pfx, forceFit = false) {
         <div class="popup-prop-footer">
           <div class="popup-prop-latlng">📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}</div>
           <div class="popup-prop-actions">
+            <button onclick="abrirEditorProp('${code}')" title="Editar propiedad">✏️</button>
             <button onclick="abrirModalProp('${code}')" title="Ver detalles">🔍</button>
             <button onclick="toggleProp('${code}')" title="Seleccionar">📌</button>
           </div>
@@ -4786,7 +4817,154 @@ function focusProperty(code) {
   if (el) el.classList.add('active');
 }
 
+
+// --- Lógica de Edición de Propiedades ---
+let mapAddMode = false;
+
+function toggleMapAddMode(pfx) {
+  mapAddMode = !mapAddMode;
+  const btn = document.getElementById(`btnAddProp_${pfx}`);
+  if (btn) btn.classList.toggle('active', mapAddMode);
+  
+  if (mapAddMode) {
+    toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
+    leafletMap.getContainer().style.cursor = 'crosshair';
+    leafletMap.on('click', onMapClickAdd);
+  } else {
+    leafletMap.getContainer().style.cursor = '';
+    leafletMap.off('click', onMapClickAdd);
+  }
+}
+
+function onMapClickAdd(e) {
+  const lat = e.latlng.lat;
+  const lng = e.latlng.lng;
+  toggleMapAddMode('nl'); // Desactivar modo
+  abrirEditorProp(null, lat, lng);
+}
+
+function abrirEditorProp(codigo, lat, lng) {
+  const isEdit = !!codigo;
+  const p = isEdit ? allProps.find(x => x['Código'] === codigo) : null;
+  
+  document.getElementById('editorPropTitle').textContent = isEdit ? '✏️ Editar Propiedad' : '➕ Nueva Propiedad';
+  document.getElementById('edPropCod').value = isEdit ? codigo : '';
+  document.getElementById('edPropCod').readOnly = isEdit;
+  document.getElementById('edPropNom').value = p ? (p['Nombre'] || '') : '';
+  document.getElementById('edPropPre').value = p ? (p['Precio'] || '') : '';
+  document.getElementById('edPropTipo').value = p ? (p['Tipo de inmueble'] || 'Casa') : 'Casa';
+  document.getElementById('edPropZona').value = p ? (p['Zona'] || '') : '';
+  document.getElementById('edPropBar').value = p ? (p['Barrio'] || '') : '';
+  document.getElementById('edPropHab').value = p ? (p['Habitaciones'] || '') : '';
+  document.getElementById('edPropBan').value = p ? (p['Baños'] || '') : '';
+  document.getElementById('edPropGar').value = p ? (p['Garaje'] || '') : '';
+  document.getElementById('edPropArea').value = p ? (p['Área'] || '') : '';
+  document.getElementById('edPropLat').value = p ? (p['Latitud'] || '') : (lat || '');
+  document.getElementById('edPropLng').value = p ? (p['Longitud'] || '') : (lng || '');
+  document.getElementById('edPropInmob').value = p ? (p['Inmobiliaria'] || '') : '';
+  document.getElementById('edPropDesc').value = p ? (p['Descripción'] || '') : '';
+  document.getElementById('edPropImgs').value = p ? (p['Imagenes'] || '') : '';
+  
+  updateEditorImgs();
+  document.getElementById('modalEditorProp').classList.add('open');
+}
+
+function updateEditorImgs() {
+  const val = document.getElementById('edPropImgs').value;
+  const urls = val.split(/[|\n]/).map(u => u.trim()).filter(u => u.startsWith('http'));
+  const preview = document.getElementById('edPropImgPreview');
+  preview.innerHTML = urls.map(u => `<div class="img-preview-item"><img src="${u}" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/></div>`).join('');
+}
+
+async function guardarPropiedadEditor() {
+  const cod = document.getElementById('edPropCod').value.trim();
+  if (!cod) { toast('El código es obligatorio', 'error'); return; }
+  
+  const p = {
+    'Código': cod,
+    'Nombre': document.getElementById('edPropNom').value.trim(),
+    'Precio': document.getElementById('edPropPre').value.trim(),
+    'Tipo de inmueble': document.getElementById('edPropTipo').value,
+    'Zona': document.getElementById('edPropZona').value.trim(),
+    'Barrio': document.getElementById('edPropBar').value.trim(),
+    'Habitaciones': document.getElementById('edPropHab').value,
+    'Baños': document.getElementById('edPropBan').value,
+    'Garaje': document.getElementById('edPropGar').value,
+    'Área': document.getElementById('edPropArea').value.trim(),
+    'Latitud': document.getElementById('edPropLat').value.trim(),
+    'Longitud': document.getElementById('edPropLng').value.trim(),
+    'Inmobiliaria': document.getElementById('edPropInmob').value.trim(),
+    'Descripción': document.getElementById('edPropDesc').value.trim(),
+    'Imagenes': document.getElementById('edPropImgs').value.trim(),
+    'Publicar': 'si'
+  };
+
+  const idx = allProps.findIndex(x => x['Código'] === cod);
+  if (idx >= 0) {
+    allProps[idx] = { ...allProps[idx], ...p };
+    toast('Propiedad actualizada localmente ✓', 'success');
+  } else {
+    allProps.push(p);
+    toast('Nueva propiedad agregada localmente ✓', 'success');
+  }
+
+  // Guardar en persistencia local extendida (opcional)
+  const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
+  const cIdx = customProps.findIndex(x => x['Código'] === cod);
+  if (cIdx >= 0) customProps[cIdx] = p;
+  else customProps.push(p);
+  localStorage.setItem('icde_custom_props', JSON.stringify(customProps));
+
+  closeModal('modalEditorProp');
+  renderNuevo();
+  actualizarPinesMapa('nl');
+  
+  // Sugerencia de sincronización
+  console.log("Para persistencia permanente, actualiza el Excel maestro con este JSON:", p);
+}
 </script>
+
+<!-- MODAL EDITOR PROPIEDAD -->
+<div class="modal-overlay" id="modalEditorProp" onclick="if(event.target===this) closeModal('modalEditorProp')">
+  <div class="modal-box large">
+    <div class="modal-title" id="editorPropTitle">✏️ Editar Propiedad</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Código *</label><input class="form-input" id="edPropCod" placeholder="ej: 101"/></div>
+      <div class="form-group full"><label class="form-label">Nombre / Título</label><input class="form-input" id="edPropNom" placeholder="ej: Casa Campestre en Neiva"/></div>
+      <div class="form-group"><label class="form-label">Precio</label><input class="form-input" id="edPropPre" placeholder="ej: 450000000"/></div>
+      <div class="form-group"><label class="form-label">Tipo de Inmueble</label>
+        <select class="form-input" id="edPropTipo">
+          <option value="Casa">Casa</option>
+          <option value="Apartamento">Apartamento</option>
+          <option value="Lote">Lote</option>
+          <option value="Finca">Finca</option>
+          <option value="Local">Local</option>
+          <option value="Oficina">Oficina</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Zona</label><input class="form-input" id="edPropZona" placeholder="ej: Oriente"/></div>
+      <div class="form-group"><label class="form-label">Barrio</label><input class="form-input" id="edPropBar" placeholder="ej: Ipanema"/></div>
+      <div class="form-group"><label class="form-label">Habitaciones</label><input class="form-input" type="number" id="edPropHab"/></div>
+      <div class="form-group"><label class="form-label">Baños</label><input class="form-input" type="number" id="edPropBan"/></div>
+      <div class="form-group"><label class="form-label">Garaje</label><input class="form-input" type="number" id="edPropGar"/></div>
+      <div class="form-group"><label class="form-label">Área (m²)</label><input class="form-input" id="edPropArea"/></div>
+      <div class="form-group"><label class="form-label">Latitud</label><input class="form-input" id="edPropLat"/></div>
+      <div class="form-group"><label class="form-label">Longitud</label><input class="form-input" id="edPropLng"/></div>
+      <div class="form-group"><label class="form-label">Inmobiliaria / Aliado</label><input class="form-input" id="edPropInmob" placeholder="Nombre de la inmobiliaria"/></div>
+      <div class="form-group full"><label class="form-label">Descripción</label><textarea class="form-input" id="edPropDesc" style="min-height:80px;"></textarea></div>
+      <div class="form-group full">
+        <label class="form-label">Imágenes (URLs separadas por | o nuevas líneas)</label>
+        <textarea class="form-input" id="edPropImgs" placeholder="https://i.imgur.com/... | https://..." oninput="updateEditorImgs()"></textarea>
+        <div class="img-preview-grid" id="edPropImgPreview"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalEditorProp')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarPropiedadEditor()">Guardar Propiedad</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PROPIEDAD -->
 <div class="modal-overlay-prop" id="modalPropOverlay" onclick="if(event.target===this) cerrarModalProp()">
   <div class="modal-prop">
