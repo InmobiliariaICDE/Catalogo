@@ -625,6 +625,13 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
   grid-template-columns: 65% 35%;
   gap: 24px;
   align-items: start;
+  transition: all 0.3s ease;
+}
+.nuevo-lead-layout.hide-data {
+  grid-template-columns: 1fr;
+}
+.nuevo-lead-layout.hide-data .nl-col-2 {
+  display: none;
 }
 
 
@@ -1263,6 +1270,7 @@ let currentLeadFilter = 'todos';
 let nlPage = 0;
 const PAGE_SIZE = 20;
 let criterioOrden = ''; // Default sort (no filter)
+let nlShowData = false; // Por defecto recogido para optimizar espacio
 let MAX_CATALOG_PRICE = 5000000000; // Valor por defecto
 let kmzProps = [];
 let kmzCategories = [];
@@ -2437,6 +2445,10 @@ function showTab(tab){
   else if(tab==='administracion') renderAdministracion();
   else if(tab==='estadisticas') renderEstadisticas();
 }
+function toggleNlData(){
+  nlShowData = !nlShowData;
+  renderNuevo();
+}
 
 /* ═══════════════════════════════════════════════
    RENDER NUEVO LEAD (UNIFICADO)
@@ -2446,9 +2458,14 @@ function renderNuevo(){
   c.innerHTML=`
   <div class="section-header">
     <div class="section-title">Nuevo Lead</div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn ${nlShowData?'btn-primary':'btn-secondary'}" onclick="toggleNlData()" title="${nlShowData?'Ocultar formulario':'Ver datos del cliente'}">
+        ${nlShowData ? '👤 Ocultar Datos' : '👤 Datos del Cliente'}
+      </button>
+    </div>
   </div>
 
-  <div class="nuevo-lead-layout">
+  <div class="nuevo-lead-layout ${nlShowData ? '' : 'hide-data'}">
     <!-- COLUMNA 1: FILTROS E INMUEBLES (30%) -->
     <div class="nl-col-1">
       <div class="panel-section">
