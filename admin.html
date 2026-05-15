@@ -1019,6 +1019,33 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     color: #fff;
     box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
   }
+
+  /* Búsqueda de Código en Editor */
+  .ed-cod-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    z-index: 100;
+    max-height: 150px;
+    overflow-y: auto;
+    box-shadow: var(--shadow);
+    display: none;
+  }
+  .ed-cod-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .ed-cod-item:hover { background: rgba(255,255,255,0.05); }
+  .ed-cod-item .match-code { color: var(--gold); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -4866,7 +4893,31 @@ function abrirEditorProp(codigo, lat, lng) {
   document.getElementById('edPropImgs').value = p ? (p['Imagenes'] || '') : '';
   
   updateEditorImgs();
+  document.getElementById('edPropCodResults').style.display = 'none';
   document.getElementById('modalEditorProp').classList.add('open');
+}
+
+function checkPropCode(val) {
+  const resCont = document.getElementById('edPropCodResults');
+  if (!val || val.length < 1) {
+    resCont.style.display = 'none';
+    return;
+  }
+
+  const query = val.toLowerCase();
+  const matches = allProps.filter(p => String(p['Código']).toLowerCase().includes(query)).slice(0, 5);
+
+  if (matches.length > 0) {
+    resCont.innerHTML = matches.map(p => `
+      <div class="ed-cod-item" onclick="abrirEditorProp('${eq(p['Código'])}')">
+        <span><span class="match-code">${p['Código']}</span> · ${p['Nombre'] || ''}</span>
+        <span style="font-size:10px; color:var(--muted);">${p['Zona'] || ''}</span>
+      </div>
+    `).join('');
+    resCont.style.display = 'block';
+  } else {
+    resCont.style.display = 'none';
+  }
 }
 
 function updateEditorImgs() {
@@ -4929,7 +4980,11 @@ async function guardarPropiedadEditor() {
   <div class="modal-box large">
     <div class="modal-title" id="editorPropTitle">✏️ Editar Propiedad</div>
     <div class="form-grid">
-      <div class="form-group"><label class="form-label">Código *</label><input class="form-input" id="edPropCod" placeholder="ej: 101"/></div>
+      <div class="form-group" style="position:relative;">
+        <label class="form-label">Código *</label>
+        <input class="form-input" id="edPropCod" placeholder="ej: 101" oninput="checkPropCode(this.value)"/>
+        <div id="edPropCodResults" class="ed-cod-results"></div>
+      </div>
       <div class="form-group full"><label class="form-label">Nombre / Título</label><input class="form-input" id="edPropNom" placeholder="ej: Casa Campestre en Neiva"/></div>
       <div class="form-group"><label class="form-label">Precio</label><input class="form-input" id="edPropPre" placeholder="ej: 450000000"/></div>
       <div class="form-group"><label class="form-label">Tipo de Inmueble</label>
