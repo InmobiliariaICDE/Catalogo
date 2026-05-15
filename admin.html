@@ -4874,20 +4874,35 @@ function abrirEditorProp(codigo, lat, lng) {
   const isEdit = !!codigo;
   const p = isEdit ? allProps.find(x => x['Código'] === codigo) : null;
   
+  // Capturar valores actuales por si vienen de un clic previo en el mapa
+  const currentLat = document.getElementById('edPropLat')?.value || '';
+  const currentLng = document.getElementById('edPropLng')?.value || '';
+
   document.getElementById('editorPropTitle').textContent = isEdit ? '✏️ Editar Propiedad' : '➕ Nueva Propiedad';
   document.getElementById('edPropCod').value = isEdit ? codigo : '';
   document.getElementById('edPropCod').readOnly = isEdit;
   document.getElementById('edPropNom').value = p ? (p['Nombre'] || '') : '';
   document.getElementById('edPropPre').value = p ? (p['Precio'] || '') : '';
-  document.getElementById('edPropTipo').value = p ? (p['Tipo de inmueble'] || 'Casa') : 'Casa';
+  
+  // Poblar tipos de inmueble dinámicamente desde la matriz
+  const selectTipo = document.getElementById('edPropTipo');
+  const tipos = getUniqueVals('Tipo de inmueble');
+  selectTipo.innerHTML = tipos.map(t => `<option value="${t}">${t}</option>`).join('');
+  // Si es una propiedad nueva y no hay tipos, o si queremos agregar uno manualmente, 
+  // podríamos permitirlo, pero el usuario pidió que sea según la matriz.
+  if (p) selectTipo.value = p['Tipo de inmueble'] || '';
+
   document.getElementById('edPropZona').value = p ? (p['Zona'] || '') : '';
   document.getElementById('edPropBar').value = p ? (p['Barrio'] || '') : '';
   document.getElementById('edPropHab').value = p ? (p['Habitaciones'] || '') : '';
   document.getElementById('edPropBan').value = p ? (p['Baños'] || '') : '';
   document.getElementById('edPropGar').value = p ? (p['Garaje'] || '') : '';
   document.getElementById('edPropArea').value = p ? (p['Área'] || '') : '';
-  document.getElementById('edPropLat').value = p ? (p['Latitud'] || '') : (lat || '');
-  document.getElementById('edPropLng').value = p ? (p['Longitud'] || '') : (lng || '');
+  
+  // Prioridad: 1. Datos de la propiedad (p) si existen, 2. Argumentos (lat/lng), 3. Valor actual en el input
+  document.getElementById('edPropLat').value = (p && p['Latitud']) ? p['Latitud'] : (lat || currentLat);
+  document.getElementById('edPropLng').value = (p && p['Longitud']) ? p['Longitud'] : (lng || currentLng);
+  
   document.getElementById('edPropInmob').value = p ? (p['Inmobiliaria'] || '') : '';
   document.getElementById('edPropDesc').value = p ? (p['Descripción'] || '') : '';
   document.getElementById('edPropImgs').value = p ? (p['Imagenes'] || '') : '';
@@ -4988,14 +5003,7 @@ async function guardarPropiedadEditor() {
       <div class="form-group full"><label class="form-label">Nombre / Título</label><input class="form-input" id="edPropNom" placeholder="ej: Casa Campestre en Neiva"/></div>
       <div class="form-group"><label class="form-label">Precio</label><input class="form-input" id="edPropPre" placeholder="ej: 450000000"/></div>
       <div class="form-group"><label class="form-label">Tipo de Inmueble</label>
-        <select class="form-input" id="edPropTipo">
-          <option value="Casa">Casa</option>
-          <option value="Apartamento">Apartamento</option>
-          <option value="Lote">Lote</option>
-          <option value="Finca">Finca</option>
-          <option value="Local">Local</option>
-          <option value="Oficina">Oficina</option>
-        </select>
+        <select class="form-input" id="edPropTipo"></select>
       </div>
       <div class="form-group"><label class="form-label">Zona</label><input class="form-input" id="edPropZona" placeholder="ej: Oriente"/></div>
       <div class="form-group"><label class="form-label">Barrio</label><input class="form-input" id="edPropBar" placeholder="ej: Ipanema"/></div>
