@@ -1448,12 +1448,24 @@ function ordenarLista(lista) {
       const rb = parseRet(b["Retorno de la Inversión"]);
       return ra - rb;
     }
+    if (criterioOrden === "noUbicadas") {
+      const isUbi = p => {
+        const lat = parseFloat(String(p['Latitud'] || p['Lat'] || '').replace(',','.'));
+        const lng = parseFloat(String(p['Longitud'] || p['Lng'] || '').replace(',','.'));
+        return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+      };
+      const uA = isUbi(a);
+      const uB = isUbi(b);
+      if(!uA && uB) return -1;
+      if(uA && !uB) return 1;
+      return 0;
+    }
     return 0;
   });
 }
 
 function getSortLabel(crit){
-  const labels = { 'destacadas': 'Destacadas', 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad' };
+  const labels = { 'destacadas': 'Destacadas', 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad', 'noUbicadas': 'Faltan por mapa' };
   return labels[crit] || 'Ordenar por';
 }
 
@@ -2503,6 +2515,7 @@ function renderNuevo(){
                 <li onclick="setSort('menorPrecio')" class="${criterioOrden==='menorPrecio'?'st-selected':''}">Menor precio</li>
                 <li onclick="setSort('mayorPrecio')" class="${criterioOrden==='mayorPrecio'?'st-selected':''}">Mayor precio</li>
                 <li onclick="setSort('rentabilidad')" class="${criterioOrden==='rentabilidad'?'st-selected':''}">Mayor rentabilidad</li>
+                <li onclick="setSort('noUbicadas')" class="${criterioOrden==='noUbicadas'?'st-selected':''}">Faltan por mapa</li>
               </ul>
             </div>
           </div>
