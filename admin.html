@@ -1384,7 +1384,11 @@ function filtrarProps(f, returnAllIfEmpty = true){
     if(f.cocina?.length       && !f.cocina.includes(String(d['Cocina'] || "").trim()))             return false;
     if(f.barrio?.length       && !f.barrio.some(v => norm(v) === norm(d['Barrio'])))               return false;
     if(f.conjunto?.length     && !f.conjunto.some(v => norm(v) === norm(d['Conjunto'])))           return false;
-    if(f.kmzCategory?.length  && !f.kmzCategory.includes(String(d['_kmzCategory'] || "").trim()))     return false;
+    if(f.kmzCategory && Array.isArray(f.kmzCategory)){
+      const propCat = String(d['_kmzCategory'] || "").trim();
+      // Si la propiedad tiene categoría y no está en la lista de permitidas, filtrar
+      if(propCat && !f.kmzCategory.includes(propCat)) return false;
+    }
 
 
     
@@ -2120,12 +2124,8 @@ function toggleKmzCategory(pfx, cat, checked) {
   }
 
   // Sincronizar con el filtro global kmzCategory
-  // Si todas están activas, dejamos el filtro vacío para mostrar todo (incluyendo las que no tienen categoría)
-  if (activeKmzCategories.length === kmzCategories.length) {
-    st.kmzCategory = [];
-  } else {
-    st.kmzCategory = [...activeKmzCategories];
-  }
+  // Siempre guardamos la lista de categorías activas para que el filtro funcione incluso si está vacío
+  st.kmzCategory = [...activeKmzCategories];
 
   fnActualizarConteo(pfx);
   actualizarPinesMapa(pfx);
