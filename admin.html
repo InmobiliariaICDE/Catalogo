@@ -1809,7 +1809,15 @@ function fnActualizarConteo(pfx){
     tempFiltros.buscar = busVal;
   }
 
-  const f = filtrarProps(st, true);
+  let f = filtrarProps(st, true);
+  if(pfx==='nl'){
+    if(criterioOrden==='destacadas') f = f.filter(a => ["Directo", "Verbal"].includes(a["Contrato"]));
+    else if(criterioOrden==='noUbicadas') f = f.filter(p => {
+      const lat = parseFloat(String(p['Latitud'] || p['Lat'] || '').replace(',','.'));
+      const lng = parseFloat(String(p['Longitud'] || p['Lng'] || '').replace(',','.'));
+      return isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0;
+    });
+  }
   const el = document.getElementById(`fnCnt_${pfx}`);
   if(el) el.textContent = f.length;
 
@@ -2686,6 +2694,14 @@ function deselProp(cod){ selectedProps=selectedProps.filter(c=>c!==cod); renderN
 function renderPropsGrid(listaForzada){
   const el=document.getElementById('propsGrid'); if(!el) return;
   let lista = listaForzada || filtrarProps(nuevoLead.filtros, true);
+  if(!listaForzada){
+    if(criterioOrden==='destacadas') lista = lista.filter(a => ["Directo", "Verbal"].includes(a["Contrato"]));
+    else if(criterioOrden==='noUbicadas') lista = lista.filter(p => {
+      const lat = parseFloat(String(p['Latitud'] || p['Lat'] || '').replace(',','.'));
+      const lng = parseFloat(String(p['Longitud'] || p['Lng'] || '').replace(',','.'));
+      return isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0;
+    });
+  }
   const total = lista.length;
 
   if(!total){ el.innerHTML='<div class="empty">No hay propiedades con estos filtros</div>'; return; }
