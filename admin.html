@@ -1368,7 +1368,8 @@ function filtrarProps(f, returnAllIfEmpty = true){
   // Si el filtro está "vacío" (no hay nada seleccionado en ningún lado)
   // Para kmzCategory, lo consideramos "vacío" (sin filtrar) solo si contiene todas las categorías disponibles
   const hasCategoryFilter = f.kmzCategory && Array.isArray(f.kmzCategory) && f.kmzCategory.length < kmzCategories.length;
-  const isEmpty = !f.buscar && !f.minPrice && !f.maxPrice && !Object.values(f).some(v => Array.isArray(v) && v.length > 0 && v !== f.kmzCategory) && !hasCategoryFilter;
+  const isDestacadas = (criterioOrden === 'destacadas');
+  const isEmpty = !f.buscar && !f.minPrice && !f.maxPrice && !Object.values(f).some(v => Array.isArray(v) && v.length > 0 && v !== f.kmzCategory) && !hasCategoryFilter && !isDestacadas;
   
   if(isEmpty) return ordenarLista([...base]);
 
@@ -1410,6 +1411,8 @@ function filtrarProps(f, returnAllIfEmpty = true){
       const combinado = norm((d['Nombre']||'') + ' ' + codStr + ' ' + (d['Zona']||'') + ' ' + (d['Barrio']||'') + ' ' + (d['Descripción']||'') + ' ' + (d['Puntos Clave']||''));
       if(!combinado.includes(txt) && !codStr.toLowerCase().includes(txt.toLowerCase())) return false;
     }
+    // 4. Filtro especial Destacadas (Global)
+    if(criterioOrden === 'destacadas' && !["Directo", "Verbal"].includes(String(d["Contrato"] || ""))) return false;
     
     return true;
   });
@@ -1528,6 +1531,7 @@ function setSort(crit){
   nlPage = 0; 
   renderPropsGrid();
   fnActualizarConteo('nl');
+  actualizarPinesMapa('nl'); // Sincronizar mapa
   const efGrid = document.getElementById('editFiltrosGrid');
   if(efGrid) {
     const efSt = getFSt('ef');
