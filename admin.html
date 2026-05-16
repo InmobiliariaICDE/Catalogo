@@ -4791,7 +4791,7 @@ function toggleMapa(pfx) {
     } else {
       setTimeout(() => { 
         leafletMap.invalidateSize(); 
-        actualizarPinesMapa(pfx); 
+        actualizarPinesMapa(pfx, true); // Ajustar vista al abrir
       }, 300);
     }
   }
@@ -4905,8 +4905,8 @@ function actualizarPinesMapa(pfx, forceFit = false) {
     bounds.push([lat, lng]);
   });
   
-  // Solo ajustar vista si es la primera vez (forceFit) o si el filtro de viewport NO está activo
-  if(bounds.length > 0 && (forceFit || !mapViewportFilterActive)) {
+  // Solo ajustar vista si se solicita explícitamente (forceFit)
+  if(bounds.length > 0 && forceFit) {
     leafletMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
   }
 
