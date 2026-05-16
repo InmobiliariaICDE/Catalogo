@@ -4030,7 +4030,7 @@ function renderCalendario(){
   container.innerHTML = html;
 }
 
-let feedbackOmitidos = [];
+let feedbackOmitidos = JSON.parse(localStorage.getItem('icde_feedback_omitidos') || '[]');
 function checkCitasFeedback(){
   if(document.querySelector('.modal-overlay.open')) return; // No interrumpir si hay modal abierto
   const now = new Date();
@@ -4038,7 +4038,8 @@ function checkCitasFeedback(){
     if(c.estado !== 'agendada') return false;
     if(feedbackOmitidos.includes(String(c.id))) return false;
     const citaDate = new Date(c.fecha + (c.hora ? 'T' + c.hora : 'T23:59'));
-    return (now - citaDate) > (30 * 60 * 1000); // 30 mins después de la cita
+    const age = now - citaDate;
+    return age > (30 * 60 * 1000) && age < (10 * 24 * 60 * 60 * 1000); // 30m min, 10d max
   });
   if(pendientes.length > 0) abrirFeedbackModal(pendientes[0]);
 }
@@ -4057,7 +4058,10 @@ function abrirFeedbackModal(cita){
 
 function omitirFeedback(){
   const id = document.getElementById('feedbackCitaId').value;
-  feedbackOmitidos.push(String(id));
+  if(!feedbackOmitidos.includes(String(id))) {
+    feedbackOmitidos.push(String(id));
+    localStorage.setItem('icde_feedback_omitidos', JSON.stringify(feedbackOmitidos));
+  }
   closeModal('feedbackModal');
   setTimeout(checkCitasFeedback, 1000);
 }
@@ -4087,6 +4091,11 @@ async function guardarFeedback(){
     syncCita(cita);
     if(currentTab === 'citas') renderCitas();
     toast('Feedback guardado ✓');
+  }
+  // Marcar como omitido localmente para que no vuelva a saltar en esta sesion/dispositivo
+  if(!feedbackOmitidos.includes(String(id))) {
+    feedbackOmitidos.push(String(id));
+    localStorage.setItem('icde_feedback_omitidos', JSON.stringify(feedbackOmitidos));
   }
   closeModal('feedbackModal');
   // Solo volver a revisar si hay más citas pendientes (con delay para que el save se propague)
