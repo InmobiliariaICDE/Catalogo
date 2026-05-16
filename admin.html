@@ -1384,7 +1384,7 @@ function filtrarProps(f, returnAllIfEmpty = true){
     if(f.cocina?.length       && !f.cocina.includes(String(d['Cocina'] || "").trim()))             return false;
     if(f.barrio?.length       && !f.barrio.some(v => norm(v) === norm(d['Barrio'])))               return false;
     if(f.conjunto?.length     && !f.conjunto.some(v => norm(v) === norm(d['Conjunto'])))           return false;
-    if(f.kmzCategory && Array.isArray(f.kmzCategory)){
+    if(d.isKmzOnly && f.kmzCategory && Array.isArray(f.kmzCategory)){
       const propCat = String(d['_kmzCategory'] || "").trim();
       if(propCat){
         // Usamos una comparación normalizada para evitar problemas con espacios o emojis
