@@ -3910,6 +3910,19 @@ async function syncCita(cita){
   } catch(e){}
 }
 
+async function syncProperty(prop) {
+  if(!CRM_SCRIPT_URL) return;
+  try {
+    await fetch(CRM_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({ action: 'saveProperty', property: JSON.stringify(prop) })
+    });
+  } catch (e) {
+    console.error("Error syncProperty:", e);
+  }
+}
+
 async function syncDeleteCita(id){
   if(!CRM_SCRIPT_URL) return;
   try {
@@ -5073,6 +5086,9 @@ async function guardarPropiedadEditor() {
   if (cIdx >= 0) customProps[cIdx] = p;
   else customProps.push(p);
   localStorage.setItem('icde_custom_props', JSON.stringify(customProps));
+  
+  // Sincronización en tiempo real con la nube
+  syncProperty(p);
 
   closeModal('modalEditorProp');
   renderNuevo();

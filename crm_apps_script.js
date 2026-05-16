@@ -34,6 +34,9 @@ function doPost(e) {
     if (params.action === 'saveCita') {
       return saveCitaToSheet(JSON.parse(params.cita));
     }
+    if (params.action === 'saveProperty') {
+      return savePropertyToSheet(JSON.parse(params.property));
+    }
     return createJsonResponse({error: 'Acción no válida'});
   } catch (err) {
     return createJsonResponse({error: err.toString()});
@@ -242,6 +245,68 @@ function deleteLeadFromSheet(id) {
     }
   }
   return createJsonResponse({success: false, error: 'Lead no encontrado'});
+}
+
+/**
+ * Guarda o actualiza una propiedad en la hoja principal
+ */
+function savePropertyToSheet(prop) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Hoja1') || ss.getSheetByName('Propiedades') || ss.getSheets()[0];
+  if (!sheet) return createJsonResponse({error: 'No se encontró la hoja de propiedades'});
+
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  
+  // Encontrar columna de código de forma flexible
+  const codIdx = headers.findIndex(h => {
+    const nk = String(h || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    return nk === 'codigo' || nk === 'cdigo' || nk === 'cod' || nk === 'id';
+  });
+
+  if (codIdx === -1) return createJsonResponse({error: 'No se encontró columna de código en el Excel'});
+
+  // Mapeo de campos de admin.html a los encabezados del Excel
+  const rowData = headers.map(h => {
+    const nk = String(h || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    
+    if (nk === 'codigo' || nk === 'cdigo' || nk === 'cod' || nk === 'id') return prop['Código'] || '';
+    if (nk === 'nombre' || nk === 'titulo' || nk === 'propiedad') return prop['Nombre'] || '';
+    if (nk.includes('precio') && !nk.includes('rango') && !nk.includes('administracion')) return prop['Precio'] || '';
+    if (nk === 'tipo' || nk === 'tipo de inmueble' || nk === 'clase') return prop['Tipo de inmueble'] || '';
+    if (nk === 'zona' || nk === 'sector') return prop['Zona'] || '';
+    if (nk === 'barrio') return prop['Barrio'] || '';
+    if (nk.includes('ubicaci') || nk === 'direccion') return prop['Ubicación'] || '';
+    if (nk.includes('habitaci') || nk === 'alcobas' || nk === 'cuartos') return prop['Habitaciones'] || '';
+    if (nk.includes('bano') || nk === 'sanitarios') return prop['Baños'] || '';
+    if (nk.includes('garaje') || nk.includes('parquea')) return prop['Garaje'] || '';
+    if (nk.includes('area') || nk === 'mt2' || nk === 'superficie') return prop['Área'] || '';
+    if (nk.includes('latitud') || nk === 'lat') return prop['Latitud'] || '';
+    if (nk.includes('longitud') || nk === 'lng' || nk === 'lon') return prop['Longitud'] || '';
+    if (nk.includes('inmobiliaria') || nk.includes('inmob') || nk === 'aliado') return prop['Inmobiliaria'] || '';
+    if (nk.includes('descrip') || nk === 'detalle') return prop['Descripción'] || '';
+    if (nk.includes('imagen') || nk.includes('foto') || nk === 'galeria') return prop['Imagenes'] || '';
+    
+    // Fallback: buscar coincidencia exacta en el objeto prop
+    return prop[h] !== undefined ? prop[h] : '';
+  });
+
+  let rowIndex = -1;
+  const targetCod = String(prop['Código']).trim();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][codIdx]).trim() === targetCod) {
+      rowIndex = i + 1;
+      break;
+    }
+  }
+
+  if (rowIndex > 0) {
+    sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+  } else {
+    sheet.appendRow(rowData);
+  }
+
+  return createJsonResponse({success: true});
 }
 
 /**
