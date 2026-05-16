@@ -1365,12 +1365,13 @@ function filtrarProps(f, returnAllIfEmpty = true){
     base = allProps.filter(d => !d.isKmzOnly);
   }
 
-  // Si el filtro está "vacío"
-  const isEmpty = !f.buscar && !f.minPrice && !f.maxPrice && !Object.values(f).some(v => Array.isArray(v) && v.length > 0);
-  // Nota: excluimos kmzCategory del check de vacio si queremos que el mapa activo cuente como "no vacio" para mostrar KMZ
-  // Pero lo más limpio es simplemente usar 'base' en el return
+  // Si el filtro está "vacío" (no hay nada seleccionado en ningún lado)
+  // Para kmzCategory, lo consideramos "vacío" (sin filtrar) solo si contiene todas las categorías disponibles
+  const hasCategoryFilter = f.kmzCategory && Array.isArray(f.kmzCategory) && f.kmzCategory.length < kmzCategories.length;
+  const isEmpty = !f.buscar && !f.minPrice && !f.maxPrice && !Object.values(f).some(v => Array.isArray(v) && v.length > 0 && v !== f.kmzCategory) && !hasCategoryFilter;
   
-  if(isEmpty) return returnAllIfEmpty ? ordenarLista([...base]) : [];
+  if(isEmpty && !returnAllIfEmpty) return [];
+  if(isEmpty && returnAllIfEmpty) return ordenarLista([...base]);
 
   const filtered = base.filter(d=>{
     // 1. Categorías (Multi-select)
