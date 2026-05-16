@@ -1370,8 +1370,7 @@ function filtrarProps(f, returnAllIfEmpty = true){
   const hasCategoryFilter = f.kmzCategory && Array.isArray(f.kmzCategory) && f.kmzCategory.length < kmzCategories.length;
   const isEmpty = !f.buscar && !f.minPrice && !f.maxPrice && !Object.values(f).some(v => Array.isArray(v) && v.length > 0 && v !== f.kmzCategory) && !hasCategoryFilter;
   
-  if(isEmpty && !returnAllIfEmpty) return [];
-  if(isEmpty && returnAllIfEmpty) return ordenarLista([...base]);
+  if(isEmpty) return ordenarLista([...base]);
 
   const filtered = base.filter(d=>{
     // 1. Categorías (Multi-select)
