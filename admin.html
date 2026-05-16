@@ -1366,7 +1366,7 @@ function filtrarProps(f, returnAllIfEmpty = true){
   }
 
   // Si el filtro está "vacío"
-  const isEmpty = !f.buscar && !f.minPrice && !f.maxPrice && !Object.values(f).some(v => Array.isArray(v) && v.length > 0 && v !== f.kmzCategory);
+  const isEmpty = !f.buscar && !f.minPrice && !f.maxPrice && !Object.values(f).some(v => Array.isArray(v) && v.length > 0);
   // Nota: excluimos kmzCategory del check de vacio si queremos que el mapa activo cuente como "no vacio" para mostrar KMZ
   // Pero lo más limpio es simplemente usar 'base' en el return
   
@@ -1386,8 +1386,11 @@ function filtrarProps(f, returnAllIfEmpty = true){
     if(f.conjunto?.length     && !f.conjunto.some(v => norm(v) === norm(d['Conjunto'])))           return false;
     if(f.kmzCategory && Array.isArray(f.kmzCategory)){
       const propCat = String(d['_kmzCategory'] || "").trim();
-      // Si la propiedad tiene categoría y no está en la lista de permitidas, filtrar
-      if(propCat && !f.kmzCategory.includes(propCat)) return false;
+      if(propCat){
+        // Usamos una comparación normalizada para evitar problemas con espacios o emojis
+        const activeNorm = f.kmzCategory.map(c => norm(c));
+        if(!activeNorm.includes(norm(propCat))) return false;
+      }
     }
 
 
