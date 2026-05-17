@@ -5436,8 +5436,7 @@ function generarSlugPropiedad(inmueble) {
 function compartirPropiedad(codigo, btn){
   const p = allProps.find(x=>x['Código']===codigo);
   if(!p) return;
-  const url = p['Google Fotos'] || p['Image'] || '';
-  if(!url){ toast('No hay link de fotos disponible','error'); return; }
+  const url = window.location.origin + '/propiedad/' + generarSlugPropiedad(p) + '.html';
   
   navigator.clipboard.writeText(url).then(() => {
     toast('Enlace copiado ✓');
