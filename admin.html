@@ -5631,13 +5631,15 @@ function sincronizarAliadosConPropiedades() {
   let aliados = JSON.parse(localStorage.getItem('icde_aliados') || '[]');
   
   // Limpiar las que se insertaron automáticamente por etiquetas en pruebas anteriores
+  // También limpiar Finca Raíz, Metrocuadrado y Ciencuadras ya que el usuario no las quiere.
   const lenOriginal = aliados.length;
-  aliados = aliados.filter(a => a.notas !== 'Autosincronizado desde propiedad');
+  aliados = aliados.filter(a => {
+    if (a.notas === 'Autosincronizado desde propiedad') return false;
+    if (['finca raiz', 'metrocuadrado', 'ciencuadras'].includes(norm(a.nombre))) return false;
+    return true;
+  });
   
   const LW_PARTNERS = [
-    { nombre: "Finca Raíz", urlBase: "https://www.fincaraiz.com.co", notas: "Portal principal" },
-    { nombre: "Metrocuadrado", urlBase: "https://www.metrocuadrado.com", notas: "Portal principal" },
-    { nombre: "Ciencuadras", urlBase: "https://www.ciencuadras.com", notas: "Portal principal" },
     { nombre: "Elite Group", urlBase: "https://inmobiliariaelitegroupsas.com/", notas: "Carrusel Index" },
     { nombre: "Soluciones La Primavera", urlBase: "https://www.solucioneslaprimavera.com/", notas: "Carrusel Index" },
     { nombre: "Rocha Finca Raíz", urlBase: "https://rochafincaraiz.com/welcome/", notas: "Carrusel Index" },
@@ -5654,7 +5656,7 @@ function sincronizarAliadosConPropiedades() {
   ];
 
   const nombresExistentes = new Set(aliados.map(a => norm(a.nombre)));
-  let updated = false;
+  let updated = (aliados.length !== lenOriginal);
 
   LW_PARTNERS.forEach((p, idx) => {
     const n = norm(p.nombre);
@@ -5670,18 +5672,18 @@ function sincronizarAliadosConPropiedades() {
       });
       updated = true;
     } else {
-      // Si ya existe pero no tenía link o era el viejo "Auto-sincronizado", lo actualizamos
       const existing = aliados.find(a => norm(a.nombre) === n);
       if (existing && (!existing.urlBase || existing.notas === 'Autosincronizado desde propiedad')) {
         existing.urlBase = p.urlBase;
-        if(existing.notas === 'Autosincronizado desde propiedad') existing.notas = p.notas;
+        existing.notas = p.notas;
         updated = true;
       }
     }
   });
 
-  if (updated || !localStorage.getItem('icde_aliados')) {
+  if (updated || !localStorage.getItem('icde_aliados_migrated')) {
     localStorage.setItem('icde_aliados', JSON.stringify(aliados));
+    localStorage.setItem('icde_aliados_migrated', 'true');
   }
 }
 
