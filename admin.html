@@ -4954,17 +4954,9 @@ function actualizarPinesMapa(pfx, forceFit = false) {
     if(isNaN(lat) || isNaN(lng) || lat === 0) return;
     
     const price = p['Precio'] ? formatShortPrice(p['Precio']) : 'N/A';
-    const isKmzOnly = p.isKmzOnly;
-    const tieneConflicto = p._tieneConflictoCoordenadas;
-    let markerClass = 'z-marker';
-    if (isKmzOnly) {
-      markerClass = 'z-marker kmz-marker';
-    } else if (tieneConflicto) {
-      markerClass = 'z-marker conflict-marker';
-    }
     const icon = L.divIcon({
       className: 'z-marker-wrap',
-      html: `<div class="${markerClass}" id="m-${code}" title="${p['Nombre']}">${price}</div>`,
+      html: `<div class="z-marker" id="m-${code}" title="${p['Nombre']}">${price}</div>`,
       iconSize: [60, 25],
       iconAnchor: [30, 25]
     });
