@@ -2494,10 +2494,61 @@ function rebuildCitas() {
     }
   });
   
-  // Merge con citas genéricas (optimizando con Set)
+  // Migración automática: Cualquier cita que no pertenezca a un lead
+  // se mueve a LEAD-AGENDA-GLOBAL para garantizar su sincronización en la nube.
   const genericCitas = citas.filter(c => !seenCitaIds.has(String(c.id)));
   
-  citas = [...allVisitas, ...genericCitas];
+  if (genericCitas.length > 0) {
+     let globalLead = leads.find(l => l.id === 'LEAD-AGENDA-GLOBAL');
+     if (!globalLead) {
+         globalLead = {
+           id: 'LEAD-AGENDA-GLOBAL',
+           tipo: 'cliente',
+           nombre: 'Agenda Global (Citas Genéricas)',
+           celular: '0000000000',
+           notas: 'Contenedor para sincronizar citas antiguas o sin datos en la nube.',
+           metodoPago: [],
+           estado: 'visita',
+           etiqueta: 'activo',
+           filtros: {},
+           frecuencia: 'manual',
+           maxPorEnvio: 4,
+           nombreInmobiliaria: '',
+           nombreAgente: '',
+           propsFiltradas: [],
+           propsEnviadas: [],
+           proximosEnvios: [],
+           historialEnvios: [],
+           visitas: [],
+           creadoEn: new Date().toISOString()
+         };
+         leads.push(globalLead);
+     }
+     
+     let modified = false;
+     genericCitas.forEach(gc => {
+         const existing = globalLead.visitas.find(v => String(v.id) === String(gc.id) || (v.codigo === gc.codigo && v.fecha === gc.fecha));
+         if (!existing) {
+             globalLead.visitas.push(gc);
+             modified = true;
+         }
+     });
+     
+     if (modified) {
+         // Al cargarse y detectar citas huérfanas, forzamos sincronización del contenedor global
+         setTimeout(() => {
+             syncSheets(globalLead);
+             saveLeads();
+         }, 1000);
+     }
+     
+     genericCitas.forEach(gc => {
+         seenCitaIds.add(String(gc.id));
+         allVisitas.push(gc);
+     });
+  }
+  
+  citas = allVisitas;
 }
 
 function normalizarPropiedades(data) {
@@ -3928,6 +3979,35 @@ function guardarVisita(){
     let lead = leads.find(l=>String(l.id)===String(visitaLeadId));
     if(!lead && celular) lead = leads.find(l => String(l.celular) === String(celular));
 
+    if(!lead) {
+       // Asignar a contenedor global para sincronización
+       lead = leads.find(l => l.id === 'LEAD-AGENDA-GLOBAL');
+       if (!lead) {
+           lead = {
+               id: 'LEAD-AGENDA-GLOBAL',
+               tipo: 'cliente',
+               nombre: 'Agenda Global (Citas Genéricas)',
+               celular: '0000000000',
+               notas: 'Contenedor para sincronizar citas sin lead asociado.',
+               metodoPago: [],
+               estado: 'visita',
+               etiqueta: 'activo',
+               filtros: {},
+               frecuencia: 'manual',
+               maxPorEnvio: 4,
+               nombreInmobiliaria: '',
+               nombreAgente: '',
+               propsFiltradas: [],
+               propsEnviadas: [],
+               proximosEnvios: [],
+               historialEnvios: [],
+               visitas: [],
+               creadoEn: new Date().toISOString()
+           };
+           leads.push(lead);
+       }
+    }
+
     let existingId = null;
     const vInLead = lead?.visitas?.find(x => x.codigo === cod);
     const vInCitas = citas.find(x => x.codigo === cod && x.celular === celular);
@@ -3944,7 +4024,7 @@ function guardarVisita(){
       notas:document.getElementById('visitaNotas').value.trim(),
       cliente: cliente,
       celular: celular,
-      inmobiliaria: lead && lead.tipo==='inmobiliaria' ? lead.nombreInmobiliaria : '',
+      inmobiliaria: lead && lead.tipo==='inmobiliaria' && lead.id !== 'LEAD-AGENDA-GLOBAL' ? lead.nombreInmobiliaria : '',
     };
     
     if(lead){
@@ -3972,7 +4052,6 @@ function guardarVisita(){
     toast('Visita registrada ✓','success'); 
     
     if(lead) syncSheets(lead);
-    else syncCita(v); // Sincronizar cita genérica si no tiene lead
     
     if(currentLeadId && lead && currentLeadId===lead.id) renderSidePanel(lead);
     if(currentTab==='citas') renderCitas();
