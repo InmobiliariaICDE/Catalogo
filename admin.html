@@ -5972,7 +5972,10 @@ function formatPrecioOnInput(el) {
   }
 }
 
-function validarCodigoExistente(codigo) {
+let icdeMatrixText = '';
+let loadingMatrix = false;
+
+async function validarCodigoExistente(codigo) {
   const msg = document.getElementById('gp_codigo_msg');
   const input = document.getElementById('gp_codigo');
   if (!codigo) {
@@ -5981,12 +5984,42 @@ function validarCodigoExistente(codigo) {
     return;
   }
   
-  const match = allProps.find(p => String(p['Código'] || '').toLowerCase() === codigo.toLowerCase());
-  if (match) {
+  // Mostrar estado de carga si no tenemos la matriz
+  if (!icdeMatrixText && !loadingMatrix) {
+    loadingMatrix = true;
+    if (msg) {
+      msg.style.display = 'inline-block';
+      msg.style.color = '#d4a84b';
+      msg.textContent = '⌛ Consultando matriz...';
+    }
+    try {
+      const url = "https://docs.google.com/spreadsheets/d/1o4W4k1rxPq7t20RTd-1tC10ObsRUG3k-WewOKHshJdg/export?format=csv&gid=1129470117";
+      const resp = await fetch(url);
+      icdeMatrixText = await resp.text();
+    } catch (e) {
+      console.error('Error al consultar la matriz:', e);
+    } finally {
+      loadingMatrix = false;
+    }
+  }
+
+  let existe = false;
+  
+  if (icdeMatrixText) {
+    // Búsqueda en el texto del CSV usando regex para evitar falsos positivos
+    const escapedCode = codigo.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const regex = new RegExp(`(^|,|\\n)"?${escapedCode}"?(,|\\r|\\n|$)`, 'i');
+    existe = regex.test(icdeMatrixText);
+  } else {
+    // Fallback a allProps si falla el fetch o aún no carga
+    existe = allProps.some(p => String(p['Código'] || '').toLowerCase() === codigo.toLowerCase());
+  }
+
+  if (existe) {
     if (msg) {
       msg.style.display = 'inline-block';
       msg.style.color = '#ef4444';
-      msg.textContent = '✕ Código ya existe';
+      msg.textContent = '✕ Código ya existe en la matriz';
     }
     if (input) input.style.borderColor = '#ef4444';
   } else {
