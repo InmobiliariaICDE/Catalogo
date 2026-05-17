@@ -1390,27 +1390,30 @@ function getUniqueNums(campo){
   }).filter(v => !isNaN(v));
   return [...new Set(nums)].sort((a,b) => a - b).map(String);
 }
-function filtrarProps(f, returnAllIfEmpty = true){
+function filtrarProps(f, returnAllIfEmpty = true, incluirVirtuales = false){
   const parseP = txt => parseFloat(String(txt || "").replace(/[^\d]/g, "")) || 0;
   
-  if(!f) return allProps;
+  if(!f) return allProps.filter(d => !d.isKmzOnly);
 
-  // Filtrado base por estado de mapa (siempre aplica)
+  // Filtrado base por estado de mapa y flag de incluir virtuales
   let base = allProps;
-  if (!f.mapActive) {
-    // Mapa cerrado: solo propiedades del catálogo principal
+  if (!incluirVirtuales) {
+    // Si no se solicitan virtuales, solo mostramos las propiedades reales del catálogo Excel
     base = allProps.filter(d => !d.isKmzOnly);
   } else {
-    // Mapa abierto: incluir KMZ-only SOLO si su categoría está activa
-    // Esto garantiza que Inventario Barrios no aparezca aunque isEmpty sea true
-    const activeCatNorms = activeKmzCategories.map(c => norm(c));
-    base = allProps.filter(d => {
-      if (!d.isKmzOnly) return true; // Siempre incluir catálogo principal
-      if (!activeKmzCategories.length) return false; // Si no hay categorías activas, excluir todo KMZ-only
-      const cat = String(d['_kmzCategory'] || '').trim();
-      if (!cat) return false; // KMZ-only sin categoría: excluir
-      return activeCatNorms.includes(norm(cat));
-    });
+    // Si se solicitan virtuales, los incluimos SOLO si el mapa está abierto y pertenecen a categorías activas
+    if (f.mapActive) {
+      const activeCatNorms = activeKmzCategories.map(c => norm(c));
+      base = allProps.filter(d => {
+        if (!d.isKmzOnly) return true; // Siempre incluir catálogo principal
+        if (!activeKmzCategories.length) return false; // Si no hay categorías activas, excluir todo KMZ-only
+        const cat = String(d['_kmzCategory'] || '').trim();
+        if (!cat) return false; // KMZ-only sin categoría: excluir
+        return activeCatNorms.includes(norm(cat));
+      });
+    } else {
+      base = allProps.filter(d => !d.isKmzOnly);
+    }
   }
 
   // Si el filtro está "vacío" (no hay nada seleccionado en ningún lado)
@@ -4931,11 +4934,11 @@ function actualizarPinesMapa(pfx, forceFit = false) {
   
   let propsToShow = [];
   if(pfx === 'nl') {
-    propsToShow = filtrarProps(nuevoLead.filtros);
+    propsToShow = filtrarProps(nuevoLead.filtros, true, true);
   } else if (pfx === 'ef') {
-    propsToShow = filtrarProps(tempFiltros);
+    propsToShow = filtrarProps(tempFiltros, true, true);
   } else {
-    propsToShow = filtrarProps(_fst[pfx]);
+    propsToShow = filtrarProps(_fst[pfx], true, true);
   }
   
   if(propsToShow.length === 0) return;
