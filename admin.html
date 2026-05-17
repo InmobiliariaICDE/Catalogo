@@ -4866,6 +4866,7 @@ function renderTopProps(){
 // === MAPA INTERACTIVO ===
 let leafletMap = null;
 let mapMarkersObj = {};
+let mapMarkers = [];
 
 function toggleMapa(pfx) {
   const container = document.getElementById(`mapaContenedor_${pfx}`);
@@ -4928,8 +4929,11 @@ function initMapa(pfx) {
 function actualizarPinesMapa(pfx, forceFit = false) {
   if(!leafletMap) return;
   
-  // Limpiar marcadores
-  Object.values(mapMarkersObj).forEach(m => leafletMap.removeLayer(m));
+  // Limpiar todos los marcadores sin dejar residuos huérfanos/duplicados
+  mapMarkers.forEach(m => {
+    try { leafletMap.removeLayer(m); } catch(e) {}
+  });
+  mapMarkers = [];
   mapMarkersObj = {};
   
   let propsToShow = [];
@@ -5004,6 +5008,7 @@ function actualizarPinesMapa(pfx, forceFit = false) {
       // El popup se abre automáticamente por bindPopup
     });
 
+    mapMarkers.push(marker);
     mapMarkersObj[code] = marker;
     bounds.push([lat, lng]);
   });
