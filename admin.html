@@ -1362,7 +1362,19 @@ function filtrarProps(f, returnAllIfEmpty = true){
   // Filtrado base por estado de mapa (siempre aplica)
   let base = allProps;
   if (!f.mapActive) {
+    // Mapa cerrado: solo propiedades del catálogo principal
     base = allProps.filter(d => !d.isKmzOnly);
+  } else {
+    // Mapa abierto: incluir KMZ-only SOLO si su categoría está activa
+    // Esto garantiza que Inventario Barrios no aparezca aunque isEmpty sea true
+    const activeCatNorms = activeKmzCategories.map(c => norm(c));
+    base = allProps.filter(d => {
+      if (!d.isKmzOnly) return true; // Siempre incluir catálogo principal
+      if (!activeKmzCategories.length) return false; // Si no hay categorías activas, excluir todo KMZ-only
+      const cat = String(d['_kmzCategory'] || '').trim();
+      if (!cat) return false; // KMZ-only sin categoría: excluir
+      return activeCatNorms.includes(norm(cat));
+    });
   }
 
   // Si el filtro está "vacío" (no hay nada seleccionado en ningún lado)
@@ -4809,7 +4821,7 @@ function toggleMapa(pfx) {
     } else {
       setTimeout(() => { 
         leafletMap.invalidateSize(); 
-        actualizarPinesMapa(pfx, true); // Ajustar vista al abrir
+        actualizarPinesMapa(pfx); // Sin forceFit: mantiene posición actual
       }, 300);
     }
   }
