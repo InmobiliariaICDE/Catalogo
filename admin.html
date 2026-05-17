@@ -2091,39 +2091,53 @@ async function cargarKmz() {
 function correlacionarKmzConCatalogo() {
   if (!allProps.length || !kmzProps.length) return;
 
-  const normalizarCodigo = (cod) => String(cod || "").trim().replace(/^0+/, '');
+  // Normalización robusta de código: quita ceros a la izquierda, espacios y guiones
+  const normCod = (cod) => String(cod || '').trim()
+    .replace(/[\s\-_]/g, '')
+    .replace(/^0+([1-9\D])/, '$1')  // quita ceros iniciales antes de caracter significativo
+    .replace(/^0+$/, '0')           // si es todo ceros, conservar "0"
+    .toLowerCase();
+
+  // Construir mapa rápido del catálogo (normalizado → objeto original)
+  const catMap = new Map();
+  allProps.forEach(p => {
+    if (p.isKmzOnly) return;
+    const n = normCod(p['Código']);
+    if (n) catMap.set(n, p);
+  });
+
+  const sinMatch = [];
 
   kmzProps.forEach(kp => {
-    const kpNorm = normalizarCodigo(kp['Código']);
+    const kpNorm = normCod(kp['Código']);
     if (!kpNorm) return;
 
-    const existing = allProps.find(p => normalizarCodigo(p['Código']) === kpNorm);
-    
+    const existing = catMap.get(kpNorm);
+
     if (existing) {
-      // Verificar si ya tiene ubicación asignada en el catálogo
-      const latVal = parseFloat(String(existing['Latitud'] || '0').replace(',','.'));
-      const lngVal = parseFloat(String(existing['Longitud'] || '0').replace(',','.'));
+      // Verificar si ya tiene ubicación válida
+      const latVal = parseFloat(String(existing['Latitud'] || '0').replace(',', '.'));
+      const lngVal = parseFloat(String(existing['Longitud'] || '0').replace(',', '.'));
       const yaTieneUbicacion = !isNaN(latVal) && latVal !== 0 && !isNaN(lngVal) && lngVal !== 0;
 
       if (!yaTieneUbicacion) {
-        // No tiene ubicación asignada: Emparejar y asignar coordenadas del KMZ
+        // Sin ubicación: asignar coordenadas del KMZ (burbuja dorada)
         existing['Latitud'] = kp['Latitud'];
         existing['Longitud'] = kp['Longitud'];
       } else {
-        // Ya tiene ubicación asignada: No cambiarla, pero marcar conflicto para pintarlo de color diferente
+        // Ya tiene ubicación: marcar conflicto (burbuja naranja para revisión manual)
         existing._tieneConflictoCoordenadas = true;
       }
-      
-      // Guardar categoría KMZ en el objeto del catálogo para el filtro
+
       existing._kmzCategory = kp['Categoría'];
-      
-      // Si el catálogo no tiene imagen, intentar usar la del KMZ
+
       if (!existing['Imagenes'] && kp['Imagenes']) {
-         existing['Imagenes'] = kp['Imagenes'];
+        existing['Imagenes'] = kp['Imagenes'];
       }
     } else {
-      // No está en el catálogo, crear entrada virtual (morada)
-      const virtualProp = {
+      sinMatch.push({ raw: kp['Código'], norm: kpNorm });
+      // Crear entrada virtual (burbuja morada)
+      allProps.push({
         'Código': kp['Código'],
         'Nombre': kp['Nombre_KMZ'],
         'Precio': kp['Precio_KMZ'] ? parseKmzPrice(kp['Precio_KMZ']) : 0,
@@ -2136,19 +2150,25 @@ function correlacionarKmzConCatalogo() {
         'Ubicación': kp['Ubicación'],
         'Área': kp['Área'],
         'Tipo de inmueble': 'Casa (KMZ)',
-        'Image': 'https://i.imgur.com/YbnRomr.png', // Logo ICDE
+        'Image': 'https://i.imgur.com/YbnRomr.png',
         'Imagenes': kp['Imagenes'] || 'https://i.imgur.com/YbnRomr.png',
         'isKmzOnly': true,
         '_kmzCategory': kp['Categoría'],
         'Descripción': kp['KMZ_Data']?.['Descripción'] || '',
         'Renta': kp['KMZ_Data']?.['Renta'] || '',
         'Retorno de la inversión': kp['KMZ_Data']?.['Retorno de Inversión'] || ''
-      };
-      allProps.push(virtualProp);
+      });
     }
   });
 
-  // Re-filtrar y re-renderizar si es necesario
+  // Imprimir en consola los codigos sin match para diagnóstico
+  if (sinMatch.length > 0) {
+    console.warn(`[KMZ] ${sinMatch.length} códigos KMZ sin coincidencia (aparecen en MORADO):`);
+    console.table(sinMatch);
+  } else {
+    console.log('[KMZ] Todos los códigos KMZ coincidieron con el catálogo.');
+  }
+
   if (currentTab === 'nuevo') {
     fnActualizarConteo('nl');
   }
