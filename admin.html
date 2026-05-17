@@ -3762,16 +3762,16 @@ function confirmarEnvio(btn){
           toast(`Enviado automáticamente ✓`, 'success');
         } else {
           // Si el bridge falló con error controlado, permitimos el fallback manual
-          window.open(`https://wa.me/${waBase}?text=${encodeURIComponent(msg)}`, '_blank');
+          window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
         }
       }).catch(() => {
         // En caso de error de red (bridge offline)
-        window.open(`https://wa.me/${waBase}?text=${encodeURIComponent(msg)}`, '_blank');
+        window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
       }).finally(() => {
         if(btn) btn.disabled = false;
       });
     } else {
-      window.open(`https://wa.me/${waBase}?text=${encodeURIComponent(msg)}`, '_blank');
+      window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
       if(btn) btn.disabled = false;
     }
 
@@ -4580,7 +4580,7 @@ function sendAdminReminder(owner, prop, amount) {
       else toast('Error al enviar recordatorio', 'error');
     });
   } else {
-    const url = `https://wa.me/${phone.replace(/\+/g,'')}?text=${encodeURIComponent(msg)}`;
+    const url = `https://api.whatsapp.com/send?phone=${phone.replace(/\+/g,'')}&text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
   }
 }
