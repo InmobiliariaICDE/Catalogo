@@ -5822,7 +5822,10 @@ function renderNuevaPropiedad() {
       </div>
       
       <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 24px;">
-        <div class="form-group"><label class="form-label">Código</label><input class="form-input" id="gp_codigo" type="text" placeholder="Año + Secuencia (Auto-generar si está vacío)"/></div>
+        <div class="form-group" style="position:relative;"><label class="form-label">Código</label>
+          <input class="form-input" id="gp_codigo" type="text" placeholder="Año + Secuencia (Auto-generar si está vacío)" oninput="validarCodigoExistente(this.value)"/>
+          <span id="gp_codigo_msg" style="display:none; position:absolute; right:10px; bottom:-16px; font-size:11px; font-weight:600;"></span>
+        </div>
         <div class="form-group"><label class="form-label">Nombre *</label>
           <div style="display:flex; gap:6px;">
             <input class="form-input" id="gp_nombre" type="text" placeholder="Apartamento en barrio X" style="flex:1;"/>
@@ -5966,6 +5969,33 @@ function formatPrecioOnInput(el) {
     el.value = Number(val).toLocaleString('es-CO');
   } else {
     el.value = "";
+  }
+}
+
+function validarCodigoExistente(codigo) {
+  const msg = document.getElementById('gp_codigo_msg');
+  const input = document.getElementById('gp_codigo');
+  if (!codigo) {
+    if (msg) msg.style.display = 'none';
+    if (input) input.style.borderColor = '';
+    return;
+  }
+  
+  const match = allProps.find(p => String(p['Código'] || '').toLowerCase() === codigo.toLowerCase());
+  if (match) {
+    if (msg) {
+      msg.style.display = 'inline-block';
+      msg.style.color = '#ef4444';
+      msg.textContent = '✕ Código ya existe';
+    }
+    if (input) input.style.borderColor = '#ef4444';
+  } else {
+    if (msg) {
+      msg.style.display = 'inline-block';
+      msg.style.color = '#22c55e';
+      msg.textContent = '✓ Disponible';
+    }
+    if (input) input.style.borderColor = '#22c55e';
   }
 }
 
