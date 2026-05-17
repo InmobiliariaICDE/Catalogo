@@ -58,6 +58,11 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .modal-prop{background:#0a0a0a;border:1px solid rgba(212,168,75,0.2);border-radius:24px;width:95%;max-width:1100px;height:96vh;display:flex;flex-direction:column;box-shadow:0 30px 100px rgba(0,0,0,0.9);overflow:hidden;}
 .modal-prop-header{padding:12px 20px;display:flex;justify-content:flex-end;align-items:center;background:transparent;z-index:10;position:absolute;top:10px;right:10px;}
 .modal-prop-close{background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.2);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;cursor:pointer;transition:all 0.2s;backdrop-filter:blur(4px);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:11000;display:none;align-items:center;justify-content:center;padding:20px;transition:all 0.3s;}
+.modal-overlay.active{display:flex;}
+.modal-box{background:#0a0a0a;border:1px solid rgba(212,168,75,0.3);border-radius:24px;width:100%;max-width:500px;padding:30px;display:flex;flex-direction:column;box-shadow:0 30px 100px rgba(0,0,0,0.9);position:relative;}
+.modal-title{font-size:1.2rem;font-weight:700;color:var(--gold);margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+
 .modal-prop-close:hover{background:#d4a84b;border-color:#d4a84b;}
 .modal-prop-body{padding:0;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
 .modal-contenido{display:flex;min-height:0;flex:1;}
@@ -5624,6 +5629,10 @@ function updTimelineNota(leadId, idx, val) {
 
 function sincronizarAliadosConPropiedades() {
   let aliados = JSON.parse(localStorage.getItem('icde_aliados') || '[]');
+  
+  // Limpiar las que se insertaron automáticamente por etiquetas en pruebas anteriores
+  const lenOriginal = aliados.length;
+  aliados = aliados.filter(a => a.notas !== 'Autosincronizado desde propiedad');
   
   const LW_PARTNERS = [
     { nombre: "Finca Raíz", urlBase: "https://www.fincaraiz.com.co", notas: "Portal principal" },
