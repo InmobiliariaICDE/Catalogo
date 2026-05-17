@@ -2020,18 +2020,21 @@ async function cargarKmz() {
     // Extraer categorías únicas
     kmzCategories = [...new Set(kmzProps.map(p => p['Categoría']))].filter(Boolean).sort();
     
-    // Por defecto, todas activas (revertido el ocultamiento de Inventario Barrios)
-    activeKmzCategories = [...kmzCategories];
+    // Por defecto, todas activas EXCEPTO "Inventario Barrios" (siempre desactivado al abrir)
+    activeKmzCategories = kmzCategories.filter(cat => !cat.toUpperCase().includes("INVENTARIO BARRIOS"));
     
     console.log(`Cargadas ${kmzProps.length} propiedades desde KMZ en ${kmzCategories.length} categorías.`);
     
     correlacionarKmzConCatalogo();
     
     // Inicializar el filtro de categorías en el estado global de 'nl'
+    // Solo las categorías activas (sin Inventario Barrios)
     const stNl = getFSt('nl');
     stNl.kmzCategory = [...activeKmzCategories];
 
     renderKmzCategories('nl');
+    // Actualizar conteo ya que el filtro cambió
+    fnActualizarConteo('nl');
   } catch (e) {
     console.error("Error cargando KMZ JSON:", e);
   }
