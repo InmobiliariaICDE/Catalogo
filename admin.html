@@ -3673,7 +3673,7 @@ function abrirEnvioModal(leadId, presel){
            <div style="line-height:1.5;">
              ${emoCasa} ¡Hola ${dest}! ${emoHola}<br/><br/>
              Te comparto estas nuevas opciones que se ajustan a lo que buscas ${emoLink}<br/><br/>
-             ${objs.map(p => `• <strong>${p['Nombre'] || p['Código']}</strong> (${formatP(p['Precio'])})<br/>&nbsp;&nbsp;\u{1F517} ${p['Google Fotos'] || 'Ver fotos'}`).join('<br/><br/>')}
+             ${objs.map(p => `• <strong>${p['Nombre'] || p['Código']}</strong> (${formatP(p['Precio'])})<br/>&nbsp;&nbsp;\u{1F517} ${p['Google Fotos'] ? `<a href="${p['Google Fotos']}" target="_blank" style="color:var(--gold);text-decoration:none;">Ver fotos</a>` : `<a href="https://icdeinmobiliaria.com/propiedad/${generarSlugPropiedad(p)}.html" target="_blank" style="color:var(--gold);text-decoration:none;">Ver propiedad</a>`}`).join('<br/><br/>')}
              <br/><br/>
              Revísalo y me cuentas que inmueble deseas que visitemos ${emoFin}
            </div>
@@ -3805,7 +3805,7 @@ function confirmarEnvio(btn){
       msg = emoCasa + " \u00A1Hola " + dest + "! " + emoHola + "\r\n\r\n" +
             "Te comparto estas nuevas opciones que se ajustan a lo que buscas " + emoLink + "\r\n\r\n";
       objs.forEach(p => {
-        msg += emoBullet + " *" + (p['Nombre'] || p['Código']) + "* (" + formatP(p['Precio']) + ")\r\n  " + emoClip + " " + (p['Google Fotos'] || 'Ver fotos') + "\r\n\r\n";
+        msg += emoBullet + " *" + (p['Nombre'] || p['Código']) + "* (" + formatP(p['Precio']) + ")\r\n  " + emoClip + " " + (p['Google Fotos'] || `https://icdeinmobiliaria.com/propiedad/${generarSlugPropiedad(p)}.html`) + "\r\n\r\n";
       });
       msg += "Rev\u00EDsalo y me cuentas que inmueble deseas que visitemos " + emoFin + emoEstrella;
     }
