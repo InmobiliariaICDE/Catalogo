@@ -5622,42 +5622,50 @@ function updTimelineNota(leadId, idx, val) {
   toast('Nota actualizada', 'success');
 }
 
-/* ═══════════════════════════════════════════════
-   MÓDULO DE GESTIÓN DE INMUEBLES & ALIADOS
-═══════════════════════════════════════════════ */
 function sincronizarAliadosConPropiedades() {
   let aliados = JSON.parse(localStorage.getItem('icde_aliados') || '[]');
   
-  // Agregar defaults si está vacío
-  if (aliados.length === 0) {
-    aliados = [
-      { id: '1', nombre: 'Finca Raíz', urlBase: 'https://www.fincaraiz.com.co', frecuenciaDias: 15, ultimoBarrido: '', notas: 'Competidor principal' },
-      { id: '2', nombre: 'Metrocuadrado', urlBase: 'https://www.metrocuadrado.com', frecuenciaDias: 15, ultimoBarrido: '', notas: '' },
-      { id: '3', nombre: 'Ciencuadras', urlBase: 'https://www.ciencuadras.com', frecuenciaDias: 15, ultimoBarrido: '', notas: '' }
-    ];
-  }
+  const LW_PARTNERS = [
+    { nombre: "Finca Raíz", urlBase: "https://www.fincaraiz.com.co", notas: "Portal principal" },
+    { nombre: "Metrocuadrado", urlBase: "https://www.metrocuadrado.com", notas: "Portal principal" },
+    { nombre: "Ciencuadras", urlBase: "https://www.ciencuadras.com", notas: "Portal principal" },
+    { nombre: "Elite Group", urlBase: "https://inmobiliariaelitegroupsas.com/", notas: "Carrusel Index" },
+    { nombre: "Soluciones La Primavera", urlBase: "https://www.solucioneslaprimavera.com/", notas: "Carrusel Index" },
+    { nombre: "Rocha Finca Raíz", urlBase: "https://rochafincaraiz.com/welcome/", notas: "Carrusel Index" },
+    { nombre: "Inmobiliaria Jovel Muñoz", urlBase: "https://www.inmobiliariajovelmunoz.com.co/", notas: "Carrusel Index" },
+    { nombre: "Inmobiliaria Santa María Vera", urlBase: "https://inmobiliariasantamariavera.com/", notas: "Carrusel Index" },
+    { nombre: "MAC Negocios Inmobiliarios", urlBase: "https://web.facebook.com/people/MAC-negocios-Inmobiliarios/61581485549130/", notas: "Carrusel Index" },
+    { nombre: "Inmobiliaria JP Escobar", urlBase: "https://www.inmobiliariajpescobar.com.co/", notas: "Carrusel Index" },
+    { nombre: "Asuntos Inmobiliarios", urlBase: "https://www.facebook.com/figueroayasociadoshuila/?locale=es_LA", notas: "Carrusel Index" },
+    { nombre: "Casa Honor Inmobiliaria", urlBase: "https://casahonorinmobiliaria.com/", notas: "Carrusel Index" },
+    { nombre: "Rediis Armiento", urlBase: "https://www.instagram.com/rediisarmiento/", notas: "Carrusel Index" },
+    { nombre: "Inmobiliaria Casa & Casa", urlBase: "https://casaycasainmobiliariadelhuila.com/", notas: "Carrusel Index" },
+    { nombre: "Inmobiliaria Rustik House", urlBase: "https://inmobiliarianeiva.com/", notas: "Carrusel Index" },
+    { nombre: "Menber", urlBase: "https://casasenventaneiva.com/", notas: "Carrusel Index" }
+  ];
 
-  // Escanear todas las propiedades actuales por la etiqueta o inmobiliaria
   const nombresExistentes = new Set(aliados.map(a => norm(a.nombre)));
   let updated = false;
 
-  allProps.forEach(p => {
-    // Buscar la etiqueta (Inmobiliaria, Agente, o Etiquetas combinadas)
-    let inmobStr = String(p['Inmobiliaria'] || p['Inmob'] || p['Agente'] || p['Publicar'] || '').trim();
-    
-    // Si la etiqueta existe, no es ICDE ni N/A, ni palabras clave genéricas
-    if (inmobStr && inmobStr.toUpperCase() !== 'ICDE' && inmobStr.toUpperCase() !== 'N/A' && inmobStr.toUpperCase() !== 'SI' && inmobStr.toUpperCase() !== 'NO') {
-      const n = norm(inmobStr);
-      if (!nombresExistentes.has(n)) {
-        nombresExistentes.add(n);
-        aliados.push({
-          id: Date.now().toString() + Math.floor(Math.random()*1000),
-          nombre: inmobStr, // Ej: Rocha, Jovel, C&C
-          urlBase: '',
-          frecuenciaDias: 15,
-          ultimoBarrido: '',
-          notas: 'Autosincronizado desde propiedad'
-        });
+  LW_PARTNERS.forEach((p, idx) => {
+    const n = norm(p.nombre);
+    if (!nombresExistentes.has(n)) {
+      nombresExistentes.add(n);
+      aliados.push({
+        id: 'ally_' + Date.now().toString() + '_' + idx,
+        nombre: p.nombre,
+        urlBase: p.urlBase,
+        frecuenciaDias: 15,
+        ultimoBarrido: '',
+        notas: p.notas
+      });
+      updated = true;
+    } else {
+      // Si ya existe pero no tenía link o era el viejo "Auto-sincronizado", lo actualizamos
+      const existing = aliados.find(a => norm(a.nombre) === n);
+      if (existing && (!existing.urlBase || existing.notas === 'Autosincronizado desde propiedad')) {
+        existing.urlBase = p.urlBase;
+        if(existing.notas === 'Autosincronizado desde propiedad') existing.notas = p.notas;
         updated = true;
       }
     }
