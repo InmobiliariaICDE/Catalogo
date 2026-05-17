@@ -450,6 +450,24 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 .z-marker.kmz-marker:hover::after, .z-marker.kmz-marker.active::after {
   border-top-color: var(--purple) !important;
 }
+/* Estilo premium en naranja para propiedades con ubicación preexistente y conflicto en KMZ */
+.z-marker.conflict-marker {
+  background: #24140a !important;
+  border: 1px solid var(--orange) !important;
+  color: #ffedd5 !important;
+  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35) !important;
+}
+.z-marker.conflict-marker:hover, .z-marker.conflict-marker.active {
+  background: var(--orange) !important;
+  color: #000 !important;
+  border-color: #fff !important;
+}
+.z-marker.conflict-marker::after {
+  border-top-color: #24140a !important;
+}
+.z-marker.conflict-marker:hover::after, .z-marker.conflict-marker.active::after {
+  border-top-color: var(--orange) !important;
+}
 .map-control-card {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -2073,16 +2091,30 @@ async function cargarKmz() {
 function correlacionarKmzConCatalogo() {
   if (!allProps.length || !kmzProps.length) return;
 
+  const normalizarCodigo = (cod) => String(cod || "").trim().replace(/^0+/, '');
+
   kmzProps.forEach(kp => {
-    const codeStr = String(kp['Código']).trim();
-    const existing = allProps.find(p => String(p['Código']).trim() === codeStr);
+    const kpNorm = normalizarCodigo(kp['Código']);
+    if (!kpNorm) return;
+
+    const existing = allProps.find(p => normalizarCodigo(p['Código']) === kpNorm);
     
     if (existing) {
-      // Correlacionar: Actualizar coordenadas si no las tiene o son 0
-      if (!existing['Latitud'] || existing['Latitud'] == 0) existing['Latitud'] = kp['Latitud'];
-      if (!existing['Longitud'] || existing['Longitud'] == 0) existing['Longitud'] = kp['Longitud'];
+      // Verificar si ya tiene ubicación asignada en el catálogo
+      const latVal = parseFloat(String(existing['Latitud'] || '0').replace(',','.'));
+      const lngVal = parseFloat(String(existing['Longitud'] || '0').replace(',','.'));
+      const yaTieneUbicacion = !isNaN(latVal) && latVal !== 0 && !isNaN(lngVal) && lngVal !== 0;
+
+      if (!yaTieneUbicacion) {
+        // No tiene ubicación asignada: Emparejar y asignar coordenadas del KMZ
+        existing['Latitud'] = kp['Latitud'];
+        existing['Longitud'] = kp['Longitud'];
+      } else {
+        // Ya tiene ubicación asignada: No cambiarla, pero marcar conflicto para pintarlo de color diferente
+        existing._tieneConflictoCoordenadas = true;
+      }
       
-      // Guardar categoría KMZ en el objeto del catálogo
+      // Guardar categoría KMZ en el objeto del catálogo para el filtro
       existing._kmzCategory = kp['Categoría'];
       
       // Si el catálogo no tiene imagen, intentar usar la del KMZ
@@ -2090,7 +2122,7 @@ function correlacionarKmzConCatalogo() {
          existing['Imagenes'] = kp['Imagenes'];
       }
     } else {
-      // No está en el catálogo, crear entrada virtual
+      // No está en el catálogo, crear entrada virtual (morada)
       const virtualProp = {
         'Código': kp['Código'],
         'Nombre': kp['Nombre_KMZ'],
@@ -4900,7 +4932,13 @@ function actualizarPinesMapa(pfx, forceFit = false) {
     
     const price = p['Precio'] ? formatShortPrice(p['Precio']) : 'N/A';
     const isKmzOnly = p.isKmzOnly;
-    const markerClass = isKmzOnly ? 'z-marker kmz-marker' : 'z-marker';
+    const tieneConflicto = p._tieneConflictoCoordenadas;
+    let markerClass = 'z-marker';
+    if (isKmzOnly) {
+      markerClass = 'z-marker kmz-marker';
+    } else if (tieneConflicto) {
+      markerClass = 'z-marker conflict-marker';
+    }
     const icon = L.divIcon({
       className: 'z-marker-wrap',
       html: `<div class="${markerClass}" id="m-${code}" title="${p['Nombre']}">${price}</div>`,
