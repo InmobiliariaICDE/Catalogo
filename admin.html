@@ -5625,15 +5625,51 @@ function updTimelineNota(leadId, idx, val) {
 /* ═══════════════════════════════════════════════
    MÓDULO DE GESTIÓN DE INMUEBLES & ALIADOS
 ═══════════════════════════════════════════════ */
-if (!localStorage.getItem('icde_aliados')) {
-  localStorage.setItem('icde_aliados', JSON.stringify([
-    { id: '1', nombre: 'Finca Raíz', urlBase: 'https://www.fincaraiz.com.co', frecuenciaDias: 15, ultimoBarrido: '', notas: 'Competidor principal' },
-    { id: '2', nombre: 'Metrocuadrado', urlBase: 'https://www.metrocuadrado.com', frecuenciaDias: 15, ultimoBarrido: '', notas: '' },
-    { id: '3', nombre: 'Ciencuadras', urlBase: 'https://www.ciencuadras.com', frecuenciaDias: 15, ultimoBarrido: '', notas: '' }
-  ]));
+function sincronizarAliadosConPropiedades() {
+  let aliados = JSON.parse(localStorage.getItem('icde_aliados') || '[]');
+  
+  // Agregar defaults si está vacío
+  if (aliados.length === 0) {
+    aliados = [
+      { id: '1', nombre: 'Finca Raíz', urlBase: 'https://www.fincaraiz.com.co', frecuenciaDias: 15, ultimoBarrido: '', notas: 'Competidor principal' },
+      { id: '2', nombre: 'Metrocuadrado', urlBase: 'https://www.metrocuadrado.com', frecuenciaDias: 15, ultimoBarrido: '', notas: '' },
+      { id: '3', nombre: 'Ciencuadras', urlBase: 'https://www.ciencuadras.com', frecuenciaDias: 15, ultimoBarrido: '', notas: '' }
+    ];
+  }
+
+  // Escanear todas las propiedades actuales por la etiqueta o inmobiliaria
+  const nombresExistentes = new Set(aliados.map(a => norm(a.nombre)));
+  let updated = false;
+
+  allProps.forEach(p => {
+    // Buscar la etiqueta (Inmobiliaria, Agente, o Etiquetas combinadas)
+    let inmobStr = String(p['Inmobiliaria'] || p['Inmob'] || p['Agente'] || p['Publicar'] || '').trim();
+    
+    // Si la etiqueta existe, no es ICDE ni N/A, ni palabras clave genéricas
+    if (inmobStr && inmobStr.toUpperCase() !== 'ICDE' && inmobStr.toUpperCase() !== 'N/A' && inmobStr.toUpperCase() !== 'SI' && inmobStr.toUpperCase() !== 'NO') {
+      const n = norm(inmobStr);
+      if (!nombresExistentes.has(n)) {
+        nombresExistentes.add(n);
+        aliados.push({
+          id: Date.now().toString() + Math.floor(Math.random()*1000),
+          nombre: inmobStr, // Ej: Rocha, Jovel, C&C
+          urlBase: '',
+          frecuenciaDias: 15,
+          ultimoBarrido: '',
+          notas: 'Autosincronizado desde propiedad'
+        });
+        updated = true;
+      }
+    }
+  });
+
+  if (updated || !localStorage.getItem('icde_aliados')) {
+    localStorage.setItem('icde_aliados', JSON.stringify(aliados));
+  }
 }
 
 function renderGestion() {
+  sincronizarAliadosConPropiedades();
   const c = document.getElementById('mainContent');
   if (!window.currentGestionSubTab) {
     window.currentGestionSubTab = 'nueva';
