@@ -1313,11 +1313,7 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
           🔍 Diagnóstico
         </button>
       </div>
-      <div style="margin-top:8px;">
-        <button id="btnLimpiarDups" class="btn btn-danger" style="width:100%; font-size:12px;" onclick="limpiarDuplicadosLocales()">
-          🧹 Limpiar duplicados (por teléfono)
-        </button>
-      </div>
+
       <div id="diagResultado" style="margin-top:12px; font-size:11px; color:#888; background:rgba(255,255,255,0.03); border-radius:8px; padding:10px; display:none;"></div>
     </div>
 
@@ -2568,6 +2564,13 @@ async function autoSyncLeads() {
 
     let huboNuevos = false;
     const localMap = new Map(leads.map(l => [String(l.id).trim(), l]));
+    // Mapa de teléfonos locales para evitar duplicados al sincronizar desde la nube
+    const localPhoneMap = new Map(
+      leads
+        .filter(l => l.id !== 'LEAD-AGENDA-GLOBAL')
+        .map(l => [String(l.celular || '').replace(/\D/g, ''), String(l.id).trim()])
+        .filter(([phone]) => phone !== '')
+    );
 
     cloudData.forEach(cloudLead => {
       const id = String(cloudLead.id).trim();
@@ -2575,9 +2578,27 @@ async function autoSyncLeads() {
 
       const local = localMap.get(id);
       if (!local) {
+        // Verificar que no exista ya un lead local con el mismo teléfono
+        const phone = String(cloudLead.celular || '').replace(/\D/g, '');
+        if (phone && localPhoneMap.has(phone) && cloudLead.id !== 'LEAD-AGENDA-GLOBAL') {
+          // Existe duplicado por teléfono — hacer merge de visitas en el lead existente
+          const existingId = localPhoneMap.get(phone);
+          const existingLead = localMap.get(existingId);
+          if (existingLead) {
+            const merged = mergeVisitas(existingLead.visitas, cloudLead.visitas);
+            const prevStates = (existingLead.visitas || []).map(v => visitaKey(v) + v.estado).sort().join('|');
+            const newStates  = merged.map(v => visitaKey(v) + v.estado).sort().join('|');
+            if (merged.length !== (existingLead.visitas || []).length || prevStates !== newStates) {
+              huboNuevos = true;
+              existingLead.visitas = merged;
+            }
+          }
+          return; // No insertar el duplicado
+        }
         huboNuevos = true;
         leads.push(cloudLead);
         localMap.set(id, cloudLead);
+        if (phone) localPhoneMap.set(phone, id);
         return;
       }
 
