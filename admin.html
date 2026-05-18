@@ -6142,8 +6142,20 @@ function autofillPropiedadPorCodigo() {
   setVal('gp_garaje', p['Garaje'] || p['garaje'] || 'No');
   setVal('gp_area', p['Área (m²)'] || p['area'] || p['Área construida']);
   
-  // SOLUCIÓN ESTRICTA: Solo leer de la columna exacta 'Google Fotos'
-  setVal('gp_gfotos', p['Google Fotos']);
+  // SOLUCIÓN ESTRICTA PERO INTELIGENTE: Solo leer de la columna exacta 'Google Fotos',
+  // pero si por algún motivo viene vacío (ej. fallo de fetch y fallback a allProps), 
+  // buscar en las otras columnas si alguna contiene un enlace real de álbum de Google Fotos.
+  let gfLink = p['Google Fotos'] || '';
+  if (!gfLink) {
+    const possibleKeys = ['Google Fotos (Link Álbum)', 'googleFotos', 'Imagenes', 'Image'];
+    for (const k of possibleKeys) {
+      if (p[k] && typeof p[k] === 'string' && (p[k].includes('photos.app.goo.gl') || p[k].includes('photos.google.com'))) {
+        gfLink = p[k];
+        break;
+      }
+    }
+  }
+  setVal('gp_gfotos', gfLink);
   
   setVal('gp_inmobiliaria', p['Inmobiliaria / Aliado'] || p['inmobiliaria'] || p['Inmob'] || '');
   setVal('gp_administracion', p['Administración ($)'] || p['administracion'] || p['Administración']);
