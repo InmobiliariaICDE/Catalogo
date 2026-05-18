@@ -5327,8 +5327,17 @@ async function guardarPropiedadEditor() {
 
   const idx = allProps.findIndex(x => x['Código'] === cod);
   if (idx >= 0) {
-    allProps[idx] = { ...allProps[idx], ...p };
-    toast('Propiedad actualizada localmente ✓', 'success');
+    // CORRECCIÓN CRÍTICA: Solo sobrescribir campos que el usuario realmente editó.
+    // Si un campo viene vacío del formulario mini del mapa, NO borrar la info
+    // rica que ya existe en la propiedad (descripción, puntos clave, ciudad, etc.)
+    const updated = { ...allProps[idx] };
+    for (const [key, val] of Object.entries(p)) {
+      if (val !== '' && val !== null && val !== undefined) {
+        updated[key] = val;
+      }
+    }
+    allProps[idx] = updated;
+    toast('Propiedad actualizada ✓ (información de la matriz preservada)', 'success');
   } else {
     allProps.push(p);
     toast('Nueva propiedad agregada localmente ✓', 'success');
