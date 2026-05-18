@@ -1094,6 +1094,17 @@ document.addEventListener('DOMContentLoaded', function() {{
         lightboxNav(-1); // Deslizar derecha -> anterior
       }}
     }}, {{passive: true}});
+    
+    // Evitar que el swipe en las miniaturas cambie la foto principal
+    var wrapMinis = lightbox.querySelector('.lightbox-miniaturas-wrap');
+    if (wrapMinis) {{
+      wrapMinis.addEventListener('touchstart', function(e) {{
+        e.stopPropagation();
+      }}, {{passive: true}});
+      wrapMinis.addEventListener('touchend', function(e) {{
+        e.stopPropagation();
+      }}, {{passive: true}});
+    }}
   }}
 }});
 
