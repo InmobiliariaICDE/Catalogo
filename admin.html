@@ -1298,6 +1298,24 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
         <input class="form-input" id="setGeminiKey" type="password" placeholder="AIza..." value="${settings.geminiKey || ''}"/>
       </div>
     </div>
+
+    <!-- SECCIÓN DE SINCRONIZACIÓN -->
+    <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+      <div style="font-size:12px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px;">🔄 Sincronización entre computadores</div>
+      <div style="font-size:12px; color:#aaa; margin-bottom:14px; line-height:1.5;">
+        Si las citas o leads no aparecen en otro computador, usa este botón <strong style="color:#fff;">en el equipo que SÍ tiene los datos correctos</strong> para subirlos a la nube.
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button id="btnForzarPush" class="btn btn-gold" style="flex:1;" onclick="forzarPushTotal()">
+          ☁️ Subir todo a la nube
+        </button>
+        <button class="btn btn-secondary" style="flex:1;" onclick="diagnosticarDatosLocales()">
+          🔍 Diagnóstico
+        </button>
+      </div>
+      <div id="diagResultado" style="margin-top:12px; font-size:11px; color:#888; background:rgba(255,255,255,0.03); border-radius:8px; padding:10px; display:none;"></div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('settingsModal')">Cancelar</button>
       <button class="btn btn-primary" onclick="guardarSettings()">Guardar</button>
@@ -2129,6 +2147,41 @@ function hardResetData() {
     location.reload();
   }
 }
+
+/* Sube TODOS los leads del localStorage actual a Google Sheets.
+   Úsalo en el computador que tiene los datos correctos para
+   enviarlos a la nube y que el otro los pueda ver. */
+async function forzarPushTotal() {
+  if (!CRM_SCRIPT_URL) { toast('No hay URL de sincronización configurada', 'error'); return; }
+  if (!leads.length)    { toast('No hay leads en este computador', 'error'); return; }
+
+  const btn = document.getElementById('btnForzarPush');
+  if (btn) { btn.disabled = true; btn.textContent = 'Subiendo...'; }
+
+  let ok = 0, err = 0;
+  // Enviar de a 3 en paralelo para no saturar el servidor
+  const chunks = [];
+  for (let i = 0; i < leads.length; i += 3) chunks.push(leads.slice(i, i + 3));
+
+  for (const chunk of chunks) {
+    await Promise.all(chunk.map(async lead => {
+      try {
+        await fetch(CRM_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: JSON.stringify({ action: 'saveLead', lead: JSON.stringify(lead) })
+        });
+        ok++;
+      } catch (e) { err++; }
+    }));
+    // Pequeña pausa para no bloquear Apps Script
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = '☁️ Subir todo a la nube'; }
+  toast(`Push total: ${ok} leads subidos${err ? `, ${err} con error` : ''} ✓`, ok > 0 ? 'success' : 'error');
+  console.log(`[forzarPushTotal] OK: ${ok}, ERR: ${err}`);
+}
 function doLogout(){
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('app').style.display='none';
@@ -2340,9 +2393,14 @@ function toggleCategoriasMap(pfx) {
 
 async function refreshData() {
   const btn = document.querySelector('.topbar-right .settings-btn');
-  if(btn) btn.classList.add('listening'); 
+  if(btn) btn.classList.add('listening');
   await cargarProps();
   await cargarKmz();
+  // También refrescar leads/citas desde la nube
+  await cargarLeads();
+  rebuildCitas();
+  if(currentTab === 'citas')  renderCitas();
+  if(currentTab === 'leads')  renderLeadsBody(leads);
   if(btn) btn.classList.remove('listening');
   toast('Datos sincronizados ✓', 'success');
 }
@@ -4638,6 +4696,30 @@ function guardarSettings(){
   localStorage.setItem('icde_settings', JSON.stringify(settings));
   closeModal('settingsModal');
   toast('Configuración guardada ✓');
+}
+
+function diagnosticarDatosLocales() {
+  const diag = document.getElementById('diagResultado');
+  if (!diag) return;
+
+  const totalLeads  = leads.length;
+  const totalCitas  = citas.length;
+  const totalVisitas = leads.reduce((acc, l) => acc + (l.visitas || []).length, 0);
+  const leadsConCitas = leads.filter(l => (l.visitas || []).length > 0).length;
+  const lsSize = (JSON.stringify(leads).length / 1024).toFixed(1);
+
+  diag.style.display = 'block';
+  diag.innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <div>📋 Leads en este equipo: <strong style="color:#fff;">${totalLeads}</strong></div>
+      <div>🗓 Citas totales: <strong style="color:#fff;">${totalCitas}</strong></div>
+      <div>🏠 Visitas registradas: <strong style="color:#fff;">${totalVisitas}</strong></div>
+      <div>👥 Leads con visitas: <strong style="color:#fff;">${leadsConCitas}</strong></div>
+      <div style="grid-column:1/-1; color:#888;">💾 Tamaño en memoria: ${lsSize} KB</div>
+    </div>
+    <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05); color:#d4a84b; font-size:11px;">
+      ⬆️ Si este equipo tiene más datos que el otro, presiona <strong>"Subir todo a la nube"</strong>
+    </div>`;
 }
 
 let recognition;
