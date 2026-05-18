@@ -365,11 +365,12 @@ body{
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  border: 1px solid rgba(212, 168, 75, 0.3);
 }
 
 .modal-tabla-caracteristicas td{
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 8px;
+  border: 1px solid rgba(212, 168, 75, 0.15);
 }
 
 .char-label{
@@ -486,7 +487,13 @@ body{
 /* ── MÓVIL ── */
 @media(max-width: 768px){
   body{
-    padding: 10px;
+    padding: 0;
+  }
+  .modal{
+    width: 100vw;
+    max-width: 100%;
+    border: none;
+    box-shadow: none;
   }
   .modal-contenido{
     flex-direction: column;
@@ -586,6 +593,26 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczNic0bUD935s6Ta-NmQFd8LGautvxRSxYct9acl4nFvUnZRrJwu3O_EfNVJ4Y91o5idgsZOOZX6KRGXrfbKCmkMeIz19DDz_4SFMryjMB3i9BwaMPpG=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNAwDudj_I4_2aa9okKgpk4LLv7nfeEjF0zsxH87oltGS8zGNIv0cjgLjQfHLMl2tiPnPuCjd1z2cPaqMdux0XSJDs9Jy4YkIvrvxTDBfWohYgIrqQ2=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPSZDqTATb1YstKoUGTG7WbaafdWP8fpTlOcT4EYgdGnltA2hBJw8xe75iBKDO7p-V82mqck-XFKMOfROdS8pfDpiyUyJF-gdsXDRHDBBFP-tdNc9B3=w1200"];
 var imgIndex = 0;
+
+// Soporte para swipe (deslizar) en móviles
+var startX = 0;
+var endX = 0;
+document.addEventListener('DOMContentLoaded', function() {
+  var carrusel = document.querySelector('.carrusel-principal');
+  if (carrusel) {
+    carrusel.addEventListener('touchstart', function(e) {
+      startX = e.touches[0].clientX;
+    }, {passive: true});
+    carrusel.addEventListener('touchend', function(e) {
+      endX = e.changedTouches[0].clientX;
+      if (startX - endX > 50) {
+        cambiarImg(1); // Deslizar izquierda -> siguiente
+      } else if (endX - startX > 50) {
+        cambiarImg(-1); // Deslizar derecha -> anterior
+      }
+    }, {passive: true});
+  }
+});
 
 function irImg(i) {
   if (!IMGS.length) return;

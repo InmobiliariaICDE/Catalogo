@@ -365,11 +365,12 @@ body{
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  border: 1px solid rgba(212, 168, 75, 0.3);
 }
 
 .modal-tabla-caracteristicas td{
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 8px;
+  border: 1px solid rgba(212, 168, 75, 0.15);
 }
 
 .char-label{
@@ -486,7 +487,13 @@ body{
 /* ── MÓVIL ── */
 @media(max-width: 768px){
   body{
-    padding: 10px;
+    padding: 0;
+  }
+  .modal{
+    width: 100vw;
+    max-width: 100%;
+    border: none;
+    box-shadow: none;
   }
   .modal-contenido{
     flex-direction: column;
@@ -586,6 +593,26 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczOSQTR239_Rg-j1MR_v0tg_7X_9ogkQuhDCc_rPrIFMaKsBQoCEWEMgDFucgtZ3p4y4H_UM84lqmeQzCRe8FPlZywODlBrkXdGzlkniip26f6b4dBRE=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMxGMGPnPDPUOX11nXVZb3Zo6GvDbvdvyTxmpvJKxwiPcJofgJ9LYMv8UAAZdT57KmlethuYhHzRrZc0-Vkmxt0gHiZz7qDaPQ0iqxY3dwWIma_bChL=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMYiS2qWdxFFWipa-IRvg-pYbW8EqWyljq_LWMPm9NCmlEF1Fk0aZIgc9Yr3WNqbU0fWieCn4G8NINaifxDnZzZAUvNbja9pd7aMiYxachX0VLxCP7Z=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP5oxZOquxr-PVievhxlUpDspzcaE1v_rHvwQj_gqfym6JstsEWfawLjt-1yDaP3ymrbwo1HQzZGv9_mPhk7xlvH9-UBqhRA8UaPq5J_yNEOhi_Q9md=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPw3hcAyT7q2W66bQ1SuJ8NLd-_ot4KfBInOixm_mNmd-z0ImSBn5_OilsJHY115_M66D-plcSkKhFU7WcNLVuJDbUZkiCG0lea59KwYfEym89v8OYb=w1200"];
 var imgIndex = 0;
+
+// Soporte para swipe (deslizar) en móviles
+var startX = 0;
+var endX = 0;
+document.addEventListener('DOMContentLoaded', function() {
+  var carrusel = document.querySelector('.carrusel-principal');
+  if (carrusel) {
+    carrusel.addEventListener('touchstart', function(e) {
+      startX = e.touches[0].clientX;
+    }, {passive: true});
+    carrusel.addEventListener('touchend', function(e) {
+      endX = e.changedTouches[0].clientX;
+      if (startX - endX > 50) {
+        cambiarImg(1); // Deslizar izquierda -> siguiente
+      } else if (endX - startX > 50) {
+        cambiarImg(-1); // Deslizar derecha -> anterior
+      }
+    }, {passive: true});
+  }
+});
 
 function irImg(i) {
   if (!IMGS.length) return;

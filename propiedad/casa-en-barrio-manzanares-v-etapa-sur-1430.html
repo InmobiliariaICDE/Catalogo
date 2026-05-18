@@ -368,11 +368,12 @@ body{
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  border: 1px solid rgba(212, 168, 75, 0.3);
 }
 
 .modal-tabla-caracteristicas td{
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 8px;
+  border: 1px solid rgba(212, 168, 75, 0.15);
 }
 
 .char-label{
@@ -489,7 +490,13 @@ body{
 /* ── MÓVIL ── */
 @media(max-width: 768px){
   body{
-    padding: 10px;
+    padding: 0;
+  }
+  .modal{
+    width: 100vw;
+    max-width: 100%;
+    border: none;
+    box-shadow: none;
   }
   .modal-contenido{
     flex-direction: column;
@@ -589,6 +596,26 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczM63i-_d7OkPKRNaEGx-tyYa1DFs7bJpGrOkb5tz4TOj34apUChWftE2hpOFHzV6CyF39sMfbFbnyZKH8yut6UpyZErMaXAlb7pamY6jPUVoGjAPEuY=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMzLd2oz1k2X2F3ozyWohuoibaVeFEi0p0ctHWn7Jlr-xdlXOfR80c_P16PqzONNQYzVE2NFtHKWv2L0yY3G1xHBaju045zSnR0ZJiJ6cIStx0gbQld=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPDWASY_5C2C3SSJhXPxiV4p-VvLBkTN5mdiO4KgZGzhVvU-6jcb_l5mI9SCq-rzkZEBEr1xEUNeW-Is9yjQ5X1RXndG55s2KmnXkBp-bzRpSzXrXBw=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM6ruW-kC7xrJ5-GhMDFTB6k0TUBedgcbXcrFALlTiQI_x9eeVQBMm7723R2MTwRbL8oi5w-0F7kbzxCtU1bbvhh1vexymBFmoLkab3ZGNIEjD5pYSc=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMTLEwAawg3l0LZIcEpzlbcChNQBkBggxRfZTtqXMHzyt2rMnzBEFShTwBeIa_jndM4NWbOdCZ3_NJ61II1SUncXjtV9BmM0tPBRlfy8Zt3cFhtXxAB=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOMP6RsFhf85A-rAF4HNWXlv7JsY0Ny5FdrAVUaDK6Nbu0leZZ47L1VofCF7f1vLP5xrRrpSKeaD35Y0jMi_X1EVwr33VEvImbxooaFB4dGCKH51ohv=w1200"];
 var imgIndex = 0;
+
+// Soporte para swipe (deslizar) en móviles
+var startX = 0;
+var endX = 0;
+document.addEventListener('DOMContentLoaded', function() {
+  var carrusel = document.querySelector('.carrusel-principal');
+  if (carrusel) {
+    carrusel.addEventListener('touchstart', function(e) {
+      startX = e.touches[0].clientX;
+    }, {passive: true});
+    carrusel.addEventListener('touchend', function(e) {
+      endX = e.changedTouches[0].clientX;
+      if (startX - endX > 50) {
+        cambiarImg(1); // Deslizar izquierda -> siguiente
+      } else if (endX - startX > 50) {
+        cambiarImg(-1); // Deslizar derecha -> anterior
+      }
+    }, {passive: true});
+  }
+});
 
 function irImg(i) {
   if (!IMGS.length) return;

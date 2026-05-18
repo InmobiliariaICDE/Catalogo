@@ -368,11 +368,12 @@ body{
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  border: 1px solid rgba(212, 168, 75, 0.3);
 }
 
 .modal-tabla-caracteristicas td{
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 8px;
+  border: 1px solid rgba(212, 168, 75, 0.15);
 }
 
 .char-label{
@@ -489,7 +490,13 @@ body{
 /* ── MÓVIL ── */
 @media(max-width: 768px){
   body{
-    padding: 10px;
+    padding: 0;
+  }
+  .modal{
+    width: 100vw;
+    max-width: 100%;
+    border: none;
+    box-shadow: none;
   }
   .modal-contenido{
     flex-direction: column;
@@ -589,6 +596,26 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczOQYFTBF0ceNlb-W1kiXAEwjetU03YghOTWs4OrIu7esgBVGmbWygtIXjPJqCz6mgtjvxA_udfMMDvt5xx-VpiDMv5xHNQgg1KO9vjhnXouUR-p0LRJ=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMvDpDLW5Ah53zEeDO4UCOsztkI3-Yj2FbGpRcRA3dppqG2PRhD9x3BeueHc-EOeqzt6QLY3eiQpEvihtPX-OqLhirT4KwavogNynOGaJHSrn1lOJLO=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPT7QUHuoYsYNGvL5nzII_Dl-pmf5BtXK0tIN0iW8I8HmOPSdU-tiM6koRKUIvQiuxoJj_uLeXghVJm_9hGpdiJiMU59KVvLeTgZq47ecVQthiXVmK1=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMmiOhkzjAVVDVLy2FobbDqRMydVwt2BrSyh1N5829vsRVDelz5X_AOpyzx0PoxZ64GN_wWZkFOwA2X0YekeWUwVx3-W7LB_M79oRJEyxZHdJIqr4z6=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMH_HUxoM5BCZ58bpA4f6-mi63OSL4q18iwopjpdlF4GcM3so2fPZG5eFjSAGpnNSOTNXz-A8d2qUb9eTz0NaJYQYWv9qU4BWrxM4j2ncl30QkG4mRs=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPPeAaGMFCepbA5qChjfM7azY8yIPQIQVRFqdLyqEM_hhWdvhkoWwtYT2zCCEL7IHZHk9MIOXj8y3UXSv6ONgaWG8ie0Bjtw5AHIPwMxPf2w_7MQGBm=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPgPuODAjm6dTXn96v_E2zaL3aWSV0LpMY9v0VmgrCNIxq9nesM1N835SmSgIwrVqloXXlj6CF5JxWkGJOL8w-Qk-5EmzBI_zzwJ8WbkG-sjbsp-WxJ=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO7RCcyimWp8_dGsIIOgDKtyFKZ8onos1Brjh82aq_cIk3g1cUaMRsk_YL5zRfgtpzju69vCNWyREtvtbTEOcchQnqHDwJHLsnyg8yU_NRBW9Ivlq6M=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO_1Yq-sryvR1n1Lmlmp-9kjFQo7DE8OF_wO8W4Ct3vmgW5_FAeG75f5w4A1HT5QU1_3bB_Pw7wCY_KhnzrKN0OnIfRNeF-3gm4vi7KNkeyAT14G7F2=w1200"];
 var imgIndex = 0;
+
+// Soporte para swipe (deslizar) en móviles
+var startX = 0;
+var endX = 0;
+document.addEventListener('DOMContentLoaded', function() {
+  var carrusel = document.querySelector('.carrusel-principal');
+  if (carrusel) {
+    carrusel.addEventListener('touchstart', function(e) {
+      startX = e.touches[0].clientX;
+    }, {passive: true});
+    carrusel.addEventListener('touchend', function(e) {
+      endX = e.changedTouches[0].clientX;
+      if (startX - endX > 50) {
+        cambiarImg(1); // Deslizar izquierda -> siguiente
+      } else if (endX - startX > 50) {
+        cambiarImg(-1); // Deslizar derecha -> anterior
+      }
+    }, {passive: true});
+  }
+});
 
 function irImg(i) {
   if (!IMGS.length) return;

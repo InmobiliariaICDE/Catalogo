@@ -368,11 +368,12 @@ body{
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  border: 1px solid rgba(212, 168, 75, 0.3);
 }
 
 .modal-tabla-caracteristicas td{
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 8px;
+  border: 1px solid rgba(212, 168, 75, 0.15);
 }
 
 .char-label{
@@ -489,7 +490,13 @@ body{
 /* ── MÓVIL ── */
 @media(max-width: 768px){
   body{
-    padding: 10px;
+    padding: 0;
+  }
+  .modal{
+    width: 100vw;
+    max-width: 100%;
+    border: none;
+    box-shadow: none;
   }
   .modal-contenido{
     flex-direction: column;
@@ -589,6 +596,26 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczNCBgGgi2RRZ-VYQdQoSnpdxdZJLLFOCUuQmyx0_ZiQEMSIz_xJdw66tQeyAPKtMldKCFJcG7HIiHNmKrLUiISE4G7acnRguubn76pUGyE5TOrY4nCl=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOomR98QadHel2FpNtatI9oNvergqeCfdwv1XK7bvn2Fh0JThx6lW2lC2uOAhfGmSeJpjdwIpGXxNDYSu-5_ygjGjS1z0Au4D9mNkF2kKGZjPAdUSCP=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP1udhUsSZH6pt491K7ZNtmW6-o6ymy2LRPQQlayIjyzrjo_z6IENAmxbJPQ2_yy6AxehAI1toCz_vXBpGaFxs3x92O3ZNHqrUXkvx2ZxznywM2pS5D=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP2AWUP3EQlePPP6aOkRKfexkHw1W1A26h21Pd-D3MhrXI5zY8J1jylZPTOe8PBsiXV7baoft86_6ah6kZ9DmPIkD_M2oxHwcVBxsHMZD2Vs8en4eGR=w1200"];
 var imgIndex = 0;
+
+// Soporte para swipe (deslizar) en móviles
+var startX = 0;
+var endX = 0;
+document.addEventListener('DOMContentLoaded', function() {
+  var carrusel = document.querySelector('.carrusel-principal');
+  if (carrusel) {
+    carrusel.addEventListener('touchstart', function(e) {
+      startX = e.touches[0].clientX;
+    }, {passive: true});
+    carrusel.addEventListener('touchend', function(e) {
+      endX = e.changedTouches[0].clientX;
+      if (startX - endX > 50) {
+        cambiarImg(1); // Deslizar izquierda -> siguiente
+      } else if (endX - startX > 50) {
+        cambiarImg(-1); // Deslizar derecha -> anterior
+      }
+    }, {passive: true});
+  }
+});
 
 function irImg(i) {
   if (!IMGS.length) return;

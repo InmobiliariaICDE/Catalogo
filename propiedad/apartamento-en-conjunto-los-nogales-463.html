@@ -368,11 +368,12 @@ body{
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  border: 1px solid rgba(212, 168, 75, 0.3);
 }
 
 .modal-tabla-caracteristicas td{
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 8px;
+  border: 1px solid rgba(212, 168, 75, 0.15);
 }
 
 .char-label{
@@ -489,7 +490,13 @@ body{
 /* ── MÓVIL ── */
 @media(max-width: 768px){
   body{
-    padding: 10px;
+    padding: 0;
+  }
+  .modal{
+    width: 100vw;
+    max-width: 100%;
+    border: none;
+    box-shadow: none;
   }
   .modal-contenido{
     flex-direction: column;
@@ -589,6 +596,26 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczML3DxPcAG6xs_V6qEnH5kxnymbK6Zw3LOn2Z0SYWEaNgu6W6LuMwZ5S_GoBP62L6NnyfM9KVIIkK9MMiRqo73OYAzxrLKs2D9hZYmsQujvABDRgrws=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNYQYdB6fAXCZh6ZwKA_0wcpV6DQ57q0Zg3IXi3sd6_25T8HD8Meql-1XylydBe1sxYnnsTUCmTaiTnXLi7e6mII9AEefjUQvNAxNPnUFZ8l3cePMHQ=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMrmHD4EkKGotnM_zgDE38NcOfLK02_huZGJwUGDOUujC0Glz4dsUAGuH1Sb8o9VT0qsxkkGTm4BDVddT_uUIrAlvcyMuxsspdlYZ7oiJOGDOEviKXs=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMJk2j17OQIu5J1LI08dcRUHeQ_mVuYm4g8I82WcEMDTjjRsz4H-Hegx3MP66Xiz9ntnd2SSB77iQmQX3knbyl-dCC4uKHHo0M6LxvHCWPNNUvIWrXy=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNCKVLO4JjvysUwndMCMtyLlYSfxAxBtargJYB_4vsVFnuzAbzehTg9wwDQv0G8T4EaUiNjOdeOiVchEu6Kw8-270oSoerdf-kIQM3-e-Em2EWWO6kN=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMPH33lLdL1fpMZW1qI1wtGi7r5T7R05E2ayfd-Cbau8d1iV5i6xkcywRQWfHIJhXdsxv8HJ916S-ur4Bo2-VGNYJQYA8S2cUC-b3XSF1IEyqTtrT9h=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPZrdfwti1cxJK8eJm76VO1fZ5E7Y3G5N6aznNiLS0TZyoQh7dU1K9cgxLB1r7-bm2bkRZEXjxZsgM1yVZbE5xhM7b-JLgnkwDBD7JLBtZpouN-BiKY=w1200"];
 var imgIndex = 0;
+
+// Soporte para swipe (deslizar) en móviles
+var startX = 0;
+var endX = 0;
+document.addEventListener('DOMContentLoaded', function() {
+  var carrusel = document.querySelector('.carrusel-principal');
+  if (carrusel) {
+    carrusel.addEventListener('touchstart', function(e) {
+      startX = e.touches[0].clientX;
+    }, {passive: true});
+    carrusel.addEventListener('touchend', function(e) {
+      endX = e.changedTouches[0].clientX;
+      if (startX - endX > 50) {
+        cambiarImg(1); // Deslizar izquierda -> siguiente
+      } else if (endX - startX > 50) {
+        cambiarImg(-1); // Deslizar derecha -> anterior
+      }
+    }, {passive: true});
+  }
+});
 
 function irImg(i) {
   if (!IMGS.length) return;

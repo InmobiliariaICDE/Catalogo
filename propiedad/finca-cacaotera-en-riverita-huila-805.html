@@ -368,11 +368,12 @@ body{
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  border: 1px solid rgba(212, 168, 75, 0.3);
 }
 
 .modal-tabla-caracteristicas td{
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 8px;
+  border: 1px solid rgba(212, 168, 75, 0.15);
 }
 
 .char-label{
@@ -489,7 +490,13 @@ body{
 /* ── MÓVIL ── */
 @media(max-width: 768px){
   body{
-    padding: 10px;
+    padding: 0;
+  }
+  .modal{
+    width: 100vw;
+    max-width: 100%;
+    border: none;
+    box-shadow: none;
   }
   .modal-contenido{
     flex-direction: column;
@@ -589,6 +596,26 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczNVRoqZcGP1HiGXAmKnmExUFBohVQkqc168n613Z8yf0umVlxCTCmGS63WMqhdERNLXWk3ua_Zzwl0rk6VBxVLLs-uulTpYhrhV2N6UjxiVAY6dEL8C=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOGQUX1_lTHNVmSDpS7cu4zMqnx6L-KXKd4-iod-n5cIMMabCkM6QJjNdshIQMXOOcOLe6E6GCK5czgkHXWiInibvSBIY4XtGsmiJ_tCypmgZJOKq5T=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNzGcMmxKV8eylhsPA18vfQ_O7SdTDeFtG2gh5B3ZN0Akb8--Ivq8KQAKi4FLxditL3ao25DDpYXBIShB962fodJ0kgLb2UekbHXiNLFS9U6SR6pZIJ=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMNsB-XN6J3t71grOn3vcASygL3wGrUzjLIn_oBqqNZlYJ9a0-pA8Y4WwdFCrFjJN6ax4wwb4R7ZRCBEXxtQ6TfdAheVJQ1EoJZ66oWiDzxtR6u_Mg-=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMKC9xXfTFkynx33zAIX7Nre1fqImqADnaPw4ZqA89u5QFtoT_cQjrgA4_EgHnbtu1EUY_ZsaDs61kRCvc1HhxeNw2AwjcH_iTNgpNcr-Q8-14-2Idm=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMQJK9cuJRNqPsiNZeX35qbFyJySbz3DsNmY81Ugt7OlMjJ6gaCsdHTatY1nuH8VuG3F7Qx3DDRV2GQmOHArRzNEzLjnVElodH70uTNXjzvEgW50j13=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPBfLvgMgzepZcCDEGdp6TmCQiirJP4kIQxA3uEgoCVbJfDV1bsBQs8VQ3j3EhWf-SevgoO27U6l65B18QUVwDyNjB8RQKY-tPiCV8quOC2jiuB2PsV=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNlhPeuBCZ4yBYrSfm1Fa3IJsYKOXoQpMXMHPKiY8DS0mTx1z6kyMb0xwNijrO59DkPet9SJDxQQHqL-YeGIM9HveKAWeVWyNT6pzbRYNFTtsrn9sfU=w1200"];
 var imgIndex = 0;
+
+// Soporte para swipe (deslizar) en móviles
+var startX = 0;
+var endX = 0;
+document.addEventListener('DOMContentLoaded', function() {
+  var carrusel = document.querySelector('.carrusel-principal');
+  if (carrusel) {
+    carrusel.addEventListener('touchstart', function(e) {
+      startX = e.touches[0].clientX;
+    }, {passive: true});
+    carrusel.addEventListener('touchend', function(e) {
+      endX = e.changedTouches[0].clientX;
+      if (startX - endX > 50) {
+        cambiarImg(1); // Deslizar izquierda -> siguiente
+      } else if (endX - startX > 50) {
+        cambiarImg(-1); // Deslizar derecha -> anterior
+      }
+    }, {passive: true});
+  }
+});
 
 function irImg(i) {
   if (!IMGS.length) return;

@@ -368,11 +368,12 @@ body{
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  border: 1px solid rgba(212, 168, 75, 0.3);
 }
 
 .modal-tabla-caracteristicas td{
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 8px;
+  border: 1px solid rgba(212, 168, 75, 0.15);
 }
 
 .char-label{
@@ -489,7 +490,13 @@ body{
 /* ── MÓVIL ── */
 @media(max-width: 768px){
   body{
-    padding: 10px;
+    padding: 0;
+  }
+  .modal{
+    width: 100vw;
+    max-width: 100%;
+    border: none;
+    box-shadow: none;
   }
   .modal-contenido{
     flex-direction: column;
@@ -589,6 +596,26 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczPmpRFv5DkfmiVECAexOKaOzYJHQ1_EhgpW8u2aO1d3WlH-A_WhOi_yFfUtliWzvdvVw-QoUk-6rspkk35zmvjwrpi4-4rTnrsEo9qvF74xXT6EoCtX=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPxewC66waQYAQUOLe7S3Nglv1vi0C63bVwMd8mIjR5zqy-3OzXQN8gCuPymue-rwzq3tg_19O6pVLXUTT2gTCaTs6kITh-G07u5-1N-1742oHgEmY_=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOtvukeVixldDnkyhjMn-1xTTgO6e1_9Avq3-o2e4u06fuHaQU2Mp6M9WxxsMCXmc5NQ2Nyn8cKlr47QhTCdj9xaP1V8tSgsYtTBNMxtbrxR4BPovel=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNA5etm52pooiZXRjOxtTSG4qXgwQY1_xADbHXu-ylKzx-HWkMVjZedfVzKOJrYVlzv5wkPPZFrYbm9FEjLR01jOPviGPiJXmWu8-GvxZNY27OCG6JM=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNLossBDTSqikDInf55ldN52zTM3x1KnNHgo4mpPRs5meBpZFK2WqLVMmIuVynswCCw7RrHN-7Dg7nojplIoBa3MvOlmNgH9Jy4Ni_DnmDGI9FSHdx5=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMUzLg_SlZxP8TXwj5Jiv1H6PpaFkpqTDzT98ykDBKaK83y6FsE6Vzmv_agmZxiZRTsfcK9BSxEnk12jEzqzPqX1Hodu4TXTcf9Y6IQBZahuVwtmRlC=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMjG1RDoPCm8FE0yIbC5b1mpZkUwEIvP1axAn3_HCVMoC2MUpOG3KYl_yEK-6-WxrLo3JIad9BJRB-cLkoSmiMzX2lQwCkLKjc__TTywj47nk1qvxV6=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPNF4Om3T_vK7_1w_1K-ZDCiW6IwzcYXwHbRiZUVvwl3u5Wu5KNbOVVmt2TffzQ8dibjZh-AHqtmVWNeu-dP3-h3U202D-ABjBC7eCkQjrKFKusNLTc=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMpBmlmvtMtQvbAtxmYzrg5X8pIxbMWCmsZlSGVY947ywZN1lJr72K526vo5bsoUov0JdEYgCdku190F5ZZir58WVgVat-_HqK4CGhg9g-A2pFeuk6e=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNw0wmd7HT95367QMU9MRJskc7uYEIqS3ZLEJx3940K0kqSMgfmrJFohA-tFqls2_eDGfhSX5uANGE_Nzzf-wv2RVepxLc_Yaqm7xCrKJG-j1eDKZUA=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPU1aUIaWZwdN2sMO5J02ccLZbUFTHH2LemHairlHROG71Bv_TCCCXBNAwDltgMo3RIhz33zgjXk5wpEb7-P9BSdqurhgw2DlpnBE0GxUZ7L-g9ezFj=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMrEP3rwoEcpH185U5LkeNCur9pFHOt5Jbu4hRI0ygzp0nYcVQA_anS8Pf-FjnE049heR5r_HHoFeY6X70AgjHq5vRyA5MSV5xv3zTjnI7_6L26Svn2=w1200"];
 var imgIndex = 0;
+
+// Soporte para swipe (deslizar) en móviles
+var startX = 0;
+var endX = 0;
+document.addEventListener('DOMContentLoaded', function() {
+  var carrusel = document.querySelector('.carrusel-principal');
+  if (carrusel) {
+    carrusel.addEventListener('touchstart', function(e) {
+      startX = e.touches[0].clientX;
+    }, {passive: true});
+    carrusel.addEventListener('touchend', function(e) {
+      endX = e.changedTouches[0].clientX;
+      if (startX - endX > 50) {
+        cambiarImg(1); // Deslizar izquierda -> siguiente
+      } else if (endX - startX > 50) {
+        cambiarImg(-1); // Deslizar derecha -> anterior
+      }
+    }, {passive: true});
+  }
+});
 
 function irImg(i) {
   if (!IMGS.length) return;

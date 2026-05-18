@@ -365,11 +365,12 @@ body{
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  border: 1px solid rgba(212, 168, 75, 0.3);
 }
 
 .modal-tabla-caracteristicas td{
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 8px;
+  border: 1px solid rgba(212, 168, 75, 0.15);
 }
 
 .char-label{
@@ -486,7 +487,13 @@ body{
 /* ── MÓVIL ── */
 @media(max-width: 768px){
   body{
-    padding: 10px;
+    padding: 0;
+  }
+  .modal{
+    width: 100vw;
+    max-width: 100%;
+    border: none;
+    box-shadow: none;
   }
   .modal-contenido{
     flex-direction: column;
@@ -586,6 +593,26 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczPiduRZlbPeXlDrj6RHU-psCpa2YDezMUBhQtay2TPqm1K3NL3FleO0_-gQc205vcmuDPpK3cNUSLa6aVEQ-YIVUxSY6mYSQDrLcCNLPAqpg0WPmrZ9=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOUSgpCNucWuKKH3VBZv5q_sQPd6AAA6KXcRfuuGasGg9emxf2esc25DBQmUSrmUVQanbfpSlXiAVtyCMw15jk9zXkakjJG1215YdNuTXQuGWfgmou-=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN5IAYqBbluu9553V5i7VOJC-FjWAFvoI9e9F_xn0xuK8VSwaBX7TBun2oRD4jQ02mbBx0ZsHs0ImpA2Caq4ZRPr_zkx92hfbD4Z_Jwk7lQpapDKWdh=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM9ij8DukSlnmE8rlMDp0-a8dIAzK_SyIYnOEJ2KEVcyTWFbmCuvD4BmEP8CityZvlAPcbokd4RxNpbsyOXUZg99PKxiZkhAycOuJvsYrUmqf3B6_g2=w1200", "https://lh3.googleusercontent.com/pw/AP1GczONQhI6JxqtftWjeTzro4n8q5uXCFTrdnHTHsss0f7ZLOX1sYvgyXuBdYDAvR0bS5B2qOVnXOLAtyCLVIkAAIIQ0M4wnKW1vuccr5RxhFRDxhbfK6-5=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNaBA-2zkJ3UoHwGRSynyezPI6FdvP-Ub2MjTYyelxS9T5o3xqTplWef-U5iMtYLK3UU9ti58bD2FGNvKrOY15Zj0ebW1cmu5MmQgXoY5wA7cMQ6dB-=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMbsFOB5tTiSt-ZAlI1z-q-xz3QwSkJIw9ZytI-4XxMIZVo0gannmZWnfM5mG8WGGFm3rypMuzA0Gwfj-y535_zYtQOU1DSpq5w6joP1jgKEo18euVq=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMglrxMCT9LVS3OWju14Ce6WfpN2EOmX7etSolvGpbb9DSWJSIk0cABQlkuJ29pA2EHVDTskba6Y5zk_yHw-fEsHlb49DPomZygcZ4zYQGPy2DNOcHU=w1200", "https://lh3.googleusercontent.com/pw/AP1GczObbRgCsQcAUatcFNIyKPj1_1fmBZ_FOM57Hq9D3V2yLXbz4l25lgNV3Yl4SF0i_AN0KWTKgwb5kuei5isD1fCMo5lipF6MN6uECFK8IMejp531kU4N=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNVFZtZHhozTTsjVfs0PANa4IBHhi0iM9Cqba-VwrwGvIpxKhOGyotl2ShOsOkGMwmjUSMWl8Aaph0CRwI-tV8qhqUaGe2sPuUMMC1SLPNRmCj0haAG=w1200"];
 var imgIndex = 0;
+
+// Soporte para swipe (deslizar) en móviles
+var startX = 0;
+var endX = 0;
+document.addEventListener('DOMContentLoaded', function() {
+  var carrusel = document.querySelector('.carrusel-principal');
+  if (carrusel) {
+    carrusel.addEventListener('touchstart', function(e) {
+      startX = e.touches[0].clientX;
+    }, {passive: true});
+    carrusel.addEventListener('touchend', function(e) {
+      endX = e.changedTouches[0].clientX;
+      if (startX - endX > 50) {
+        cambiarImg(1); // Deslizar izquierda -> siguiente
+      } else if (endX - startX > 50) {
+        cambiarImg(-1); // Deslizar derecha -> anterior
+      }
+    }, {passive: true});
+  }
+});
 
 function irImg(i) {
   if (!IMGS.length) return;
