@@ -1389,34 +1389,123 @@ const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFUuzwKA_5C35NX
 ═══════════════════════════════════════════════ */
 let allProps = [];
 let leads = JSON.parse(localStorage.getItem('icde_leads') || '[]');
-try {
-  (function deduplicarLeads() {
+async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
+  try {
     let leadsUnicos = [];
-    let telefonosVistos = new Set();
+    let telefonosVistos = new Map();
+    let idsParaBorrarDeNube = [];
+    let huboCambio = false;
+
+    // Ordenar leads: más recientes o con más info primero
     leads.sort((a, b) => {
       let tA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
       let tB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
       return tB - tA;
     });
+
     leads.forEach(l => {
       if (l.id === 'LEAD-AGENDA-GLOBAL') {
         leadsUnicos.push(l);
         return;
       }
-      let telLimpio = (l.celular || '').replace(/\D/g, '');
-      if (!telefonosVistos.has(telLimpio) && telLimpio !== '') {
-        telefonosVistos.add(telLimpio);
+      let telLimpio = String(l.celular || '').replace(/\D/g, '');
+      if (telLimpio === '') {
         leadsUnicos.push(l);
-      } else if (telLimpio === '') {
+        return;
+      }
+
+      if (!telefonosVistos.has(telLimpio)) {
+        telefonosVistos.set(telLimpio, l);
         leadsUnicos.push(l);
+      } else {
+        // Es un duplicado! Fusionar con el principal
+        let principal = telefonosVistos.get(telLimpio);
+        huboCambio = true;
+
+        // Fusionar visitas
+        if (l.visitas && l.visitas.length) {
+          if (typeof mergeVisitas === 'function') {
+            principal.visitas = mergeVisitas(principal.visitas, l.visitas);
+          } else {
+            const combined = [...(principal.visitas || []), ...(l.visitas || [])];
+            const seen = new Set();
+            principal.visitas = combined.filter(v => {
+              const k = (v.codigo || '') + '-' + (v.fecha || '');
+              if (seen.has(k)) return false;
+              seen.add(k);
+              return true;
+            });
+          }
+        }
+
+        // Fusionar historial de envíos
+        const combinedHist = [...(principal.historialEnvios || []), ...(l.historialEnvios || [])];
+        const seenHist = new Set();
+        principal.historialEnvios = combinedHist.filter(h => {
+          const key = (h.fecha || '') + (h.codigo || '');
+          if (seenHist.has(key)) return false;
+          seenHist.add(key);
+          return true;
+        });
+
+        // Fusionar propiedades enviadas
+        principal.propsEnviadas = Array.from(new Set([...(principal.propsEnviadas || []), ...(l.propsEnviadas || [])]));
+
+        // Fusionar notas si el principal no tiene
+        if (!principal.notas && l.notas) {
+          principal.notas = l.notas;
+        }
+
+        // Añadir ID duplicado a la lista para borrar de la nube
+        if (l.id && !String(l.id).startsWith('U-')) {
+          idsParaBorrarDeNube.push(l.id);
+        }
       }
     });
+
     if (leads.length !== leadsUnicos.length) {
       leads = leadsUnicos;
-      try { localStorage.setItem('icde_leads', JSON.stringify(leads)); } catch(e){}
+      if (typeof saveLeads === 'function') {
+        saveLeads();
+      } else {
+        try { localStorage.setItem('icde_leads', JSON.stringify(leads)); } catch(e){}
+      }
+      
+      if (typeof rebuildCitas === 'function') rebuildCitas();
+      
+      // Renderizar la pestaña actual si corresponde
+      if (typeof currentTab !== 'undefined') {
+        if (currentTab === 'leads' && typeof renderLeadsBody === 'function') renderLeadsBody(leads);
+        if (currentTab === 'citas' && typeof renderCitas === 'function') renderCitas();
+        if (currentTab === 'pedidos' && typeof renderPedidosInmob === 'function') renderPedidosInmob();
+      }
+
+      // Borrar de la nube de forma silenciosa
+      if (forceCloudDelete && idsParaBorrarDeNube.length > 0 && typeof CRM_SCRIPT_URL !== 'undefined' && CRM_SCRIPT_URL) {
+        console.log("Borrando duplicados de la nube:", idsParaBorrarDeNube);
+        for (let id of idsParaBorrarDeNube) {
+          try {
+            fetch(CRM_SCRIPT_URL, {
+              method: 'POST',
+              mode: 'no-cors',
+              body: JSON.stringify({ action: 'deleteLead', id: id })
+            });
+          } catch (e) {
+            console.error("Error al borrar duplicado de la nube:", id, e);
+          }
+        }
+      }
+      return true;
     }
-  })();
-} catch(e) { console.error("Error deduplicando:", e); }
+  } catch(e) {
+    console.error("Error en limpieza profunda de duplicados:", e);
+  }
+  return false;
+}
+
+try {
+  limpiarYFusionarDuplicados(true);
+} catch(e) { console.error("Error deduplicando inicial:", e); }
 let deletedLeads = JSON.parse(localStorage.getItem('icde_deleted_leads') || '[]');
 let citas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
 if (!Array.isArray(citas)) citas = []; // Ensure it's always an array
@@ -2631,10 +2720,12 @@ async function autoSyncLeads() {
     });
 
     if (huboNuevos) {
+      limpiarYFusionarDuplicados(true);
       rebuildCitas();
       saveLeads();
       if (currentTab === 'citas')  renderCitas();
       if (currentTab === 'leads')  renderLeadsBody(leads);
+      if (currentTab === 'pedidos') renderPedidosInmob();
       if (currentLeadId) {
         const l = leads.find(x => String(x.id).trim() === String(currentLeadId).trim());
         if (l) renderSidePanel(l);
@@ -2730,10 +2821,12 @@ async function cargarLeads(){
       });
 
       leads = Array.from(mergedMap.values());
+      limpiarYFusionarDuplicados(true);
       rebuildCitas();
       saveLeads();
       if(currentTab === 'leads') renderLeadsBody(leads);
       if(currentTab === 'citas') renderCitas();
+      if(currentTab === 'pedidos') renderPedidosInmob();
     }
   } catch(e){ console.error("Error cargando leads:", e); }
 }
