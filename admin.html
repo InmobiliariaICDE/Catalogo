@@ -4717,7 +4717,17 @@ function renderPedidosInmob(){
 /* ═══════════════════════════════════════════════
    SETTINGS & GEMINI
 ═══════════════════════════════════════════════ */
-function abrirSettings(){ document.getElementById('settingsModal').classList.add('open'); }
+function abrirSettings(){
+  // Poblar los campos con los valores actuales
+  const waInput = document.getElementById('setWaApi');
+  const geminiInput = document.getElementById('setGeminiKey');
+  if (waInput)     waInput.value     = settings.waApi || '';
+  if (geminiInput) geminiInput.value = settings.geminiKey || '';
+  document.getElementById('settingsModal').classList.add('open');
+  // Limpiar diagnóstico previo
+  const diag = document.getElementById('diagResultado');
+  if (diag) diag.style.display = 'none';
+}
 function guardarSettings(){
   settings.waApi = document.getElementById('setWaApi').value;
   settings.geminiKey = document.getElementById('setGeminiKey').value;
@@ -4730,23 +4740,30 @@ function diagnosticarDatosLocales() {
   const diag = document.getElementById('diagResultado');
   if (!diag) return;
 
-  const totalLeads  = leads.length;
-  const totalCitas  = citas.length;
-  const totalVisitas = leads.reduce((acc, l) => acc + (l.visitas || []).length, 0);
+  const totalLeads    = leads.length;
+  const totalCitas    = citas.length;
+  const totalVisitas  = leads.reduce((acc, l) => acc + (l.visitas || []).length, 0);
   const leadsConCitas = leads.filter(l => (l.visitas || []).length > 0).length;
-  const lsSize = (JSON.stringify(leads).length / 1024).toFixed(1);
+  const lsSize        = (JSON.stringify(leads).length / 1024).toFixed(1);
+  const leadsLocales  = leads.filter(l => String(l.id||'').startsWith('U-')).length;
+  const leadsNube     = leads.filter(l => !String(l.id||'').startsWith('U-')).length;
 
   diag.style.display = 'block';
   diag.innerHTML = `
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-      <div>📋 Leads en este equipo: <strong style="color:#fff;">${totalLeads}</strong></div>
-      <div>🗓 Citas totales: <strong style="color:#fff;">${totalCitas}</strong></div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:11px;">
+      <div>📋 Leads total: <strong style="color:#fff;">${totalLeads}</strong></div>
+      <div>📅 Citas en agenda: <strong style="color:#fff;">${totalCitas}</strong></div>
       <div>🏠 Visitas registradas: <strong style="color:#fff;">${totalVisitas}</strong></div>
       <div>👥 Leads con visitas: <strong style="color:#fff;">${leadsConCitas}</strong></div>
+      <div style="color:#d4a84b">💻 Solo en este equipo: <strong>${leadsLocales}</strong></div>
+      <div style="color:#22c55e">☁️ Sincronizados nube: <strong>${leadsNube}</strong></div>
       <div style="grid-column:1/-1; color:#888;">💾 Tamaño en memoria: ${lsSize} KB</div>
     </div>
-    <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05); color:#d4a84b; font-size:11px;">
-      ⬆️ Si este equipo tiene más datos que el otro, presiona <strong>"Subir todo a la nube"</strong>
+    <div style="margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05); font-size:11px; line-height:1.5;">
+      ${leadsLocales > 0
+        ? `<span style="color:#d4a84b">⚠️ <strong>${leadsLocales} leads</strong> solo están en este equipo. Presiona <strong>"Subir todo a la nube"</strong> para compartirlos.</span>`
+        : `<span style="color:#22c55e">✅ Todos los leads están sincronizados con la nube.</span>`
+      }
     </div>`;
 }
 
