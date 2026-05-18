@@ -5825,6 +5825,10 @@ function renderNuevaPropiedad() {
         <div class="form-group" style="position:relative;"><label class="form-label">Código</label>
           <input class="form-input" id="gp_codigo" type="text" placeholder="Año + Secuencia (Auto-generar si está vacío)" oninput="validarCodigoExistente(this.value)"/>
           <span id="gp_codigo_msg" style="display:none; position:absolute; right:10px; bottom:-16px; font-size:11px; font-weight:600;"></span>
+          
+          <!-- Dropdown para autocompletar -->
+          <div id="gp_codigo_dropdown" style="display:none; position:absolute; left:0; right:0; top:calc(100% + 2px); background:#141210; border:1px solid rgba(212,168,75,0.3); border-radius:10px; padding:10px; z-index:100; box-shadow:0 10px 30px rgba(0,0,0,0.8); cursor:pointer;" onclick="autofillPropiedadPorCodigo()">
+          </div>
         </div>
         <div class="form-group"><label class="form-label">Nombre *</label>
           <div style="display:flex; gap:6px;">
@@ -5974,13 +5978,18 @@ function formatPrecioOnInput(el) {
 
 let icdeMatrixText = '';
 let loadingMatrix = false;
+window.currentMatchedProp = null;
 
 async function validarCodigoExistente(codigo) {
   const msg = document.getElementById('gp_codigo_msg');
   const input = document.getElementById('gp_codigo');
+  const dropdown = document.getElementById('gp_codigo_dropdown');
+  
   if (!codigo) {
     if (msg) msg.style.display = 'none';
     if (input) input.style.borderColor = '';
+    if (dropdown) dropdown.style.display = 'none';
+    window.currentMatchedProp = null;
     return;
   }
   
@@ -6003,10 +6012,10 @@ async function validarCodigoExistente(codigo) {
     }
   }
 
-  let existe = false;
+  let matchedProp = null;
   
   // 1. Siempre revisar en allProps primero
-  existe = allProps.some(p => {
+  matchedProp = allProps.find(p => {
     const codeStr = String(p['Código'] || '').trim();
     if (codeStr.toLowerCase() === codigo.toLowerCase()) return true;
     if (!isNaN(codeStr) && !isNaN(codigo) && parseFloat(codeStr) === parseFloat(codigo)) return true;
@@ -6014,49 +6023,131 @@ async function validarCodigoExistente(codigo) {
   });
 
   // 2. Si no se encontró en allProps y tenemos la matriz en vivo, revisar la columna específica
-  if (!existe && icdeMatrixText) {
+  if (!matchedProp && icdeMatrixText) {
     const lines = icdeMatrixText.split(/\r?\n/);
     if (lines.length > 0) {
-      // Obtener cabeceras limpias
       const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
       const codeIdx = headers.findIndex(h => h.toLowerCase() === 'código' || h.toLowerCase() === 'codigo');
       
       if (codeIdx !== -1) {
-        existe = lines.slice(1).some(line => {
-          if (!line.trim()) return false;
-          // Split que ignora comas dentro de comillas
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i];
+          if (!line.trim()) continue;
           const cells = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
           const valStr = cells[codeIdx] ? cells[codeIdx].trim().replace(/^"|"$/g, '') : '';
           
-          if (valStr.toLowerCase() === codigo.toLowerCase()) return true;
-          // Comparación numérica por si acaso (ej: 038 vs 38)
-          if (valStr && !isNaN(valStr) && !isNaN(codigo) && parseFloat(valStr) === parseFloat(codigo)) return true;
-          return false;
-        });
-      } else {
-        // Fallback a regex si no se encuentra la columna Código
-        const escapedCode = codigo.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-        const regex = new RegExp(`(^|,|\\n)"?${escapedCode}"?(,|\\r|\\n|$)`, 'i');
-        existe = regex.test(icdeMatrixText);
+          if (valStr.toLowerCase() === codigo.toLowerCase() || (valStr && !isNaN(valStr) && !isNaN(codigo) && parseFloat(valStr) === parseFloat(codigo))) {
+            // Construir un objeto propiedad a partir del CSV
+            matchedProp = {};
+            headers.forEach((h, idx) => {
+              matchedProp[h] = cells[idx] ? cells[idx].trim().replace(/^"|"$/g, '') : '';
+            });
+            break;
+          }
+        }
       }
     }
   }
 
-  if (existe) {
+  if (matchedProp) {
+    window.currentMatchedProp = matchedProp;
     if (msg) {
       msg.style.display = 'inline-block';
       msg.style.color = '#ef4444';
-      msg.textContent = '✕ Código ya existe en la matriz';
+      msg.textContent = '✕ Código ya existe';
     }
     if (input) input.style.borderColor = '#ef4444';
+    
+    // Mostrar dropdown
+    if (dropdown) {
+      dropdown.style.display = 'block';
+      const name = matchedProp['Nombre'] || matchedProp['nombre'] || 'Sin nombre';
+      const barrio = matchedProp['Barrio'] || matchedProp['barrio'] || '';
+      const zona = matchedProp['Zona'] || matchedProp['zona'] || '';
+      const code = matchedProp['Código'] || matchedProp['codigo'] || codigo;
+      
+      dropdown.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span style="color:var(--gold); font-weight:700;">${code}</span> · ${name}
+            <div style="font-size:11px; color:var(--muted); margin-top:2px;">${barrio}</div>
+          </div>
+          <div style="font-size:11px; color:rgba(255,255,255,0.5);">${zona}</div>
+        </div>
+        <div style="font-size:10px; color:var(--gold); margin-top:6px; border-top:1px solid rgba(255,255,255,0.05); padding-top:4px;">🖱️ Click para autocompletar y editar</div>
+      `;
+    }
   } else {
+    window.currentMatchedProp = null;
     if (msg) {
       msg.style.display = 'inline-block';
       msg.style.color = '#22c55e';
       msg.textContent = '✓ Disponible';
     }
     if (input) input.style.borderColor = '#22c55e';
+    if (dropdown) dropdown.style.display = 'none';
   }
+}
+
+function autofillPropiedadPorCodigo() {
+  const p = window.currentMatchedProp;
+  if (!p) return;
+  
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  const setChecked = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+  
+  setVal('gp_nombre', p['Nombre'] || p['nombre']);
+  setVal('gp_tipo', p['Tipo de inmueble'] || p['tipo'] || 'Apartamento');
+  setVal('gp_contrato', p['Contrato'] || p['contrato'] || 'Venta');
+  
+  const precioEl = document.getElementById('gp_precio');
+  const precioVal = p['Precio'] || p['precio'] || '';
+  if (precioEl) {
+    precioEl.value = precioVal;
+    formatPrecioOnInput(precioEl);
+  }
+  
+  setVal('gp_barrio', p['Barrio'] || p['barrio']);
+  setVal('gp_conjunto', p['Conjunto / Edificio'] || p['conjunto'] || p['Edificio']);
+  setVal('gp_zona', p['Zona'] || p['zona']);
+  setVal('gp_ciudad', p['Ciudad'] || p['ciudad'] || 'Cali');
+  setVal('gp_estrato', p['Estrato'] || p['estrato']);
+  setVal('gp_ubicacion', p['Ubicación / Dirección'] || p['ubicacion'] || p['Dirección']);
+  setVal('gp_habitaciones', p['Habitaciones'] || p['habitaciones'] || '1');
+  setVal('gp_banos', p['Baños'] || p['banos'] || '1');
+  setVal('gp_garaje', p['Garaje'] || p['garaje'] || 'No');
+  setVal('gp_area', p['Área (m²)'] || p['area'] || p['Área construida']);
+  setVal('gp_gfotos', p['Google Fotos (Link Álbum)'] || p['googleFotos'] || p['Imagenes'] || p['Image']);
+  setVal('gp_inmobiliaria', p['Inmobiliaria / Aliado'] || p['inmobiliaria'] || p['Inmob'] || '');
+  setVal('gp_administracion', p['Administración ($)'] || p['administracion'] || p['Administración']);
+  setVal('gp_rentabilidad', p['Retorno inversión (Rentabilidad)'] || p['rentabilidad'] || p['Retorno de la inversión']);
+  
+  setVal('gp_lat', p['Latitud'] || p['latitud'] || p['Lat']);
+  setVal('gp_lng', p['Longitud'] || p['longitud'] || p['Lng']);
+  setVal('gp_descripcion', p['Descripción'] || p['descripcion']);
+  
+  const pcEl = document.getElementById('gp_puntos_clave');
+  if (pcEl) {
+    let pc = p['Puntos Clave'] || p['puntosClave'] || '';
+    if (Array.isArray(pc)) pc = pc.join('\n');
+    pcEl.value = pc;
+  }
+  
+  const dest = p['Destacada'] || p['destacada'];
+  setChecked('gp_destacada', dest === 'SI' || dest === true || dest === 'true');
+  
+  const pub = p['Publicar en Web'] || p['publicar'];
+  setChecked('gp_publicar', pub !== 'NO' && pub !== false && pub !== 'false');
+  
+  const dropdown = document.getElementById('gp_codigo_dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+  
+  const btnGuardar = document.getElementById('btn_gp_guardar');
+  if (btnGuardar) {
+    btnGuardar.innerHTML = '💾 Actualizar Propiedad';
+  }
+  
+  toast('Datos cargados para editar ✓', 'success');
 }
 
 /* DRAFT SAVE & RESTORE */
