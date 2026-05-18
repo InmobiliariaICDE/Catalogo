@@ -2429,7 +2429,7 @@ async function initApp(){
   // ── AUTO-SYNC: sincronizar leads/citas en segundo plano cada 90 segundos ──
   const ind = document.getElementById('autoSyncIndicator');
   if (ind) ind.style.display = 'flex';
-  setInterval(autoSyncLeads, 90 * 1000); // Cada 90 segundos
+  setInterval(autoSyncLeads, 15 * 1000); // Cada 15 segundos → tiempo real
 }
 
 function cleanupLocalData() {
@@ -2464,36 +2464,61 @@ function cleanupLocalData() {
    Refresca leads/citas silenciosamente y actualiza la UI
    sin interrumpir al usuario. Se ejecuta cada 90 segundos.
 ═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   HELPER: Combina dos arrays de visitas sin duplicar.
+   Clave única = codigo + celular (misma propiedad, mismo cliente).
+   Si el mismo par existe en ambos lados, gana el estado más avanzado.
+═══════════════════════════════════════════════ */
+const ESTADO_ORDEN = { realizada: 5, oferta: 4, solicito_visita: 3, agendada: 2, cancelada: 1 };
+
+function visitaKey(v) {
+  return String(v.codigo || '').trim() + '_' + String(v.celular || '').replace(/[^\d]/g, '');
+}
+
+function mergeVisitas(localArr, cloudArr) {
+  const vMap = new Map();
+  // Primero la nube (base)
+  (cloudArr || []).forEach(v => {
+    const k = visitaKey(v);
+    const ex = vMap.get(k);
+    if (!ex || (ESTADO_ORDEN[v.estado] || 0) >= (ESTADO_ORDEN[ex.estado] || 0)) vMap.set(k, v);
+  });
+  // Luego local (tiene prioridad: si el usuario editó aquí, se conserva)
+  (localArr || []).forEach(v => {
+    const k = visitaKey(v);
+    const ex = vMap.get(k);
+    if (!ex || (ESTADO_ORDEN[v.estado] || 0) >= (ESTADO_ORDEN[ex.estado] || 0)) vMap.set(k, v);
+  });
+  return Array.from(vMap.values());
+}
+
 async function autoSyncLeads() {
   if (!CRM_SCRIPT_URL) return;
 
-  const dot  = document.getElementById('autoSyncDot');
-  const txt  = document.getElementById('autoSyncTxt');
+  const dot = document.getElementById('autoSyncDot');
+  const txt = document.getElementById('autoSyncTxt');
 
-  // Animación: parpadeo dorado mientras sincroniza
   if (dot) { dot.style.background = '#d4a84b'; dot.style.boxShadow = '0 0 6px #d4a84b'; }
   if (txt) txt.textContent = 'Sincronizando...';
 
   try {
     const res  = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
     const data = await res.json();
-
     if (!Array.isArray(data)) throw new Error('Respuesta inválida');
 
-    // Normalizar IDs (igual que cargarLeads)
+    // Normalizar IDs
     const cloudData = data.map(l => {
       let id = String(l.id || '').trim();
       if (!id || id === 'undefined' || id === 'null') {
-        const normName  = String(l.nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
-        const normPhone = String(l.celular || '').replace(/[^\d]/g, '');
+        const s = String(l.nombre||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'')
+                + String(l.celular||'').replace(/[^\d]/g,'');
         let h = 0;
-        for (let i = 0; i < (normName+normPhone).length; i++) { h = ((h << 5) - h) + (normName+normPhone).charCodeAt(i); h |= 0; }
+        for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
         id = 'C-' + Math.abs(h).toString(16);
       }
       return { ...l, id };
     });
 
-    // Detectar cambios reales comparando con leads locales
     let huboNuevos = false;
     const localMap = new Map(leads.map(l => [String(l.id).trim(), l]));
 
@@ -2503,25 +2528,23 @@ async function autoSyncLeads() {
 
       const local = localMap.get(id);
       if (!local) {
-        // Lead completamente nuevo desde otro computador
         huboNuevos = true;
         leads.push(cloudLead);
         localMap.set(id, cloudLead);
         return;
       }
 
-      // Comparar citas/visitas para detectar cambios
-      const citasCloud = JSON.stringify((cloudLead.visitas || []).map(v => v.id + v.estado + v.fecha));
-      const citasLocal = JSON.stringify((local.visitas || []).map(v => v.id + v.estado + v.fecha));
-      if (citasCloud !== citasLocal) {
+      // ── Merge de visitas con deduplicación real ──
+      const merged = mergeVisitas(local.visitas, cloudLead.visitas);
+      const prevLen = (local.visitas || []).length;
+      const prevStates = (local.visitas || []).map(v => visitaKey(v) + v.estado).sort().join('|');
+      const newStates  = merged.map(v => visitaKey(v) + v.estado).sort().join('|');
+      if (merged.length !== prevLen || prevStates !== newStates) {
         huboNuevos = true;
-        // Merge de visitas: nube tiene prioridad para cambios remotos
-        const vMap = new Map((local.visitas || []).map(v => [v.id, v]));
-        (cloudLead.visitas || []).forEach(v => vMap.set(v.id, v));
-        local.visitas = Array.from(vMap.values());
+        local.visitas = merged;
       }
 
-      // Comparar historial de envíos
+      // Merge historial
       const hCloud = (cloudLead.historialEnvios || []).length;
       const hLocal = (local.historialEnvios  || []).length;
       if (hCloud > hLocal) {
@@ -2531,7 +2554,7 @@ async function autoSyncLeads() {
         local.historialEnvios = Array.from(hMap.values()).sort((a,b) => a.fecha < b.fecha ? 1 : -1);
       }
 
-      // Sincronizar estado y etiqueta si cambiaron en la nube
+      // Estado y etiqueta
       if (cloudLead.estado !== local.estado || cloudLead.etiqueta !== local.etiqueta) {
         huboNuevos = true;
         local.estado   = cloudLead.estado;
@@ -2542,26 +2565,23 @@ async function autoSyncLeads() {
     if (huboNuevos) {
       rebuildCitas();
       saveLeads();
-      // Actualizar la UI activa sin perder la posición del usuario
       if (currentTab === 'citas')  renderCitas();
       if (currentTab === 'leads')  renderLeadsBody(leads);
-      // Si el panel lateral está abierto, refrescarlo
       if (currentLeadId) {
         const l = leads.find(x => String(x.id).trim() === String(currentLeadId).trim());
         if (l) renderSidePanel(l);
       }
       if (dot) dot.style.boxShadow = '0 0 8px #22c55e';
-      setTimeout(() => { if (dot) dot.style.boxShadow = ''; }, 2000);
-      console.log('[AutoSync] Cambios aplicados desde la nube.');
+      setTimeout(() => { if (dot) dot.style.boxShadow = ''; }, 1500);
+      console.log('[AutoSync] Cambios aplicados.');
     }
 
-    // Indicador: verde = OK
     if (dot) { dot.style.background = '#22c55e'; dot.style.boxShadow = ''; }
     if (txt) txt.textContent = 'En vivo';
 
   } catch (e) {
     console.warn('[AutoSync] Error:', e);
-    if (dot) { dot.style.background = '#ef4444'; dot.style.boxShadow = ''; }
+    if (dot) { dot.style.background = '#ef4444'; }
     if (txt) txt.textContent = 'Sin conexión';
     setTimeout(() => {
       if (dot) dot.style.background = '#888';
@@ -2576,14 +2596,12 @@ async function cargarLeads(){
     const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads');
     const data = await res.json();
     if(Array.isArray(data)){
-      // 1. Normalizar IDs de la nube de forma ULTRA-ESTABLE (Ignora acentos y espacios)
       const cloudData = data.map(l => {
         let id = String(l.id || '').trim();
         if(!id || id === 'undefined' || id === 'null') {
            const normName = String(l.nombre || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g,'');
            const normPhone = String(l.celular || '').replace(/[^\d]/g, "");
            const hashStr = normName + normPhone;
-           // Hash numérico simple
            let h = 0;
            for (let i = 0; i < hashStr.length; i++) { h = ((h << 5) - h) + hashStr.charCodeAt(i); h |= 0; }
            id = 'C-' + Math.abs(h).toString(16);
@@ -2654,27 +2672,40 @@ async function cargarLeads(){
 
 function rebuildCitas() {
   const allVisitas = [];
-  const seenCitaIds = new Set();
+  const seenKeys = new Set(); // clave = codigo_celular (deduplicación real)
   
   leads.forEach(l => {
-    if (Array.isArray(l.visitas)) {
-      l.visitas.forEach(v => {
-        const id = v.id || `${l.id}_${v.codigo}_${v.fecha}`;
-        const cita = { 
-          ...v, 
-          cliente: v.cliente || l.nombre, 
+    if (!Array.isArray(l.visitas) || !l.visitas.length) return;
+
+    // 1. Deduplicar visitas dentro del mismo lead por codigo+celular
+    const vMap = new Map();
+    l.visitas.forEach(v => {
+      const k = visitaKey({ ...v, celular: v.celular || l.celular });
+      const ex = vMap.get(k);
+      if (!ex || (ESTADO_ORDEN[v.estado] || 0) >= (ESTADO_ORDEN[ex.estado] || 0)) vMap.set(k, v);
+    });
+    l.visitas = Array.from(vMap.values()); // guardar visitas limpias en el lead
+
+    // 2. Agregar a la agenda global, evitando duplicados globales
+    l.visitas.forEach(v => {
+      const k = visitaKey({ ...v, celular: v.celular || l.celular });
+      if (!seenKeys.has(k)) {
+        seenKeys.add(k);
+        allVisitas.push({
+          ...v,
+          cliente: v.cliente || l.nombre,
           celular: v.celular || l.celular,
-          id: id
-        };
-        allVisitas.push(cita);
-        seenCitaIds.add(String(id));
-      });
-    }
+          id: v.id || `${l.id}_${v.codigo}_${v.fecha}`
+        });
+      }
+    });
   });
   
-  // Migración automática: Cualquier cita que no pertenezca a un lead
-  // se mueve a LEAD-AGENDA-GLOBAL para garantizar su sincronización en la nube.
-  const genericCitas = citas.filter(c => !seenCitaIds.has(String(c.id)));
+  // Citas genéricas que no estén ya incluidas
+  const genericCitas = citas.filter(c => {
+    const k = visitaKey(c);
+    return !seenKeys.has(k);
+  });
   
   if (genericCitas.length > 0) {
      let globalLead = leads.find(l => l.id === 'LEAD-AGENDA-GLOBAL');
@@ -2705,25 +2736,22 @@ function rebuildCitas() {
      
      let modified = false;
      genericCitas.forEach(gc => {
-         const existing = globalLead.visitas.find(v => String(v.id) === String(gc.id) || (v.codigo === gc.codigo && v.fecha === gc.fecha));
+         const k = visitaKey(gc);
+         const existing = globalLead.visitas.find(v => visitaKey(v) === k);
          if (!existing) {
              globalLead.visitas.push(gc);
+             seenKeys.add(k);
+             allVisitas.push(gc);
              modified = true;
          }
      });
      
      if (modified) {
-         // Al cargarse y detectar citas huérfanas, forzamos sincronización del contenedor global
          setTimeout(() => {
              syncSheets(globalLead);
              saveLeads();
          }, 1000);
      }
-     
-     genericCitas.forEach(gc => {
-         seenCitaIds.add(String(gc.id));
-         allVisitas.push(gc);
-     });
   }
   
   citas = allVisitas;
