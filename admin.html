@@ -1397,7 +1397,31 @@ async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
     let huboCambio = false;
 
     // Ordenar leads: más recientes o con más info primero
+    // Obtener teléfonos eliminados para bloquearlos
+    let deletedPhones = JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]');
+
+    // Filtrar leads que correspondan a teléfonos eliminados
+    leads = leads.filter(l => {
+      if (l.id === 'LEAD-AGENDA-GLOBAL') return true;
+      let telLimpio = String(l.celular || '').replace(/\D/g, '');
+      if (telLimpio && deletedPhones.includes(telLimpio)) {
+        huboCambio = true;
+        if (l.id && !String(l.id).startsWith('U-')) {
+          idsParaBorrarDeNube.push(l.id);
+        }
+        return false;
+      }
+      return true;
+    });
+
+    // Ordenar leads: preferir los que NO empiezan con U- (prioridad ID de la nube C-)
+    // y luego los más recientes
     leads.sort((a, b) => {
+      const isA_U = String(a.id || '').startsWith('U-');
+      const isB_U = String(b.id || '').startsWith('U-');
+      if (isA_U !== isB_U) {
+        return isA_U ? 1 : -1;
+      }
       let tA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
       let tB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
       return tB - tA;
@@ -1452,7 +1476,9 @@ async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
         principal.propsEnviadas = Array.from(new Set([...(principal.propsEnviadas || []), ...(l.propsEnviadas || [])]));
 
         // Fusionar notas si el principal no tiene
-        if (!principal.notas && l.notas) {
+        if (!principal.notes && l.notes) {
+          principal.notas = l.notes;
+        } else if (!principal.notas && l.notas) {
           principal.notas = l.notas;
         }
 
@@ -2555,9 +2581,9 @@ function cleanupLocalData() {
   let changed = false;
   
   leads.forEach(l => {
-    // Si el ID es inválido, vacío o no tiene el prefijo de seguridad U-, generar uno nuevo
     let id = String(l.id || '').trim();
-    if (!id || id === 'undefined' || id === 'null' || !id.startsWith('U-')) {
+    // Conservar cualquier ID válido (que no esté vacío, null, o undefined)
+    if (!id || id === 'undefined' || id === 'null') {
       id = 'U-' + Date.now() + Math.floor(Math.random()*1000);
       l.id = id;
       changed = true;
@@ -2566,7 +2592,7 @@ function cleanupLocalData() {
     if (!unique.has(id)) {
       unique.set(id, l);
     } else {
-      changed = true; // Duplicado encontrado, se elimina al usar Map
+      changed = true; // Duplicado de ID encontrado
     }
   });
   
@@ -3461,6 +3487,14 @@ function guardarLead(enviarAhora, btn){
   if(!nuevoLead.celular.trim()){ toast('Ingresa el celular','error'); return; }
   
   const celularLimpio = nuevoLead.celular.trim().replace(/\D/g, '');
+  
+  // Si el teléfono estaba en la lista de eliminados, desbloquearlo para permitir su re-registro
+  let deletedPhones = JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]');
+  if (deletedPhones.includes(celularLimpio)) {
+    deletedPhones = deletedPhones.filter(p => p !== celularLimpio);
+    localStorage.setItem('icde_deleted_phones', JSON.stringify(deletedPhones));
+  }
+
   const existe = leads.find(l => (l.celular || '').replace(/\D/g, '') === celularLimpio);
   if (existe && existe.id !== 'LEAD-AGENDA-GLOBAL') {
     toast('Ya existe un lead con este celular', 'error');
@@ -4034,28 +4068,63 @@ function addNota(lid,idx){
 async function eliminarLead(id){ 
   if(!confirm('¿Estás seguro de eliminar este cliente? Esta acción también lo eliminará de la nube y no se puede deshacer.')) return; 
   
-  // Registrar el ID eliminado para evitar que vuelva a aparecer
-  if(!deletedLeads.includes(String(id))) {
-    deletedLeads.push(String(id));
-    localStorage.setItem('icde_deleted_leads', JSON.stringify(deletedLeads));
+  // Encontrar el lead para obtener su teléfono y buscar posibles duplicados locales con otras IDs
+  const leadABorrar = leads.find(l => String(l.id) === String(id));
+  let celularABorrar = '';
+  let idsABorrar = [String(id)];
+  
+  if (leadABorrar) {
+    celularABorrar = String(leadABorrar.celular || '').replace(/\D/g, '');
+    if (celularABorrar) {
+      // Buscar otros leads con el mismo teléfono (duplicados por ID)
+      leads.forEach(l => {
+        if (l.id !== 'LEAD-AGENDA-GLOBAL' && String(l.id) !== String(id)) {
+          const lCel = String(l.celular || '').replace(/\D/g, '');
+          if (lCel === celularABorrar) {
+            idsABorrar.push(String(l.id));
+          }
+        }
+      });
+      
+      // Guardar el teléfono en la lista de teléfonos eliminados
+      let deletedPhones = JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]');
+      if (!deletedPhones.includes(celularABorrar)) {
+        deletedPhones.push(celularABorrar);
+        localStorage.setItem('icde_deleted_phones', JSON.stringify(deletedPhones));
+      }
+    }
   }
 
-  // Eliminar localmente primero para respuesta rápida
-  leads = leads.filter(l => String(l.id) !== String(id)); 
+  // Registrar todos los IDs a borrar en deletedLeads
+  idsABorrar.forEach(bId => {
+    if(!deletedLeads.includes(bId)) {
+      deletedLeads.push(bId);
+    }
+  });
+  localStorage.setItem('icde_deleted_leads', JSON.stringify(deletedLeads));
+
+  // Eliminar localmente primero (por ID y por teléfono celular para barrer duplicados locales)
+  leads = leads.filter(l => {
+    if (String(l.id) === String(id)) return false;
+    if (celularABorrar && String(l.celular || '').replace(/\D/g, '') === celularABorrar && l.id !== 'LEAD-AGENDA-GLOBAL') return false;
+    return true;
+  });
+  
   saveLeads(); 
-  if(currentLeadId == id) closeSidePanel(); 
+  if(currentLeadId == id || idsABorrar.includes(String(currentLeadId))) closeSidePanel(); 
   renderLeads(); 
   toast('Eliminando de la nube...', 'success'); 
   
   // Sincronizar eliminación con Google Sheets
   if(CRM_SCRIPT_URL) {
     try {
-      const res = await fetch(CRM_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors', // Apps Script suele requerir no-cors o manejarlo con redirect
-        body: JSON.stringify({ action: 'deleteLead', id: id })
-      });
-      // Con no-cors no podemos leer la respuesta, pero si llegamos aquí es que se envió
+      for (let bId of idsABorrar) {
+        fetch(CRM_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors', // Apps Script suele requerir no-cors o manejarlo con redirect
+          body: JSON.stringify({ action: 'deleteLead', id: bId })
+        });
+      }
       toast('Eliminado correctamente ✓', 'success');
     } catch(e) {
       console.error("Error sincronizando eliminación:", e);
