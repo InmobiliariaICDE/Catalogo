@@ -1192,7 +1192,11 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     <div class="brand">ICDE Panel de Control <span>/ Gestión de Clientes</span></div>
     <div class="topbar-right">
       <span id="syncStatus" style="font-size:12px;color:#888;"></span>
-      <button class="settings-btn" onclick="refreshData()" title="Sincronizar Datos" style="background:rgba(212,168,75,0.1); border-color:var(--border);">🔄</button>
+      <span id="autoSyncIndicator" style="font-size:11px; color:#888; display:none; align-items:center; gap:5px;">
+        <span id="autoSyncDot" style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
+        <span id="autoSyncTxt">En vivo</span>
+      </span>
+      <button class="settings-btn" onclick="refreshData()" title="Sincronizar Datos ahora" style="background:rgba(212,168,75,0.1); border-color:var(--border);">🔄</button>
       <button class="btn-logout" onclick="doLogout()">Salir</button>
     </div>
   </div>
@@ -2363,6 +2367,11 @@ async function initApp(){
   // Feedback de citas
   setTimeout(checkCitasFeedback, 3000);
   setInterval(checkCitasFeedback, 1000 * 60 * 5); // Cada 5 mins
+
+  // ── AUTO-SYNC: sincronizar leads/citas en segundo plano cada 90 segundos ──
+  const ind = document.getElementById('autoSyncIndicator');
+  if (ind) ind.style.display = 'flex';
+  setInterval(autoSyncLeads, 90 * 1000); // Cada 90 segundos
 }
 
 function cleanupLocalData() {
@@ -2389,6 +2398,117 @@ function cleanupLocalData() {
     leads = Array.from(unique.values());
     saveLeads();
     console.log("Deep Cleanup: IDs normalized and duplicates removed.");
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   AUTO-SYNC EN SEGUNDO PLANO
+   Refresca leads/citas silenciosamente y actualiza la UI
+   sin interrumpir al usuario. Se ejecuta cada 90 segundos.
+═══════════════════════════════════════════════ */
+async function autoSyncLeads() {
+  if (!CRM_SCRIPT_URL) return;
+
+  const dot  = document.getElementById('autoSyncDot');
+  const txt  = document.getElementById('autoSyncTxt');
+
+  // Animación: parpadeo dorado mientras sincroniza
+  if (dot) { dot.style.background = '#d4a84b'; dot.style.boxShadow = '0 0 6px #d4a84b'; }
+  if (txt) txt.textContent = 'Sincronizando...';
+
+  try {
+    const res  = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
+    const data = await res.json();
+
+    if (!Array.isArray(data)) throw new Error('Respuesta inválida');
+
+    // Normalizar IDs (igual que cargarLeads)
+    const cloudData = data.map(l => {
+      let id = String(l.id || '').trim();
+      if (!id || id === 'undefined' || id === 'null') {
+        const normName  = String(l.nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
+        const normPhone = String(l.celular || '').replace(/[^\d]/g, '');
+        let h = 0;
+        for (let i = 0; i < (normName+normPhone).length; i++) { h = ((h << 5) - h) + (normName+normPhone).charCodeAt(i); h |= 0; }
+        id = 'C-' + Math.abs(h).toString(16);
+      }
+      return { ...l, id };
+    });
+
+    // Detectar cambios reales comparando con leads locales
+    let huboNuevos = false;
+    const localMap = new Map(leads.map(l => [String(l.id).trim(), l]));
+
+    cloudData.forEach(cloudLead => {
+      const id = String(cloudLead.id).trim();
+      if (deletedLeads.includes(id)) return;
+
+      const local = localMap.get(id);
+      if (!local) {
+        // Lead completamente nuevo desde otro computador
+        huboNuevos = true;
+        leads.push(cloudLead);
+        localMap.set(id, cloudLead);
+        return;
+      }
+
+      // Comparar citas/visitas para detectar cambios
+      const citasCloud = JSON.stringify((cloudLead.visitas || []).map(v => v.id + v.estado + v.fecha));
+      const citasLocal = JSON.stringify((local.visitas || []).map(v => v.id + v.estado + v.fecha));
+      if (citasCloud !== citasLocal) {
+        huboNuevos = true;
+        // Merge de visitas: nube tiene prioridad para cambios remotos
+        const vMap = new Map((local.visitas || []).map(v => [v.id, v]));
+        (cloudLead.visitas || []).forEach(v => vMap.set(v.id, v));
+        local.visitas = Array.from(vMap.values());
+      }
+
+      // Comparar historial de envíos
+      const hCloud = (cloudLead.historialEnvios || []).length;
+      const hLocal = (local.historialEnvios  || []).length;
+      if (hCloud > hLocal) {
+        huboNuevos = true;
+        const hMap = new Map((local.historialEnvios || []).map(h => [h.fecha + (h.codigos||[]).join(','), h]));
+        (cloudLead.historialEnvios || []).forEach(h => hMap.set(h.fecha + (h.codigos||[]).join(','), h));
+        local.historialEnvios = Array.from(hMap.values()).sort((a,b) => a.fecha < b.fecha ? 1 : -1);
+      }
+
+      // Sincronizar estado y etiqueta si cambiaron en la nube
+      if (cloudLead.estado !== local.estado || cloudLead.etiqueta !== local.etiqueta) {
+        huboNuevos = true;
+        local.estado   = cloudLead.estado;
+        local.etiqueta = cloudLead.etiqueta;
+      }
+    });
+
+    if (huboNuevos) {
+      rebuildCitas();
+      saveLeads();
+      // Actualizar la UI activa sin perder la posición del usuario
+      if (currentTab === 'citas')  renderCitas();
+      if (currentTab === 'leads')  renderLeadsBody(leads);
+      // Si el panel lateral está abierto, refrescarlo
+      if (currentLeadId) {
+        const l = leads.find(x => String(x.id).trim() === String(currentLeadId).trim());
+        if (l) renderSidePanel(l);
+      }
+      if (dot) dot.style.boxShadow = '0 0 8px #22c55e';
+      setTimeout(() => { if (dot) dot.style.boxShadow = ''; }, 2000);
+      console.log('[AutoSync] Cambios aplicados desde la nube.');
+    }
+
+    // Indicador: verde = OK
+    if (dot) { dot.style.background = '#22c55e'; dot.style.boxShadow = ''; }
+    if (txt) txt.textContent = 'En vivo';
+
+  } catch (e) {
+    console.warn('[AutoSync] Error:', e);
+    if (dot) { dot.style.background = '#ef4444'; dot.style.boxShadow = ''; }
+    if (txt) txt.textContent = 'Sin conexión';
+    setTimeout(() => {
+      if (dot) dot.style.background = '#888';
+      if (txt) txt.textContent = 'En vivo';
+    }, 10000);
   }
 }
 
