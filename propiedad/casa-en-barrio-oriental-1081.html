@@ -80,10 +80,8 @@
   --text-muted: #c4beb5;
   --text-faint: #7a7368;
   --border: rgba(212, 168, 75, 0.15);
-  --r: 16px;
+  --r: 0px;
   --green: #22c55e;
-  --shadow-gold: 0 10px 40px rgba(212, 168, 75, 0.06);
-  --shadow-glow: 0 0 25px rgba(212, 168, 75, 0.15);
 }
 
 *{
@@ -92,145 +90,144 @@
   box-sizing: border-box;
 }
 
-html{
-  scroll-behavior: smooth;
-}
-
 body{
   font-family: 'Outfit', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   line-height: 1.7;
-}
-
-/* ── HEADER ── */
-.site-header{
-  background: rgba(7, 6, 5, 0.85);
-  border-bottom: 1px solid var(--border);
-  padding: 0 2.5rem;
-  height: 70px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 200;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  justify-content: center;
+  padding: 20px;
 }
 
-.site-header img{
-  height: 38px;
-  display: block;
-}
-
-.back-btn{
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-muted);
-  text-decoration: none;
-  font-size: 13.5px;
-  font-weight: 600;
-  border: 1px solid var(--border);
-  padding: 8px 16px;
-  border-radius: 10px;
-  transition: all 0.3s;
-  white-space: nowrap;
-  background: rgba(212, 168, 75, 0.02);
-}
-
-.back-btn:hover{
-  color: var(--gold);
-  border-color: var(--gold);
-  background: var(--gold-dim);
-  transform: translateY(-1px);
-}
-
-/* ── BREADCRUMB ── */
-.breadcrumb{
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem 1.5rem 0.5rem;
-  font-size: 12.5px;
-  color: var(--text-faint);
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.breadcrumb a{
-  color: var(--text-faint);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.breadcrumb a:hover{
-  color: var(--gold);
-}
-
-/* ── GRID DESKTOP ── */
-.page-wrap{
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1.5rem 1.5rem 3rem;
-}
-
-.page-grid{
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
-  gap: 2rem;
-  width: 100%;
-  align-items: start;
-}
-
-/* ── COLUMNA IZQUIERDA ── */
-.left-col{
+/* ── MODAL LAYOUT (Usado como contenedor principal) ── */
+.modal{
+  background: linear-gradient(144deg, rgb(28 22 15 / 97%) 0%, rgb(4 4 4 / 99%) 60%);
+  border: 1px solid rgba(212,168,75,0.18);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset, 0 32px 80px rgba(0,0,0,0.7), 0 0 60px rgba(212,168,75,0.06);
+  width: 95vw;
+  max-width: 980px;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  min-width: 0;
+  border-radius: 0 !important;
+  overflow: hidden;
 }
 
-/* ── GALERÍA ── */
-.galeria-wrap{
+.modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: rgba(212,168,75,0.7);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.modal::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 60%; height: 40%;
+  background: radial-gradient(ellipse at 30% 0%, rgba(212,168,75,0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.modal-close{
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 20px;
+  cursor: pointer;
+  border: 1px solid rgb(255 255 255 / 30%);
+  background: rgb(0 0 0 / 50%);
+  color: rgb(255 255 255 / 90%);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  z-index: 10;
+  transition: all 0.3s;
+}
+
+.modal-close:hover{
+  background: var(--gold);
+  color: #000;
+  border-color: var(--gold);
+}
+
+.modal-contenido{
+  display: flex;
+  flex-direction: row;
   position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  overflow: hidden;
+  z-index: 2;
+}
+
+.modal-columna-izq{
+  flex: 1 1 420px;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+}
+
+.modal-divisor-v{
+  width: 1px;
+  flex-shrink: 0;
+  background: rgba(212,168,75,0.2);
+}
+
+.modal-columna-der-nueva{
+  flex: 1;
+  padding: 28px 24px 20px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 75vh;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212,168,75,0.3) transparent;
+}
+
+.modal-columna-der-nueva::-webkit-scrollbar{ width: 3px; }
+.modal-columna-der-nueva::-webkit-scrollbar-thumb{ background: rgba(212,168,75,0.3); border-radius: 2px; }
+
+/* ── GALERÍA ── */
+.carrusel-wrapper{
+  position: relative;
   width: 100%;
-  aspect-ratio: 16/10;
-  box-shadow: var(--shadow-gold);
+}
+
+.carrusel-principal{
+  width: 100%;
+  height: 300px;
+  position: relative;
+  background: #000;
 }
 
 .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
-  transition: transform 0.5s ease;
 }
 
-.galeria-wrap:hover .galeria-img{
-  transform: scale(1.02);
-}
-
-.img-contador{
+.carrusel-counter{
   position: absolute;
   top: 15px;
   left: 15px;
   background: rgba(7, 6, 5, 0.8);
   border: 1px solid var(--border);
-  backdrop-filter: blur(10px);
   color: var(--gold);
   font-size: 12.5px;
   font-weight: 600;
   padding: 4px 12px;
   border-radius: 20px;
-  z-index: 2;
 }
 
 .galeria-nav{
@@ -239,7 +236,6 @@ body{
   transform: translateY(-50%);
   background: rgba(7, 6, 5, 0.7);
   border: 1px solid var(--border);
-  backdrop-filter: blur(5px);
   color: #fff;
   width: 44px;
   height: 44px;
@@ -250,80 +246,50 @@ body{
   align-items: center;
   justify-content: center;
   transition: all 0.3s;
-  z-index: 2;
 }
 
 .galeria-nav:hover{
   background: var(--gold);
   color: #000;
-  border-color: var(--gold);
-  transform: translateY(-50%) scale(1.08);
 }
 
 .galeria-nav.prev{ left: 15px; }
 .galeria-nav.next{ right: 15px; }
 
-.galeria-expand{
+.carrusel-expand{
   position: absolute;
   bottom: 15px;
   right: 15px;
   background: rgba(7, 6, 5, 0.7);
   border: 1px solid var(--border);
-  backdrop-filter: blur(5px);
   color: #fff;
   width: 40px;
   height: 40px;
   border-radius: 10px;
   cursor: pointer;
-  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2;
-  transition: all 0.3s;
-}
-
-.galeria-expand:hover{
-  background: var(--gold);
-  color: #000;
-  border-color: var(--gold);
-  transform: scale(1.08);
 }
 
 .miniaturas-wrap{
-  margin-top: 0.75rem;
+  padding: 10px;
   overflow-x: auto;
-  padding-bottom: 6px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--gold-border) transparent;
-}
-
-.miniaturas-wrap::-webkit-scrollbar{
-  height: 4px;
-}
-
-.miniaturas-wrap::-webkit-scrollbar-track{
-  background: transparent;
-}
-
-.miniaturas-wrap::-webkit-scrollbar-thumb{
-  background: var(--gold-border);
-  border-radius: 4px;
+  background: rgba(0,0,0,0.2);
 }
 
 .miniaturas{
   display: flex;
-  gap: 0.75rem;
+  gap: 8px;
 }
 
 .miniatura{
-  width: 100px;
-  height: 68px;
+  width: 60px;
+  height: 45px;
   object-fit: cover;
-  border-radius: 10px;
-  flex-shrink: 0;
+  border-radius: 4px;
   cursor: pointer;
-  opacity: 0.45;
+  opacity: 0.5;
   transition: all 0.3s;
   border: 2px solid transparent;
 }
@@ -331,7 +297,154 @@ body{
 .miniatura.activa, .miniatura:hover{
   opacity: 1;
   border-color: var(--gold);
-  transform: translateY(-2px);
+}
+
+/* ── BLOQUE INFO ── */
+.modal-bloque-info{
+  padding: 20px;
+}
+
+.modal-bloque-info h1{
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+.modal-bloque-info .tipo{
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.modal-bloque-info .modalCodigo{
+  color: #c0c0c0;
+  font-size: 12px;
+}
+
+.modal-bloque-info .precio{
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--green);
+  margin: 8px 0;
+}
+
+.chips, .modal-etiquetas{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.chip, .modal-etiqueta-pill{
+  background: rgba(212,168,75,0.05);
+  border: 1px solid rgba(212,168,75,0.15);
+  color: #fff;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip svg, .modal-etiqueta-pill svg{
+  color: var(--gold);
+}
+
+/* ── COLUMNA DERECHA ── */
+.modal-subtitulo-nuevo{
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+  border-left: 3px solid var(--gold);
+  padding-left: 8px;
+}
+
+.modal-tabla-caracteristicas{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.modal-tabla-caracteristicas td{
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.char-label{
+  color: #a0a0a0;
+}
+
+.char-val{
+  color: #fff;
+  text-align: right;
+  font-weight: 500;
+}
+
+.modal-texto{
+  color: #d0d0d0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ── ACCIONES ── */
+.modal-acciones{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 18px 20px 20px;
+  border-top: 1px solid rgba(212,168,75,0.08);
+  position: relative;
+  z-index: 2;
+}
+
+.modal-btn-whatsapp-nuevo{
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background-color: #d4a84b;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.modal-btn-whatsapp-nuevo:hover{
+  background-color: var(--gold-hover);
+}
+
+.cta-share{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(212,168,75,0.3);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.3s;
+}
+
+.cta-share:hover{
+  border-color: var(--gold);
+  background: var(--gold-dim);
+}
+
+.share-confirm{
+  font-size: 12px;
+  color: var(--gold);
+  display: none;
 }
 
 /* ── LIGHTBOX ── */
@@ -353,16 +466,14 @@ body{
   max-width: 92vw;
   max-height: 85vh;
   object-fit: contain;
-  border-radius: 12px;
-  box-shadow: 0 10px 50px rgba(0,0,0,0.8);
+  border-radius: 0;
 }
 
 .lightbox-close{
   position: absolute;
   top: 20px;
   right: 24px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.1);
   color: #fff;
   width: 44px;
   height: 44px;
@@ -372,372 +483,29 @@ body{
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s;
-}
-
-.lightbox-close:hover{
-  background: var(--gold);
-  color: #000;
-  border-color: var(--gold);
-}
-
-.lightbox-nav{
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: #fff;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s;
-}
-
-.lightbox-nav:hover{
-  background: var(--gold);
-  color: #000;
-  border-color: var(--gold);
-}
-
-.lightbox-nav.prev{ left: 24px; }
-.lightbox-nav.next{ right: 24px; }
-
-.lightbox-counter{
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: var(--text-muted);
-  font-size: 14px;
-  font-weight: 600;
-  background: rgba(7, 6, 5, 0.8);
-  padding: 6px 16px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-}
-
-/* ── PANEL DERECHO ── */
-.prop-panel{
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 2.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  box-shadow: var(--shadow-gold);
-  position: sticky;
-  top: 90px;
-  min-width: 0;
-}
-
-.prop-tipo-badge{
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--gold);
-  background: var(--gold-dim);
-  border: 1px solid var(--gold-border);
-  border-radius: 6px;
-  padding: 0.35rem 0.8rem;
-  display: inline-block;
-  margin-bottom: 0.25rem;
-}
-
-.prop-codigo{
-  font-size: 13px;
-  color: var(--text-faint);
-  font-weight: 500;
-}
-
-.prop-nombre{
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.35;
-}
-
-.prop-precio{
-  font-size: 2.2rem;
-  font-weight: 800;
-  color: var(--green);
-  text-shadow: 0 0 30px rgba(34, 197, 94, 0.18);
-  line-height: 1.1;
-  margin: 0.25rem 0;
-}
-
-/* ── CHIPS ── */
-.chips{
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-}
-
-.chip{
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 13px;
-  color: var(--text-muted);
-  transition: all 0.3s;
-}
-
-.chip:hover{
-  border-color: var(--gold-border);
-  background: var(--gold-dim);
-  transform: translateY(-2px);
-}
-
-.chip svg{
-  flex-shrink: 0;
-  color: var(--gold);
-}
-
-/* ── CTA ── */
-.cta-group{
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.cta-wa{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  background: linear-gradient(135deg, var(--gold), #b88d32);
-  color: #000;
-  font-weight: 700;
-  font-size: 15px;
-  padding: 14px 20px;
-  border-radius: 12px;
-  text-decoration: none;
-  transition: all 0.3s;
-  box-shadow: 0 4px 20px rgba(212, 168, 75, 0.2);
-}
-
-.cta-wa:hover{
-  transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(212, 168, 75, 0.35);
-  filter: brightness(1.1);
-}
-
-.cta-share{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  font-size: 14px;
-  padding: 12px 20px;
-  border-radius: 12px;
-  cursor: pointer;
-  background: transparent;
-  transition: all 0.3s;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 600;
-}
-
-.cta-share:hover{
-  color: var(--gold);
-  border-color: var(--gold);
-  background: var(--gold-dim);
-  transform: translateY(-1px);
-}
-
-.share-confirm{
-  font-size: 12.5px;
-  color: var(--gold);
-  text-align: center;
-  display: none;
-  font-weight: 600;
-  animation: fadeIn 0.3s;
-}
-
-@keyframes fadeIn{
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ── CARACTERÍSTICAS / CONTENIDO ── */
-.char-section, .content-section{
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 2rem;
-  box-shadow: var(--shadow-gold);
-  transition: all 0.3s;
-}
-
-.char-section:hover, .content-section:hover{
-  border-color: rgba(212, 168, 75, 0.25);
-}
-
-.section-title{
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.section-title::before{
-  content: '';
-  width: 4px;
-  height: 16px;
-  background: var(--gold);
-  border-radius: 2px;
-  display: inline-block;
-}
-
-.char-table{
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.char-table tr{
-  border-bottom: 1px solid var(--border);
-}
-
-.char-table tr:last-child{
-  border-bottom: none;
-}
-
-.char-label{
-  color: var(--text-muted);
-  padding: 0.8rem 0;
-  font-weight: 500;
-}
-
-.char-val{
-  color: var(--text);
-  font-weight: 600;
-  text-align: right;
-  padding: 0.8rem 0;
-}
-
-.content-text{
-  font-size: 14.5px;
-  color: var(--text-muted);
-  line-height: 1.8;
-}
-
-/* ── FOOTER ── */
-.site-footer{
-  text-align: center;
-  padding: 2.5rem 1rem;
-  font-size: 13px;
-  color: var(--text-faint);
-  border-top: 1px solid var(--border);
-  margin-top: 3rem;
-  background: rgba(7, 6, 5, 0.4);
-}
-
-.site-footer p{
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.site-footer a{
-  color: var(--text-faint);
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.2s;
-}
-
-.site-footer a:hover{
-  color: var(--gold);
+  border: none;
 }
 
 /* ── MÓVIL ── */
-@media(max-width: 900px){
-  .page-grid{
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
+@media(max-width: 768px){
+  body{
+    padding: 10px;
   }
-  .prop-panel{
-    position: static;
-  }
-}
-
-@media(max-width: 680px){
-  .page-wrap{
-    padding: 1.25rem 1rem;
-  }
-  .site-header{
-    padding: 0 1.25rem;
-    height: 60px;
-  }
-  .site-header img{
-    height: 32px;
-  }
-  
-  /* Reordenación en móvil con flex-direction: column */
-  .page-grid{
-    display: flex;
+  .modal-contenido{
     flex-direction: column;
-    gap: 1.25rem;
   }
-  .left-col, .prop-panel{
-    display: contents;
+  .modal-columna-izq{
+    max-width: 100%;
+    flex: none;
   }
-  
-  .sec-nombre{ order: 1; }
-  .sec-precio{ order: 2; }
-  .sec-galeria{ order: 3; }
-  .sec-chips{ order: 4; }
-  .sec-tabla{ order: 5; }
-  .sec-desc{ order: 6; }
-  .sec-cta{ order: 7; }
-  
-  .galeria-wrap{
-    aspect-ratio: 4/3;
+  .modal-divisor-v{
+    display: none;
   }
-  
-  .miniatura{
-    width: 76px;
-    height: 52px;
+  .modal-columna-der-nueva{
+    max-height: none;
+    padding: 16px;
   }
-  
-  .chips{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  
-  .chip{
-    flex: 1 1 calc(50% - 0.5rem);
-    justify-content: center;
-  }
-  
-  .prop-nombre{
-    font-size: 1.35rem;
-  }
-  
-  .prop-precio{
-    font-size: 2rem;
-    text-align: center;
-  }
-  
-  .cta-wa{
-    font-size: 16px;
+  .modal-acciones{
     padding: 16px;
   }
 }
@@ -746,100 +514,77 @@ body{
 <body>
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PH2B85PT" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
-<!-- HEADER -->
-<header class="site-header">
-  <a href="https://icdeinmobiliaria.com" aria-label="ICDE Inmobiliaria – inicio">
-    <img src="https://i.imgur.com/XgfIulc.png" alt="ICDE Negocios Inmobiliarios" height="38"/>
-  </a>
-  <a href="https://icdeinmobiliaria.com" class="back-btn">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-    Ver catálogo
-  </a>
-</header>
+<div class="modal">
+  <!-- Botón cerrar actúa como volver al catálogo -->
+  <a class="modal-close" href="https://icdeinmobiliaria.com" aria-label="Volver al catálogo">&#215;</a>
 
-<!-- BREADCRUMB -->
-<nav class="breadcrumb" aria-label="Ruta de navegación">
-  <a href="https://icdeinmobiliaria.com">Inicio</a>
-  <span>›</span>
-  <a href="https://icdeinmobiliaria.com/">Casas en Neiva</a>
-  <span>›</span>
-  <span>Casa en barrio Oriental</span>
-</nav>
-
-<!-- LIGHTBOX -->
-<div class="lightbox" id="lightbox" onclick="cerrarLightbox(event)">
-  <button class="lightbox-close" onclick="cerrarLightbox()">&#x2715;</button>
-  <button class="lightbox-nav prev" onclick="lightboxNav(-1);event.stopPropagation()">&#8249;</button>
-  <img id="lightboxImg" src="" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria"/>
-  <button class="lightbox-nav next" onclick="lightboxNav(1);event.stopPropagation()">&#8250;</button>
-  <div class="lightbox-counter" id="lightboxCounter"></div>
-</div>
-
-<!-- CONTENIDO PRINCIPAL -->
-<main>
-  <div class="page-wrap">
-  <div class="page-grid">
-
-    <!-- COLUMNA IZQUIERDA: galería + descripción -->
-    <div class="left-col">
-
-      <div class="sec-galeria">
-        <div class="galeria-wrap"><div class="img-contador"><span id="imgActual">1</span> / 20</div><button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button><button class="galeria-expand" onclick="abrirLightbox(imgIndex)" title="Expandir">&#x26F6;</button><img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczO7FOl2oc817zHCWWUtI3mXa2lEglgcmtleJgedojT_udld33ggXkywYndYvE3xq4l3JpHPT3ZNKVXSOF-bbQCALpVbZuuATocUUWzU7kAOuLmZ0a6n=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager" fetchpriority="high"/></div>
+  <div class="modal-contenido">
+    <!-- COLUMNA IZQUIERDA -->
+    <div class="modal-columna-izq">
+      <div class="carrusel-wrapper">
+        <div class="carrusel-principal">
+          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczO7FOl2oc817zHCWWUtI3mXa2lEglgcmtleJgedojT_udld33ggXkywYndYvE3xq4l3JpHPT3ZNKVXSOF-bbQCALpVbZuuATocUUWzU7kAOuLmZ0a6n=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 20</div>
+          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
+          <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+              <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+              <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+            </svg>
+          </button>
+        </div>
         <div class="miniaturas-wrap"><div class="miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczO7FOl2oc817zHCWWUtI3mXa2lEglgcmtleJgedojT_udld33ggXkywYndYvE3xq4l3JpHPT3ZNKVXSOF-bbQCALpVbZuuATocUUWzU7kAOuLmZ0a6n=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 1" class="miniatura activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPwOKyw3Ojr4opOLR31aJl4UMi4gWrkMTtig_fAZHDdedsSpyPch0nO6bPQ2sq7BvB-k54XLaK21_CqiEpPwZXN4O9-6hsScp1qTq3Sa2dw7WYPCDO7=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 2" class="miniatura" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNUuEz7WZ3ZULF37b37LMAlbFclyOHBtIVo05HtcIKmEfm6EPUsBJGW7I8Kjr3Sdt_HyGeIwQXLqInM0UxvRxH4-jD6FdJDdrQ6qflBR-xERYw5EtAZ=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 3" class="miniatura" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNTdFZ2ij79hkBPdMZB0Ja56k2S0tEjMgStDfwk0fqsOWsyYNHqlL_5n_oaqFI9E1dv13PCXacQGOWdk40dHLx7VuZkw_FmJFTcyeICwpxb-pAGrR1V=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 4" class="miniatura" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMWb7x1r9issXujTLTlEwrrLIDjORKqCT50IVIAxYpZ3NDOwAOks1PzGCb207nTb0QBL92Alg3yIW6Ua4OZuSMGYfpWq0JrZU0B1c3yEg9r3zXHRBDj=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 5" class="miniatura" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMb4D1oM_42tYjbZZQSOF0UTgKsVUyBGuHDfxBuIYNfOKb9kJ7LTEmtWkgScIgBfu9pCB7C-g5-ylgIlktUVeYqexAlsBHD8kkFU-14ys7NbIP9DYZ_=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 6" class="miniatura" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP8tkxeKiTGWbgH4TsWz_LRkgyzqzHbWU3-kjhHEEmKUio3BusweTEX4A4B8dsZgo5l2S8J7ERQ4F8LZJkav8gtCcw3c6nw4oJlAhkEse81D3bM0D9N=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 7" class="miniatura" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOslJ8jspSsWHhsSPrZNa9_IIxIrT8wZPHrFFUM0llzhEgtt5TK5q8wNDzXW6SAQ4m16kzzSyY72m4YMS670LVQKN6mA_olodl1oQgyV9rdUaqSEYSf=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 8" class="miniatura" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNzc5ZdWxqPqDNWBn-jnRKG8nsdAHu-LTs8DXKFtgt4eEQFMa51vcFzyZOA84iRTgAVkGGP6m6L_MrOgE-hhunNK5LDQk7dDoF2_P6ZKBhVUZ1RxtSA=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 9" class="miniatura" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOgSbPQPPHfXB1aLSPSC85Dc0AfbJNuAyp3zvdPqR-ZlUhLPP5t8GrIseahu2Z3MM4vNucwiR__kRWq7EsW4MAGdduXRiYYTkaYLb2OQ2clLgP_9kVd=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 10" class="miniatura" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM48whLnxqajhsSwc11rThJ2ooJW9bh__Bg6sAv_F1D2V9UN55TPyvrfnDwNE4BP22psZ4u3zvgtze86WKPwaevFemyr6S3ceKR5OnzvYkyX4-yEwzy=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 11" class="miniatura" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOZ6clnwBlLe2OCpWquCph3xtmJGO625rXAVSJjJ99iWCQDmabnNYYZnZ3yIYJde04AyJ9-X5BiSnCFgf1fkysPWsDRqlfmolJOHTro92JJTLa7dsoH=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 12" class="miniatura" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNEq6O2NwcSXHTAOhlXKYOV93N6TXnhXp50BcvXQzK_TqV2P6eLVDnlfy9_E0tHdY2qkjDE6v1AazuP3WSbSKpbc7S2_kGV0eaSzdmlPc3ZkZM4LY0t=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 13" class="miniatura" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP4oAybvkwwB87O6IkdvxBt20EuaD5eKgxaxNJo9UglzYs_D4HEpGreM-9wDh1cda3GHDX9ScHFZWq3LNxYRI-FS3xQ1-1BXq4NIOTz02KHGZ_Wvxbg=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 14" class="miniatura" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPJtG4rFEKnAI4-mG8a3Eucl0S2rc4lXecxYq5Bp5-wOJiypUyrWRz3KnsKnIMZPUitSCwBNEfkp42hh16Bv_-4ZkQl8i8eLqPNuO-wpTzk8bgUfTsA=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 15" class="miniatura" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP_rQOsIK48GNwz6rkhOqI1AfS2TgGbSb5qcUcNKLhoHeXouokGwWHS45Eo0r8Yyf9O8wfnFRxKjJTaGlKOBV8-8RaphED9Dr4gnTw-G9C0j57lireR=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 16" class="miniatura" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPWKrG0quY3zWhA1DFzbVgeCJveKT05VaVXkwg5ihhRxvI7dwdiGrDBmywPQ3dXViOJkrUDJO2eQ-n9LAk8tvPRsFlfnMLktkwJG2pJv4RIs0-lnM0q=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 17" class="miniatura" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczONIDe9k9gl1aDH2jVECJ2ZSS2HOpkgtnvORCcNKq6fpYVeiptaY0LtcPdf-zfrbh0iBeU_HpUhDtBSf9PKHZaf9SaWKV3QtaZLDNIv2uSS1YZcFaci=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 18" class="miniatura" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPa0lz1cqhxq5QjyfZ2Nxfm5SFfyn4VUMgQhI_g0qpJiHTj6smQFjeMHfvFdtrxBefuvwQRgVJ2EPQ61GMkQxw9o5k43xOLJ5T7eS-P6PDqvlInMR5l=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 19" class="miniatura" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOWIY2jtWA7J5BXKAweCwRBii4OvQeSW8gJAlHjsTBlUoBUqIyYrE53iGBDyCafFZ-g47MAyTYYTxTScDtpQ3RkphCB0Mqg0jHtQpGKycWwMQDtpp83=w1200" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria foto 20" class="miniatura" onclick="irImg(19)" loading="lazy"/></div></div>
       </div>
-
-      <div class="sec-desc"><div class="content-section"><h2 class="section-title">PUNTOS CLAVE</h2><p class="content-text">Casa bien ubicada sobre vía  vehicular amplia y pavimentada, con reja antejardín, en fachada viga canal. Piso del antejardín en cerámica antideslizante. 17 años de construida. Sector de alta valorización. Escritura al día.</p></div><div class="content-section"><h2 class="section-title">DESCRIPCIÓN</h2><p class="content-text">Casa con buenos acabados, piso en porcelanato, Cieloraso en DriWall, molduras en yeso, carpintería marcos, puertas, closet, muebles empotrados y estudio en madera.  Fachaleta. Hierro forjado en pasamanos de la escalera. Divisiones en vídrio templado.</p></div></div>
-
+      
+      <div class="modal-bloque-info">
+        <h1>Casa en barrio Oriental</h1>
+        <p class="tipo">Casa</p>
+        <p class="modalCodigo"><strong>Código:</strong> 1081</p>
+        <p class="precio">$370.000.000</p>
+        <div class="chips"><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12V7a1 1 0 011-1h4a1 1 0 011 1v5M3 12h18M3 12v5h18v-5"/><path d="M13 6h4a1 1 0 011 1v5"/></svg>3 hab.</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16v4a4 4 0 01-4 4H8a4 4 0 01-4-4v-4z"/><path d="M6 12V5a2 2 0 012-2h1"/><circle cx="8" cy="3" r="1"/></svg>2 baños</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20M16 7l-1-4H9L8 7"/></svg>1 garaje</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 7l9-4 9 4M4 11v10M20 11v10M8 11v10M16 11v10M12 11v10"/></svg>2 pisos</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M6 7V5a2 2 0 014 0v2M14 7V5a2 2 0 014 0v2"/><circle cx="8" cy="14" r="2"/><circle cx="16" cy="14" r="2"/></svg>Cocina integral</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>95 m²</span></div>
+      </div>
     </div>
 
-    <!-- COLUMNA DERECHA: nombre, precio, chips, tabla, cta -->
-    <div class="prop-panel">
+    <!-- DIVISOR VERTICAL -->
+    <div class="modal-divisor-v"></div>
 
-      <div class="sec-nombre">
-        <span class="prop-tipo-badge">Casa</span>
-        <p class="prop-codigo">Código: 1081</p>
-        <h1 class="prop-nombre">Casa en barrio Oriental</h1>
-      </div>
-
-      <div class="sec-precio"><p class="prop-precio">$370.000.000</p></div>
-
-      <div class="sec-chips"><div class="chips"><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12V7a1 1 0 011-1h4a1 1 0 011 1v5M3 12h18M3 12v5h18v-5"/><path d="M13 6h4a1 1 0 011 1v5"/></svg>3 hab.</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16v4a4 4 0 01-4 4H8a4 4 0 01-4-4v-4z"/><path d="M6 12V5a2 2 0 012-2h1"/><circle cx="8" cy="3" r="1"/></svg>2 baños</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20M16 7l-1-4H9L8 7"/></svg>1 garaje</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 7l9-4 9 4M4 11v10M20 11v10M8 11v10M16 11v10M12 11v10"/></svg>2 pisos</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M6 7V5a2 2 0 014 0v2M14 7V5a2 2 0 014 0v2"/><circle cx="8" cy="14" r="2"/><circle cx="16" cy="14" r="2"/></svg>Cocina integral</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>95 m²</span></div></div>
-
-      <div class="sec-tabla"><div class="char-section"><h2 class="section-title">CARACTERÍSTICAS</h2><table class="char-table"><tbody><tr><td class="char-label">Ciudad</td><td class="char-val">Neiva</td></tr><tr><td class="char-label">Zona</td><td class="char-val">Oriente</td></tr><tr><td class="char-label">Estrato</td><td class="char-val">3</td></tr><tr><td class="char-label">Ubicación</td><td class="char-val">Medianera</td></tr><tr><td class="char-label">Área construida</td><td class="char-val">142</td></tr><tr><td class="char-label">Área lote</td><td class="char-val">95</td></tr><tr><td class="char-label">Piscina</td><td class="char-val">No tiene</td></tr><tr><td class="char-label">Administración</td><td class="char-val">No aplica</td></tr><tr><td class="char-label">Retorno de la inversión</td><td class="char-val">No aplica</td></tr></tbody></table></div></div>
-
-      <div class="sec-cta">
-        <div class="cta-group">
-          <a href="https://wa.me/573208762117?text=Hola%2C%20me%20interesa%20la%20propiedad%3A%20Casa%20en%20barrio%20Oriental%20%28C%C3%B3digo%201081%29"
-             class="cta-wa"
-             target="_blank"
-             rel="noopener noreferrer"
-             aria-label="Agendar visita por WhatsApp">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-            Agendar visita por WhatsApp
-          </a>
-          <button class="cta-share" onclick="compartir()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            Compartir
-          </button>
-          <p class="share-confirm" id="shareConfirm">¡Enlace copiado!</p>
-        </div>
-      </div>
-
+    <!-- COLUMNA DERECHA -->
+    <div class="modal-columna-der-nueva">
+      <div class="modal-subtitulo-nuevo">Características</div>
+      <table class="modal-tabla-caracteristicas">
+        <tbody>
+          <tr><td class="char-label">Ciudad</td><td class="char-val">Neiva</td></tr><tr><td class="char-label">Zona</td><td class="char-val">Oriente</td></tr><tr><td class="char-label">Estrato</td><td class="char-val">3</td></tr><tr><td class="char-label">Ubicación</td><td class="char-val">Medianera</td></tr><tr><td class="char-label">Área construida</td><td class="char-val">142</td></tr><tr><td class="char-label">Área lote</td><td class="char-val">95</td></tr><tr><td class="char-label">Piscina</td><td class="char-val">No tiene</td></tr><tr><td class="char-label">Administración</td><td class="char-val">No aplica</td></tr><tr><td class="char-label">Retorno de la inversión</td><td class="char-val">No aplica</td></tr>
+        </tbody>
+      </table>
+      
+      <div class="modal-subtitulo-nuevo">Puntos clave</div><p class="modal-texto">Casa bien ubicada sobre vía  vehicular amplia y pavimentada, con reja antejardín, en fachada viga canal. Piso del antejardín en cerámica antideslizante. 17 años de construida. Sector de alta valorización. Escritura al día.</p>
+      
+      <div class="modal-subtitulo-nuevo">Descripción</div><p class="modal-texto">Casa con buenos acabados, piso en porcelanato, Cieloraso en DriWall, molduras en yeso, carpintería marcos, puertas, closet, muebles empotrados y estudio en madera.  Fachaleta. Hierro forjado en pasamanos de la escalera. Divisiones en vídrio templado.</p>
     </div>
-
   </div>
-  </div>
-</main>
 
-<!-- FOOTER -->
-<footer class="site-footer">
-  <p>
-    <a href="https://icdeinmobiliaria.com">ICDE Negocios Inmobiliarios</a> &middot;
-    Calle 32 #6-67, Las Granjas, Neiva, Huila &middot;
-    <a href="tel:+573208762117">320 876 2117</a>
-  </p>
-  <p style="margin-top:.4rem">&copy; 2026 ICDE Negocios Inmobiliarios &middot; Neiva, Huila, Colombia</p>
-</footer>
+  <!-- ACCIONES -->
+  <div class="modal-acciones">
+    <a href="https://wa.me/573208762117?text=Hola%2C%20me%20interesa%20la%20propiedad%3A%20Casa%20en%20barrio%20Oriental%20%28C%C3%B3digo%201081%29"
+       class="modal-btn-whatsapp-nuevo"
+       target="_blank"
+       rel="noopener noreferrer"
+       aria-label="Agendar visita por WhatsApp">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.846.497 3.576 1.362 5.065L2 22l5.07-1.33A9.953 9.953 0 0012 22c5.522 0 10-4.477 10-10S17.521 2 11.999 2zm.001 18a7.963 7.963 0 01-4.184-1.188l-.3-.178-3.012.79.803-2.93-.196-.31A7.944 7.944 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/></svg>
+      Agendar visita por WhatsApp
+    </a>
+    <button class="cta-share" onclick="compartir()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      Compartir
+    </button>
+    <p class="share-confirm" id="shareConfirm">¡Enlace copiado!</p>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="cerrarLightbox(event)">
+  <button class="lightbox-close" onclick="cerrarLightbox()">&#x2715;</button>
+  <img id="lightboxImg" src="" alt="Casa en venta Oriente Neiva – ICDE Inmobiliaria"/>
+</div>
 
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczO7FOl2oc817zHCWWUtI3mXa2lEglgcmtleJgedojT_udld33ggXkywYndYvE3xq4l3JpHPT3ZNKVXSOF-bbQCALpVbZuuATocUUWzU7kAOuLmZ0a6n=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPwOKyw3Ojr4opOLR31aJl4UMi4gWrkMTtig_fAZHDdedsSpyPch0nO6bPQ2sq7BvB-k54XLaK21_CqiEpPwZXN4O9-6hsScp1qTq3Sa2dw7WYPCDO7=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNUuEz7WZ3ZULF37b37LMAlbFclyOHBtIVo05HtcIKmEfm6EPUsBJGW7I8Kjr3Sdt_HyGeIwQXLqInM0UxvRxH4-jD6FdJDdrQ6qflBR-xERYw5EtAZ=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNTdFZ2ij79hkBPdMZB0Ja56k2S0tEjMgStDfwk0fqsOWsyYNHqlL_5n_oaqFI9E1dv13PCXacQGOWdk40dHLx7VuZkw_FmJFTcyeICwpxb-pAGrR1V=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMWb7x1r9issXujTLTlEwrrLIDjORKqCT50IVIAxYpZ3NDOwAOks1PzGCb207nTb0QBL92Alg3yIW6Ua4OZuSMGYfpWq0JrZU0B1c3yEg9r3zXHRBDj=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMb4D1oM_42tYjbZZQSOF0UTgKsVUyBGuHDfxBuIYNfOKb9kJ7LTEmtWkgScIgBfu9pCB7C-g5-ylgIlktUVeYqexAlsBHD8kkFU-14ys7NbIP9DYZ_=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP8tkxeKiTGWbgH4TsWz_LRkgyzqzHbWU3-kjhHEEmKUio3BusweTEX4A4B8dsZgo5l2S8J7ERQ4F8LZJkav8gtCcw3c6nw4oJlAhkEse81D3bM0D9N=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOslJ8jspSsWHhsSPrZNa9_IIxIrT8wZPHrFFUM0llzhEgtt5TK5q8wNDzXW6SAQ4m16kzzSyY72m4YMS670LVQKN6mA_olodl1oQgyV9rdUaqSEYSf=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNzc5ZdWxqPqDNWBn-jnRKG8nsdAHu-LTs8DXKFtgt4eEQFMa51vcFzyZOA84iRTgAVkGGP6m6L_MrOgE-hhunNK5LDQk7dDoF2_P6ZKBhVUZ1RxtSA=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOgSbPQPPHfXB1aLSPSC85Dc0AfbJNuAyp3zvdPqR-ZlUhLPP5t8GrIseahu2Z3MM4vNucwiR__kRWq7EsW4MAGdduXRiYYTkaYLb2OQ2clLgP_9kVd=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM48whLnxqajhsSwc11rThJ2ooJW9bh__Bg6sAv_F1D2V9UN55TPyvrfnDwNE4BP22psZ4u3zvgtze86WKPwaevFemyr6S3ceKR5OnzvYkyX4-yEwzy=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOZ6clnwBlLe2OCpWquCph3xtmJGO625rXAVSJjJ99iWCQDmabnNYYZnZ3yIYJde04AyJ9-X5BiSnCFgf1fkysPWsDRqlfmolJOHTro92JJTLa7dsoH=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNEq6O2NwcSXHTAOhlXKYOV93N6TXnhXp50BcvXQzK_TqV2P6eLVDnlfy9_E0tHdY2qkjDE6v1AazuP3WSbSKpbc7S2_kGV0eaSzdmlPc3ZkZM4LY0t=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP4oAybvkwwB87O6IkdvxBt20EuaD5eKgxaxNJo9UglzYs_D4HEpGreM-9wDh1cda3GHDX9ScHFZWq3LNxYRI-FS3xQ1-1BXq4NIOTz02KHGZ_Wvxbg=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPJtG4rFEKnAI4-mG8a3Eucl0S2rc4lXecxYq5Bp5-wOJiypUyrWRz3KnsKnIMZPUitSCwBNEfkp42hh16Bv_-4ZkQl8i8eLqPNuO-wpTzk8bgUfTsA=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP_rQOsIK48GNwz6rkhOqI1AfS2TgGbSb5qcUcNKLhoHeXouokGwWHS45Eo0r8Yyf9O8wfnFRxKjJTaGlKOBV8-8RaphED9Dr4gnTw-G9C0j57lireR=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPWKrG0quY3zWhA1DFzbVgeCJveKT05VaVXkwg5ihhRxvI7dwdiGrDBmywPQ3dXViOJkrUDJO2eQ-n9LAk8tvPRsFlfnMLktkwJG2pJv4RIs0-lnM0q=w1200", "https://lh3.googleusercontent.com/pw/AP1GczONIDe9k9gl1aDH2jVECJ2ZSS2HOpkgtnvORCcNKq6fpYVeiptaY0LtcPdf-zfrbh0iBeU_HpUhDtBSf9PKHZaf9SaWKV3QtaZLDNIv2uSS1YZcFaci=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPa0lz1cqhxq5QjyfZ2Nxfm5SFfyn4VUMgQhI_g0qpJiHTj6smQFjeMHfvFdtrxBefuvwQRgVJ2EPQ61GMkQxw9o5k43xOLJ5T7eS-P6PDqvlInMR5l=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOWIY2jtWA7J5BXKAweCwRBii4OvQeSW8gJAlHjsTBlUoBUqIyYrE53iGBDyCafFZ-g47MAyTYYTxTScDtpQ3RkphCB0Mqg0jHtQpGKycWwMQDtpp83=w1200"];
@@ -851,13 +596,6 @@ function irImg(i) {
   document.getElementById('imgPrincipal').src = IMGS[imgIndex];
   var minis = document.querySelectorAll('.miniatura');
   minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
-  var activa = minis[imgIndex];
-  if (activa) {
-    var wrap = activa.closest('.miniaturas-wrap');
-    if (wrap) {
-      wrap.scrollTo({ left: activa.offsetLeft - (wrap.offsetWidth/2) + (activa.offsetWidth/2), behavior:'smooth' });
-    }
-  }
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }
@@ -868,31 +606,15 @@ function abrirLightbox(i) {
   irImg(i);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
-  document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   lb.classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
 function cerrarLightbox(e) {
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
-  if (e && e.currentTarget !== e.target && e.target.tagName === 'IMG') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
 }
-
-function lightboxNav(dir) {
-  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
-  document.getElementById('lightboxImg').src = IMGS[imgIndex];
-  document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
-}
-
-document.addEventListener('keydown', function(e) {
-  var lb = document.getElementById('lightbox');
-  if (!lb.classList.contains('open')) return;
-  if (e.key === 'ArrowRight') lightboxNav(1);
-  if (e.key === 'ArrowLeft') lightboxNav(-1);
-  if (e.key === 'Escape') cerrarLightbox({target: lb});
-});
 
 function compartir() {
   var url = window.location.href;
@@ -902,8 +624,6 @@ function compartir() {
       c.style.display = 'block';
       setTimeout(function(){ c.style.display = 'none'; }, 2000);
     });
-  } else if (navigator.share) {
-    navigator.share({ title: document.title, url: url });
   }
 }
 </script>

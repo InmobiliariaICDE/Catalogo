@@ -80,10 +80,8 @@
   --text-muted: #c4beb5;
   --text-faint: #7a7368;
   --border: rgba(212, 168, 75, 0.15);
-  --r: 16px;
+  --r: 0px;
   --green: #22c55e;
-  --shadow-gold: 0 10px 40px rgba(212, 168, 75, 0.06);
-  --shadow-glow: 0 0 25px rgba(212, 168, 75, 0.15);
 }
 
 *{
@@ -92,145 +90,144 @@
   box-sizing: border-box;
 }
 
-html{
-  scroll-behavior: smooth;
-}
-
 body{
   font-family: 'Outfit', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   line-height: 1.7;
-}
-
-/* ── HEADER ── */
-.site-header{
-  background: rgba(7, 6, 5, 0.85);
-  border-bottom: 1px solid var(--border);
-  padding: 0 2.5rem;
-  height: 70px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 200;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  justify-content: center;
+  padding: 20px;
 }
 
-.site-header img{
-  height: 38px;
-  display: block;
-}
-
-.back-btn{
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-muted);
-  text-decoration: none;
-  font-size: 13.5px;
-  font-weight: 600;
-  border: 1px solid var(--border);
-  padding: 8px 16px;
-  border-radius: 10px;
-  transition: all 0.3s;
-  white-space: nowrap;
-  background: rgba(212, 168, 75, 0.02);
-}
-
-.back-btn:hover{
-  color: var(--gold);
-  border-color: var(--gold);
-  background: var(--gold-dim);
-  transform: translateY(-1px);
-}
-
-/* ── BREADCRUMB ── */
-.breadcrumb{
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem 1.5rem 0.5rem;
-  font-size: 12.5px;
-  color: var(--text-faint);
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.breadcrumb a{
-  color: var(--text-faint);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.breadcrumb a:hover{
-  color: var(--gold);
-}
-
-/* ── GRID DESKTOP ── */
-.page-wrap{
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1.5rem 1.5rem 3rem;
-}
-
-.page-grid{
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
-  gap: 2rem;
-  width: 100%;
-  align-items: start;
-}
-
-/* ── COLUMNA IZQUIERDA ── */
-.left-col{
+/* ── MODAL LAYOUT (Usado como contenedor principal) ── */
+.modal{
+  background: linear-gradient(144deg, rgb(28 22 15 / 97%) 0%, rgb(4 4 4 / 99%) 60%);
+  border: 1px solid rgba(212,168,75,0.18);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset, 0 32px 80px rgba(0,0,0,0.7), 0 0 60px rgba(212,168,75,0.06);
+  width: 95vw;
+  max-width: 980px;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  min-width: 0;
+  border-radius: 0 !important;
+  overflow: hidden;
 }
 
-/* ── GALERÍA ── */
-.galeria-wrap{
+.modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: rgba(212,168,75,0.7);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.modal::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 60%; height: 40%;
+  background: radial-gradient(ellipse at 30% 0%, rgba(212,168,75,0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.modal-close{
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 20px;
+  cursor: pointer;
+  border: 1px solid rgb(255 255 255 / 30%);
+  background: rgb(0 0 0 / 50%);
+  color: rgb(255 255 255 / 90%);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  z-index: 10;
+  transition: all 0.3s;
+}
+
+.modal-close:hover{
+  background: var(--gold);
+  color: #000;
+  border-color: var(--gold);
+}
+
+.modal-contenido{
+  display: flex;
+  flex-direction: row;
   position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  overflow: hidden;
+  z-index: 2;
+}
+
+.modal-columna-izq{
+  flex: 1 1 420px;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+}
+
+.modal-divisor-v{
+  width: 1px;
+  flex-shrink: 0;
+  background: rgba(212,168,75,0.2);
+}
+
+.modal-columna-der-nueva{
+  flex: 1;
+  padding: 28px 24px 20px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 75vh;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212,168,75,0.3) transparent;
+}
+
+.modal-columna-der-nueva::-webkit-scrollbar{ width: 3px; }
+.modal-columna-der-nueva::-webkit-scrollbar-thumb{ background: rgba(212,168,75,0.3); border-radius: 2px; }
+
+/* ── GALERÍA ── */
+.carrusel-wrapper{
+  position: relative;
   width: 100%;
-  aspect-ratio: 16/10;
-  box-shadow: var(--shadow-gold);
+}
+
+.carrusel-principal{
+  width: 100%;
+  height: 300px;
+  position: relative;
+  background: #000;
 }
 
 .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
-  transition: transform 0.5s ease;
 }
 
-.galeria-wrap:hover .galeria-img{
-  transform: scale(1.02);
-}
-
-.img-contador{
+.carrusel-counter{
   position: absolute;
   top: 15px;
   left: 15px;
   background: rgba(7, 6, 5, 0.8);
   border: 1px solid var(--border);
-  backdrop-filter: blur(10px);
   color: var(--gold);
   font-size: 12.5px;
   font-weight: 600;
   padding: 4px 12px;
   border-radius: 20px;
-  z-index: 2;
 }
 
 .galeria-nav{
@@ -239,7 +236,6 @@ body{
   transform: translateY(-50%);
   background: rgba(7, 6, 5, 0.7);
   border: 1px solid var(--border);
-  backdrop-filter: blur(5px);
   color: #fff;
   width: 44px;
   height: 44px;
@@ -250,80 +246,50 @@ body{
   align-items: center;
   justify-content: center;
   transition: all 0.3s;
-  z-index: 2;
 }
 
 .galeria-nav:hover{
   background: var(--gold);
   color: #000;
-  border-color: var(--gold);
-  transform: translateY(-50%) scale(1.08);
 }
 
 .galeria-nav.prev{ left: 15px; }
 .galeria-nav.next{ right: 15px; }
 
-.galeria-expand{
+.carrusel-expand{
   position: absolute;
   bottom: 15px;
   right: 15px;
   background: rgba(7, 6, 5, 0.7);
   border: 1px solid var(--border);
-  backdrop-filter: blur(5px);
   color: #fff;
   width: 40px;
   height: 40px;
   border-radius: 10px;
   cursor: pointer;
-  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2;
-  transition: all 0.3s;
-}
-
-.galeria-expand:hover{
-  background: var(--gold);
-  color: #000;
-  border-color: var(--gold);
-  transform: scale(1.08);
 }
 
 .miniaturas-wrap{
-  margin-top: 0.75rem;
+  padding: 10px;
   overflow-x: auto;
-  padding-bottom: 6px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--gold-border) transparent;
-}
-
-.miniaturas-wrap::-webkit-scrollbar{
-  height: 4px;
-}
-
-.miniaturas-wrap::-webkit-scrollbar-track{
-  background: transparent;
-}
-
-.miniaturas-wrap::-webkit-scrollbar-thumb{
-  background: var(--gold-border);
-  border-radius: 4px;
+  background: rgba(0,0,0,0.2);
 }
 
 .miniaturas{
   display: flex;
-  gap: 0.75rem;
+  gap: 8px;
 }
 
 .miniatura{
-  width: 100px;
-  height: 68px;
+  width: 60px;
+  height: 45px;
   object-fit: cover;
-  border-radius: 10px;
-  flex-shrink: 0;
+  border-radius: 4px;
   cursor: pointer;
-  opacity: 0.45;
+  opacity: 0.5;
   transition: all 0.3s;
   border: 2px solid transparent;
 }
@@ -331,7 +297,154 @@ body{
 .miniatura.activa, .miniatura:hover{
   opacity: 1;
   border-color: var(--gold);
-  transform: translateY(-2px);
+}
+
+/* ── BLOQUE INFO ── */
+.modal-bloque-info{
+  padding: 20px;
+}
+
+.modal-bloque-info h1{
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+.modal-bloque-info .tipo{
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.modal-bloque-info .modalCodigo{
+  color: #c0c0c0;
+  font-size: 12px;
+}
+
+.modal-bloque-info .precio{
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--green);
+  margin: 8px 0;
+}
+
+.chips, .modal-etiquetas{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.chip, .modal-etiqueta-pill{
+  background: rgba(212,168,75,0.05);
+  border: 1px solid rgba(212,168,75,0.15);
+  color: #fff;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip svg, .modal-etiqueta-pill svg{
+  color: var(--gold);
+}
+
+/* ── COLUMNA DERECHA ── */
+.modal-subtitulo-nuevo{
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+  border-left: 3px solid var(--gold);
+  padding-left: 8px;
+}
+
+.modal-tabla-caracteristicas{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.modal-tabla-caracteristicas td{
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.char-label{
+  color: #a0a0a0;
+}
+
+.char-val{
+  color: #fff;
+  text-align: right;
+  font-weight: 500;
+}
+
+.modal-texto{
+  color: #d0d0d0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ── ACCIONES ── */
+.modal-acciones{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 18px 20px 20px;
+  border-top: 1px solid rgba(212,168,75,0.08);
+  position: relative;
+  z-index: 2;
+}
+
+.modal-btn-whatsapp-nuevo{
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background-color: #d4a84b;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.modal-btn-whatsapp-nuevo:hover{
+  background-color: var(--gold-hover);
+}
+
+.cta-share{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(212,168,75,0.3);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.3s;
+}
+
+.cta-share:hover{
+  border-color: var(--gold);
+  background: var(--gold-dim);
+}
+
+.share-confirm{
+  font-size: 12px;
+  color: var(--gold);
+  display: none;
 }
 
 /* ── LIGHTBOX ── */
@@ -353,16 +466,14 @@ body{
   max-width: 92vw;
   max-height: 85vh;
   object-fit: contain;
-  border-radius: 12px;
-  box-shadow: 0 10px 50px rgba(0,0,0,0.8);
+  border-radius: 0;
 }
 
 .lightbox-close{
   position: absolute;
   top: 20px;
   right: 24px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.1);
   color: #fff;
   width: 44px;
   height: 44px;
@@ -372,372 +483,29 @@ body{
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s;
-}
-
-.lightbox-close:hover{
-  background: var(--gold);
-  color: #000;
-  border-color: var(--gold);
-}
-
-.lightbox-nav{
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: #fff;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s;
-}
-
-.lightbox-nav:hover{
-  background: var(--gold);
-  color: #000;
-  border-color: var(--gold);
-}
-
-.lightbox-nav.prev{ left: 24px; }
-.lightbox-nav.next{ right: 24px; }
-
-.lightbox-counter{
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: var(--text-muted);
-  font-size: 14px;
-  font-weight: 600;
-  background: rgba(7, 6, 5, 0.8);
-  padding: 6px 16px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-}
-
-/* ── PANEL DERECHO ── */
-.prop-panel{
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 2.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  box-shadow: var(--shadow-gold);
-  position: sticky;
-  top: 90px;
-  min-width: 0;
-}
-
-.prop-tipo-badge{
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--gold);
-  background: var(--gold-dim);
-  border: 1px solid var(--gold-border);
-  border-radius: 6px;
-  padding: 0.35rem 0.8rem;
-  display: inline-block;
-  margin-bottom: 0.25rem;
-}
-
-.prop-codigo{
-  font-size: 13px;
-  color: var(--text-faint);
-  font-weight: 500;
-}
-
-.prop-nombre{
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.35;
-}
-
-.prop-precio{
-  font-size: 2.2rem;
-  font-weight: 800;
-  color: var(--green);
-  text-shadow: 0 0 30px rgba(34, 197, 94, 0.18);
-  line-height: 1.1;
-  margin: 0.25rem 0;
-}
-
-/* ── CHIPS ── */
-.chips{
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-}
-
-.chip{
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 13px;
-  color: var(--text-muted);
-  transition: all 0.3s;
-}
-
-.chip:hover{
-  border-color: var(--gold-border);
-  background: var(--gold-dim);
-  transform: translateY(-2px);
-}
-
-.chip svg{
-  flex-shrink: 0;
-  color: var(--gold);
-}
-
-/* ── CTA ── */
-.cta-group{
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.cta-wa{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  background: linear-gradient(135deg, var(--gold), #b88d32);
-  color: #000;
-  font-weight: 700;
-  font-size: 15px;
-  padding: 14px 20px;
-  border-radius: 12px;
-  text-decoration: none;
-  transition: all 0.3s;
-  box-shadow: 0 4px 20px rgba(212, 168, 75, 0.2);
-}
-
-.cta-wa:hover{
-  transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(212, 168, 75, 0.35);
-  filter: brightness(1.1);
-}
-
-.cta-share{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  font-size: 14px;
-  padding: 12px 20px;
-  border-radius: 12px;
-  cursor: pointer;
-  background: transparent;
-  transition: all 0.3s;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 600;
-}
-
-.cta-share:hover{
-  color: var(--gold);
-  border-color: var(--gold);
-  background: var(--gold-dim);
-  transform: translateY(-1px);
-}
-
-.share-confirm{
-  font-size: 12.5px;
-  color: var(--gold);
-  text-align: center;
-  display: none;
-  font-weight: 600;
-  animation: fadeIn 0.3s;
-}
-
-@keyframes fadeIn{
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ── CARACTERÍSTICAS / CONTENIDO ── */
-.char-section, .content-section{
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 2rem;
-  box-shadow: var(--shadow-gold);
-  transition: all 0.3s;
-}
-
-.char-section:hover, .content-section:hover{
-  border-color: rgba(212, 168, 75, 0.25);
-}
-
-.section-title{
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.section-title::before{
-  content: '';
-  width: 4px;
-  height: 16px;
-  background: var(--gold);
-  border-radius: 2px;
-  display: inline-block;
-}
-
-.char-table{
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.char-table tr{
-  border-bottom: 1px solid var(--border);
-}
-
-.char-table tr:last-child{
-  border-bottom: none;
-}
-
-.char-label{
-  color: var(--text-muted);
-  padding: 0.8rem 0;
-  font-weight: 500;
-}
-
-.char-val{
-  color: var(--text);
-  font-weight: 600;
-  text-align: right;
-  padding: 0.8rem 0;
-}
-
-.content-text{
-  font-size: 14.5px;
-  color: var(--text-muted);
-  line-height: 1.8;
-}
-
-/* ── FOOTER ── */
-.site-footer{
-  text-align: center;
-  padding: 2.5rem 1rem;
-  font-size: 13px;
-  color: var(--text-faint);
-  border-top: 1px solid var(--border);
-  margin-top: 3rem;
-  background: rgba(7, 6, 5, 0.4);
-}
-
-.site-footer p{
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.site-footer a{
-  color: var(--text-faint);
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.2s;
-}
-
-.site-footer a:hover{
-  color: var(--gold);
+  border: none;
 }
 
 /* ── MÓVIL ── */
-@media(max-width: 900px){
-  .page-grid{
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
+@media(max-width: 768px){
+  body{
+    padding: 10px;
   }
-  .prop-panel{
-    position: static;
-  }
-}
-
-@media(max-width: 680px){
-  .page-wrap{
-    padding: 1.25rem 1rem;
-  }
-  .site-header{
-    padding: 0 1.25rem;
-    height: 60px;
-  }
-  .site-header img{
-    height: 32px;
-  }
-  
-  /* Reordenación en móvil con flex-direction: column */
-  .page-grid{
-    display: flex;
+  .modal-contenido{
     flex-direction: column;
-    gap: 1.25rem;
   }
-  .left-col, .prop-panel{
-    display: contents;
+  .modal-columna-izq{
+    max-width: 100%;
+    flex: none;
   }
-  
-  .sec-nombre{ order: 1; }
-  .sec-precio{ order: 2; }
-  .sec-galeria{ order: 3; }
-  .sec-chips{ order: 4; }
-  .sec-tabla{ order: 5; }
-  .sec-desc{ order: 6; }
-  .sec-cta{ order: 7; }
-  
-  .galeria-wrap{
-    aspect-ratio: 4/3;
+  .modal-divisor-v{
+    display: none;
   }
-  
-  .miniatura{
-    width: 76px;
-    height: 52px;
+  .modal-columna-der-nueva{
+    max-height: none;
+    padding: 16px;
   }
-  
-  .chips{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  
-  .chip{
-    flex: 1 1 calc(50% - 0.5rem);
-    justify-content: center;
-  }
-  
-  .prop-nombre{
-    font-size: 1.35rem;
-  }
-  
-  .prop-precio{
-    font-size: 2rem;
-    text-align: center;
-  }
-  
-  .cta-wa{
-    font-size: 16px;
+  .modal-acciones{
     padding: 16px;
   }
 }
@@ -746,100 +514,77 @@ body{
 <body>
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PH2B85PT" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
-<!-- HEADER -->
-<header class="site-header">
-  <a href="https://icdeinmobiliaria.com" aria-label="ICDE Inmobiliaria – inicio">
-    <img src="https://i.imgur.com/XgfIulc.png" alt="ICDE Negocios Inmobiliarios" height="38"/>
-  </a>
-  <a href="https://icdeinmobiliaria.com" class="back-btn">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-    Ver catálogo
-  </a>
-</header>
+<div class="modal">
+  <!-- Botón cerrar actúa como volver al catálogo -->
+  <a class="modal-close" href="https://icdeinmobiliaria.com" aria-label="Volver al catálogo">&#215;</a>
 
-<!-- BREADCRUMB -->
-<nav class="breadcrumb" aria-label="Ruta de navegación">
-  <a href="https://icdeinmobiliaria.com">Inicio</a>
-  <span>›</span>
-  <a href="https://icdeinmobiliaria.com/">Casa campestre en conjuntos en Neiva</a>
-  <span>›</span>
-  <span>Casa campestre en conjunto Parrots - cruce a Rivera</span>
-</nav>
-
-<!-- LIGHTBOX -->
-<div class="lightbox" id="lightbox" onclick="cerrarLightbox(event)">
-  <button class="lightbox-close" onclick="cerrarLightbox()">&#x2715;</button>
-  <button class="lightbox-nav prev" onclick="lightboxNav(-1);event.stopPropagation()">&#8249;</button>
-  <img id="lightboxImg" src="" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria"/>
-  <button class="lightbox-nav next" onclick="lightboxNav(1);event.stopPropagation()">&#8250;</button>
-  <div class="lightbox-counter" id="lightboxCounter"></div>
-</div>
-
-<!-- CONTENIDO PRINCIPAL -->
-<main>
-  <div class="page-wrap">
-  <div class="page-grid">
-
-    <!-- COLUMNA IZQUIERDA: galería + descripción -->
-    <div class="left-col">
-
-      <div class="sec-galeria">
-        <div class="galeria-wrap"><div class="img-contador"><span id="imgActual">1</span> / 44</div><button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button><button class="galeria-expand" onclick="abrirLightbox(imgIndex)" title="Expandir">&#x26F6;</button><img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczN5CwAFaefd-dywRogGs5fjm2S3mG1RrtC7WjLTGiPIZ9uYnclox23M6FUSMqsCBlTAfzoe2y9CKF4FiBe0GdOSbkBPNiM2G-g00eOWOD54AfKOdWmo=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager" fetchpriority="high"/></div>
+  <div class="modal-contenido">
+    <!-- COLUMNA IZQUIERDA -->
+    <div class="modal-columna-izq">
+      <div class="carrusel-wrapper">
+        <div class="carrusel-principal">
+          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczN5CwAFaefd-dywRogGs5fjm2S3mG1RrtC7WjLTGiPIZ9uYnclox23M6FUSMqsCBlTAfzoe2y9CKF4FiBe0GdOSbkBPNiM2G-g00eOWOD54AfKOdWmo=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 44</div>
+          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
+          <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+              <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+              <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+            </svg>
+          </button>
+        </div>
         <div class="miniaturas-wrap"><div class="miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczN5CwAFaefd-dywRogGs5fjm2S3mG1RrtC7WjLTGiPIZ9uYnclox23M6FUSMqsCBlTAfzoe2y9CKF4FiBe0GdOSbkBPNiM2G-g00eOWOD54AfKOdWmo=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 1" class="miniatura activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOKsU-0z-oDfZzKPxNcFa0tLDRxODjI2LXmu5DqkP-i6-1bW7KL6xOBQhEMElLuP8cufnJDkwRktacYOioN5fxXltMZBr_wFjEdZs9cMRU9ipqtr34X=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 2" class="miniatura" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP8Xt8WpA9Eb-9MjfD4f04g4MzAFYdyRZwoYwMr_eMkkYkno4LcYBIe9b3FNWgOljbkkLek4FcLi-PNVTKFVdQppoAUrhIBBqNFI9MIjYIWHwYS_GQg=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 3" class="miniatura" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOkkVwKR-l7WmD7gi6IjeM5rNAZ35MYRzSclZlZlIlMU_FKq49HlQzTKTtgmHt-Vys83774XFDpd0CxOH9xXOw9s0jZYkCMbEhxcM0B3K5yRsj3D85V=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 4" class="miniatura" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPMe1cFqB0s1IR60bz_wB_BCUuX4oJas4vzJpNswK80HJi1sDhc6UIkKQbtvnDTB64H6ONhSiDgxkxOwuImrVj5ciwow0Vyrs4ACrkZOuNGCojkmEyp=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 5" class="miniatura" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMVdgrJmQKhGTXL1_iBYoe4Hnkpc51ISEBFmOdHEAvAMHqa6Wz81pf4JJjqDVXJoteMbSIUKMK_lhKiKD50IgLsE-bhlkRlAK6iwJ4u9dHXdkIHp4V3=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 6" class="miniatura" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN9M01MupEr18WetVDfN3X9eEHC_muGIhL9EX4khkef1taBMGUk5NcKTE4ODkNHCrcIUgOseLlhQCM6U9aa9-ARJmMLT8Z0Wnnq_A5sxK_d-_xTUQuQ=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 7" class="miniatura" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMqxD9H-33Uhxnw1RW9_0qLiS09B_mPbrF2KzgalgegXrzir4LnG5IDVHfNbPduI4b-3WxTVGf5yxa049vZgAYW--Uf3QZ9zLD92a5IdITNOU_16luv=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 8" class="miniatura" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMt4v8wakoQpGAHfI-atVDLGcY6ZiEGauFlF7BcGxntOIebtCX14e5z9O0zrqhXRbcI5sXyheM2YeUirRlbbtFGyuiA43JaBGVsK7sh_WQ4_LyakBJ1=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 9" class="miniatura" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNmSYb-_uY6H9G2nFdKnRyLeha_igC_L95FrOMRsoCVwxUFE5pEq-K8QUgGDYc7sCdtsnCmPK3wTUbXOf0vrJbdQIdtJ-HkpQqYbwGKQrXuPpCbi8Ak=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 10" class="miniatura" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMY18bEdWKPEdwedbvb56eLPhnOoQPfQhwxjFrHDQJYytS4fgaaU1Po5NfAcy1HG4pm42YsP9N8EfMcq5DGHrZnWPR19_a0h0thN7uSXGFw-8cjW-HP=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 11" class="miniatura" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPvfRlKzNm63N9AukW8LoAVdSmSE77oCS73_NAygAXzK0NMvcfcmNDHdTq3YCdsZaGiqBVrUVRTpQGpYF7m2eVCwsliy-vdIryvsUr6Q8h_E8oE75sN=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 12" class="miniatura" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczODHv97gPBVk8KZF80ffirvPEeJYgXrivRCuX43wQrqM6z8cZi78479SXvdceMD63qrXMKTSvNJENRiTuHDmFUROhTJC6OF8clpGtMIIvdXhx5RkO7T=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 13" class="miniatura" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczONmn30OiCbnR8glLivJHx88FVhsOvUwadbPenhMEdc2Im3kaF6eUl4Gv2o1Nn7nga8oTVKiXZ7WEK9Fu3wRDso2IpyzerJ5USP91ZHL3hAUA3m7ahP=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 14" class="miniatura" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOI7telvlWcsrQdZiyxG9KpPrI_Onm7bqF-ePvsdYyVXF0rh6aXOvyPdVTdik9P5lFguFycQWkZ0h9EBrSDX7kwpf9JIcu8jQetrNkWCP8UAoOPD1-m=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 15" class="miniatura" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNwztQcE56tkgIZwR-vLn0kNRaw9u3IQbbAQl-Hl7Tl7JDMPd6WmRIeayYp7IzHj9EVVBX6EZIMDqz-xacHRcue064okK9qwUlqWMvctV-bSdCmtwK3=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 16" class="miniatura" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMvxjGPsDh8sbz5HMiCdbT48ef5qa4QWQzpnkIfcGlmp4HcdsOTQ0aN4IOtccTsWG6m701LLrMS2FrUnTVrTT5ZqKNDK3rc_J5HQWg286-3e_OX_Bk4=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 17" class="miniatura" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOUqF0Vfoymniff6ePZmwQBBCBJmxIc6gwhsCiMX9Uuh5T1a9drtKo3jGEZzp7W5Vv-Y4ajHtBoe0ADDwtjieWa5YP_aI62_hD2C51zWQPyuh3BwB1G=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 18" class="miniatura" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPsSfQ0WwhsCdWch2RhP5NrpZcVsBcnCdAvcJ28-TTnGYg-fuIUXnPJ-dyWWdo0xOZGDsoPCzr6ITqwqCvIVjI8AQaVJTbqKvjVusp_8Qln0XxvT-HB=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 19" class="miniatura" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPcM48jgGjacs37TBH6ULKFQvklkLBVxd2ZfXAA2Q18aE522nh4at0MluMN_GPRGTVoaHa5KqPXRqKnMM3maM12XbH8twIaulnYh0x3eh6nXn_0owt6=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 20" class="miniatura" onclick="irImg(19)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMK0x4Uyhn8DLb-EHHViWAVSgeIx91zc8I5rfxcUy29f81bsjGEtcza7S23Fga8aeIQ1MMNpdDgrlOFN-jWXmfbTC508n-zNd1yTprZyY4-PkXLQuJY=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 21" class="miniatura" onclick="irImg(20)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNUZX0nNzaPSdjt-v7BhqpZpmw507cEwExy-W5Ui-WRpY51WrLfQO9VPwIfyxnqn3kbkv-HUMwRJPLTx2O-nIf2dkr32NkLQH5FZdWvLVqf3EtA1TDZ=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 22" class="miniatura" onclick="irImg(21)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNZhNxPjQNSoizkcJZx-lCz1BhDW2JMug_5MG9zMUf6B-CmJlOX0Jk8m9uN1wwhjsDd9WIH-uEt4q43-4G4Xz7Q3X9bZtZG3uO-ACio26TYRF6oKIUZ=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 23" class="miniatura" onclick="irImg(22)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMY00VyZ2aVmL_g__crBoDqTZ8unithtdhwVV06csc3zumiiLp_9H3Y_0dGfYznxYvlVlz4-2MKcI5CI1DZ57iZDq325HhvvZSLYsP_pU5tS5DUsXEp=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 24" class="miniatura" onclick="irImg(23)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOGSWa1BzfXnx4nRrnWLTqltfkruQ3p-18yhyPZLVKJCSKBH69c-JrUvJlOtrF7S8DffNBgmp0L4kOIigaOcCCTzkFypuwmk0JVByBuXq2mgz7hAne0=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 25" class="miniatura" onclick="irImg(24)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNes3qsQYx0dMlKgk1Q8bk2uygRh3tK0C5M1X0CaNrNnTRNrokdVn2fGBhjDOdtXoOBLbWqZnago7CGb6ebWxsvgVBYrjUaSuRRR2_lCPn7RFFbq9Y2=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 26" class="miniatura" onclick="irImg(25)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNlhIv5Cly04S3trzX2zhFjJfTko35KCOW1gsR6CKKhugl2_GbnpptOTOfhdUG4uo3IW5thTQ3WTSfAdBcpNuXLf7FDd3Hv235fuZvJpp3lnlXXpDQZ=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 27" class="miniatura" onclick="irImg(26)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMBhQzDm6bNkwU3Bf13hqFDRenc8TGzhE2N_1b6RHKNYSmmY_cbfD6G6mNsvPO8FYIs4EwxOCiPpoGQDRJo47u9N1WhisRZ2gFpcLoXIwXxq9iCyT9O=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 28" class="miniatura" onclick="irImg(27)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPPc_fGs4bSIu6T11qQCfM_b4JDb47y8UvAN5JC2i809HDtbOYgJ8mxDjeXGRAftvzCVZNJPOMf4dkvPTGZFZiPjPE6uEPEmCNVCAOSGuZqLDs3ebLh=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 29" class="miniatura" onclick="irImg(28)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOFeSf1Z7k0E3JaHrbDvfz6GRL5pcywkw4DWBdhM0JxQLgcQsG-2S6byZ3ooVPpN3MWc8asObhQgoIqlusWCkSx3v3U_eKUeqMliFce3QzS6nMl2nfb=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 30" class="miniatura" onclick="irImg(29)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMtGiAShXl15hZkrwa2DhxqOubM-Jwi2PkfLaEmKgaFypS_nFFCrUMoKzEJKnT0ZLSOAFHTJWiFLy-jnJQkK1aj3_q6gVCNl4YGSGr1oetdCF9STT26=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 31" class="miniatura" onclick="irImg(30)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNgB-y1dPFx_QdP0q4bO63RHsQJg61VMdAQJ5EWhP_NrDrZtpMOZ4bI_It52tEIgS4D6CJbGXWa8t4OAez8xK7C3GYDxxblahkAH9by8B_Ch3WGIjXs=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 32" class="miniatura" onclick="irImg(31)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOk0uc9kMecFZ72GnlA1xxffsQJJBXc6AHqel0tSWM-RwFoySy4UH2lwREofpnuo0O6Qn-11pWQ1ZOn3q71lcbwrhFHNmPDn92hfxpI6uA1kXThY7xM=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 33" class="miniatura" onclick="irImg(32)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMy85ZDNit0t6uOUmyudMXHz_X8ri5jrGEICvXC9OD3Jd5R-3BTn9bHSw6SC-ZYKgPo5MCS7bNlcOpqsg7OaeV1qZBJfp4ARMlhV9abpmKmK4ieKCN2=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 34" class="miniatura" onclick="irImg(33)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMbcdCxFp7CpprnVkb3nR5b3JyStvxt2swKgP7v_Vk7ySUe5YTuqjOMcQrQ_XQr4Pm3WEOqxLOuSJVMsuVEBna1miI99lqbVXBZLPw9luEW1kD5fUMo=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 35" class="miniatura" onclick="irImg(34)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOcxPgq_8rkZjfuYqrJspaqcwdQpuWM4E39PjNqmY6Hli74srw7CWqXT0odiULO_BGViITzBxO31_Ln0HYDdH5vUKh6szeCe9-UzTUm2M3glrjB9zAe=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 36" class="miniatura" onclick="irImg(35)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNjt4Uv7HYFL0e5Zvdc4WecNlhgt4LeAYE--FtezWXkYEg97aYmKFIztoHqGGOI0goAqfyOiM0deM4pKC-62FuXHMDSU7huK9m1Hn1mlocl3O9NWTeb=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 37" class="miniatura" onclick="irImg(36)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN2nVH0t7wEnsUvnsD9PXEloll-EWfGoRhknbweAzFBPQV11yaPBz8TcFVHnYVoS06k4qkm6wWb30OqvZ1_MJK5ZsK49nUcDC3T7iQo3wS0LoL2UuQ9=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 38" class="miniatura" onclick="irImg(37)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP2IUn2jkWBWy4XuDSDc8pKU9iAwuix9EFngQbbW0G38dzmMnRLnZRLUWF4x-ZFcF6UubJ8cnkLVSBdhOt8_JS47rQz3cFeeuCvTjXrNBjMGw8uE3XI=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 39" class="miniatura" onclick="irImg(38)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMKvbuYlPGMJ5TQa_qZVGC7SveKnT7EBtSKLKFWIj1Bc2jzrXXzv0km4mq6o5GYYR8pVQxDIGl6SYZ8MTOib1xwhtOSL5WfOtWZI_DO27qfmaJWbBu5=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 40" class="miniatura" onclick="irImg(39)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO8wBvvL9Ty9PAc5ZBc1XbR2LcYNn3xwDOfhb-fI1bZmq5T3nEmLIEdkxhnOHw_-B2uNL_T_Of8ijmSrwQpAY5lZKZA6lItG66-1nL82j2WyC3slFd9=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 41" class="miniatura" onclick="irImg(40)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMcbi8uhL0zJROxsTrqiI9Z5sVDCPlwHh0s5f8ugnDeqb8PH2r8MyEfhDsHTluwFb1LVvf6VKoa4mLiTsnXI9eOxM8jFpSeJTjC85O0xefEh90eZ1Ok=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 42" class="miniatura" onclick="irImg(41)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPtDeeevIdS5a0QmJAqlA8auPLIWO3m0dpA5RqCqNXDlRwTzVKVdSU2KVQ_2tZNI6-s7e-QmPnDgnIX07o1dHoMQBjW3w4tqOMU33fWYaKdtd0UslH8=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 43" class="miniatura" onclick="irImg(42)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPEt1NUmxgnctPx9H1rRxOhPFCFhc9D2Ne3oowFvPTTPm0WWJ-hN0xJ5SJgFUK_aZR-NVspLRNMv70uQqYz1JF3C6pWKguJ4T8jcmk2r9iuQxLgnCic=w1200" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria foto 44" class="miniatura" onclick="irImg(43)" loading="lazy"/></div></div>
       </div>
-
-      <div class="sec-desc"><div class="content-section"><h2 class="section-title">PUNTOS CLAVE</h2><p class="content-text">Buenos acabados. Cuenta con piscina privada. Escritura al día.</p></div></div>
-
+      
+      <div class="modal-bloque-info">
+        <h1>Casa campestre en conjunto Parrots - cruce a Rivera</h1>
+        <p class="tipo">Casa campestre en conjunto</p>
+        <p class="modalCodigo"><strong>Código:</strong> 253</p>
+        <p class="precio">$1.000.000.000</p>
+        <div class="chips"><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12V7a1 1 0 011-1h4a1 1 0 011 1v5M3 12h18M3 12v5h18v-5"/><path d="M13 6h4a1 1 0 011 1v5"/></svg>4 hab.</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16v4a4 4 0 01-4 4H8a4 4 0 01-4-4v-4z"/><path d="M6 12V5a2 2 0 012-2h1"/><circle cx="8" cy="3" r="1"/></svg>3 baños</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20M16 7l-1-4H9L8 7"/></svg>1 garaje</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 7l9-4 9 4M4 11v10M20 11v10M8 11v10M16 11v10M12 11v10"/></svg>1 pisos</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M6 7V5a2 2 0 014 0v2M14 7V5a2 2 0 014 0v2"/><circle cx="8" cy="14" r="2"/><circle cx="16" cy="14" r="2"/></svg>Cocina integral</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>2400 m²</span></div>
+      </div>
     </div>
 
-    <!-- COLUMNA DERECHA: nombre, precio, chips, tabla, cta -->
-    <div class="prop-panel">
+    <!-- DIVISOR VERTICAL -->
+    <div class="modal-divisor-v"></div>
 
-      <div class="sec-nombre">
-        <span class="prop-tipo-badge">Casa campestre en conjunto</span>
-        <p class="prop-codigo">Código: 253</p>
-        <h1 class="prop-nombre">Casa campestre en conjunto Parrots - cruce a Rivera</h1>
-      </div>
-
-      <div class="sec-precio"><p class="prop-precio">$1.000.000.000</p></div>
-
-      <div class="sec-chips"><div class="chips"><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12V7a1 1 0 011-1h4a1 1 0 011 1v5M3 12h18M3 12v5h18v-5"/><path d="M13 6h4a1 1 0 011 1v5"/></svg>4 hab.</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16v4a4 4 0 01-4 4H8a4 4 0 01-4-4v-4z"/><path d="M6 12V5a2 2 0 012-2h1"/><circle cx="8" cy="3" r="1"/></svg>3 baños</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20M16 7l-1-4H9L8 7"/></svg>1 garaje</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 7l9-4 9 4M4 11v10M20 11v10M8 11v10M16 11v10M12 11v10"/></svg>1 pisos</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M6 7V5a2 2 0 014 0v2M14 7V5a2 2 0 014 0v2"/><circle cx="8" cy="14" r="2"/><circle cx="16" cy="14" r="2"/></svg>Cocina integral</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>2400 m²</span></div></div>
-
-      <div class="sec-tabla"><div class="char-section"><h2 class="section-title">CARACTERÍSTICAS</h2><table class="char-table"><tbody><tr><td class="char-label">Ciudad</td><td class="char-val">Rivera</td></tr><tr><td class="char-label">Zona</td><td class="char-val">Sur</td></tr><tr><td class="char-label">Área construida</td><td class="char-val">600</td></tr><tr><td class="char-label">Área lote</td><td class="char-val">2400</td></tr><tr><td class="char-label">Piscina</td><td class="char-val">Social</td></tr><tr><td class="char-label">Administración</td><td class="char-val">700000</td></tr><tr><td class="char-label">Retorno de la inversión</td><td class="char-val">No aplica</td></tr></tbody></table></div></div>
-
-      <div class="sec-cta">
-        <div class="cta-group">
-          <a href="https://wa.me/573208762117?text=Hola%2C%20me%20interesa%20la%20propiedad%3A%20Casa%20campestre%20en%20conjunto%20Parrots%20-%20cruce%20a%20Rivera%20%28C%C3%B3digo%20253%29"
-             class="cta-wa"
-             target="_blank"
-             rel="noopener noreferrer"
-             aria-label="Agendar visita por WhatsApp">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-            Agendar visita por WhatsApp
-          </a>
-          <button class="cta-share" onclick="compartir()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            Compartir
-          </button>
-          <p class="share-confirm" id="shareConfirm">¡Enlace copiado!</p>
-        </div>
-      </div>
-
+    <!-- COLUMNA DERECHA -->
+    <div class="modal-columna-der-nueva">
+      <div class="modal-subtitulo-nuevo">Características</div>
+      <table class="modal-tabla-caracteristicas">
+        <tbody>
+          <tr><td class="char-label">Ciudad</td><td class="char-val">Rivera</td></tr><tr><td class="char-label">Zona</td><td class="char-val">Sur</td></tr><tr><td class="char-label">Área construida</td><td class="char-val">600</td></tr><tr><td class="char-label">Área lote</td><td class="char-val">2400</td></tr><tr><td class="char-label">Piscina</td><td class="char-val">Social</td></tr><tr><td class="char-label">Administración</td><td class="char-val">700000</td></tr><tr><td class="char-label">Retorno de la inversión</td><td class="char-val">No aplica</td></tr>
+        </tbody>
+      </table>
+      
+      <div class="modal-subtitulo-nuevo">Puntos clave</div><p class="modal-texto">Buenos acabados. Cuenta con piscina privada. Escritura al día.</p>
+      
+      
     </div>
-
   </div>
-  </div>
-</main>
 
-<!-- FOOTER -->
-<footer class="site-footer">
-  <p>
-    <a href="https://icdeinmobiliaria.com">ICDE Negocios Inmobiliarios</a> &middot;
-    Calle 32 #6-67, Las Granjas, Neiva, Huila &middot;
-    <a href="tel:+573208762117">320 876 2117</a>
-  </p>
-  <p style="margin-top:.4rem">&copy; 2026 ICDE Negocios Inmobiliarios &middot; Neiva, Huila, Colombia</p>
-</footer>
+  <!-- ACCIONES -->
+  <div class="modal-acciones">
+    <a href="https://wa.me/573208762117?text=Hola%2C%20me%20interesa%20la%20propiedad%3A%20Casa%20campestre%20en%20conjunto%20Parrots%20-%20cruce%20a%20Rivera%20%28C%C3%B3digo%20253%29"
+       class="modal-btn-whatsapp-nuevo"
+       target="_blank"
+       rel="noopener noreferrer"
+       aria-label="Agendar visita por WhatsApp">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.846.497 3.576 1.362 5.065L2 22l5.07-1.33A9.953 9.953 0 0012 22c5.522 0 10-4.477 10-10S17.521 2 11.999 2zm.001 18a7.963 7.963 0 01-4.184-1.188l-.3-.178-3.012.79.803-2.93-.196-.31A7.944 7.944 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/></svg>
+      Agendar visita por WhatsApp
+    </a>
+    <button class="cta-share" onclick="compartir()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      Compartir
+    </button>
+    <p class="share-confirm" id="shareConfirm">¡Enlace copiado!</p>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="cerrarLightbox(event)">
+  <button class="lightbox-close" onclick="cerrarLightbox()">&#x2715;</button>
+  <img id="lightboxImg" src="" alt="Casa campestre en conjunto en venta  Neiva – ICDE Inmobiliaria"/>
+</div>
 
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczN5CwAFaefd-dywRogGs5fjm2S3mG1RrtC7WjLTGiPIZ9uYnclox23M6FUSMqsCBlTAfzoe2y9CKF4FiBe0GdOSbkBPNiM2G-g00eOWOD54AfKOdWmo=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOKsU-0z-oDfZzKPxNcFa0tLDRxODjI2LXmu5DqkP-i6-1bW7KL6xOBQhEMElLuP8cufnJDkwRktacYOioN5fxXltMZBr_wFjEdZs9cMRU9ipqtr34X=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP8Xt8WpA9Eb-9MjfD4f04g4MzAFYdyRZwoYwMr_eMkkYkno4LcYBIe9b3FNWgOljbkkLek4FcLi-PNVTKFVdQppoAUrhIBBqNFI9MIjYIWHwYS_GQg=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOkkVwKR-l7WmD7gi6IjeM5rNAZ35MYRzSclZlZlIlMU_FKq49HlQzTKTtgmHt-Vys83774XFDpd0CxOH9xXOw9s0jZYkCMbEhxcM0B3K5yRsj3D85V=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPMe1cFqB0s1IR60bz_wB_BCUuX4oJas4vzJpNswK80HJi1sDhc6UIkKQbtvnDTB64H6ONhSiDgxkxOwuImrVj5ciwow0Vyrs4ACrkZOuNGCojkmEyp=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMVdgrJmQKhGTXL1_iBYoe4Hnkpc51ISEBFmOdHEAvAMHqa6Wz81pf4JJjqDVXJoteMbSIUKMK_lhKiKD50IgLsE-bhlkRlAK6iwJ4u9dHXdkIHp4V3=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN9M01MupEr18WetVDfN3X9eEHC_muGIhL9EX4khkef1taBMGUk5NcKTE4ODkNHCrcIUgOseLlhQCM6U9aa9-ARJmMLT8Z0Wnnq_A5sxK_d-_xTUQuQ=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMqxD9H-33Uhxnw1RW9_0qLiS09B_mPbrF2KzgalgegXrzir4LnG5IDVHfNbPduI4b-3WxTVGf5yxa049vZgAYW--Uf3QZ9zLD92a5IdITNOU_16luv=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMt4v8wakoQpGAHfI-atVDLGcY6ZiEGauFlF7BcGxntOIebtCX14e5z9O0zrqhXRbcI5sXyheM2YeUirRlbbtFGyuiA43JaBGVsK7sh_WQ4_LyakBJ1=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNmSYb-_uY6H9G2nFdKnRyLeha_igC_L95FrOMRsoCVwxUFE5pEq-K8QUgGDYc7sCdtsnCmPK3wTUbXOf0vrJbdQIdtJ-HkpQqYbwGKQrXuPpCbi8Ak=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMY18bEdWKPEdwedbvb56eLPhnOoQPfQhwxjFrHDQJYytS4fgaaU1Po5NfAcy1HG4pm42YsP9N8EfMcq5DGHrZnWPR19_a0h0thN7uSXGFw-8cjW-HP=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPvfRlKzNm63N9AukW8LoAVdSmSE77oCS73_NAygAXzK0NMvcfcmNDHdTq3YCdsZaGiqBVrUVRTpQGpYF7m2eVCwsliy-vdIryvsUr6Q8h_E8oE75sN=w1200", "https://lh3.googleusercontent.com/pw/AP1GczODHv97gPBVk8KZF80ffirvPEeJYgXrivRCuX43wQrqM6z8cZi78479SXvdceMD63qrXMKTSvNJENRiTuHDmFUROhTJC6OF8clpGtMIIvdXhx5RkO7T=w1200", "https://lh3.googleusercontent.com/pw/AP1GczONmn30OiCbnR8glLivJHx88FVhsOvUwadbPenhMEdc2Im3kaF6eUl4Gv2o1Nn7nga8oTVKiXZ7WEK9Fu3wRDso2IpyzerJ5USP91ZHL3hAUA3m7ahP=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOI7telvlWcsrQdZiyxG9KpPrI_Onm7bqF-ePvsdYyVXF0rh6aXOvyPdVTdik9P5lFguFycQWkZ0h9EBrSDX7kwpf9JIcu8jQetrNkWCP8UAoOPD1-m=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNwztQcE56tkgIZwR-vLn0kNRaw9u3IQbbAQl-Hl7Tl7JDMPd6WmRIeayYp7IzHj9EVVBX6EZIMDqz-xacHRcue064okK9qwUlqWMvctV-bSdCmtwK3=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMvxjGPsDh8sbz5HMiCdbT48ef5qa4QWQzpnkIfcGlmp4HcdsOTQ0aN4IOtccTsWG6m701LLrMS2FrUnTVrTT5ZqKNDK3rc_J5HQWg286-3e_OX_Bk4=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOUqF0Vfoymniff6ePZmwQBBCBJmxIc6gwhsCiMX9Uuh5T1a9drtKo3jGEZzp7W5Vv-Y4ajHtBoe0ADDwtjieWa5YP_aI62_hD2C51zWQPyuh3BwB1G=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPsSfQ0WwhsCdWch2RhP5NrpZcVsBcnCdAvcJ28-TTnGYg-fuIUXnPJ-dyWWdo0xOZGDsoPCzr6ITqwqCvIVjI8AQaVJTbqKvjVusp_8Qln0XxvT-HB=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPcM48jgGjacs37TBH6ULKFQvklkLBVxd2ZfXAA2Q18aE522nh4at0MluMN_GPRGTVoaHa5KqPXRqKnMM3maM12XbH8twIaulnYh0x3eh6nXn_0owt6=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMK0x4Uyhn8DLb-EHHViWAVSgeIx91zc8I5rfxcUy29f81bsjGEtcza7S23Fga8aeIQ1MMNpdDgrlOFN-jWXmfbTC508n-zNd1yTprZyY4-PkXLQuJY=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNUZX0nNzaPSdjt-v7BhqpZpmw507cEwExy-W5Ui-WRpY51WrLfQO9VPwIfyxnqn3kbkv-HUMwRJPLTx2O-nIf2dkr32NkLQH5FZdWvLVqf3EtA1TDZ=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNZhNxPjQNSoizkcJZx-lCz1BhDW2JMug_5MG9zMUf6B-CmJlOX0Jk8m9uN1wwhjsDd9WIH-uEt4q43-4G4Xz7Q3X9bZtZG3uO-ACio26TYRF6oKIUZ=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMY00VyZ2aVmL_g__crBoDqTZ8unithtdhwVV06csc3zumiiLp_9H3Y_0dGfYznxYvlVlz4-2MKcI5CI1DZ57iZDq325HhvvZSLYsP_pU5tS5DUsXEp=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOGSWa1BzfXnx4nRrnWLTqltfkruQ3p-18yhyPZLVKJCSKBH69c-JrUvJlOtrF7S8DffNBgmp0L4kOIigaOcCCTzkFypuwmk0JVByBuXq2mgz7hAne0=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNes3qsQYx0dMlKgk1Q8bk2uygRh3tK0C5M1X0CaNrNnTRNrokdVn2fGBhjDOdtXoOBLbWqZnago7CGb6ebWxsvgVBYrjUaSuRRR2_lCPn7RFFbq9Y2=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNlhIv5Cly04S3trzX2zhFjJfTko35KCOW1gsR6CKKhugl2_GbnpptOTOfhdUG4uo3IW5thTQ3WTSfAdBcpNuXLf7FDd3Hv235fuZvJpp3lnlXXpDQZ=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMBhQzDm6bNkwU3Bf13hqFDRenc8TGzhE2N_1b6RHKNYSmmY_cbfD6G6mNsvPO8FYIs4EwxOCiPpoGQDRJo47u9N1WhisRZ2gFpcLoXIwXxq9iCyT9O=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPPc_fGs4bSIu6T11qQCfM_b4JDb47y8UvAN5JC2i809HDtbOYgJ8mxDjeXGRAftvzCVZNJPOMf4dkvPTGZFZiPjPE6uEPEmCNVCAOSGuZqLDs3ebLh=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOFeSf1Z7k0E3JaHrbDvfz6GRL5pcywkw4DWBdhM0JxQLgcQsG-2S6byZ3ooVPpN3MWc8asObhQgoIqlusWCkSx3v3U_eKUeqMliFce3QzS6nMl2nfb=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMtGiAShXl15hZkrwa2DhxqOubM-Jwi2PkfLaEmKgaFypS_nFFCrUMoKzEJKnT0ZLSOAFHTJWiFLy-jnJQkK1aj3_q6gVCNl4YGSGr1oetdCF9STT26=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNgB-y1dPFx_QdP0q4bO63RHsQJg61VMdAQJ5EWhP_NrDrZtpMOZ4bI_It52tEIgS4D6CJbGXWa8t4OAez8xK7C3GYDxxblahkAH9by8B_Ch3WGIjXs=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOk0uc9kMecFZ72GnlA1xxffsQJJBXc6AHqel0tSWM-RwFoySy4UH2lwREofpnuo0O6Qn-11pWQ1ZOn3q71lcbwrhFHNmPDn92hfxpI6uA1kXThY7xM=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMy85ZDNit0t6uOUmyudMXHz_X8ri5jrGEICvXC9OD3Jd5R-3BTn9bHSw6SC-ZYKgPo5MCS7bNlcOpqsg7OaeV1qZBJfp4ARMlhV9abpmKmK4ieKCN2=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMbcdCxFp7CpprnVkb3nR5b3JyStvxt2swKgP7v_Vk7ySUe5YTuqjOMcQrQ_XQr4Pm3WEOqxLOuSJVMsuVEBna1miI99lqbVXBZLPw9luEW1kD5fUMo=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOcxPgq_8rkZjfuYqrJspaqcwdQpuWM4E39PjNqmY6Hli74srw7CWqXT0odiULO_BGViITzBxO31_Ln0HYDdH5vUKh6szeCe9-UzTUm2M3glrjB9zAe=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNjt4Uv7HYFL0e5Zvdc4WecNlhgt4LeAYE--FtezWXkYEg97aYmKFIztoHqGGOI0goAqfyOiM0deM4pKC-62FuXHMDSU7huK9m1Hn1mlocl3O9NWTeb=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN2nVH0t7wEnsUvnsD9PXEloll-EWfGoRhknbweAzFBPQV11yaPBz8TcFVHnYVoS06k4qkm6wWb30OqvZ1_MJK5ZsK49nUcDC3T7iQo3wS0LoL2UuQ9=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP2IUn2jkWBWy4XuDSDc8pKU9iAwuix9EFngQbbW0G38dzmMnRLnZRLUWF4x-ZFcF6UubJ8cnkLVSBdhOt8_JS47rQz3cFeeuCvTjXrNBjMGw8uE3XI=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMKvbuYlPGMJ5TQa_qZVGC7SveKnT7EBtSKLKFWIj1Bc2jzrXXzv0km4mq6o5GYYR8pVQxDIGl6SYZ8MTOib1xwhtOSL5WfOtWZI_DO27qfmaJWbBu5=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO8wBvvL9Ty9PAc5ZBc1XbR2LcYNn3xwDOfhb-fI1bZmq5T3nEmLIEdkxhnOHw_-B2uNL_T_Of8ijmSrwQpAY5lZKZA6lItG66-1nL82j2WyC3slFd9=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMcbi8uhL0zJROxsTrqiI9Z5sVDCPlwHh0s5f8ugnDeqb8PH2r8MyEfhDsHTluwFb1LVvf6VKoa4mLiTsnXI9eOxM8jFpSeJTjC85O0xefEh90eZ1Ok=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPtDeeevIdS5a0QmJAqlA8auPLIWO3m0dpA5RqCqNXDlRwTzVKVdSU2KVQ_2tZNI6-s7e-QmPnDgnIX07o1dHoMQBjW3w4tqOMU33fWYaKdtd0UslH8=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPEt1NUmxgnctPx9H1rRxOhPFCFhc9D2Ne3oowFvPTTPm0WWJ-hN0xJ5SJgFUK_aZR-NVspLRNMv70uQqYz1JF3C6pWKguJ4T8jcmk2r9iuQxLgnCic=w1200"];
@@ -851,13 +596,6 @@ function irImg(i) {
   document.getElementById('imgPrincipal').src = IMGS[imgIndex];
   var minis = document.querySelectorAll('.miniatura');
   minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
-  var activa = minis[imgIndex];
-  if (activa) {
-    var wrap = activa.closest('.miniaturas-wrap');
-    if (wrap) {
-      wrap.scrollTo({ left: activa.offsetLeft - (wrap.offsetWidth/2) + (activa.offsetWidth/2), behavior:'smooth' });
-    }
-  }
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }
@@ -868,31 +606,15 @@ function abrirLightbox(i) {
   irImg(i);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
-  document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   lb.classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
 function cerrarLightbox(e) {
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
-  if (e && e.currentTarget !== e.target && e.target.tagName === 'IMG') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
 }
-
-function lightboxNav(dir) {
-  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
-  document.getElementById('lightboxImg').src = IMGS[imgIndex];
-  document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
-}
-
-document.addEventListener('keydown', function(e) {
-  var lb = document.getElementById('lightbox');
-  if (!lb.classList.contains('open')) return;
-  if (e.key === 'ArrowRight') lightboxNav(1);
-  if (e.key === 'ArrowLeft') lightboxNav(-1);
-  if (e.key === 'Escape') cerrarLightbox({target: lb});
-});
 
 function compartir() {
   var url = window.location.href;
@@ -902,8 +624,6 @@ function compartir() {
       c.style.display = 'block';
       setTimeout(function(){ c.style.display = 'none'; }, 2000);
     });
-  } else if (navigator.share) {
-    navigator.share({ title: document.title, url: url });
   }
 }
 </script>
