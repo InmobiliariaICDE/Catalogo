@@ -2569,6 +2569,8 @@ function normalizarPropiedades(data) {
       else if (nk === 'tipo' || nk === 'tipo de inmueble' || nk === 'clase') k = 'Tipo de inmueble';
       else if (nk === 'zona' || nk === 'sector') k = 'Zona';
       else if (nk === 'barrio') k = 'Barrio';
+      else if (nk === 'ciudad') k = 'Ciudad';
+      else if (nk === 'estrato') k = 'Estrato';
       else if (nk === 'ubicacion' || nk === 'direccion') k = 'Ubicación';
       else if (nk === 'habitaciones' || nk === 'alcobas' || nk === 'cuartos') k = 'Habitaciones';
       else if (nk === 'banos' || nk === 'sanitarios') k = 'Baños';
@@ -2579,12 +2581,13 @@ function normalizarPropiedades(data) {
       else if (nk === 'conjunto' || nk === 'edificio' || nk === 'unidad') k = 'Conjunto';
       else if (nk === 'descripcion' || nk === 'detalle') k = 'Descripción';
       else if (nk === 'puntos clave' || nk === 'caracteristicas' || nk === 'highlights') k = 'Puntos Clave';
+      else if (nk === 'area construida' || nk === 'area construida m2' || nk === 'area total') k = 'Área construida';
       else if (nk === 'area' || nk === 'mt2' || nk === 'superficie') k = 'Área';
       else if (nk === 'imagenes' || nk === 'fotos' || nk === 'imagen' || nk === 'galeria') k = 'Imagenes';
       else if (nk === 'contrato') k = 'Contrato';
       else if (nk === 'publicar') k = 'Publicar';
       else if (nk === 'destacada' || nk === 'destacado') k = 'Destacada';
-      else if (nk === 'rentabilidad' || nk === 'retorno') k = 'Rentabilidad';
+      else if (nk === 'rentabilidad' || nk === 'retorno' || nk.includes('retorno') || nk.includes('rentabilidad')) k = 'Retorno de la inversión';
       else if (nk === 'administracion' || nk === 'admin') k = 'Administración';
       else if (nk === 'latitud' || nk === 'lat') k = 'Latitud';
       else if (nk === 'longitud' || nk === 'lng' || nk === 'lon') k = 'Longitud';
@@ -2597,6 +2600,8 @@ function normalizarPropiedades(data) {
         else if (nk.includes('tipo')) k = 'Tipo de inmueble';
         else if (nk.includes('zona')) k = 'Zona';
         else if (nk.includes('barrio')) k = 'Barrio';
+        else if (nk.includes('ciudad')) k = 'Ciudad';
+        else if (nk.includes('estrato')) k = 'Estrato';
         else if (nk.includes('ubicaci')) k = 'Ubicación';
         else if (nk.includes('habitaci')) k = 'Habitaciones';
         else if (nk.includes('garaje') || nk.includes('parquea')) k = 'Garaje';
@@ -2605,9 +2610,12 @@ function normalizarPropiedades(data) {
         else if (nk.includes('conjunto')) k = 'Conjunto';
         else if (nk.includes('descrip')) k = 'Descripción';
         else if (nk.includes('puntos') && nk.includes('clave')) k = 'Puntos Clave';
+        else if (nk.includes('area construida') || nk.includes('area total')) k = 'Área construida';
         else if (nk.includes('area')) k = 'Área';
         else if (nk.includes('imagen') || nk.includes('foto')) k = 'Imagenes';
         else if (nk.includes('precio') && !nk.includes('rango') && !nk.includes('administracion')) k = 'Precio';
+        else if (nk.includes('retorno') || nk.includes('rentabilidad')) k = 'Retorno de la inversión';
+        else if (nk.includes('administr')) k = 'Administración';
         else if (nk.includes('inmobiliaria') || nk.includes('inmob')) k = 'Inmobiliaria';
       }
 
@@ -2661,10 +2669,27 @@ async function cargarProps(){
     // Cargar propiedades personalizadas de localStorage
     const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
     
-    // Unir (sobrescribir remotas con locales si coinciden por código)
+    // Unir: la propiedad REMOTA es la base con toda su info rica.
+    // customProps solo aporta los campos que explícitamente se editaron
+    // (ej: coordenadas agregadas desde el mapa). No reemplaza completamente.
     const propsMap = new Map();
     remoteProps.forEach(p => propsMap.set(p['Código'], p));
-    customProps.forEach(p => propsMap.set(p['Código'], p));
+    customProps.forEach(custom => {
+      const existing = propsMap.get(custom['Código']);
+      if (existing) {
+        // Merge inteligente: solo sobreescribir campos no vacíos
+        const merged = { ...existing };
+        for (const [key, val] of Object.entries(custom)) {
+          if (val !== '' && val !== null && val !== undefined) {
+            merged[key] = val;
+          }
+        }
+        propsMap.set(custom['Código'], merged);
+      } else {
+        // Es una propiedad nueva creada desde el admin, agregarla tal cual
+        propsMap.set(custom['Código'], custom);
+      }
+    });
     
     allProps = Array.from(propsMap.values());
     
@@ -5588,9 +5613,9 @@ function abrirModalProp(codigoOrProp){
     ['Estrato', p['Estrato']],
     ['Ubicación', p['Ubicación']],
     ['Piscina', p['Piscina']],
-    ['Área construida', p['Área construida']],
-    ['Administración', p['Administración']],
-    ['Retorno de la inversión', p['Retorno de la inversión']]
+    ['Área construida', p['Área construida'] || p['Área'] || p['area'] || ''],
+    ['Administración', p['Administración'] || p['Administracion'] || ''],
+    ['Retorno de la inversión', p['Retorno de la inversión'] || p['Rentabilidad'] || p['rentabilidad'] || '']
   ];
   specsTable.innerHTML = items.map(([k,v]) => `<tr><td>${k}</td><td>${v||'—'}</td></tr>`).join('');
   
