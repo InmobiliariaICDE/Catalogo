@@ -3686,7 +3686,12 @@ function renderLeadsBody(lista){
     // 3. Terciario: Presupuesto (Mayor a Menor)
     const pA = a.filtros?.maxPrice || 0;
     const pB = b.filtros?.maxPrice || 0;
-    return pB - pA;
+    if (pA !== pB) return pB - pA;
+
+    // 4. Cuaternario: Ofertas (Mayor a Menor)
+    const ofA = (a.visitas || []).filter(v => v.oferto === 'si').length;
+    const ofB = (b.visitas || []).filter(v => v.oferto === 'si').length;
+    return ofB - ofA;
   });
 
   if(leadViewMode === 'table'){
