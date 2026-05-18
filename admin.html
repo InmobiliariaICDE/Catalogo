@@ -6015,20 +6015,26 @@ async function validarCodigoExistente(codigo) {
 
   let matchedProp = null;
   
-  // 1. Siempre revisar en allProps primero
-  matchedProp = allProps.find(p => {
+  // 1. Siempre revisar en allProps primero para tener datos base
+  const propFromAllProps = allProps.find(p => {
     const codeStr = String(p['Código'] || '').trim();
     if (codeStr.toLowerCase() === codigo.toLowerCase()) return true;
     if (!isNaN(codeStr) && !isNaN(codigo) && parseFloat(codeStr) === parseFloat(codigo)) return true;
     return false;
   });
+  
+  if (propFromAllProps) {
+    // Clonamos para no mutar el original de allProps directamente
+    matchedProp = {...propFromAllProps};
+  }
 
-  // 2. Si no se encontró en allProps y tenemos la matriz en vivo, revisar la columna específica
-  if (!matchedProp && icdeMatrixText) {
+  // 2. SIEMPRE buscar en la matriz CSV para obtener el link de Google Fotos real y fresco
+  if (icdeMatrixText) {
     const lines = icdeMatrixText.split(/\r?\n/);
     if (lines.length > 0) {
       const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
       const codeIdx = headers.findIndex(h => h.toLowerCase() === 'código' || h.toLowerCase() === 'codigo');
+      const gfIdx = headers.findIndex(h => h.trim().toLowerCase() === 'google fotos');
       
       if (codeIdx !== -1) {
         for (let i = 1; i < lines.length; i++) {
@@ -6038,11 +6044,19 @@ async function validarCodigoExistente(codigo) {
           const valStr = cells[codeIdx] ? cells[codeIdx].trim().replace(/^"|"$/g, '') : '';
           
           if (valStr.toLowerCase() === codigo.toLowerCase() || (valStr && !isNaN(valStr) && !isNaN(codigo) && parseFloat(valStr) === parseFloat(codigo))) {
-            // Construir un objeto propiedad a partir del CSV
-            matchedProp = {};
-            headers.forEach((h, idx) => {
-              matchedProp[h] = cells[idx] ? cells[idx].trim().replace(/^"|"$/g, '') : '';
-            });
+            const liveGoogleFotos = gfIdx !== -1 && cells[gfIdx] ? cells[gfIdx].trim().replace(/^"|"$/g, '') : '';
+            
+            if (matchedProp) {
+              // Forzar a que use el de la matriz en vivo
+              matchedProp['Google Fotos'] = liveGoogleFotos;
+            } else {
+              // Si no existía en allProps, construimos el objeto completo desde la matriz
+              matchedProp = {};
+              headers.forEach((h, idx) => {
+                matchedProp[h] = cells[idx] ? cells[idx].trim().replace(/^"|"$/g, '') : '';
+              });
+              matchedProp['Google Fotos'] = liveGoogleFotos;
+            }
             break;
           }
         }
@@ -6119,8 +6133,8 @@ function autofillPropiedadPorCodigo() {
   setVal('gp_garaje', p['Garaje'] || p['garaje'] || 'No');
   setVal('gp_area', p['Área (m²)'] || p['area'] || p['Área construida']);
   
-  // Priorizar las columnas que el usuario espera para Google Fotos
-  setVal('gp_gfotos', p['Google Fotos'] || p['Google Fotos (Link Álbum)'] || p['googleFotos'] || p['Imagenes'] || p['Image']);
+  // SOLUCIÓN ESTRICTA: Solo leer de la columna exacta 'Google Fotos'
+  setVal('gp_gfotos', p['Google Fotos']);
   
   setVal('gp_inmobiliaria', p['Inmobiliaria / Aliado'] || p['inmobiliaria'] || p['Inmob'] || '');
   setVal('gp_administracion', p['Administración ($)'] || p['administracion'] || p['Administración']);
