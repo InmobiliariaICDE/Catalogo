@@ -5918,6 +5918,7 @@ function renderNuevaPropiedad() {
       </div>
       
       <div style="display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;">
+        <button class="btn btn-danger" onclick="resetNuevaPropForm()">❌ Cancelar / Limpiar</button>
         <button class="btn btn-secondary" onclick="gpVistaPrevia()">👁️ Vista Previa</button>
         <button class="btn btn-primary" id="btn_gp_guardar" onclick="guardarPropiedad()">💾 Guardar Propiedad</button>
       </div>
@@ -6117,7 +6118,10 @@ function autofillPropiedadPorCodigo() {
   setVal('gp_banos', p['Baños'] || p['banos'] || '1');
   setVal('gp_garaje', p['Garaje'] || p['garaje'] || 'No');
   setVal('gp_area', p['Área (m²)'] || p['area'] || p['Área construida']);
-  setVal('gp_gfotos', p['Google Fotos (Link Álbum)'] || p['googleFotos'] || p['Imagenes'] || p['Image']);
+  
+  // Priorizar las columnas que el usuario espera para Google Fotos
+  setVal('gp_gfotos', p['Google Fotos'] || p['Google Fotos (Link Álbum)'] || p['googleFotos'] || p['Imagenes'] || p['Image']);
+  
   setVal('gp_inmobiliaria', p['Inmobiliaria / Aliado'] || p['inmobiliaria'] || p['Inmob'] || '');
   setVal('gp_administracion', p['Administración ($)'] || p['administracion'] || p['Administración']);
   setVal('gp_rentabilidad', p['Retorno inversión (Rentabilidad)'] || p['rentabilidad'] || p['Retorno de la inversión']);
@@ -6148,6 +6152,39 @@ function autofillPropiedadPorCodigo() {
   }
   
   toast('Datos cargados para editar ✓', 'success');
+}
+
+function resetNuevaPropForm() {
+  const ids = ['gp_codigo', 'gp_nombre', 'gp_tipo', 'gp_contrato', 'gp_precio', 'gp_barrio', 'gp_conjunto', 'gp_zona', 'gp_ciudad', 'gp_estrato', 'gp_ubicacion', 'gp_habitaciones', 'gp_banos', 'gp_garaje', 'gp_area', 'gp_gfotos', 'gp_inmobiliaria', 'gp_administracion', 'gp_rentabilidad', 'gp_lat', 'gp_lng', 'gp_descripcion', 'gp_puntos_clave'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = (id === 'gp_tipo' ? 'Apartamento' : (id === 'gp_contrato' ? 'Venta' : (id === 'gp_ciudad' ? 'Cali' : '')));
+  });
+  
+  const checks = ['gp_destacada', 'gp_publicar'];
+  checks.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.checked = (id === 'gp_publicar');
+  });
+  
+  const msg = document.getElementById('gp_codigo_msg');
+  if (msg) msg.style.display = 'none';
+  
+  const input = document.getElementById('gp_codigo');
+  if (input) input.style.borderColor = '';
+  
+  const dropdown = document.getElementById('gp_codigo_dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+  
+  const btnGuardar = document.getElementById('btn_gp_guardar');
+  if (btnGuardar) btnGuardar.innerHTML = '💾 Guardar Propiedad';
+  
+  const preview = document.getElementById('gp_gfotos_preview');
+  if (preview) preview.innerHTML = '';
+  
+  window.currentMatchedProp = null;
+  
+  toast('Formulario limpiado ✓', 'success');
 }
 
 /* DRAFT SAVE & RESTORE */
