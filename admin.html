@@ -1313,6 +1313,11 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
           🔍 Diagnóstico
         </button>
       </div>
+      <div style="margin-top:8px;">
+        <button id="btnLimpiarDups" class="btn btn-danger" style="width:100%; font-size:12px;" onclick="limpiarDuplicadosLocales()">
+          🧹 Limpiar duplicados (por teléfono)
+        </button>
+      </div>
       <div id="diagResultado" style="margin-top:12px; font-size:11px; color:#888; background:rgba(255,255,255,0.03); border-radius:8px; padding:10px; display:none;"></div>
     </div>
 
@@ -1388,6 +1393,32 @@ const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFUuzwKA_5C35NX
 ═══════════════════════════════════════════════ */
 let allProps = [];
 let leads = JSON.parse(localStorage.getItem('icde_leads') || '[]');
+(function deduplicarLeads() {
+  let leadsUnicos = [];
+  let telefonosVistos = new Set();
+  leads.sort((a, b) => {
+    let tA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
+    let tB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
+    return tB - tA;
+  });
+  leads.forEach(l => {
+    if (l.id === 'LEAD-AGENDA-GLOBAL') {
+      leadsUnicos.push(l);
+      return;
+    }
+    let telLimpio = (l.celular || '').replace(/\D/g, '');
+    if (!telefonosVistos.has(telLimpio) && telLimpio !== '') {
+      telefonosVistos.add(telLimpio);
+      leadsUnicos.push(l);
+    } else if (telLimpio === '') {
+      leadsUnicos.push(l);
+    }
+  });
+  if (leads.length !== leadsUnicos.length) {
+    leads = leadsUnicos;
+    try { localStorage.setItem('icde_leads', JSON.stringify(leads)); } catch(e){}
+  }
+})();
 let deletedLeads = JSON.parse(localStorage.getItem('icde_deleted_leads') || '[]');
 let citas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
 if (!Array.isArray(citas)) citas = []; // Ensure it's always an array
@@ -3293,6 +3324,15 @@ function guardarLead(enviarAhora, btn){
   if(!nuevoLead.nombre.trim() && nuevoLead.tipo !== 'inmobiliaria'){ toast('Ingresa el nombre','error'); return; }
   if(nuevoLead.tipo === 'inmobiliaria' && !nuevoLead.nombreInmobiliaria.trim()){ toast('Ingresa nombre de inmobiliaria','error'); return; }
   if(!nuevoLead.celular.trim()){ toast('Ingresa el celular','error'); return; }
+  
+  const celularLimpio = nuevoLead.celular.trim().replace(/\D/g, '');
+  const existe = leads.find(l => (l.celular || '').replace(/\D/g, '') === celularLimpio);
+  if (existe && existe.id !== 'LEAD-AGENDA-GLOBAL') {
+    toast('Ya existe un lead con este celular', 'error');
+    if(btn) btn.disabled = false;
+    return;
+  }
+  
   if(btn) btn.disabled = true;
   const filtradas=filtrarProps(nuevoLead.filtros, true), max=nuevoLead.maxPorEnvio||4;
   const lead={
