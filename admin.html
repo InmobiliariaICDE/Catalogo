@@ -6563,7 +6563,25 @@ async function gpGenerarPuntosClaveIA() {
 /* CATALOG PREVIEW (FASE 9) */
 function gpVistaPrevia() {
   const data = getNuevaPropData();
+  const codigo = data.codigo;
   
+  // Si el código ya existe en el catálogo (allProps), mostramos el modal REAL
+  if (codigo) {
+    const propReal = allProps.find(p => {
+      const codeStr = String(p['Código'] || '').trim();
+      if (codeStr.toLowerCase() === codigo.toLowerCase()) return true;
+      if (!isNaN(codeStr) && !isNaN(codigo) && parseFloat(codeStr) === parseFloat(codigo)) return true;
+      return false;
+    });
+    
+    if (propReal) {
+      // Usamos la función oficial del catálogo pasándole el código
+      abrirModalProp(propReal['Código']);
+      return;
+    }
+  }
+  
+  // Si es un inmueble nuevo que no está en el catálogo, mantenemos la simulación
   const propSimulada = {
     'Código': data.codigo || 'PREVIEW',
     'Nombre': data.nombre || 'Simulación de Propiedad',
