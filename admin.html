@@ -6005,14 +6005,41 @@ async function validarCodigoExistente(codigo) {
 
   let existe = false;
   
-  if (icdeMatrixText) {
-    // Búsqueda en el texto del CSV usando regex para evitar falsos positivos
-    const escapedCode = codigo.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-    const regex = new RegExp(`(^|,|\\n)"?${escapedCode}"?(,|\\r|\\n|$)`, 'i');
-    existe = regex.test(icdeMatrixText);
-  } else {
-    // Fallback a allProps si falla el fetch o aún no carga
-    existe = allProps.some(p => String(p['Código'] || '').toLowerCase() === codigo.toLowerCase());
+  // 1. Siempre revisar en allProps primero
+  existe = allProps.some(p => {
+    const codeStr = String(p['Código'] || '').trim();
+    if (codeStr.toLowerCase() === codigo.toLowerCase()) return true;
+    if (!isNaN(codeStr) && !isNaN(codigo) && parseFloat(codeStr) === parseFloat(codigo)) return true;
+    return false;
+  });
+
+  // 2. Si no se encontró en allProps y tenemos la matriz en vivo, revisar la columna específica
+  if (!existe && icdeMatrixText) {
+    const lines = icdeMatrixText.split(/\r?\n/);
+    if (lines.length > 0) {
+      // Obtener cabeceras limpias
+      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+      const codeIdx = headers.findIndex(h => h.toLowerCase() === 'código' || h.toLowerCase() === 'codigo');
+      
+      if (codeIdx !== -1) {
+        existe = lines.slice(1).some(line => {
+          if (!line.trim()) return false;
+          // Split que ignora comas dentro de comillas
+          const cells = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+          const valStr = cells[codeIdx] ? cells[codeIdx].trim().replace(/^"|"$/g, '') : '';
+          
+          if (valStr.toLowerCase() === codigo.toLowerCase()) return true;
+          // Comparación numérica por si acaso (ej: 038 vs 38)
+          if (valStr && !isNaN(valStr) && !isNaN(codigo) && parseFloat(valStr) === parseFloat(codigo)) return true;
+          return false;
+        });
+      } else {
+        // Fallback a regex si no se encuentra la columna Código
+        const escapedCode = codigo.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const regex = new RegExp(`(^|,|\\n)"?${escapedCode}"?(,|\\r|\\n|$)`, 'i');
+        existe = regex.test(icdeMatrixText);
+      }
+    }
   }
 
   if (existe) {
