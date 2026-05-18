@@ -485,6 +485,80 @@ body{
   align-items: center;
   justify-content: center;
   border: none;
+  z-index: 11;
+}
+
+.lightbox-counter{
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  color: #fff;
+  font-size: 14px;
+  background: rgba(0,0,0,0.5);
+  padding: 4px 10px;
+  border-radius: 4px;
+  z-index: 11;
+}
+
+.lightbox-nav{
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: #fff;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  z-index: 11;
+}
+
+.lightbox-nav:hover{ background: rgba(212,168,75,0.5); }
+.lightbox-nav.prev{ left: 20px; }
+.lightbox-nav.next{ right: 20px; }
+
+.lightbox-miniaturas-wrap{
+  position: absolute;
+  bottom: 20px;
+  left: 0; right: 0;
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  z-index: 11;
+}
+
+.lightbox-miniaturas{
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  max-width: 90vw;
+  scrollbar-width: none;
+}
+
+.lightbox-miniaturas::-webkit-scrollbar {
+  display: none;
+}
+
+.lightbox-miniatura{
+  width: 60px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+
+.lightbox-miniatura.activa, .lightbox-miniatura:hover{
+  opacity: 1;
+  border-color: var(--gold);
 }
 
 /* ── MÓVIL ── */
@@ -589,8 +663,14 @@ body{
 </div>
 
 <div class="lightbox" id="lightbox" onclick="cerrarLightbox(event)">
+  <div class="lightbox-counter" id="lightboxCounter"></div>
   <button class="lightbox-close" onclick="cerrarLightbox()">&#x2715;</button>
+  <button class="lightbox-nav prev" onclick="lightboxNav(-1);event.stopPropagation()">&#8249;</button>
   <img id="lightboxImg" src="" alt="Casa en venta Villa del Río Neiva – ICDE Inmobiliaria"/>
+  <button class="lightbox-nav next" onclick="lightboxNav(1);event.stopPropagation()">&#8250;</button>
+  <div class="lightbox-miniaturas-wrap">
+    <div class="lightbox-miniaturas" id="lightboxMiniaturas"></div>
+  </div>
 </div>
 
 <script>
@@ -601,6 +681,7 @@ var imgIndex = 0;
 var startX = 0;
 var endX = 0;
 document.addEventListener('DOMContentLoaded', function() {
+  // Swipe en carrusel principal
   var carrusel = document.querySelector('.carrusel-principal');
   if (carrusel) {
     carrusel.addEventListener('touchstart', function(e) {
@@ -612,6 +693,22 @@ document.addEventListener('DOMContentLoaded', function() {
         cambiarImg(1); // Deslizar izquierda -> siguiente
       } else if (endX - startX > 50) {
         cambiarImg(-1); // Deslizar derecha -> anterior
+      }
+    }, {passive: true});
+  }
+  
+  // Swipe en lightbox (pantalla completa)
+  var lightbox = document.getElementById('lightbox');
+  if (lightbox) {
+    lightbox.addEventListener('touchstart', function(e) {
+      startX = e.touches[0].clientX;
+    }, {passive: true});
+    lightbox.addEventListener('touchend', function(e) {
+      endX = e.changedTouches[0].clientX;
+      if (startX - endX > 50) {
+        lightboxNav(1); // Deslizar izquierda -> siguiente
+      } else if (endX - startX > 50) {
+        lightboxNav(-1); // Deslizar derecha -> anterior
       }
     }, {passive: true});
   }
@@ -633,14 +730,48 @@ function abrirLightbox(i) {
   irImg(i);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
+  document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
+  
+  // Generar miniaturas en el lightbox si no existen
+  var minisDiv = document.getElementById('lightboxMiniaturas');
+  if (minisDiv && !minisDiv.innerHTML) {
+    minisDiv.innerHTML = IMGS.map(function(url, index) {
+      return '<img src="'+url+'" class="lightbox-miniatura'+(index===imgIndex?' activa':'')+'" onclick="lightboxNav('+(index-imgIndex)+');event.stopPropagation()"/>';
+    }).join('');
+  }
+  
   lb.classList.add('open');
   document.body.style.overflow = 'hidden';
+  updateLightboxMiniaturas();
 }
 
 function cerrarLightbox(e) {
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
+}
+
+function lightboxNav(dir) {
+  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
+  document.getElementById('lightboxImg').src = IMGS[imgIndex];
+  document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
+  updateLightboxMiniaturas();
+  irImg(imgIndex); // Actualizar también el carrusel principal
+}
+
+function updateLightboxMiniaturas() {
+  var minis = document.querySelectorAll('.lightbox-miniatura');
+  minis.forEach(function(m, j) {
+    m.classList.toggle('activa', j === imgIndex);
+  });
+  // Hacer scroll a la miniatura activa
+  var activa = minis[imgIndex];
+  if (activa) {
+    var wrap = activa.closest('.lightbox-miniaturas');
+    if (wrap) {
+      wrap.scrollTo({ left: activa.offsetLeft - (wrap.offsetWidth/2) + (activa.offsetWidth/2), behavior:'smooth' });
+    }
+  }
 }
 
 function compartir() {
