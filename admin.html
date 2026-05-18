@@ -5887,6 +5887,29 @@ function renderNuevaPropiedad() {
             <option value="3+">3+</option>
           </select>
         </div>
+        <div class="form-group"><label class="form-label">Cocina</label>
+          <select class="form-input" id="gp_cocina">
+            <option value="No">No</option>
+            <option value="Integral">Integral</option>
+            <option value="Semi-integral">Semi-integral</option>
+            <option value="Tradicional">Tradicional</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Piscina</label>
+          <select class="form-input" id="gp_piscina">
+            <option value="No tiene">No tiene</option>
+            <option value="Propia">Propia</option>
+            <option value="Comunal">Comunal</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Pisos</label><input class="form-input" id="gp_pisos" type="number" placeholder="Nº de pisos" value="1"/></div>
+        <div class="form-group"><label class="form-label">Ubicación (Posición)</label>
+          <select class="form-input" id="gp_ubicacion_posicion">
+            <option value="Medianera">Medianera</option>
+            <option value="Esquinera">Esquinera</option>
+            <option value="Intermedia">Intermedia</option>
+          </select>
+        </div>
         <div class="form-group"><label class="form-label">Área (m²)</label><input class="form-input" id="gp_area" type="number" placeholder="m²"/></div>
         <div class="form-group"><label class="form-label">Google Fotos (Link Álbum)</label>
           <input class="form-input" id="gp_gfotos" type="text" placeholder="https://photos.app.goo.gl/..." oninput="debounceGFotosPreview(this.value)"/>
@@ -6142,6 +6165,12 @@ function autofillPropiedadPorCodigo() {
   setVal('gp_garaje', p['Garaje'] || p['garaje'] || 'No');
   setVal('gp_area', p['Área (m²)'] || p['area'] || p['Área construida']);
   
+  // Nuevos campos para coincidir con la matriz
+  setVal('gp_cocina', p['Cocina'] || 'No');
+  setVal('gp_piscina', p['Piscina'] || 'No tiene');
+  setVal('gp_pisos', p['Pisos'] || '1');
+  setVal('gp_ubicacion_posicion', p['Ubicación'] || 'Medianera');
+  
   // SOLUCIÓN ESTRICTA PERO INTELIGENTE: Solo leer de la columna exacta 'Google Fotos',
   // pero si por algún motivo viene vacío (ej. fallo de fetch y fallback a allProps), 
   // buscar en las otras columnas si alguna contiene un enlace real de álbum de Google Fotos.
@@ -6252,7 +6281,8 @@ function getNuevaPropData() {
     gfotos: document.getElementById('gp_gfotos')?.value || '',
     destacada: document.getElementById('gp_destacada')?.checked || false,
     publicar: document.getElementById('gp_publicar')?.checked || false,
-    inmobiliaria: document.getElementById('gp_inmobiliaria')?.value || ''
+    inmobiliaria: document.getElementById('gp_inmobiliaria')?.value || '',
+    ubicacion_posicion: document.getElementById('gp_ubicacion_posicion')?.value || ''
   };
 }
 
@@ -6355,6 +6385,7 @@ function poblarNuevaPropForm(data) {
   setCheck('gp_destacada', data.destacada);
   setCheck('gp_publicar', data.publicar);
   setVal('gp_inmobiliaria', data.inmobiliaria);
+  setVal('gp_ubicacion_posicion', data.ubicacion_posicion || 'Medianera');
   
   if (data.gfotos) {
     debounceGFotosPreview(data.gfotos);
