@@ -1393,32 +1393,34 @@ const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFUuzwKA_5C35NX
 ═══════════════════════════════════════════════ */
 let allProps = [];
 let leads = JSON.parse(localStorage.getItem('icde_leads') || '[]');
-(function deduplicarLeads() {
-  let leadsUnicos = [];
-  let telefonosVistos = new Set();
-  leads.sort((a, b) => {
-    let tA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
-    let tB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
-    return tB - tA;
-  });
-  leads.forEach(l => {
-    if (l.id === 'LEAD-AGENDA-GLOBAL') {
-      leadsUnicos.push(l);
-      return;
+try {
+  (function deduplicarLeads() {
+    let leadsUnicos = [];
+    let telefonosVistos = new Set();
+    leads.sort((a, b) => {
+      let tA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
+      let tB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
+      return tB - tA;
+    });
+    leads.forEach(l => {
+      if (l.id === 'LEAD-AGENDA-GLOBAL') {
+        leadsUnicos.push(l);
+        return;
+      }
+      let telLimpio = (l.celular || '').replace(/\D/g, '');
+      if (!telefonosVistos.has(telLimpio) && telLimpio !== '') {
+        telefonosVistos.add(telLimpio);
+        leadsUnicos.push(l);
+      } else if (telLimpio === '') {
+        leadsUnicos.push(l);
+      }
+    });
+    if (leads.length !== leadsUnicos.length) {
+      leads = leadsUnicos;
+      try { localStorage.setItem('icde_leads', JSON.stringify(leads)); } catch(e){}
     }
-    let telLimpio = (l.celular || '').replace(/\D/g, '');
-    if (!telefonosVistos.has(telLimpio) && telLimpio !== '') {
-      telefonosVistos.add(telLimpio);
-      leadsUnicos.push(l);
-    } else if (telLimpio === '') {
-      leadsUnicos.push(l);
-    }
-  });
-  if (leads.length !== leadsUnicos.length) {
-    leads = leadsUnicos;
-    try { localStorage.setItem('icde_leads', JSON.stringify(leads)); } catch(e){}
-  }
-})();
+  })();
+} catch(e) { console.error("Error deduplicando:", e); }
 let deletedLeads = JSON.parse(localStorage.getItem('icde_deleted_leads') || '[]');
 let citas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
 if (!Array.isArray(citas)) citas = []; // Ensure it's always an array
@@ -2500,7 +2502,7 @@ function cleanupLocalData() {
    Clave única = codigo + celular (misma propiedad, mismo cliente).
    Si el mismo par existe en ambos lados, gana el estado más avanzado.
 ═══════════════════════════════════════════════ */
-const ESTADO_ORDEN = { realizada: 5, oferta: 4, solicito_visita: 3, agendada: 2, cancelada: 1 };
+const ESTADO_ORDEN = { cancelada: 5, oferta: 4, realizada: 3, agendada: 2, solicito_visita: 1 };
 
 function visitaKey(v) {
   return String(v.codigo || '').trim() + '_' + String(v.celular || '').replace(/[^\d]/g, '');
@@ -2508,18 +2510,32 @@ function visitaKey(v) {
 
 function mergeVisitas(localArr, cloudArr) {
   const vMap = new Map();
-  // Primero la nube (base)
-  (cloudArr || []).forEach(v => {
+  
+  const processMerge = (v, isLocal) => {
     const k = visitaKey(v);
     const ex = vMap.get(k);
-    if (!ex || (ESTADO_ORDEN[v.estado] || 0) >= (ESTADO_ORDEN[ex.estado] || 0)) vMap.set(k, v);
-  });
-  // Luego local (tiene prioridad: si el usuario editó aquí, se conserva)
-  (localArr || []).forEach(v => {
-    const k = visitaKey(v);
-    const ex = vMap.get(k);
-    if (!ex || (ESTADO_ORDEN[v.estado] || 0) >= (ESTADO_ORDEN[ex.estado] || 0)) vMap.set(k, v);
-  });
+    if (!ex) {
+      vMap.set(k, v);
+      return;
+    }
+    
+    // Si ambos tienen updatedAt, gana el mayor
+    if (v.updatedAt && ex.updatedAt) {
+      if (v.updatedAt > ex.updatedAt || (v.updatedAt === ex.updatedAt && isLocal)) vMap.set(k, v);
+    } 
+    // Si uno tiene updatedAt y el otro no, gana el que sí tiene
+    else if (v.updatedAt && !ex.updatedAt) {
+      vMap.set(k, v);
+    }
+    // Si ninguno tiene, fallback a la prioridad estática del estado
+    else if (!v.updatedAt && !ex.updatedAt) {
+      if ((ESTADO_ORDEN[v.estado] || 0) >= (ESTADO_ORDEN[ex.estado] || 0)) vMap.set(k, v);
+    }
+  };
+
+  (cloudArr || []).forEach(v => processMerge(v, false));
+  (localArr || []).forEach(v => processMerge(v, true));
+  
   return Array.from(vMap.values());
 }
 
@@ -2897,10 +2913,8 @@ async function cargarProps(){
     const data = await res.json();
     const rawData = normalizarPropiedades(Array.isArray(data) ? data : []);
     
-    // No filtramos por Nombre para no perder registros incompletos, solo por Publicar si existe el campo
     let remoteProps = rawData.filter(d => {
-        const pub = String(d['Publicar'] || '').toLowerCase();
-        return pub === 'si' || pub === 'sí' || !d['Publicar']; // Por defecto mostrar si no existe campo publicar
+        return String(d['Publicar'] || '').trim().toUpperCase() === 'SI';
     });
 
     // Cargar propiedades personalizadas de localStorage
@@ -2909,26 +2923,33 @@ async function cargarProps(){
     // Unir: la propiedad REMOTA es la base con toda su info rica.
     // customProps solo aporta los campos que explícitamente se editaron
     // (ej: coordenadas agregadas desde el mapa). No reemplaza completamente.
-    const propsMap = new Map();
-    remoteProps.forEach(p => propsMap.set(p['Código'], p));
-    customProps.forEach(custom => {
-      const existing = propsMap.get(custom['Código']);
-      if (existing) {
+    // Usamos un Map solo para los customProps y preservamos todos los remoteProps (incluso si tienen mismo Código)
+    // para que el total coincida exactamente con index.html (533 props).
+    const customMap = new Map();
+    customProps.forEach(custom => customMap.set(custom['Código'], custom));
+
+    allProps = remoteProps.map(p => {
+      const custom = customMap.get(p['Código']);
+      if (custom) {
         // Merge inteligente: solo sobreescribir campos no vacíos
-        const merged = { ...existing };
+        const merged = { ...p };
         for (const [key, val] of Object.entries(custom)) {
           if (val !== '' && val !== null && val !== undefined) {
             merged[key] = val;
           }
         }
-        propsMap.set(custom['Código'], merged);
-      } else {
-        // Es una propiedad nueva creada desde el admin, agregarla tal cual
-        propsMap.set(custom['Código'], custom);
+        return merged;
+      }
+      return p;
+    });
+
+    // Agregar las propiedades nuevas creadas desde el admin que no están en remoteProps
+    const remoteCodigos = new Set(remoteProps.map(p => p['Código']));
+    customProps.forEach(custom => {
+      if (!remoteCodigos.has(custom['Código'])) {
+        allProps.push(custom);
       }
     });
-    
-    allProps = Array.from(propsMap.values());
     
     console.log("Admin: Remote:", remoteProps.length, "Custom:", customProps.length, "Total:", allProps.length);
     document.getElementById('syncStatus').textContent=`✓ ${allProps.length} propiedades`;
@@ -4296,6 +4317,7 @@ function guardarVisita(){
       cliente: cliente,
       celular: celular,
       inmobiliaria: lead && lead.tipo==='inmobiliaria' && lead.id !== 'LEAD-AGENDA-GLOBAL' ? lead.nombreInmobiliaria : '',
+      updatedAt: Date.now()
     };
     
     if(lead){
