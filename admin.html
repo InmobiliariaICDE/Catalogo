@@ -1225,8 +1225,8 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     <input type="hidden" id="visitaId"/>
     <div class="form-grid">
       <div class="form-group"><label class="form-label">Código Casa</label><input class="form-input" id="visitaCodigo" placeholder="ej: 222"/></div>
-      <div class="form-group"><label class="form-label">Cliente</label><input class="form-input" id="visitaCliente" placeholder="Nombre del cliente"/></div>
-      <div class="form-group"><label class="form-label">WhatsApp / Celular</label><input class="form-input" id="visitaCelular" placeholder="3001234567"/></div>
+      <div class="form-group"><label class="form-label">Cliente</label><input class="form-input" id="visitaCliente" list="datalist_lead_names" placeholder="Nombre del cliente"/></div>
+      <div class="form-group"><label class="form-label">WhatsApp / Celular</label><input class="form-input" id="visitaCelular" list="datalist_lead_phones" placeholder="3001234567"/></div>
       <div class="form-group"><label class="form-label">Fecha</label><input class="form-input" type="date" id="visitaFecha"/></div>
       <div class="form-group"><label class="form-label">Hora</label><input class="form-input" type="time" id="visitaHora"/></div>
       <div class="form-group"><label class="form-label">Estado</label>
@@ -2571,6 +2571,34 @@ async function initApp(){
   rebuildCitas();
   renderNuevo();
   
+  // Auto-completado en modal de visitas
+  const vC = document.getElementById('visitaCliente');
+  const vCel = document.getElementById('visitaCelular');
+  if (vC && vCel) {
+    vC.addEventListener('input', function() {
+      const val = this.value.trim();
+      if (!val) return;
+      const match = leads.find(l => l.id !== 'LEAD-AGENDA-GLOBAL' && norm(l.nombre) === norm(val));
+      if (match && match.celular) {
+        vCel.value = match.celular;
+      }
+    });
+    vCel.addEventListener('input', function() {
+      const val = this.value.trim().replace(/\D/g, '');
+      if (!val) return;
+      const matchInput = val.length >= 10 ? val.slice(-10) : val;
+      const match = leads.find(l => {
+        if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
+        const lRaw = String(l.celular || '').replace(/\D/g, '');
+        const lMatch = lRaw.length >= 10 ? lRaw.slice(-10) : lRaw;
+        return matchInput && lMatch && lMatch === matchInput;
+      });
+      if (match && match.nombre) {
+        vC.value = match.nombre;
+      }
+    });
+  }
+  
   // Feedback de citas
   setTimeout(checkCitasFeedback, 3000);
   setInterval(checkCitasFeedback, 1000 * 60 * 5); // Cada 5 mins
@@ -3205,8 +3233,8 @@ function renderNuevo(){
           </div>
           <div id="nlDuplicateWarning" style="display:none; margin-bottom:15px; padding:12px 15px; background-color:rgba(249, 115, 22, 0.1); border:1px solid rgba(249, 115, 22, 0.3); border-radius:8px; color:#f97316; font-size:13px; align-items:center; justify-content:space-between;"></div>
           <div class="form-grid">
-            <div class="form-group"><label class="form-label">Nombre Completo *</label><input class="form-input" id="nlN" value="${nuevoLead.nombre}" placeholder="Ej: Maria Perez" oninput="nuevoLead.nombre=this.value; checkDuplicateLead()"/></div>
-            <div class="form-group"><label class="form-label">WhatsApp / Celular *</label><input class="form-input" id="nlC" value="${nuevoLead.celular}" placeholder="3001234567" oninput="nuevoLead.celular=this.value; checkDuplicateLead()"/></div>
+            <div class="form-group"><label class="form-label">Nombre Completo *</label><input class="form-input" id="nlN" value="\${nuevoLead.nombre}" list="datalist_lead_names" placeholder="Ej: Maria Perez" oninput="nuevoLead.nombre=this.value; checkDuplicateLead()"/></div>
+            <div class="form-group"><label class="form-label">WhatsApp / Celular *</label><input class="form-input" id="nlC" value="\${nuevoLead.celular}" list="datalist_lead_phones" placeholder="3001234567" oninput="nuevoLead.celular=this.value; checkDuplicateLead()"/></div>
             <div class="form-group full"><label class="form-label">Notas u Observaciones</label><textarea class="form-input" oninput="nuevoLead.notas=this.value" placeholder="¿Qué detalles adicionales tiene este cliente?">${nuevoLead.notas}</textarea></div>
             <div class="form-group">
               <label class="form-label">Estado Inicial</label>
@@ -3308,13 +3336,44 @@ function updateFrec(){
   if(fi){ fi.style.display=nuevoLead.frecuencia==='manual'?'none':''; fi.innerHTML=getFrecInfo(); }
 }
 
+function updateLeadsDatalists() {
+  let container = document.getElementById('globalLeadsDatalists');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'globalLeadsDatalists';
+    container.style.display = 'none';
+    document.body.appendChild(container);
+  }
+  
+  const uniqueNames = Array.from(new Set(leads.map(l => l.nombre).filter(Boolean)));
+  const uniquePhones = Array.from(new Set(leads.map(l => l.celular).filter(Boolean)));
+  
+  container.innerHTML = `
+    <datalist id="datalist_lead_names">
+      \${uniqueNames.map(n => `<option value="\${eq(n)}"></option>`).join('')}
+    </datalist>
+    <datalist id="datalist_lead_phones">
+      \${uniquePhones.map(p => `<option value="\${eq(p)}"></option>`).join('')}
+    </datalist>
+  `;
+}
+
 function checkDuplicateLead(){
   const w = document.getElementById('nlDuplicateWarning');
   if(!w) return;
   
-  const rawNum = String(nuevoLead.celular||'').trim().replace(/\D/g, '');
+  const inputN = document.getElementById('nlN');
+  const inputC = document.getElementById('nlC');
+  
+  const valN = inputN ? inputN.value : '';
+  const valC = inputC ? inputC.value : '';
+  
+  nuevoLead.nombre = valN;
+  nuevoLead.celular = valC;
+  
+  const rawNum = String(valC).trim().replace(/\D/g, '');
   const num = rawNum.length >= 10 ? rawNum.slice(-10) : rawNum;
-  const nom = norm(nuevoLead.nombre);
+  const nom = norm(valN);
   
   if(!num && !nom) { w.style.display='none'; return; }
 
@@ -3334,7 +3393,7 @@ function checkDuplicateLead(){
     const lRawNum = String(dup.celular||'').trim().replace(/\D/g, '');
     const lNum = lRawNum.length >= 10 ? lRawNum.slice(-10) : lRawNum;
     const coincidenciaCelular = num && lNum === num;
-    w.innerHTML = `<div>⚠️ <b>Atención:</b> Ya existe un cliente con este ${coincidenciaCelular ? 'celular' : 'nombre'} (${dup.nombre}).</div> <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="showTab('leads'); abrirLead('${String(dup.id).trim()}', '${String(dup.celular).trim()}')">Ver Cliente</button>`;
+    w.innerHTML = `<div>⚠️ <b>Atención:</b> Ya existe un cliente con este \${coincidenciaCelular ? 'celular' : 'nombre'} (\${dup.nombre}).</div> <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="showTab('leads'); abrirLead('\${String(dup.id).trim()}', '\${String(dup.celular).trim()}')">Ver Cliente</button>`;
   } else {
     w.style.display='none';
   }
@@ -3498,6 +3557,11 @@ function toggleProp(cod,el){
    GUARDAR LEAD
 ═══════════════════════════════════════════════ */
 function guardarLead(enviarAhora, btn){
+  const inputN = document.getElementById('nlN');
+  const inputC = document.getElementById('nlC');
+  if (inputN) nuevoLead.nombre = inputN.value.trim();
+  if (inputC) nuevoLead.celular = inputC.value.trim();
+
   if(!nuevoLead.nombre.trim() && nuevoLead.tipo !== 'inmobiliaria'){ toast('Ingresa el nombre','error'); return; }
   if(nuevoLead.tipo === 'inmobiliaria' && !nuevoLead.nombreInmobiliaria.trim()){ toast('Ingresa nombre de inmobiliaria','error'); return; }
   if(!nuevoLead.celular.trim()){ toast('Ingresa el celular','error'); return; }
@@ -4692,6 +4756,7 @@ function saveLeads(){
   try {
     localStorage.setItem('icde_leads', JSON.stringify(leads)); 
     localStorage.setItem('icde_citas', JSON.stringify(citas)); 
+    updateLeadsDatalists();
   } catch (e) {
     console.error("Error saving to localStorage:", e);
     if (e.name === 'QuotaExceededError') {
