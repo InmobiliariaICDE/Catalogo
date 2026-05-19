@@ -8351,6 +8351,36 @@ font-weight: 500;
                             ["filterGaraje", "Garaje"],
                             ["filterPisos", "Pisos"],
                             ["filterBarrio", "Barrio"],
+                        ];
+
+                        filtrosInd.forEach(([id, campo]) => {
+                            const elemento = document.getElementById(id);
+                            if (!elemento) return;
+
+                            const instancia = choicesInstances[id];
+                            if (!instancia) return;
+
+                            // 7.2. Calcular subconjunto sin aplicar el filtro actual
+                            const subset = datos.filter(d =>
+                                Object.keys(filtros).every(c => {
+                                    if (c === campo) return true;
+                                    return filtroIncluye(d[c], filtros[c]);
+                                })
+                            );
+
+                            // 7.3. Obtener valores únicos posibles para este select en el dataset completo
+                            let valores = [...new Set(datos.map(d => d[campo]).filter(v => v))];
+                            if (["Habitaciones", "Garaje", "Pisos"].includes(campo)) {
+                                valores = valores
+                                    .map(v => Number(v))
+                                    .filter(v => !isNaN(v))
+                                    .sort((a, b) => a - b)
+                                    .map(v => String(v));
+                            } else {
+                                valores = valores.sort();
+                            }
+
+                            // 7.4. Generar opciones para Choices
                             const opciones = [
                                 {
                                     value: "",
