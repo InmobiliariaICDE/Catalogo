@@ -306,47 +306,52 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
         /* Card Actions */
         .cocreacion-acciones {
+            position: absolute;
+            bottom: 6px;
+            left: 8px;
+            z-index: 10;
             display: flex;
-            gap: 8px;
-            margin-top: 12px;
-            padding-top: 10px;
-            border-top: 1px solid rgba(255,255,255,0.06);
+            gap: 5px;
         }
         .btn-cc {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.08);
-            color: #aaa;
-            padding: 5px 10px;
-            border-radius: 16px;
-            font-size: 11.5px;
+            background: rgba(15, 15, 15, 0.75);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #eee;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10.5px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            font-weight: 500;
+            font-weight: 600;
             line-height: 1;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
         .btn-cc:hover {
-            background: rgba(255,255,255,0.06);
+            background: rgba(15, 15, 15, 0.9);
             color: #fff;
             transform: translateY(-1px);
         }
         .btn-cc.btn-like.active {
-            background: rgba(235, 94, 85, 0.15);
+            background: rgba(235, 94, 85, 0.9);
             border-color: #eb5e55;
-            color: #eb5e55;
-            box-shadow: 0 0 8px rgba(235, 94, 85, 0.15);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(235, 94, 85, 0.4);
         }
         .btn-cc.btn-dislike.active {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(119, 119, 119, 0.9);
             border-color: #777;
-            color: #777;
+            color: #fff;
         }
         .btn-cc.btn-comment.has-comment {
-            background: rgba(212, 168, 75, 0.12);
+            background: rgba(212, 168, 75, 0.9);
             border-color: #d4a84b;
-            color: #d4a84b;
+            color: #141210;
+            box-shadow: 0 2px 8px rgba(212, 168, 75, 0.4);
         }
 
         /* Card dimming when disliked */
@@ -8462,6 +8467,19 @@ font-weight: 500;
                                                                                             ${_getFotosHTML(d)}
                                                                                           </div>
                                                                                           <span class="tarjeta-foto-counter"></span>
+                                                                                          ${window.lid ? `
+                                                                                            <div class="cocreacion-acciones" onclick="event.stopPropagation()">
+                                                                                              <button class="btn-cc btn-like ${isLiked ? 'active' : ''}" onclick="enviarCCFeedback('${cod}', 'like')">
+                                                                                                ❤️ Me Interesa
+                                                                                              </button>
+                                                                                              <button class="btn-cc btn-dislike ${isDisliked ? 'active' : ''}" onclick="enviarCCFeedback('${cod}', 'dislike')">
+                                                                                                👎 Descartar
+                                                                                              </button>
+                                                                                              <button class="btn-cc btn-comment ${hasComment ? 'has-comment' : ''}" onclick="abrirCCComentario('${cod}')">
+                                                                                                💬 ${hasComment ? 'Comentado' : 'Comentar'}
+                                                                                              </button>
+                                                                                            </div>
+                                                                                          ` : ''}
                                                                                         </div>
                                                                                         <div class="contenido">
                                                                                           <h3 class="titulo">${d["Nombre"]}</h3>
@@ -8498,17 +8516,6 @@ font-weight: 500;
                                                                                           </div>
                                                                                           
                                                                                           ${window.lid ? `
-                                                                                            <div class="cocreacion-acciones" onclick="event.stopPropagation()">
-                                                                                              <button class="btn-cc btn-like ${isLiked ? 'active' : ''}" onclick="enviarCCFeedback('${cod}', 'like')">
-                                                                                                ❤️ Me Interesa
-                                                                                              </button>
-                                                                                              <button class="btn-cc btn-dislike ${isDisliked ? 'active' : ''}" onclick="enviarCCFeedback('${cod}', 'dislike')">
-                                                                                                👎 Descartar
-                                                                                              </button>
-                                                                                              <button class="btn-cc btn-comment ${hasComment ? 'has-comment' : ''}" onclick="abrirCCComentario('${cod}')">
-                                                                                                💬 ${hasComment ? 'Comentado' : 'Comentar'}
-                                                                                              </button>
-                                                                                            </div>
                                                                                             <div id="ccCommentBox-${cod}" class="cc-comment-box" style="display: ${editingComment ? 'flex' : 'none'};" onclick="event.stopPropagation()">
                                                                                               <input type="text" id="ccCommentInput-${cod}" class="cc-comment-input" placeholder="Escribe tu opinión sobre esta propiedad..." value="${window.ccFeedback && window.ccFeedback[cod]?.comentario || ''}" onkeydown="if(event.key==='Enter') guardarCCComentario('${cod}')" />
                                                                                               <button class="cc-comment-btn" onclick="guardarCCComentario('${cod}')">Enviar</button>
