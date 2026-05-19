@@ -3312,7 +3312,7 @@ function checkDuplicateLead(){
   const w = document.getElementById('nlDuplicateWarning');
   if(!w) return;
   
-  const rawNum = (nuevoLead.celular||'').trim().replace(/\D/g, '');
+  const rawNum = String(nuevoLead.celular||'').trim().replace(/\D/g, '');
   const num = rawNum.length >= 10 ? rawNum.slice(-10) : rawNum;
   const nom = norm(nuevoLead.nombre);
   
@@ -3320,7 +3320,7 @@ function checkDuplicateLead(){
 
   const dup = leads.find(l => {
     if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
-    const lRawNum = (l.celular||'').trim().replace(/\D/g, '');
+    const lRawNum = String(l.celular||'').trim().replace(/\D/g, '');
     const lNum = lRawNum.length >= 10 ? lRawNum.slice(-10) : lRawNum;
     const lNom = norm(l.nombre);
     
@@ -3331,7 +3331,7 @@ function checkDuplicateLead(){
 
   if(dup){
     w.style.display='flex';
-    const lRawNum = (dup.celular||'').trim().replace(/\D/g, '');
+    const lRawNum = String(dup.celular||'').trim().replace(/\D/g, '');
     const lNum = lRawNum.length >= 10 ? lRawNum.slice(-10) : lRawNum;
     const coincidenciaCelular = num && lNum === num;
     w.innerHTML = `<div>⚠️ <b>Atención:</b> Ya existe un cliente con este ${coincidenciaCelular ? 'celular' : 'nombre'} (${dup.nombre}).</div> <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="showTab('leads'); abrirLead('${String(dup.id).trim()}', '${String(dup.celular).trim()}')">Ver Cliente</button>`;
@@ -3502,7 +3502,7 @@ function guardarLead(enviarAhora, btn){
   if(nuevoLead.tipo === 'inmobiliaria' && !nuevoLead.nombreInmobiliaria.trim()){ toast('Ingresa nombre de inmobiliaria','error'); return; }
   if(!nuevoLead.celular.trim()){ toast('Ingresa el celular','error'); return; }
   
-  const celularLimpio = nuevoLead.celular.trim().replace(/\D/g, '');
+  const celularLimpio = String(nuevoLead.celular||'').trim().replace(/\D/g, '');
   
   // Si el teléfono estaba en la lista de eliminados, desbloquearlo para permitir su re-registro
   let deletedPhones = JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]');
@@ -3513,7 +3513,7 @@ function guardarLead(enviarAhora, btn){
 
   const existe = leads.find(l => {
     if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
-    const lRawNum = (l.celular || '').replace(/\D/g, '');
+    const lRawNum = String(l.celular || '').replace(/\D/g, '');
     const lNum = lRawNum.length >= 10 ? lRawNum.slice(-10) : lRawNum;
     const cleanC = celularLimpio.length >= 10 ? celularLimpio.slice(-10) : celularLimpio;
     
@@ -3525,7 +3525,7 @@ function guardarLead(enviarAhora, btn){
     return matchCelular || matchNombre;
   });
   if (existe) {
-    const lRawNum = (existe.celular || '').replace(/\D/g, '');
+    const lRawNum = String(existe.celular || '').replace(/\D/g, '');
     const lNum = lRawNum.length >= 10 ? lRawNum.slice(-10) : lRawNum;
     const cleanC = celularLimpio.length >= 10 ? celularLimpio.slice(-10) : celularLimpio;
     const coincidenciaCelular = cleanC && lNum === cleanC;
