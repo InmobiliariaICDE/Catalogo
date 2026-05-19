@@ -305,13 +305,20 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }
 
         /* Card Actions */
+        .tarjeta-cc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            width: 100%;
+        }
+        .tarjeta-cc-header .codigo {
+            margin: 0 !important;
+        }
         .cocreacion-acciones {
-            position: absolute;
-            bottom: 5px;
-            left: 8px;
-            z-index: 10;
             display: flex;
             gap: 5px;
+            align-items: center;
         }
         .btn-cc {
             background: rgba(15, 15, 15, 0.75);
@@ -8464,24 +8471,25 @@ font-weight: 500;
                                                                                             ${_getFotosHTML(d)}
                                                                                           </div>
                                                                                           <span class="tarjeta-foto-counter"></span>
-                                                                                          ${window.lid ? `
-                                                                                            <div class="cocreacion-acciones" onclick="event.stopPropagation()">
-                                                                                              <button class="btn-cc btn-like ${isLiked ? 'active' : ''}" title="Me Interesa" aria-label="Me Interesa" onclick="enviarCCFeedback('${cod}', 'like')">
-                                                                                                ❤️
-                                                                                              </button>
-                                                                                              <button class="btn-cc btn-dislike ${isDisliked ? 'active' : ''}" title="Descartar" aria-label="Descartar" onclick="enviarCCFeedback('${cod}', 'dislike')">
-                                                                                                👎
-                                                                                              </button>
-                                                                                              <button class="btn-cc btn-comment ${hasComment ? 'has-comment' : ''}" title="Comentar" aria-label="Comentar" onclick="abrirCCComentario('${cod}')">
-                                                                                                💬
-                                                                                              </button>
-                                                                                            </div>
-                                                                                          ` : ''}
                                                                                         </div>
                                                                                         <div class="contenido">
+                                                                                          <div class="tarjeta-cc-header">
+                                                                                            ${window.lid ? `
+                                                                                              <div class="cocreacion-acciones" onclick="event.stopPropagation()">
+                                                                                                <button class="btn-cc btn-like ${isLiked ? 'active' : ''}" title="Me Interesa" aria-label="Me Interesa" onclick="enviarCCFeedback('${cod}', 'like')">
+                                                                                                  ❤️
+                                                                                                </button>
+                                                                                                <button class="btn-cc btn-dislike ${isDisliked ? 'active' : ''}" title="Descartar" aria-label="Descartar" onclick="enviarCCFeedback('${cod}', 'dislike')">
+                                                                                                  👎
+                                                                                                </button>
+                                                                                                <button class="btn-cc btn-comment ${hasComment ? 'has-comment' : ''}" title="Comentar" aria-label="Comentar" onclick="abrirCCComentario('${cod}')">
+                                                                                                  💬
+                                                                                                </button>
+                                                                                              </div>
+                                                                                            ` : ''}
+                                                                                            <p class="codigo">Código: ${cod}</p>
+                                                                                          </div>
                                                                                           <h3 class="titulo">${d["Nombre"]}</h3>
-
-                                                                                          <p class="codigo">Código: ${cod}</p>
                                                                                           <p class="precio">${formatearPrecio(d["Precio"])}</p>
                                                                                           <div class="etiquetas">
                                                                                             <span class="etiqueta">
