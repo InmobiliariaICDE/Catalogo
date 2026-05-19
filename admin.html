@@ -4613,7 +4613,16 @@ function guardarVisita(){
     const celular = document.getElementById('visitaCelular').value.trim();
     
     let lead = leads.find(l=>String(l.id)===String(visitaLeadId));
-    if(!lead && celular) lead = leads.find(l => String(l.celular) === String(celular));
+    if(!lead && celular) {
+      const cleanInput = String(celular).replace(/\D/g, '');
+      const matchInput = cleanInput.length >= 10 ? cleanInput.slice(-10) : cleanInput;
+      lead = leads.find(l => {
+        if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
+        const lRaw = String(l.celular || '').replace(/\D/g, '');
+        const lMatch = lRaw.length >= 10 ? lRaw.slice(-10) : lRaw;
+        return matchInput && lMatch && lMatch === matchInput;
+      });
+    }
 
     if(!lead) {
        // Asignar a contenedor global para sincronización
