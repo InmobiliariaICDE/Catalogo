@@ -16,6 +16,12 @@ function doGet(e) {
     if (action === 'getCitas') {
       return getCitas();
     }
+    if (action === 'getLeadName') {
+      return getLeadName(e.parameter.leadId);
+    }
+    if (action === 'saveFeedback') {
+      return saveLeadFeedback(e.parameter.leadId, e.parameter.cod, e.parameter.type, e.parameter.comment);
+    }
     return createJsonResponse({error: 'Acción no válida'});
   } catch (err) {
     return createJsonResponse({error: err.toString()});
@@ -36,6 +42,9 @@ function doPost(e) {
     }
     if (params.action === 'saveProperty') {
       return savePropertyToSheet(JSON.parse(params.property));
+    }
+    if (params.action === 'saveFeedback') {
+      return saveLeadFeedback(params.leadId, params.cod, params.type, params.comment);
     }
     return createJsonResponse({error: 'Acción no válida'});
   } catch (err) {
@@ -315,4 +324,106 @@ function savePropertyToSheet(prop) {
 function createJsonResponse(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Obtiene el nombre del lead por su ID de manera segura para el saludo del cliente
+ */
+function getLeadName(leadId) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('CRM_Leads');
+  if (!sheet) return createJsonResponse({error: 'Hoja CRM_Leads no encontrada'});
+  
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const jsonIdx = headers.indexOf('Full_JSON');
+  
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] == leadId) {
+      let feedback = {};
+      if (jsonIdx !== -1 && data[i][jsonIdx]) {
+        try {
+          const lead = JSON.parse(data[i][jsonIdx]);
+          feedback = lead.feedback || {};
+        } catch(e) {}
+      }
+      return createJsonResponse({
+        nombre: data[i][2] || 'Cliente',
+        feedback: feedback
+      });
+    }
+  }
+  return createJsonResponse({nombre: 'Cliente', feedback: {}});
+}
+
+/**
+ * Guarda el feedback (likes, dislikes, comentarios) del cliente
+ */
+function saveLeadFeedback(leadId, cod, type, comment) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('CRM_Leads');
+  if (!sheet) return createJsonResponse({error: 'Hoja CRM_Leads no encontrada'});
+  
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const jsonIdx = headers.indexOf('Full_JSON');
+  const notasIdx = headers.indexOf('Notas');
+  
+  if (jsonIdx === -1) return createJsonResponse({error: 'Columna Full_JSON no encontrada'});
+  
+  let rowIndex = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] == leadId) {
+      rowIndex = i + 1;
+      break;
+    }
+  }
+  
+  if (rowIndex === -1) return createJsonResponse({error: 'Lead no encontrado'});
+  
+  // Leer y parsear lead JSON
+  let lead = {};
+  const jsonVal = sheet.getRange(rowIndex, jsonIdx + 1).getValue();
+  if (jsonVal) {
+    try {
+      lead = JSON.parse(jsonVal);
+    } catch (e) {
+      lead = { id: leadId, nombre: data[rowIndex-1][2], celular: data[rowIndex-1][3] };
+    }
+  }
+  
+  // Inicializar estructura de feedback en el objeto lead
+  if (!lead.feedback) lead.feedback = {};
+  if (!lead.feedback[cod]) lead.feedback[cod] = {};
+  
+  const fechaStr = new Date().toISOString().split('T')[0];
+  let logMsg = "";
+  
+  if (type === 'like') {
+    lead.feedback[cod].interes = 'LIKE';
+    logMsg = `[Co-Creación: Código ${cod} -> ❤️ Me Interesa! (${fechaStr})]`;
+  } else if (type === 'dislike') {
+    lead.feedback[cod].interes = 'DISLIKE';
+    logMsg = `[Co-Creación: Código ${cod} -> 👎 Descartada (${fechaStr})]`;
+  } else if (type === 'comment') {
+    lead.feedback[cod].comentario = comment || '';
+    logMsg = `[Co-Creación: Comentario sobre ${cod} -> "${comment}" (${fechaStr})]`;
+  }
+  lead.feedback[cod].fecha = fechaStr;
+  
+  // Guardar JSON actualizado
+  sheet.getRange(rowIndex, jsonIdx + 1).setValue(JSON.stringify(lead));
+  
+  // Opcional: registrar en la columna de Notas para visibilidad rápida
+  if (notasIdx !== -1) {
+    let currentNotas = String(sheet.getRange(rowIndex, notasIdx + 1).getValue() || '');
+    if (currentNotas) {
+      currentNotas += '\n' + logMsg;
+    } else {
+      currentNotas = logMsg;
+    }
+    sheet.getRange(rowIndex, notasIdx + 1).setValue(currentNotas);
+  }
+  
+  return createJsonResponse({success: true, feedback: lead.feedback});
 }

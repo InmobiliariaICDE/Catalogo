@@ -244,9 +244,161 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 </script>
     <style>
         
-        /* ============================= */
-        /* 1. Contenedor base .choices   */
-        /* ============================= */
+        /* ============================================== */
+        /* PORTAL DE CO-CREACIÓN Y COLABORACIÓN CLIENTE  */
+        /* ============================================== */
+        .cocreacion-banner {
+            background: linear-gradient(135deg, rgba(16,14,12,0.98), rgba(30,26,20,0.98));
+            border-bottom: 2px solid var(--gold, #d4a84b);
+            padding: 12px 20px;
+            color: #fff;
+            font-size: 13px;
+            display: none; /* Se activa por JS */
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 99999;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .cocreacion-banner-text {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .cocreacion-banner-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(212, 168, 75, 0.15);
+            border: 1px solid var(--gold, #d4a84b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .cocreacion-banner-title {
+            font-weight: 700;
+            color: var(--gold, #d4a84b);
+        }
+        .cocreacion-banner-desc {
+            color: #ccc;
+            font-size: 11px;
+        }
+        .cocreacion-banner-status {
+            background: rgba(46, 213, 115, 0.12);
+            color: #2ed573;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            border: 1px solid rgba(46, 213, 115, 0.25);
+            animation: pulseFeedback 2s infinite;
+        }
+        @keyframes pulseFeedback {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+
+        /* Card Actions */
+        .cocreacion-acciones {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .btn-cc {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #aaa;
+            padding: 5px 10px;
+            border-radius: 16px;
+            font-size: 11.5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            line-height: 1;
+        }
+        .btn-cc:hover {
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        .btn-cc.btn-like.active {
+            background: rgba(235, 94, 85, 0.15);
+            border-color: #eb5e55;
+            color: #eb5e55;
+            box-shadow: 0 0 8px rgba(235, 94, 85, 0.15);
+        }
+        .btn-cc.btn-dislike.active {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #777;
+            color: #777;
+        }
+        .btn-cc.btn-comment.has-comment {
+            background: rgba(212, 168, 75, 0.12);
+            border-color: #d4a84b;
+            color: #d4a84b;
+        }
+
+        /* Card dimming when disliked */
+        .tarjeta.cc-disliked {
+            opacity: 0.35 !important;
+            filter: grayscale(0.8) !important;
+            transition: all 0.25s ease;
+        }
+        .tarjeta.cc-disliked:hover {
+            opacity: 0.65 !important;
+            filter: grayscale(0.2) !important;
+        }
+
+        /* Comment Box inside Card */
+        .cc-comment-box {
+            margin-top: 8px;
+            background: rgba(255,255,255,0.01);
+            border: 1px solid rgba(212,168,75,0.15);
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .cc-comment-input {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 6px;
+            color: #fff;
+            padding: 5px 8px;
+            font-size: 11px;
+        }
+        .cc-comment-input:focus {
+            border-color: var(--gold, #d4a84b);
+            outline: none;
+        }
+        .cc-comment-btn {
+            background: var(--gold, #d4a84b);
+            color: #141210;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 9px;
+            font-size: 10.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .cc-comment-btn:hover {
+            background: #e5b95c;
+        }
+
         .choices {
             position: relative;
             overflow: hidden;
@@ -5846,6 +5998,17 @@ font-weight: 500;
 </head>
 
 <body>
+    <!-- Banner de Co-Creación -->
+    <div id="cocreacionBanner" class="cocreacion-banner">
+        <div class="cocreacion-banner-text">
+            <div class="cocreacion-banner-avatar">🤝</div>
+            <div>
+                <div><span id="cocreacionBienvenida">¡Te damos la bienvenida a tu</span> <span class="cocreacion-banner-title">Portal de Co-Creación ICDE</span>!</div>
+                <div class="cocreacion-banner-desc">Califica las propiedades con ❤️ o 👎 y dinos qué te parecen. Tu asesor verá tu feedback en tiempo real.</div>
+            </div>
+        </div>
+        <div id="cocreacionSyncStatus" class="cocreacion-banner-status">🟢 Conectado con tu Asesor</div>
+    </div>
     <!-- Google Tag Manager (noscript) -->
     <noscript>
         <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PH2B85PT"
@@ -6206,6 +6369,11 @@ font-weight: 500;
                             <p class="modalCodigo" style="color:#c0c0c0;font-size:12px;margin:0;"><strong style="font-weight:500;">Código:</strong> <span id="modalCodigo"></span></p>
                             <p id="modalPrecio" class="precio"></p>
                             <div class="modal-etiquetas" id="modalEtiquetas" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"></div>
+                            <!-- Co-Creación Modal Comment Box -->
+                            <div id="modalCocreacionCommentBox" class="cc-comment-box" style="display:none; margin-top:12px;">
+                                <input type="text" id="modalCcCommentInput" class="cc-comment-input" placeholder="Escribe tu opinión sobre esta propiedad..." onkeydown="if(event.key==='Enter') guardarCCComentarioDesdeModal()" />
+                                <button class="cc-comment-btn" onclick="guardarCCComentarioDesdeModal()">Enviar</button>
+                            </div>
                         </div>
                     </div>
 
@@ -6238,6 +6406,12 @@ font-weight: 500;
                         <span class="modal-chk-box"></span>
                         <span id="modalCompararTexto">Comparar</span>
                     </label>
+                    <!-- Co-Creación Modal Actions -->
+                    <div id="modalCocreacionAcciones" style="display:none; align-items:center; gap:8px; margin-left:12px;">
+                        <button id="modalBtnLike" class="btn-cc btn-like" onclick="enviarCCFeedbackDesdeModal('like')">❤️ Me Interesa</button>
+                        <button id="modalBtnDislike" class="btn-cc btn-dislike" onclick="enviarCCFeedbackDesdeModal('dislike')">👎 Descartar</button>
+                        <button id="modalBtnComment" class="btn-cc btn-comment" onclick="abrirCCComentarioDesdeModal()">💬 Comentar</button>
+                    </div>
                 </div>
 
             </div>
@@ -8177,56 +8351,6 @@ font-weight: 500;
                             ["filterGaraje", "Garaje"],
                             ["filterPisos", "Pisos"],
                             ["filterBarrio", "Barrio"],
-                            ["filterConjunto", "Conjunto"]
-                        ];
-
-                        filtrosInd.forEach(([id, campo]) => {
-                            const instancia = choiceInstances[id];
-                            if (!instancia) return;
-
-                            // 7.1. Filtramos todos los datos según TODO lo que esté seleccionado, excepto el campo actual
-                            const subset = datos.filter(d => {
-                                for (const [, campo2] of filtrosInd) {
-                                    if (campo2 === campo) continue;
-                                    const filtroValores = filtros[campo2];
-                                    if (filtroValores && Array.isArray(filtroValores) && filtroValores.length > 0) {
-                                        const valorDato = String(d[campo2]);
-                                        if (!filtroValores.includes(valorDato)) return false;
-                                    }
-                                }
-                                return true;
-                            });
-
-                            // 7.2. Obtenemos valores únicos de “datos” para este campo (ignoramos vacíos)
-                            let valores = [...new Set(
-                                datos
-                                    .map(d => d[campo])
-                                    .filter(v => {
-                                        if (["Barrio", "Conjunto"].includes(campo)) {
-                                            return v !== undefined && v !== null && String(v).trim() !== "";
-                                        }
-                                        return v !== undefined && v !== null && String(v) !== "";
-                                    })
-                            )];
-
-                            // 7.3. Eliminamos de “valores” los que ya estén seleccionados
-                            const seleccionados = filtros[campo] || [];
-                            if (Array.isArray(seleccionados) && seleccionados.length > 0) {
-                                valores = valores.filter(v => !seleccionados.includes(String(v)));
-                            }
-
-                            // 7.4. Ordenamos numérica o alfabéticamente
-                            if (["Habitaciones", "Garaje", "Pisos"].includes(campo)) {
-                                valores = valores
-                                    .map(v => Number(v))
-                                    .filter(v => !isNaN(v))
-                                    .sort((a, b) => a - b)
-                                    .map(v => String(v));
-                            } else {
-                                valores = valores.sort();
-                            }
-
-                            // 7.5. Construimos las “choices” con contador basándonos en “subset”
                             const opciones = [
                                 {
                                     value: "",
@@ -8284,13 +8408,20 @@ font-weight: 500;
                             }).join('');
                         }
 
-                        cont.innerHTML = paginaDatos.map(d => `
+                        cont.innerHTML = paginaDatos.map(d => {
+                            const cod = d["Código"];
+                            const isDisliked = window.lid && window.ccFeedback && window.ccFeedback[cod]?.interes === 'DISLIKE';
+                            const isLiked = window.lid && window.ccFeedback && window.ccFeedback[cod]?.interes === 'LIKE';
+                            const hasComment = window.lid && window.ccFeedback && window.ccFeedback[cod]?.comentario;
+                            const editingComment = window.lid && window.ccFeedback && window.ccFeedback[cod]?._editingComment;
+                            
+                            return `
                                                                                       <div
-                                                                                        class="tarjeta ${["Directo", "Verbal"].includes(d["Contrato"]) ? "recomendado" : ""}"
+                                                                                        class="tarjeta ${["Directo", "Verbal"].includes(d["Contrato"]) ? "recomendado" : ""} ${isDisliked ? "cc-disliked" : ""}"
                                                                                         tabindex="0"
                                                                                         role="button"
                                                                                         aria-pressed="false"
-                                                                                        data-codigo="${d["Código"]}"
+                                                                                        data-codigo="${cod}"
                                                                                       >
                                                                                         ${["Directo", "Verbal"].includes(d["Contrato"])
                                 ? `<div class="ribbon"><span>¡Destacada!</span></div>`
@@ -8305,7 +8436,7 @@ font-weight: 500;
                                                                                         <div class="contenido">
                                                                                           <h3 class="titulo">${d["Nombre"]}</h3>
 
-                                                                                          <p class="codigo">Código: ${d["Código"]}</p>
+                                                                                          <p class="codigo">Código: ${cod}</p>
                                                                                           <p class="precio">${formatearPrecio(d["Precio"])}</p>
                                                                                           <div class="etiquetas">
                                                                                             <span class="etiqueta">
@@ -8335,9 +8466,29 @@ font-weight: 500;
                                                                                               ${d["Rentabilidad"]}
                                                                                             </span>
                                                                                           </div>
+                                                                                          
+                                                                                          ${window.lid ? `
+                                                                                            <div class="cocreacion-acciones" onclick="event.stopPropagation()">
+                                                                                              <button class="btn-cc btn-like ${isLiked ? 'active' : ''}" onclick="enviarCCFeedback('${cod}', 'like')">
+                                                                                                ❤️ Me Interesa
+                                                                                              </button>
+                                                                                              <button class="btn-cc btn-dislike ${isDisliked ? 'active' : ''}" onclick="enviarCCFeedback('${cod}', 'dislike')">
+                                                                                                👎 Descartar
+                                                                                              </button>
+                                                                                              <button class="btn-cc btn-comment ${hasComment ? 'has-comment' : ''}" onclick="abrirCCComentario('${cod}')">
+                                                                                                💬 ${hasComment ? 'Comentado' : 'Comentar'}
+                                                                                              </button>
+                                                                                            </div>
+                                                                                            <div id="ccCommentBox-${cod}" class="cc-comment-box" style="display: ${editingComment ? 'flex' : 'none'};" onclick="event.stopPropagation()">
+                                                                                              <input type="text" id="ccCommentInput-${cod}" class="cc-comment-input" placeholder="Escribe tu opinión sobre esta propiedad..." value="${window.ccFeedback && window.ccFeedback[cod]?.comentario || ''}" onkeydown="if(event.key==='Enter') guardarCCComentario('${cod}')" />
+                                                                                              <button class="cc-comment-btn" onclick="guardarCCComentario('${cod}')">Enviar</button>
+                                                                                            </div>
+                                                                                          ` : ''}
                                                                                         </div>
                                                                                       </div>
-                                                                                    `).join("");
+                                                                                    `;
+                        }).join("");
+
 
                         // ─────────── (scroll manejado en cambiarPagina) ───────────
                         primeraCarga = false;
@@ -9135,6 +9286,44 @@ document.head.appendChild(schemaScript);
                         const _metaDesc = document.querySelector('meta[name="description"]');
                         if (_metaDesc) _metaDesc.setAttribute('content', (inmueble["Descripción"] || inmueble["Puntos Clave"] || ('Propiedad en ' + (inmueble["Barrio"] || 'Neiva') + ' - ICDE Inmobiliaria')).substring(0, 160));
                         
+                        // Sincronizar Co-Creación en el Modal
+                        if (window.lid) {
+                            const cod = inmueble["Código"];
+                            const ccAcciones = document.getElementById("modalCocreacionAcciones");
+                            const ccCommentBox = document.getElementById("modalCocreacionCommentBox");
+                            
+                            if (ccAcciones) {
+                                ccAcciones.style.display = "flex";
+                                
+                                // Reset active classes
+                                const modalLike = document.getElementById("modalLike");
+                                const modalDislike = document.getElementById("modalDislike");
+                                const modalComment = document.getElementById("modalComment");
+                                
+                                if (modalLike) modalLike.classList.toggle("active", !!(window.ccFeedback && window.ccFeedback[cod]?.interes === 'LIKE'));
+                                if (modalDislike) modalDislike.classList.toggle("active", !!(window.ccFeedback && window.ccFeedback[cod]?.interes === 'DISLIKE'));
+                                
+                                const hasComment = window.ccFeedback && window.ccFeedback[cod]?.comentario;
+                                if (modalComment) {
+                                    modalComment.classList.toggle("has-comment", !!hasComment);
+                                    modalComment.innerHTML = hasComment ? '💬 Comentado' : '💬 Comentar';
+                                }
+                                
+                                // Pre-fill and display comment box if active/has comment
+                                if (ccCommentBox) {
+                                    ccCommentBox.style.display = (window.ccFeedback && window.ccFeedback[cod]?._editingCommentModal) ? "flex" : "none";
+                                    const commentInput = document.getElementById("modalCcCommentInput");
+                                    if (commentInput) {
+                                        commentInput.value = (window.ccFeedback && window.ccFeedback[cod]?.comentario) || "";
+                                    }
+                                }
+                            }
+                        } else {
+                            const ccAcciones = document.getElementById("modalCocreacionAcciones");
+                            const ccCommentBox = document.getElementById("modalCocreacionCommentBox");
+                            if (ccAcciones) ccAcciones.style.display = "none";
+                            if (ccCommentBox) ccCommentBox.style.display = "none";
+                        }
                     }
 
 
@@ -10595,13 +10784,213 @@ sizePct: 70
                                 if(!down) return;
                                 el.scrollLeft = scrollLeft - (e.pageX - startX);
                             });
-                        }
                         // Init al abrir modal
                         var ov = document.getElementById('modalOverlay');
                         if (ov) new MutationObserver(function(){ initMinDrag(); })
                             .observe(ov, {attributes:true, attributeFilter:['style','class']});
                     })();
-        </script>
+
+                    // ─────────────────────────────────────────────────
+                    // CO-CREACIÓN CLIENT JS PORTAL LOGIC
+                    // ─────────────────────────────────────────────────
+                    window.ccFeedback = {};
+                    window.lid = null;
+                    window.leadName = "";
+                    const GAS_CC_URL = "https://script.google.com/macros/s/AKfycbz-HipJ53KIf2JD1q9BUIBFUB45o4wRYcjvlqUbpg9TDAGK0q3hNQcSrV23dMCWaTgXcQ/exec";
+
+                    // Inicializar Co-creación
+                    (function initCocreacion() {
+                        const params = new URLSearchParams(window.location.search);
+                        const lidParam = params.get('lid');
+                        if (!lidParam) return;
+                        
+                        window.lid = lidParam;
+                        
+                        // Cargar info del Lead (Nombre y Feedback previo)
+                        const fetchUrl = `${GAS_CC_URL}?action=getLeadName&leadId=${encodeURIComponent(lidParam)}&t=${Date.now()}`;
+                        fetch(fetchUrl)
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data && data.success) {
+                                    window.leadName = data.name || "Cliente";
+                                    window.ccFeedback = data.feedback || {};
+                                    
+                                    // Mostrar banner
+                                    const banner = document.getElementById("cocreacionBanner");
+                                    const leadNameEl = document.getElementById("ccLeadName");
+                                    if (banner) {
+                                        banner.style.display = "flex";
+                                        if (leadNameEl) leadNameEl.textContent = window.leadName;
+                                    }
+                                    
+                                    // Forzar renderizado para reflejar me gusta/descartar
+                                    if (typeof renderizarTarjetas === "function") {
+                                        renderizarTarjetas(datos);
+                                    }
+                                }
+                            })
+                            .catch(err => console.error("Error cargando Co-Creación:", err));
+                    })();
+
+                    // Enviar Feedback (LIKE / DISLIKE)
+                    window.enviarCCFeedback = function(cod, type) {
+                        if (!window.lid) return;
+                        
+                        const upperType = type.toUpperCase(); // 'LIKE' o 'DISLIKE'
+                        const prevFeedback = window.ccFeedback[cod] || {};
+                        const newInteres = prevFeedback.interes === upperType ? null : upperType; // Toggle off if clicked again
+                        
+                        // Optimistic update
+                        if (!window.ccFeedback[cod]) window.ccFeedback[cod] = {};
+                        window.ccFeedback[cod].interes = newInteres;
+                        
+                        // Update UI immediately
+                        if (typeof renderizarTarjetas === "function") renderizarTarjetas(datos);
+                        
+                        // Update active modal if open
+                        const activeModal = document.getElementById("modalOverlay");
+                        if (activeModal && activeModal.style.display === "flex") {
+                            const modalLike = document.getElementById("modalLike");
+                            const modalDislike = document.getElementById("modalDislike");
+                            if (modalLike) modalLike.classList.toggle("active", newInteres === 'LIKE');
+                            if (modalDislike) modalDislike.classList.toggle("active", newInteres === 'DISLIKE');
+                        }
+                        
+                        // Send to GAS
+                        const postData = {
+                            action: 'saveFeedback',
+                            leadId: window.lid,
+                            codigo: cod,
+                            interes: newInteres || '',
+                            comentario: prevFeedback.comentario || ''
+                        };
+                        
+                        enviarFeedbackRemote(postData);
+                    };
+
+                    // Abrir Comentario Rápido en Tarjeta
+                    window.abrirCCComentario = function(cod) {
+                        if (!window.lid) return;
+                        if (!window.ccFeedback[cod]) window.ccFeedback[cod] = {};
+                        
+                        // Toggle editing state
+                        window.ccFeedback[cod]._editingComment = !window.ccFeedback[cod]._editingComment;
+                        
+                        // Update UI
+                        if (typeof renderizarTarjetas === "function") renderizarTarjetas(datos);
+                    };
+
+                    // Guardar Comentario Rápido en Tarjeta
+                    window.guardarCCComentario = function(cod) {
+                        if (!window.lid) return;
+                        
+                        const inputEl = document.getElementById(`ccCommentInput-${cod}`);
+                        if (!inputEl) return;
+                        
+                        const val = inputEl.value.trim();
+                        if (!window.ccFeedback[cod]) window.ccFeedback[cod] = {};
+                        window.ccFeedback[cod].comentario = val;
+                        window.ccFeedback[cod]._editingComment = false; // Close box
+                        
+                        // Update UI
+                        if (typeof renderizarTarjetas === "function") renderizarTarjetas(datos);
+                        
+                        // Send to GAS
+                        const postData = {
+                            action: 'saveFeedback',
+                            leadId: window.lid,
+                            codigo: cod,
+                            interes: window.ccFeedback[cod].interes || '',
+                            comentario: val
+                        };
+                        
+                        enviarFeedbackRemote(postData);
+                    };
+
+                    // Acciones desde el Modal Detallado
+                    window.enviarCCFeedbackDesdeModal = function(type) {
+                        const codEl = document.getElementById("modalCodigo");
+                        if (!codEl) return;
+                        const cod = codEl.textContent.trim();
+                        if (!cod) return;
+                        
+                        window.enviarCCFeedback(cod, type);
+                    };
+
+                    window.abrirCCComentarioDesdeModal = function() {
+                        const codEl = document.getElementById("modalCodigo");
+                        if (!codEl) return;
+                        const cod = codEl.textContent.trim();
+                        if (!cod) return;
+                        
+                        if (!window.ccFeedback[cod]) window.ccFeedback[cod] = {};
+                        window.ccFeedback[cod]._editingCommentModal = !window.ccFeedback[cod]._editingCommentModal;
+                        
+                        const commentBox = document.getElementById("modalCocreacionCommentBox");
+                        if (commentBox) {
+                            commentBox.style.display = window.ccFeedback[cod]._editingCommentModal ? "flex" : "none";
+                            const commentInput = document.getElementById("modalCcCommentInput");
+                            if (commentInput) {
+                                commentInput.value = window.ccFeedback[cod].comentario || "";
+                                if (window.ccFeedback[cod]._editingCommentModal) commentInput.focus();
+                            }
+                        }
+                    };
+
+                    window.guardarCCComentarioDesdeModal = function() {
+                        const codEl = document.getElementById("modalCodigo");
+                        if (!codEl) return;
+                        const cod = codEl.textContent.trim();
+                        if (!cod) return;
+                        
+                        const inputEl = document.getElementById("modalCcCommentInput");
+                        if (!inputEl) return;
+                        
+                        const val = inputEl.value.trim();
+                        if (!window.ccFeedback[cod]) window.ccFeedback[cod] = {};
+                        window.ccFeedback[cod].comentario = val;
+                        window.ccFeedback[cod]._editingCommentModal = false;
+                        
+                        // Hide box
+                        const commentBox = document.getElementById("modalCocreacionCommentBox");
+                        if (commentBox) commentBox.style.display = "none";
+                        
+                        // Update badge in modal comment button
+                        const modalComment = document.getElementById("modalComment");
+                        if (modalComment) {
+                            modalComment.classList.toggle("has-comment", !!val);
+                            modalComment.innerHTML = val ? '💬 Comentado' : '💬 Comentar';
+                        }
+                        
+                        // Force render cards in background to update states
+                        if (typeof renderizarTarjetas === "function") renderizarTarjetas(datos);
+                        
+                        // Send to GAS
+                        const postData = {
+                            action: 'saveFeedback',
+                            leadId: window.lid,
+                            codigo: cod,
+                            interes: window.ccFeedback[cod].interes || '',
+                            comentario: val
+                        };
+                        
+                        enviarFeedbackRemote(postData);
+                    };
+
+                    // Enviar de forma segura a Google Apps Script
+                    function enviarFeedbackRemote(postData) {
+                        const url = `${GAS_CC_URL}?action=saveFeedback`;
+                        
+                        fetch(url, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(postData)
+                        }).catch(err => console.error("Error enviando feedback:", err));
+                    }
+         </script>
     <!-- Lightbox -->
     <div id="lightboxOverlay">
         <button class="lightbox-close" id="lightboxClose">&times;</button>
