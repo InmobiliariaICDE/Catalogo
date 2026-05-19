@@ -2776,6 +2776,12 @@ async function autoSyncLeads() {
         local.estado   = cloudLead.estado;
         local.etiqueta = cloudLead.etiqueta;
       }
+
+      // Sincronizar co-creación feedback
+      if (JSON.stringify(cloudLead.feedback || {}) !== JSON.stringify(local.feedback || {})) {
+        huboNuevos = true;
+        local.feedback = cloudLead.feedback || {};
+      }
     });
 
     if (huboNuevos) {
@@ -2873,6 +2879,7 @@ async function cargarLeads(){
              ...cloudLead,
              ...localLead,
              id: targetId,
+             feedback: cloudLead.feedback || localLead.feedback || {},
              historialEnvios: cleanHist,
              propsEnviadas: Array.from(new Set([...(localLead.propsEnviadas || []), ...(cloudLead.propsEnviadas || [])]))
           });
