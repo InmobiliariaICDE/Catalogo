@@ -1,5 +1,5 @@
 // ============================================================
-//  ICDE Inmobiliaria – Extractor v5.1 (Optimizado y ultra rápido)
+//  ICDE Inmobiliaria – Extractor v5.2 (Optimizado, Ultra rápido y Ahorro de Cuota)
 //  Extracción de fotos y detección de videos en segundo plano
 // ============================================================
 
@@ -9,9 +9,9 @@ var COL_IMAGENES  = "Imagenes";
 var COL_PUBLICAR  = "Publicar";
 var SEPARADOR     = "|";
 
-// Configuración de lotes
-var FOTOS_POR_LOTE = 5;  // Cantidad de álbumes a extraer por minuto en segundo plano
-var URLS_POR_LOTE  = 10; // Cantidad de URLs de fotos a validar (para videos) por minuto
+// Configuración de lotes (CAPACIDAD DUPLICADA)
+var FOTOS_POR_LOTE = 10; // Cantidad de álbumes a extraer por minuto en segundo plano (Antes era 5)
+var URLS_POR_LOTE  = 20; // Cantidad de URLs de fotos a validar (para videos) por minuto (Antes era 10)
 
 function onEdit(e) {
   EF_onEdit(e);
@@ -527,7 +527,7 @@ function reintentarErrores() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// FIREBASE — CONFIGURACIÓN Y SINCRONIZACIÓN (PERFECTAMENTE PRESERVADO)
+// FIREBASE — CONFIGURACIÓN Y SINCRONIZACIÓN (OPTIMIZADO PARA AHORRAR CUOTAS)
 // ─────────────────────────────────────────────────────────────
 var FIREBASE_CONFIG = {
   project_id:   "inmobiliariaicde",
@@ -587,7 +587,7 @@ function FIREBASE_onEdit(e) {
 
   if (publicar !== 'SI') {
     borrarDocumento(token, docId);
-    _actualizarSheetOrder(token, data, idx);
+    // OPTIMIZACIÓN DE CUOTAS: No reordenar todo en cada edición individual
     return;
   }
 
@@ -599,7 +599,8 @@ function FIREBASE_onEdit(e) {
   obj['_sheetOrder'] = String(row);
 
   escribirDocumento(token, docId, obj);
-  _actualizarSheetOrder(token, data, idx);
+  // OPTIMIZACIÓN DE CUOTAS CRÍTICA: Eliminamos _actualizarSheetOrder en cada tecla/edición individual
+  // que consumía hasta 200 peticiones urlfetch por cada celda modificada.
 }
 
 function _actualizarSheetOrder(token, data, idx) {
