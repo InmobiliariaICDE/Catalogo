@@ -4914,6 +4914,7 @@ async function guardarFeedback(){
   const cita = citas.find(c => String(c.id) === String(id));
   if(cita){
     cita.observaciones = notas;
+    cita.notas = notas;
     cita.estado = estado;
     const lead = leads.find(l => String(l.id) === String(cita.leadId));
     if(lead && lead.visitas){
@@ -4930,6 +4931,9 @@ async function guardarFeedback(){
     }
     saveLeads();
     syncCita(cita);
+    if(lead) {
+      syncSheets(lead);
+    }
     if(currentTab === 'citas') renderCitas();
     toast('Feedback guardado ✓');
   }
