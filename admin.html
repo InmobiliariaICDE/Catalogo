@@ -2183,29 +2183,31 @@ function renderEditFiltrosGrid(lista){
   el.innerHTML = html;
 }
 
-function getSearchLinkFromFilters(st, ids){
+function getSearchLinkFromFilters(st, ids, leadId){
   if(!st && (!ids || !ids.length)) return 'https://icdeinmobiliaria.com/';
   const url = new URL('https://icdeinmobiliaria.com/');
   const p = url.searchParams;
   
   if(ids && ids.length) {
     p.set('ids', ids.join(','));
-    return url.toString(); // Si hay IDs, priorizamos mostrar solo esos
+  } else {
+    if(st.buscar) p.set('q', st.buscar.trim());
+    if(st.tipoInmueble?.length) p.set('tipo', st.tipoInmueble.join(','));
+    if(st.minPrice) p.set('min', st.minPrice);
+    if(st.maxPrice) p.set('max', st.maxPrice);
+    if(st.zona?.length)         p.set('zona', st.zona.join(','));
+    if(st.habitaciones?.length) p.set('hab', st.habitaciones.join(','));
+    if(st.garaje?.length)       p.set('garaje', st.garaje.join(','));
+    if(st.pisos?.length)        p.set('pisos', st.pisos.join(','));
+    if(st.ubicacion?.length)    p.set('ubicacion', st.ubicacion.join(','));
+    if(st.piscina?.length)      p.set('piscina', st.piscina.join(','));
+    if(st.cocina?.length)       p.set('cocina', st.cocina.join(','));
+    if(st.barrio?.length)       p.set('barrio', st.barrio.join(','));
+    if(st.conjunto?.length)     p.set('conjunto', st.conjunto.join(','));
   }
-  
-  if(st.buscar) p.set('q', st.buscar.trim());
-  if(st.tipoInmueble?.length) p.set('tipo', st.tipoInmueble.join(','));
-  if(st.minPrice) p.set('min', st.minPrice);
-  if(st.maxPrice) p.set('max', st.maxPrice);
-  if(st.zona?.length)         p.set('zona', st.zona.join(','));
-  if(st.habitaciones?.length) p.set('hab', st.habitaciones.join(','));
-  if(st.garaje?.length)       p.set('garaje', st.garaje.join(','));
-  if(st.pisos?.length)        p.set('pisos', st.pisos.join(','));
-  if(st.ubicacion?.length)    p.set('ubicacion', st.ubicacion.join(','));
-  if(st.piscina?.length)      p.set('piscina', st.piscina.join(','));
-  if(st.cocina?.length)       p.set('cocina', st.cocina.join(','));
-  if(st.barrio?.length)       p.set('barrio', st.barrio.join(','));
-  if(st.conjunto?.length)     p.set('conjunto', st.conjunto.join(','));
+  if(leadId) {
+    p.set('lid', leadId);
+  }
   return url.toString();
 }
 
@@ -2217,7 +2219,10 @@ function fnGenerarLink(pfx, btn){
   // Si es Nuevo Lead o Editar Filtros, incluimos seleccionados
   const ids = ((pfx === 'nl' || pfx === 'ef') && typeof selectedProps !== 'undefined' && selectedProps.length > 0) ? selectedProps : null;
   
-  const link = getSearchLinkFromFilters(st, ids);
+  // Si tenemos un lead activo o en proceso de envío, incluimos su ID
+  const leadId = (typeof currentLeadId !== 'undefined' && currentLeadId) ? currentLeadId : null;
+  
+  const link = getSearchLinkFromFilters(st, ids, leadId);
   navigator.clipboard.writeText(link).then(() => {
     const original = btn.innerHTML;
     btn.textContent = '¡Copiado!';
@@ -3880,6 +3885,15 @@ function renderSidePanel(lead){
   </div>
 
   <div class="panel-section collapsible">
+    <div class="panel-section-title" onclick="toggleSection(this)">📊 Feedback de Co-Creación</div>
+    <div class="section-content">
+      <div id="panelCocreacionFeedback" style="margin-top:12px;">
+        ${renderCoCreacionFeedback(lead)}
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-section collapsible">
     <div class="panel-section-title" onclick="toggleSection(this)">📋 Seguimiento de Propiedades</div>
     <div class="section-content">
       <!-- A. PROGRESO -->
@@ -3928,6 +3942,56 @@ function renderSidePanel(lead){
   </div>`;
   
 
+}
+
+function renderCoCreacionFeedback(lead) {
+  const feedback = lead.feedback || {};
+  const keys = Object.keys(feedback);
+  if (!keys.length) {
+    return `<div class="empty" style="padding:15px; text-align:center; color:#888; font-size:12px; background:rgba(255,255,255,0.02); border-radius:12px; border:1px dashed rgba(255,255,255,0.1);">El cliente aún no ha dejado reacciones en su portal.</div>`;
+  }
+  
+  let html = `<div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">`;
+  
+  keys.forEach(cod => {
+    const fb = feedback[cod];
+    const p = allProps.find(x => String(x['Código']) === String(cod));
+    const name = p ? p['Nombre'] : `Propiedad ${cod}`;
+    const price = p ? formatP(p['Precio']) : '';
+    const img = p ? ((p['Imagenes'] || '').split('|')[0].trim() || p['Image'] || 'https://i.imgur.com/Pc9M3I8.png') : 'https://i.imgur.com/Pc9M3I8.png';
+    
+    let badge = '';
+    if (fb.interes === 'LIKE') {
+      badge = `<span class="badge" style="background:#10b981; color:#fff; font-size:11px; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">❤️ Me Interesa</span>`;
+    } else if (fb.interes === 'DISLIKE') {
+      badge = `<span class="badge" style="background:#ef4444; color:#fff; font-size:11px; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">👎 Descartada</span>`;
+    } else {
+      badge = `<span class="badge" style="background:#6b7280; color:#fff; font-size:11px; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">💬 Comentado</span>`;
+    }
+    
+    html += `
+      <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:12px; display:flex; gap:12px; align-items:flex-start;">
+        <img src="${img}" style="width:60px; height:50px; object-fit:cover; border-radius:8px; flex-shrink:0;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
+            <span style="font-weight:700; color:#fff; font-size:12px; text-transform:uppercase; letter-spacing:0.02em;">Código ${cod}</span>
+            ${badge}
+          </div>
+          <div style="font-size:12px; font-weight:600; color:#eee; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px;">${name}</div>
+          ${price ? `<div style="font-size:11px; color:var(--gold); font-weight:700; margin-bottom:6px;">${price}</div>` : ''}
+          ${fb.comentario ? `
+            <div style="background:rgba(212,168,75,0.06); border-left:3px solid var(--gold); border-radius:0 6px 6px 0; padding:6px 10px; font-size:11px; font-style:italic; color:#ddd; margin-top:6px; line-height:1.4; word-break:break-word;">
+              "${fb.comentario}"
+            </div>
+          ` : ''}
+          <div style="font-size:10px; color:#666; text-align:right; margin-top:6px;">${fb.fecha || ''}</div>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `</div>`;
+  return html;
 }
 
 function toggleSection(el){
@@ -4177,7 +4241,7 @@ function abrirEnvioModal(leadId, presel){
     const emoLink = "\uD83D\uDC47";      // 👇
     const emoFin = "\u2705";            // ✅
     
-    const link = getSearchLinkFromFilters(st, lote);
+    const link = getSearchLinkFromFilters(st, lote, lead.id);
     const hasSelection = lote.length > 0;
     const initModo = (Array.isArray(presel) && presel.length > 0) ? 'individual' : 'link';
 
@@ -4322,7 +4386,7 @@ function confirmarEnvio(btn){
       const st = (lead.filtros && typeof lead.filtros === 'object') ? lead.filtros : {};
       // Usar los IDs del lote (preselección) si existen, igual que en la vista previa
       const idsParaLink = (envioLote && envioLote.length > 0) ? envioLote : null;
-      const link = getSearchLinkFromFilters(st, idsParaLink);
+      const link = getSearchLinkFromFilters(st, idsParaLink, lead.id);
       msg = emoCasa + " \u00A1Hola " + dest + "! " + emoHola + "\r\n\r\n" +
             "Te comparto aqu\u00ED los inmuebles que se ajustan a tus requerimientos " + emoLink + "\r\n\r\n" +
             link + "\r\n\r\n" +
