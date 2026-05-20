@@ -1,13 +1,9 @@
-import re
+with open('admin.html', 'r', encoding='utf-8') as f:
+    lines = f.readlines()
 
-with open('index.html', 'r', encoding='utf-8') as f:
-    content = f.read()
-
-# Look for the first 500 chars of a property card to understand structure
-# Find property-related patterns
-lines = content.split('\n')
+keywords = ['initMapa', 'google-search-container', 'google-search-suggestions', 'updateSuggestions']
 for i, line in enumerate(lines):
-    if 'property-card' in line or 'data-prop' in line or 'prop-id' in line or 'propertyId' in line:
-        print(f'Line {i}: {line[:200]}')
-        if i > 30:
+    for kw in keywords:
+        if kw in line:
+            print(f'Line {i+1}: {kw} -> {line.strip()[:150]}')
             break
