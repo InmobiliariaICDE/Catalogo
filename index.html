@@ -11398,7 +11398,9 @@ function agendarVisitaFavs() {
         if (!prop) return '• Código: ' + cod;
         var precio = prop['Precio'] || '';
         if (precio && typeof formatearPrecio === 'function') precio = formatearPrecio(precio);
-        return '• ' + (prop['Nombre'] || 'Propiedad') + ' (Cód. ' + cod + ')' + (precio ? ' - ' + precio : '');
+        var slug = (typeof generarSlugPropiedad === 'function') ? generarSlugPropiedad(prop) : '';
+        var link = slug ? ' 🔗 https://icdeinmobiliaria.com/propiedad/' + slug : '';
+        return '• ' + (prop['Nombre'] || 'Propiedad') + ' (Cód. ' + cod + ')' + (precio ? ' - ' + precio : '') + link;
     });
 
     var msg = 'Hola ICDE Inmobiliaria 🏠%0A%0A';
