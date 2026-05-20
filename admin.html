@@ -1438,7 +1438,7 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     bottom: 12px;
     left: 50%;
     transform: translateX(-50%);
-    width: 460px;
+    width: 480px;
     max-width: calc(100% - 24px);
     background: #ffffff;
     border-radius: 12px;
@@ -1469,8 +1469,8 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     padding: 0;
   }
   .bottom-card-thumbnail {
-    width: 90px;
-    height: 60px;
+    width: 110px;
+    height: 75px;
     border-radius: 8px;
     overflow: hidden;
     position: relative;
@@ -6339,13 +6339,13 @@ function initMapa(pfx) {
 
     leafletMap._tempSearchMarker = L.marker([lat, lng], { icon: searchIcon }).addTo(leafletMap);
 
-    const staticSvUrl = `https://maps.googleapis.com/maps/api/streetview?size=220x95&location=${lat},${lng}&key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0`;
+    const staticSvUrl = `https://maps.googleapis.com/maps/api/streetview?size=220x115&scale=2&location=${lat},${lng}&key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0`;
     const popupContent = `
       <div style="font-family: 'Outfit', sans-serif; padding: 4px 6px; color: #333; width: 220px;">
         <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px; color: #1a73e8;">📍 Dirección Encontrada</div>
         <div style="font-size: 11.5px; color: #555; margin-bottom: 8px; line-height: 1.3;">${title}</div>
         
-        <div style="position: relative; width: 100%; height: 95px; margin-bottom: 8px; border-radius: 8px; overflow: hidden; cursor: pointer; border: 1px solid #ddd; background: #eaeaea; background-image: linear-gradient(135deg, #e5e5e5 25%, transparent 25%), linear-gradient(225deg, #e5e5e5 25%, transparent 25%), linear-gradient(45deg, #e5e5e5 25%, transparent 25%), linear-gradient(315deg, #e5e5e5 25%, #eaeaea 25%); background-position: 10px 0, 10px 0, 0 0, 0 0; background-size: 10px 10px;" onclick="abrirStreetView(${lat}, ${lng})">
+        <div style="position: relative; width: 100%; height: 115px; margin-bottom: 8px; border-radius: 8px; overflow: hidden; cursor: pointer; border: 1px solid #ddd; background: #eaeaea; background-image: linear-gradient(135deg, #e5e5e5 25%, transparent 25%), linear-gradient(225deg, #e5e5e5 25%, transparent 25%), linear-gradient(45deg, #e5e5e5 25%, transparent 25%), linear-gradient(315deg, #e5e5e5 25%, #eaeaea 25%); background-position: 10px 0, 10px 0, 0 0, 0 0; background-size: 10px 10px;" onclick="abrirStreetView(${lat}, ${lng})">
           <img src="${staticSvUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'"/>
           <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.3)'" onmouseout="this.style.background='rgba(0,0,0,0.15)'">
             <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
@@ -6591,8 +6591,13 @@ function actualizarPinesMapa(pfx, forceFit = false) {
         <div class="popup-prop-img-wrap" style="position: relative;">
           <img class="popup-prop-img" src="${imgSrc2}" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
           <div class="popup-prop-counter">1 de ${numFotos2} ›</div>
-          <button onclick="L.DomEvent.stopPropagation(event); abrirStreetView(${lat}, ${lng})" class="pegman-btn" title="Ver Street View" style="position: absolute; bottom: 8px; left: 8px; width: 30px; height: 30px; border-radius: 50%; background: #ffffff; border: 1px solid rgba(0,0,0,0.15); box-shadow: 0 2px 5px rgba(0,0,0,0.25); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; padding: 0;">
-            <img src="https://maps.gstatic.com/tactile/pegman/2x/pegman_bypass_v3.png" style="height: 20px; width: auto;"/>
+          <button onclick="L.DomEvent.stopPropagation(event); abrirStreetView(${lat}, ${lng})" class="pegman-btn" title="Ver Street View" style="position: absolute; bottom: 8px; left: 8px; height: 28px; padding: 0 10px; border-radius: 14px; background: #ffffff; border: 1px solid rgba(0,0,0,0.15); box-shadow: 0 2px 5px rgba(0,0,0,0.25); cursor: pointer; display: flex; align-items: center; gap: 6px; z-index: 10;">
+            <svg viewBox="0 0 32 32" style="width: 16px; height: 16px; flex-shrink: 0;">
+              <path d="M16,2.5C18.2,2.5,20,4.3,20,6.5S18.2,10.5,16,10.5S12,8.7,12,6.5S13.8,2.5,16,2.5z" fill="#f4b400"/>
+              <path d="M16,11.5c-3.3,0-6,2.7-6,6v10.5c0,0.8,0.7,1.5,1.5,1.5h3.5v-8h2v8h3.5c0.8,0,1.5-0.7,1.5-1.5V17.5C22,14.2,19.3,11.5,16,11.5z" fill="#f4b400"/>
+              <path d="M16,13.5c-1.1,0-2,0.9-2,2v5h4v-5C18,14.4,17.1,13.5,16,13.5z" fill="#e37400"/>
+            </svg>
+            <span style="font-size: 10px; font-weight: 700; color: #333; font-family: 'Outfit', sans-serif;">Street View (360°)</span>
           </button>
         </div>
         <div class="popup-prop-body">
@@ -9204,8 +9209,8 @@ function mostrarBottomCard(lat, lng, main, sub, full) {
   document.getElementById('bottomCardAddressSub').textContent = sub;
   document.getElementById('bottomCardLatLng').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   
-  // Set street view preview image
-  const staticSvUrl = `https://maps.googleapis.com/maps/api/streetview?size=120x80&location=${lat},${lng}&key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0`;
+  // Set street view preview image (enlarged and scale=2 for HD)
+  const staticSvUrl = `https://maps.googleapis.com/maps/api/streetview?size=110x75&scale=2&location=${lat},${lng}&key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0`;
   const imgEl = document.getElementById('bottomCardImg');
   imgEl.src = staticSvUrl;
   imgEl.style.display = 'block';
