@@ -6918,7 +6918,17 @@ async function guardarPropiedadEditor() {
 
           <div style="margin-top:24px;">
             <div class="modal-subtitulo-nuevo">Ubicación en Mapa</div>
-            <div id="mpMapa" style="width:100%; height:350px; border-radius:12px; border:1px solid var(--border); background:var(--bg2); position:relative; overflow:hidden; z-index:5;"></div>
+            <div style="position: relative;">
+              <div id="mpMapa" style="width:100%; height:350px; border-radius:12px; border:1px solid var(--border); background:var(--bg2); position:relative; overflow:hidden; z-index:5;"></div>
+              <div id="mpStreetViewThumb" onclick="abrirStreetView(window._mpSvLat, window._mpSvLng)" style="display:none; position:absolute; bottom:14px; right:14px; width:100px; height:70px; border-radius:8px; overflow:hidden; cursor:pointer; border:2px solid rgba(255,255,255,0.8); box-shadow:0 2px 8px rgba(0,0,0,0.4); z-index:10; background:#222;">
+                <img id="mpStreetViewImg" src="" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'"/>
+                <div style="position:absolute; inset:0; background:rgba(0,0,0,0.3); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.3)'">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1px; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  <span style="font-family:'Outfit',sans-serif; font-size:9px; font-weight:700; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.8);">Street View</span>
+                  <span style="position:absolute; bottom:3px; left:5px; font-family:'Outfit',sans-serif; font-size:7px; font-weight:700; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.8); opacity:0.85;">Google</span>
+                </div>
+              </div>
+            </div>
             <div id="mpMapaError" style="display:none; color:var(--muted); font-size:12px; margin-top:8px; text-align:center;">Coordenadas no disponibles para este inmueble</div>
           </div>
         </div>
@@ -7131,6 +7141,17 @@ function initMpMapa(p) {
   });
 
   mpMapaMarker = L.marker([lat, lng], { icon }).addTo(mpMapaInstance);
+
+  // Update Street View thumbnail in the modal map corner
+  const svThumb = document.getElementById('mpStreetViewThumb');
+  const svImg = document.getElementById('mpStreetViewImg');
+  if (svThumb && svImg) {
+    window._mpSvLat = lat;
+    window._mpSvLng = lng;
+    svImg.src = `https://maps.googleapis.com/maps/api/streetview?size=100x70&scale=2&location=${lat},${lng}&key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0`;
+    svImg.style.display = 'block';
+    svThumb.style.display = 'block';
+  }
 }
 
 function mpCarruselInit(){
