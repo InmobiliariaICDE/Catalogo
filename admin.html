@@ -1345,14 +1345,29 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     display: block;
   }
   .google-suggestion-text {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    width: 100%;
+  }
+  .google-suggestion-main {
     font-size: 14px;
     color: #202124;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: 400;
-    text-align: left;
-    width: 100%;
+    line-height: 1.4;
+  }
+  .google-suggestion-secondary {
+    font-size: 12px;
+    color: #70757a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 400;
+    line-height: 1.4;
+    margin-top: 1px;
   }
 
   @media (max-width: 480px) {
@@ -6097,20 +6112,15 @@ function initMapa(pfx) {
       return;
     }
 
-    const suggestionsList = [];
     const cleanQuery = query.toLowerCase().trim();
-
-    suggestionsList.push({ text: query, type: 'query' });
-    if (!cleanQuery.includes('neiva')) suggestionsList.push({ text: query + ' neiva', type: 'query' });
-    if (!cleanQuery.includes('huila') && !cleanQuery.includes('colombia')) suggestionsList.push({ text: query + ' huila', type: 'query' });
 
     try {
       if (typeof google !== 'undefined' && google.maps && google.maps.places) {
         if (!autocompleteService) autocompleteService = new google.maps.places.AutocompleteService();
-        
+
         let searchQuery = query;
-        if (!cleanQuery.includes("neiva") && !cleanQuery.includes("colombia") && !cleanQuery.includes("huila")) {
-          searchQuery += ", Neiva, Huila";
+        if (!cleanQuery.includes('neiva') && !cleanQuery.includes('colombia') && !cleanQuery.includes('huila')) {
+          searchQuery += ', Neiva, Huila';
         }
 
         const request = {
@@ -6119,30 +6129,29 @@ function initMapa(pfx) {
         };
 
         autocompleteService.getPlacePredictions(request, (predictions, status) => {
+          const suggestionsList = [];
           if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
-            predictions.slice(0, 3).forEach(place => {
-              let shortName = place.description;
-              const parts = place.description.split(',');
-              if (parts.length > 3) shortName = parts.slice(0, 3).join(',').trim();
-              
-              if (!suggestionsList.some(s => s.text.toLowerCase() === shortName.toLowerCase())) {
-                suggestionsList.push({
-                  text: shortName,
-                  placeId: place.place_id,
-                  fullName: place.description,
-                  type: 'place'
-                });
-              }
+            predictions.slice(0, 5).forEach(place => {
+              // Split into main text and secondary text (context), identical to Google Maps UI
+              const mainText = place.structured_formatting ? place.structured_formatting.main_text : place.description.split(',')[0].trim();
+              const secondaryText = place.structured_formatting ? place.structured_formatting.secondary_text : place.description.split(',').slice(1).join(',').trim();
+              suggestionsList.push({
+                main: mainText,
+                secondary: secondaryText,
+                placeId: place.place_id,
+                fullName: place.description,
+                type: 'place'
+              });
             });
           }
           renderSuggestions(suggestionsList);
         });
-        return; 
+        return;
       }
     } catch (e) {
-      console.error("Google Places fetch error:", e);
+      console.error('Google Places fetch error:', e);
     }
-    renderSuggestions(suggestionsList);
+    renderSuggestions([]);
   }
 
   function renderSuggestions(list) {
@@ -6153,42 +6162,33 @@ function initMapa(pfx) {
 
     suggestionsDropdown.innerHTML = '';
 
+    // Pin icon identical to Google Maps
+    const pinSvg = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
+
     list.forEach(item => {
       const row = document.createElement('div');
       row.className = 'google-suggestion-item';
-      
-      let iconSvg = '';
-      if (item.type === 'query') {
-        // Magnifying glass
-        iconSvg = `<svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>`;
-      } else {
-        // Location pin
-        iconSvg = `<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
-      }
 
       row.innerHTML = `
-        <div class="google-suggestion-icon">${iconSvg}</div>
-        <div class="google-suggestion-text">${item.text}</div>
+        <div class="google-suggestion-icon">${pinSvg}</div>
+        <div class="google-suggestion-text">
+          <span class="google-suggestion-main">${item.main}</span>
+          ${item.secondary ? `<span class="google-suggestion-secondary">${item.secondary}</span>` : ''}
+        </div>
       `;
 
       row.addEventListener('click', (e) => {
         e.stopPropagation();
-        searchInput.value = item.text;
-        if (item.type === 'place') {
-          if (item.placeId && typeof google !== 'undefined') {
-            const geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ placeId: item.placeId }, (results, status) => {
-              if (status === 'OK' && results[0]) {
-                const lat = results[0].geometry.location.lat();
-                const lng = results[0].geometry.location.lng();
-                showSearchResult(lat, lng, item.fullName);
-              }
-            });
-          } else if (item.lat && item.lng) {
-            showSearchResult(item.lat, item.lng, item.fullName);
-          }
-        } else {
-          performSearch();
+        searchInput.value = item.main + (item.secondary ? ', ' + item.secondary : '');
+        if (item.placeId && typeof google !== 'undefined') {
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ placeId: item.placeId }, (results, status) => {
+            if (status === 'OK' && results[0]) {
+              const lat = results[0].geometry.location.lat();
+              const lng = results[0].geometry.location.lng();
+              showSearchResult(lat, lng, item.fullName);
+            }
+          });
         }
         hideSuggestionsDropdown();
       });
