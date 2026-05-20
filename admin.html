@@ -1167,6 +1167,137 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     from { opacity: 0; }
     to { opacity: 1; }
   }
+
+  /* =======================================================
+     GOOGLE MAPS SEARCH BAR STYLES (PREMIUM)
+     ======================================================= */
+  .google-search-container {
+    position: absolute;
+    top: 10px;
+    left: 55px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 0 12px 0 16px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 4px 15px rgba(0, 0, 0, 0.15);
+    width: 360px;
+    height: 48px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .google-search-container:focus-within {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), 0 4px 20px rgba(0, 0, 0, 0.25);
+    border-color: rgba(212, 168, 75, 0.5);
+  }
+  .google-search-input {
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    width: 100% !important;
+    height: 100% !important;
+    font-size: 14px !important;
+    color: #333333 !important;
+    font-family: 'Outfit', sans-serif !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+  .google-search-input::placeholder {
+    color: #70757a !important;
+    font-size: 14.5px !important;
+    opacity: 0.9 !important;
+  }
+  .google-search-btn {
+    background: none !important;
+    border: none !important;
+    outline: none !important;
+    padding: 8px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #5f6368 !important;
+    transition: color 0.2s, transform 0.15s !important;
+    box-shadow: none !important;
+    height: auto !important;
+    width: auto !important;
+  }
+  .google-search-btn:hover {
+    color: #1a73e8 !important;
+    transform: scale(1.1) !important;
+  }
+  .google-search-btn svg {
+    width: 20px !important;
+    height: 20px !important;
+    fill: currentColor !important;
+  }
+  .google-search-divider {
+    width: 1px !important;
+    height: 28px !important;
+    background-color: #dadce0 !important;
+    margin: 0 8px !important;
+    flex-shrink: 0 !important;
+  }
+  .google-directions-btn {
+    background: none !important;
+    border: none !important;
+    outline: none !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: transform 0.15s !important;
+    box-shadow: none !important;
+    height: auto !important;
+    width: auto !important;
+  }
+  .google-directions-btn:hover {
+    transform: scale(1.1) !important;
+  }
+  .google-directions-btn svg {
+    width: 28px !important;
+    height: 28px !important;
+    display: block !important;
+  }
+
+  /* Google search result marker style */
+  .google-search-pin-wrap {
+    pointer-events: none !important;
+  }
+  .google-search-pin {
+    pointer-events: auto !important;
+    width: 24px !important;
+    height: 24px !important;
+    background: #1a73e8 !important;
+    border: 2px solid #ffffff !important;
+    border-radius: 50% 50% 50% 0 !important;
+    transform: rotate(-45deg) !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.35) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+  }
+  .google-search-pin-circle {
+    width: 8px !important;
+    height: 8px !important;
+    background: #ffffff !important;
+    border-radius: 50% !important;
+  }
+
+  @media (max-width: 480px) {
+    .google-search-container {
+      width: calc(100% - 70px) !important;
+      left: 55px !important;
+      height: 42px !important;
+      padding: 0 8px 0 12px !important;
+    }
+  }
 </style>
 </head>
 <body>
@@ -5757,6 +5888,162 @@ function initMapa(pfx) {
   // Viewport filtering listeners
   leafletMap.on('moveend', () => updateMapBoundsFilter(pfx));
   leafletMap.on('zoomend', () => updateMapBoundsFilter(pfx));
+
+  // --- FLOATING GOOGLE MAPS SEARCH BAR ---
+  const searchContainer = document.createElement('div');
+  searchContainer.className = 'google-search-container';
+  searchContainer.innerHTML = `
+    <input type="text" class="google-search-input" placeholder="Buscar en Google Maps" />
+    <button class="google-search-btn" title="Buscar">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    </button>
+    <div class="google-search-divider"></div>
+    <button class="google-directions-btn" title="Cómo llegar">
+      <svg viewBox="0 0 24 24">
+        <path d="M21.71 11.29l-9-9a.996.996 0 0 0-1.41 0l-9 9a.996.996 0 0 0 0 1.41l9 9c.39.39.9.39 1.29 0l9-9a.996.996 0 0 0 .12-1.41z" fill="#00838f"/>
+        <path d="M14 14.5V12h-4v3H8v-5h6V7.5l4 4-4 3z" fill="#ffffff"/>
+      </svg>
+    </button>
+  `;
+
+  // Prevent Leaflet events from leaking when clicking/scrolling/typing inside the search box
+  L.DomEvent.disableClickPropagation(searchContainer);
+  L.DomEvent.disableScrollPropagation(searchContainer);
+  L.DomEvent.on(searchContainer, 'keydown', (e) => {
+    e.stopPropagation();
+  });
+
+  // Append search bar directly to Leaflet container
+  const mapDiv = document.getElementById(`mapaLeaflet_${pfx}`);
+  if (mapDiv) {
+    mapDiv.appendChild(searchContainer);
+  }
+
+  leafletMap._tempSearchMarker = null;
+
+  async function performSearch() {
+    const input = searchContainer.querySelector('.google-search-input');
+    const query = input.value.trim();
+    if (!query) return;
+
+    // 1. Check coordinates (e.g. 2.9273,-75.2819)
+    const coordRegex = /^\s*(-?\d+(?:\.\d+)?)\s*[\s,]\s*(-?\d+(?:\.\d+)?)\s*$/;
+    const match = query.match(coordRegex);
+    if (match) {
+      const lat = parseFloat(match[1]);
+      const lng = parseFloat(match[2]);
+      showSearchResult(lat, lng, `Coordenadas: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+      return;
+    }
+
+    // 2. Geocode with OSM Nominatim API (prioritize Neiva, Huila)
+    let searchQuery = query;
+    if (!query.toLowerCase().includes("neiva") && !query.toLowerCase().includes("colombia") && !query.toLowerCase().includes("huila")) {
+      searchQuery += ", Neiva, Huila, Colombia";
+    }
+
+    try {
+      input.disabled = true;
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`;
+      const response = await fetch(url, {
+        headers: { 'Accept-Language': 'es' }
+      });
+      const data = await response.json();
+      if (data && data.length > 0) {
+        const place = data[0];
+        showSearchResult(parseFloat(place.lat), parseFloat(place.lon), place.display_name);
+      } else {
+        // Fallback: try search without local context
+        if (searchQuery !== query) {
+          const fallbackRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
+            headers: { 'Accept-Language': 'es' }
+          });
+          const fallbackData = await fallbackRes.json();
+          if (fallbackData && fallbackData.length > 0) {
+            const place = fallbackData[0];
+            showSearchResult(parseFloat(place.lat), parseFloat(place.lon), place.display_name);
+            return;
+          }
+        }
+        toast('No se encontró el lugar. Intenta con más detalles.', 'error');
+      }
+    } catch (e) {
+      console.error(e);
+      toast('Error al buscar dirección', 'error');
+    } finally {
+      input.disabled = false;
+      input.focus();
+    }
+  }
+
+  function showSearchResult(lat, lng, title) {
+    if (leafletMap._tempSearchMarker) {
+      leafletMap.removeLayer(leafletMap._tempSearchMarker);
+    }
+
+    // Fly smoothly to target coordinate
+    leafletMap.flyTo([lat, lng], 16, { animate: true, duration: 1.5 });
+
+    // Custom modern Google Maps search result marker
+    const searchIcon = L.divIcon({
+      className: 'google-search-pin-wrap',
+      html: `
+        <div class="google-search-pin">
+          <div class="google-search-pin-circle"></div>
+        </div>
+      `,
+      iconSize: [24, 24],
+      iconAnchor: [12, 24]
+    });
+
+    leafletMap._tempSearchMarker = L.marker([lat, lng], { icon: searchIcon }).addTo(leafletMap);
+
+    const popupContent = `
+      <div style="font-family: 'Outfit', sans-serif; padding: 4px 6px; color: #333;">
+        <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px; color: #1a73e8;">📍 Dirección Encontrada</div>
+        <div style="font-size: 11.5px; color: #555; margin-bottom: 8px; line-height: 1.3;">${title}</div>
+        <div style="font-size: 10px; color: #888; margin-bottom: 8px;">${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+        <div style="display: flex; gap: 6px;">
+          <button id="btnRemoveSearchPin" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px; background: #f1f1f1; border: 1px solid #ddd; color: #333 !important; border-radius: 4px; cursor: pointer;">Limpiar Pin</button>
+        </div>
+      </div>
+    `;
+
+    leafletMap._tempSearchMarker.bindPopup(popupContent, { maxWidth: 200 }).openPopup();
+
+    leafletMap.on('popupopen', () => {
+      const btn = document.getElementById('btnRemoveSearchPin');
+      if (btn) {
+        L.DomEvent.on(btn, 'click', () => {
+          if (leafletMap._tempSearchMarker) {
+            leafletMap.removeLayer(leafletMap._tempSearchMarker);
+            leafletMap._tempSearchMarker = null;
+          }
+        });
+      }
+    });
+  }
+
+  // Bind Enter key press
+  const searchInput = searchContainer.querySelector('.google-search-input');
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      performSearch();
+    }
+  });
+
+  // Bind buttons click
+  searchContainer.querySelector('.google-search-btn').addEventListener('click', performSearch);
+
+  searchContainer.querySelector('.google-directions-btn').addEventListener('click', () => {
+    let dest = "Neiva, Huila";
+    if (leafletMap._tempSearchMarker) {
+      const latlng = leafletMap._tempSearchMarker.getLatLng();
+      dest = `${latlng.lat},${latlng.lng}`;
+    }
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;
+    window.open(url, '_blank');
+  });
 
   actualizarPinesMapa(pfx);
 }
