@@ -6171,6 +6171,10 @@ function initMapa(pfx) {
   // Map click reverse geocoding for Street View bottom card
   leafletMap.on('click', (e) => {
     if (mapAddMode) return;
+    
+    // Close any active marker popup
+    leafletMap.closePopup();
+    
     const lat = e.latlng.lat;
     const lng = e.latlng.lng;
     
@@ -6313,6 +6317,7 @@ function initMapa(pfx) {
   }
 
   function showSearchResult(lat, lng, title) {
+    if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
     if (leafletMap._tempSearchMarker) {
       leafletMap.removeLayer(leafletMap._tempSearchMarker);
     }
@@ -6614,6 +6619,7 @@ function actualizarPinesMapa(pfx, forceFit = false) {
     
     marker.on('click', (e) => {
       L.DomEvent.stopPropagation(e);
+      if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
       // El popup se abre automáticamente por bindPopup
     });
 
