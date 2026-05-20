@@ -8349,9 +8349,12 @@ font-weight: 500;
                                     if (cw.includes(qw)) { wordMatched = true; break; }
                                 } else {
                                     if (cw === qw || cw.startsWith(qw)) { wordMatched = true; break; }
-                                    const maxDist = qw.length >= 5 ? 2 : (qw.length >= 3 ? 1 : 0);
-                                    if (maxDist > 0 && _getEditDistance(qw, cw) <= maxDist) {
-                                        wordMatched = true; break;
+                                    if (cw[0] !== qw[0]) continue;
+                                    const maxDist = qw.length >= 8 ? 2 : (qw.length >= 3 ? 1 : 0);
+                                    if (maxDist > 0 && Math.abs(cw.length - qw.length) <= maxDist) {
+                                        if (_getEditDistance(qw, cw) <= maxDist) {
+                                            wordMatched = true; break;
+                                        }
                                     }
                                 }
                             }
