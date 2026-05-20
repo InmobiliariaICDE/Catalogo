@@ -11493,6 +11493,28 @@ sizePct: 70
             matchingCodes.sort((a, b) => b.score - a.score);
             matchingCodes.slice(0, 4).forEach(item => list.push(item));
 
+            // 4. Property Titles (Nombre)
+            const matchingTitles = [];
+            datos.forEach(d => {
+                const nombre = String(d['Nombre'] || '').trim();
+                const code = String(d['Código'] || '').trim();
+                const tipo = String(d['Tipo de inmueble'] || '').trim();
+                const precio = String(d['Precio'] || '').trim();
+                if (nombre) {
+                    const match = matchFuzzy(cleanQuery, nombre);
+                    if (match.matches) {
+                        matchingTitles.push({
+                            text: nombre,
+                            subtext: `Código: ${code} · ${tipo}${precio ? ' · ' + precio : ''}`,
+                            type: 'code',
+                            score: match.score
+                        });
+                    }
+                }
+            });
+            matchingTitles.sort((a, b) => b.score - a.score);
+            matchingTitles.slice(0, 5).forEach(item => list.push(item));
+
             // Sort everything by score descending to present best fuzzy matches first
             list.sort((a, b) => b.score - a.score);
 
