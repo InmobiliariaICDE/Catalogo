@@ -14,6 +14,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script async defer src="https://apis.google.com/js/api.js"></script>
 <script async defer src="https://accounts.google.com/gsi/client"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&libraries=places&loading=async"></script>
 <style>
 :root {
   --gold: #d4a84b; 
@@ -5998,7 +5999,7 @@ function initMapa(pfx) {
 
     hideSuggestionsDropdown();
 
-    // 1. Check coordinates (e.g. 2.9273,-75.2819)
+    // 1. Check coordinates
     const coordRegex = /^\s*(-?\d+(?:\.\d+)?)\s*[\s,]\s*(-?\d+(?:\.\d+)?)\s*$/;
     const match = query.match(coordRegex);
     if (match) {
@@ -6008,7 +6009,7 @@ function initMapa(pfx) {
       return;
     }
 
-    // 2. Geocode with OSM Nominatim API (prioritize Neiva, Huila)
+    // 2. Geocode with Google Maps
     let searchQuery = query;
     if (!query.toLowerCase().includes("neiva") && !query.toLowerCase().includes("colombia") && !query.toLowerCase().includes("huila")) {
       searchQuery += ", Neiva, Huila, Colombia";
@@ -6016,35 +6017,27 @@ function initMapa(pfx) {
 
     try {
       searchInput.disabled = true;
-      const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=co&q=${encodeURIComponent(searchQuery)}&limit=1`;
-      const response = await fetch(url, {
-        headers: { 'Accept-Language': 'es' }
-      });
-      const data = await response.json();
-      if (data && data.length > 0) {
-        const place = data[0];
-        showSearchResult(parseFloat(place.lat), parseFloat(place.lon), place.display_name);
-      } else {
-        // Fallback: try search without local context
-        if (searchQuery !== query) {
-          const fallbackRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&countrycodes=co&q=${encodeURIComponent(query)}&limit=1`, {
-            headers: { 'Accept-Language': 'es' }
-          });
-          const fallbackData = await fallbackRes.json();
-          if (fallbackData && fallbackData.length > 0) {
-            const place = fallbackData[0];
-            showSearchResult(parseFloat(place.lat), parseFloat(place.lon), place.display_name);
-            return;
+      if (typeof google !== 'undefined' && google.maps && google.maps.Geocoder) {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address: searchQuery, componentRestrictions: { country: 'CO' } }, (results, status) => {
+          if (status === 'OK' && results[0]) {
+            const lat = results[0].geometry.location.lat();
+            const lng = results[0].geometry.location.lng();
+            showSearchResult(lat, lng, results[0].formatted_address);
+          } else {
+            toast('No se encontró el lugar. Intenta con más detalles.', 'error');
           }
-        }
-        toast('No se encontró el lugar. Intenta con más detalles.', 'error');
+          searchInput.disabled = false;
+          searchInput.focus();
+        });
+      } else {
+        toast('Google Maps no está disponible en este momento.', 'error');
+        searchInput.disabled = false;
       }
     } catch (e) {
       console.error(e);
       toast('Error al buscar dirección', 'error');
-    } finally {
       searchInput.disabled = false;
-      searchInput.focus();
     }
   }
 
@@ -6097,6 +6090,7 @@ function initMapa(pfx) {
   }
 
   // --- AUTOCOMPLETE SUGGESTIONS LOGIC ---
+  let autocompleteService = null;
   async function updateSuggestions(query) {
     if (!query) {
       hideSuggestionsDropdown();
@@ -6106,53 +6100,48 @@ function initMapa(pfx) {
     const suggestionsList = [];
     const cleanQuery = query.toLowerCase().trim();
 
-    // 1. Generate text query suggestions (Magnifying Glass icon)
     suggestionsList.push({ text: query, type: 'query' });
+    if (!cleanQuery.includes('neiva')) suggestionsList.push({ text: query + ' neiva', type: 'query' });
+    if (!cleanQuery.includes('huila') && !cleanQuery.includes('colombia')) suggestionsList.push({ text: query + ' huila', type: 'query' });
 
-    if (!cleanQuery.includes('neiva')) {
-      suggestionsList.push({ text: query + ' neiva', type: 'query' });
-    }
-
-    if (!cleanQuery.includes('huila') && !cleanQuery.includes('colombia')) {
-      suggestionsList.push({ text: query + ' huila', type: 'query' });
-    }
-
-    // 2. Fetch place predictions via Nominatim (Location Pin icon)
     try {
-      let searchQuery = query;
-      if (!cleanQuery.includes("neiva") && !cleanQuery.includes("colombia") && !cleanQuery.includes("huila")) {
-        searchQuery += ", Neiva, Huila, Colombia";
-      }
+      if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+        if (!autocompleteService) autocompleteService = new google.maps.places.AutocompleteService();
+        
+        let searchQuery = query;
+        if (!cleanQuery.includes("neiva") && !cleanQuery.includes("colombia") && !cleanQuery.includes("huila")) {
+          searchQuery += ", Neiva, Huila";
+        }
 
-      const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=co&q=${encodeURIComponent(searchQuery)}&limit=3`;
-      const response = await fetch(url, {
-        headers: { 'Accept-Language': 'es' }
-      });
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        data.forEach(place => {
-          let shortName = place.display_name;
-          const parts = place.display_name.split(',');
-          if (parts.length > 3) {
-            shortName = parts.slice(0, 3).join(',').trim();
-          }
-          
-          if (!suggestionsList.some(s => s.text.toLowerCase() === shortName.toLowerCase())) {
-            suggestionsList.push({
-              text: shortName,
-              lat: parseFloat(place.lat),
-              lng: parseFloat(place.lon),
-              fullName: place.display_name,
-              type: 'place'
+        const request = {
+          input: searchQuery,
+          componentRestrictions: { country: 'co' }
+        };
+
+        autocompleteService.getPlacePredictions(request, (predictions, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+            predictions.slice(0, 3).forEach(place => {
+              let shortName = place.description;
+              const parts = place.description.split(',');
+              if (parts.length > 3) shortName = parts.slice(0, 3).join(',').trim();
+              
+              if (!suggestionsList.some(s => s.text.toLowerCase() === shortName.toLowerCase())) {
+                suggestionsList.push({
+                  text: shortName,
+                  placeId: place.place_id,
+                  fullName: place.description,
+                  type: 'place'
+                });
+              }
             });
           }
+          renderSuggestions(suggestionsList);
         });
+        return; 
       }
     } catch (e) {
-      console.error("Suggestions fetch error:", e);
+      console.error("Google Places fetch error:", e);
     }
-
     renderSuggestions(suggestionsList);
   }
 
@@ -6186,7 +6175,18 @@ function initMapa(pfx) {
         e.stopPropagation();
         searchInput.value = item.text;
         if (item.type === 'place') {
-          showSearchResult(item.lat, item.lng, item.fullName);
+          if (item.placeId && typeof google !== 'undefined') {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ placeId: item.placeId }, (results, status) => {
+              if (status === 'OK' && results[0]) {
+                const lat = results[0].geometry.location.lat();
+                const lng = results[0].geometry.location.lng();
+                showSearchResult(lat, lng, item.fullName);
+              }
+            });
+          } else if (item.lat && item.lng) {
+            showSearchResult(item.lat, item.lng, item.fullName);
+          }
         } else {
           performSearch();
         }
