@@ -6322,8 +6322,8 @@ function initMapa(pfx) {
       leafletMap.removeLayer(leafletMap._tempSearchMarker);
     }
 
-    // Fly smoothly to target coordinate
-    leafletMap.flyTo([lat, lng], 16, { animate: true, duration: 1.5 });
+    // Fly smoothly to target coordinate (offsetting latitude slightly North so the popup fits perfectly)
+    leafletMap.flyTo([lat + 0.0018, lng], 16, { animate: true, duration: 1.5 });
 
     // Custom modern Google Maps search result marker
     const searchIcon = L.divIcon({
@@ -6367,7 +6367,7 @@ function initMapa(pfx) {
       </div>
     `;
 
-    leafletMap._tempSearchMarker.bindPopup(popupContent, { maxWidth: 230 }).openPopup();
+    leafletMap._tempSearchMarker.bindPopup(popupContent, { maxWidth: 230, autoPanPadding: [20, 50] }).openPopup();
 
     leafletMap.on('popupopen', () => {
       const btn = document.getElementById('btnRemoveSearchPin');
