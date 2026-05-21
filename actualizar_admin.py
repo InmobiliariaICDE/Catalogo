@@ -2,6 +2,9 @@ import pandas as pd
 import json
 import os
 import re
+import sys
+import requests
+import openpyxl
 from datetime import datetime
 
 def clean_prop_name(raw_name):
@@ -217,9 +220,149 @@ def parse_silvia_ledger(file):
             
     return silvia_data
 
+def pull_from_cloud():
+    print("Obteniendo datos actualizados desde la nube...")
+    url = "https://script.google.com/macros/s/AKfycbzFUuzwKA_5C35NX7S2eniREyP8AAqqYxz4rUoL195-vfIuiis8KmG3IbKIojfywllI1w/exec?action=getAdminData"
+    try:
+        res = requests.get(url, timeout=15)
+        if res.status_code != 200:
+            print(f"Error al conectar con la nube: Código HTTP {res.status_code}")
+            return False
+        
+        cloud_data = res.json()
+        if "error" in cloud_data:
+            print("Error devuelto por Apps Script:", cloud_data["error"])
+            return False
+            
+        properties = cloud_data.get("properties", [])
+        if not properties:
+            print("No se encontraron propiedades en los datos de la nube.")
+            return False
+            
+        print(f"Se obtuvieron {len(properties)} propiedades de la nube. Actualizando Excel local en el lugar...")
+        
+        file_path = "Pagos - Control.xlsx"
+        if not os.path.exists(file_path):
+            print(f"Error: El archivo {file_path} no existe.")
+            return False
+            
+        # Abrir el Excel con openpyxl preservando fórmulas y estilos
+        wb = openpyxl.load_workbook(file_path, data_only=False)
+        sheet_name = 'ADMINISTRACION DETALLADA'
+        if sheet_name not in wb.sheetnames:
+            found = False
+            for name in wb.sheetnames:
+                if 'ADMINISTRACION' in name.upper():
+                    sheet_name = name
+                    found = True
+                    break
+            if not found:
+                print(f"No se encontró la hoja '{sheet_name}' en el Excel.")
+                return False
+                
+        ws = wb[sheet_name]
+        
+        # Mapeo de columnas por año (1-indexed para openpyxl)
+        years_map = {
+            2023: 13,
+            2024: 26,
+            2025: 39,
+            2026: 52,
+            2027: 65
+        }
+        
+        updated_cells_count = 0
+        
+        for prop in properties:
+            prop_id = prop.get("id")
+            prop_name = prop.get("name", "")
+            payments_history = prop.get("payments", {})
+            
+            # Buscar la fila correspondiente
+            row_idx = -1
+            for r in range(6, ws.max_row + 1):
+                cell_id = ws.cell(row=r, column=1).value
+                if cell_id is not None and str(cell_id).strip() == str(prop_id).strip():
+                    row_idx = r
+                    break
+                    
+            if row_idx == -1 and prop_name:
+                # Buscar por coincidencia aproximada de nombre
+                clean_prop_name = str(prop_name).strip().lower()
+                for r in range(6, ws.max_row + 1):
+                    cell_name = ws.cell(row=r, column=6).value
+                    if cell_name is not None:
+                        clean_cell_name = str(cell_name).strip().lower()
+                        if clean_prop_name in clean_cell_name or clean_cell_name in clean_prop_name:
+                            row_idx = r
+                            break
+                            
+            if row_idx == -1:
+                print(f"No se pudo encontrar la fila para el inmueble: ID={prop_id}, Nombre={prop_name}")
+                continue
+                
+            # Actualizar pagos de esta propiedad
+            for year_str, months_list in payments_history.items():
+                year = int(year_str)
+                if year not in years_map:
+                    continue
+                start_col = years_map[year]
+                
+                for month_idx, month_pay in enumerate(months_list):
+                    val = month_pay.get("value", "-")
+                    col_idx = start_col + month_idx
+                    
+                    # Leer valor actual de la celda en Excel
+                    current_cell = ws.cell(row=row_idx, column=col_idx)
+                    current_val = current_cell.value
+                    
+                    # Normalizar valores para comparación
+                    excel_val_str = "" if current_val is None else str(current_val).strip().upper()
+                    cloud_val_str = "" if val is None or val == "-" else str(val).strip().upper()
+                    
+                    # Comparación inteligente (número vs texto)
+                    try:
+                        cloud_num = float(val)
+                        excel_num = 0.0
+                        if current_val is not None:
+                            try:
+                                cleaned_excel = str(current_val).replace('$', '').replace('.', '').replace(',', '').strip()
+                                excel_num = float(cleaned_excel)
+                            except:
+                                excel_num = 0.0
+                        is_diff = abs(cloud_num - excel_num) > 0.01
+                        final_write_val = cloud_num
+                    except:
+                        is_diff = excel_val_str != cloud_val_str
+                        if val == "" or val == "-":
+                            final_write_val = "-"
+                        else:
+                            final_write_val = val
+                            
+                    if is_diff:
+                        current_cell.value = final_write_val
+                        updated_cells_count += 1
+                        print(f"Fila {row_idx}, Columna {col_idx} ({year_str} - Mes Index {month_idx}): Cambió '{current_val}' -> '{final_write_val}'")
+                        
+        if updated_cells_count > 0:
+            wb.save(file_path)
+            print(f"Éxito: Se actualizó el Excel local con {updated_cells_count} cambios de pagos.")
+        else:
+            print("El Excel local ya está sincronizado con la nube. No se requirieron cambios.")
+        return True
+    except Exception as e:
+        print("Excepción al intentar sincronizar con la nube:", str(e))
+        import traceback
+        traceback.print_exc()
+        return False
+
 def main():
     print("Iniciando extracción y normalización de datos de administración...")
     
+    # Soporte para jalar datos desde la nube (--pull)
+    if "--pull" in sys.argv:
+        pull_from_cloud()
+        
     all_data = {
         "last_update": datetime.now().isoformat(),
         "properties": [],

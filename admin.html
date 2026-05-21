@@ -5909,13 +5909,49 @@ const safeFormatP = (v) => {
 
 async function loadAdminData() {
   try {
+    console.log('Cargando datos de administración desde la nube...');
+    // Intentar desde Apps Script con un abort controller
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 7000); // 7s
+    
+    const url = CRM_SCRIPT_URL + '?action=getAdminData&t=' + Date.now();
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    
+    if (res.ok) {
+      const data = await res.json();
+      if (data && !data.error && data.properties && data.properties.length) {
+        adminData = data;
+        localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+        console.log('Datos de administración cargados desde la nube con éxito.');
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('No se pudo cargar desde la nube. Usando caché local...', e);
+  }
+
+  // Fallback 1: localStorage
+  const cached = localStorage.getItem('icde_admin_data');
+  if (cached) {
+    try {
+      adminData = JSON.parse(cached);
+      console.log('Datos de administración cargados desde la caché de localStorage.');
+      return;
+    } catch (err) {
+      console.error('Error parseando caché de adminData:', err);
+    }
+  }
+
+  // Fallback 2: admin_data.json local
+  try {
     const res = await fetch('admin_data.json');
     if (res.ok) {
       adminData = await res.json();
-      console.log('Admin data loaded:', adminData);
+      console.log('Datos de administración cargados desde el archivo estático local.');
     }
   } catch (e) {
-    console.error('Error loading admin data:', e);
+    console.error('Error fatal al cargar admin_data.json:', e);
   }
 }
 
@@ -6559,7 +6595,7 @@ function openMatrixCellDetails(propId, monthName, year) {
       <button onclick="closeMatrixCellDetails()" style="background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer; font-weight:700; transition:color 0.2s;" onhover="this.style.color='#fff'">×</button>
     </div>
     
-    <div style="display:flex; flex-direction:column; gap:14px; font-size:13px; color:rgba(255,255,255,0.9);">
+    <div style="display:flex; flex-direction:column; gap:14px; font-size:13px; color:rgba(255,255,255,0.9); max-height: 480px; overflow-y: auto; padding-right: 4px;">
       <div>
         <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:3px;">Inmueble</div>
         <div style="font-size:15px; font-weight:700; color:#fff;">${p.name}</div>
@@ -6623,15 +6659,42 @@ function openMatrixCellDetails(propId, monthName, year) {
           <div style="font-size:11px; color:rgba(255,255,255,0.85);">${p.increase_notes.replace(/\|/g, '<br>')}</div>
         </div>
       ` : ''}
+
+      <!-- Sección de Edición de Pago Bilateral -->
+      <div style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">
+        <div style="font-size:11px; color:var(--gold); text-transform:uppercase; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:5px;">
+          ✏️ Registrar Pago (Sincronización Nube)
+        </div>
+        <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:10px; margin-bottom:10px;">
+          <div>
+            <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:3px;">Nuevo Estado</label>
+            <select id="editPayStatus" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px; font-size:12px; outline:none; height:32px;">
+              <option value="PAID" ${pay.status === 'PAID' ? 'selected' : ''}>Pagado</option>
+              <option value="PENDING" ${pay.status === 'PENDING' ? 'selected' : ''}>Pendiente</option>
+              <option value="VACANT" ${pay.status === 'VACANT' ? 'selected' : ''}>Desocupado</option>
+              <option value="PREAVISO" ${pay.status === 'PREAVISO' ? 'selected' : ''}>Preaviso</option>
+              <option value="NEW_CONTRACT" ${pay.status === 'NEW_CONTRACT' ? 'selected' : ''}>Nuevo Contrato</option>
+              <option value="FUTURE" ${pay.status === 'FUTURE' ? 'selected' : ''}>Futuro (Vacío)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:3px;">Valor Recibido</label>
+            <input type="number" id="editPayValue" value="${pay.value && parseFloat(pay.value) > 0 ? parseFloat(pay.value) : ''}" placeholder="${p.monthly_rent}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12px; outline:none; height:32px; box-sizing:border-box;">
+          </div>
+        </div>
+        <button class="btn btn-gold btn-sm" id="btnSaveAdminPay" style="width:100%; justify-content:center; gap:6px; font-weight:700; height:34px;" onclick="saveAdminPaymentStatus('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${monthName}', '${year}')">
+          💾 Guardar en la Nube
+        </button>
+      </div>
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px;">
-      <button class="btn btn-gold btn-sm" style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700;" 
-              onclick="sendAdminReminder('${p.owner}', '${p.name}', '${p.monthly_rent}', '${monthName}', '${year}', ${dueDay})">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; border-top:1px solid rgba(255,255,255,0.08); padding-top:12px;">
+      <button class="btn btn-secondary btn-sm" style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; background:rgba(255,255,255,0.05); color:#fff; border:1px solid rgba(255,255,255,0.1);" 
+              onclick="sendAdminReminder('${p.owner}', '${p.name.replace(/'/g, "\\'")}', '${p.monthly_rent}', '${monthName}', '${year}', ${dueDay})">
         💬 WhatsApp
       </button>
       <button class="btn btn-primary btn-sm" style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700;" 
-              onclick="addIndividualToCalendar('${p.name}', '${p.owner}', ${p.monthly_rent}, '${year}', '${monthName}', ${dueDay}, ${maxDueDay})">
+              onclick="addIndividualToCalendar('${p.name.replace(/'/g, "\\'")}', '${p.owner}', ${p.monthly_rent}, '${year}', '${monthName}', ${dueDay}, ${maxDueDay})">
         📅 Calendar
       </button>
     </div>
@@ -6639,6 +6702,113 @@ function openMatrixCellDetails(propId, monthName, year) {
 
   modal.classList.add('active');
   overlay.classList.add('active');
+}
+
+async function saveAdminPaymentStatus(propId, propName, monthName, year) {
+  const statusSelect = document.getElementById('editPayStatus');
+  const valueInput = document.getElementById('editPayValue');
+  const saveBtn = document.getElementById('btnSaveAdminPay');
+  
+  if (!statusSelect || !saveBtn) return;
+  
+  const status = statusSelect.value;
+  let rawValue = valueInput ? valueInput.value.trim() : '';
+  
+  // Mapear el valor según el estado
+  let finalValue = '';
+  if (status === 'PAID') {
+    const parsedVal = parseFloat(rawValue);
+    if (isNaN(parsedVal) || parsedVal <= 0) {
+      const p = adminData.properties.find(x => x.id === propId);
+      finalValue = p ? p.monthly_rent : 0;
+    } else {
+      finalValue = parsedVal;
+    }
+  } else if (status === 'VACANT' || status === 'FUTURE') {
+    finalValue = 'DESOCUPADO';
+  } else if (status === 'PREAVISO') {
+    finalValue = 'PREAVISO';
+  } else if (status === 'NEW_CONTRACT') {
+    finalValue = 'CONTRATO NUEVO';
+  } else if (status === 'NO_RENEW') {
+    finalValue = 'NO RENOVARA';
+  } else {
+    finalValue = rawValue || '-';
+  }
+  
+  // Deshabilitar botón y mostrar spinner
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
+  
+  const monthsNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+  const monthIdx = monthsNames.indexOf(monthName.toUpperCase());
+  
+  const payload = {
+    action: 'saveAdminPayment',
+    propertyId: propId,
+    propertyName: propName,
+    year: year,
+    monthIndex: monthIdx,
+    value: finalValue
+  };
+  
+  try {
+    const response = await fetch(CRM_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    
+    if (response.ok) {
+      const resData = await response.json();
+      if (resData.success) {
+        toast('Pago actualizado en la nube con éxito!', 'success');
+        
+        // Actualizar localmente en memoria para renderizado inmediato
+        const p = adminData.properties.find(x => x.id === propId);
+        if (p) {
+          if (!p.payments[year]) p.payments[year] = [];
+          let mPay = p.payments[year].find(m => m.month === monthName);
+          if (mPay) {
+            mPay.status = status;
+            mPay.value = finalValue;
+          } else {
+            p.payments[year].push({
+              month: monthName,
+              value: finalValue,
+              status: status
+            });
+          }
+          // Guardar caché local
+          localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+        }
+        
+        closeMatrixCellDetails();
+        renderAdministracion();
+      } else {
+        throw new Error(resData.error || 'Error desconocido del servidor');
+      }
+    } else {
+      throw new Error('Error de conexión HTTP');
+    }
+  } catch (err) {
+    console.error('Error al guardar pago en la nube:', err);
+    toast('Error al guardar en la nube: ' + err.message + '. Se guardó en caché local.', 'warning');
+    
+    // Fallback local: Guardar al menos localmente
+    const p = adminData.properties.find(x => x.id === propId);
+    if (p) {
+      if (!p.payments[year]) p.payments[year] = [];
+      let mPay = p.payments[year].find(m => m.month === monthName);
+      if (mPay) {
+        mPay.status = status;
+        mPay.value = finalValue;
+      }
+      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+      closeMatrixCellDetails();
+      renderAdministracion();
+    }
+  }
 }
 
 function closeMatrixCellDetails() {
