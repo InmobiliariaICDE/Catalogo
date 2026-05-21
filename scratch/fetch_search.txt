@@ -1,0 +1,78 @@
+1788: <div class="modal-overlay" id="feedbackModal" onclick="if(event.target===this) closeModal('feedbackModal')">
+1793: <div id="feedbackCitaInfo" style="background:rgba(212,168,75,0.08); padding:15px; border-radius:12px; margin-bottom:20px; border:1px solid rgba(212,168,75,0.15);">
+1795: <input type="hidden" id="feedbackCitaId"/>
+1798: <textarea class="form-input" id="feedbackNotas" placeholder="Cuéntanos qué pasó, si le gustó, si hará oferta..." style="min-height:100px; background:rgba(255,255,255,0.03);"></textarea>
+1802: <select class="form-input" id="feedbackEstado">
+1810: <button class="btn btn-secondary" style="flex:0.4;" onclick="omitirFeedback()">Más tarde</button>
+1811: <button class="btn btn-primary" style="flex:1;" onclick="guardarFeedback()">Guardar Resultado</button>
+2042: fetch(CRM_SCRIPT_URL, {
+2846: await fetch(CRM_SCRIPT_URL, {
+2876: const res = await fetch('propiedades_kmz.json');
+3130: // Feedback de citas
+3131: setTimeout(checkCitasFeedback, 3000);
+3132: setInterval(checkCitasFeedback, 1000 * 60 * 5); // Cada 5 mins
+3224: const res  = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
+3308: // Sincronizar co-creación feedback
+3309: if (JSON.stringify(cloudLead.feedback || {}) !== JSON.stringify(local.feedback || {})) {
+3311: local.feedback = cloudLead.feedback || {};
+3348: const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads');
+3410: feedback: cloudLead.feedback || localLead.feedback || {},
+3620: const res = await fetch(urlBusca);
+4524: <div class="panel-section-title" onclick="toggleSection(this)">📊 Feedback de Co-Creación</div>
+4526: <div id="panelCocreacionFeedback" style="margin-top:12px;">
+4527: ${renderCoCreacionFeedback(lead)}
+4583: function renderCoCreacionFeedback(lead) {
+4584: const feedback = lead.feedback || {};
+4585: const keys = Object.keys(feedback);
+4593: const fb = feedback[cod];
+4855: fetch(CRM_SCRIPT_URL, {
+5095: fetch(`${settings.waApi}/send-message`, {
+5361: await fetch(CRM_SCRIPT_URL,{
+5372: await fetch(CRM_SCRIPT_URL,{
+5383: await fetch(CRM_SCRIPT_URL, {
+5396: await fetch(CRM_SCRIPT_URL,{
+5547: let feedbackOmitidos = JSON.parse(localStorage.getItem('icde_feedback_omitidos') || '[]');
+5548: function checkCitasFeedback(){
+5553: if(feedbackOmitidos.includes(String(c.id))) return false;
+5558: if(pendientes.length > 0) abrirFeedbackModal(pendientes[0]);
+5561: function abrirFeedbackModal(cita){
+5562: document.getElementById('feedbackCitaId').value = cita.id;
+5563: document.getElementById('feedbackCitaInfo').innerHTML = `
+5568: document.getElementById('feedbackNotas').value = cita.observaciones || '';
+5569: document.getElementById('feedbackEstado').value = 'realizada';
+5570: document.getElementById('feedbackModal').classList.add('open');
+5573: function omitirFeedback(){
+5574: const id = document.getElementById('feedbackCitaId').value;
+5575: if(!feedbackOmitidos.includes(String(id))) {
+5576: feedbackOmitidos.push(String(id));
+5577: localStorage.setItem('icde_feedback_omitidos', JSON.stringify(feedbackOmitidos));
+5579: closeModal('feedbackModal');
+5580: setTimeout(checkCitasFeedback, 1000);
+5583: async function guardarFeedback(){
+5584: const id = document.getElementById('feedbackCitaId').value;
+5585: const notas = document.getElementById('feedbackNotas').value;
+5586: const estado = document.getElementById('feedbackEstado').value;
+5611: toast('Feedback guardado ✓');
+5614: if(!feedbackOmitidos.includes(String(id))) {
+5615: feedbackOmitidos.push(String(id));
+5616: localStorage.setItem('icde_feedback_omitidos', JSON.stringify(feedbackOmitidos));
+5618: closeModal('feedbackModal');
+5620: setTimeout(checkCitasFeedback, 3000);
+5641: const db = b.fecha + (b.hora ? 'T' + b.hora : 'T00:00');
+5642: return da.localeCompare(db);
+5800: const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${settings.geminiKey}`, {
+5835: const res = await fetch(`${settings.waApi}/messages/${phone}`);
+5877: const res = await fetch(`${settings.waApi}/send-message`, {
+5912: const res = await fetch('admin_data.json');
+5926: const res = await fetch('http://localhost:3000/status', {
+6397: fetch('http://localhost:3000/send-reminder', {
+6450: const res = await fetch('http://localhost:3000/send-reminder', {
+8358: const resp = await fetch(url);
+8745: const res = await fetch(proxiedUrl);
+8829: const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${settings.geminiKey}`, {
+8890: const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${settings.geminiKey}`, {
+9191: const response = await fetch(`${scriptUrl}?action=appendRow`, {
+9353: const res = await fetch(proxiedUrl);
+9391: const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${settings.geminiKey}`, {
+9492: const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${settings.geminiKey}`, {
+9566: const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${settings.geminiKey}`, {
