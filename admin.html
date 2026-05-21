@@ -5516,8 +5516,19 @@ function renderCitasBody(lista){
   const b = document.getElementById('citasBody'); if(!b) return;
   const diasSem = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   
-  // Clonar y ordenar de forma robusta
+  // Clonar y ordenar por prioridad de estado (solicitó, agendada, visitada, cancelada) y luego por fecha/hora
+  const ESTADO_PRIO = {
+    'solicito_visita': 1,
+    'agendada': 2,
+    'realizada': 3,
+    'cancelada': 4
+  };
   const ordenada = [...lista].sort((a,b) => {
+    const prioA = ESTADO_PRIO[a.estado] || 99;
+    const prioB = ESTADO_PRIO[b.estado] || 99;
+    if (prioA !== prioB) {
+      return prioA - prioB;
+    }
     const da = a.fecha + (a.hora ? 'T' + a.hora : 'T00:00');
     const db = b.fecha + (b.hora ? 'T' + b.hora : 'T00:00');
     return da.localeCompare(db);
