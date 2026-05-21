@@ -3623,7 +3623,6 @@ function renderNuevo(){
           <div class="panel-section-title">Selección de Propiedades</div>
           <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; margin-top:10px;">
             <span style="font-size:12px;color:var(--gold); opacity:0.8; font-weight:500;" id="selCnt">${selectedProps.length} seleccionadas</span>
-            ${selectedProps.length ? `<button class="btn btn-sm" style="font-size:11px; padding:3px 10px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.3)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'" onclick="borrarSeleccion()">🗑 Borrar selección</button>` : ''}
             <div class="ordenar-por" style="margin:0; margin-bottom:12px;">
               <div class="sort-toggle" onclick="toggleSortMenu(event)" style="height:32px; font-size:11.5px; padding:0 12px; border-radius:10px;">
                 ${getSortLabel(criterioOrden)} <span class="st-arrow"></span>
@@ -3641,7 +3640,7 @@ function renderNuevo(){
         <div class="section-content">
           <p style="font-size:13px;color:var(--muted);margin-bottom:24px; margin-top:-32px;">Puedes marcar casas específicas para enviar hoy mismo.</p>
 
-          ${selectedProps.length?`<div class="selected-bar" style="margin-bottom:20px;"><div class="selected-chips">${selectedProps.map(c=>`<span class="sel-chip">${c}<button onclick="deselProp('${c}')">×</button></span>`).join('')}</div></div>`:''}
+          ${selectedProps.length?`<div class="selected-bar" style="margin-bottom:20px; display:flex; align-items:center; justify-content:space-between;"><div class="selected-chips">${selectedProps.map(c=>`<span class="sel-chip">${c}<button onclick="deselProp('${c}')">×</button></span>`).join('')}</div><button class="btn btn-sm" style="font-size:11px; padding:4px 12px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:8px; cursor:pointer; transition:all 0.2s; white-space:nowrap; margin-left:12px; flex-shrink:0;" onmouseover="this.style.background='rgba(239,68,68,0.3)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'" onclick="borrarSeleccion()">🗑 Borrar</button></div>`:''}
           <div id="propsGrid"></div>
         </div>
       </div>
@@ -3940,13 +3939,19 @@ function toggleProp(cod,el){
     let bar = grid.parentElement.querySelector('.selected-bar');
     if(selectedProps.length > 0){
       const chipsHtml = selectedProps.map(s=>`<span class="sel-chip">${s}<button onclick="deselProp('${s}')">\u00d7</button></span>`).join('');
+      const borrarBtn = `<button class="btn btn-sm" style="font-size:11px; padding:4px 12px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:8px; cursor:pointer; transition:all 0.2s; white-space:nowrap; margin-left:12px; flex-shrink:0;" onmouseover="this.style.background='rgba(239,68,68,0.3)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'" onclick="borrarSeleccion()">🗑 Borrar</button>`;
       if(bar){
+        bar.style.display = 'flex';
+        bar.style.alignItems = 'center';
+        bar.style.justifyContent = 'space-between';
         bar.querySelector('.selected-chips').innerHTML = chipsHtml;
+        const existingBtn = bar.querySelector('button[onclick*="borrarSeleccion"]');
+        if(!existingBtn) bar.insertAdjacentHTML('beforeend', borrarBtn);
       } else {
         const newBar = document.createElement('div');
         newBar.className = 'selected-bar';
-        newBar.style.marginBottom = '20px';
-        newBar.innerHTML = `<div class="selected-chips">${chipsHtml}</div>`;
+        newBar.style.cssText = 'margin-bottom:20px; display:flex; align-items:center; justify-content:space-between;';
+        newBar.innerHTML = `<div class="selected-chips">${chipsHtml}</div>${borrarBtn}`;
         grid.parentElement.insertBefore(newBar, grid);
       }
     } else {
