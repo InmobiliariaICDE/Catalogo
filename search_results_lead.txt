@@ -1,0 +1,219 @@
+1648: <div class="form-group"><label class="form-label">Cliente</label><input class="form-input" id="visitaCliente" placeholder="Nombre del cliente"/></div>
+1649: <div class="form-group"><label class="form-label">WhatsApp / Celular</label><input class="form-input" id="visitaCelular" placeholder="3001234567"/></div>
+1826: let telLimpio = String(l.celular || '').replace(/\D/g, '');
+1855: let telLimpio = String(l.celular || '').replace(/\D/g, '');
+1992: tipo:'cliente', nombre:'', celular:'', notas:'', metodoPago:[], estado:'enviando', etiqueta:'activo',
+1994: frecuencia:'semanal', maxPorEnvio:4, nombreInmobiliaria:'', nombreAgente:'',
+2125: const combinado = norm((d['Nombre']||'') + ' ' + codStr + ' ' + (d['Zona']||'') + ' ' + (d['Barrio']||'') + ' ' + (d['Descripción']||'') + ' ' + (d['Puntos Clave']||''));
+2282: <input type="text" id="fnBus_${pfx}" placeholder="Buscar por nombre, código, barrio..." oninput="fnBuscar('${pfx}',this.value)"/>
+2582: <div style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; font-weight:600;">${d['Nombre']||''}</div>
+2848: 'Nombre': kp['Nombre_KMZ'],
+2996: const vCel = document.getElementById('visitaCelular');
+3001: const match = leads.find(l => l.id !== 'LEAD-AGENDA-GLOBAL' && norm(l.nombre) === norm(val));
+3002: if (match && match.celular) {
+3003: vCel.value = match.celular;
+3012: const lRaw = String(l.celular || '').replace(/\D/g, '');
+3016: if (match && match.nombre) {
+3017: vC.value = match.nombre;
+3066: Clave única = codigo + celular (misma propiedad, mismo cliente).
+3072: return String(v.codigo || '').trim() + '_' + String(v.celular || '').replace(/[^\d]/g, '');
+3124: const s = String(l.nombre||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'')
+3125: + String(l.celular||'').replace(/[^\d]/g,'');
+3139: .map(l => [String(l.celular || '').replace(/\D/g, ''), String(l.id).trim()])
+3150: const phone = String(cloudLead.celular || '').replace(/\D/g, '');
+3246: const normName = String(l.nombre || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g,'');
+3247: const normPhone = String(l.celular || '').replace(/[^\d]/g, "");
+3263: const phone = String(l.celular || '').replace(/[^\d]/g, "");
+3273: const phone = String(cloudLead.celular || '').replace(/[^\d]/g, "");
+3322: const seenKeys = new Set(); // clave = codigo_celular (deduplicación real)
+3327: // 1. Deduplicar visitas dentro del mismo lead por codigo+celular
+3330: const k = visitaKey({ ...v, celular: v.celular || l.celular });
+3338: const k = visitaKey({ ...v, celular: v.celular || l.celular });
+3343: cliente: v.cliente || l.nombre,
+3344: celular: v.celular || l.celular,
+3363: nombre: 'Agenda Global (Citas Genéricas)',
+3364: celular: '0000000000',
+3366: metodoPago: [],
+3372: nombreInmobiliaria: '',
+3373: nombreAgente: '',
+3420: else if (nk === 'nombre' || nk === 'titulo' || nk === 'propiedad') k = 'Nombre';
+3452: else if (nk.includes('nombre')) k = 'Nombre';
+3663: <div class="form-group"><label class="form-label">Nombre Completo *</label><input class="form-input" id="nlN" value="${nuevoLead.nombre}" placeholder="Ej: Maria Perez" oninput="nuevoLead.nombre=this.value; checkDuplicateLead()"/></div>
+3664: <div class="form-group"><label class="form-label">WhatsApp / Celular *</label><input class="form-input" id="nlC" value="${nuevoLead.celular}" placeholder="3001234567" oninput="nuevoLead.celular=this.value; checkDuplicateLead()"/></div>
+3689: <div class="form-group"><label class="form-label">Nombre Inmobiliaria</label><input class="form-input" value="${nuevoLead.nombreInmobiliaria}" placeholder="Nombre" oninput="nuevoLead.nombreInmobiliaria=this.value"/></div>
+3690: <div class="form-group"><label class="form-label">Nombre del Agente</label><input class="form-input" value="${nuevoLead.nombreAgente}" placeholder="Agente" oninput="nuevoLead.nombreAgente=this.value"/></div>
+3697: ${['Efectivo', 'Crédito', 'Caja Honor', 'Permuta'].map(m=>`<label class="check-item ${nuevoLead.metodoPago.includes(m)?'active':''}"><input type="checkbox" ${nuevoLead.metodoPago.includes(m)?'checked':''} onchange="toggleMetodo('${m}',this)"/> ${m}</label>`).join('')}
+3776: nuevoLead.nombre = valN;
+3777: nuevoLead.celular = valC;
+3787: const lRawNum = String(l.celular||'').trim().replace(/\D/g, '');
+3789: const lNom = norm(l.nombre);
+3791: const matchCelular = num && lNum && lNum === num;
+3792: const matchNombre = nom && lNom && lNom === nom;
+3793: return matchCelular || matchNombre;
+3798: const lRawNum = String(dup.celular||'').trim().replace(/\D/g, '');
+3800: const coincidenciaCelular = num && lNum === num;
+3801: w.innerHTML = `<div>⚠️ <b>Atención:</b> Ya existe un cliente con este ${coincidenciaCelular ? 'celular' : 'nombre'} (${dup.nombre}).</div> <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="showTab('leads'); abrirLead('${String(dup.id).trim()}', '${String(dup.celular).trim()}')">Ver Cliente</button>`;
+3814: if(el.checked){ if(!nuevoLead.metodoPago.includes(m)) nuevoLead.metodoPago.push(m); }
+3815: else nuevoLead.metodoPago=nuevoLead.metodoPago.filter(x=>x!==m);
+3861: html += '<div class="prop-card-name" style="font-size:14px; font-weight:600; color:#fff; margin:2px 0 4px 0;">' + (d['Nombre']||'') + '</div>';
+3974: if (inputN) nuevoLead.nombre = inputN.value.trim();
+3975: if (inputC) nuevoLead.celular = inputC.value.trim();
+3977: if(!nuevoLead.nombre.trim() && nuevoLead.tipo !== 'inmobiliaria'){ toast('Ingresa el nombre','error'); return; }
+3978: if(nuevoLead.tipo === 'inmobiliaria' && !nuevoLead.nombreInmobiliaria.trim()){ toast('Ingresa nombre de inmobiliaria','error'); return; }
+3979: if(!nuevoLead.celular.trim()){ toast('Ingresa el celular','error'); return; }
+3981: const celularLimpio = String(nuevoLead.celular||'').trim().replace(/\D/g, '');
+3985: if (deletedPhones.includes(celularLimpio)) {
+3986: deletedPhones = deletedPhones.filter(p => p !== celularLimpio);
+3992: const lRawNum = String(l.celular || '').replace(/\D/g, '');
+3994: const cleanC = celularLimpio.length >= 10 ? celularLimpio.slice(-10) : celularLimpio;
+3996: const lNom = norm(l.nombre);
+3997: const nom = norm(nuevoLead.nombre);
+3999: const matchCelular = cleanC && lNum && lNum === cleanC;
+4000: const matchNombre = nom && lNom && lNom === nom;
+4001: return matchCelular || matchNombre;
+4004: const lRawNum = String(existe.celular || '').replace(/\D/g, '');
+4006: const cleanC = celularLimpio.length >= 10 ? celularLimpio.slice(-10) : celularLimpio;
+4007: const coincidenciaCelular = cleanC && lNum === cleanC;
+4009: toast(`Ya existe un cliente con este ${coincidenciaCelular ? 'celular' : 'nombre'} (${existe.nombre})`, 'error');
+4018: tipo:nuevoLead.tipo, nombre:nuevoLead.nombre.trim(),
+4019: celular:nuevoLead.celular.trim(), notas:nuevoLead.notas, metodoPago:[...nuevoLead.metodoPago],
+4023: nombreInmobiliaria:nuevoLead.nombreInmobiliaria, nombreAgente:nuevoLead.nombreAgente,
+4097: <input type="text" id="searchLeadsInput" placeholder="Buscar por nombre o celular..." value="${searchTermLeads}" oninput="buscarLeads(this.value)"/>
+4164: const basicStr = String(l.nombre || '') + ' ' + String(l.celular || '');
+4172: if(prop && String(prop['Nombre'] || '').toLowerCase().includes(searchTermLeads)) return true;
+4217: return `<tr class="clickable" onclick="abrirLead('${String(l.id).trim()}', '${String(l.celular).trim()}')">
+4218: <td><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">📱 ${l.celular}</div></td>
+4222: <td><div style="font-weight:700; color:var(--gold);">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div><div style="font-size:10px;color:#888;margin-top:2px;">${(l.metodoPago || []).join(', ') || '—'}</div></td>
+4245: <div class="lead-card" onclick="abrirLead('${String(l.id).trim()}', '${String(l.celular).trim()}')">
+4248: <div class="lc-name">${l.nombre}</div>
+4249: <div class="lc-phone">📱 ${l.celular}</div>
+4256: <div><div class="lc-stat-val" style="color:var(--gold); font-size:13px;">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div><div class="lc-stat-lbl">Presupuesto</div><div style="font-size:9px;color:#888;margin-top:1px;">${(l.metodoPago||[]).join(', ')||'—'}</div></div>
+4274: function abrirLead(id, celular){
+4287: if(!l && celular) {
+4288: const normPhone = String(celular).replace(/[^\d]/g, "");
+4289: l = leads.find(x => String(x.celular || '').replace(/[^\d]/g, "") === normPhone);
+4291: console.warn("Lead recuperado por teléfono:", celular);
+4326: <div class="panel-name">${lead.nombre}</div>
+4331: ${lead.tipo==='inmobiliaria'?`<span class="badge badge-inmobiliaria">🏢 ${lead.nombreInmobiliaria||''}</span>`:''}
+4341: <a href="https://wa.me/57${lead.celular}" target="_blank" class="btn btn-secondary btn-sm" style="flex:0.5; text-decoration:none; color:inherit; display:flex; align-items:center; justify-content:center; gap:6px;">💬 WhatsApp</a>
+4347: <div class="panel-section-title" onclick="toggleSection(this)">Perfil y Contacto</div>
+4350: <div><div class="form-label">Teléfono</div><div style="margin-top:4px; font-weight:600;">📱 ${lead.celular}</div></div>
+4351: <div><div class="form-label">Método Pago</div><div style="margin-top:4px; font-weight:600;">${(lead.metodoPago||[]).join(', ')||'—'}</div></div>
+4352: ${lead.tipo==='inmobiliaria'?`<div><div class="form-label">Agente Aliado</div><div style="margin-top:4px; font-weight:600;">${lead.nombreAgente||'—'}</div></div>`:''}
+4463: const name = p ? p['Nombre'] : `Propiedad ${cod}`;
+4537: <div style="font-weight:700; color:#fff; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cod} ${p ? `· ${p['Nombre']}` : ''}</div>
+4646: let celularABorrar = '';
+4650: celularABorrar = String(leadABorrar.celular || '').replace(/\D/g, '');
+4651: if (celularABorrar) {
+4655: const lCel = String(l.celular || '').replace(/\D/g, '');
+4656: if (lCel === celularABorrar) {
+4664: if (!deletedPhones.includes(celularABorrar)) {
+4665: deletedPhones.push(celularABorrar);
+4679: // Eliminar localmente primero (por ID y por teléfono celular para barrer duplicados locales)
+4682: if (celularABorrar && String(l.celular || '').replace(/\D/g, '') === celularABorrar && l.id !== 'LEAD-AGENDA-GLOBAL') return false;
+4737: dest = (lead.nombreAgente || lead.nombre || "Agente").trim().split(' ')[0];
+4739: dest = (lead.nombre || "Cliente").trim().split(' ')[0];
+4765: <div style="font-size:11px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p ? p['Nombre'] || '' : ''} · <span style="color:var(--gold);">${p ? formatP(p['Precio']) : ''}</span></div>
+4775: ${objs.map(p => `• <strong>${p['Nombre'] || p['Código']}</strong> (${formatP(p['Precio'])})<br/>&nbsp;&nbsp;\u{1F517} <a href="https://icdeinmobiliaria.com/propiedad/${generarSlugPropiedad(p)}.html" target="_blank" style="color:var(--gold);text-decoration:none;">Ver propiedad</a>`).join('<br/><br/>')}
+4785: <div style="font-size:13px;color:#aaa;margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.05);">Para: <strong style="color:#fff;">${dest}</strong> · ${lead.celular}</div>
+4872: dest = (lead.nombreAgente || lead.nombre || "Agente").trim().split(' ')[0];
+4874: dest = (lead.nombre || "Cliente").trim().split(' ')[0];
+4907: msg += emoBullet + " *" + (p['Nombre'] || p['Código']) + "* (" + formatP(p['Precio']) + ")\r\n  " + emoClip + " " + `https://icdeinmobiliaria.com/propiedad/${generarSlugPropiedad(p)}.html` + "\r\n\r\n";
+4931: const num = lead.celular.replace(/\D/g, '');
+4995: document.getElementById('visitaCliente').value = v ? v.cliente : (lead ? lead.nombre : '');
+4996: document.getElementById('visitaCelular').value = v ? v.celular : (lead ? lead.celular : '');
+5025: const celular = document.getElementById('visitaCelular').value.trim();
+5028: if(!lead && celular) {
+5029: const cleanInput = String(celular).replace(/\D/g, '');
+5033: const lRaw = String(l.celular || '').replace(/\D/g, '');
+5046: nombre: 'Agenda Global (Citas Genéricas)',
+5047: celular: '0000000000',
+5049: metodoPago: [],
+5055: nombreInmobiliaria: '',
+5056: nombreAgente: '',
+5070: const vInCitas = citas.find(x => x.codigo === cod && x.celular === celular);
+5083: celular: celular,
+5084: inmobiliaria: lead && lead.tipo==='inmobiliaria' && lead.id !== 'LEAD-AGENDA-GLOBAL' ? lead.nombreInmobiliaria : '',
+5096: const cIdx = citas.findIndex(x => x.id === v.id || (x.codigo === cod && x.celular === v.celular && !x.id));
+5490: <div style="font-size:11px;color:#888;">${c.celular || ''}</div>
+5510: let lead = leads.find(l => (l.visitas || []).some(v => v.id === citaId || (v.codigo === cita.codigo && v.fecha === cita.fecha && v.celular === cita.celular)));
+5534: <thead><tr><th>Inmobiliaria / Agente</th><th>Celular</th><th>Requerimiento</th><th>Estado</th><th>Acciones</th></tr></thead>
+5536: <tr class="clickable" onclick="abrirLead('${String(l.id).trim()}')">
+5537: <td><div class="leads-row-name">${l.nombreInmobiliaria || l.nombre}</div><div style="font-size:11px;color:#888;">Agente: ${l.nombreAgente || '—'}</div></td>
+5538: <td>${l.celular}</td>
+5541: <td><button class="btn btn-sm btn-secondary" onclick="abrirLead('${String(l.id).trim()}')">Ver</button></td>
+5625: Responde UNICAMENTE en formato JSON con estos campos: codigo (solo el numero), fecha (YYYY-MM-DD), hora (HH:mm), cliente (nombre), notas.
+5828: const lead = leads.find(l => l.nombre.toLowerCase().includes(owner.toLowerCase()) || owner.toLowerCase().includes(l.nombre.toLowerCase()));
+5829: const phone = lead ? lead.celular : prompt(`No se encontró el teléfono para ${owner}. Por favor ingrésalo:`);
+6120: <div class="top-prop-name">${p ? p['Nombre'] : 'Propiedad Desconocida'}</div>
+6588: html: `<div class="z-marker" id="m-${code}" title="${p['Nombre']}">${price}</div>`,
+6719: document.getElementById('edPropNom').value = p ? (p['Nombre'] || '') : '';
+6763: <span><span class="match-code">${p['Código']}</span> · ${p['Nombre'] || ''}</span>
+6786: 'Nombre': document.getElementById('edPropNom').value.trim(),
+6850: <div class="form-group full"><label class="form-label">Nombre / Título</label><input class="form-input" id="edPropNom" placeholder="ej: Casa Campestre en Neiva"/></div>
+6863: <div class="form-group"><label class="form-label">Inmobiliaria / Aliado</label><input class="form-input" id="edPropInmob" placeholder="Nombre de la inmobiliaria"/></div>
+6901: <div class="modal-prop-title" id="mpTitle">Nombre</div>
+7007: const nombre = (inmueble["Nombre"] || '').toLowerCase()
+7011: return nombre ? nombre + '-' + codigo : 'propiedad-' + codigo;
+7049: document.getElementById('mpTitle').textContent = p['Nombre'];
+7222: if (['finca raiz', 'metrocuadrado', 'ciencuadras'].includes(norm(a.nombre))) return false;
+7227: { nombre: "Elite Group", urlBase: "https://inmobiliariaelitegroupsas.com/", notas: "Carrusel Index" },
+7228: { nombre: "Soluciones La Primavera", urlBase: "https://www.solucioneslaprimavera.com/", notas: "Carrusel Index" },
+7229: { nombre: "Rocha Finca Raíz", urlBase: "https://rochafincaraiz.com/welcome/", notas: "Carrusel Index" },
+7230: { nombre: "Inmobiliaria Jovel Muñoz", urlBase: "https://www.inmobiliariajovelmunoz.com.co/", notas: "Carrusel Index" },
+7231: { nombre: "Inmobiliaria Santa María Vera", urlBase: "https://inmobiliariasantamariavera.com/", notas: "Carrusel Index" },
+7232: { nombre: "MAC Negocios Inmobiliarios", urlBase: "https://web.facebook.com/people/MAC-negocios-Inmobiliarios/61581485549130/", notas: "Carrusel Index" },
+7233: { nombre: "Inmobiliaria JP Escobar", urlBase: "https://www.inmobiliariajpescobar.com.co/", notas: "Carrusel Index" },
+7234: { nombre: "Asuntos Inmobiliarios", urlBase: "https://www.facebook.com/figueroayasociadoshuila/?locale=es_LA", notas: "Carrusel Index" },
+7235: { nombre: "Casa Honor Inmobiliaria", urlBase: "https://casahonorinmobiliaria.com/", notas: "Carrusel Index" },
+7236: { nombre: "Rediis Armiento", urlBase: "https://www.instagram.com/rediisarmiento/", notas: "Carrusel Index" },
+7237: { nombre: "Inmobiliaria Casa & Casa", urlBase: "https://casaycasainmobiliariadelhuila.com/", notas: "Carrusel Index" },
+7238: { nombre: "Inmobiliaria Rustik House", urlBase: "https://inmobiliarianeiva.com/", notas: "Carrusel Index" },
+7239: { nombre: "Menber", urlBase: "https://casasenventaneiva.com/", notas: "Carrusel Index" }
+7242: const nombresExistentes = new Set(aliados.map(a => norm(a.nombre)));
+7246: const n = norm(p.nombre);
+7247: if (!nombresExistentes.has(n)) {
+7248: nombresExistentes.add(n);
+7251: nombre: p.nombre,
+7259: const existing = aliados.find(a => norm(a.nombre) === n);
+7338: <div class="form-group"><label class="form-label">Nombre *</label>
+7340: <input class="form-input" id="gp_nombre" type="text" placeholder="Apartamento en barrio X" style="flex:1;"/>
+7341: <button class="btn btn-secondary btn-sm" onclick="gpAutoGenerarNombre()" style="padding:0 8px;">Auto</button>
+7460: function gpAutoGenerarNombre() {
+7464: document.getElementById('gp_nombre').value = `${tipo} en barrio ${barrio}`;
+7465: toast('Nombre auto-generado ✓', 'success');
+7467: toast('Por favor escribe el barrio para generar el nombre', 'error');
+7617: const name = matchedProp['Nombre'] || matchedProp['nombre'] || 'Sin nombre';
+7652: setVal('gp_nombre', p['Nombre'] || p['nombre']);
+7728: const ids = ['gp_codigo', 'gp_nombre', 'gp_tipo', 'gp_contrato', 'gp_precio', 'gp_barrio', 'gp_conjunto', 'gp_zona', 'gp_ciudad', 'gp_estrato', 'gp_ubicacion', 'gp_habitaciones', 'gp_banos', 'gp_garaje', 'gp_area', 'gp_gfotos', 'gp_inmobiliaria', 'gp_administracion', 'gp_rentabilidad', 'gp_lat', 'gp_lng', 'gp_descripcion', 'gp_puntos_clave'];
+7764: nombre: document.getElementById('gp_nombre')?.value || '',
+7867: setVal('gp_nombre', data.nombre);
+7974: const currentNombre = document.getElementById('gp_nombre').value;
+7976: if (currentNombre || currentDesc) {
+7977: if (!confirm('¿Quieres sobrescribir el Nombre, Descripción y Puntos Clave actuales con IA?')) {
+7989: "nombre": "Título profesional, atractivo y comercial del inmueble (ej: 'Espectacular Apartamento en barrio El Ingenio').",
+8029: await typeWriter('gp_nombre', result.nombre, 15);
+8124: 'Nombre': data.nombre || 'Simulación de Propiedad',
+8262: const ids = ['gp_codigo', 'gp_nombre', 'gp_precio', 'gp_barrio', 'gp_conjunto', 'gp_zona', 'gp_ubicacion', 'gp_area', 'gp_administracion', 'gp_rentabilidad', 'gp_descripcion', 'gp_puntos_clave', 'gp_lat', 'gp_lng', 'gp_gfotos', 'gp_inmobiliaria'];
+8304: 'Nombre': gpData.nombre || `${tipo} en barrio ${barrio}`,
+8439: ${aliados.map(a => `<option value="${a.nombre}" ${window.preselectedAllyId===a.id?'selected':''}>${a.nombre}</option>`).join('')}
+8545: "nombre": "Nombre del inmueble",
+8648: "nombre": "Título del inmueble",
+8719: "nombre": "Nombre del inmueble",
+8791: <div class="form-group"><label class="form-label">Nombre *</label>
+8793: <input class="form-input ${emptyClass(data.nombre)}" id="gp_nombre" type="text" value="${emptyCheck(data.nombre)}" style="flex:1;"/>
+8794: <button class="btn btn-secondary btn-sm" onclick="gpAutoGenerarNombre()" style="padding:0 8px;">Auto</button>
+8938: <th>Nombre</th>
+8957: const allyHist = history.filter(h => norm(h.aliado) === norm(a.nombre)).slice(0, 5);
+8962: <div style="font-weight:700; color:#fff;">${a.nombre}</div>
+9037: <span>El barrido para <strong>${overdueAlly.nombre}</strong> está <strong>${overdueDaysStr}</strong>.</span>
+9065: <div class="form-group"><label class="form-label">Nombre del Aliado *</label><input class="form-input" id="ca_nombre" type="text" placeholder="Ej: Finca Raíz"/></div>
+9082: const nombre = document.getElementById('ca_nombre').value.trim();
+9087: if (!nombre || !url) {
+9088: toast('Nombre y URL son requeridos', 'error');
+9095: nombre: nombre,
+9125: <div class="form-group"><label class="form-label">Nombre del Aliado *</label><input class="form-input" id="ca_nombre" type="text" value="${match.nombre}"/></div>
+9142: const nombre = document.getElementById('ca_nombre').value.trim();
+9147: if (!nombre || !url) {
+9148: toast('Nombre y URL son requeridos', 'error');
+9155: match.nombre = nombre;
