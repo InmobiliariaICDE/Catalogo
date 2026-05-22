@@ -5198,30 +5198,48 @@ function generarProximosCheck(frec){
    MODAL VISITA
 ═══════════════════════════════════════════════ */
 function abrirVisitaModal(lid, prefilledCod, citaId){
-  visitaLeadId = lid;
-  let v = null;
-  const lead = lid ? leads.find(l => String(l.id) === String(lid)) : null;
-  
-  if (citaId) {
-    v = citas.find(c => String(c.id) === String(citaId));
-  } else if (prefilledCod && lead) {
-    v = (lead.visitas || []).find(x => x.codigo === prefilledCod);
+  try {
+    visitaLeadId = lid || null;
+    let v = null;
+    const lead = (lid && typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l => String(l.id) === String(lid)) : null;
+    
+    if (citaId && typeof citas !== 'undefined' && Array.isArray(citas)) {
+      v = citas.find(c => String(c.id) === String(citaId));
+    } else if (prefilledCod && lead) {
+      v = (lead.visitas || []).find(x => x.codigo === prefilledCod);
+    }
+
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    };
+
+    setVal('visitaCodigo', v ? v.codigo : (prefilledCod || ''));
+    setVal('visitaCliente', v ? v.cliente : (lead ? lead.nombre : ''));
+    setVal('visitaCelular', v ? v.celular : (lead ? lead.celular : ''));
+    
+    const elFecha = document.getElementById('visitaFecha');
+    if (elFecha) elFecha.value = v ? v.fecha : new Date().toISOString().split('T')[0];
+
+    setVal('visitaHora', v ? v.hora : '');
+    setVal('visitaEstado', v ? v.estado : 'agendada');
+    setVal('visitaOferto', v ? v.oferto : 'no');
+    setVal('visitaOferta', v ? v.oferta : '');
+    setVal('visitaNotas', v ? v.notas : '');
+    
+    const elCalendar = document.getElementById('visitaCalendar');
+    if (elCalendar) elCalendar.checked = false;
+
+    setVal('visitaId', v ? v.id : '');
+
+    const btnEliminar = document.getElementById('btnEliminarVisita');
+    if (btnEliminar) btnEliminar.style.display = v ? 'block' : 'none';
+
+    const modal = document.getElementById('visitaModal');
+    if (modal) modal.classList.add('open');
+  } catch (err) {
+    console.error("Error in abrirVisitaModal:", err);
   }
-
-  document.getElementById('visitaCodigo').value = v ? v.codigo : (prefilledCod || '');
-  document.getElementById('visitaCliente').value = v ? v.cliente : (lead ? lead.nombre : '');
-  document.getElementById('visitaCelular').value = v ? v.celular : (lead ? lead.celular : '');
-  document.getElementById('visitaFecha').value = v ? v.fecha : new Date().toISOString().split('T')[0];
-  document.getElementById('visitaHora').value = v ? v.hora : '';
-  document.getElementById('visitaEstado').value = v ? v.estado : 'agendada';
-  document.getElementById('visitaOferto').value = v ? v.oferto : 'no';
-  document.getElementById('visitaOferta').value = v ? v.oferta : '';
-  document.getElementById('visitaNotas').value = v ? v.notas : '';
-  document.getElementById('visitaCalendar').checked = false;
-  document.getElementById('visitaId').value = v ? v.id : '';
-  document.getElementById('btnEliminarVisita').style.display = v ? 'block' : 'none';
-
-  document.getElementById('visitaModal').classList.add('open');
 }
 
 function marcarVisitaRealizada(lid, cod){
@@ -5241,7 +5259,7 @@ function guardarVisita(){
     const cliente = document.getElementById('visitaCliente').value.trim();
     const celular = document.getElementById('visitaCelular').value.trim();
     
-    let lead = leads.find(l=>String(l.id)===String(visitaLeadId));
+    let lead = (visitaLeadId && typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l=>String(l.id)===String(visitaLeadId)) : null;
     if(!lead && celular) {
       const cleanInput = String(celular).replace(/\D/g, '');
       const matchInput = cleanInput.length >= 10 ? cleanInput.slice(-10) : cleanInput;
