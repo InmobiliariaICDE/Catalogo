@@ -11394,22 +11394,22 @@ function agendarVisitaFavs() {
 
     var datosRef = (typeof datos !== 'undefined') ? datos : [];
     var lineas = favs.map(function(cod) {
-        var prop = datosRef.find(function(d) { return d['C\u00f3digo'] === cod; });
-        if (!prop) return '\u2022 C\u00f3digo: ' + cod;
+        var prop = datosRef.find(function(d) { return d['Código'] === cod; });
+        if (!prop) return '• Código: ' + cod;
         var precio = prop['Precio'] || '';
         if (precio && typeof formatearPrecio === 'function') precio = formatearPrecio(precio);
-        return '\u2022 ' + (prop['Nombre'] || 'Propiedad') + ' (C\u00f3d. ' + cod + ')' + (precio ? ' - ' + precio : '');
+        return '• ' + (prop['Nombre'] || 'Propiedad') + ' (Cód. ' + cod + ')' + (precio ? ' - ' + precio : '');
     });
 
     var catalogoURL = 'https://icdeinmobiliaria.com/?ids=' + favs.join(',');
 
-    var msg = 'Hola ICDE Inmobiliaria \uD83C\uDFE0\n\n';
-    msg += 'Me interesan las siguientes propiedades y me gustar\u00eda *agendar una visita*:\n\n';
+    var msg = 'Hola ICDE Inmobiliaria 🏠\n\n';
+    msg += 'Me interesan las siguientes propiedades y me gustaría *agendar una visita*:\n\n';
     msg += lineas.join('\n');
-    msg += '\n\n\uD83D\uDD17 *Mi cat\u00e1logo personalizado:*\n' + catalogoURL;
-    msg += '\n\n\u00bfCu\u00e1ndo podr\u00edamos coordinar?';
+    msg += '\n\n🔗 *Mi catálogo personalizado:*\n' + catalogoURL;
+    msg += '\n\n¿Cuándo podríamos coordinar?';
 
-    window.open('https://wa.me/573208762117?text=' + encodeURIComponent(msg), '_blank');
+    window.open('https://api.whatsapp.com/send?phone=573208762117&text=' + encodeURIComponent(msg), '_blank');
 }
 
 // Inicializar panel al cargar
