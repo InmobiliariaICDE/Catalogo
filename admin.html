@@ -5236,7 +5236,10 @@ function abrirVisitaModal(lid, prefilledCod, citaId){
     if (btnEliminar) btnEliminar.style.display = v ? 'block' : 'none';
 
     const modal = document.getElementById('visitaModal');
-    if (modal) modal.classList.add('open');
+    if (modal) {
+      modal.classList.add('open');
+      modal.classList.add('active');
+    }
   } catch (err) {
     console.error("Error in abrirVisitaModal:", err);
   }
@@ -5405,8 +5408,21 @@ function guardarFiltrosEditados(marcarComoEnviadas = false){
 /* ═══════════════════════════════════════════════
    HELPERS
 ═══════════════════════════════════════════════ */
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open')); });
+function closeModal(id){ 
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.remove('open');
+    el.classList.remove('active');
+  }
+}
+document.addEventListener('keydown',e=>{ 
+  if(e.key==='Escape') {
+    document.querySelectorAll('.modal-overlay.open, .modal-overlay.active').forEach(m=>{
+      m.classList.remove('open');
+      m.classList.remove('active');
+    });
+  }
+});
 
 function saveLeads(){ 
   try {
