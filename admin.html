@@ -7884,7 +7884,7 @@ function abrirEditorProp(codigo, lat, lng) {
   document.getElementById('edPropLng').value = (p && p['Longitud']) ? p['Longitud'] : (lng || currentLng);
   
   document.getElementById('edPropContrato').value = p ? (p['Contrato'] || 'Venta') : 'Venta';
-  document.getElementById('edPropUbicacion').value = p ? (p['Ubicación'] || '') : '';
+  document.getElementById('edPropUbicacion').value = p ? (p['DIRECCIÒN-VEREDA'] || p['Ubicación'] || '') : '';
   document.getElementById('edPropCocina').value = p ? (p['Cocina'] || 'No') : 'No';
   document.getElementById('edPropGFotos').value = p ? (p['Google Fotos'] || '') : '';
   document.getElementById('edPropPropietario').value = p ? (p['Nombre del Propietario'] || '') : '';
@@ -7946,6 +7946,7 @@ async function guardarPropiedadEditor() {
     'Zona': document.getElementById('edPropZona').value.trim(),
     'Barrio': document.getElementById('edPropBar').value.trim(),
     'Ubicación': document.getElementById('edPropUbicacion').value.trim(),
+    'DIRECCIÒN-VEREDA': document.getElementById('edPropUbicacion').value.trim(),
     'Habitaciones': document.getElementById('edPropHab').value,
     'Baños': document.getElementById('edPropBan').value,
     'Garaje': document.getElementById('edPropGar').value,
@@ -8027,7 +8028,7 @@ async function guardarPropiedadEditor() {
       </div>
       <div class="form-group"><label class="form-label">Zona</label><input class="form-input" id="edPropZona" placeholder="ej: Oriente"/></div>
       <div class="form-group"><label class="form-label">Barrio</label><input class="form-input" id="edPropBar" placeholder="ej: Ipanema"/></div>
-      <div class="form-group"><label class="form-label">Ubicación / Dirección</label><input class="form-input" id="edPropUbicacion"/></div>
+      <div class="form-group"><label class="form-label">Dirección</label><input class="form-input" id="edPropUbicacion"/></div>
       <div class="form-group"><label class="form-label">Habitaciones</label><input class="form-input" type="number" id="edPropHab"/></div>
       <div class="form-group"><label class="form-label">Baños</label><input class="form-input" type="number" id="edPropBan"/></div>
       <div class="form-group"><label class="form-label">Garaje</label><input class="form-input" type="number" id="edPropGar"/></div>
@@ -8577,7 +8578,7 @@ function renderNuevaPropiedad() {
             ${[1,2,3,4,5,6].map(e => `<option value="${e}">${e}</option>`).join('')}
           </select>
         </div>
-        <div class="form-group"><label class="form-label">Ubicación / Dirección</label><input class="form-input" id="gp_ubicacion" type="text" placeholder="Dirección exacta"/></div>
+        <div class="form-group"><label class="form-label">Dirección</label><input class="form-input" id="gp_ubicacion" type="text" placeholder="Dirección exacta"/></div>
         <div class="form-group"><label class="form-label">Habitaciones</label>
           <select class="form-input" id="gp_habitaciones">
             ${[1,2,3,4,5,'6+'].map(h => `<option value="${h}">${h}</option>`).join('')}
@@ -8913,7 +8914,7 @@ function autofillPropiedadPorCodigo() {
   setVal('gp_zona', p['Zona'] || p['zona']);
   setVal('gp_ciudad', p['Ciudad'] || p['ciudad'] || 'Cali');
   setVal('gp_estrato', p['Estrato'] || p['estrato']);
-  setVal('gp_ubicacion', p['Ubicación'] || p['Ubicación / Dirección'] || p['ubicacion'] || p['Dirección'] || '');
+  setVal('gp_ubicacion', p['DIRECCIÒN-VEREDA'] || p['Dirección-Vereda'] || p['Ubicación'] || p['Ubicación / Dirección'] || p['ubicacion'] || p['Dirección'] || '');
   setVal('gp_habitaciones', p['Habitaciones'] || p['habitaciones'] || '1');
   setVal('gp_banos', p['Baños'] || p['banos'] || '1');
   setVal('gp_garaje', p['Garaje'] || p['garaje'] || 'No');
@@ -9641,6 +9642,7 @@ async function guardarPropiedad(scraperAllyName = '') {
     'Ciudad': gpData.ciudad || 'Cali',
     'Estrato': gpData.estrato,
     'Ubicación': gpData.ubicacion,
+    'DIRECCIÒN-VEREDA': gpData.ubicacion,
     'Habitaciones': gpData.habitaciones,
     'Baños': gpData.banos,
     'Garaje': gpData.garaje,
