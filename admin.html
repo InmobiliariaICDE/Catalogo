@@ -4164,9 +4164,11 @@ function guardarLead(enviarAhora, btn){
   leads.push(lead); saveLeads(); toast('Cliente guardado ✓','success');
   if(enviarAhora){ 
     const sel = selectedProps.length > 0 ? [...selectedProps] : null;
-    setTimeout(()=>abrirEnvioModal(lead.id, sel), 300); 
+    resetNuevoLead();
+    setTimeout(()=> abrirEnvioModal(lead.id, sel), 300); 
+  } else {
+    resetNuevoLead();
   }
-  resetNuevoLead(); 
   syncSheets(lead).finally(() => {
     if(btn) btn.disabled = false;
   });
