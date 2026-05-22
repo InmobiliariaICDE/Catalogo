@@ -4164,8 +4164,9 @@ function guardarLead(enviarAhora, btn){
   leads.push(lead); saveLeads(); toast('Cliente guardado ✓','success');
   if(enviarAhora){ 
     const sel = selectedProps.length > 0 ? [...selectedProps] : null;
+    abrirEnvioModal(lead.id, sel);
+    confirmarEnvio(null);
     resetNuevoLead();
-    setTimeout(()=> abrirEnvioModal(lead.id, sel), 300); 
   } else {
     resetNuevoLead();
   }
@@ -4759,7 +4760,21 @@ function renderPanelPendientes(lead, pend){
 
 function renderPanelVisitas(lead){
   if(!(lead.visitas||[]).length) return '<div style="color:#555;font-size:13px;padding:12px 0;">No hay visitas agendadas</div>';
-  return lead.visitas.map(v=>`
+  const ESTADO_PRIO = {
+    'solicito_visita': 1,
+    'agendada': 2,
+    'realizada': 3,
+    'cancelada': 4
+  };
+  const ordenadas = [...lead.visitas].sort((a,b) => {
+    const prioA = ESTADO_PRIO[a.estado] || 99;
+    const prioB = ESTADO_PRIO[b.estado] || 99;
+    if (prioA !== prioB) return prioA - prioB;
+    const da = a.fecha + (a.hora ? 'T' + a.hora : 'T00:00');
+    const db = b.fecha + (b.hora ? 'T' + b.hora : 'T00:00');
+    return da.localeCompare(db);
+  });
+  return ordenadas.map(v=>`
     <div class="visita-item" style="background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:12px; margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <span style="font-weight:700;color:var(--gold);">${v.codigo}</span>
