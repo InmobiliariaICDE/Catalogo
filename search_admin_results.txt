@@ -1,0 +1,177 @@
+56: /* MODAL PROPIEDAD */
+441: /* Estilo premium diferente para propiedades exclusivas del KMZ */
+459: /* Estilo premium en naranja para propiedades con ubicación preexistente y conflicto en KMZ */
+1162: /* --- Editor de Propiedad --- */
+1219: .autofilled-msg {
+1781: <button class="btn btn-primary" onclick="guardarVisita()">Guardar</button>
+1811: <button class="btn btn-primary" style="flex:1;" onclick="guardarFeedback()">Guardar Resultado</button>
+1850: <button class="btn btn-primary" onclick="guardarSettings()">Guardar</button>
+1867: <button class="btn btn-gold" onclick="guardarSinEnviar()">🤫 Guardar sin enviar</button>
+1901: <button class="btn btn-gold" style="flex:1;" onclick="guardarFiltrosEditados(false)">Guardar</button>
+1902: <button class="btn btn-primary" style="flex:1;" onclick="guardarFiltrosEditados(true)">💾 Guardar y marcar como enviadas</button>
+2003: // Fusionar propiedades enviadas
+2114: const FCAMPOS = [
+2175: // Si no se solicitan virtuales, solo mostramos las propiedades reales del catálogo Excel
+2379: ${FCAMPOS.map(c=>`
+2398: <div class="pc-count-bar" style="padding:0; margin:0;">Propiedades encontradas: <strong id="fnCnt_${pfx}">—</strong></div>
+2430: <button class="btn-map-control btn-map-add-mode" id="btnAddProp_${pfx}" onclick="toggleMapAddMode('${pfx}')" title="Agregar propiedad en el mapa">➕</button>
+2439: FCAMPOS.forEach(c => fnPoblar(pfx, c));
+2442: FCAMPOS.forEach(c => fnRenderHead(pfx, c.key));
+2597: const c = FCAMPOS.find(f=>f.key===key);
+2623: fnPoblar(pfx, FCAMPOS.find(c=>c.key==='rangoPrecio'));
+2659: FCAMPOS.forEach(c => {
+2675: if(!lista.length){ el.innerHTML = '<div class="empty">No hay propiedades con estos filtros</div>'; return; }
+2713: if(lista.length > 30) html += `<div style="text-align:center; padding:10px; font-size:12px; color:var(--gold); font-weight:600;">... y otras ${lista.length-30} propiedades más</div>`;
+2779: if(el) el.textContent = `${cnt} propiedades encontradas`;
+2798: FCAMPOS.forEach(c=>{
+2879: const res = await fetch('propiedades_kmz.json');
+2880: if (!res.ok) throw new Error('No se pudo cargar propiedades_kmz.json');
+2891: console.log(`Cargadas ${kmzProps.length} propiedades desde KMZ en ${kmzCategories.length} categorías.`);
+3014: // Actualizar la grilla de propiedades con las que están en el viewport
+3177: Clave única = codigo + celular (misma propiedad, mismo cliente).
+3231: // Normalizar IDs
+3445: l.visitas = Array.from(vMap.values()); // guardar visitas limpias en el lead
+3518: function normalizarPropiedades(data) {
+3531: else if (nk === 'nombre' || nk === 'titulo' || nk === 'propiedad') k = 'Nombre';
+3653: const rawData = normalizarPropiedades(Array.isArray(data) ? data : []);
+3659: // Cargar propiedades personalizadas de localStorage
+3662: // Unir: la propiedad REMOTA es la base con toda su info rica.
+3663: // customProps solo aporta los campos que explícitamente se editaron
+3673: // Merge inteligente: solo sobreescribir campos no vacíos
+3685: // Agregar las propiedades nuevas creadas desde el admin que no están en remoteProps
+3694: document.getElementById('syncStatus').textContent=`✓ ${allProps.length} propiedades`;
+3703: console.error("Error cargando propiedades:", e);
+3756: <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Selecciona los filtros para encontrar las propiedades ideales automáticamente.</p>
+3762: <div class="panel-section-title">Selección de Propiedades</div>
+3861: <button class="btn btn-primary" style="flex:1;" onclick="guardarLead(false, this)">💾 Solo Guardar</button>
+3863: ? `<button class="btn btn-green" style="flex:1.2; font-weight:700;" onclick="guardarLead(true, this)">💾 Guardar y Enviar WhatsApp ➜</button>`
+3864: : `<button class="btn btn-gold" style="flex:1.2; font-weight:700;" onclick="guardarLead(true, this)">💾 Guardar y Msg. Agente ➜</button>`}
+3896: if(nuevoLead.frecuencia==='manual') return `Con <strong>${cnt}</strong> propiedades → <strong>Envío manual</strong>.`;
+3897: return `Con <strong>${cnt}</strong> propiedades → Se enviarán todas las propiedades encontradas cada <strong>${ft}</strong>.`;
+3976: if(!total){ el.innerHTML='<div class="empty">No hay propiedades con estos filtros</div>'; return; }
+4108: GUARDAR LEAD
+4110: function guardarLead(enviarAhora, btn){
+4567: <div class="panel-section-title" onclick="toggleSection(this)">📋 Seguimiento de Propiedades</div>
+4582: <!-- B. PROPIEDADES ENVIADAS Y AGENDAMIENTO -->
+4584: <div style="font-size:12px; color:var(--gold); font-weight:600; text-transform:uppercase; margin-bottom:10px;">Propiedades e Interés</div>
+4604: <div class="panel-section-title" onclick="toggleSection(this)">⏳ Propiedades Pendientes (${pend.length})</div>
+4629: const name = p ? p['Nombre'] : `Propiedad ${cod}`;
+4714: if(!env.length) return '<div style="color:#555;font-size:13px;padding:12px 0;">No se han enviado propiedades aún</div>';
+4821: if(!confirm(`¿Eliminar la propiedad ${cod} de la lista de enviadas?`)) return;
+4833: toast('Propiedad eliminada de la lista ✓','success');
+4870: // Guardar el teléfono en la lista de teléfonos eliminados
+4932: // Detectamos si hay propiedades nuevas
+4937: // Lote de propiedades (Individual)
+4963: <div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:10px;">Propiedades seleccionadas (${lote.length}):</div>
+4989: htmlIndividual = `<div class="empty" style="padding:20px;text-align:center;color:#666;">No hay propiedades nuevas para enviar individualmente.</div>`;
+5038: function guardarSinEnviar(){
+5052: const msg = `Se marcaron ${count} propiedades como enviadas (sin WhatsApp).`;
+5060: toast("✅ Propiedades marcadas como enviadas","success");
+5065: toast("No había propiedades nuevas para marcar","warning");
+5262: function guardarVisita(){
+5358: console.error("Error en guardarVisita:", err);
+5359: toast("Error al guardar la visita", "error");
+5370: document.getElementById('editFiltrosCount').textContent=`${filtrarProps(tempFiltros).length} propiedades encontradas`;
+5378: function guardarFiltrosEditados(marcarComoEnviadas = false){
+5398: notas: 'Filtros actualizados (propiedades marcadas como vistas sin enviar WhatsApp)'
+5439: toast('Error al guardar datos localmente', 'error');
+5695: async function guardarFeedback(){
+5876: // Poblar los campos con los valores actuales
+5886: function guardarSettings(){
+5949: Responde UNICAMENTE en formato JSON con estos campos: codigo (solo el numero), fecha (YYYY-MM-DD), hora (HH:mm), cliente (nombre), notas.
+6386: <th>Propiedad</th>
+6464: <th class="col-prop">Propiedad</th>
+6531: 🏢 Informes de Recaudos y Abonos Contables - Hojas de Administración de Copropiedad Edificio Silvia
+6702: icsContent += `DESCRIPTION:Cobro de canon de arrendamiento de la propiedad ${p.name} por valor de ${safeFormatP(rent)}. Inquilino/Propietario: ${p.owner}. Pagar antes del dia ${maxDueDay}.\n`;
+6723: const details = `Cobro de canon de arrendamiento de la propiedad ${propName} por valor de ${safeFormatP(rent)}. Inquilino: ${owner}. Plazo maximo de pago: dia ${maxDueDay}.`;
+6839: 💾 Guardar en la Nube
+6935: // Guardar caché local
+6948: console.error('Error al guardar pago en la nube:', err);
+6949: toast('Error al guardar en la nube: ' + err.message + '. Se guardó en caché local.', 'warning');
+6951: // Fallback local: Guardar al menos localmente
+7078: <div class="panel-section-title">Leads por Tipo de Propiedad</div>
+7265: <div class="top-prop-name">${p ? p['Nombre'] : 'Propiedad Desconocida'}</div>
+7774: <button onclick="abrirEditorProp('${code}')" title="Editar propiedad">✏️</button>
+7828: // --- Lógica de Edición de Propiedades ---
+7837: toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
+7861: document.getElementById('editorPropTitle').textContent = isEdit ? '✏️ Editar Propiedad' : '➕ Nueva Propiedad';
+7871: // Si es una propiedad nueva y no hay tipos, o si queremos agregar uno manualmente,
+7882: // Prioridad: 1. Datos de la propiedad (p) si existen, 2. Argumentos (lat/lng), 3. Valor actual en el input
+7925: async function guardarPropiedadEditor() {
+7950: // CORRECCIÓN CRÍTICA: Solo sobrescribir campos que el usuario realmente editó.
+7952: // rica que ya existe en la propiedad (descripción, puntos clave, ciudad, etc.)
+7960: toast('Propiedad actualizada ✓ (información de la matriz preservada)', 'success');
+7963: toast('Nueva propiedad agregada localmente ✓', 'success');
+7966: // Guardar en persistencia local extendida (opcional)
+7985: <!-- MODAL EDITOR PROPIEDAD -->
+7988: <div class="modal-title" id="editorPropTitle">✏️ Editar Propiedad</div>
+8018: <button class="btn btn-primary" onclick="guardarPropiedadEditor()">Guardar Propiedad</button>
+8023: <!-- MODAL PROPIEDAD -->
+8151: function generarSlugPropiedad(inmueble) {
+8156: return nombre ? nombre + '-' + codigo : 'propiedad-' + codigo;
+8159: function compartirPropiedad(codigo, btn){
+8162: const url = window.location.origin + '/propiedad/' + generarSlugPropiedad(p) + '.html';
+8248: btnShare.onclick = () => compartirPropiedad(p['Código'], btnShare);
+8374: function sincronizarAliadosConPropiedades() {
+8381: if (a.notas === 'Autosincronizado desde propiedad') return false;
+8420: if (existing && (!existing.urlBase || existing.notas === 'Autosincronizado desde propiedad')) {
+8435: sincronizarAliadosConPropiedades();
+8447: <button class="btn ${window.currentGestionSubTab==='nueva'?'btn-primary':'btn-secondary'}" onclick="setGestionSubTab('nueva')">🏠 Nueva Propiedad</button>
+8458: renderNuevaPropiedad();
+8473: /* SUB-TAB 1: NUEVA PROPIEDAD */
+8474: function renderNuevaPropiedad() {
+8525: <span class="autofilled-msg" id="gp_barrio_msg" style="display:none; position:absolute; right:10px; bottom:-16px;"></span>
+8656: <button class="btn btn-primary" id="btn_gp_guardar" onclick="guardarPropiedad()">💾 Guardar Propiedad</button>
+8661: checkBorradorPropiedad();
+8687: let autofilled = false;
+8688: if (inputZona && !inputZona.value) { inputZona.value = z; autofilled = true; }
+8689: if (inputCiudad && (!inputCiudad.value || inputCiudad.value === 'Cali')) { inputCiudad.value = c; autofilled = true; }
+8690: if (inputEstrato && !inputEstrato.value) { inputEstrato.value = e; autofilled = true; }
+8692: if (autofilled) {
+8849: function autofillPropiedadPorCodigo() {
+8878: // Nuevos campos para coincidir con la matriz
+8944: const btnGuardar = document.getElementById('btn_gp_guardar');
+8945: if (btnGuardar) {
+8946: btnGuardar.innerHTML = '💾 Actualizar Propiedad';
+8984: const btnGuardar = document.getElementById('btn_gp_guardar');
+8985: if (btnGuardar) btnGuardar.innerHTML = '💾 Guardar Propiedad';
+9045: function saveBorradorPropiedad() {
+9054: localStorage.setItem('icde_borrador_propiedad', JSON.stringify(draft));
+9059: function checkBorradorPropiedad() {
+9060: const draftStr = localStorage.getItem('icde_borrador_propiedad');
+9078: <button class="btn btn-primary btn-sm" onclick="recuperarBorradorPropiedad()">Recuperar</button>
+9079: <button class="btn btn-secondary btn-sm" onclick="descartarBorradorPropiedad()">Descartar</button>
+9090: function recuperarBorradorPropiedad() {
+9091: const draftStr = localStorage.getItem('icde_borrador_propiedad');
+9096: descartarBorradorPropiedad(true);
+9103: function descartarBorradorPropiedad(onlyVisual = false) {
+9105: localStorage.removeItem('icde_borrador_propiedad');
+9208: container.innerHTML = '<div style="font-size: 11px; color: var(--muted);">Vista previa no disponible — el enlace se guardará igual</div>';
+9212: container.innerHTML = '<div style="font-size: 11px; color: var(--muted);">Vista previa no disponible — el enlace se guardará igual</div>';
+9300: toast('¡Propiedad generada con éxito con IA! ✓', 'success');
+9389: 'Nombre': data.nombre || 'Simulación de Propiedad',
+9495: ⚠️ Alerta: Posible Propiedad Duplicada Detectada
+9498: Hemos encontrado una propiedad existente muy similar en la base de datos. Por favor compara antes de proceder:
+9503: <h4 style="color: var(--gold); margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">Nueva Propiedad</h4>
+9514: <h4 style="color: var(--gold); margin-bottom: 12px; border-bottom: 1px solid rgba(212,168,75,0.1); padding-bottom: 6px;">Propiedad Existente (${oldProp['Código']})</h4>
+9528: <button class="btn btn-gold" id="btn_gp_dup_confirm">Guardar de todos modos (Es diferente)</button>
+9561: async function guardarPropiedad(scraperAllyName = '') {
+9646: ejecutarGuardadoPropiedad(finalProp);
+9649: ejecutarGuardadoPropiedad(finalProp);
+9653: async function ejecutarGuardadoPropiedad(prop) {
+9654: const btn = document.getElementById('btn_gp_guardar');
+9676: toast('Propiedad guardada y sincronizada ✓', 'success');
+9689: descartarBorradorPropiedad();
+9710: descartarBorradorPropiedad();
+9731: 📡 Extractor de Propiedades Aliadas
+9782: <input class="form-input" id="sw_url" type="text" placeholder="https://ejemplo.com/propiedad/apartamento-arriendo-..." style="flex:1;"/>
+10174: <span class="autofilled-msg" id="gp_barrio_msg" style="display:none; position:absolute; right:10px; bottom:-16px;"></span>
+10272: <button class="btn btn-primary" id="btn_gp_guardar" onclick="guardarBarridoPropiedad()">💾 Guardar Propiedad</button>
+10281: function guardarBarridoPropiedad() {
+10283: guardarPropiedad(aliadoName);
+10293: propiedadesTotal: total,
+10294: propiedadesNuevas: nuevos,
+10295: propiedadesActualizadas: actualizados
+10363: ${allyHist.map(h => `<div>· <strong>${h.fecha}</strong>: Extraído <strong>${h.propiedadesTotal}</strong> prop.</div>`).join('')}
+10468: <button class="btn btn-primary" onclick="saveAddAlly()">Guardar Aliado</button>
+10528: <button class="btn btn-primary" onclick="saveEditAlly('${id}')">Guardar Cambios</button>

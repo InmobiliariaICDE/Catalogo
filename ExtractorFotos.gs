@@ -546,7 +546,10 @@ var CAMPOS_FB = [
   'Rentabilidad', 'Ciudad', 'Estrato', 'Ubicación', 'Closet',
   'Piscina', 'Administración', 'Retorno de la Inversión',
   'Image', 'Google Fotos', 'Descripción', 'Puntos Clave',
-  'Buscar', 'Cocina', 'Contrato', 'Inmobiliaria', 'Imagenes', 'Publicar'
+  'Buscar', 'Cocina', 'Contrato', 'Inmobiliaria', 'Imagenes', 'Publicar',
+  'Celulares', 'Nombre del Propietario', 'Cuánto Renta ($)', 'Dimensiones',
+  'Aire Acondicionado', 'Antigüedad del Inmueble', 'Ascensor', 'Número de Cortinas',
+  'Reja Antejardín', 'Patio'
 ];
  
 function FIREBASE_onEdit(e) {
@@ -753,6 +756,153 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.action === 'getData') return ContentService.createTextOutput(JSON.stringify(leerPropiedades())).setMimeType(ContentService.MimeType.JSON);
   if (e && e.parameter && e.parameter.action === 'sitemap') return ContentService.createTextOutput(construirSitemapXML()).setMimeType(ContentService.MimeType.XML);
   return HtmlService.createHtmlOutputFromFile('prueba estilos').setTitle('ICDE - Negocios inmobiliarios');
+}
+
+function doPost(e) {
+  try {
+    var action = e.parameter.action;
+    if (action === 'appendRow') {
+      var prop = JSON.parse(e.postData.contents);
+      var ss = SpreadsheetApp.openById(SHEET_ID);
+      var sheet = ss.getSheetByName(HOJA_NOMBRE);
+      if (!sheet) {
+        return ContentService.createTextOutput(JSON.stringify({ok: false, error: "No se encontró la hoja Base de Datos"})).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      var data = sheet.getDataRange().getValues();
+      var headers = data[0];
+      
+      // Encontrar columna de código
+      var codIdx = -1;
+      for (var i = 0; i < headers.length; i++) {
+        var h = String(headers[i] || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        if (h === 'codigo' || h === 'cdigo' || h === 'cod' || h === 'id') {
+          codIdx = i;
+          break;
+        }
+      }
+      
+      if (codIdx === -1) {
+        return ContentService.createTextOutput(JSON.stringify({ok: false, error: "No se encontró la columna de Código"})).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      // Mapear campos a las columnas de la hoja
+      var rowData = headers.map(function(h) {
+        var fieldName = String(h || "").trim();
+        var nk = fieldName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        
+        if (nk === 'codigo' || nk === 'cdigo' || nk === 'cod' || nk === 'id') return prop['Código'] || '';
+        if (nk === 'nombre' || nk === 'titulo' || nk === 'propiedad') return prop['Nombre'] || '';
+        if (nk === 'precio' || nk === 'valor') return prop['Precio'] || '';
+        if (nk === 'tipo' || nk === 'tipo de inmueble' || nk === 'clase') return prop['Tipo de inmueble'] || '';
+        if (nk === 'zona' || nk === 'sector') return prop['Zona'] || '';
+        if (nk === 'barrio') return prop['Barrio'] || '';
+        if (nk === 'contrato') return prop['Contrato'] || '';
+        if (nk.includes('ubicaci') || nk === 'direccion') return prop['Ubicación'] || '';
+        if (nk.includes('habitaci') || nk === 'alcobas' || nk === 'cuartos') return prop['Habitaciones'] || '';
+        if (nk.includes('bano') || nk === 'sanitarios') return prop['Baños'] || '';
+        if (nk.includes('garaje') || nk.includes('parquea')) return prop['Garaje'] || '';
+        if (nk.includes('cocina')) return prop['Cocina'] || '';
+        if (nk.includes('piscina')) return prop['Piscina'] || '';
+        if (nk.includes('pisos')) return prop['Pisos'] || '';
+        if (nk.includes('area construida') || nk.includes('area total') || nk === 'area') return prop['Área'] || '';
+        if (nk === 'google fotos') return prop['Google Fotos'] || '';
+        if (nk === 'inmobiliaria' || nk === 'aliado') return prop['Inmobiliaria'] || '';
+        if (nk.includes('administr')) return prop['Administración'] || '';
+        if (nk.includes('retorno') || nk.includes('rentabilidad')) return prop['Retorno de la inversión'] || '';
+        if (nk === 'comuna') return prop['Comuna'] || '';
+        if (nk === 'area lote' || nk === 'area de lote') return prop['Área lote'] || '';
+        if (nk === 'closet' || nk === 'closets') return prop['Closet'] || '';
+        if (nk === 'inventario') return prop['Inventario'] || '';
+        if (nk === 'celulares') return prop['Celulares'] || '';
+        if (nk === 'nombre del propietario' || nk === 'propietario') return prop['Nombre del Propietario'] || '';
+        if (nk === 'cuanto renta' || nk === 'cuanto renta ($)') return prop['Cuánto Renta ($)'] || '';
+        if (nk === 'ascensor') return prop['Ascensor'] || '';
+        if (nk === 'numero de cortinas' || nk === 'cortinas') return prop['Número de Cortinas'] || '';
+        if (nk === 'aire acondicionado' || nk === 'aire') return prop['Aire Acondicionado'] || '';
+        if (nk === 'reja antejardin' || nk === 'reja') return prop['Reja Antejardín'] || '';
+        if (nk === 'antiguedad del inmueble' || nk === 'antiguedad') return prop['Antigüedad del Inmueble'] || '';
+        if (nk === 'patio') return prop['Patio'] || '';
+        if (nk === 'dimensiones') return prop['Dimensiones'] || '';
+        if (nk === 'publicar') return prop['Publicar'] || '';
+        if (nk === 'destacada') return prop['Destacada'] || '';
+        if (nk === 'descripcion' || nk === 'detalle') return prop['Descripción'] || '';
+        if (nk === 'puntos clave') {
+          var pc = prop['Puntos Clave'] || '';
+          if (Array.isArray(pc)) return pc.join('\n');
+          return pc;
+        }
+        if (nk === 'imagenes' || nk === 'fotos') return prop['Imagenes'] || '';
+        
+        return prop[fieldName] !== undefined ? prop[fieldName] : (prop[nk] !== undefined ? prop[nk] : '');
+      });
+      
+      var rowIndex = -1;
+      var targetCod = String(prop['Código']).trim();
+      for (var r = 1; r < data.length; r++) {
+        if (String(data[r][codIdx]).trim() === targetCod) {
+          rowIndex = r + 1;
+          break;
+        }
+      }
+      
+      if (rowIndex > 0) {
+        sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+      } else {
+        sheet.appendRow(rowData);
+      }
+      
+      try {
+        var newRow = rowIndex > 0 ? rowIndex : sheet.getLastRow();
+        var headersValues = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        var colFotos = headersValues.indexOf(COL_FOTOS) + 1;
+        var colImagenes = headersValues.indexOf(COL_IMAGENES) + 1;
+        var colPublicar = headersValues.indexOf(COL_PUBLICAR) + 1;
+        
+        if (colFotos > 0 && colImagenes > 0) {
+          var linkFotos = sheet.getRange(newRow, colFotos).getValue();
+          if (linkFotos) {
+            var rawUrls = extraerURLsDeAlbum(linkFotos.toString().trim());
+            if (rawUrls.length > 0) {
+              sheet.getRange(newRow, colImagenes).setValue(rawUrls.join(SEPARADOR));
+              rowData[colImagenes - 1] = rawUrls.join(SEPARADOR);
+            } else {
+              sheet.getRange(newRow, colImagenes).setValue("⚠️ Sin fotos encontradas");
+              rowData[colImagenes - 1] = "⚠️ Sin fotos encontradas";
+            }
+          }
+        }
+        
+        var token = getAccessToken();
+        var docId = String(targetCod).replace(/[^a-zA-Z0-9]/g, '_');
+        var publicarVal = colPublicar > 0 ? String(sheet.getRange(newRow, colPublicar).getValue() || '').trim().toUpperCase() : 'NO';
+        
+        if (publicarVal === 'SI') {
+          var fbObj = {};
+          var currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+          var currentFilaData = sheet.getRange(newRow, 1, 1, sheet.getLastColumn()).getValues()[0];
+          var currentIdx = {};
+          currentHeaders.forEach(function(h, idx) { if (h) currentIdx[String(h).trim()] = idx; });
+          
+          CAMPOS_FB.forEach(function(campo) {
+            var i = currentIdx[campo];
+            fbObj[campo] = i !== undefined ? String(currentFilaData[i] != null ? currentFilaData[i] : '') : '';
+          });
+          fbObj['_sheetOrder'] = String(newRow);
+          escribirDocumento(token, docId, fbObj);
+        } else {
+          borrarDocumento(token, docId);
+        }
+      } catch(e_sync) {
+        Logger.log("Error en post-sync: " + e_sync.message);
+      }
+      
+      return ContentService.createTextOutput(JSON.stringify({ok: true})).setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ok: false, error: "Acción no válida"})).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ok: false, error: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
 }
  
 function construirSitemapXML() {

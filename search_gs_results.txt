@@ -1,0 +1,24 @@
+45: .createMenu("🔢 Sincronizar orden")
+46: .addItem("Actualizar orden en la web", "sincronizarOrden")
+47: .addItem("🔄 Sincronizar todo con Firebase", "sincronizarFirestore")
+161: // Mostrar "⏳ Extrayendo..." en los primeros de la cola para dar un feedback visual inmediato al usuario
+162: var numFeedback = Math.min(cola.length, FOTOS_POR_LOTE);
+163: for (var k = 0; k < numFeedback; k++) {
+539: var FIRESTORE_BASE = "https://firestore.googleapis.com/v1/projects/" + FIREBASE_CONFIG.project_id + "/databases/(default)/documents";
+542: var CAMPOS_FB = [
+567: _sincronizarTodos(token, data, headers, idx);
+583: _sincronizarTodos(token, data, headers, idx);
+595: CAMPOS_FB.forEach(function(campo) {
+615: FIRESTORE_BASE + '/propiedades/' + docId + '?updateMask.fieldPaths=_sheetOrder',
+626: function _sincronizarTodos(token, data, headers, idx) {
+627: var docsEnFirestore = _listarDocIds(token);
+638: CAMPOS_FB.forEach(function(campo) {
+645: docsEnFirestore.forEach(function(docId) {
+653: var url = FIRESTORE_BASE + '/propiedades?pageSize=300';
+667: function sincronizarFirestore() {
+689: CAMPOS_FB.forEach(function(campo) {
+706: UrlFetchApp.fetch(FIRESTORE_BASE + '/propiedades/' + docId, {
+716: UrlFetchApp.fetch(FIRESTORE_BASE + '/propiedades/' + docId, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }, muteHttpExceptions: true });
+723: var url = FIRESTORE_BASE + '/propiedades?pageSize=300';
+729: UrlFetchApp.fetch('https://firestore.googleapis.com/v1/' + doc.name, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }, muteHttpExceptions: true });
+793: function sincronizarOrden() {

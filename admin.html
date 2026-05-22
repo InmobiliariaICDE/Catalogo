@@ -7883,6 +7883,17 @@ function abrirEditorProp(codigo, lat, lng) {
   document.getElementById('edPropLat').value = (p && p['Latitud']) ? p['Latitud'] : (lat || currentLat);
   document.getElementById('edPropLng').value = (p && p['Longitud']) ? p['Longitud'] : (lng || currentLng);
   
+  document.getElementById('edPropContrato').value = p ? (p['Contrato'] || 'Venta') : 'Venta';
+  document.getElementById('edPropUbicacion').value = p ? (p['Ubicación'] || '') : '';
+  document.getElementById('edPropCocina').value = p ? (p['Cocina'] || 'No') : 'No';
+  document.getElementById('edPropGFotos').value = p ? (p['Google Fotos'] || '') : '';
+  document.getElementById('edPropPropietario').value = p ? (p['Nombre del Propietario'] || '') : '';
+  document.getElementById('edPropCelulares').value = p ? (p['Celulares'] || '') : '';
+  document.getElementById('edPropRenta').value = p ? (p['Cuánto Renta ($)'] || '') : '';
+  document.getElementById('edPropDimensiones').value = p ? (p['Dimensiones'] || '') : '';
+  document.getElementById('edPropAire').value = p ? (p['Aire Acondicionado'] || '') : '';
+  document.getElementById('edPropAntiguedad').value = p ? (p['Antigüedad del Inmueble'] || '') : '';
+  
   document.getElementById('edPropInmob').value = p ? (p['Inmobiliaria'] || '') : '';
   document.getElementById('edPropDesc').value = p ? (p['Descripción'] || '') : '';
   document.getElementById('edPropImgs').value = p ? (p['Imagenes'] || '') : '';
@@ -7931,15 +7942,25 @@ async function guardarPropiedadEditor() {
     'Nombre': document.getElementById('edPropNom').value.trim(),
     'Precio': document.getElementById('edPropPre').value.trim(),
     'Tipo de inmueble': document.getElementById('edPropTipo').value,
+    'Contrato': document.getElementById('edPropContrato').value,
     'Zona': document.getElementById('edPropZona').value.trim(),
     'Barrio': document.getElementById('edPropBar').value.trim(),
+    'Ubicación': document.getElementById('edPropUbicacion').value.trim(),
     'Habitaciones': document.getElementById('edPropHab').value,
     'Baños': document.getElementById('edPropBan').value,
     'Garaje': document.getElementById('edPropGar').value,
+    'Cocina': document.getElementById('edPropCocina').value,
     'Área': document.getElementById('edPropArea').value.trim(),
+    'Dimensiones': document.getElementById('edPropDimensiones').value.trim(),
+    'Antigüedad del Inmueble': document.getElementById('edPropAntiguedad').value.trim(),
+    'Aire Acondicionado': document.getElementById('edPropAire').value.trim(),
+    'Google Fotos': document.getElementById('edPropGFotos').value.trim(),
     'Latitud': document.getElementById('edPropLat').value.trim(),
     'Longitud': document.getElementById('edPropLng').value.trim(),
     'Inmobiliaria': document.getElementById('edPropInmob').value.trim(),
+    'Nombre del Propietario': document.getElementById('edPropPropietario').value.trim(),
+    'Celulares': document.getElementById('edPropCelulares').value.trim(),
+    'Cuánto Renta ($)': document.getElementById('edPropRenta').value.trim(),
     'Descripción': document.getElementById('edPropDesc').value.trim(),
     'Imagenes': document.getElementById('edPropImgs').value.trim(),
     'Publicar': 'si'
@@ -7997,15 +8018,38 @@ async function guardarPropiedadEditor() {
       <div class="form-group"><label class="form-label">Tipo de Inmueble</label>
         <select class="form-input" id="edPropTipo"></select>
       </div>
+      <div class="form-group"><label class="form-label">Contrato</label>
+        <select class="form-input" id="edPropContrato">
+          <option value="Venta">Venta</option>
+          <option value="Arriendo">Arriendo</option>
+          <option value="Venta/Arriendo">Venta/Arriendo</option>
+        </select>
+      </div>
       <div class="form-group"><label class="form-label">Zona</label><input class="form-input" id="edPropZona" placeholder="ej: Oriente"/></div>
       <div class="form-group"><label class="form-label">Barrio</label><input class="form-input" id="edPropBar" placeholder="ej: Ipanema"/></div>
+      <div class="form-group"><label class="form-label">Ubicación / Dirección</label><input class="form-input" id="edPropUbicacion"/></div>
       <div class="form-group"><label class="form-label">Habitaciones</label><input class="form-input" type="number" id="edPropHab"/></div>
       <div class="form-group"><label class="form-label">Baños</label><input class="form-input" type="number" id="edPropBan"/></div>
       <div class="form-group"><label class="form-label">Garaje</label><input class="form-input" type="number" id="edPropGar"/></div>
+      <div class="form-group"><label class="form-label">Cocina</label>
+        <select class="form-input" id="edPropCocina">
+          <option value="No">No</option>
+          <option value="Integral">Integral</option>
+          <option value="Semi-integral">Semi-integral</option>
+          <option value="Tradicional">Tradicional</option>
+        </select>
+      </div>
       <div class="form-group"><label class="form-label">Área (m²)</label><input class="form-input" id="edPropArea"/></div>
+      <div class="form-group"><label class="form-label">Dimensiones</label><input class="form-input" id="edPropDimensiones"/></div>
+      <div class="form-group"><label class="form-label">Antigüedad</label><input class="form-input" id="edPropAntiguedad"/></div>
+      <div class="form-group"><label class="form-label">Aire Acondicionado</label><input class="form-input" id="edPropAire"/></div>
+      <div class="form-group"><label class="form-label">Google Fotos (Link)</label><input class="form-input" id="edPropGFotos"/></div>
       <div class="form-group"><label class="form-label">Latitud</label><input class="form-input" id="edPropLat"/></div>
       <div class="form-group"><label class="form-label">Longitud</label><input class="form-input" id="edPropLng"/></div>
       <div class="form-group"><label class="form-label">Inmobiliaria / Aliado</label><input class="form-input" id="edPropInmob" placeholder="Nombre de la inmobiliaria"/></div>
+      <div class="form-group"><label class="form-label">Nombre del Propietario</label><input class="form-input" id="edPropPropietario"/></div>
+      <div class="form-group"><label class="form-label">Celulares (Propietario)</label><input class="form-input" id="edPropCelulares"/></div>
+      <div class="form-group"><label class="form-label">Cuánto Renta ($)</label><input class="form-input" id="edPropRenta"/></div>
       <div class="form-group full"><label class="form-label">Descripción</label><textarea class="form-input" id="edPropDesc" style="min-height:80px;"></textarea></div>
       <div class="form-group full">
         <label class="form-label">Imágenes (URLs separadas por | o nuevas líneas)</label>
@@ -8865,21 +8909,21 @@ function autofillPropiedadPorCodigo() {
   }
   
   setVal('gp_barrio', p['Barrio'] || p['barrio']);
-  setVal('gp_conjunto', p['Conjunto / Edificio'] || p['conjunto'] || p['Edificio']);
+  setVal('gp_conjunto', p['Conjunto'] || p['Conjunto / Edificio'] || p['conjunto'] || p['Edificio']);
   setVal('gp_zona', p['Zona'] || p['zona']);
   setVal('gp_ciudad', p['Ciudad'] || p['ciudad'] || 'Cali');
   setVal('gp_estrato', p['Estrato'] || p['estrato']);
-  setVal('gp_ubicacion', p['Ubicación / Dirección'] || p['ubicacion'] || p['Dirección']);
+  setVal('gp_ubicacion', p['Ubicación'] || p['Ubicación / Dirección'] || p['ubicacion'] || p['Dirección'] || '');
   setVal('gp_habitaciones', p['Habitaciones'] || p['habitaciones'] || '1');
   setVal('gp_banos', p['Baños'] || p['banos'] || '1');
   setVal('gp_garaje', p['Garaje'] || p['garaje'] || 'No');
-  setVal('gp_area', p['Área (m²)'] || p['area'] || p['Área construida']);
+  setVal('gp_area', p['Área'] || p['Área (m²)'] || p['area'] || p['Área construida']);
   
   // Nuevos campos para coincidir con la matriz
-  setVal('gp_cocina', p['Cocina'] || 'No');
-  setVal('gp_piscina', p['Piscina'] || 'No tiene');
-  setVal('gp_pisos', p['Pisos'] || '1');
-  setVal('gp_ubicacion_posicion', p['Ubicación'] || 'Medianera');
+  setVal('gp_cocina', p['Cocina'] || p['cocina'] || 'No');
+  setVal('gp_piscina', p['Piscina'] || p['piscina'] || 'No tiene');
+  setVal('gp_pisos', p['Pisos'] || p['pisos'] || '1');
+  setVal('gp_ubicacion_posicion', p['Ubicación (Posición)'] || p['Posición'] || 'Medianera');
   
   // SOLUCIÓN ESTRICTA PERO INTELIGENTE: Solo leer de la columna exacta 'Google Fotos',
   // pero si por algún motivo viene vacío (ej. fallo de fetch y fallback a allProps), 
@@ -8896,30 +8940,30 @@ function autofillPropiedadPorCodigo() {
   }
   setVal('gp_gfotos', gfLink);
   
-  setVal('gp_inmobiliaria', p['Inmobiliaria / Aliado'] || p['inmobiliaria'] || p['Inmob'] || '');
-  setVal('gp_administracion', p['Administración ($)'] || p['administracion'] || p['Administración']);
-  setVal('gp_rentabilidad', p['Retorno inversión (Rentabilidad)'] || p['rentabilidad'] || p['Retorno de la inversión']);
+  setVal('gp_inmobiliaria', p['Inmobiliaria'] || p['Inmobiliaria / Aliado'] || p['inmobiliaria'] || p['Inmob'] || '');
+  setVal('gp_administracion', p['Administración'] || p['Administración ($)'] || p['administracion']);
+  setVal('gp_rentabilidad', p['Retorno de la inversión'] || p['Retorno inversión (Rentabilidad)'] || p['rentabilidad']);
   
-  setVal('gp_comuna', p['Comuna'] || '');
+  setVal('gp_comuna', p['Comuna'] || p['comuna'] || '');
   setVal('gp_area_lote', p['Área lote'] || p['Área de lote'] || p['areaLote'] || '');
   setVal('gp_closets', p['Closet'] || p['Closets'] || p['closet'] || '0');
-  setVal('gp_inventario', p['Inventario'] || 'NO');
-  setVal('gp_celulares', p['Celulares'] || '');
-  setVal('gp_propietario', p['Nombre del Propietario'] || p['propietario'] || '');
+  setVal('gp_inventario', p['Inventario'] || p['inventario'] || 'NO');
+  setVal('gp_celulares', p['Celulares'] || p['celulares'] || '');
+  setVal('gp_propietario', p['Nombre del Propietario'] || p['propietario'] || p['Nombre del propietario'] || '');
   
   const rentaEl = document.getElementById('gp_renta');
   if (rentaEl) {
-    rentaEl.value = p['Cuánto Renta ($)'] || p['renta'] || p['Cuánto renta'] || '';
+    rentaEl.value = p['Cuánto Renta ($)'] || p['renta'] || p['Cuánto renta'] || p['Cuanto Renta'] || '';
     formatPrecioOnInput(rentaEl);
   }
   
-  setVal('gp_ascensor', p['Ascensor'] || 'NO');
+  setVal('gp_ascensor', p['Ascensor'] || p['ascensor'] || 'NO');
   setVal('gp_cortinas', p['Número de Cortinas'] || p['cortinas'] || '0');
-  setVal('gp_aire_acondicionado', p['Aire Acondicionado'] || p['aire_acondicionado'] || '');
+  setVal('gp_aire_acondicionado', p['Aire Acondicionado'] || p['aire_acondicionado'] || p['Aire acondicionado'] || '');
   setVal('gp_reja_antejardin', p['Reja Antejardín'] || p['rejaAntejardin'] || 'NO');
-  setVal('gp_antiguedad', p['Antigüedad del Inmueble'] || p['Antigüedad'] || p['antiguedad'] || '');
-  setVal('gp_patio', p['Patio'] || 'NO');
-  setVal('gp_dimensiones', p['Dimensiones'] || '');
+  setVal('gp_antiguedad', p['Antigüedad del Inmueble'] || p['Antigüedad'] || p['antiguedad'] || p['Antiguedad del Inmueble'] || '');
+  setVal('gp_patio', p['Patio'] || p['patio'] || 'NO');
+  setVal('gp_dimensiones', p['Dimensiones'] || p['dimensiones'] || '');
   
   setVal('gp_lat', p['Latitud'] || p['latitud'] || p['Lat']);
   setVal('gp_lng', p['Longitud'] || p['longitud'] || p['Lng']);
