@@ -5571,7 +5571,7 @@ function renderCitas(){
               <span class="bn-icon" style="padding:0 8px 0 12px; color: var(--gold);">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               </span>
-              <input type="text" id="searchCitasInput" placeholder="Buscar por cliente..." value="${searchTermCitas}" oninput="buscarCitas(this.value)" style="font-size:13px; background: transparent; color: #fff; border: none; outline: none; width: 100%;"/>
+              <input type="text" id="searchCitasInput" placeholder="Buscar por cliente o celular..." value="${searchTermCitas}" oninput="buscarCitas(this.value)" style="font-size:13px; background: transparent; color: #fff; border: none; outline: none; width: 100%;"/>
               ${searchTermCitas ? `<button class="btn-limpiar-pc" style="padding:0 12px; border-radius:0 8px 8px 0; font-size:12px; color: #aaa; background: transparent; cursor: pointer; transition: color 0.2s; border: none;" onclick="buscarCitas(''); document.getElementById('searchCitasInput').value=''" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">✕</button>` : ''}
             </div>
 
@@ -5888,7 +5888,7 @@ function aplicarFiltroYBusquedaCitas(){
 
   if (searchTermCitas) {
     const normalizedTerm = norm(searchTermCitas);
-    filtered = filtered.filter(c => norm(c.cliente).includes(normalizedTerm));
+    filtered = filtered.filter(c => norm(c.cliente).includes(normalizedTerm) || norm(c.celular || '').includes(normalizedTerm));
   }
 
   renderCitasBody(filtered);
