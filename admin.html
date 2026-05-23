@@ -7876,14 +7876,22 @@ let mapAddMode = false;
 function onMapClickAddContainer(e) {
   if (!mapAddMode) return;
   
-  const lat = e.latlng.lat;
-  const lng = e.latlng.lng;
+  if (e.stopPropagation) e.stopPropagation();
+  if (e.preventDefault) e.preventDefault();
+  
+  // Calculate lat/lng directly from the click event using containerPointToLatLng
+  const rect = leafletMap.getContainer().getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const latlng = leafletMap.containerPointToLatLng([x, y]);
+  const lat = latlng.lat;
+  const lng = latlng.lng;
   
   // Desactivar modo
   mapAddMode = false;
   document.querySelectorAll('.btn-map-add-mode').forEach(b => b.classList.remove('active'));
   leafletMap.getContainer().style.cursor = '';
-  leafletMap.off('click', onMapClickAddContainer);
+  leafletMap.getContainer().removeEventListener('click', onMapClickAddContainer, true);
   
   // Cerrar bottom card si está abierta
   if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
@@ -7899,10 +7907,10 @@ function toggleMapAddMode(pfx) {
   if (mapAddMode) {
     toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
     leafletMap.getContainer().style.cursor = 'crosshair';
-    leafletMap.on('click', onMapClickAddContainer);
+    leafletMap.getContainer().addEventListener('click', onMapClickAddContainer, true);
   } else {
     leafletMap.getContainer().style.cursor = '';
-    leafletMap.off('click', onMapClickAddContainer);
+    leafletMap.getContainer().removeEventListener('click', onMapClickAddContainer, true);
   }
 }
 
