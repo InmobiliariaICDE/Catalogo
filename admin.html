@@ -7874,13 +7874,16 @@ function onMapClickAddContainer(e) {
   if (e.stopPropagation) e.stopPropagation();
   if (e.preventDefault) e.preventDefault();
   
-  // Convert standard DOM click coordinates to Leaflet lat/lng
-  const rect = leafletMap.getContainer().getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  const latlng = leafletMap.containerPointToLatLng([x, y]);
-  const lat = latlng.lat;
-  const lng = latlng.lng;
+  // Use Leaflet's built-in robust coordinate resolver
+  let lat, lng;
+  try {
+    const latlng = leafletMap.mouseEventToLatLng(e);
+    lat = latlng.lat;
+    lng = latlng.lng;
+  } catch(err) {
+    console.error("Error resolviendo coordenadas:", err);
+    return;
+  }
   
   // Desactivar modo
   mapAddMode = false;
