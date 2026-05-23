@@ -7375,10 +7375,26 @@ function initMapa(pfx) {
   leafletMap.on('moveend', () => updateMapBoundsFilter(pfx));
   leafletMap.on('zoomend', () => updateMapBoundsFilter(pfx));
 
-  // Map click reverse geocoding for Street View bottom card
+  // Main map click handler (handles both Add Property Mode and Street View Reverse Geocoding)
   leafletMap.on('click', (e) => {
-    if (mapAddMode) return;
+    // 1. If Add Property Mode is active, handle it and stop.
+    if (mapAddMode) {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+      
+      // Deactivate mode
+      mapAddMode = false;
+      document.querySelectorAll('.btn-map-add-mode').forEach(b => b.classList.remove('active'));
+      leafletMap.getContainer().style.cursor = '';
+      
+      // Close bottom card if open
+      if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
+      
+      abrirEditorProp(null, lat, lng);
+      return;
+    }
     
+    // 2. Otherwise, handle Street View reverse geocoding
     // Close any active marker popup
     leafletMap.closePopup();
     
@@ -7873,24 +7889,6 @@ function focusProperty(code) {
 // --- Lógica de Edición de Propiedades ---
 let mapAddMode = false;
 
-function onMapClickAddContainer(e) {
-  if (!mapAddMode) return;
-  
-  const lat = e.latlng.lat;
-  const lng = e.latlng.lng;
-  
-  // Desactivar modo
-  mapAddMode = false;
-  document.querySelectorAll('.btn-map-add-mode').forEach(b => b.classList.remove('active'));
-  leafletMap.getContainer().style.cursor = '';
-  leafletMap.off('click', onMapClickAddContainer);
-  
-  // Cerrar bottom card si está abierta
-  if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
-  
-  abrirEditorProp(null, lat, lng);
-}
-
 function toggleMapAddMode(pfx) {
   mapAddMode = !mapAddMode;
   const btn = document.getElementById(`btnAddProp_${pfx}`) || document.getElementById('btnAddProp_nl');
@@ -7899,13 +7897,8 @@ function toggleMapAddMode(pfx) {
   if (mapAddMode) {
     toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
     leafletMap.getContainer().style.cursor = 'crosshair';
-    // Utilizamos un pequeño timeout para evitar que el clic en el botón dispare el evento del mapa inmediatamente
-    setTimeout(() => {
-      leafletMap.on('click', onMapClickAddContainer);
-    }, 50);
   } else {
     leafletMap.getContainer().style.cursor = '';
-    leafletMap.off('click', onMapClickAddContainer);
   }
 }
 
