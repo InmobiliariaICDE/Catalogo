@@ -7890,14 +7890,19 @@ function focusProperty(code) {
 let mapAddMode = false;
 
 function toggleMapAddMode(pfx) {
-  mapAddMode = !mapAddMode;
   const btn = document.getElementById(`btnAddProp_${pfx}`) || document.getElementById('btnAddProp_nl');
-  if (btn) btn.classList.toggle('active', mapAddMode);
   
-  if (mapAddMode) {
-    toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
-    leafletMap.getContainer().style.cursor = 'crosshair';
+  if (!mapAddMode) {
+    // Activar con un ligero retraso para evitar que el clic del botón burbujee al mapa y lo cancele instantáneamente
+    setTimeout(() => {
+      mapAddMode = true;
+      if (btn) btn.classList.add('active');
+      toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
+      leafletMap.getContainer().style.cursor = 'crosshair';
+    }, 50);
   } else {
+    mapAddMode = false;
+    if (btn) btn.classList.remove('active');
     leafletMap.getContainer().style.cursor = '';
   }
 }
