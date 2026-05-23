@@ -7375,26 +7375,8 @@ function initMapa(pfx) {
   leafletMap.on('moveend', () => updateMapBoundsFilter(pfx));
   leafletMap.on('zoomend', () => updateMapBoundsFilter(pfx));
 
-  // Main map click handler (handles both Add Property Mode and Street View Reverse Geocoding)
+  // Main map click handler (handles Street View Reverse Geocoding)
   leafletMap.on('click', (e) => {
-    // 1. If Add Property Mode is active, handle it and stop.
-    if (mapAddMode) {
-      const lat = e.latlng.lat;
-      const lng = e.latlng.lng;
-      
-      // Deactivate mode
-      mapAddMode = false;
-      document.querySelectorAll('.btn-map-add-mode').forEach(b => b.classList.remove('active'));
-      leafletMap.getContainer().style.cursor = '';
-      
-      // Close bottom card if open
-      if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
-      
-      abrirEditorProp(null, lat, lng);
-      return;
-    }
-    
-    // 2. Otherwise, handle Street View reverse geocoding
     // Close any active marker popup
     leafletMap.closePopup();
     
@@ -7886,24 +7868,50 @@ function focusProperty(code) {
 }
 
 
-// --- Lógica de Edición de Propiedades ---
-let mapAddMode = false;
+function onMapClickAddContainer(e) {
+  if (!mapAddMode) return;
+  
+  if (e.stopPropagation) e.stopPropagation();
+  if (e.preventDefault) e.preventDefault();
+  
+  // Convert standard DOM click coordinates to Leaflet lat/lng
+  const rect = leafletMap.getContainer().getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const latlng = leafletMap.containerPointToLatLng([x, y]);
+  const lat = latlng.lat;
+  const lng = latlng.lng;
+  
+  // Desactivar modo
+  mapAddMode = false;
+  document.querySelectorAll('.btn-map-add-mode').forEach(b => b.classList.remove('active'));
+  leafletMap.getContainer().style.cursor = '';
+  leafletMap.getContainer().removeEventListener('click', onMapClickAddContainer, true);
+  
+  // Cerrar bottom card si está abierta
+  if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
+  
+  abrirEditorProp(null, lat, lng);
+}
 
 function toggleMapAddMode(pfx) {
   const btn = document.getElementById(`btnAddProp_${pfx}`) || document.getElementById('btnAddProp_nl');
   
   if (!mapAddMode) {
-    // Activar con un ligero retraso para evitar que el clic del botón burbujee al mapa y lo cancele instantáneamente
+    // Activar con un ligero retraso para evitar interceptar el clic del botón
     setTimeout(() => {
       mapAddMode = true;
       if (btn) btn.classList.add('active');
       toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
       leafletMap.getContainer().style.cursor = 'crosshair';
+      // Use true for capture phase so we intercept the click BEFORE Leaflet sees it
+      leafletMap.getContainer().addEventListener('click', onMapClickAddContainer, true);
     }, 50);
   } else {
     mapAddMode = false;
     if (btn) btn.classList.remove('active');
     leafletMap.getContainer().style.cursor = '';
+    leafletMap.getContainer().removeEventListener('click', onMapClickAddContainer, true);
   }
 }
 
