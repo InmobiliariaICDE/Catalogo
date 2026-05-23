@@ -7876,22 +7876,14 @@ let mapAddMode = false;
 function onMapClickAddContainer(e) {
   if (!mapAddMode) return;
   
-  if (e.stopPropagation) e.stopPropagation();
-  if (e.preventDefault) e.preventDefault();
-  
-  // Calculate lat/lng directly from the click event using containerPointToLatLng
-  const rect = leafletMap.getContainer().getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  const latlng = leafletMap.containerPointToLatLng([x, y]);
-  const lat = latlng.lat;
-  const lng = latlng.lng;
+  const lat = e.latlng.lat;
+  const lng = e.latlng.lng;
   
   // Desactivar modo
   mapAddMode = false;
   document.querySelectorAll('.btn-map-add-mode').forEach(b => b.classList.remove('active'));
   leafletMap.getContainer().style.cursor = '';
-  leafletMap.getContainer().removeEventListener('click', onMapClickAddContainer, true);
+  leafletMap.off('click', onMapClickAddContainer);
   
   // Cerrar bottom card si está abierta
   if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
@@ -7907,10 +7899,13 @@ function toggleMapAddMode(pfx) {
   if (mapAddMode) {
     toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
     leafletMap.getContainer().style.cursor = 'crosshair';
-    leafletMap.getContainer().addEventListener('click', onMapClickAddContainer, true);
+    // Utilizamos un pequeño timeout para evitar que el clic en el botón dispare el evento del mapa inmediatamente
+    setTimeout(() => {
+      leafletMap.on('click', onMapClickAddContainer);
+    }, 50);
   } else {
     leafletMap.getContainer().style.cursor = '';
-    leafletMap.getContainer().removeEventListener('click', onMapClickAddContainer, true);
+    leafletMap.off('click', onMapClickAddContainer);
   }
 }
 
