@@ -7873,26 +7873,54 @@ function focusProperty(code) {
 // --- Lógica de Edición de Propiedades ---
 let mapAddMode = false;
 
+function onMapClickAddContainer(e) {
+  if (!mapAddMode) return;
+  
+  // Si el clic original fue sobre controles flotantes, ignorar
+  const oe = e.originalEvent || e;
+  if (oe.target && (oe.target.closest('.map-floating-controls') || oe.target.closest('.leaflet-control'))) return;
+  
+  if (oe.stopPropagation) oe.stopPropagation();
+  if (oe.preventDefault) oe.preventDefault();
+  
+  let lat, lng;
+  if (e.latlng) {
+    lat = e.latlng.lat;
+    lng = e.latlng.lng;
+  } else {
+    const rect = leafletMap.getContainer().getBoundingClientRect();
+    const x = oe.clientX - rect.left;
+    const y = oe.clientY - rect.top;
+    const latlng = leafletMap.containerPointToLatLng([x, y]);
+    lat = latlng.lat;
+    lng = latlng.lng;
+  }
+  
+  // Desactivar modo
+  mapAddMode = false;
+  document.querySelectorAll('.btn-map-add-mode').forEach(b => b.classList.remove('active'));
+  leafletMap.getContainer().style.cursor = '';
+  leafletMap.off('click', onMapClickAddContainer);
+  leafletMap.getContainer().removeEventListener('click', onMapClickAddContainer, true);
+  
+  abrirEditorProp(null, lat, lng);
+}
+
 function toggleMapAddMode(pfx) {
   mapAddMode = !mapAddMode;
-  const btn = document.getElementById(`btnAddProp_${pfx}`);
+  const btn = document.getElementById(`btnAddProp_${pfx}`) || document.getElementById('btnAddProp_nl');
   if (btn) btn.classList.toggle('active', mapAddMode);
   
   if (mapAddMode) {
     toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
     leafletMap.getContainer().style.cursor = 'crosshair';
-    leafletMap.on('click', onMapClickAdd);
+    leafletMap.on('click', onMapClickAddContainer);
+    leafletMap.getContainer().addEventListener('click', onMapClickAddContainer, true);
   } else {
     leafletMap.getContainer().style.cursor = '';
-    leafletMap.off('click', onMapClickAdd);
+    leafletMap.off('click', onMapClickAddContainer);
+    leafletMap.getContainer().removeEventListener('click', onMapClickAddContainer, true);
   }
-}
-
-function onMapClickAdd(e) {
-  const lat = e.latlng.lat;
-  const lng = e.latlng.lng;
-  toggleMapAddMode('nl'); // Desactivar modo
-  abrirEditorProp(null, lat, lng);
 }
 
 function abrirEditorProp(codigo, lat, lng) {
