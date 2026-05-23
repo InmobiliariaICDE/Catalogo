@@ -190,9 +190,9 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 select.form-input option{background:#1a1714;color:#fff;}
 textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 .checklist{display:flex;flex-wrap:wrap;gap:8px;}
-.check-item{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px;transition:all .2s;user-select:none;}
+.check-item{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:none;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px;transition:all .2s;user-select:none;box-shadow:2px 2px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3);}
 .check-item input{accent-color:var(--gold);}
-.check-item.active{background:rgba(212,168,75,.1);border-color:var(--border);}
+.check-item.active{background:rgba(212,168,75,.1);box-shadow:inset 2px 2px 4px rgba(0,0,0,0.5),inset -1px -1px 0px rgba(212,168,75,0.3);transform:translate(1px,1px);}
 
 /* BADGES */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;text-transform:uppercase;}
@@ -239,8 +239,8 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 .chat-history::-webkit-scrollbar-thumb { background: rgba(212,168,75,0.3); border-radius: 10px; }
 
 .chat-bubble { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.4; position: relative; word-wrap: break-word; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-.bubble-in { align-self: flex-start; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-bottom-left-radius: 4px; }
-.bubble-out { align-self: flex-end; background: rgba(212,168,75,0.18); border: 1px solid var(--border); color: #fff; border-bottom-right-radius: 4px; }
+.bubble-in { align-self: flex-start; background: rgba(255,255,255,0.06); border:none; color: #fff; border-bottom-left-radius: 4px; box-shadow:2px 2px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3); }
+.bubble-out { align-self: flex-end; background: rgba(212,168,75,0.18); border:none; color: #fff; border-bottom-right-radius: 4px; box-shadow:2px 2px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3); }
 .bubble-time { font-size: 9px; color: rgba(255,255,255,0.4); margin-top: 4px; text-align: right; }
 
 .chat-footer { 
@@ -255,17 +255,19 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 }
 .chat-input { 
   flex: 1; 
-  background: rgba(255,255,255,0.05); 
-  border: 1px solid var(--glass-border); 
+  background: rgba(0,0,0,0.2); 
+  border: none; 
   border-radius: 10px; 
   padding: 10px 14px; 
   color: #fff; 
   font-size: 14px; 
   outline: none; 
+  box-shadow:inset 3px 3px 6px rgba(0,0,0,0.6),inset -1px -1px 0px rgba(255,255,255,0.05);
 }
-.chat-input:focus { border-color: var(--gold); background: rgba(255,255,255,0.08); }
-.btn-send { background: var(--gold); color: #000; border: none; border-radius: 10px; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: transform 0.2s; }
-.btn-send:hover { transform: scale(1.05); }
+.chat-input:focus { background: rgba(0,0,0,0.4); box-shadow:inset 3px 3px 6px rgba(0,0,0,0.8),inset -1px -1px 0px rgba(212,168,75,0.3), 0 0 0 2px rgba(212,168,75,0.15); }
+.btn-send { background: var(--gold); color: #000; border: none; border-radius: 10px; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: transform 0.2s; box-shadow:3px 3px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.3),inset -1px -1px 0px rgba(0,0,0,0.4); }
+.btn-send:hover { transform: translate(-1px,-1px); box-shadow:4px 4px 0px rgba(0,0,0,0.4); }
+.btn-send:active { transform: scale(0.95); box-shadow:inset 2px 2px 6px rgba(0,0,0,0.5); }
 
 .badge-oferta{background:rgba(168,85,247,.15);color:#a855f7;border:1px solid rgba(168,85,247,.3);}
 .estado-badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:600;}
@@ -286,9 +288,10 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
   width: 100%;
   position: relative;
   z-index: 20;
-  border: 1px solid rgba(212, 168, 75, 0.25);
+  border: none;
   border-radius: 12px;
   background: rgba(0,0,0,0.2);
+  box-shadow:inset 3px 3px 6px rgba(0,0,0,0.6),inset -1px -1px 0px rgba(255,255,255,0.05);
 }
 
 .filtro-nuevo{
@@ -357,7 +360,7 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 .fn-count{margin-left:auto;font-size:12px;color:rgba(180,180,180,.55);font-weight:400;}
 .fn-option.fn-sel .fn-count{color:rgba(212,168,75,.6);}
 /* Fila buscar — copia de .buscar-row-nueva */
-.pc-buscar-row{display:flex;align-items:stretch;background:rgba(0,0,0,0.45);backdrop-filter:blur(14px);border:1px solid rgba(200,200,200,0.20);border-radius:var(--icde-radius);height:var(--icde-h);overflow:hidden;}
+.pc-buscar-row{display:flex;align-items:stretch;background:rgba(0,0,0,0.45);backdrop-filter:blur(14px);border:none;border-radius:var(--icde-radius);height:var(--icde-h);overflow:hidden;box-shadow:inset 3px 3px 6px rgba(0,0,0,0.6),inset -1px -1px 0px rgba(255,255,255,0.05);}
 .pc-buscar-row .bn-icon{padding:0 10px 0 14px;color:var(--icde-gold);display:flex;align-items:center;flex-shrink:0;}
 .pc-buscar-row input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:400;padding:0;}
 .pc-buscar-row input::placeholder{color:rgba(200,200,200,.45);font-weight:500;letter-spacing:.07em;font-size:12.5px;}
@@ -375,8 +378,8 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 .pc-count-bar strong{color:var(--icde-gold);}
 
 /* CHIPS de tabla */
-.chip-filtro{padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#aaa;font-size:13px;cursor:pointer;transition:all .2s;white-space:nowrap;}
-.chip-filtro.sel{background:rgba(212,168,75,.12);border-color:var(--gold);color:var(--gold);}
+.chip-filtro{padding:6px 14px;border-radius:20px;border:none;background:rgba(255,255,255,.04);color:#aaa;font-size:13px;cursor:pointer;transition:all .2s;white-space:nowrap;box-shadow:2px 2px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3);}
+.chip-filtro.sel{background:rgba(212,168,75,.12);color:var(--gold);box-shadow:inset 2px 2px 4px rgba(0,0,0,0.5),inset -1px -1px 0px rgba(212,168,75,0.3);transform:translate(1px,1px);}
 
 /* PROPS GRID */
 .props-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:16px;}
@@ -393,17 +396,17 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 .prop-card-inmobiliaria { background: rgba(212, 168, 75, 0.15); color: var(--gold); padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; border: 1px solid rgba(212, 168, 75, 0.3); white-space: nowrap; max-width: 80px; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: middle; }
 
 /* SELECTED BAR */
-.selected-bar{background:rgba(212,168,75,.1);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+.selected-bar{background:rgba(212,168,75,.1);border:none;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;box-shadow:inset 3px 3px 6px rgba(0,0,0,0.4),inset -1px -1px 0px rgba(212,168,75,0.2);}
 .selected-chips{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
-.sel-chip{background:rgba(212,168,75,.12);border:1px solid var(--border);border-radius:20px;padding:3px 10px 3px 12px;font-size:12px;color:var(--gold);display:flex;align-items:center;gap:6px;}
+.sel-chip{background:rgba(212,168,75,.12);border:none;border-radius:20px;padding:3px 10px 3px 12px;font-size:12px;color:var(--gold);display:flex;align-items:center;gap:6px;box-shadow:2px 2px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(212,168,75,0.3),inset -1px -1px 0px rgba(0,0,0,0.3);}
 .sel-chip button{background:none;border:none;color:#888;cursor:pointer;font-size:13px;line-height:1;padding:0;}
 
 /* SEND CONFIG */
 .send-config{background:var(--bg2);border:none;border-radius:14px;padding:20px;margin-top:4px;box-shadow:inset 3px 3px 6px rgba(0,0,0,0.4),inset -1px -1px 0px rgba(255,255,255,0.05);}
 .freq-options{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
-.freq-btn{padding:8px 16px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#aaa;font-size:13px;cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif;}
-.freq-btn.sel{background:rgba(212,168,75,.12);border-color:var(--gold);color:var(--gold);}
-.freq-info{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:12px;font-size:13px;color:#aaa;margin-top:10px;}
+.freq-btn{padding:8px 16px;border-radius:20px;border:none;background:rgba(255,255,255,.04);color:#aaa;font-size:13px;cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif;box-shadow:2px 2px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3);}
+.freq-btn.sel{background:rgba(212,168,75,.12);color:var(--gold);box-shadow:inset 2px 2px 4px rgba(0,0,0,0.5),inset -1px -1px 0px rgba(212,168,75,0.3);transform:translate(1px,1px);}
+.freq-info{background:rgba(59,130,246,.08);border:none;border-radius:10px;padding:12px;font-size:13px;color:#aaa;margin-top:10px;box-shadow:inset 3px 3px 6px rgba(0,0,0,0.4),inset -1px -1px 0px rgba(59,130,246,0.2);}
 .freq-info strong{color:#3b82f6;}
 
 /* LEADS TABLE */
@@ -574,8 +577,9 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 .side-panel{pointer-events: auto; background:var(--bg3);width:min(620px,100vw);height:100vh;overflow-y:auto;padding:32px;border-left:1px solid var(--border);display:flex;flex-direction:column;gap:20px;box-shadow:-10px 0 50px rgba(0,0,0,0.8);animation: slidePanel 0.4s cubic-bezier(0.16, 1, 0.3, 1);}
 @keyframes slidePanel { from { transform: translateX(100%); } to { transform: translateX(0); } }
 .panel-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:10px;}
-.panel-close{background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);color:#aaa;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;font-size:24px;}
-.panel-close:hover{color:var(--gold);border-color:var(--gold);background:rgba(212,168,75,0.1);}
+.panel-close{background:rgba(255,255,255,0.05);border:none;color:#aaa;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;font-size:24px;box-shadow:3px 3px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3);}
+.panel-close:hover{color:var(--gold);background:rgba(212,168,75,0.1);transform:translate(-1px,-1px);box-shadow:4px 4px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(212,168,75,0.2),inset -1px -1px 0px rgba(0,0,0,0.3);}
+.panel-close:active{box-shadow:inset 2px 2px 6px rgba(0,0,0,0.5),inset -1px -1px 0px rgba(212,168,75,0.1);transform:scale(0.95);}
 .panel-name{font-size:1.5rem;font-weight:800;color:#fff;letter-spacing:-0.01em;}
 .panel-section{background:rgba(255,255,255,0.04);backdrop-filter:blur(10px);border:none;border-radius:16px;padding:24px;box-shadow:3px 3px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3);}
 .panel-section-title{font-size:13px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;margin-bottom:16px;display:flex;align-items:center;gap:10px;}
@@ -7376,8 +7380,17 @@ function initMapa(pfx) {
   leafletMap.on('moveend', () => updateMapBoundsFilter(pfx));
   leafletMap.on('zoomend', () => updateMapBoundsFilter(pfx));
 
-  // Main map click handler (handles Street View Reverse Geocoding)
+  // Unified map click handler: Add Property Mode OR Street View Reverse Geocoding
   leafletMap.on('click', (e) => {
+    // --- MODO AGREGAR PROPIEDAD ---
+    if (mapAddMode) {
+      mapAddMode = false;
+      document.querySelectorAll('.btn-map-add-mode').forEach(b => b.classList.remove('active'));
+      leafletMap.getContainer().style.cursor = '';
+      if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
+      abrirEditorProp(null, e.latlng.lat, e.latlng.lng);
+      return;
+    }
     // Close any active marker popup
     leafletMap.closePopup();
     
@@ -7872,53 +7885,21 @@ function focusProperty(code) {
 // --- Lógica de Edición de Propiedades ---
 var mapAddMode = false;
 
-function onMapClickAddContainer(e) {
-  if (!mapAddMode) return;
-  
-  if (e.stopPropagation) e.stopPropagation();
-  if (e.preventDefault) e.preventDefault();
-  
-  // Use Leaflet's built-in robust coordinate resolver
-  let lat, lng;
-  try {
-    const latlng = leafletMap.mouseEventToLatLng(e);
-    lat = latlng.lat;
-    lng = latlng.lng;
-  } catch(err) {
-    console.error("Error resolviendo coordenadas:", err);
-    return;
-  }
-  
-  // Desactivar modo
-  mapAddMode = false;
-  document.querySelectorAll('.btn-map-add-mode').forEach(b => b.classList.remove('active'));
-  leafletMap.getContainer().style.cursor = '';
-  leafletMap.getContainer().removeEventListener('click', onMapClickAddContainer, true);
-  
-  // Cerrar bottom card si está abierta
-  if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
-  
-  abrirEditorProp(null, lat, lng);
-}
-
 function toggleMapAddMode(pfx) {
   const btn = document.getElementById(`btnAddProp_${pfx}`) || document.getElementById('btnAddProp_nl');
   
   if (!mapAddMode) {
-    // Activar con un ligero retraso para evitar interceptar el clic del botón
+    // Activar con un ligero retraso para evitar que el clic del botón active inmediatamente el modo
     setTimeout(() => {
       mapAddMode = true;
       if (btn) btn.classList.add('active');
       toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
       leafletMap.getContainer().style.cursor = 'crosshair';
-      // Use true for capture phase so we intercept the click BEFORE Leaflet sees it
-      leafletMap.getContainer().addEventListener('click', onMapClickAddContainer, true);
     }, 50);
   } else {
     mapAddMode = false;
     if (btn) btn.classList.remove('active');
     leafletMap.getContainer().style.cursor = '';
-    leafletMap.getContainer().removeEventListener('click', onMapClickAddContainer, true);
   }
 }
 
