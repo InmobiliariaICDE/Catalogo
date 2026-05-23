@@ -8772,28 +8772,9 @@ async function validarCodigoExistente(codigo) {
     return;
   }
   
-  // Mostrar estado de carga si no tenemos la matriz
-  if (!icdeMatrixText && !loadingMatrix) {
-    loadingMatrix = true;
-    if (msg) {
-      msg.style.display = 'inline-block';
-      msg.style.color = '#d4a84b';
-      msg.textContent = '⌛ Consultando matriz...';
-    }
-    try {
-      const url = "https://docs.google.com/spreadsheets/d/1o4W4k1rxPq7t20RTd-1tC10ObsRUG3k-WewOKHshJdg/export?format=csv&gid=1129470117";
-      const resp = await fetch(url);
-      icdeMatrixText = await resp.text();
-    } catch (e) {
-      console.error('Error al consultar la matriz:', e);
-    } finally {
-      loadingMatrix = false;
-    }
-  }
-
   let matchedProp = null;
   
-  // 1. Siempre revisar en allProps primero para tener datos base
+  // Buscar en allProps (Datos de Apps Script)
   const propFromAllProps = allProps.find(p => {
     const codeStr = String(p['Código'] || '').trim();
     if (codeStr.toLowerCase() === codigo.toLowerCase()) return true;
@@ -8802,53 +8783,7 @@ async function validarCodigoExistente(codigo) {
   });
   
   if (propFromAllProps) {
-    // Clonamos para no mutar el original de allProps directamente
     matchedProp = {...propFromAllProps};
-  }
-
-  // 2. SIEMPRE buscar en la matriz CSV para obtener el link de Google Fotos real y fresco
-  if (icdeMatrixText) {
-    const lines = icdeMatrixText.split(/\r?\n/);
-    if (lines.length > 0) {
-      // Autodetectar si el separador es coma (,) o punto y coma (;)
-      let sep = ',';
-      const commas = (lines[0].match(/,/g) || []).length;
-      const semicolons = (lines[0].match(/;/g) || []).length;
-      if (semicolons > commas) sep = ';';
-      
-      const headers = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g, ''));
-      const codeIdx = headers.findIndex(h => h.toLowerCase() === 'código' || h.toLowerCase() === 'codigo');
-      const gfIdx = headers.findIndex(h => h.trim().toLowerCase() === 'google fotos');
-      
-      if (codeIdx !== -1) {
-        // Regex para separar por el delimitador detectado ignorando lo que esté entre comillas
-        const cellRegex = new RegExp(`${sep}(?=(?:(?:[^"]*"){2})*[^"]*$)`);
-        
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i];
-          if (!line.trim()) continue;
-          const cells = line.split(cellRegex);
-          const valStr = cells[codeIdx] ? cells[codeIdx].trim().replace(/^"|"$/g, '') : '';
-          
-          if (valStr.toLowerCase() === codigo.toLowerCase() || (valStr && !isNaN(valStr) && !isNaN(codigo) && parseFloat(valStr) === parseFloat(codigo))) {
-            const liveGoogleFotos = gfIdx !== -1 && cells[gfIdx] ? cells[gfIdx].trim().replace(/^"|"$/g, '') : '';
-            
-            if (matchedProp) {
-              // Forzar a que use el de la matriz en vivo
-              matchedProp['Google Fotos'] = liveGoogleFotos;
-            } else {
-              // Si no existía en allProps, construimos el objeto completo desde la matriz
-              matchedProp = {};
-              headers.forEach((h, idx) => {
-                matchedProp[h] = cells[idx] ? cells[idx].trim().replace(/^"|"$/g, '') : '';
-              });
-              matchedProp['Google Fotos'] = liveGoogleFotos;
-            }
-            break;
-          }
-        }
-      }
-    }
   }
 
   if (matchedProp) {
@@ -8914,21 +8849,22 @@ function autofillPropiedadPorCodigo() {
   setVal('gp_zona', p['Zona'] || p['zona']);
   setVal('gp_ciudad', p['Ciudad'] || p['ciudad'] || 'Cali');
   setVal('gp_estrato', p['Estrato'] || p['estrato']);
-  setVal('gp_ubicacion', p['DIRECCIÒN-VEREDA'] || p['Dirección-Vereda'] || p['Ubicación'] || p['Ubicación / Dirección'] || p['ubicacion'] || p['Dirección'] || '');
+  
+  // Dirección exacta (Ubicación posicional es distinto)
+  setVal('gp_ubicacion', p['Dirección'] || p['DIRECCIÒN-VEREDA'] || p['Dirección-Vereda'] || '');
+  
   setVal('gp_habitaciones', p['Habitaciones'] || p['habitaciones'] || '1');
   setVal('gp_banos', p['Baños'] || p['banos'] || '1');
   setVal('gp_garaje', p['Garaje'] || p['garaje'] || 'No');
-  setVal('gp_area', p['Área'] || p['Área (m²)'] || p['area'] || p['Área construida']);
+  setVal('gp_area', p['Área Construida'] || p['Área'] || p['Área (m²)'] || p['area'] || '');
   
-  // Nuevos campos para coincidir con la matriz
   setVal('gp_cocina', p['Cocina'] || p['cocina'] || 'No');
   setVal('gp_piscina', p['Piscina'] || p['piscina'] || 'No tiene');
   setVal('gp_pisos', p['Pisos'] || p['pisos'] || '1');
-  setVal('gp_ubicacion_posicion', p['Ubicación (Posición)'] || p['Posición'] || 'Medianera');
   
-  // SOLUCIÓN ESTRICTA PERO INTELIGENTE: Solo leer de la columna exacta 'Google Fotos',
-  // pero si por algún motivo viene vacío (ej. fallo de fetch y fallback a allProps), 
-  // buscar en las otras columnas si alguna contiene un enlace real de álbum de Google Fotos.
+  // Posición (Medianera, etc)
+  setVal('gp_ubicacion_posicion', p['Ubicación'] || p['Ubicación (Posición)'] || p['Posición'] || 'Medianera');
+  
   let gfLink = p['Google Fotos'] || '';
   if (!gfLink) {
     const possibleKeys = ['Google Fotos (Link Álbum)', 'googleFotos', 'Imagenes', 'Image'];
@@ -8943,7 +8879,7 @@ function autofillPropiedadPorCodigo() {
   
   setVal('gp_inmobiliaria', p['Inmobiliaria'] || p['Inmobiliaria / Aliado'] || p['inmobiliaria'] || p['Inmob'] || '');
   setVal('gp_administracion', p['Administración'] || p['Administración ($)'] || p['administracion']);
-  setVal('gp_rentabilidad', p['Retorno de la inversión'] || p['Retorno inversión (Rentabilidad)'] || p['rentabilidad']);
+  setVal('gp_rentabilidad', p['Retorno de la Inversión'] || p['Retorno de la inversión'] || p['Retorno inversión (Rentabilidad)'] || p['rentabilidad']);
   
   setVal('gp_comuna', p['Comuna'] || p['comuna'] || '');
   setVal('gp_area_lote', p['Área lote'] || p['Área de lote'] || p['areaLote'] || '');
@@ -8954,7 +8890,12 @@ function autofillPropiedadPorCodigo() {
   
   const rentaEl = document.getElementById('gp_renta');
   if (rentaEl) {
-    rentaEl.value = p['Cuánto Renta ($)'] || p['renta'] || p['Cuánto renta'] || p['Cuanto Renta'] || '';
+    // A veces Rentabilidad contiene el valor en pesos
+    let rentaStr = p['Cuánto Renta ($)'] || p['renta'] || p['Cuánto renta'] || '';
+    if (!rentaStr && p['Rentabilidad'] && p['Rentabilidad'].toLowerCase().includes('rentabilidad')) {
+      rentaStr = p['Rentabilidad'].replace(/[^\d]/g, '');
+    }
+    rentaEl.value = rentaStr;
     formatPrecioOnInput(rentaEl);
   }
   
