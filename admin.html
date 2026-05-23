@@ -5543,7 +5543,6 @@ function renderCitas(){
   document.getElementById('mainContent').innerHTML=`
     <div class="section-header">
       <div class="section-title">🗓 Agenda de Citas</div>
-      <button class="btn btn-primary btn-sm" onclick="abrirVisitaModal()">+ Nueva Cita</button>
     </div>
     
     <div class="citas-layout-nuevo" style="display:grid; grid-template-columns: 320px 1fr; gap:24px; align-items:start;">
@@ -5558,22 +5557,29 @@ function renderCitas(){
         </div>
       </div>
       <div id="listContainer">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap: 15px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap: 15px; flex-wrap: wrap;">
           <div style="display:flex; gap:8px; flex-shrink: 0;">
             <button class="chip-filtro ${citasActiveFilterType === 'semana' ? 'sel' : ''}" onclick="filterCitas('semana',this)">Semana</button>
             <button class="chip-filtro ${citasActiveFilterType === 'mes' ? 'sel' : ''}" onclick="filterCitas('mes',this)">Mes</button>
             <button class="chip-filtro ${citasActiveFilterType === 'todas' ? 'sel' : ''}" onclick="filterCitas('todas',this)">Todas</button>
           </div>
 
-          <div class="pc-buscar-row" style="height:32px; border-radius:8px; flex-grow:1; max-width:350px;">
-            <span class="bn-icon" style="padding:0 8px 0 10px;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            </span>
-            <input type="text" id="searchCitasInput" placeholder="Buscar por cliente..." value="${searchTermCitas}" oninput="buscarCitas(this.value)" style="font-size:12px;"/>
-            ${searchTermCitas ? `<button class="btn-limpiar-pc" style="padding:0 8px; border-radius:0 8px 8px 0; font-size:11px;" onclick="buscarCitas(''); document.getElementById('searchCitasInput').value=''">✕</button>` : ''}
-          </div>
+          <div id="citasSelFecha" style="font-size:12px; color:var(--gold); font-weight:600; flex-shrink: 0; margin-right: auto;">${citasActiveFilterType === 'fecha' ? 'Filtrado por: ' + citasActiveFilterValue : ''}</div>
 
-          <div id="citasSelFecha" style="font-size:12px; color:var(--gold); font-weight:600; flex-shrink: 0;">${citasActiveFilterType === 'fecha' ? 'Filtrado por: ' + citasActiveFilterValue : ''}</div>
+          <div style="display:flex; align-items:center; gap:12px; flex-grow:1; justify-content: flex-end;">
+            <div class="pc-buscar-row-premium">
+              <span class="bn-icon" style="padding:0 8px 0 12px; color: var(--gold);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </span>
+              <input type="text" id="searchCitasInput" placeholder="Buscar por cliente..." value="${searchTermCitas}" oninput="buscarCitas(this.value)" style="font-size:13px; background: transparent; color: #fff; border: none; outline: none; width: 100%;"/>
+              ${searchTermCitas ? `<button class="btn-limpiar-pc" style="padding:0 12px; border-radius:0 8px 8px 0; font-size:12px; color: #aaa; background: transparent; cursor: pointer; transition: color 0.2s; border: none;" onclick="buscarCitas(''); document.getElementById('searchCitasInput').value=''" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">✕</button>` : ''}
+            </div>
+
+            <button class="btn-nueva-cita-premium" onclick="abrirVisitaModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Nueva Cita
+            </button>
+          </div>
         </div>
         <div class="citas-table-wrap">
           <table class="citas-table">
@@ -5585,6 +5591,44 @@ function renderCitas(){
     </div>
     <style>
       @media(max-width:900px){ .citas-layout-nuevo { grid-template-columns: 1fr !important; } }
+      .pc-buscar-row-premium {
+        display: flex;
+        align-items: center;
+        height: 38px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        max-width: 260px;
+        flex-grow: 1;
+      }
+      .pc-buscar-row-premium:focus-within {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: var(--gold);
+        box-shadow: 0 4px 15px rgba(212, 168, 75, 0.15);
+      }
+      .btn-nueva-cita-premium {
+        height: 38px;
+        background: linear-gradient(135deg, var(--gold) 0%, #b8860b 100%);
+        color: #000;
+        font-weight: 700;
+        font-size: 13px;
+        padding: 0 16px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(212, 168, 75, 0.3);
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+      }
+      .btn-nueva-cita-premium:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(212, 168, 75, 0.5);
+      }
     </style>`;
   
   renderCalendario();
@@ -5820,7 +5864,7 @@ function buscarCitas(val){
   if (container) {
     let btnLimpiar = container.querySelector('.btn-limpiar-pc');
     if (searchTermCitas && !btnLimpiar) {
-      container.insertAdjacentHTML('beforeend', `<button class="btn-limpiar-pc" style="padding:0 8px; border-radius:0 8px 8px 0; font-size:11px;" onclick="buscarCitas(''); document.getElementById('searchCitasInput').value=''">✕</button>`);
+      container.insertAdjacentHTML('beforeend', `<button class="btn-limpiar-pc" style="padding:0 12px; border-radius:0 8px 8px 0; font-size:12px; color: #aaa; background: transparent; cursor: pointer; transition: color 0.2s; border: none;" onclick="buscarCitas(''); document.getElementById('searchCitasInput').value=''" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">✕</button>`);
     } else if (!searchTermCitas && btnLimpiar) {
       btnLimpiar.remove();
     }
