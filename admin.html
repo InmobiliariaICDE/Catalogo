@@ -2427,7 +2427,7 @@ function buildFiltrosBar(containerId, pfx, initVals){
             </div>
           </div>
           <div class="map-control-card" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 8px; pointer-events: auto; box-shadow: var(--shadow); display: flex; gap: 8px; align-items: center; justify-content: center;">
-            <button class="btn-map-control btn-map-add-mode active" id="btnAddProp_nl" onclick="toggleMapAddMode('nl')" title="Agregar propiedad en el mapa">➕</button>
+            <button class="btn-map-control btn-map-add-mode" id="btnAddProp_nl" onclick="toggleMapAddMode('nl')" title="Agregar propiedad en el mapa">➕</button>
             <button class="btn-map-control" onclick="actualizarPinesMapa('${pfx}', true)" title="Recentrar mapa">🎯</button>
             <button class="btn-map-control" onclick="refreshData()" title="Actualizar datos">🔄</button>
           </div>
@@ -7876,32 +7876,17 @@ let mapAddMode = false;
 function onMapClickAddContainer(e) {
   if (!mapAddMode) return;
   
-  // Si el clic original fue sobre controles flotantes, ignorar
-  const oe = e.originalEvent || e;
-  if (oe.target && (oe.target.closest('.map-floating-controls') || oe.target.closest('.leaflet-control'))) return;
-  
-  if (oe.stopPropagation) oe.stopPropagation();
-  if (oe.preventDefault) oe.preventDefault();
-  
-  let lat, lng;
-  if (e.latlng) {
-    lat = e.latlng.lat;
-    lng = e.latlng.lng;
-  } else {
-    const rect = leafletMap.getContainer().getBoundingClientRect();
-    const x = oe.clientX - rect.left;
-    const y = oe.clientY - rect.top;
-    const latlng = leafletMap.containerPointToLatLng([x, y]);
-    lat = latlng.lat;
-    lng = latlng.lng;
-  }
+  const lat = e.latlng.lat;
+  const lng = e.latlng.lng;
   
   // Desactivar modo
   mapAddMode = false;
   document.querySelectorAll('.btn-map-add-mode').forEach(b => b.classList.remove('active'));
   leafletMap.getContainer().style.cursor = '';
   leafletMap.off('click', onMapClickAddContainer);
-  leafletMap.getContainer().removeEventListener('click', onMapClickAddContainer, true);
+  
+  // Cerrar bottom card si está abierta
+  if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
   
   abrirEditorProp(null, lat, lng);
 }
@@ -7915,11 +7900,9 @@ function toggleMapAddMode(pfx) {
     toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
     leafletMap.getContainer().style.cursor = 'crosshair';
     leafletMap.on('click', onMapClickAddContainer);
-    leafletMap.getContainer().addEventListener('click', onMapClickAddContainer, true);
   } else {
     leafletMap.getContainer().style.cursor = '';
     leafletMap.off('click', onMapClickAddContainer);
-    leafletMap.getContainer().removeEventListener('click', onMapClickAddContainer, true);
   }
 }
 
