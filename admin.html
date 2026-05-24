@@ -2432,8 +2432,7 @@ function buildFiltrosBar(containerId, pfx, initVals){
             </div>
           </div>
           <div class="map-control-card" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 8px; pointer-events: auto; box-shadow: var(--shadow); display: flex; gap: 8px; align-items: center; justify-content: center;">
-            <button class="btn-map-control btn-map-add-mode" id="btnAddProp_nl" onclick="toggleMapAddMode('nl')" title="Agregar propiedad (clic en mapa)">➕</button>
-            <button class="btn-map-control" id="btnAddPropCenter_nl" onclick="addPropAtMapCenter()" title="Agregar propiedad en centro del mapa" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.5);color:#60a5fa;font-size:18px;">📍</button>
+            <button class="btn-map-control btn-map-add-mode" id="btnAddProp_nl" onclick="abrirNuevaPropiedad()" title="Agregar nueva propiedad">➕</button>
             <button class="btn-map-control" onclick="actualizarPinesMapa('${pfx}', true)" title="Recentrar mapa">🎯</button>
             <button class="btn-map-control" onclick="refreshData()" title="Actualizar datos">🔄</button>
           </div>
@@ -7886,13 +7885,15 @@ function focusProperty(code) {
 // --- Lógica de Edición de Propiedades ---
 var mapAddMode = false;
 
-// Botón directo: abre el editor con el centro actual del mapa
-function addPropAtMapCenter() {
-  if (!leafletMap) { toast('El mapa no está listo', 'error'); return; }
-  const center = leafletMap.getCenter();
-  if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
-  abrirEditorProp(null, center.lat, center.lng);
-  toast('Formulario abierto con coordenadas del centro del mapa. Ajusta si es necesario.', 'success');
+// Abre el formulario de nueva propiedad directamente, con coordenadas del centro del mapa
+function abrirNuevaPropiedad() {
+  let lat = null, lng = null;
+  if (leafletMap) {
+    const center = leafletMap.getCenter();
+    lat = center.lat;
+    lng = center.lng;
+  }
+  abrirEditorProp(null, lat, lng);
 }
 
 function toggleMapAddMode(pfx) {
