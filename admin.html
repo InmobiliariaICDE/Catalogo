@@ -1922,7 +1922,8 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 ═══════════════════════════════════════════════ */
 const PASSWORD = 'icde2024';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-HipJ53KIf2JD1q9BUIBFUB45o4wRYcjvlqUbpg9TDAGK0q3hNQcSrV23dMCWaTgXcQ/exec?action=getData';
-const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFUuzwKA_5C35NX7S2eniREyP8AAqqYxz4rUoL195-vfIuiis8KmG3IbKIojfywllI1w/exec';
+// CRM URL apunta al mismo script nuevo que maneja getData, getLeads, getCitas, etc.
+const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-HipJ53KIf2JD1q9BUIBFUB45o4wRYcjvlqUbpg9TDAGK0q3hNQcSrV23dMCWaTgXcQ/exec';
 
 /* ═══════════════════════════════════════════════
    STATE
@@ -8725,6 +8726,9 @@ function renderNuevaPropiedad() {
             <option value="Venta">Venta</option>
             <option value="Arriendo">Arriendo</option>
             <option value="Venta/Arriendo">Venta/Arriendo</option>
+            <option value="Verbal">Verbal</option>
+            <option value="Anti-crisis">Anti-crisis</option>
+            <option value="Permuta">Permuta</option>
           </select>
         </div>
         <div class="form-group"><label class="form-label">Precio *</label><input class="form-input" id="gp_precio" type="text" placeholder="COP (Separador miles al escribir)" oninput="formatPrecioOnInput(this)"/></div>
@@ -8993,7 +8997,20 @@ function autofillPropiedadPorCodigo() {
   const p = window.currentMatchedProp;
   if (!p) return;
   
-  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (val === undefined || val === null) { el.value = ''; return; }
+    el.value = val;
+    // Si es un select y el valor no coincidió con ninguna opción, inyectarlo dinámicamente
+    if (el.tagName === 'SELECT' && val && el.value !== val) {
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = val;
+      el.appendChild(opt);
+      el.value = val;
+    }
+  };
   const setChecked = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
   
   setVal('gp_nombre', p['Nombre'] || p['nombre']);
@@ -10316,6 +10333,10 @@ function swShowReviewForm(data) {
           <option value="Venta" ${data.contrato==='Venta'?'selected':''}>Venta</option>
           <option value="Arriendo" ${data.contrato==='Arriendo'?'selected':''}>Arriendo</option>
           <option value="Venta/Arriendo" ${data.contrato==='Venta/Arriendo'?'selected':''}>Venta/Arriendo</option>
+          <option value="Verbal" ${data.contrato==='Verbal'?'selected':''}>Verbal</option>
+          <option value="Anti-crisis" ${data.contrato==='Anti-crisis'?'selected':''}>Anti-crisis</option>
+          <option value="Permuta" ${data.contrato==='Permuta'?'selected':''}>Permuta</option>
+          ${data.contrato && !['Venta','Arriendo','Venta/Arriendo','Verbal','Anti-crisis','Permuta'].includes(data.contrato) ? `<option value="${data.contrato}" selected>${data.contrato}</option>` : ''}
         </select>
       </div>
       <div class="form-group"><label class="form-label">Precio *</label><input class="form-input ${emptyClass(data.precio)}" id="gp_precio" type="text" value="${priceStr}" oninput="formatPrecioOnInput(this)"/></div>
