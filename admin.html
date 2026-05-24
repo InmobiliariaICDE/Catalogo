@@ -8940,8 +8940,9 @@ async function validarCodigoExistente(codigo) {
   
   let exactMatch = null;
   
-  // Buscar coincidencia exacta en allProps (Datos de Apps Script / Matriz)
+  // Buscar coincidencia exacta en allProps (Datos de Apps Script / Matriz), ignorando KMZ
   const propFromAllProps = allProps.find(p => {
+    if (p.isKmzOnly) return false;
     const codeStr = String(p['Código'] || '').trim();
     if (codeStr.toLowerCase() === codigo.toLowerCase()) return true;
     if (!isNaN(codeStr) && !isNaN(codigo) && parseFloat(codeStr) === parseFloat(codigo)) return true;
@@ -8970,9 +8971,10 @@ async function validarCodigoExistente(codigo) {
     if (input) input.style.borderColor = '#22c55e';
   }
 
-  // Filtrar sugerencias de inmuebles códigos que están en la matriz base de datos
+  // Filtrar sugerencias de inmuebles códigos que están en la matriz base de datos (excluyendo KMZ)
   const query = codigo.toLowerCase();
   const matches = allProps.filter(p => {
+    if (p.isKmzOnly) return false;
     const codeStr = String(p['Código'] || '').trim().toLowerCase();
     return codeStr.includes(query);
   }).slice(0, 10);
@@ -9013,7 +9015,7 @@ document.addEventListener('click', function(e) {
 function autofillPropiedadPorCodigo(selectedCode) {
   let p = null;
   if (selectedCode) {
-    p = allProps.find(x => String(x['Código'] || '').trim().toLowerCase() === String(selectedCode).trim().toLowerCase());
+    p = allProps.find(x => !x.isKmzOnly && String(x['Código'] || '').trim().toLowerCase() === String(selectedCode).trim().toLowerCase());
   } else {
     p = window.currentMatchedProp;
   }

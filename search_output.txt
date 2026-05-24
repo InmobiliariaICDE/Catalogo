@@ -1,210 +1,185 @@
-admin.html:697 -> /* CITAS TABLE */
-admin.html:698 -> .citas-table-wrap { overflow-x: auto; margin-top: 10px; }
-admin.html:699 -> .citas-table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--bg2); border-radius: 12px; overflow: hidden; border: 1px sol
-admin.html:700 -> .citas-table th { background: rgba(255,255,255,.03); padding: 12px; text-align: left; color: var(--gold); font-size: 11px; text-transform: uppercase; 
-admin.html:701 -> .citas-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,.03); }
-admin.html:702 -> .citas-table tr:hover { background: rgba(255,255,255,.015); }
-admin.html:703 -> .citas-time { font-weight: 600; color: #fff; }
-admin.html:704 -> .citas-weekday { color: var(--muted); font-size: 11px; }
-admin.html:1188 -> .ed-cod-results {
-admin.html:1202 -> .ed-cod-item {
-admin.html:1211 -> .ed-cod-item:hover { background: rgba(255,255,255,0.05); }
-admin.html:1212 -> .ed-cod-item .match-code { color: var(--gold); font-weight: 700; }
-admin.html:1214 -> /* GESTION DE INMUEBLES STYLES */
-admin.html:1306 -> .google-search-container.has-suggestions {
-admin.html:1412 -> /* Google suggestion dropdown style */
-admin.html:1413 -> .google-search-suggestions {
-admin.html:1429 -> .google-search-suggestions.active {
-admin.html:1432 -> .google-suggestion-item {
-admin.html:1440 -> .google-suggestion-item:last-child {
-admin.html:1443 -> .google-suggestion-item:hover {
-admin.html:1446 -> .google-suggestion-icon {
-admin.html:1454 -> .google-suggestion-icon svg {
-admin.html:1460 -> .google-suggestion-text {
-admin.html:1466 -> .google-suggestion-main {
-admin.html:1475 -> .google-suggestion-secondary {
-admin.html:1493 -> .google-search-suggestions {
-admin.html:1732 -> <div class="brand">ICDE Panel de Control <span>/ Gestión de Clientes</span></div>
-admin.html:1746 -> <button class="tab" onclick="showTab('citas')">🗓 Citas</button>
-admin.html:1750 -> <button class="tab" onclick="showTab('gestion')">🏠 Gestión de Inmuebles</button>
-admin.html:1767 -> <div class="form-group"><label class="form-label">Código Casa</label><input class="form-input" id="visitaCodigo" placeholder="ej: 222"/></div>
-admin.html:1799 -> <!-- MODAL FEEDBACK CITAS -->
-admin.html:1846 -> Si las citas o leads no aparecen en otro computador, usa este botón <strong style="color:#fff;">en el equipo que SÍ tiene los datos correctos</strong>
-admin.html:1925 -> // CRM URL apunta al mismo script nuevo que maneja getData, getLeads, getCitas, etc.
-admin.html:2041 -> if (typeof rebuildCitas === 'function') rebuildCitas();
-admin.html:2046 -> if (currentTab === 'citas' && typeof renderCitas === 'function') renderCitas();
-admin.html:2077 -> let citas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
-admin.html:2078 -> if (!Array.isArray(citas)) citas = []; // Ensure it's always an array
-admin.html:2105 -> let citasViewMode = localStorage.getItem('icde_citas_view') || 'lista';
-admin.html:2107 -> let searchTermCitas = '';
-admin.html:2108 -> let citasActiveFilterType = 'todas';
-admin.html:2109 -> let citasActiveFilterValue = '';
-admin.html:2313 -> // Gestión de menús y clics globales (Única vez)
-admin.html:3092 -> // También refrescar leads/citas desde la nube
-admin.html:3094 -> rebuildCitas();
-admin.html:3095 -> if(currentTab === 'citas')  renderCitas();
-admin.html:3115 -> rebuildCitas();
-admin.html:3146 -> // Feedback de citas
-admin.html:3147 -> setTimeout(checkCitasFeedback, 3000);
-admin.html:3148 -> setInterval(checkCitasFeedback, 1000 * 60 * 5); // Cada 5 mins
-admin.html:3150 -> // ── AUTO-SYNC: sincronizar leads/citas en segundo plano cada 90 segundos ──
-admin.html:3185 -> Refresca leads/citas silenciosamente y actualiza la UI
-admin.html:3333 -> rebuildCitas();
-admin.html:3335 -> if (currentTab === 'citas')  renderCitas();
-admin.html:3435 -> rebuildCitas();
-admin.html:3438 -> if(currentTab === 'citas') renderCitas();
-admin.html:3444 -> function rebuildCitas() {
-admin.html:3475 -> // Citas genéricas que no estén ya incluidas
-admin.html:3476 -> const genericCitas = citas.filter(c => {
-admin.html:3481 -> if (genericCitas.length > 0) {
-admin.html:3487 -> nombre: 'Agenda Global (Citas Genéricas)',
-admin.html:3489 -> notas: 'Contenedor para sincronizar citas antiguas o sin datos en la nube.',
-admin.html:3509 -> genericCitas.forEach(gc => {
-admin.html:3528 -> citas = allVisitas;
-admin.html:3729 -> const tabNames = ['nuevo','leads','citas','pedidos','administracion','estadisticas','gestion'];
-admin.html:3736 -> else if(tab==='citas') renderCitas();
-admin.html:3740 -> else if(tab==='gestion') renderGestion();
-admin.html:4604 -> <div style="font-size:12px; color:var(--gold); font-weight:600; text-transform:uppercase; margin-bottom:10px;">Citas y Visitas</div>
-admin.html:5223 -> if (citaId && typeof citas !== 'undefined' && Array.isArray(citas)) {
-admin.html:5224 -> v = citas.find(c => String(c.id) === String(citaId));
-admin.html:5234 -> setVal('visitaCodigo', v ? v.codigo : (prefilledCod || ''));
-admin.html:5278 -> const cod=document.getElementById('visitaCodigo').value.trim(); if(!cod){ toast('Ingresa el código','error'); return; }
-admin.html:5301 -> nombre: 'Agenda Global (Citas Genéricas)',
-admin.html:5303 -> notas: 'Contenedor para sincronizar citas sin lead asociado.',
-admin.html:5325 -> const vInCitas = citas.find(x => x.codigo === cod && x.celular === celular);
-admin.html:5326 -> existingId = vInLead?.id || vInCitas?.id;
-admin.html:5351 -> const cIdx = citas.findIndex(x => x.id === v.id || (x.codigo === cod && x.celular === v.celular && !x.id));
-admin.html:5352 -> if(cIdx >= 0) citas[cIdx] = v;
-admin.html:5353 -> else citas.push(v);
-admin.html:5370 -> if(currentTab==='citas') renderCitas();
-admin.html:5447 -> localStorage.setItem('icde_citas', JSON.stringify(citas));
-admin.html:5518 -> const cIdx = citas.findIndex(x => String(x.id) === String(id));
-admin.html:5519 -> if(cIdx >= 0) citas.splice(cIdx, 1);
-admin.html:5542 -> if(currentTab === 'citas') renderCitas();
-admin.html:5547 -> MÓDULO CITAS & PEDIDOS INMOB.
-admin.html:5549 -> function setCitasView(mode){
-admin.html:5550 -> citasViewMode = mode;
-admin.html:5551 -> localStorage.setItem('icde_citas_view', mode);
-admin.html:5552 -> renderCitas();
-admin.html:5555 -> function renderCitas(){
-admin.html:5558 -> <div class="section-title">🗓 Agenda de Citas</div>
-admin.html:5561 -> <div class="citas-layout-nuevo" style="display:grid; grid-template-columns: 320px 1fr; gap:24px; align-items:start;">
-admin.html:5575 -> <button class="chip-filtro ${citasActiveFilterType === 'semana' ? 'sel' : ''}" onclick="filterCitas('semana',this)">Semana</button>
-admin.html:5576 -> <button class="chip-filtro ${citasActiveFilterType === 'mes' ? 'sel' : ''}" onclick="filterCitas('mes',this)">Mes</button>
-admin.html:5577 -> <button class="chip-filtro ${citasActiveFilterType === 'todas' ? 'sel' : ''}" onclick="filterCitas('todas',this)">Todas</button>
-admin.html:5580 -> <div id="citasSelFecha" style="font-size:12px; color:var(--gold); font-weight:600; flex-shrink: 0; margin-right: auto;">${citasActiveFilterType === 'f
-admin.html:5587 -> <input type="text" id="searchCitasInput" placeholder="Buscar por cliente o celular..." value="${searchTermCitas}" oninput="buscarCitas(this.value)" st
-admin.html:5588 -> ${searchTermCitas ? `<button class="btn-limpiar-pc" style="padding:0 12px; border-radius:0 8px 8px 0; font-size:12px; color: #aaa; background: transpa
-admin.html:5597 -> <div class="citas-table-wrap">
-admin.html:5598 -> <table class="citas-table">
-admin.html:5600 -> <tbody id="citasBody"></tbody>
-admin.html:5606 -> @media(max-width:900px){ .citas-layout-nuevo { grid-template-columns: 1fr !important; } }
-admin.html:5648 -> aplicarFiltroYBusquedaCitas();
-admin.html:5652 -> citasActiveFilterType = 'fecha';
-admin.html:5653 -> citasActiveFilterValue = fecha;
-admin.html:5655 -> const elSelFecha = document.getElementById('citasSelFecha');
-admin.html:5663 -> aplicarFiltroYBusquedaCitas();
-admin.html:5700 -> const dayEvents = citas.filter(c => c.fecha === curDate);
-admin.html:5718 -> function checkCitasFeedback(){
-admin.html:5721 -> const pendientes = citas.filter(c => {
-admin.html:5750 -> setTimeout(checkCitasFeedback, 1000);
-admin.html:5757 -> const cita = citas.find(c => String(c.id) === String(id));
-admin.html:5780 -> if(currentTab === 'citas') renderCitas();
-admin.html:5789 -> // Solo volver a revisar si hay más citas pendientes (con delay para que el save se propague)
-admin.html:5790 -> setTimeout(checkCitasFeedback, 3000);
-admin.html:5793 -> function renderCitasBody(lista){
-admin.html:5794 -> const b = document.getElementById('citasBody'); if(!b) return;
-admin.html:5826 -> <td><div class="citas-time">${c.hora || '--:--'}</div><div class="citas-weekday">${isNaN(d.getDay()) ? '—' : diasSem[d.getDay()]} ${c.fecha}</div></td
-admin.html:5847 -> const cita = citas.find(c => String(c.id) === String(citaId));
-admin.html:5856 -> function filterCitas(tipo, btn){
-admin.html:5857 -> citasActiveFilterType = tipo;
-admin.html:5858 -> citasActiveFilterValue = '';
-admin.html:5865 -> const elSelFecha = document.getElementById('citasSelFecha');
-admin.html:5870 -> aplicarFiltroYBusquedaCitas();
-admin.html:5873 -> function buscarCitas(val){
-admin.html:5874 -> searchTermCitas = val.trim().toLowerCase();
-admin.html:5876 -> const container = document.getElementById('searchCitasInput')?.parentElement;
-admin.html:5879 -> if (searchTermCitas && !btnLimpiar) {
-admin.html:5880 -> container.insertAdjacentHTML('beforeend', `<button class="btn-limpiar-pc" style="padding:0 12px; border-radius:0 8px 8px 0; font-size:12px; color: #aa
-admin.html:5881 -> } else if (!searchTermCitas && btnLimpiar) {
-admin.html:5885 -> aplicarFiltroYBusquedaCitas();
-admin.html:5888 -> function aplicarFiltroYBusquedaCitas(){
-admin.html:5890 -> let filtered = citas;
-admin.html:5892 -> if (citasActiveFilterType === 'semana') {
-admin.html:5895 -> filtered = citas.filter(c => { const d = new Date(c.fecha); return d >= start && d <= end; });
-admin.html:5896 -> } else if (citasActiveFilterType === 'mes') {
-admin.html:5897 -> filtered = citas.filter(c => c.fecha.startsWith(new Date().toISOString().slice(0,7)));
-admin.html:5898 -> } else if (citasActiveFilterType === 'fecha') {
-admin.html:5899 -> filtered = citas.filter(c => c.fecha === citasActiveFilterValue);
-admin.html:5902 -> if (searchTermCitas) {
-admin.html:5903 -> const normalizedTerm = norm(searchTermCitas);
-admin.html:5907 -> renderCitasBody(filtered);
-admin.html:5957 -> const totalCitas    = citas.length;
-admin.html:5959 -> const leadsConCitas = leads.filter(l => (l.visitas || []).length > 0).length;
-admin.html:5968 -> <div>📅 Citas en agenda: <strong style="color:#fff;">${totalCitas}</strong></div>
-admin.html:5970 -> <div>👥 Leads con visitas: <strong style="color:#fff;">${leadsConCitas}</strong></div>
-admin.html:6022 -> if(result.codigo) document.getElementById('visitaCodigo').value = result.codigo;
-admin.html:7481 -> <div class="google-search-suggestions"></div>
-admin.html:7535 -> const suggestionsDropdown = searchContainer.querySelector('.google-search-suggestions');
-admin.html:7541 -> hideSuggestionsDropdown();
-admin.html:7647 -> // --- AUTOCOMPLETE SUGGESTIONS LOGIC ---
-admin.html:7649 -> async function updateSuggestions(query) {
-admin.html:7651 -> hideSuggestionsDropdown();
-admin.html:7672 -> const suggestionsList = [];
-admin.html:7678 -> suggestionsList.push({
-admin.html:7687 -> renderSuggestions(suggestionsList);
-admin.html:7694 -> renderSuggestions([]);
-admin.html:7697 -> function renderSuggestions(list) {
-admin.html:7699 -> hideSuggestionsDropdown();
-admin.html:7703 -> suggestionsDropdown.innerHTML = '';
-admin.html:7710 -> row.className = 'google-suggestion-item';
-admin.html:7713 -> <div class="google-suggestion-icon">${pinSvg}</div>
-admin.html:7714 -> <div class="google-suggestion-text">
-admin.html:7715 -> <span class="google-suggestion-main">${item.main}</span>
-admin.html:7716 -> ${item.secondary ? `<span class="google-suggestion-secondary">${item.secondary}</span>` : ''}
-admin.html:7733 -> hideSuggestionsDropdown();
-admin.html:7736 -> suggestionsDropdown.appendChild(row);
-admin.html:7739 -> searchContainer.classList.add('has-suggestions');
-admin.html:7740 -> suggestionsDropdown.classList.add('active');
-admin.html:7743 -> function hideSuggestionsDropdown() {
-admin.html:7744 -> searchContainer.classList.remove('has-suggestions');
-admin.html:7745 -> suggestionsDropdown.classList.remove('active');
-admin.html:7756 -> hideSuggestionsDropdown();
-admin.html:7761 -> updateSuggestions(val);
-admin.html:7768 -> updateSuggestions(val);
-admin.html:7775 -> hideSuggestionsDropdown();
-admin.html:8074 -> <div class="ed-cod-item" onclick="abrirEditorProp('${eq(p['Código'])}')">
-admin.html:8170 -> <div id="edPropCodResults" class="ed-cod-results"></div>
-admin.html:8644 -> function renderGestion() {
-admin.html:8647 -> if (!window.currentGestionSubTab) {
-admin.html:8648 -> window.currentGestionSubTab = 'nueva';
-admin.html:8654 -> <span>🏠</span> Gestión de Inmuebles
-admin.html:8657 -> <button class="btn ${window.currentGestionSubTab==='nueva'?'btn-primary':'btn-secondary'}" onclick="setGestionSubTab('nueva')">🏠 Nueva Propiedad</butt
-admin.html:8658 -> <button class="btn ${window.currentGestionSubTab==='barrido'?'btn-primary':'btn-secondary'}" onclick="setGestionSubTab('barrido')">📡 Barrido de Aliado
-admin.html:8659 -> <button class="btn ${window.currentGestionSubTab==='aliados'?'btn-primary':'btn-secondary'}" onclick="setGestionSubTab('aliados')">👥 Gestión de Aliado
-admin.html:8663 -> <div id="gestionAlerts"></div>
-admin.html:8664 -> <div id="gestionSubContent"></div>
-admin.html:8667 -> if (window.currentGestionSubTab === 'nueva') {
-admin.html:8669 -> } else if (window.currentGestionSubTab === 'barrido') {
-admin.html:8671 -> } else if (window.currentGestionSubTab === 'aliados') {
-admin.html:8672 -> renderGestionAliados();
-admin.html:8678 -> function setGestionSubTab(subTab) {
-admin.html:8679 -> window.currentGestionSubTab = subTab;
-admin.html:8680 -> renderGestion();
-admin.html:8685 -> const sub = document.getElementById('gestionSubContent');
-admin.html:9211 -> if (window.currentGestionSubTab !== 'nueva') return;
-admin.html:9235 -> const banner = document.getElementById('gestionAlerts');
-admin.html:9272 -> const banner = document.getElementById('gestionAlerts');
-admin.html:9857 -> renderGestion();
-admin.html:9878 -> renderGestion();
-admin.html:9887 -> const sub = document.getElementById('gestionSubContent');
-admin.html:10077 -> if (window.currentGestionSubTab !== 'barrido' || window.currentBarridoMode !== 'screenshot') return;
-admin.html:10469 -> /* SUB-TAB 3: GESTION DE ALIADOS & CRUD */
-admin.html:10470 -> function renderGestionAliados() {
-admin.html:10471 -> const sub = document.getElementById('gestionSubContent');
-admin.html:10565 -> const alertContainer = document.getElementById('gestionAlerts');
-admin.html:10609 -> window.currentGestionSubTab = 'barrido';
-admin.html:10611 -> renderGestion();
-admin.html:10668 -> renderGestion();
-admin.html:10726 -> renderGestion();
-admin.html:10738 -> renderGestion();
+admin.html:446 -> /* Estilo premium diferente para propiedades exclusivas del KMZ */
+admin.html:447 -> .z-marker.kmz-marker {
+admin.html:453 -> .z-marker.kmz-marker:hover, .z-marker.kmz-marker.active {
+admin.html:458 -> .z-marker.kmz-marker::after {
+admin.html:461 -> .z-marker.kmz-marker:hover::after, .z-marker.kmz-marker.active::after {
+admin.html:464 -> /* Estilo premium en naranja para propiedades con ubicación preexistente y conflicto en KMZ */
+admin.html:1102 -> .matrix-wrapper { overflow-x: auto; background: var(--bg2); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.
+admin.html:1103 -> .matrix-table { width: 100%; border-collapse: collapse; }
+admin.html:1104 -> .matrix-table th { padding: 14px 10px; font-size: 11px; font-weight: 700; text-align: center; text-transform: uppercase; color: var(--gold); border-bo
+admin.html:1105 -> .matrix-table th.col-prop { text-align: left; padding-left: 20px; font-size: 12px; }
+admin.html:1106 -> .matrix-table td { padding: 12px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); text-align: center; vertical-align: middle; }
+admin.html:1107 -> .matrix-table td.cell-prop { text-align: left; padding-left: 20px; font-weight: 600; color: #fff; max-width: 200px; white-space: nowrap; overflow: hid
+admin.html:1109 -> .matrix-cell {
+admin.html:1112 -> .matrix-cell:hover { transform: scale(1.15); box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10; }
+admin.html:1114 -> .matrix-cell.status-cell-PAID { color: #22c55e; background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3); }
+admin.html:1115 -> .matrix-cell.status-cell-PENDING { color: #ef4444; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); animation: pulse-border 2
+admin.html:1116 -> .matrix-cell.status-cell-VACANT { color: #9ca3af; background: rgba(156,163,175,0.08); border: 1px solid rgba(156,163,175,0.15); }
+admin.html:1117 -> .matrix-cell.status-cell-PREAVISO { color: #a855f7; background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.3); }
+admin.html:1118 -> .matrix-cell.status-cell-NEW_CONTRACT { color: #3b82f6; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); }
+admin.html:1119 -> .matrix-cell.status-cell-FUTURE { color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); cursor:
+admin.html:1120 -> .matrix-cell.status-cell-UNSTARTED { color: rgba(255,255,255,0.15); background: transparent; border: 1px dashed rgba(255,255,255,0.06); cursor: not-al
+admin.html:1128 -> /* Matrix Tooltip */
+admin.html:1129 -> .matrix-cell::after {
+admin.html:1138 -> .matrix-cell:hover::after { opacity: 1; transform: translateX(-50%) scale(1); }
+admin.html:1153 -> .matrix-detail-modal {
+admin.html:1159 -> .matrix-detail-modal.active { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+admin.html:1931 -> let allProps = [];
+admin.html:2095 -> let kmzProps = [];
+admin.html:2096 -> let kmzCategories = [];
+admin.html:2097 -> let activeKmzCategories = [];
+admin.html:2117 -> buscar:'', filtros:{tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],
+admin.html:2162 -> // Filtramos isKmzOnly para que el menú de filtros solo muestre datos reales del catálogo Excel
+admin.html:2163 -> allProps.filter(d => !d.isKmzOnly).forEach(d => {
+admin.html:2174 -> const nums = allProps.filter(d => !d.isKmzOnly).map(d => {
+admin.html:2183 -> if(!f) return allProps.filter(d => !d.isKmzOnly);
+admin.html:2186 -> let base = allProps;
+admin.html:2189 -> base = allProps.filter(d => !d.isKmzOnly);
+admin.html:2193 -> const activeCatNorms = activeKmzCategories.map(c => norm(c));
+admin.html:2194 -> base = allProps.filter(d => {
+admin.html:2195 -> if (!d.isKmzOnly) return true; // Siempre incluir catálogo principal
+admin.html:2196 -> if (!activeKmzCategories.length) return false; // Si no hay categorías activas, excluir todo KMZ-only
+admin.html:2197 -> const cat = String(d['_kmzCategory'] || '').trim();
+admin.html:2198 -> if (!cat) return false; // KMZ-only sin categoría: excluir
+admin.html:2202 -> base = allProps.filter(d => !d.isKmzOnly);
+admin.html:2207 -> // Para kmzCategory, lo consideramos "vacío" (sin filtrar) solo si contiene todas las categorías disponibles
+admin.html:2208 -> const hasCategoryFilter = f.kmzCategory && Array.isArray(f.kmzCategory) && f.kmzCategory.length < kmzCategories.length;
+admin.html:2210 -> const isEmpty = !f.buscar && !f.minPrice && !f.maxPrice && !Object.values(f).some(v => Array.isArray(v) && v.length > 0 && v !== f.kmzCategory) && !ha
+admin.html:2226 -> if(d.isKmzOnly && f.kmzCategory && Array.isArray(f.kmzCategory)){
+admin.html:2227 -> const propCat = String(d['_kmzCategory'] || "").trim();
+admin.html:2230 -> const activeNorm = f.kmzCategory.map(c => norm(c));
+admin.html:2385 -> setFSt(pfx, initVals || {tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunt
+admin.html:2435 -> <span id="kmzCatArrow_${pfx}" style="transition: transform 0.3s; transform: rotate(-90deg);">▼</span>
+admin.html:2437 -> <div id="kmzCategoryToggle_${pfx}" style="display: none; flex-direction: column; gap: 4px; max-height: 150px; overflow-y: auto; padding-right: 4px; tr
+admin.html:2438 -> <!-- Se puebla dinámicamente con las categorías del KMZ -->
+admin.html:2458 -> renderKmzCategories(pfx);
+admin.html:2888 -> KMZ INTEGRATION
+admin.html:2890 -> async function cargarKmz() {
+admin.html:2892 -> const res = await fetch('propiedades_kmz.json');
+admin.html:2893 -> if (!res.ok) throw new Error('No se pudo cargar propiedades_kmz.json');
+admin.html:2896 -> kmzProps = data;
+admin.html:2899 -> kmzCategories = [...new Set(kmzProps.map(p => p['Categoría']))].filter(Boolean).sort();
+admin.html:2902 -> activeKmzCategories = kmzCategories.filter(cat => !cat.toUpperCase().includes("INVENTARIO BARRIOS"));
+admin.html:2904 -> console.log(`Cargadas ${kmzProps.length} propiedades desde KMZ en ${kmzCategories.length} categorías.`);
+admin.html:2906 -> correlacionarKmzConCatalogo();
+admin.html:2911 -> stNl.kmzCategory = [...activeKmzCategories];
+admin.html:2913 -> renderKmzCategories('nl');
+admin.html:2917 -> console.error("Error cargando KMZ JSON:", e);
+admin.html:2921 -> function correlacionarKmzConCatalogo() {
+admin.html:2922 -> if (!allProps.length || !kmzProps.length) return;
+admin.html:2933 -> allProps.forEach(p => {
+admin.html:2934 -> if (p.isKmzOnly) return;
+admin.html:2941 -> kmzProps.forEach(kp => {
+admin.html:2954 -> // Sin ubicación: asignar coordenadas del KMZ (burbuja dorada)
+admin.html:2962 -> existing._kmzCategory = kp['Categoría'];
+admin.html:2970 -> allProps.push({
+admin.html:2972 -> 'Nombre': kp['Nombre_KMZ'],
+admin.html:2973 -> 'Precio': kp['Precio_KMZ'] ? parseKmzPrice(kp['Precio_KMZ']) : 0,
+admin.html:2982 -> 'Tipo de inmueble': 'Casa (KMZ)',
+admin.html:2985 -> 'isKmzOnly': true,
+admin.html:2986 -> '_kmzCategory': kp['Categoría'],
+admin.html:2987 -> 'Descripción': kp['KMZ_Data']?.['Descripción'] || '',
+admin.html:2988 -> 'Renta': kp['KMZ_Data']?.['Renta'] || '',
+admin.html:2989 -> 'Retorno de la inversión': kp['KMZ_Data']?.['Retorno de Inversión'] || ''
+admin.html:2996 -> console.warn(`[KMZ] ${sinMatch.length} códigos KMZ sin coincidencia (aparecen en MORADO):`);
+admin.html:2999 -> console.log('[KMZ] Todos los códigos KMZ coincidieron con el catálogo.');
+admin.html:3007 -> function parseKmzPrice(priceStr) {
+admin.html:3035 -> function renderKmzCategories(pfx) {
+admin.html:3036 -> const container = document.getElementById(`kmzCategoryToggle_${pfx}`);
+admin.html:3039 -> if (kmzCategories.length === 0) {
+admin.html:3040 -> container.innerHTML = '<div style="font-size:11px; color:#888; text-align:center; padding:10px;">Sin categorías KMZ</div>';
+admin.html:3044 -> container.innerHTML = kmzCategories.map(cat => {
+admin.html:3045 -> const isChecked = activeKmzCategories.includes(cat);
+admin.html:3048 -> <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleKmzCategory('${pfx}', '${eq(cat)}', this.checked)">
+admin.html:3054 -> function toggleKmzCategory(pfx, cat, checked) {
+admin.html:3056 -> if (!st.kmzCategory) st.kmzCategory = [];
+admin.html:3058 -> // Nota: En nuestro filtro, si kmzCategory está vacío, muestra todo.
+admin.html:3059 -> // Pero aquí queremos que las categorías del KMZ funcionen como "exclusión" o "inclusión".
+admin.html:3061 -> // o simplemente manejamos kmzCategory como la lista de permitidos.
+admin.html:3064 -> if (!activeKmzCategories.includes(cat)) activeKmzCategories.push(cat);
+admin.html:3066 -> activeKmzCategories = activeKmzCategories.filter(c => c !== cat);
+admin.html:3069 -> // Sincronizar con el filtro global kmzCategory
+admin.html:3071 -> st.kmzCategory = [...activeKmzCategories];
+admin.html:3078 -> const el = document.getElementById(`kmzCategoryToggle_${pfx}`);
+admin.html:3079 -> const arrow = document.getElementById(`kmzCatArrow_${pfx}`);
+admin.html:3091 -> await cargarKmz();
+admin.html:3113 -> await cargarKmz();
+admin.html:3669 -> let remoteProps = rawData.filter(d => {
+admin.html:3674 -> const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
+admin.html:3677 -> // customProps solo aporta los campos que explícitamente se editaron
+admin.html:3679 -> // Usamos un Map solo para los customProps y preservamos todos los remoteProps (incluso si tienen mismo Código)
+admin.html:3682 -> customProps.forEach(custom => customMap.set(custom['Código'], custom));
+admin.html:3684 -> allProps = remoteProps.map(p => {
+admin.html:3699 -> // Agregar las propiedades nuevas creadas desde el admin que no están en remoteProps
+admin.html:3700 -> const remoteCodigos = new Set(remoteProps.map(p => p['Código']));
+admin.html:3701 -> customProps.forEach(custom => {
+admin.html:3703 -> allProps.push(custom);
+admin.html:3707 -> console.log("Admin: Remote:", remoteProps.length, "Custom:", customProps.length, "Total:", allProps.length);
+admin.html:3708 -> document.getElementById('syncStatus').textContent=`✓ ${allProps.length} propiedades`;
+admin.html:3711 -> if(allProps.length > 0){
+admin.html:3712 -> const prices = allProps.map(p => parseP(p['Precio'])).filter(p => p > 0);
+admin.html:3719 -> allProps=[];
+admin.html:3771 -> ${allProps.length ? `<div id="nlFiltrosWrap"></div>` : `<div class="loading"><div class="spinner"></div> Cargando catálogo...</div>`}
+admin.html:3888 -> if(allProps.length) setTimeout(()=> buildFiltrosBar('nlFiltrosWrap','nl',nuevoLead.filtros), 0);
+admin.html:4327 -> const prop = allProps.find(p => p['Código'] === cod);
+admin.html:4642 -> const p = allProps.find(x => String(x['Código']) === String(cod));
+admin.html:4730 -> const p = allProps.find(d => d['Código'] === cod);
+admin.html:4766 -> const p = allProps.find(d => d['Código'] === cod);
+admin.html:4954 -> const objs = lote.map(c => allProps.find(d => d['Código'] === c)).filter(Boolean);
+admin.html:4980 -> const p = allProps.find(d => d['Código'] === cod);
+admin.html:5125 -> const objs = cods.map(c => allProps.find(d => d['Código'] === c)).filter(Boolean);
+admin.html:5817 -> const prop = allProps.find(p => String(p['Código']).trim() === String(c.codigo).trim());
+admin.html:6236 -> if (!document.getElementById('matrixDetailModal')) {
+admin.html:6240 -> overlay.onclick = closeMatrixCellDetails;
+admin.html:6244 -> modal.id = 'matrixDetailModal';
+admin.html:6245 -> modal.className = 'matrix-detail-modal';
+admin.html:6518 -> <div class="matrix-wrapper">
+admin.html:6519 -> <table class="matrix-table">
+admin.html:6549 -> <div class="matrix-cell status-cell-${pay.status}"
+admin.html:6551 -> onclick="openMatrixCellDetails('${p.id}', '${mFull}', '${currentAdminYear}')">
+admin.html:6787 -> function openMatrixCellDetails(propId, monthName, year) {
+admin.html:6797 -> const modal = document.getElementById('matrixDetailModal');
+admin.html:6806 -> <button onclick="closeMatrixCellDetails()" style="background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer; font-weight
+admin.html:6997 -> closeMatrixCellDetails();
+admin.html:7019 -> closeMatrixCellDetails();
+admin.html:7025 -> function closeMatrixCellDetails() {
+admin.html:7026 -> const modal = document.getElementById('matrixDetailModal');
+admin.html:7076 -> const comisionTotal = allProps.reduce((acc, p) => acc + (parseFloat(String(p['Precio']||0).replace(/[^\d]/g,'')) * 0.1), 0) / 100; // Simulado
+admin.html:7316 -> const p = allProps.find(x => x['Código'] === cod);
+admin.html:8009 -> const p = isEdit ? allProps.find(x => x['Código'] === codigo) : null;
+admin.html:8070 -> const matches = allProps.filter(p => String(p['Código']).toLowerCase().includes(query)).slice(0, 5);
+admin.html:8125 -> const idx = allProps.findIndex(x => x['Código'] === cod);
+admin.html:8130 -> const updated = { ...allProps[idx] };
+admin.html:8136 -> allProps[idx] = updated;
+admin.html:8139 -> allProps.push(p);
+admin.html:8144 -> const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
+admin.html:8145 -> const cIdx = customProps.findIndex(x => x['Código'] === cod);
+admin.html:8146 -> if (cIdx >= 0) customProps[cIdx] = p;
+admin.html:8147 -> else customProps.push(p);
+admin.html:8148 -> localStorage.setItem('icde_custom_props', JSON.stringify(customProps));
+admin.html:8370 -> const p = allProps.find(x=>x['Código']===codigo);
+admin.html:8400 -> p = allProps.find(x=>x['Código']===codigoOrProp);
+admin.html:8686 -> const uniqueBarrios = Array.from(new Set(allProps.map(p => p['Barrio']).filter(Boolean)));
+admin.html:8888 -> const match = allProps.find(p => norm(p['Barrio']) === norm(barrioName));
+admin.html:8924 -> let icdeMatrixText = '';
+admin.html:8925 -> let loadingMatrix = false;
+admin.html:8943 -> // Buscar coincidencia exacta en allProps (Datos de Apps Script / Matriz)
+admin.html:8944 -> const propFromAllProps = allProps.find(p => {
+admin.html:8951 -> if (propFromAllProps) {
+admin.html:8952 -> exactMatch = {...propFromAllProps};
+admin.html:8975 -> const matches = allProps.filter(p => {
+admin.html:9016 -> p = allProps.find(x => String(x['Código'] || '').trim().toLowerCase() === String(selectedCode).trim().toLowerCase());
+admin.html:9133 -> // Como ya existe en allProps, actualizamos el estado visual de validación a "Código ya existe"
+admin.html:9572 -> // Si el código ya existe en el catálogo (allProps), mostramos el modal REAL
+admin.html:9574 -> const propReal = allProps.find(p => {
+admin.html:9654 -> for (let p of allProps) {
+admin.html:9767 -> allProps.forEach(p => {
+admin.html:9881 -> const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
+admin.html:9882 -> customProps.push(prop);
+admin.html:9883 -> localStorage.setItem('icde_custom_props', JSON.stringify(customProps));
+admin.html:9885 -> allProps.push(prop);
+admin.html:9902 -> const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
+admin.html:9903 -> customProps.push(prop);
+admin.html:9904 -> localStorage.setItem('icde_custom_props', JSON.stringify(customProps));
+admin.html:9906 -> allProps.push(prop);
+admin.html:10336 -> const uniqueBarrios = Array.from(new Set(allProps.map(p => p['Barrio']).filter(Boolean)));

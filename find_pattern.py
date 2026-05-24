@@ -1,4 +1,4 @@
-keywords = ['ed-cod', 'edPropCodigo', 'buscarCodigo', 'citas', 'gesti', 'visitaCodigo']
+keywords = ['kmz', 'allProps', 'remoteProps', 'customProps', 'matrix']
 output_lines = []
 for file in ['admin.html']:
     try:
