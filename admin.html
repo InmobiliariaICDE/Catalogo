@@ -8702,7 +8702,7 @@ function renderNuevaPropiedad() {
           <span id="gp_codigo_msg" style="display:none; position:absolute; right:10px; bottom:-16px; font-size:11px; font-weight:600;"></span>
           
           <!-- Dropdown para autocompletar -->
-          <div id="gp_codigo_dropdown" style="display:none; position:absolute; left:0; right:0; top:calc(100% + 2px); background:#141210; border:1px solid rgba(212,168,75,0.3); border-radius:10px; padding:10px; z-index:100; box-shadow:0 10px 30px rgba(0,0,0,0.8); cursor:pointer;" onclick="autofillPropiedadPorCodigo()">
+          <div id="gp_codigo_dropdown" style="display:none; position:absolute; left:0; right:0; top:calc(100% + 2px); background:#141210; border:1px solid rgba(212,168,75,0.3); border-radius:10px; padding:0; z-index:100; box-shadow:0 10px 30px rgba(0,0,0,0.8); max-height:200px; overflow-y:auto;">
           </div>
         </div>
         <div class="form-group"><label class="form-label">Nombre *</label>
@@ -8938,9 +8938,9 @@ async function validarCodigoExistente(codigo) {
     return;
   }
   
-  let matchedProp = null;
+  let exactMatch = null;
   
-  // Buscar en allProps (Datos de Apps Script)
+  // Buscar coincidencia exacta en allProps (Datos de Apps Script / Matriz)
   const propFromAllProps = allProps.find(p => {
     const codeStr = String(p['Código'] || '').trim();
     if (codeStr.toLowerCase() === codigo.toLowerCase()) return true;
@@ -8949,37 +8949,17 @@ async function validarCodigoExistente(codigo) {
   });
   
   if (propFromAllProps) {
-    matchedProp = {...propFromAllProps};
+    exactMatch = {...propFromAllProps};
   }
 
-  if (matchedProp) {
-    window.currentMatchedProp = matchedProp;
+  if (exactMatch) {
+    window.currentMatchedProp = exactMatch;
     if (msg) {
       msg.style.display = 'inline-block';
       msg.style.color = '#ef4444';
       msg.textContent = '✕ Código ya existe';
     }
     if (input) input.style.borderColor = '#ef4444';
-    
-    // Mostrar dropdown
-    if (dropdown) {
-      dropdown.style.display = 'block';
-      const name = matchedProp['Nombre'] || matchedProp['nombre'] || 'Sin nombre';
-      const barrio = matchedProp['Barrio'] || matchedProp['barrio'] || '';
-      const zona = matchedProp['Zona'] || matchedProp['zona'] || '';
-      const code = matchedProp['Código'] || matchedProp['codigo'] || codigo;
-      
-      dropdown.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <span style="color:var(--gold); font-weight:700;">${code}</span> · ${name}
-            <div style="font-size:11px; color:var(--muted); margin-top:2px;">${barrio}</div>
-          </div>
-          <div style="font-size:11px; color:rgba(255,255,255,0.5);">${zona}</div>
-        </div>
-        <div style="font-size:10px; color:var(--gold); margin-top:6px; border-top:1px solid rgba(255,255,255,0.05); padding-top:4px;">🖱️ Click para autocompletar y editar</div>
-      `;
-    }
   } else {
     window.currentMatchedProp = null;
     if (msg) {
@@ -8988,12 +8968,55 @@ async function validarCodigoExistente(codigo) {
       msg.textContent = '✓ Disponible';
     }
     if (input) input.style.borderColor = '#22c55e';
+  }
+
+  // Filtrar sugerencias de inmuebles códigos que están en la matriz base de datos
+  const query = codigo.toLowerCase();
+  const matches = allProps.filter(p => {
+    const codeStr = String(p['Código'] || '').trim().toLowerCase();
+    return codeStr.includes(query);
+  }).slice(0, 10);
+
+  if (matches.length > 0) {
+    if (dropdown) {
+      dropdown.style.display = 'block';
+      dropdown.innerHTML = matches.map(p => {
+        const name = p['Nombre'] || 'Sin nombre';
+        const barrio = p['Barrio'] || '';
+        const zona = p['Zona'] || '';
+        const code = p['Código'] || codigo;
+        return `
+          <div class="gp-cod-item" style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(212,168,75,0.1)'" onmouseout="this.style.background=''" onclick="autofillPropiedadPorCodigo('${eq(code)}')">
+            <div>
+              <span style="color:var(--gold); font-weight:700;">${code}</span> · ${name}
+              <div style="font-size:11px; color:var(--muted); margin-top:2px;">${barrio}</div>
+            </div>
+            <div style="font-size:11px; color:rgba(255,255,255,0.5);">${zona}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  } else {
     if (dropdown) dropdown.style.display = 'none';
   }
 }
 
-function autofillPropiedadPorCodigo() {
-  const p = window.currentMatchedProp;
+// Ocultar dropdown de códigos al hacer clic fuera
+document.addEventListener('click', function(e) {
+  const gpCod = document.getElementById('gp_codigo');
+  const gpDrop = document.getElementById('gp_codigo_dropdown');
+  if (gpDrop && gpCod && !gpCod.contains(e.target) && !gpDrop.contains(e.target)) {
+    gpDrop.style.display = 'none';
+  }
+});
+
+function autofillPropiedadPorCodigo(selectedCode) {
+  let p = null;
+  if (selectedCode) {
+    p = allProps.find(x => String(x['Código'] || '').trim().toLowerCase() === String(selectedCode).trim().toLowerCase());
+  } else {
+    p = window.currentMatchedProp;
+  }
   if (!p) return;
   
   const setVal = (id, val) => {
@@ -9012,6 +9035,7 @@ function autofillPropiedadPorCodigo() {
   };
   const setChecked = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
   
+  setVal('gp_codigo', p['Código']);
   setVal('gp_nombre', p['Nombre'] || p['nombre']);
   setVal('gp_tipo', p['Tipo de inmueble'] || p['tipo'] || 'Apartamento');
   setVal('gp_contrato', p['Contrato'] || p['contrato'] || 'Directo');
@@ -9106,10 +9130,23 @@ function autofillPropiedadPorCodigo() {
   const dropdown = document.getElementById('gp_codigo_dropdown');
   if (dropdown) dropdown.style.display = 'none';
   
+  // Como ya existe en allProps, actualizamos el estado visual de validación a "Código ya existe"
+  const msg = document.getElementById('gp_codigo_msg');
+  const input = document.getElementById('gp_codigo');
+  if (msg) {
+    msg.style.display = 'inline-block';
+    msg.style.color = '#ef4444';
+    msg.textContent = '✕ Código ya existe';
+  }
+  if (input) input.style.borderColor = '#ef4444';
+  
   const btnGuardar = document.getElementById('btn_gp_guardar');
   if (btnGuardar) {
     btnGuardar.innerHTML = '💾 Actualizar Propiedad';
   }
+  
+  // Guardar en variable global para que el botón de Guardar actúe como actualizar
+  window.currentMatchedProp = {...p};
   
   toast('Datos cargados para editar ✓', 'success');
 }
