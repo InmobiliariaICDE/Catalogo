@@ -1700,6 +1700,13 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     width: 22px;
     height: 22px;
   }
+  
+  /* Estilos para el modo de selección de ubicación en el mapa */
+  .map-add-mode-active .leaflet-overlay-pane,
+  .map-add-mode-active .leaflet-marker-pane,
+  .map-add-mode-active .leaflet-popup-pane {
+    pointer-events: none !important;
+  }
 </style>
 </head>
 <body>
@@ -2432,7 +2439,7 @@ function buildFiltrosBar(containerId, pfx, initVals){
             </div>
           </div>
           <div class="map-control-card" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 8px; pointer-events: auto; box-shadow: var(--shadow); display: flex; gap: 8px; align-items: center; justify-content: center;">
-            <button class="btn-map-control btn-map-add-mode" id="btnAddProp_nl" onclick="abrirNuevaPropiedad()" title="Agregar nueva propiedad">➕</button>
+            <button class="btn-map-control btn-map-add-mode" id="btnAddProp_nl" onclick="toggleMapAddMode('nl')" title="Agregar propiedad en el mapa">➕</button>
             <button class="btn-map-control" onclick="actualizarPinesMapa('${pfx}', true)" title="Recentrar mapa">🎯</button>
             <button class="btn-map-control" onclick="refreshData()" title="Actualizar datos">🔄</button>
           </div>
@@ -7387,8 +7394,46 @@ function initMapa(pfx) {
       mapAddMode = false;
       document.querySelectorAll('.btn-map-add-mode').forEach(b => b.classList.remove('active'));
       leafletMap.getContainer().style.cursor = '';
+      leafletMap.getContainer().classList.remove('map-add-mode-active');
       if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
-      abrirEditorProp(null, e.latlng.lat, e.latlng.lng);
+      
+      const clickedLat = e.latlng.lat;
+      const clickedLng = e.latlng.lng;
+      
+      // Si venimos de reubicar desde adentro del formulario
+      if (typeof originalEditorState !== 'undefined' && originalEditorState !== null) {
+        // Reabrir formulario con las nuevas coordenadas
+        abrirEditorProp(originalEditorState.codigo, clickedLat, clickedLng);
+        
+        // Restaurar todos los valores guardados
+        document.getElementById('edPropCod').readOnly = originalEditorState.readOnly;
+        document.getElementById('edPropNom').value = originalEditorState.nombre;
+        document.getElementById('edPropPre').value = originalEditorState.precio;
+        document.getElementById('edPropTipo').value = originalEditorState.tipo;
+        document.getElementById('edPropContrato').value = originalEditorState.contrato;
+        document.getElementById('edPropZona').value = originalEditorState.zona;
+        document.getElementById('edPropBar').value = originalEditorState.barrio;
+        document.getElementById('edPropHab').value = originalEditorState.habitaciones;
+        document.getElementById('edPropBan').value = originalEditorState.baños;
+        document.getElementById('edPropGar').value = originalEditorState.garaje;
+        document.getElementById('edPropCocina').value = originalEditorState.cocina;
+        document.getElementById('edPropArea').value = originalEditorState.area;
+        document.getElementById('edPropDimensiones').value = originalEditorState.dimensiones;
+        document.getElementById('edPropAntiguedad').value = originalEditorState.antiguedad;
+        document.getElementById('edPropAire').value = originalEditorState.aire;
+        document.getElementById('edPropGFotos').value = originalEditorState.gfotos;
+        document.getElementById('edPropInmob').value = originalEditorState.inmob;
+        document.getElementById('edPropPropietario').value = originalEditorState.propietario;
+        document.getElementById('edPropCelulares').value = originalEditorState.celulares;
+        document.getElementById('edPropRenta').value = originalEditorState.renta;
+        document.getElementById('edPropDesc').value = originalEditorState.desc;
+        document.getElementById('edPropImgs').value = originalEditorState.imgs;
+        if (typeof updateEditorImgs === 'function') updateEditorImgs();
+        
+        originalEditorState = null; // Limpiar estado
+      } else {
+        abrirEditorProp(null, clickedLat, clickedLng);
+      }
       return;
     }
     // Close any active marker popup
@@ -7884,6 +7929,7 @@ function focusProperty(code) {
 
 // --- Lógica de Edición de Propiedades ---
 var mapAddMode = false;
+var originalEditorState = null;
 
 // Abre el formulario de nueva propiedad directamente, con coordenadas del centro del mapa
 function abrirNuevaPropiedad() {
@@ -7905,13 +7951,56 @@ function toggleMapAddMode(pfx) {
       mapAddMode = true;
       if (btn) btn.classList.add('active');
       toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
-      leafletMap.getContainer().style.cursor = 'crosshair';
+      if (leafletMap) {
+        leafletMap.getContainer().style.cursor = 'crosshair';
+        leafletMap.getContainer().classList.add('map-add-mode-active');
+      }
     }, 50);
   } else {
     mapAddMode = false;
     if (btn) btn.classList.remove('active');
-    leafletMap.getContainer().style.cursor = '';
+    if (leafletMap) {
+      leafletMap.getContainer().style.cursor = '';
+      leafletMap.getContainer().classList.remove('map-add-mode-active');
+    }
   }
+}
+
+function seleccionarCoordenadasEnMapa() {
+  // Capturar todos los campos actuales del formulario para no perder datos ingresados
+  originalEditorState = {
+    codigo: document.getElementById('edPropCod').value,
+    readOnly: document.getElementById('edPropCod').readOnly,
+    nombre: document.getElementById('edPropNom').value,
+    precio: document.getElementById('edPropPre').value,
+    tipo: document.getElementById('edPropTipo').value,
+    contrato: document.getElementById('edPropContrato').value,
+    zona: document.getElementById('edPropZona').value,
+    barrio: document.getElementById('edPropBar').value,
+    habitaciones: document.getElementById('edPropHab').value,
+    baños: document.getElementById('edPropBan').value,
+    garaje: document.getElementById('edPropGar').value,
+    cocina: document.getElementById('edPropCocina').value,
+    area: document.getElementById('edPropArea').value,
+    dimensiones: document.getElementById('edPropDimensiones').value,
+    antiguedad: document.getElementById('edPropAntiguedad').value,
+    aire: document.getElementById('edPropAire').value,
+    gfotos: document.getElementById('edPropGFotos').value,
+    inmob: document.getElementById('edPropInmob').value,
+    propietario: document.getElementById('edPropPropietario').value,
+    celulares: document.getElementById('edPropCelulares').value,
+    renta: document.getElementById('edPropRenta').value,
+    desc: document.getElementById('edPropDesc').value,
+    imgs: document.getElementById('edPropImgs').value,
+  };
+
+  // Cerrar el modal temporalmente
+  document.getElementById('modalEditorProp').classList.remove('open');
+  
+  // Activar modo agregar
+  toggleMapAddMode('nl');
+  
+  toast('Haz clic en cualquier punto del mapa para capturar las coordenadas', 'info');
 }
 
 function abrirEditorProp(codigo, lat, lng) {
@@ -7943,9 +8032,11 @@ function abrirEditorProp(codigo, lat, lng) {
   document.getElementById('edPropGar').value = p ? (p['Garaje'] || '') : '';
   document.getElementById('edPropArea').value = p ? (p['Área'] || '') : '';
   
-  // Prioridad: 1. Datos de la propiedad (p) si existen, 2. Argumentos (lat/lng), 3. Valor actual en el input
-  document.getElementById('edPropLat').value = (p && p['Latitud']) ? p['Latitud'] : (lat || currentLat);
-  document.getElementById('edPropLng').value = (p && p['Longitud']) ? p['Longitud'] : (lng || currentLng);
+  // Prioridad: 1. Argumentos explícitos (lat/lng) si se proporcionan (por ejemplo, al hacer clic en el mapa),
+  //            2. Datos de la propiedad (p) si existen en la base de datos,
+  //            3. Valor actual en el input
+  document.getElementById('edPropLat').value = lat !== undefined && lat !== null ? lat : ((p && p['Latitud']) ? p['Latitud'] : currentLat);
+  document.getElementById('edPropLng').value = lng !== undefined && lng !== null ? lng : ((p && p['Longitud']) ? p['Longitud'] : currentLng);
   
   document.getElementById('edPropContrato').value = p ? (p['Contrato'] || 'Venta') : 'Venta';
   document.getElementById('edPropUbicacion').value = p ? (p['DIRECCIÒN-VEREDA'] || p['Ubicación'] || '') : '';
@@ -8108,8 +8199,17 @@ async function guardarPropiedadEditor() {
       <div class="form-group"><label class="form-label">Antigüedad</label><input class="form-input" id="edPropAntiguedad"/></div>
       <div class="form-group"><label class="form-label">Aire Acondicionado</label><input class="form-input" id="edPropAire"/></div>
       <div class="form-group"><label class="form-label">Google Fotos (Link)</label><input class="form-input" id="edPropGFotos"/></div>
-      <div class="form-group"><label class="form-label">Latitud</label><input class="form-input" id="edPropLat"/></div>
-      <div class="form-group"><label class="form-label">Longitud</label><input class="form-input" id="edPropLng"/></div>
+      <div class="form-group">
+        <label class="form-label">Latitud</label>
+        <div style="display: flex; gap: 8px;">
+          <input class="form-input" id="edPropLat" style="flex: 1; min-width: 0;"/>
+          <button type="button" class="btn btn-gold btn-sm" onclick="seleccionarCoordenadasEnMapa()" title="Seleccionar en mapa" style="padding: 0 16px; border-radius: 12px; height: 42px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; margin: 0;">📍</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Longitud</label>
+        <input class="form-input" id="edPropLng"/>
+      </div>
       <div class="form-group"><label class="form-label">Inmobiliaria / Aliado</label><input class="form-input" id="edPropInmob" placeholder="Nombre de la inmobiliaria"/></div>
       <div class="form-group"><label class="form-label">Nombre del Propietario</label><input class="form-input" id="edPropPropietario"/></div>
       <div class="form-group"><label class="form-label">Celulares (Propietario)</label><input class="form-input" id="edPropCelulares"/></div>
