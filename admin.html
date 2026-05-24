@@ -8039,7 +8039,7 @@ function abrirEditorProp(codigo, lat, lng) {
   document.getElementById('edPropLat').value = lat !== undefined && lat !== null ? lat : ((p && p['Latitud']) ? p['Latitud'] : currentLat);
   document.getElementById('edPropLng').value = lng !== undefined && lng !== null ? lng : ((p && p['Longitud']) ? p['Longitud'] : currentLng);
   
-  document.getElementById('edPropContrato').value = p ? (p['Contrato'] || 'Venta') : 'Venta';
+  document.getElementById('edPropContrato').value = p ? (p['Contrato'] || 'Directo') : 'Directo';
   document.getElementById('edPropUbicacion').value = p ? (p['DIRECCIÒN-VEREDA'] || p['Ubicación'] || '') : '';
   document.getElementById('edPropCocina').value = p ? (p['Cocina'] || 'No') : 'No';
   document.getElementById('edPropGFotos').value = p ? (p['Google Fotos'] || '') : '';
@@ -8176,9 +8176,10 @@ async function guardarPropiedadEditor() {
       </div>
       <div class="form-group"><label class="form-label">Contrato</label>
         <select class="form-input" id="edPropContrato">
-          <option value="Venta">Venta</option>
-          <option value="Arriendo">Arriendo</option>
-          <option value="Venta/Arriendo">Venta/Arriendo</option>
+          <option value="Directo">Directo</option>
+          <option value="Aliado">Aliado</option>
+          <option value="Verbal">Verbal</option>
+          <option value="No Servicio">No Servicio</option>
         </select>
       </div>
       <div class="form-group"><label class="form-label">Zona</label><input class="form-input" id="edPropZona" placeholder="ej: Oriente"/></div>
@@ -8723,12 +8724,10 @@ function renderNuevaPropiedad() {
         </div>
         <div class="form-group"><label class="form-label">Contrato *</label>
           <select class="form-input" id="gp_contrato">
-            <option value="Venta">Venta</option>
-            <option value="Arriendo">Arriendo</option>
-            <option value="Venta/Arriendo">Venta/Arriendo</option>
+            <option value="Directo">Directo</option>
+            <option value="Aliado">Aliado</option>
             <option value="Verbal">Verbal</option>
-            <option value="Anti-crisis">Anti-crisis</option>
-            <option value="Permuta">Permuta</option>
+            <option value="No Servicio">No Servicio</option>
           </select>
         </div>
         <div class="form-group"><label class="form-label">Precio *</label><input class="form-input" id="gp_precio" type="text" placeholder="COP (Separador miles al escribir)" oninput="formatPrecioOnInput(this)"/></div>
@@ -9015,7 +9014,7 @@ function autofillPropiedadPorCodigo() {
   
   setVal('gp_nombre', p['Nombre'] || p['nombre']);
   setVal('gp_tipo', p['Tipo de inmueble'] || p['tipo'] || 'Apartamento');
-  setVal('gp_contrato', p['Contrato'] || p['contrato'] || 'Venta');
+  setVal('gp_contrato', p['Contrato'] || p['contrato'] || 'Directo');
   
   const precioEl = document.getElementById('gp_precio');
   const precioVal = p['Precio'] || p['precio'] || '';
@@ -9124,7 +9123,7 @@ function resetNuevaPropForm() {
     const el = document.getElementById(id);
     if (el) {
       if (id === 'gp_tipo') el.value = 'Apartamento';
-      else if (id === 'gp_contrato') el.value = 'Venta';
+      else if (id === 'gp_contrato') el.value = 'Directo';
       else if (id === 'gp_ciudad') el.value = 'Cali';
       else if (['gp_closets', 'gp_cortinas'].includes(id)) el.value = '0';
       else if (['gp_inventario', 'gp_ascensor', 'gp_reja_antejardin', 'gp_patio'].includes(id)) el.value = 'NO';
@@ -9554,7 +9553,7 @@ function gpVistaPrevia() {
     'Código': data.codigo || 'PREVIEW',
     'Nombre': data.nombre || 'Simulación de Propiedad',
     'Tipo de inmueble': data.tipo || 'Apartamento',
-    'Contrato': data.contrato || 'Venta',
+    'Contrato': data.contrato || 'Directo',
     'Precio': data.precio ? data.precio.replace(/[^\d]/g, "") : '0',
     'Barrio': data.barrio || 'El Ingenio',
     'Conjunto': data.conjunto || '',
@@ -10330,13 +10329,11 @@ function swShowReviewForm(data) {
       </div>
       <div class="form-group"><label class="form-label">Contrato</label>
         <select class="form-input ${emptyClass(data.contrato)}" id="gp_contrato">
-          <option value="Venta" ${data.contrato==='Venta'?'selected':''}>Venta</option>
-          <option value="Arriendo" ${data.contrato==='Arriendo'?'selected':''}>Arriendo</option>
-          <option value="Venta/Arriendo" ${data.contrato==='Venta/Arriendo'?'selected':''}>Venta/Arriendo</option>
+          <option value="Directo" ${data.contrato==='Directo'?'selected':''}>Directo</option>
+          <option value="Aliado" ${data.contrato==='Aliado'?'selected':''}>Aliado</option>
           <option value="Verbal" ${data.contrato==='Verbal'?'selected':''}>Verbal</option>
-          <option value="Anti-crisis" ${data.contrato==='Anti-crisis'?'selected':''}>Anti-crisis</option>
-          <option value="Permuta" ${data.contrato==='Permuta'?'selected':''}>Permuta</option>
-          ${data.contrato && !['Venta','Arriendo','Venta/Arriendo','Verbal','Anti-crisis','Permuta'].includes(data.contrato) ? `<option value="${data.contrato}" selected>${data.contrato}</option>` : ''}
+          <option value="No Servicio" ${data.contrato==='No Servicio'?'selected':''}>No Servicio</option>
+          ${data.contrato && !['Directo','Aliado','Verbal','No Servicio'].includes(data.contrato) ? `<option value="${data.contrato}" selected>${data.contrato}</option>` : ''}
         </select>
       </div>
       <div class="form-group"><label class="form-label">Precio *</label><input class="form-input ${emptyClass(data.precio)}" id="gp_precio" type="text" value="${priceStr}" oninput="formatPrecioOnInput(this)"/></div>
