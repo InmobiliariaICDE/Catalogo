@@ -3548,8 +3548,8 @@ function normalizarPropiedades(data) {
       else if (nk === 'barrio') k = 'Barrio';
       else if (nk === 'ciudad') k = 'Ciudad';
       else if (nk === 'estrato') k = 'Estrato';
-      else if (nk === 'ubicacion' || nk === 'direccion') k = 'Ubicación';
-      else if (nk === 'direccion-vereda' || nk === 'direccion_vereda') k = 'DIRECCIÒN-VEREDA';
+      else if (nk === 'ubicacion') k = 'Ubicación';
+      else if (nk === 'direccion' || nk === 'dirección' || nk === 'direccion-vereda' || nk === 'direccion_vereda') k = 'DIRECCIÓN';
       else if (nk === 'habitaciones' || nk === 'alcobas' || nk === 'cuartos') k = 'Habitaciones';
       else if (nk === 'banos' || nk === 'sanitarios') k = 'Baños';
       else if (nk === 'garaje' || nk === 'parqueadero' || nk === 'garajes') k = 'Garaje';
@@ -8040,7 +8040,7 @@ function abrirEditorProp(codigo, lat, lng) {
   document.getElementById('edPropLng').value = lng !== undefined && lng !== null ? lng : ((p && p['Longitud']) ? p['Longitud'] : currentLng);
   
   document.getElementById('edPropContrato').value = p ? (p['Contrato'] || 'Directo') : 'Directo';
-  document.getElementById('edPropUbicacion').value = p ? (p['DIRECCIÒN-VEREDA'] || p['Ubicación'] || '') : '';
+  document.getElementById('edPropUbicacion').value = p ? (p['DIRECCIÓN'] || p['DIRECCIÒN-VEREDA'] || p['Ubicación'] || '') : '';
   document.getElementById('edPropCocina').value = p ? (p['Cocina'] || 'No') : 'No';
   document.getElementById('edPropGFotos').value = p ? (p['Google Fotos'] || '') : '';
   document.getElementById('edPropPropietario').value = p ? (p['Nombre del Propietario'] || '') : '';
@@ -8101,7 +8101,7 @@ async function guardarPropiedadEditor() {
     'Contrato': document.getElementById('edPropContrato').value,
     'Zona': document.getElementById('edPropZona').value.trim(),
     'Barrio': document.getElementById('edPropBar').value.trim(),
-    'DIRECCIÒN-VEREDA': document.getElementById('edPropUbicacion').value.trim(),
+    'DIRECCIÓN': document.getElementById('edPropUbicacion').value.trim(),
     'Habitaciones': document.getElementById('edPropHab').value,
     'Baños': document.getElementById('edPropBan').value,
     'Garaje': document.getElementById('edPropGar').value,
@@ -9056,7 +9056,7 @@ function autofillPropiedadPorCodigo(selectedCode) {
   setVal('gp_estrato', p['Estrato'] || p['estrato']);
   
   // Dirección exacta (Ubicación posicional es distinto)
-  setVal('gp_ubicacion', p['Dirección'] || p['DIRECCIÒN-VEREDA'] || p['Dirección-Vereda'] || '');
+  setVal('gp_ubicacion', p['DIRECCIÓN'] || p['Dirección'] || p['DIRECCIÒN-VEREDA'] || p['Dirección-Vereda'] || '');
   
   setVal('gp_habitaciones', p['Habitaciones'] || p['habitaciones'] || '1');
   setVal('gp_banos', p['Baños'] || p['banos'] || '1');
@@ -9801,7 +9801,7 @@ async function guardarPropiedad(scraperAllyName = '') {
     'Ciudad': gpData.ciudad || 'Cali',
     'Estrato': gpData.estrato,
     'Ubicación': gpData.ubicacion_posicion || 'Medianera',
-    'DIRECCIÒN-VEREDA': gpData.ubicacion,
+    'DIRECCIÓN': gpData.ubicacion,
     'Habitaciones': gpData.habitaciones,
     'Baños': gpData.banos,
     'Garaje': gpData.garaje,

@@ -1,6 +1,6 @@
-keywords = ['kmz', 'allProps', 'remoteProps', 'customProps', 'matrix']
+keywords = ['DIRECCIÒN-VEREDA', 'DIRECCIÓN', 'Dirección', 'edPropUbicacion', 'gp_ubicacion', 'normalizar']
 output_lines = []
-for file in ['admin.html']:
+for file in ['admin.html', 'ExtractorFotos.gs']:
     try:
         with open(file, 'r', encoding='utf-8') as f:
             for i, line in enumerate(f):
