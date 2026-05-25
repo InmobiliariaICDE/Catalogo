@@ -2443,6 +2443,7 @@ function buildFiltrosBar(containerId, pfx, initVals){
             <button class="btn-map-control btn-map-add-mode" id="btnAddProp_nl" onclick="toggleMapAddMode('nl')" title="Agregar propiedad en el mapa">➕</button>
             <button class="btn-map-control" onclick="actualizarPinesMapa('${pfx}', true)" title="Recentrar mapa">🎯</button>
             <button class="btn-map-control" onclick="refreshData()" title="Actualizar datos">🔄</button>
+            <button class="btn-map-control" id="btnGeoMasivo" onclick="abrirGeocodificadorMasivo()" title="Asignar coordenadas a propiedades sin ubicación" style="background:rgba(190,137,57,.15);border-color:rgba(190,137,57,.5);color:#be8939;font-size:10px;padding:0 8px;height:32px;white-space:nowrap;">📍 Sin coords</button>
           </div>
         </div>
       </div>
@@ -8157,7 +8158,184 @@ async function guardarPropiedadEditor() {
   // Sugerencia de sincronización
   console.log("Para persistencia permanente, actualiza el Excel maestro con este JSON:", p);
 }
+
+// ═══════════════════════════════════════════════════════════
+// GEOCODIFICADOR MASIVO – asigna coordenadas a propiedades
+// sin lat/lng haciendo clic en el mapa, una por una.
+// ═══════════════════════════════════════════════════════════
+var _geoQueue = [];      // propiedades pendientes de geolocalizar
+var _geoIdx   = 0;       // índice actual
+var _geoMap   = null;    // instancia Leaflet dentro del modal
+var _geoMarker= null;    // marcador temporal
+var _geoWait  = false;   // esperando clic del usuario
+
+function abrirGeocodificadorMasivo() {
+  // Obtener propiedades SIN coordenadas
+  _geoQueue = allProps.filter(p => {
+    const lat = parseFloat(String(p['Latitud'] || '').replace(',','.'));
+    const lng = parseFloat(String(p['Longitud'] || '').replace(',','.'));
+    return isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0;
+  });
+  _geoIdx  = 0;
+  _geoWait = false;
+
+  if (_geoQueue.length === 0) {
+    toast('✅ Todas las propiedades ya tienen coordenadas', 'success');
+    return;
+  }
+
+  // Mostrar modal
+  document.getElementById('modalGeoMasivo').classList.add('open');
+
+  // Inicializar mapa dentro del modal
+  setTimeout(() => {
+    const cont = document.getElementById('geoMapContainer');
+    if (!_geoMap) {
+      _geoMap = L.map('geoMapContainer', { scrollWheelZoom: true })
+        .setView([2.9273, -75.2819], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap', maxZoom: 19
+      }).addTo(_geoMap);
+
+      _geoMap.on('click', (e) => {
+        if (!_geoWait) return;
+        const lat = e.latlng.lat.toFixed(7);
+        const lng = e.latlng.lng.toFixed(7);
+
+        // Colocar/mover marcador
+        if (_geoMarker) _geoMap.removeLayer(_geoMarker);
+        _geoMarker = L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: '',
+            html: `<div style="background:#be8939;color:#fff;padding:3px 7px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)">${_geoQueue[_geoIdx]['Código']}</div>`,
+            iconAnchor: [20, 12]
+          })
+        }).addTo(_geoMap);
+
+        // Mostrar coordenadas capturadas
+        document.getElementById('geoLatVal').textContent = lat;
+        document.getElementById('geoLngVal').textContent = lng;
+        document.getElementById('geoBtnConfirm').disabled = false;
+        _geoWait = false;
+
+        // Cambiar cursor
+        _geoMap.getContainer().style.cursor = '';
+      });
+    } else {
+      _geoMap.invalidateSize();
+    }
+    geoMostrarActual();
+  }, 400);
+}
+
+function geoMostrarActual() {
+  if (_geoIdx >= _geoQueue.length) {
+    document.getElementById('geoInfoBox').innerHTML = `
+      <div style="text-align:center;padding:20px;color:#4ade80;font-size:16px;font-weight:700">✅ ¡Listo! Todas las propiedades fueron geolocalizadas.</div>`;
+    document.getElementById('geoBtnPin').style.display = 'none';
+    document.getElementById('geoBtnSkip').style.display = 'none';
+    document.getElementById('geoBtnConfirm').style.display = 'none';
+    return;
+  }
+  const p = _geoQueue[_geoIdx];
+  const total = _geoQueue.length;
+
+  // Limpiar estado
+  _geoWait = false;
+  document.getElementById('geoBtnConfirm').disabled = true;
+  document.getElementById('geoLatVal').textContent = '—';
+  document.getElementById('geoLngVal').textContent = '—';
+  if (_geoMarker) { _geoMap.removeLayer(_geoMarker); _geoMarker = null; }
+
+  // Info de la propiedad
+  const imgSrc = (p['Imagenes']||'').split('|')[0].trim() || 'https://i.imgur.com/Pc9M3I8.png';
+  document.getElementById('geoInfoBox').innerHTML = `
+    <div style="display:flex;gap:12px;align-items:center">
+      <img src="${imgSrc}" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'" style="width:72px;height:60px;object-fit:cover;border-radius:6px;flex-shrink:0">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;color:#be8939;font-weight:700">${p['Código'] || ''}</div>
+        <div style="font-size:14px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p['Nombre'] || '(Sin nombre)'}</div>
+        <div style="font-size:11px;color:#999;margin-top:2px">${[p['Zona'],p['Barrio'],p['DIRECCIÓN']||p['Ubicación']].filter(Boolean).join(' • ')}</div>
+        <div style="font-size:11px;color:#4ade80;margin-top:2px;font-weight:600">${p['Precio'] ? '$'+Number(p['Precio']).toLocaleString('es-CO') : ''}</div>
+      </div>
+      <div style="font-size:11px;color:#666;text-align:right;flex-shrink:0">${_geoIdx+1} / ${total}</div>
+    </div>
+    <div style="margin-top:10px;background:rgba(255,255,255,.04);border-radius:6px;padding:6px 10px;display:flex;gap:16px;font-size:11px;color:#aaa">
+      <span>📍 Lat: <b id="geoLatVal" style="color:#fff">—</b></span>
+      <span>📍 Lng: <b id="geoLngVal" style="color:#fff">—</b></span>
+    </div>`;
+
+  // Si tiene barrio/zona, intentar centrar cerca
+  const zona = p['Zona'] || p['Barrio'] || '';
+  if (_geoMap) _geoMap.invalidateSize();
+}
+
+function geoActivarClic() {
+  if (_geoIdx >= _geoQueue.length) return;
+  _geoWait = true;
+  _geoMap.getContainer().style.cursor = 'crosshair';
+  document.getElementById('geoBtnPin').textContent = '🎯 Clic en el mapa...';
+  toast('Haz clic en el mapa para ubicar: ' + (_geoQueue[_geoIdx]['Código'] || ''), 'info');
+  setTimeout(() => { document.getElementById('geoBtnPin').textContent = '📍 Hacer clic en mapa'; }, 2000);
+}
+
+function geoConfirmar() {
+  const lat = document.getElementById('geoLatVal').textContent;
+  const lng = document.getElementById('geoLngVal').textContent;
+  if (lat === '—' || lng === '—') return;
+
+  const p = _geoQueue[_geoIdx];
+  const idx = allProps.findIndex(x => x['Código'] === p['Código']);
+  if (idx >= 0) {
+    allProps[idx]['Latitud']  = lat;
+    allProps[idx]['Longitud'] = lng;
+    // Sincronizar con Google Sheets
+    syncProperty(allProps[idx]);
+    toast(`✅ ${p['Código']} → ${lat}, ${lng}`, 'success');
+  }
+
+  _geoIdx++;
+  geoMostrarActual();
+}
+
+function geoSaltar() {
+  _geoWait = false;
+  if (_geoMarker) { _geoMap.removeLayer(_geoMarker); _geoMarker = null; }
+  _geoIdx++;
+  geoMostrarActual();
+}
+
+function cerrarGeoMasivo() {
+  _geoWait = false;
+  if (_geoMap) _geoMap.getContainer().style.cursor = '';
+  document.getElementById('modalGeoMasivo').classList.remove('open');
+  actualizarPinesMapa('nl');
+}
 </script>
+
+<!-- MODAL GEOCODIFICADOR MASIVO -->
+<div class="modal-overlay" id="modalGeoMasivo" onclick="if(event.target===this) cerrarGeoMasivo()" style="z-index:3000">
+  <div class="modal-box large" style="max-width:900px;width:96%;max-height:92vh;display:flex;flex-direction:column;gap:0;padding:0;overflow:hidden">
+    <!-- Header -->
+    <div style="padding:14px 18px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:#fff">📍 Geocodificador Masivo</div>
+        <div style="font-size:11px;color:#888;margin-top:2px">Haz clic en el mapa para asignar coordenadas a cada propiedad</div>
+      </div>
+      <button onclick="cerrarGeoMasivo()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">×</button>
+    </div>
+    <!-- Info propiedad actual -->
+    <div id="geoInfoBox" style="padding:12px 16px;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0;min-height:90px"></div>
+    <!-- Botones de acción -->
+    <div style="padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;gap:10px;flex-shrink:0">
+      <button id="geoBtnPin" onclick="geoActivarClic()" style="flex:1;height:36px;background:rgba(190,137,57,.15);border:1px solid rgba(190,137,57,.5);color:#be8939;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px">📍 Hacer clic en mapa</button>
+      <button id="geoBtnConfirm" onclick="geoConfirmar()" disabled style="flex:1;height:36px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.4);color:#4ade80;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px">✅ Confirmar y siguiente</button>
+      <button id="geoBtnSkip" onclick="geoSaltar()" style="height:36px;padding:0 18px;background:rgba(255,255,255,.05);border:1px solid var(--border);color:#888;border-radius:8px;cursor:pointer;font-size:12px">⏭ Saltar</button>
+    </div>
+    <!-- Mapa -->
+    <div id="geoMapContainer" style="flex:1;min-height:380px"></div>
+  </div>
+</div>
 
 <!-- MODAL EDITOR PROPIEDAD -->
 <div class="modal-overlay" id="modalEditorProp" onclick="if(event.target===this) closeModal('modalEditorProp')">
