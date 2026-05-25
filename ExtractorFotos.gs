@@ -798,7 +798,8 @@ function doPost(e) {
         if (nk === 'zona' || nk === 'sector') return prop['Zona'] || '';
         if (nk === 'barrio') return prop['Barrio'] || '';
         if (nk === 'contrato') return prop['Contrato'] || '';
-        if (nk.includes('ubicaci') || nk === 'direccion') return prop['Ubicación'] || '';
+        if (nk === 'ubicacion') return prop['Ubicación'] || '';
+        if (nk === 'direccion' || nk === 'direccionvereda') return prop['DIRECCIÓN'] || prop['DIRECCIÒN-VEREDA'] || '';
         if (nk.includes('habitaci') || nk === 'alcobas' || nk === 'cuartos') return prop['Habitaciones'] || '';
         if (nk.includes('bano') || nk === 'sanitarios') return prop['Baños'] || '';
         if (nk.includes('garaje') || nk.includes('parquea')) return prop['Garaje'] || '';
