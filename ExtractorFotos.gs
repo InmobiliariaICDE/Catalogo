@@ -777,6 +777,11 @@ function doPost(e) {
       return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
     }
     
+    if (action === 'batchSaveCoords' && params) {
+      var res = batchSaveCoords(params.coords);
+      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+    }
+    
     if (action === 'appendRow') {
       var prop = params || JSON.parse(e.postData.contents);
       var ss = SpreadsheetApp.openById(SHEET_ID);
@@ -1031,4 +1036,84 @@ function saveCoords(codigo, lat, lng) {
   sheet.getRange(rowIndex, lngIdx + 1).setValue(lng);
 
   return { success: true, row: rowIndex, lat: lat, lng: lng };
+}
+
+function batchSaveCoords(coordsArray) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Base de Datos')
+    || ss.getSheetByName('Hoja1')
+    || ss.getSheetByName('Propiedades')
+    || ss.getSheets()[0];
+
+  if (!sheet) return { success: false, error: 'No se encontró la hoja' };
+
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  var norm = function(h) {
+    return String(h || '').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  };
+
+  var codIdx = -1;
+  var latIdx = -1;
+  var lngIdx = -1;
+
+  headers.forEach(function(h, i) {
+    var nk = norm(h);
+    if (nk === 'codigo' || nk === 'cdigo' || nk === 'cod' || nk === 'id') codIdx = i;
+    if (nk === 'latitud' || nk === 'lat') latIdx = i;
+    if (nk === 'longitud' || nk === 'lng' || nk === 'lon') lngIdx = i;
+  });
+
+  if (codIdx === -1) return { success: false, error: 'No se encontró columna Código' };
+
+  if (latIdx === -1) {
+    latIdx = sheet.getLastColumn();
+    sheet.getRange(1, latIdx + 1).setValue('Latitud');
+    headers.push('Latitud');
+  }
+  if (lngIdx === -1) {
+    lngIdx = sheet.getLastColumn();
+    sheet.getRange(1, lngIdx + 1).setValue('Longitud');
+    headers.push('Longitud');
+  }
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return { success: true, count: 0 };
+  
+  var codRange = sheet.getRange(2, codIdx + 1, lastRow - 1, 1);
+  var codValues = codRange.getValues();
+
+  var codToRow = {};
+  for (var i = 0; i < codValues.length; i++) {
+    var cStr = String(codValues[i][0]).trim().toLowerCase();
+    if (cStr) {
+      codToRow[cStr] = i + 2;
+    }
+  }
+
+  var count = 0;
+  var startCol = Math.min(latIdx, lngIdx);
+  var colCount = Math.abs(latIdx - lngIdx) + 1;
+  
+  var latLngRange = sheet.getRange(2, startCol + 1, lastRow - 1, colCount);
+  var latLngValues = latLngRange.getValues();
+  
+  var relLatIdx = latIdx - startCol;
+  var relLngIdx = lngIdx - startCol;
+
+  coordsArray.forEach(function(item) {
+    var cStr = String(item.codigo || '').trim().toLowerCase();
+    var row = codToRow[cStr];
+    if (row) {
+      var relRowIdx = row - 2;
+      latLngValues[relRowIdx][relLatIdx] = item.lat;
+      latLngValues[relRowIdx][relLngIdx] = item.lng;
+      count++;
+    }
+  });
+
+  latLngRange.setValues(latLngValues);
+
+  return { success: true, count: count };
 }
