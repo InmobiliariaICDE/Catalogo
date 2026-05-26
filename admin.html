@@ -3573,7 +3573,8 @@ function normalizarPropiedades(data) {
       else if (nk === 'area lote' || nk === 'area de lote' || nk.includes('area lote')) k = 'Área lote';
       else if (nk === 'closet' || nk === 'closets') k = 'Closet';
       else if (nk === 'inventario') k = 'Inventario';
-      else if (nk === 'celulares' || nk === 'celular propietario' || nk.includes('celular')) k = 'Celulares';
+      else if (nk === 'celular 2') k = 'Celular 2';
+      else if (nk === 'celular' || nk === 'celulares' || nk === 'celular propietario' || nk === 'celular 1') k = 'Celular 1';
       else if (nk === 'nombre del propietario' || nk === 'propietario') k = 'Nombre del Propietario';
       else if (nk === 'cuanto renta' || nk === 'cuanto renta ($)' || nk === 'renta') k = 'Cuánto Renta ($)';
       else if (nk === 'ascensor') k = 'Ascensor';
@@ -3612,7 +3613,8 @@ function normalizarPropiedades(data) {
         else if (nk.includes('area lote') || nk.includes('area de lote')) k = 'Área lote';
         else if (nk.includes('closet')) k = 'Closet';
         else if (nk.includes('inventario')) k = 'Inventario';
-        else if (nk.includes('celulares')) k = 'Celulares';
+        else if (nk.includes('celular 2')) k = 'Celular 2';
+        else if (nk.includes('celular') || nk.includes('celulares')) k = 'Celular 1';
         else if (nk.includes('propietario')) k = 'Nombre del Propietario';
         else if (nk.includes('renta')) k = 'Cuánto Renta ($)';
         else if (nk.includes('ascensor')) k = 'Ascensor';
@@ -7484,6 +7486,7 @@ function initMapa(pfx) {
           document.getElementById('edPropInmob').value = originalEditorState.inmob;
           document.getElementById('edPropPropietario').value = originalEditorState.propietario;
           document.getElementById('edPropCelulares').value = originalEditorState.celulares;
+          document.getElementById('edPropCelular2').value = originalEditorState.celular2;
           document.getElementById('edPropRenta').value = originalEditorState.renta;
           document.getElementById('edPropDesc').value = originalEditorState.desc;
           document.getElementById('edPropImgs').value = originalEditorState.imgs;
@@ -8058,6 +8061,7 @@ function seleccionarCoordenadasEnMapa() {
     inmob: document.getElementById('edPropInmob').value,
     propietario: document.getElementById('edPropPropietario').value,
     celulares: document.getElementById('edPropCelulares').value,
+    celular2: document.getElementById('edPropCelular2').value,
     renta: document.getElementById('edPropRenta').value,
     desc: document.getElementById('edPropDesc').value,
     imgs: document.getElementById('edPropImgs').value,
@@ -8119,7 +8123,8 @@ function abrirEditorProp(codigo, lat, lng) {
   document.getElementById('edPropCocina').value = p ? (p['Cocina'] || 'No') : 'No';
   document.getElementById('edPropGFotos').value = p ? (p['Google Fotos'] || '') : '';
   document.getElementById('edPropPropietario').value = p ? (p['Nombre del Propietario'] || '') : '';
-  document.getElementById('edPropCelulares').value = p ? (p['Celulares'] || '') : '';
+  document.getElementById('edPropCelulares').value = p ? (p['Celular 1'] || p['Celulares'] || '') : '';
+  document.getElementById('edPropCelular2').value = p ? (p['Celular 2'] || '') : '';
   document.getElementById('edPropRenta').value = p ? (p['Cuánto Renta ($)'] || '') : '';
   document.getElementById('edPropDimensiones').value = p ? (p['Dimensiones'] || '') : '';
   document.getElementById('edPropAire').value = p ? (p['Aire Acondicionado'] || '') : '';
@@ -8190,6 +8195,8 @@ async function guardarPropiedadEditor() {
     'Longitud': document.getElementById('edPropLng').value.trim(),
     'Inmobiliaria': document.getElementById('edPropInmob').value.trim(),
     'Nombre del Propietario': document.getElementById('edPropPropietario').value.trim(),
+    'Celular 1': document.getElementById('edPropCelulares').value.trim(),
+    'Celular 2': document.getElementById('edPropCelular2').value.trim(),
     'Celulares': document.getElementById('edPropCelulares').value.trim(),
     'Cuánto Renta ($)': document.getElementById('edPropRenta').value.trim(),
     'Descripción': document.getElementById('edPropDesc').value.trim(),
@@ -8628,7 +8635,8 @@ function _activarModoAgregarMapaDirecto() {
       </div>
       <div class="form-group"><label class="form-label">Inmobiliaria / Aliado</label><input class="form-input" id="edPropInmob" placeholder="Nombre de la inmobiliaria"/></div>
       <div class="form-group"><label class="form-label">Nombre del Propietario</label><input class="form-input" id="edPropPropietario"/></div>
-      <div class="form-group"><label class="form-label">Celulares (Propietario)</label><input class="form-input" id="edPropCelulares"/></div>
+      <div class="form-group"><label class="form-label">Celular 1</label><input class="form-input" id="edPropCelulares"/></div>
+      <div class="form-group"><label class="form-label">Celular 2</label><input class="form-input" id="edPropCelular2"/></div>
       <div class="form-group"><label class="form-label">Cuánto Renta ($)</label><input class="form-input" id="edPropRenta"/></div>
       <div class="form-group full"><label class="form-label">Descripción</label><textarea class="form-input" id="edPropDesc" style="min-height:80px;"></textarea></div>
       <div class="form-group full">
@@ -8860,7 +8868,8 @@ function abrirModalProp(codigoOrProp){
     ['Administración', p['Administración'] || p['Administracion'] || ''],
     ['Retorno de la inversión', p['Retorno de la inversión'] || p['Rentabilidad'] || p['rentabilidad'] || ''],
     ['Propietario', p['Nombre del Propietario']],
-    ['Celulares Propietario', p['Celulares']],
+    ['Celular 1', p['Celular 1'] || p['Celulares']],
+    ['Celular 2', p['Celular 2']],
     ['Cuánto Renta', p['Cuánto Renta ($)'] ? `$${Number(p['Cuánto Renta ($)']).toLocaleString('es-CO')}` : ''],
     ['Inventario', p['Inventario']]
   ];
@@ -9240,7 +9249,8 @@ function renderNuevaPropiedad() {
             <option value="SI">SI</option>
           </select>
         </div>
-        <div class="form-group"><label class="form-label">Celulares (Propietario)</label><input class="form-input" id="gp_celulares" type="text" placeholder="Celulares"/></div>
+        <div class="form-group"><label class="form-label">Celular 1</label><input class="form-input" id="gp_celulares" type="text" placeholder="Celular 1"/></div>
+        <div class="form-group"><label class="form-label">Celular 2</label><input class="form-input" id="gp_celular_2" type="text" placeholder="Celular 2"/></div>
         <div class="form-group"><label class="form-label">Nombre del Propietario</label><input class="form-input" id="gp_propietario" type="text" placeholder="Propietario"/></div>
         <div class="form-group"><label class="form-label">Cuánto Renta ($)</label><input class="form-input" id="gp_renta" type="text" placeholder="Cuánto renta" oninput="formatPrecioOnInput(this)"/></div>
         <div class="form-group"><label class="form-label">Ascensor</label>
@@ -9517,8 +9527,9 @@ function autofillPropiedadPorCodigo(selectedCode) {
   setVal('gp_area_lote', p['Área lote'] || p['Área de lote'] || p['areaLote'] || '');
   setVal('gp_closets', p['Closet'] || p['Closets'] || p['closet'] || '0');
   setVal('gp_inventario', p['Inventario'] || p['inventario'] || 'NO');
-  setVal('gp_celulares', p['Celulares'] || p['celulares'] || '');
-  setVal('gp_propietario', p['Nombre del Propietario'] || p['propietario'] || p['Nombre del propietario'] || '');
+  setVal('gp_celulares', p['Celular 1'] || p['Celulares'] || p['celulares'] || '');
+  setVal('gp_celular_2', p['Celular 2'] || p['celular 2'] || p['celular_2'] || '');
+  setVal('gp_propietario', p['Nombre del Propietario'] || p['propietario'] || p['Nombre del propietario'] || p['PROPIETARIO'] || '');
   
   const rentaEl = document.getElementById('gp_renta');
   if (rentaEl) {
@@ -9661,6 +9672,7 @@ function getNuevaPropData() {
     closets: document.getElementById('gp_closets')?.value || '0',
     inventario: document.getElementById('gp_inventario')?.value || 'NO',
     celulares: document.getElementById('gp_celulares')?.value || '',
+    celular_2: document.getElementById('gp_celular_2')?.value || '',
     propietario: document.getElementById('gp_propietario')?.value || '',
     renta: document.getElementById('gp_renta')?.value || '',
     ascensor: document.getElementById('gp_ascensor')?.value || 'NO',
@@ -10047,6 +10059,8 @@ function gpVistaPrevia() {
     'Área lote': data.area_lote || '',
     'Closet': data.closets || '0',
     'Inventario': data.inventario || 'NO',
+    'Celular 1': data.celulares || '',
+    'Celular 2': data.celular_2 || '',
     'Celulares': data.celulares || '',
     'Nombre del Propietario': data.propietario || '',
     'Cuánto Renta ($)': data.renta ? data.renta.replace(/[^\d]/g, "") : '',
@@ -10172,7 +10186,7 @@ function showDuplicateModal(newProp, oldProp, onConfirm) {
 function resetNuevaPropForm() {
   const ids = [
     'gp_codigo', 'gp_nombre', 'gp_precio', 'gp_barrio', 'gp_conjunto', 'gp_zona', 'gp_ubicacion', 'gp_area', 'gp_administracion', 'gp_rentabilidad', 'gp_descripcion', 'gp_puntos_clave', 'gp_lat', 'gp_lng', 'gp_gfotos', 'gp_inmobiliaria',
-    'gp_comuna', 'gp_area_lote', 'gp_celulares', 'gp_propietario', 'gp_renta', 'gp_cortinas', 'gp_aire_acondicionado', 'gp_antiguedad', 'gp_dimensiones'
+    'gp_comuna', 'gp_area_lote', 'gp_celulares', 'gp_celular_2', 'gp_propietario', 'gp_renta', 'gp_cortinas', 'gp_aire_acondicionado', 'gp_antiguedad', 'gp_dimensiones'
   ];
   ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   
@@ -10252,6 +10266,8 @@ async function guardarPropiedad(scraperAllyName = '') {
     'Área lote': gpData.area_lote,
     'Closet': gpData.closets,
     'Inventario': gpData.inventario,
+    'Celular 1': gpData.celulares,
+    'Celular 2': gpData.celular_2,
     'Celulares': gpData.celulares,
     'Nombre del Propietario': gpData.propietario,
     'Cuánto Renta ($)': gpData.renta ? gpData.renta.replace(/[^\d]/g, "") : '',
@@ -10857,7 +10873,8 @@ function swShowReviewForm(data) {
           <option value="SI" ${normSiNo(data.inventario) === 'SI' ? 'selected' : ''}>SI</option>
         </select>
       </div>
-      <div class="form-group"><label class="form-label">Celulares (Propietario)</label><input class="form-input ${emptyClass(data.celulares)}" id="gp_celulares" type="text" value="${emptyCheck(data.celulares)}" placeholder="Celulares"/></div>
+      <div class="form-group"><label class="form-label">Celular 1</label><input class="form-input ${emptyClass(data.celulares)}" id="gp_celulares" type="text" value="${emptyCheck(data.celulares)}" placeholder="Celular 1"/></div>
+      <div class="form-group"><label class="form-label">Celular 2</label><input class="form-input ${emptyClass(data.celular_2 || data.celular2)}" id="gp_celular_2" type="text" value="${emptyCheck(data.celular_2 || data.celular2)}" placeholder="Celular 2"/></div>
       <div class="form-group"><label class="form-label">Nombre del Propietario</label><input class="form-input ${emptyClass(data.propietario)}" id="gp_propietario" type="text" value="${emptyCheck(data.propietario)}" placeholder="Propietario"/></div>
       <div class="form-group"><label class="form-label">Cuánto Renta ($)</label><input class="form-input ${emptyClass(data.renta)}" id="gp_renta" type="text" value="${rentaStr}" oninput="formatPrecioOnInput(this)" placeholder="Cuánto renta"/></div>
       <div class="form-group"><label class="form-label">Ascensor</label>
