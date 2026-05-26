@@ -7426,6 +7426,8 @@ function initMapa(pfx) {
       document.querySelectorAll('.btn-map-add-mode').forEach(b => b.classList.remove('active'));
       leafletMap.getContainer().style.cursor = '';
       leafletMap.getContainer().classList.remove('map-add-mode-active');
+      const banner = document.getElementById('mapAddModeBanner');
+      if (banner) banner.style.display = 'none';
       if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
       
       const clickedLat = e.latlng.lat;
@@ -8029,6 +8031,8 @@ function toggleMapAddMode(pfx) {
       leafletMap.getContainer().style.cursor = '';
       leafletMap.getContainer().classList.remove('map-add-mode-active');
     }
+    const banner = document.getElementById('mapAddModeBanner');
+    if (banner) banner.style.display = 'none';
   }
 }
 
@@ -8503,14 +8507,27 @@ function crearNuevaPropDesdeMapa() {
 
 function _activarModoAgregarMapaDirecto() {
   const btn = document.getElementById('btnAddProp_nl');
-  setTimeout(() => {
-    mapAddMode = true;
-    if (btn) btn.classList.add('active');
-    if (leafletMap) {
-      leafletMap.getContainer().style.cursor = 'crosshair';
-      leafletMap.getContainer().classList.add('map-add-mode-active');
-    }
-  }, 50);
+  // Asegurarse de que el mapa esté inicializado
+  if (!leafletMap) {
+    toast('Primero activa el mapa con el toggle 🗺', 'error');
+    return;
+  }
+  mapAddMode = true;
+  if (btn) btn.classList.add('active');
+  leafletMap.getContainer().style.cursor = 'crosshair';
+  leafletMap.getContainer().classList.add('map-add-mode-active');
+  // Banner visual en el mapa
+  let banner = document.getElementById('mapAddModeBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'mapAddModeBanner';
+    banner.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:2000;background:rgba(34,197,94,0.92);color:#fff;font-family:Outfit,sans-serif;font-size:13px;font-weight:700;padding:8px 18px;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,0.35);pointer-events:none;white-space:nowrap;';
+    banner.textContent = '🖱 Haz clic en el mapa para ubicar la propiedad';
+    const mapDiv = leafletMap.getContainer();
+    if (mapDiv) mapDiv.style.position = 'relative';
+    leafletMap.getContainer().parentElement.appendChild(banner);
+  }
+  banner.style.display = '';
 }
 </script>
 
