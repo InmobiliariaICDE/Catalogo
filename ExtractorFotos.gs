@@ -547,7 +547,7 @@ var CAMPOS_FB = [
   'Piscina', 'Administración', 'Retorno de la Inversión',
   'Image', 'Google Fotos', 'Descripción', 'Puntos Clave',
   'Buscar', 'Cocina', 'Contrato', 'Inmobiliaria', 'Imagenes', 'Publicar',
-  'CELULAR', 'CELULAR 2', 'PROPIETARIO', 'Cuánto Renta ($)', 'Dimensiones',
+  'CELULAR', 'CELULAR 2', 'PROPIETARIO', 'RENTAB.', 'Dimensiones',
   'Aire Acondicionado', 'Antigüedad del Inmueble', 'Ascensor', 'Número de Cortinas',
   'Reja Antejardín', 'Patio', 'DIRECCIÓN'
 ];
@@ -839,7 +839,7 @@ function doPost(e) {
         if (nk === 'celular' || nk === 'celulares') return prop['Celular 1'] || prop['Celulares'] || '';
         if (nk === 'celular 2') return prop['Celular 2'] || '';
         if (nk === 'propietario' || nk === 'nombre del propietario') return prop['Nombre del Propietario'] || prop['PROPIETARIO'] || '';
-        if (nk === 'cuanto renta' || nk === 'cuanto renta ($)') return prop['Cuánto Renta ($)'] || '';
+        if (nk === 'cuanto renta' || nk === 'cuanto renta ($)' || nk === 'rentab' || nk === 'rentab.') return prop['Cuánto Renta ($)'] || prop['RENTAB.'] || '';
         if (nk === 'ascensor') return prop['Ascensor'] || '';
         if (nk === 'numero de cortinas' || nk === 'cortinas') return prop['Número de Cortinas'] || '';
         if (nk === 'aire acondicionado' || nk === 'aire') return prop['Aire Acondicionado'] || '';
