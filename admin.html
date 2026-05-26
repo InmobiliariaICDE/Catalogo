@@ -8418,8 +8418,8 @@ function filtrarPropsParaMapa(q) {
   const container = document.getElementById('searchPropMapaResults');
   const query = (q || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   
-  // Filtrar allProps (excluyendo isKmzOnly)
   const matches = allProps.filter(p => {
+    if (!p) return false;
     if (p.isKmzOnly) return false;
     // Si no hay búsqueda, sugerir las primeras 5 propiedades que NO tengan coordenadas
     if (!query) {
@@ -9214,7 +9214,6 @@ function renderNuevaPropiedad() {
             <option value="Intermedia">Intermedia</option>
           </select>
         </div>
-        <div class="form-group"><label class="form-label">Área (m²)</label><input class="form-input" id="gp_area" type="number" placeholder="m²"/></div>
         <div class="form-group"><label class="form-label">Google Fotos (Link Álbum)</label>
           <input class="form-input" id="gp_gfotos" type="text" placeholder="https://photos.app.goo.gl/..." oninput="debounceGFotosPreview(this.value)"/>
           <div id="gp_gfotos_preview" style="margin-top:10px;"></div>
@@ -9225,6 +9224,7 @@ function renderNuevaPropiedad() {
         
         <div class="form-group"><label class="form-label">Comuna</label><input class="form-input" id="gp_comuna" type="text" placeholder="Comuna"/></div>
         <div class="form-group"><label class="form-label">Área de Lote (m²)</label><input class="form-input" id="gp_area_lote" type="number" placeholder="m²"/></div>
+        <div class="form-group"><label class="form-label">Área (m²)</label><input class="form-input" id="gp_area" type="number" placeholder="m²"/></div>
         <div class="form-group"><label class="form-label">Clósets</label>
           <select class="form-input" id="gp_closets">
             <option value="0">0</option>
@@ -10836,17 +10836,17 @@ function swShowReviewForm(data) {
           <option value="3+" ${data.garaje==='3+'?'selected':''}>3+</option>
         </select>
       </div>
-      <div class="form-group"><label class="form-label">Área (m²)</label><input class="form-input ${emptyClass(data.area)}" id="gp_area" type="number" value="${emptyCheck(data.area)}"/></div>
       <div class="form-group"><label class="form-label">Google Fotos (Álbum)</label>
         <input class="form-input ${emptyClass(data.googleFotos)}" id="gp_gfotos" type="text" value="${emptyCheck(data.googleFotos)}" oninput="debounceGFotosPreview(this.value)"/>
         <div id="gp_gfotos_preview" style="margin-top:10px;"></div>
       </div>
-      <div class="form-group"><label class="form-label">Inmobiliaria / Aliado</label><input class="form-input" id="gp_inmobiliaria" type="text" value="${document.getElementById('sw_aliado').value}" readonly/></div>
+      <div class="form-group"><label class="form-label">Inmobiliaria / Aliado</label><input class="form-input" id="gp_inmobiliaria" type="text" value="${document.getElementById('sw_aliado')?.value || ''}" readonly/></div>
       <div class="form-group"><label class="form-label">Administración ($)</label><input class="form-input" id="gp_administracion" type="text" value="" oninput="formatPrecioOnInput(this)"/></div>
       <div class="form-group"><label class="form-label">Retorno inversión</label><input class="form-input" id="gp_rentabilidad" type="text" placeholder="Ej: 8% anual"/></div>
       
       <div class="form-group"><label class="form-label">Comuna</label><input class="form-input ${emptyClass(data.comuna)}" id="gp_comuna" type="text" value="${emptyCheck(data.comuna)}" placeholder="Comuna"/></div>
       <div class="form-group"><label class="form-label">Área de Lote (m²)</label><input class="form-input ${emptyClass(data.areaLote)}" id="gp_area_lote" type="number" value="${emptyCheck(data.areaLote)}" placeholder="m²"/></div>
+      <div class="form-group"><label class="form-label">Área (m²)</label><input class="form-input ${emptyClass(data.area)}" id="gp_area" type="number" value="${emptyCheck(data.area)}"/></div>
       <div class="form-group"><label class="form-label">Clósets</label>
         <select class="form-input ${emptyClass(data.closets)}" id="gp_closets">
           ${['0','1','2','3','4','5+'].map(val => `<option value="${val}" ${closetsVal === val ? 'selected' : ''}>${val}</option>`).join('')}
