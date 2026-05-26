@@ -761,8 +761,24 @@ function doGet(e) {
 function doPost(e) {
   try {
     var action = e.parameter.action;
+    var params = null;
+    
+    if (e.postData && e.postData.contents) {
+      try {
+        params = JSON.parse(e.postData.contents);
+        if (params && params.action && !action) {
+          action = params.action;
+        }
+      } catch (e_json) {}
+    }
+    
+    if (action === 'saveCoords' && params) {
+      var res = saveCoords(params.codigo, params.lat, params.lng);
+      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+    }
+    
     if (action === 'appendRow') {
-      var prop = JSON.parse(e.postData.contents);
+      var prop = params || JSON.parse(e.postData.contents);
       var ss = SpreadsheetApp.openById(SHEET_ID);
       var sheet = ss.getSheetByName(HOJA_NOMBRE);
       if (!sheet) {
@@ -956,4 +972,63 @@ function sincronizarOrden() {
     var docId  = String(codigo).replace(/[^a-zA-Z0-9]/g, '_');
     UrlFetchApp.fetch(FIRESTORE_BASE + '/propiedades/' + docId + '?updateMask.fieldPaths=_sheetOrder', { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, payload: JSON.stringify({ fields: { _sheetOrder: { integerValue: String(r + 1) } } }), muteHttpExceptions: true });
   }
+}
+
+function saveCoords(codigo, lat, lng) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Base de Datos')
+    || ss.getSheetByName('Hoja1')
+    || ss.getSheetByName('Propiedades')
+    || ss.getSheets()[0];
+
+  if (!sheet) return { success: false, error: 'No se encontró la hoja' };
+
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  var norm = function(h) {
+    return String(h || '').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  };
+
+  var codIdx = -1;
+  var latIdx = -1;
+  var lngIdx = -1;
+
+  headers.forEach(function(h, i) {
+    var nk = norm(h);
+    if (nk === 'codigo' || nk === 'cdigo' || nk === 'cod' || nk === 'id') codIdx = i;
+    if (nk === 'latitud' || nk === 'lat') latIdx = i;
+    if (nk === 'longitud' || nk === 'lng' || nk === 'lon') lngIdx = i;
+  });
+
+  if (codIdx === -1) return { success: false, error: 'No se encontró columna Código' };
+
+  if (latIdx === -1) {
+    latIdx = sheet.getLastColumn();
+    sheet.getRange(1, latIdx + 1).setValue('Latitud');
+    headers.push('Latitud');
+  }
+  if (lngIdx === -1) {
+    lngIdx = sheet.getLastColumn();
+    sheet.getRange(1, lngIdx + 1).setValue('Longitud');
+    headers.push('Longitud');
+  }
+
+  var lastRow = sheet.getLastRow();
+  var codValues = sheet.getRange(2, codIdx + 1, lastRow - 1, 1).getValues();
+
+  var rowIndex = -1;
+  for (var i = 0; i < codValues.length; i++) {
+    if (String(codValues[i][0]).trim() === String(codigo).trim()) {
+      rowIndex = i + 2;
+      break;
+    }
+  }
+
+  if (rowIndex === -1) return { success: false, error: 'Código no encontrado: ' + codigo };
+
+  sheet.getRange(rowIndex, latIdx + 1).setValue(lat);
+  sheet.getRange(rowIndex, lngIdx + 1).setValue(lng);
+
+  return { success: true, row: rowIndex, lat: lat, lng: lng };
 }
