@@ -3559,8 +3559,7 @@ function normalizarPropiedades(data) {
       else if (nk === 'conjunto' || nk === 'edificio' || nk === 'unidad') k = 'Conjunto';
       else if (nk === 'descripcion' || nk === 'detalle') k = 'Descripción';
       else if (nk === 'puntos clave' || nk === 'caracteristicas' || nk === 'highlights') k = 'Puntos Clave';
-      else if (nk === 'area construida' || nk === 'area construida m2' || nk === 'area total') k = 'Área construida';
-      else if (nk === 'area' || nk === 'mt2' || nk === 'superficie') k = 'Área';
+      else if (nk === 'area construida' || nk === 'area construida m2' || nk === 'area total' || nk === 'area' || nk === 'mt2' || nk === 'superficie') k = 'Área Construida';
       else if (nk === 'imagenes' || nk === 'fotos' || nk === 'imagen' || nk === 'galeria') k = 'Imagenes';
       else if (nk === 'contrato') k = 'Contrato';
       else if (nk === 'publicar') k = 'Publicar';
@@ -8107,7 +8106,7 @@ function abrirEditorProp(codigo, lat, lng) {
   document.getElementById('edPropHab').value = p ? (p['Habitaciones'] || '') : '';
   document.getElementById('edPropBan').value = p ? (p['Baños'] || '') : '';
   document.getElementById('edPropGar').value = p ? (p['Garaje'] || '') : '';
-  document.getElementById('edPropArea').value = p ? (p['Área'] || '') : '';
+  document.getElementById('edPropArea').value = p ? (p['Área Construida'] || p['Área'] || '') : '';
   
   // Prioridad: 1. Argumentos explícitos (lat/lng) si se proporcionan (por ejemplo, al hacer clic en el mapa),
   //            2. Datos de la propiedad (p) si existen en la base de datos,
@@ -8182,7 +8181,7 @@ async function guardarPropiedadEditor() {
     'Baños': document.getElementById('edPropBan').value,
     'Garaje': document.getElementById('edPropGar').value,
     'Cocina': document.getElementById('edPropCocina').value,
-    'Área': document.getElementById('edPropArea').value.trim(),
+    'Área Construida': document.getElementById('edPropArea').value.trim(),
     'Dimensiones': document.getElementById('edPropDimensiones').value.trim(),
     'Antigüedad del Inmueble': document.getElementById('edPropAntiguedad').value.trim(),
     'Aire Acondicionado': document.getElementById('edPropAire').value.trim(),
@@ -8611,7 +8610,7 @@ function _activarModoAgregarMapaDirecto() {
           <option value="Tradicional">Tradicional</option>
         </select>
       </div>
-      <div class="form-group"><label class="form-label">Área (m²)</label><input class="form-input" id="edPropArea"/></div>
+      <div class="form-group"><label class="form-label">Área Construida (m²)</label><input class="form-input" id="edPropArea"/></div>
       <div class="form-group"><label class="form-label">Dimensiones</label><input class="form-input" id="edPropDimensiones"/></div>
       <div class="form-group"><label class="form-label">Antigüedad</label><input class="form-input" id="edPropAntiguedad"/></div>
       <div class="form-group"><label class="form-label">Aire Acondicionado</label><input class="form-input" id="edPropAire"/></div>
@@ -9224,7 +9223,7 @@ function renderNuevaPropiedad() {
         
         <div class="form-group"><label class="form-label">Comuna</label><input class="form-input" id="gp_comuna" type="text" placeholder="Comuna"/></div>
         <div class="form-group"><label class="form-label">Área de Lote (m²)</label><input class="form-input" id="gp_area_lote" type="number" placeholder="m²"/></div>
-        <div class="form-group"><label class="form-label">Área (m²)</label><input class="form-input" id="gp_area" type="number" placeholder="m²"/></div>
+        <div class="form-group"><label class="form-label">Área Construida (m²)</label><input class="form-input" id="gp_area" type="number" placeholder="m²"/></div>
         <div class="form-group"><label class="form-label">Clósets</label>
           <select class="form-input" id="gp_closets">
             <option value="0">0</option>
@@ -10235,7 +10234,7 @@ async function guardarPropiedad(scraperAllyName = '') {
     'Garaje': gpData.garaje,
     'Pisos': gpData.pisos || '1',
     'Área': gpData.area,
-    'Área construida': gpData.area,
+    'Área Construida': gpData.area,
     'Piscina': gpData.piscina,
     'Cocina': gpData.cocina,
     'Administración': gpData.administracion.replace(/[^\d]/g, ""),
@@ -10846,7 +10845,7 @@ function swShowReviewForm(data) {
       
       <div class="form-group"><label class="form-label">Comuna</label><input class="form-input ${emptyClass(data.comuna)}" id="gp_comuna" type="text" value="${emptyCheck(data.comuna)}" placeholder="Comuna"/></div>
       <div class="form-group"><label class="form-label">Área de Lote (m²)</label><input class="form-input ${emptyClass(data.areaLote)}" id="gp_area_lote" type="number" value="${emptyCheck(data.areaLote)}" placeholder="m²"/></div>
-      <div class="form-group"><label class="form-label">Área (m²)</label><input class="form-input ${emptyClass(data.area)}" id="gp_area" type="number" value="${emptyCheck(data.area)}"/></div>
+      <div class="form-group"><label class="form-label">Área Construida (m²)</label><input class="form-input ${emptyClass(data.area)}" id="gp_area" type="number" value="${emptyCheck(data.area)}"/></div>
       <div class="form-group"><label class="form-label">Clósets</label>
         <select class="form-input ${emptyClass(data.closets)}" id="gp_closets">
           ${['0','1','2','3','4','5+'].map(val => `<option value="${val}" ${closetsVal === val ? 'selected' : ''}>${val}</option>`).join('')}

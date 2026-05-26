@@ -827,7 +827,7 @@ function doPost(e) {
         if (nk.includes('cocina')) return prop['Cocina'] || '';
         if (nk.includes('piscina')) return prop['Piscina'] || '';
         if (nk.includes('pisos')) return prop['Pisos'] || '';
-        if (nk.includes('area construida') || nk.includes('area total') || nk === 'area') return prop['Área'] || '';
+        if (nk.includes('area construida') || nk.includes('area total') || nk === 'area') return prop['Área Construida'] || prop['Área construida'] || prop['Área'] || '';
         if (nk === 'google fotos') return prop['Google Fotos'] || '';
         if (nk === 'inmobiliaria' || nk === 'aliado') return prop['Inmobiliaria'] || '';
         if (nk.includes('administr')) return prop['Administración'] || '';
