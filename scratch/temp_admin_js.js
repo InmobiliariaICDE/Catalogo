@@ -5521,39 +5521,67 @@ function initMapa(pfx) {
       const clickedLat = e.latlng.lat;
       const clickedLng = e.latlng.lng;
       
-      // Si venimos de reubicar desde adentro del formulario
-      if (typeof originalEditorState !== 'undefined' && originalEditorState !== null) {
-        // Reabrir formulario con las nuevas coordenadas
-        abrirEditorProp(originalEditorState.codigo, clickedLat, clickedLng);
-        
-        // Restaurar todos los valores guardados
-        document.getElementById('edPropCod').readOnly = originalEditorState.readOnly;
-        document.getElementById('edPropNom').value = originalEditorState.nombre;
-        document.getElementById('edPropPre').value = originalEditorState.precio;
-        document.getElementById('edPropTipo').value = originalEditorState.tipo;
-        document.getElementById('edPropContrato').value = originalEditorState.contrato;
-        document.getElementById('edPropZona').value = originalEditorState.zona;
-        document.getElementById('edPropBar').value = originalEditorState.barrio;
-        document.getElementById('edPropHab').value = originalEditorState.habitaciones;
-        document.getElementById('edPropBan').value = originalEditorState.baños;
-        document.getElementById('edPropGar').value = originalEditorState.garaje;
-        document.getElementById('edPropCocina').value = originalEditorState.cocina;
-        document.getElementById('edPropArea').value = originalEditorState.area;
-        document.getElementById('edPropDimensiones').value = originalEditorState.dimensiones;
-        document.getElementById('edPropAntiguedad').value = originalEditorState.antiguedad;
-        document.getElementById('edPropAire').value = originalEditorState.aire;
-        document.getElementById('edPropGFotos').value = originalEditorState.gfotos;
-        document.getElementById('edPropInmob').value = originalEditorState.inmob;
-        document.getElementById('edPropPropietario').value = originalEditorState.propietario;
-        document.getElementById('edPropCelulares').value = originalEditorState.celulares;
-        document.getElementById('edPropRenta').value = originalEditorState.renta;
-        document.getElementById('edPropDesc').value = originalEditorState.desc;
-        document.getElementById('edPropImgs').value = originalEditorState.imgs;
-        if (typeof updateEditorImgs === 'function') updateEditorImgs();
-        
-        originalEditorState = null; // Limpiar estado
+      if (_pendingGeoProp !== null) {
+        // PASO 2: GEOREFERENCIAR INMUEBLE EXISTENTE
+        const cod = _pendingGeoProp['Código'];
+        const idx = allProps.findIndex(x => x['Código'] === cod);
+        if (idx >= 0) {
+          allProps[idx]['Latitud'] = String(clickedLat);
+          allProps[idx]['Longitud'] = String(clickedLng);
+          
+          // Guardar coordenadas en Apps Script
+          syncCoords(cod, String(clickedLat), String(clickedLng));
+          
+          // Guardar en localStorage
+          const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
+          const cIdx = customProps.findIndex(x => x['Código'] === cod);
+          const updated = { ...allProps[idx] };
+          if (cIdx >= 0) customProps[cIdx] = updated;
+          else customProps.push(updated);
+          localStorage.setItem('icde_custom_props', JSON.stringify(customProps));
+          
+          // Actualizar pines del mapa
+          actualizarPinesMapa('nl');
+          
+          toast(`✅ ${cod} georeferenciado correctamente`, 'success');
+        }
+        _pendingGeoProp = null; // Limpiar
       } else {
-        abrirEditorProp(null, clickedLat, clickedLng);
+        // PASO 3: CREAR NUEVO INMUEBLE DESDE CERO
+        // Si venimos de reubicar desde adentro del formulario
+        if (typeof originalEditorState !== 'undefined' && originalEditorState !== null) {
+          // Reabrir formulario con las nuevas coordenadas
+          abrirEditorProp(originalEditorState.codigo, clickedLat, clickedLng);
+          
+          // Restaurar todos los valores guardados
+          document.getElementById('edPropCod').readOnly = originalEditorState.readOnly;
+          document.getElementById('edPropNom').value = originalEditorState.nombre;
+          document.getElementById('edPropPre').value = originalEditorState.precio;
+          document.getElementById('edPropTipo').value = originalEditorState.tipo;
+          document.getElementById('edPropContrato').value = originalEditorState.contrato;
+          document.getElementById('edPropZona').value = originalEditorState.zona;
+          document.getElementById('edPropBar').value = originalEditorState.barrio;
+          document.getElementById('edPropHab').value = originalEditorState.habitaciones;
+          document.getElementById('edPropBan').value = originalEditorState.baños;
+          document.getElementById('edPropGar').value = originalEditorState.garaje;
+          document.getElementById('edPropCocina').value = originalEditorState.cocina;
+          document.getElementById('edPropArea').value = originalEditorState.area;
+          document.getElementById('edPropDimensiones').value = originalEditorState.dimensiones;
+          document.getElementById('edPropAntiguedad').value = originalEditorState.antiguedad;
+          document.getElementById('edPropAire').value = originalEditorState.aire;
+          document.getElementById('edPropGFotos').value = originalEditorState.gfotos;
+          document.getElementById('edPropInmob').value = originalEditorState.inmob;
+          document.getElementById('edPropPropietario').value = originalEditorState.propietario;
+          document.getElementById('edPropCelulares').value = originalEditorState.celulares;
+          document.getElementById('edPropRenta').value = originalEditorState.renta;
+          document.getElementById('edPropDesc').value = originalEditorState.desc;
+          document.getElementById('edPropImgs').value = originalEditorState.imgs;
+          if (typeof updateEditorImgs === 'function') updateEditorImgs();
+          
+          originalEditorState = null; // Limpiar estado
+        } else {
+          abrirEditorProp(null, clickedLat, clickedLng);
+        }
       }
       return;
     }
@@ -5916,6 +5944,12 @@ function initMapa(pfx) {
     window.open(url, '_blank');
   });
 
+  // Prevent click leakage from floating controls
+  const floatControls = document.querySelector(`#mapaContenedor_${pfx} .map-floating-controls`);
+  if (floatControls) {
+    L.DomEvent.disableClickPropagation(floatControls);
+  }
+
   actualizarPinesMapa(pfx);
 
   // Si modo agregar está activo, aplicar estilos al contenedor del mapa
@@ -6057,6 +6091,7 @@ function focusProperty(code) {
 // --- Lógica de Edición de Propiedades ---
 var mapAddMode = false;
 var originalEditorState = null;
+var _pendingGeoProp = null;
 
 // Abre el formulario de nueva propiedad directamente, con coordenadas del centro del mapa
 function abrirNuevaPropiedad() {
@@ -6073,18 +6108,12 @@ function toggleMapAddMode(pfx) {
   const btn = document.getElementById(`btnAddProp_${pfx}`) || document.getElementById('btnAddProp_nl');
   
   if (!mapAddMode) {
-    // Activar con un ligero retraso para evitar que el clic del botón active inmediatamente el modo
-    setTimeout(() => {
-      mapAddMode = true;
-      if (btn) btn.classList.add('active');
-      toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
-      if (leafletMap) {
-        leafletMap.getContainer().style.cursor = 'crosshair';
-        leafletMap.getContainer().classList.add('map-add-mode-active');
-      }
-    }, 50);
+    // Si no está activo el modo, abrir el modal de búsqueda primero
+    abrirModalBuscarPropMapa();
   } else {
+    // Si ya está activo, desactivarlo
     mapAddMode = false;
+    _pendingGeoProp = null;
     if (btn) btn.classList.remove('active');
     if (leafletMap) {
       leafletMap.getContainer().style.cursor = '';
@@ -6449,6 +6478,127 @@ function cerrarGeoMasivo() {
   if (_geoMap) _geoMap.getContainer().style.cursor = '';
   document.getElementById('modalGeoMasivo').classList.remove('open');
   actualizarPinesMapa('nl');
+}
+
+// --- NUEVO BUSCADOR PARA AGREGAR AL MAPA (OPCIÓN A) ---
+function abrirModalBuscarPropMapa() {
+  document.getElementById('searchPropMapaInput').value = '';
+  document.getElementById('searchPropMapaResults').innerHTML = '';
+  
+  // Mostrar sugerencias iniciales
+  filtrarPropsParaMapa('');
+  
+  document.getElementById('modalBuscarPropMapa').classList.add('open');
+  setTimeout(() => {
+    document.getElementById('searchPropMapaInput').focus();
+  }, 100);
+}
+
+function cerrarModalBuscarPropMapa() {
+  document.getElementById('modalBuscarPropMapa').classList.remove('open');
+}
+
+function filtrarPropsParaMapa(q) {
+  const container = document.getElementById('searchPropMapaResults');
+  const query = (q || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  
+  // Filtrar allProps (excluyendo isKmzOnly)
+  const matches = allProps.filter(p => {
+    if (p.isKmzOnly) return false;
+    // Si no hay búsqueda, sugerir las primeras 5 propiedades que NO tengan coordenadas
+    if (!query) {
+      const lat = parseFloat(String(p['Latitud'] || p['Lat'] || '').replace(',','.'));
+      const lng = parseFloat(String(p['Longitud'] || p['Lng'] || '').replace(',','.'));
+      return isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0;
+    }
+    const cod = String(p['Código'] || '').toLowerCase();
+    const nom = String(p['Nombre'] || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return cod.includes(query) || nom.includes(query);
+  }).slice(0, 8);
+  
+  let html = '';
+  
+  if (matches.length > 0) {
+    html += matches.map(p => {
+      const barrio = p['Barrio'] || '';
+      const zona = p['Zona'] || '';
+      const loc = [barrio, zona].filter(Boolean).join(' / ');
+      return `
+        <div class="ed-cod-item" style="padding:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:8px; cursor:pointer; display:flex; flex-direction:column; gap:2px;" onclick="seleccionarPropParaMapa('${eq(p['Código'])}')">
+          <span style="font-size:13px; color:#fff; font-weight:600;"><span style="color:#d4a84b; font-weight:700;">${p['Código']}</span> · ${p['Nombre'] || ''}</span>
+          ${loc ? `<span style="font-size:11px; color:#888;">📍 ${loc}</span>` : ''}
+        </div>
+      `;
+    }).join('');
+  } else if (query) {
+    html += `
+      <div style="font-size:12px; color:var(--muted); text-align:center; padding:10px;">
+        No se encontraron propiedades en la matriz con ese término.
+      </div>
+    `;
+  } else {
+    html += `
+      <div style="font-size:12px; color:var(--muted); text-align:center; padding:10px;">
+        Todas las propiedades ya están ubicadas en el mapa.
+      </div>
+    `;
+  }
+  
+  // Agregar opción para crear nueva
+  html += `
+    <div class="ed-cod-item" style="padding:10px; background:rgba(212,168,75,0.08); border:1px solid rgba(212,168,75,0.25); border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="crearNuevaPropDesdeMapa()">
+      <span style="font-size:13px; color:#d4a84b; font-weight:700;">➕ Crear nueva propiedad desde cero</span>
+    </div>
+  `;
+  
+  container.innerHTML = html;
+}
+
+function seleccionarPropParaMapa(codigo) {
+  const p = allProps.find(x => x['Código'] === codigo);
+  if (!p) return;
+  
+  _pendingGeoProp = p;
+  cerrarModalBuscarPropMapa();
+  
+  // Asegurar que el mapa esté abierto y visible
+  const mapToggle = document.getElementById('btnToggleMapa_nl');
+  if (mapToggle && !mapToggle.checked) {
+    mapToggle.checked = true;
+    toggleMapa('nl');
+  }
+  
+  // Activar modo agregar
+  _activarModoAgregarMapaDirecto();
+  
+  toast(`Haz clic en el mapa para ubicar: ${p['Código']}`, 'info');
+}
+
+function crearNuevaPropDesdeMapa() {
+  _pendingGeoProp = null;
+  cerrarModalBuscarPropMapa();
+  
+  // Asegurar que el mapa esté abierto
+  const mapToggle = document.getElementById('btnToggleMapa_nl');
+  if (mapToggle && !mapToggle.checked) {
+    mapToggle.checked = true;
+    toggleMapa('nl');
+  }
+  
+  _activarModoAgregarMapaDirecto();
+  toast('Haz clic en el mapa para ubicar la nueva propiedad', 'info');
+}
+
+function _activarModoAgregarMapaDirecto() {
+  const btn = document.getElementById('btnAddProp_nl');
+  setTimeout(() => {
+    mapAddMode = true;
+    if (btn) btn.classList.add('active');
+    if (leafletMap) {
+      leafletMap.getContainer().style.cursor = 'crosshair';
+      leafletMap.getContainer().classList.add('map-add-mode-active');
+    }
+  }, 50);
 }
 
 
