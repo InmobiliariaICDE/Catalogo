@@ -8874,7 +8874,7 @@ function abrirModalProp(codigoOrProp){
     ['Celular 1', p['Celular 1'] || p['Celulares']],
     ['Celular 2', p['Celular 2']],
     ['Cuánto Renta', p['Cuánto Renta ($)'] ? `$${Number(p['Cuánto Renta ($)']).toLocaleString('es-CO')}` : ''],
-    ['Inventario', p['Inventario']]
+    ['Inventario', p['Inventario'] && String(p['Inventario']).trim() !== '' ? String(p['Inventario']).trim() : 'NO']
   ];
   specsTable.innerHTML = items.map(([k,v]) => {
     const displayVal = (v !== undefined && v !== null && String(v).trim() !== '') ? String(v).trim() : '—';
@@ -9252,7 +9252,7 @@ function renderNuevaPropiedad() {
         <div class="form-group"><label class="form-label">Inventario</label>
           <select class="form-input" id="gp_inventario">
             <option value="NO">NO</option>
-            <option value="SI">SI</option>
+            <option value="Inventario">Inventario</option>
           </select>
         </div>
         <div class="form-group"><label class="form-label">Celular 1</label><input class="form-input" id="gp_celulares" type="text" placeholder="Celular 1"/></div>
@@ -10875,8 +10875,8 @@ function swShowReviewForm(data) {
       </div>
       <div class="form-group"><label class="form-label">Inventario</label>
         <select class="form-input ${emptyClass(data.inventario)}" id="gp_inventario">
-          <option value="NO" ${normSiNo(data.inventario) === 'NO' ? 'selected' : ''}>NO</option>
-          <option value="SI" ${normSiNo(data.inventario) === 'SI' ? 'selected' : ''}>SI</option>
+          <option value="NO" ${(data.inventario && String(data.inventario).trim().toUpperCase() === 'NO') || !data.inventario ? 'selected' : ''}>NO</option>
+          <option value="Inventario" ${(data.inventario && String(data.inventario).trim() === 'Inventario') ? 'selected' : ''}>Inventario</option>
         </select>
       </div>
       <div class="form-group"><label class="form-label">Celular 1</label><input class="form-input ${emptyClass(data.celulares)}" id="gp_celulares" type="text" value="${emptyCheck(data.celulares)}" placeholder="Celular 1"/></div>
