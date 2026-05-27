@@ -682,7 +682,19 @@ function leerPropiedades() {
   var sheet = ss.getSheetByName(HOJA_NOMBRE);
   var data  = sheet.getDataRange().getValues();
   var headers = data[0], idx = {};
-  headers.forEach(function(h, i) { if (h) idx[String(h).trim()] = i; });
+  headers.forEach(function(h, i) {
+    if (h) {
+      var headerStr = String(h).trim();
+      idx[headerStr] = i;
+      var nh = headerStr.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      if (nh === 'ascenso' || nh === 'ascensor') { idx['Ascensor'] = i; idx['ASCENSO'] = i; }
+      else if (nh === 'cortinas' || nh === 'cortina' || nh.indexOf('cortina') >= 0) { idx['Número de Cortinas'] = i; idx['CORTINAS'] = i; }
+      else if (nh === 'aire' || nh === 'aire acondicionado' || nh.indexOf('aire') >= 0) { idx['Aire Acondicionado'] = i; idx['AIRE'] = i; }
+      else if (nh === 'reja' || nh === 'reja/' || nh.indexOf('reja') >= 0) { idx['Reja Antejardín'] = i; idx['REJA/'] = i; }
+      else if (nh === 'antiguedad' || nh.indexOf('antig') >= 0) { idx['Antigüedad del Inmueble'] = i; idx['ANTIGÜEDAD'] = i; }
+      else if (nh === 'patio') { idx['Patio'] = i; idx['PATIO'] = i; }
+    }
+  });
   var colPublicar = idx['Publicar'], rows = [];
   for (var r = 1; r < data.length; r++) {
     var row = data[r];
@@ -840,10 +852,10 @@ function doPost(e) {
         if (nk === 'celular 2') return prop['Celular 2'] || '';
         if (nk === 'propietario' || nk === 'nombre del propietario') return prop['Nombre del Propietario'] || prop['PROPIETARIO'] || '';
         if (nk === 'cuanto renta' || nk === 'cuanto renta ($)' || nk === 'rentab' || nk === 'rentab.') return prop['Cuánto Renta ($)'] || prop['RENTAB.'] || '';
-        if (nk === 'ascensor') return prop['Ascensor'] || '';
+        if (nk === 'ascensor' || nk === 'ascenso') return prop['Ascensor'] || '';
         if (nk === 'numero de cortinas' || nk === 'cortinas') return prop['Número de Cortinas'] || '';
         if (nk === 'aire acondicionado' || nk === 'aire') return prop['Aire Acondicionado'] || '';
-        if (nk === 'reja antejardin' || nk === 'reja') return prop['Reja Antejardín'] || '';
+        if (nk === 'reja antejardin' || nk === 'reja' || nk === 'reja/') return prop['Reja Antejardín'] || '';
         if (nk === 'antiguedad del inmueble' || nk === 'antiguedad') return prop['Antigüedad del Inmueble'] || '';
         if (nk === 'patio') return prop['Patio'] || '';
         if (nk === 'dimensiones') return prop['Dimensiones'] || '';

@@ -3577,7 +3577,7 @@ function normalizarPropiedades(data) {
       else if (nk === 'celular' || nk === 'celulares' || nk === 'celular propietario' || nk === 'celular 1') k = 'Celular 1';
       else if (nk === 'nombre del propietario' || nk === 'propietario') k = 'Nombre del Propietario';
       else if (nk === 'cuanto renta' || nk === 'cuanto renta ($)' || nk === 'renta' || nk === 'rentab' || nk === 'rentab.') k = 'Cuánto Renta ($)';
-      else if (nk === 'ascensor') k = 'Ascensor';
+      else if (nk === 'ascensor' || nk === 'ascenso') k = 'Ascensor';
       else if (nk === 'numero de cortinas' || nk === 'cortinas' || nk === 'nmero de cortinas') k = 'Número de Cortinas';
       else if (nk === 'aire acondicionado' || nk === 'aire') k = 'Aire Acondicionado';
       else if (nk === 'reja antejardin' || nk === 'reja' || nk === 'reja antejardn') k = 'Reja Antejardín';
@@ -3617,7 +3617,7 @@ function normalizarPropiedades(data) {
         else if (nk.includes('celular') || nk.includes('celulares')) k = 'Celular 1';
         else if (nk.includes('propietario')) k = 'Nombre del Propietario';
         else if (nk.includes('renta') || nk.includes('rentab')) k = 'Cuánto Renta ($)';
-        else if (nk.includes('ascensor')) k = 'Ascensor';
+        else if (nk.includes('ascensor') || nk.includes('ascenso')) k = 'Ascensor';
         else if (nk.includes('cortina') || nk.includes('mero')) k = 'Número de Cortinas';
         else if (nk.includes('aire') && nk.includes('acondicionado')) k = 'Aire Acondicionado';
         else if (nk.includes('reja') || nk.includes('antejardin') || nk.includes('antejardn')) k = 'Reja Antejardín';
@@ -8876,7 +8876,10 @@ function abrirModalProp(codigoOrProp){
     ['Cuánto Renta', p['Cuánto Renta ($)'] ? `$${Number(p['Cuánto Renta ($)']).toLocaleString('es-CO')}` : ''],
     ['Inventario', p['Inventario']]
   ];
-  specsTable.innerHTML = items.map(([k,v]) => `<tr><td>${k}</td><td>${v||'—'}</td></tr>`).join('');
+  specsTable.innerHTML = items.map(([k,v]) => {
+    const displayVal = (v !== undefined && v !== null && String(v).trim() !== '') ? String(v).trim() : '—';
+    return `<tr><td>${k}</td><td>${displayVal}</td></tr>`;
+  }).join('');
   
   const btnShare = document.querySelector('.modal-btn-compartir');
   if(btnShare) {
