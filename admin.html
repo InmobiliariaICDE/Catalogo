@@ -3536,7 +3536,7 @@ function normalizarPropiedades(data) {
     // Primero extraemos las llaves originales
     for (let key in obj) {
       const val = obj[key];
-      const nk = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      const nk = key.toLowerCase().replace(/[\ufffd]/g, '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
       let k = null;
 
       // Reglas de mapeo por prioridad
@@ -3549,7 +3549,7 @@ function normalizarPropiedades(data) {
       else if (nk === 'ciudad') k = 'Ciudad';
       else if (nk === 'estrato') k = 'Estrato';
       else if (nk === 'ubicacion') k = 'Ubicación';
-      else if (nk === 'direccion' || nk === 'dirección' || nk === 'direccion-vereda' || nk === 'direccion_vereda') k = 'DIRECCIÓN';
+      else if (nk === 'direccion' || nk === 'dirección' || nk === 'direccion-vereda' || nk === 'direccion_vereda' || nk === 'direccin' || nk === 'direccin-vereda' || nk === 'direccin_vereda') k = 'DIRECCIÓN';
       else if (nk === 'habitaciones' || nk === 'alcobas' || nk === 'cuartos') k = 'Habitaciones';
       else if (nk === 'banos' || nk === 'sanitarios') k = 'Baños';
       else if (nk === 'garaje' || nk === 'parqueadero' || nk === 'garajes') k = 'Garaje';
@@ -3559,18 +3559,18 @@ function normalizarPropiedades(data) {
       else if (nk === 'conjunto' || nk === 'edificio' || nk === 'unidad') k = 'Conjunto';
       else if (nk === 'descripcion' || nk === 'detalle') k = 'Descripción';
       else if (nk === 'puntos clave' || nk === 'caracteristicas' || nk === 'highlights') k = 'Puntos Clave';
-      else if (nk === 'area construida' || nk === 'area construida m2' || nk === 'area total' || nk === 'area' || nk === 'mt2' || nk === 'superficie') k = 'Área Construida';
+      else if (nk === 'area construida' || nk === 'area construida m2' || nk === 'area total' || nk === 'area' || nk === 'mt2' || nk === 'superficie' || nk === 'rea construida' || nk === 'rea construida m2' || nk === 'rea total' || nk === 'rea') k = 'Área Construida';
       else if (nk === 'imagenes' || nk === 'fotos' || nk === 'imagen' || nk === 'galeria') k = 'Imagenes';
       else if (nk === 'contrato') k = 'Contrato';
       else if (nk === 'publicar') k = 'Publicar';
       else if (nk === 'destacada' || nk === 'destacado') k = 'Destacada';
       else if (nk === 'rentabilidad' || nk === 'retorno' || nk.includes('retorno') || nk.includes('rentabilidad')) k = 'Retorno de la inversión';
-      else if (nk === 'administracion' || nk === 'admin') k = 'Administración';
+      else if (nk === 'administracion' || nk === 'admin' || nk === 'administracin') k = 'Administración';
       else if (nk === 'latitud' || nk === 'lat') k = 'Latitud';
       else if (nk === 'longitud' || nk === 'lng' || nk === 'lon') k = 'Longitud';
       else if (nk === 'inmobiliaria' || nk === 'aliado' || nk === 'fuente' || nk === 'inmob') k = 'Inmobiliaria';
       else if (nk === 'comuna') k = 'Comuna';
-      else if (nk === 'area lote' || nk === 'area de lote' || nk.includes('area lote')) k = 'Área lote';
+      else if (nk === 'area lote' || nk === 'area de lote' || nk.includes('area lote') || nk === 'rea lote' || nk === 'rea de lote' || nk.includes('rea lote')) k = 'Área lote';
       else if (nk === 'closet' || nk === 'closets') k = 'Closet';
       else if (nk === 'inventario') k = 'Inventario';
       else if (nk === 'celular 2') k = 'Celular 2';
@@ -3578,10 +3578,10 @@ function normalizarPropiedades(data) {
       else if (nk === 'nombre del propietario' || nk === 'propietario') k = 'Nombre del Propietario';
       else if (nk === 'cuanto renta' || nk === 'cuanto renta ($)' || nk === 'renta' || nk === 'rentab' || nk === 'rentab.') k = 'Cuánto Renta ($)';
       else if (nk === 'ascensor') k = 'Ascensor';
-      else if (nk === 'numero de cortinas' || nk === 'cortinas') k = 'Número de Cortinas';
+      else if (nk === 'numero de cortinas' || nk === 'cortinas' || nk === 'nmero de cortinas') k = 'Número de Cortinas';
       else if (nk === 'aire acondicionado' || nk === 'aire') k = 'Aire Acondicionado';
-      else if (nk === 'reja antejardin' || nk === 'reja') k = 'Reja Antejardín';
-      else if (nk === 'antiguedad del inmueble' || nk === 'antiguedad' || nk === 'antiguedad inmueble') k = 'Antigüedad del Inmueble';
+      else if (nk === 'reja antejardin' || nk === 'reja' || nk === 'reja antejardn') k = 'Reja Antejardín';
+      else if (nk === 'antiguedad del inmueble' || nk === 'antiguedad' || nk === 'antiguedad inmueble' || nk === 'antigedad del inmueble' || nk === 'antigedad' || nk === 'antigedad inmueble') k = 'Antigüedad del Inmueble';
       else if (nk === 'patio') k = 'Patio';
       else if (nk === 'dimensiones') k = 'Dimensiones';
 
@@ -3602,15 +3602,15 @@ function normalizarPropiedades(data) {
         else if (nk.includes('conjunto')) k = 'Conjunto';
         else if (nk.includes('descrip')) k = 'Descripción';
         else if (nk.includes('puntos') && nk.includes('clave')) k = 'Puntos Clave';
-        else if (nk.includes('area construida') || nk.includes('area total')) k = 'Área construida';
-        else if (nk.includes('area')) k = 'Área';
+        else if (nk.includes('area construida') || nk.includes('area total') || nk.includes('rea construida') || nk.includes('rea total')) k = 'Área Construida';
+        else if (nk.includes('area') || nk.includes('rea')) k = 'Área Construida';
         else if (nk.includes('imagen') || nk.includes('foto')) k = 'Imagenes';
         else if (nk.includes('precio') && !nk.includes('rango') && !nk.includes('administracion')) k = 'Precio';
-        else if (nk.includes('retorno') || nk.includes('rentabilidad')) k = 'Retorno de la inversión';
+        else if (nk.includes('retorno') || nk.includes('rentabilidad') || nk.includes('inversi')) k = 'Retorno de la inversión';
         else if (nk.includes('administr')) k = 'Administración';
         else if (nk.includes('inmobiliaria') || nk.includes('inmob')) k = 'Inmobiliaria';
         else if (nk.includes('comuna')) k = 'Comuna';
-        else if (nk.includes('area lote') || nk.includes('area de lote')) k = 'Área lote';
+        else if (nk.includes('area lote') || nk.includes('area de lote') || nk.includes('rea lote') || nk.includes('rea de lote')) k = 'Área lote';
         else if (nk.includes('closet')) k = 'Closet';
         else if (nk.includes('inventario')) k = 'Inventario';
         else if (nk.includes('celular 2')) k = 'Celular 2';
@@ -3618,10 +3618,10 @@ function normalizarPropiedades(data) {
         else if (nk.includes('propietario')) k = 'Nombre del Propietario';
         else if (nk.includes('renta') || nk.includes('rentab')) k = 'Cuánto Renta ($)';
         else if (nk.includes('ascensor')) k = 'Ascensor';
-        else if (nk.includes('cortina')) k = 'Número de Cortinas';
+        else if (nk.includes('cortina') || nk.includes('mero')) k = 'Número de Cortinas';
         else if (nk.includes('aire') && nk.includes('acondicionado')) k = 'Aire Acondicionado';
-        else if (nk.includes('reja') || nk.includes('antejardin')) k = 'Reja Antejardín';
-        else if (nk.includes('antiguedad')) k = 'Antigüedad del Inmueble';
+        else if (nk.includes('reja') || nk.includes('antejardin') || nk.includes('antejardn')) k = 'Reja Antejardín';
+        else if (nk.includes('antiguedad') || nk.includes('antigedad')) k = 'Antigüedad del Inmueble';
         else if (nk.includes('patio')) k = 'Patio';
         else if (nk.includes('dimensiones')) k = 'Dimensiones';
       }
@@ -8856,7 +8856,7 @@ function abrirModalProp(codigoOrProp){
     ['Comuna', p['Comuna']],
     ['Estrato', p['Estrato']],
     ['Ubicación', p['Ubicación']],
-    ['Área construida', p['Área construida'] || p['Área'] || p['area'] || ''],
+    ['Área construida', p['Área Construida'] || p['Área'] || p['area'] || ''],
     ['Área lote', p['Área lote']],
     ['Closets', p['Closet']],
     ['Piscina', p['Piscina']],
@@ -10048,7 +10048,7 @@ function gpVistaPrevia() {
     'Cocina': data.cocina || 'No',
     'Piscina': data.piscina || 'No',
     'Área': data.area || '',
-    'Área construida': data.area || '',
+    'Área Construida': data.area || '',
     'Administración': data.administracion || '',
     'Retorno de la inversión': data.rentabilidad || '',
     'Descripción': data.descripcion || '',
@@ -10107,7 +10107,7 @@ function calcularDuplicado(newProp) {
       if (diff <= 0.15) score += 1;
     }
     
-    const pArea = parseFloat(p['Área'] || p['Área construida']) || 0;
+    const pArea = parseFloat(p['Área'] || p['Área Construida']) || 0;
     if (newArea > 0 && pArea > 0) {
       const diff = Math.abs(newArea - pArea) / pArea;
       if (diff <= 0.10) score += 1;
@@ -10165,7 +10165,7 @@ function showDuplicateModal(newProp, oldProp, onConfirm) {
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Tipo</td><td>${oldProp['Tipo de inmueble']}</td></tr>
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Barrio</td><td>${oldProp['Barrio']}</td></tr>
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Precio</td><td>$${formatP(oldProp['Precio'])}</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Área</td><td>${oldProp['Área'] || oldProp['Área construida'] || '—'} m²</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Área</td><td>${oldProp['Área'] || oldProp['Área Construida'] || '—'} m²</td></tr>
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Habs / Baños</td><td>${oldProp['Habitaciones']} / ${oldProp['Baños']}</td></tr>
           </table>
         </div>
