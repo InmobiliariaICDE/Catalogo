@@ -549,7 +549,7 @@ var CAMPOS_FB = [
   'Buscar', 'Cocina', 'Contrato', 'Inmobiliaria', 'Imagenes', 'Publicar',
   'CELULAR', 'CELULAR 2', 'PROPIETARIO', 'RENTAB.', 'Dimensiones',
   'Aire Acondicionado', 'Antigüedad del Inmueble', 'Ascensor', 'Número de Cortinas',
-  'Reja Antejardín', 'Patio', 'DIRECCIÓN'
+  'Reja Antejardín', 'Patio', 'Inventario', 'DIRECCIÓN'
 ];
  
 function FIREBASE_onEdit(e) {
