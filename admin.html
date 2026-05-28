@@ -6565,23 +6565,25 @@ function executeGeminiAction(action) {
       renderCitaPreviewCard(action);
       break;
     case 'BUSCAR_PROPIEDADES':
-      showTab('leads'); // switch to Leads/Catalog tab if relevant, or simply apply search
+      showTab('leads');
+      const searchQuery = action.query || action.codigo || '';
       const inputCat = document.getElementById('fnBus_cat');
       if (inputCat) {
-        inputCat.value = action.query;
-        if (typeof fnBuscar === 'function') fnBuscar('cat', action.query);
-        toast(`Filtrado catálogo por: "${action.query}" ✓`, 'success');
+        inputCat.value = searchQuery;
+        if (typeof fnBuscar === 'function') fnBuscar('cat', searchQuery);
+        toast(`Filtrado catálogo por: "${searchQuery}" ✓`, 'success');
       } else {
-        toast(`Buscar propiedades: "${action.query}"`, 'info');
+        toast(`Buscar propiedades: "${searchQuery}"`, 'info');
       }
       break;
     case 'BUSCAR_LEADS':
       showTab('leads');
+      const leadQuery = action.query || action.cliente || action.celular || '';
       const inputLead = document.getElementById('searchLeadsInput');
       if (inputLead) {
-        inputLead.value = action.query;
-        if (typeof buscarLeads === 'function') buscarLeads(action.query);
-        toast(`Filtrado leads por: "${action.query}" ✓`, 'success');
+        inputLead.value = leadQuery;
+        if (typeof buscarLeads === 'function') buscarLeads(leadQuery);
+        toast(`Filtrado leads por: "${leadQuery}" ✓`, 'success');
       }
       break;
     case 'GENERAR_DESCRIPCION':
@@ -6671,40 +6673,51 @@ async function confirmarCitaGemini(codigo, fecha, hora, cliente, celular, notas)
       }
     }
 
-    const citaId = Date.now().toString();
+    // Robust default fallbacks
+    const finalFecha = fecha || new Date().toISOString().split('T')[0];
+    const finalHora = hora || '08:00';
+    const finalCliente = cliente || 'Genérico';
+    const finalCelular = celular || '';
+    const finalNotas = notas || '';
+
+    // Deduplication check: check if appointment already exists for same property code and phone
+    let existingId = null;
+    const vInLead = lead.visitas ? lead.visitas.find(x => x.codigo === codigo && x.celular === finalCelular) : null;
+    const vInCitas = citas.find(x => x.codigo === codigo && x.celular === finalCelular);
+    existingId = vInLead?.id || vInCitas?.id || Date.now().toString();
+
     const newCita = {
-      id: citaId,
+      id: existingId,
       codigo: codigo,
-      fecha: fecha,
-      hora: hora,
+      fecha: finalFecha,
+      hora: finalHora,
       estado: 'agendada',
       oferto: 'no',
       oferta: '',
-      notas: notas,
-      cliente: cliente,
-      celular: celular,
+      notas: finalNotas,
+      cliente: finalCliente,
+      celular: finalCelular,
       inmobiliaria: lead && lead.tipo === 'inmobiliaria' && lead.id !== 'LEAD-AGENDA-GLOBAL' ? lead.nombreInmobiliaria : '',
-      observaciones: notas,
+      observaciones: finalNotas,
       leadId: lead.id,
+      updatedAt: Date.now(),
       creadoEn: new Date().toISOString()
     };
 
     if (!lead.visitas) lead.visitas = [];
-    lead.visitas.push({
-      id: citaId,
-      codigo: codigo,
-      fecha: fecha,
-      hora: hora,
-      estado: 'agendada',
-      oferto: 'no',
-      oferta: '',
-      notas: notas,
-      cliente: cliente,
-      celular: celular,
-      observaciones: notas
-    });
+    const idx = lead.visitas.findIndex(x => x.id === existingId || (x.codigo === codigo && x.celular === finalCelular));
+    if (idx >= 0) {
+      lead.visitas[idx] = newCita;
+    } else {
+      lead.visitas.push(newCita);
+    }
 
-    citas.push(newCita);
+    const cIdx = citas.findIndex(x => x.id === existingId || (x.codigo === codigo && x.celular === finalCelular));
+    if (cIdx >= 0) {
+      citas[cIdx] = newCita;
+    } else {
+      citas.push(newCita);
+    }
     
     saveLeads();
     syncCita(newCita);
