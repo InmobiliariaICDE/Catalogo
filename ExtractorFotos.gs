@@ -627,6 +627,7 @@ function mapRowToObj(row, idx) {
       var largo = String(row[i] != null ? row[i] : '').trim();
       var sep = String(row[i + 1] != null ? row[i + 1] : '').trim();
       var ancho = String(row[i + 2] != null ? row[i + 2] : '').trim();
+      obj['Dimensiones_Debug'] = "Idx: " + i + ", LargoVal: [" + largo + "], SepVal: [" + sep + "], AnchoVal: [" + ancho + "]";
       if (largo && largo !== '0' && ancho && ancho !== '0') {
         obj[campo] = largo + 'x' + ancho;
       } else {

@@ -3680,19 +3680,24 @@ async function cargarProps(){
     if (data && data.length > 0) {
       console.log("[Diagnostic Log] Llaves (columnas) presentes en el primer elemento de la respuesta del API:", Object.keys(data[0]));
       
+      // Mostrar info debug de dimensiones para los primeros 5 elementos de data
+      console.log("[Diagnostic Log] Muestra de depuración de Dimensiones en los primeros 5 elementos crudos:");
+      data.slice(0, 5).forEach(p => {
+        console.log(` - Código: "${p['Código'] || p['codigo'] || p['id']}", Dimensiones: "${p['Dimensiones'] || ''}", Debug: "${p['Dimensiones_Debug'] || 'no disponible'}"`);
+      });
+      
       // Buscar elementos que tengan algún valor en el campo dimensiones en los datos crudos del API
       const conDimensionesCrudas = data.filter(p => {
-        return Object.keys(p).some(k => k.toLowerCase().includes('dimension') && String(p[k] || '').trim() !== '');
+        return String(p['Dimensiones'] || '').trim() !== '';
       });
-      console.log("[Diagnostic Log] Cantidad de propiedades crudas con algún valor en columna de dimensión:", conDimensionesCrudas.length);
+      console.log("[Diagnostic Log] Cantidad de propiedades crudas con valor en columna 'Dimensiones':", conDimensionesCrudas.length);
       if (conDimensionesCrudas.length > 0) {
         console.log("[Diagnostic Log] Muestra de 3 propiedades crudas con dimensiones del API:");
         conDimensionesCrudas.slice(0, 3).forEach(p => {
-          const dimKey = Object.keys(p).find(k => k.toLowerCase().includes('dimension'));
-          console.log(` - Código: "${p['Código'] || p['codigo'] || p['id']}", Campo "${dimKey}": "${p[dimKey]}"`);
+          console.log(` - Código: "${p['Código'] || p['codigo'] || p['id']}", Dimensiones: "${p['Dimensiones']}", Debug: "${p['Dimensiones_Debug'] || 'no disponible'}"`);
         });
       } else {
-        console.warn("[Diagnostic Log] ¡ALERTA! Ninguna propiedad cruda devuelta por el API tiene valores en ninguna columna que contenga la palabra 'dimension'.");
+        console.warn("[Diagnostic Log] ¡ALERTA! Ninguna propiedad cruda devuelta por el API tiene valor en la columna 'Dimensiones'.");
       }
     }
     
