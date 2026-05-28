@@ -616,6 +616,10 @@ function buildHeaderIndex(headers) {
 
 function mapRowToObj(row, idx) {
   var obj = {};
+  
+  // Test de depuración definitiva
+  obj['Dimensiones_Debug'] = "Keys in idx: " + Object.keys(idx).join(',') + " | idx['Dimensiones']: " + idx['Dimensiones'];
+  
   CAMPOS_FB.forEach(function(campo) {
     var i = idx[campo];
     if (i === undefined) {
