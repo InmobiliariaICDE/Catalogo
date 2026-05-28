@@ -6341,32 +6341,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 // Dedicated listener bound directly to the input to prevent event bubbles from clashing
-document.addEventListener('DOMContentLoaded', () => {
-  const geminiInputEl = document.getElementById('geminiTextInput');
-  if (geminiInputEl) {
-    geminiInputEl.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const textVal = geminiInputEl.value.trim();
-        if (typeof isGeminiListening !== 'undefined' && isGeminiListening) {
-          toggleGeminiMic();
-          setTimeout(() => {
-            sendGeminiTextMessage();
-          }, 450);
-        } else if (textVal) {
-          sendGeminiTextMessage();
-        } else {
-          toggleGeminiMic();
-        }
-      }
-    });
-  }
-});
-
-// Fallback initialization just in case DOMContentLoaded has already fired
-setTimeout(() => {
+(function initGeminiInputListener() {
   const geminiInputEl = document.getElementById('geminiTextInput');
   if (geminiInputEl && !geminiInputEl._hasGeminiListener) {
     geminiInputEl._hasGeminiListener = true;
@@ -6388,8 +6363,10 @@ setTimeout(() => {
         }
       }
     });
+  } else if (!geminiInputEl) {
+    setTimeout(initGeminiInputListener, 500);
   }
-}, 1200);
+})();
 
 function addGeminiMessage(sender, text, htmlExtra = '', emotion = 'feliz') {
   const container = document.getElementById('geminiChatHistory');
