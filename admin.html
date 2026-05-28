@@ -1742,6 +1742,9 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
       <button class="btn-logout" onclick="doLogout()">Salir</button>
     </div>
   </div>
+  <div id="scriptWarningBanner" style="display:none; background:#ef4444; color:#fff; padding:10px 15px; font-size:13px; text-align:center; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,0.2); position:relative; z-index:9999;">
+    ⚠️ ACCIÓN REQUERIDA: Tu Google Apps Script en la nube está desactualizado y no envía el campo 'Inventario'. Por favor copia el archivo <a href="https://github.com/InmobiliariaICDE/Catalogo/blob/main/ExtractorFotos.gs" target="_blank" style="color:#fff; text-decoration:underline; font-weight:700;">ExtractorFotos.gs</a> en el editor de Apps Script de tu Google Sheet y crea una <strong>Nueva Versión</strong> de la implementación Web App.
+  </div>
   <div class="tabs">
     <button class="tab active" onclick="showTab('nuevo')">➕ Nuevo Lead</button>
     <button class="tab" onclick="showTab('leads')">👥 Leads</button>
@@ -3667,6 +3670,14 @@ async function cargarProps(){
     const urlBusca = "https://script.google.com/macros/s/AKfycbz-HipJ53KIf2JD1q9BUIBFUB45o4wRYcjvlqUbpg9TDAGK0q3hNQcSrV23dMCWaTgXcQ/exec?action=getData&t=" + Date.now();
     const res = await fetch(urlBusca);
     const data = await res.json();
+    
+    // Validar si los datos de la nube contienen el campo Inventario
+    const hasInventario = Array.isArray(data) && data.length > 0 && data.some(p => p.hasOwnProperty('Inventario') || p.hasOwnProperty('inventario'));
+    const banner = document.getElementById('scriptWarningBanner');
+    if (banner) {
+      banner.style.display = hasInventario ? 'none' : 'block';
+    }
+    
     const rawData = normalizarPropiedades(Array.isArray(data) ? data : []);
     
     let remoteProps = rawData.filter(d => {
