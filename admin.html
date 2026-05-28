@@ -2313,17 +2313,7 @@ try {
 let deletedLeads = JSON.parse(localStorage.getItem('icde_deleted_leads') || '[]');
 let citas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
 if (!Array.isArray(citas)) citas = []; // Ensure it's always an array
-let settings = JSON.parse(localStorage.getItem('icde_settings') || '{"waApi":"","geminiKey":"AIzaSyBeCa0rPdvPziSwRTXV1SUvJ06UnpXfgmE"}');
-// Migración automática de API Key de Gemini
-try {
-  let storedSettings = JSON.parse(localStorage.getItem('icde_settings') || '{}');
-  if (storedSettings.geminiKey !== 'AIzaSyBeCa0rPdvPziSwRTXV1SUvJ06UnpXfgmE') {
-    storedSettings.geminiKey = 'AIzaSyBeCa0rPdvPziSwRTXV1SUvJ06UnpXfgmE';
-    localStorage.setItem('icde_settings', JSON.stringify(storedSettings));
-    settings.geminiKey = 'AIzaSyBeCa0rPdvPziSwRTXV1SUvJ06UnpXfgmE';
-    console.log("Gemini API Key migrada automáticamente.");
-  }
-} catch(e) { console.error("Error migrando key:", e); }
+let settings = JSON.parse(localStorage.getItem('icde_settings') || '{"waApi":"","geminiKey":""}');
 let currentTab = 'nuevo';
 let selectedProps = [];
 let currentLeadId = null;
@@ -6338,6 +6328,25 @@ document.addEventListener('keydown', (e) => {
       setTimeout(() => toggleGeminiMic(), 350);
     } else {
       toggleGeminiMic();
+    }
+  }
+  // Enter: Toggle Recording / Stop & Send
+  if (e.key === 'Enter') {
+    const sidebar = document.getElementById('geminiSidebar');
+    if (sidebar && sidebar.classList.contains('open')) {
+      const input = document.getElementById('geminiTextInput');
+      const textVal = input ? input.value.trim() : '';
+
+      if (typeof isGeminiListening !== 'undefined' && isGeminiListening) {
+        e.preventDefault();
+        toggleGeminiMic();
+        setTimeout(() => {
+          sendGeminiTextMessage();
+        }, 450);
+      } else if (typeof isGeminiListening !== 'undefined' && !isGeminiListening && !textVal) {
+        e.preventDefault();
+        toggleGeminiMic();
+      }
     }
   }
 });
