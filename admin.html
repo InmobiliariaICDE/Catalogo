@@ -1731,7 +1731,7 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 <div id="app">
   <div class="topbar">
     <img src="https://i.imgur.com/YbnRomr.png" alt="ICDE"/>
-    <div class="brand" style="display: flex; align-items: baseline; gap: 8px;">ICDE Panel de Control <span>/ Gestión de Clientes</span><span style="font-size: 10px; font-weight: normal; color: var(--gold); opacity: 0.7; padding: 1px 6px; border: 1px solid rgba(212,168,75,0.3); border-radius: 6px; font-family: monospace;">v2.8</span></div>
+    <div class="brand" style="display: flex; align-items: baseline; gap: 8px;">ICDE Panel de Control <span>/ Gestión de Clientes</span><span style="font-size: 10px; font-weight: normal; color: var(--gold); opacity: 0.7; padding: 1px 6px; border: 1px solid rgba(212,168,75,0.3); border-radius: 6px; font-family: monospace;">v2.9</span></div>
     <div class="topbar-right">
       <span id="syncStatus" style="font-size:12px;color:#888;"></span>
       <span id="autoSyncIndicator" style="font-size:11px; color:#888; display:none; align-items:center; gap:5px;">
@@ -1741,9 +1741,6 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
       <button class="settings-btn" onclick="refreshData()" title="Sincronizar Datos ahora" style="background:rgba(212,168,75,0.1); border-color:var(--border);">🔄</button>
       <button class="btn-logout" onclick="doLogout()">Salir</button>
     </div>
-  </div>
-  <div id="scriptWarningBanner" style="display:none; background:#ef4444; color:#fff; padding:10px 15px; font-size:13px; text-align:center; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,0.2); position:relative; z-index:9999;">
-    ⚠️ ACCIÓN REQUERIDA: Tu Google Apps Script en la nube está desactualizado y no envía el campo 'Inventario'. Por favor copia el archivo <a href="https://github.com/InmobiliariaICDE/Catalogo/blob/main/ExtractorFotos.gs" target="_blank" style="color:#fff; text-decoration:underline; font-weight:700;">ExtractorFotos.gs</a> en el editor de Apps Script de tu Google Sheet y crea una <strong>Nueva Versión</strong> de la implementación Web App.
   </div>
   <div class="tabs">
     <button class="tab active" onclick="showTab('nuevo')">➕ Nuevo Lead</button>
@@ -3673,11 +3670,8 @@ async function cargarProps(){
     
     // Validar si los datos de la nube contienen el campo Inventario
     const hasInventario = Array.isArray(data) && data.length > 0 && data.some(p => p.hasOwnProperty('Inventario') || p.hasOwnProperty('inventario'));
-    const banner = document.getElementById('scriptWarningBanner');
-    if (banner) {
-      banner.style.display = hasInventario ? 'none' : 'block';
-    }
     
+
     const rawData = normalizarPropiedades(Array.isArray(data) ? data : []);
     
     let remoteProps = rawData.filter(d => {
