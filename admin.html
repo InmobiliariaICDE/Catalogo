@@ -3562,6 +3562,7 @@ function normalizarPropiedades(data) {
       else if (nk === 'descripcion' || nk === 'detalle') k = 'Descripción';
       else if (nk === 'puntos clave' || nk === 'caracteristicas' || nk === 'highlights') k = 'Puntos Clave';
       else if (nk === 'area construida' || nk === 'area construida m2' || nk === 'area total' || nk === 'area' || nk === 'mt2' || nk === 'superficie' || nk === 'rea construida' || nk === 'rea construida m2' || nk === 'rea total' || nk === 'rea') k = 'Área Construida';
+      else if (nk === 'google fotos' || nk === 'google fotos (link)' || nk === 'google fotos (link album)' || nk === 'googlefotos' || nk === 'google fotos (album)' || nk === 'google_fotos' || nk.includes('google fotos') || nk.includes('googlefotos')) k = 'Google Fotos';
       else if (nk === 'imagenes' || nk === 'fotos' || nk === 'imagen' || nk === 'galeria') k = 'Imagenes';
       else if (nk === 'contrato') k = 'Contrato';
       else if (nk === 'publicar') k = 'Publicar';
@@ -3642,6 +3643,11 @@ function normalizarPropiedades(data) {
         }
       } else {
         nuevo[key] = val;
+      }
+
+      // Diagnóstico para Google Fotos e imágenes
+      if (nk.includes('foto') || nk.includes('google') || nk.includes('imagen')) {
+        console.log(`[Diagnostic Log] Normalización: La llave original "${key}" (normalizada a "${nk}") se mapeó a "${k || key}" con valor:`, val);
       }
     }
 
@@ -9725,14 +9731,21 @@ function autofillPropiedadPorCodigo(selectedCode) {
   setVal('gp_ubicacion_posicion', p['Ubicación'] || p['Ubicación (Posición)'] || p['Posición'] || 'Medianera');
   
   let gfLink = p['Google Fotos'] || '';
+  console.log(`[Diagnostic Log] Autocompletando Google Fotos para inmueble ${selectedCode || p['Código']}. Valor en p['Google Fotos']: "${p['Google Fotos'] || ''}"`);
   if (!gfLink) {
     const possibleKeys = ['Google Fotos (Link Álbum)', 'googleFotos', 'Imagenes', 'Image'];
     for (const k of possibleKeys) {
       if (p[k] && typeof p[k] === 'string' && (p[k].includes('photos.app.goo.gl') || p[k].includes('photos.google.com'))) {
         gfLink = p[k];
+        console.log(`[Diagnostic Log] Enlace de Google Fotos recuperado de la llave alternativa "${k}": "${gfLink}"`);
         break;
       }
     }
+  }
+  if (!gfLink) {
+    console.warn(`[Diagnostic Log] ¡Advertencia! No se encontró un enlace de Google Fotos para este inmueble en ninguna llave. Llaves disponibles en el objeto del inmueble:`, Object.keys(p));
+  } else {
+    console.log(`[Diagnostic Log] Asignando enlace final de Google Fotos al input 'gp_gfotos': "${gfLink}"`);
   }
   setVal('gp_gfotos', gfLink);
   
