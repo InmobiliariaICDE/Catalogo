@@ -552,6 +552,31 @@ var CAMPOS_FB = [
   'Reja Antejardín', 'Patio', 'Inventario', 'DIRECCIÓN'
 ];
  
+function mapRowToObj(row, idx) {
+  var obj = {};
+  CAMPOS_FB.forEach(function(campo) {
+    var i = idx[campo];
+    if (i === undefined) {
+      obj[campo] = '';
+      return;
+    }
+    
+    if (campo === 'Dimensiones') {
+      var largo = String(row[i] != null ? row[i] : '').trim();
+      var sep = String(row[i + 1] != null ? row[i + 1] : '').trim();
+      var ancho = String(row[i + 2] != null ? row[i + 2] : '').trim();
+      if (largo && largo !== '0' && ancho && ancho !== '0') {
+        obj[campo] = largo + 'x' + ancho;
+      } else {
+        obj[campo] = '';
+      }
+    } else {
+      obj[campo] = String(row[i] != null ? row[i] : '');
+    }
+  });
+  return obj;
+}
+
 function FIREBASE_onEdit(e) {
   var sheet = e.source.getActiveSheet();
   if (sheet.getName() !== HOJA_NOMBRE) return;
@@ -594,11 +619,7 @@ function FIREBASE_onEdit(e) {
     return;
   }
 
-  var obj = {};
-  CAMPOS_FB.forEach(function(campo) {
-    var i = idx[campo];
-    obj[campo] = i !== undefined ? String(filaData[i] != null ? filaData[i] : '') : '';
-  });
+  var obj = mapRowToObj(filaData, idx);
   obj['_sheetOrder'] = String(row);
 
   escribirDocumento(token, docId, obj);
@@ -637,11 +658,7 @@ function _sincronizarTodos(token, data, headers, idx) {
     var codigo = row[idx['Código']] || (r + 1);
     var docId  = String(codigo).replace(/[^a-zA-Z0-9]/g, '_');
     docsQueDebenExistir[docId] = true;
-    var obj = {};
-    CAMPOS_FB.forEach(function(campo) {
-      var i = idx[campo];
-      obj[campo] = i !== undefined ? String(row[i] != null ? row[i] : '') : '';
-    });
+    var obj = mapRowToObj(row, idx);
     obj['_sheetOrder'] = String(r + 1);
     escribirDocumento(token, docId, obj);
   }
@@ -701,11 +718,7 @@ function leerPropiedades() {
     var row = data[r];
     if (row.every(function(c) { return c === '' || c === null || c === undefined; })) continue;
     if (String(row[colPublicar] || '').trim().toUpperCase() !== 'SI') continue;
-    var obj = {};
-    CAMPOS_FB.forEach(function(campo) {
-      var i = idx[campo];
-      obj[campo] = i !== undefined ? String(row[i] != null ? row[i] : '') : '';
-    });
+    var obj = mapRowToObj(row, idx);
     obj['_sheetOrder'] = String(r);
     rows.push(obj);
   }
@@ -820,10 +833,37 @@ function doPost(e) {
         return ContentService.createTextOutput(JSON.stringify({ok: false, error: "No se encontró la columna de Código"})).setMimeType(ContentService.MimeType.JSON);
       }
       
+      // Encontrar columna de dimensiones
+      var dimIdx = -1;
+      for (var i = 0; i < headers.length; i++) {
+        var hNorm = String(headers[i] || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        if (hNorm === 'dimensiones') {
+          dimIdx = i;
+          break;
+        }
+      }
+      
       // Mapear campos a las columnas de la hoja
-      var rowData = headers.map(function(h) {
+      var rowData = headers.map(function(h, colIdx) {
         var fieldName = String(h || "").trim();
         var nk = fieldName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        
+        if (dimIdx !== -1) {
+          if (colIdx === dimIdx) {
+            var dimsStr = String(prop['Dimensiones'] || "").trim();
+            var parts = dimsStr.split(/[xX]/);
+            return parts[0] ? parts[0].trim() : '0';
+          }
+          if (colIdx === dimIdx + 1) {
+            var dimsStr = String(prop['Dimensiones'] || "").trim();
+            return dimsStr ? 'X' : '';
+          }
+          if (colIdx === dimIdx + 2) {
+            var dimsStr = String(prop['Dimensiones'] || "").trim();
+            var parts = dimsStr.split(/[xX]/);
+            return parts[1] ? parts[1].trim() : '0';
+          }
+        }
         
         if (nk === 'codigo' || nk === 'cdigo' || nk === 'cod' || nk === 'id') return prop['Código'] || '';
         if (nk === 'nombre' || nk === 'titulo' || nk === 'propiedad') return prop['Nombre'] || '';
@@ -914,16 +954,7 @@ function doPost(e) {
         var publicarVal = colPublicar > 0 ? String(sheet.getRange(newRow, colPublicar).getValue() || '').trim().toUpperCase() : 'NO';
         
         if (publicarVal === 'SI') {
-          var fbObj = {};
-          var currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-          var currentFilaData = sheet.getRange(newRow, 1, 1, sheet.getLastColumn()).getValues()[0];
-          var currentIdx = {};
-          currentHeaders.forEach(function(h, idx) { if (h) currentIdx[String(h).trim()] = idx; });
-          
-          CAMPOS_FB.forEach(function(campo) {
-            var i = currentIdx[campo];
-            fbObj[campo] = i !== undefined ? String(currentFilaData[i] != null ? currentFilaData[i] : '') : '';
-          });
+          var fbObj = mapRowToObj(currentFilaData, currentIdx);
           fbObj['_sheetOrder'] = String(newRow);
           escribirDocumento(token, docId, fbObj);
         } else {
