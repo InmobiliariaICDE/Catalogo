@@ -9447,10 +9447,7 @@ function renderNuevaPropiedad() {
           </select>
         </div>
         <div class="form-group"><label class="form-label">Inventario</label>
-          <select class="form-input" id="gp_inventario">
-            <option value="NO">NO</option>
-            <option value="Inventario">Inventario</option>
-          </select>
+          <input class="form-input" id="gp_inventario" type="text" value="NO" placeholder="Inventario o NO"/>
         </div>
         <div class="form-group"><label class="form-label">Celular 1</label><input class="form-input" id="gp_celulares" type="text" placeholder="Celular 1"/></div>
         <div class="form-group"><label class="form-label">Celular 2</label><input class="form-input" id="gp_celular_2" type="text" placeholder="Celular 2"/></div>
@@ -10395,9 +10392,12 @@ function resetNuevaPropForm() {
   
   const selectIds = [
     'gp_tipo', 'gp_contrato', 'gp_estrato', 'gp_habitaciones', 'gp_banos', 'gp_garaje', 'gp_piscina', 'gp_cocina',
-    'gp_closets', 'gp_inventario', 'gp_ascensor', 'gp_reja_antejardin', 'gp_patio'
+    'gp_closets', 'gp_ascensor', 'gp_reja_antejardin', 'gp_patio'
   ];
   selectIds.forEach(id => { const el = document.getElementById(id); if (el) el.selectedIndex = 0; });
+
+  const invEl = document.getElementById('gp_inventario');
+  if (invEl) invEl.value = 'NO';
   
   const checkIds = ['gp_destacada', 'gp_publicar'];
   checkIds.forEach(id => { const el = document.getElementById(id); if (el) el.checked = (id==='gp_publicar'); });
@@ -11071,10 +11071,7 @@ function swShowReviewForm(data) {
         </select>
       </div>
       <div class="form-group"><label class="form-label">Inventario</label>
-        <select class="form-input ${emptyClass(data.inventario)}" id="gp_inventario">
-          <option value="NO" ${(data.inventario && String(data.inventario).trim().toUpperCase() === 'NO') || !data.inventario ? 'selected' : ''}>NO</option>
-          <option value="Inventario" ${(data.inventario && String(data.inventario).trim() === 'Inventario') ? 'selected' : ''}>Inventario</option>
-        </select>
+        <input class="form-input ${emptyClass(data.inventario)}" id="gp_inventario" type="text" value="${emptyCheck(data.inventario || 'NO')}" placeholder="Inventario o NO"/>
       </div>
       <div class="form-group"><label class="form-label">Celular 1</label><input class="form-input ${emptyClass(data.celulares)}" id="gp_celulares" type="text" value="${emptyCheck(data.celulares)}" placeholder="Celular 1"/></div>
       <div class="form-group"><label class="form-label">Celular 2</label><input class="form-input ${emptyClass(data.celular_2 || data.celular2)}" id="gp_celular_2" type="text" value="${emptyCheck(data.celular_2 || data.celular2)}" placeholder="Celular 2"/></div>
