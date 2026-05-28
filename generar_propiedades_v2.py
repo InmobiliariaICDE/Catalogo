@@ -74,7 +74,7 @@ def parsear_imagenes(campo: str) -> list[str]:
     if not campo:
         return []
     urls = [u.strip() for u in campo.replace("\r", "").replace("\n", "").split("|")]
-    return [u for u in urls if len(u) > 10]
+    return [u for u in urls if len(u) > 10 and (u.lower().startswith("http://") or u.lower().startswith("https://"))]
 
 
 def precio_corto(precio_str: str) -> str:
@@ -320,6 +320,8 @@ ICONOS = {
 
 def build_html(p: dict, slug: str) -> str:
     imagenes  = parsear_imagenes(p.get("Imagenes") or p.get("Google Fotos") or p.get("Image") or "")
+    if not imagenes:
+        imagenes = ["https://i.imgur.com/Pc9M3I8.png"]
     imagen_og = imagenes[0] if imagenes else ""
 
     title      = build_title(p)

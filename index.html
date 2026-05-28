@@ -9946,7 +9946,10 @@ document.head.appendChild(schemaScript);
                         const path = window.location.pathname;
                         const match = path.match(/^\/propiedad\/(.+)/);
                         if (!match) return;
-                        const slugURL = match[1];
+                        let slugURL = match[1];
+                        if (slugURL.endsWith('.html')) {
+                            slugURL = slugURL.slice(0, -5);
+                        }
                         // Buscar la propiedad cuyo slug coincida
                         const encontrada = datos.find(d => generarSlugPropiedad(d) === slugURL);
                         if (encontrada) {
