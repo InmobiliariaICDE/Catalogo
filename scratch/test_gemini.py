@@ -23,6 +23,4 @@ def test_model(model):
         else:
             print(str(e))
 
-print("Testing the new API Key...")
-test_model("gemini-2.0-flash")
-test_model("gemini-2.0-flash-lite")
+test_model("gemini-flash-latest")
