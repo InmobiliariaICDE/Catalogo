@@ -6653,14 +6653,17 @@ function executeGeminiAction(action) {
     case 'BUSCAR_PROPIEDADES':
       showTab('nuevo');
       const searchQuery = action.query || action.codigo || '';
-      const inputNl = document.getElementById('fnBus_nl');
-      if (inputNl) {
-        inputNl.value = searchQuery;
-        if (typeof fnBuscar === 'function') fnBuscar('nl', searchQuery);
-        toast(`Filtrado catálogo por: "${searchQuery}" ✓`, 'success');
-      } else {
-        toast(`Buscar propiedades: "${searchQuery}"`, 'info');
-      }
+      // Retraso de 100ms para permitir que la barra de filtros se dibuje asíncronamente en el DOM
+      setTimeout(() => {
+        const inputNl = document.getElementById('fnBus_nl');
+        if (inputNl) {
+          inputNl.value = searchQuery;
+          if (typeof fnBuscar === 'function') fnBuscar('nl', searchQuery);
+          toast(`Filtrado catálogo por: "${searchQuery}" ✓`, 'success');
+        } else {
+          toast(`Buscar propiedades: "${searchQuery}"`, 'info');
+        }
+      }, 100);
       break;
     case 'BUSCAR_LEADS':
       showTab('leads');
