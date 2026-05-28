@@ -6352,10 +6352,16 @@ document.addEventListener('keydown', (e) => {
         
         const textVal = geminiInputEl.value.trim();
         if (typeof isGeminiListening !== 'undefined' && isGeminiListening) {
+          // Capturar el texto inmediatamente antes de detener el micrófono
           toggleGeminiMic();
+          // Retraso muy corto para permitir que se asiente la detención y enviar
           setTimeout(() => {
-            sendGeminiTextMessage();
-          }, 450);
+            const finalQuery = geminiInputEl.value.trim() || textVal;
+            if (finalQuery) {
+              geminiInputEl.value = finalQuery;
+              sendGeminiTextMessage();
+            }
+          }, 250);
         } else if (textVal) {
           sendGeminiTextMessage();
         } else {
