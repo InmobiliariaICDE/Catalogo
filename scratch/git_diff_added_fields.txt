@@ -1,0 +1,67 @@
+diff --git a/admin.html b/admin.html
+index eba40c9..6d019b3 100644
+--- a/admin.html
++++ b/admin.html
+@@ -1742,6 +1742,9 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
+       <button class="btn-logout" onclick="doLogout()">Salir</button>
+     </div>
+   </div>
++  <div id="scriptWarningBanner" style="display:none; background:#ef4444; color:#fff; padding:10px 15px; font-size:13px; text-align:center; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,0.2); position:relative; z-index:9999;">
++    ⚠️ ACCIÓN REQUERIDA: Tu Google Apps Script en la nube está desactualizado y no envía el campo 'Inventario'. Por favor copia el archivo <a href="https://github.com/InmobiliariaICDE/Catalogo/blob/main/ExtractorFotos.gs" target="_blank" style="color:#fff; text-decoration:underline; font-weight:700;">ExtractorFotos.gs</a> en el editor de Apps Script de tu Google Sheet y crea una <strong>Nueva Versión</strong> de la implementación Web App.
++  </div>
+   <div class="tabs">
+     <button class="tab active" onclick="showTab('nuevo')">➕ Nuevo Lead</button>
+     <button class="tab" onclick="showTab('leads')">👥 Leads</button>
+@@ -3667,6 +3670,14 @@ async function cargarProps(){
+     const urlBusca = "https://script.google.com/macros/s/AKfycbz-HipJ53KIf2JD1q9BUIBFUB45o4wRYcjvlqUbpg9TDAGK0q3hNQcSrV23dMCWaTgXcQ/exec?action=getData&t=" + Date.now();
+     const res = await fetch(urlBusca);
+     const data = await res.json();
++    
++    // Validar si los datos de la nube contienen el campo Inventario
++    const hasInventario = Array.isArray(data) && data.length > 0 && data.some(p => p.hasOwnProperty('Inventario') || p.hasOwnProperty('inventario'));
++    const banner = document.getElementById('scriptWarningBanner');
++    if (banner) {
++      banner.style.display = hasInventario ? 'none' : 'block';
++    }
++    
+     const rawData = normalizarPropiedades(Array.isArray(data) ? data : []);
+     
+     let remoteProps = rawData.filter(d => {
+@@ -9447,10 +9458,7 @@ function renderNuevaPropiedad() {
+           </select>
+         </div>
+         <div class="form-group"><label class="form-label">Inventario</label>
+-          <select class="form-input" id="gp_inventario">
+-            <option value="NO">NO</option>
+-            <option value="Inventario">Inventario</option>
+-          </select>
++          <input class="form-input" id="gp_inventario" type="text" value="NO" placeholder="Inventario o NO"/>
+         </div>
+         <div class="form-group"><label class="form-label">Celular 1</label><input class="form-input" id="gp_celulares" type="text" placeholder="Celular 1"/></div>
+         <div class="form-group"><label class="form-label">Celular 2</label><input class="form-input" id="gp_celular_2" type="text" placeholder="Celular 2"/></div>
+@@ -10395,9 +10403,12 @@ function resetNuevaPropForm() {
+   
+   const selectIds = [
+     'gp_tipo', 'gp_contrato', 'gp_estrato', 'gp_habitaciones', 'gp_banos', 'gp_garaje', 'gp_piscina', 'gp_cocina',
+-    'gp_closets', 'gp_inventario', 'gp_ascensor', 'gp_reja_antejardin', 'gp_patio'
++    'gp_closets', 'gp_ascensor', 'gp_reja_antejardin', 'gp_patio'
+   ];
+   selectIds.forEach(id => { const el = document.getElementById(id); if (el) el.selectedIndex = 0; });
++
++  const invEl = document.getElementById('gp_inventario');
++  if (invEl) invEl.value = 'NO';
+   
+   const checkIds = ['gp_destacada', 'gp_publicar'];
+   checkIds.forEach(id => { const el = document.getElementById(id); if (el) el.checked = (id==='gp_publicar'); });
+@@ -11071,10 +11082,7 @@ function swShowReviewForm(data) {
+         </select>
+       </div>
+       <div class="form-group"><label class="form-label">Inventario</label>
+-        <select class="form-input ${emptyClass(data.inventario)}" id="gp_inventario">
+-          <option value="NO" ${(data.inventario && String(data.inventario).trim().toUpperCase() === 'NO') || !data.inventario ? 'selected' : ''}>NO</option>
+-          <option value="Inventario" ${(data.inventario && String(data.inventario).trim() === 'Inventario') ? 'selected' : ''}>Inventario</option>
+-        </select>
++        <input class="form-input ${emptyClass(data.inventario)}" id="gp_inventario" type="text" value="${emptyCheck(data.inventario || 'NO')}" placeholder="Inventario o NO"/>
+       </div>
+       <div class="form-group"><label class="form-label">Celular 1</label><input class="form-input ${emptyClass(data.celulares)}" id="gp_celulares" type="text" value="${emptyCheck(data.celulares)}" placeholder="Celular 1"/></div>
+       <div class="form-group"><label class="form-label">Celular 2</label><input class="form-input ${emptyClass(data.celular_2 || data.celular2)}" id="gp_celular_2" type="text" value="${emptyCheck(data.celular_2 || data.celular2)}" placeholder="Celular 2"/></div>
