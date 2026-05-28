@@ -745,6 +745,58 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
   filter: drop-shadow(0 8px 16px rgba(212, 168, 75, 0.45));
 }
 
+.gemini-speech-bubble {
+  position: fixed;
+  bottom: 94px;
+  right: 92px;
+  max-width: 280px;
+  background: rgba(20, 20, 22, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(212, 168, 75, 0.1);
+  z-index: 101;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(15px) scale(0.9);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.25);
+}
+.gemini-speech-bubble.active {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
+}
+.gemini-speech-bubble::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -10px;
+  transform: translateY(-50%);
+  border-width: 6px 0 6px 10px;
+  border-style: solid;
+  border-color: transparent transparent transparent rgba(20, 20, 22, 0.95);
+  display: block;
+  width: 0;
+  z-index: 1;
+}
+.gemini-speech-bubble::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  transform: translateY(-50%);
+  border-width: 7px 0 7px 12px;
+  border-style: solid;
+  border-color: transparent transparent transparent rgba(255, 255, 255, 0.08);
+  display: block;
+  width: 0;
+  z-index: 0;
+}
+
 .gemini-sidebar {
   position: fixed;
   top: 0;
@@ -2137,6 +2189,9 @@ textarea.gemini-card-input {
     </div>
   </div>
 </div>
+
+<!-- GEMINI SPEECH BUBBLE -->
+<div class="gemini-speech-bubble" id="geminiSpeechBubble"></div>
 
 <!-- GEMINI ASSISTANT BTN -->
 <button class="gemini-btn" id="geminiBtn" onclick="toggleGemini()" title="Asistente Gemini AI">
@@ -6334,23 +6389,33 @@ function diagnosticarDatosLocales() {
 /* ═══════════════════════════════════════════════
    HYBRID GEMINI AI ASSISTANT CORE
    ═══════════════════════════════════════════════ */
+function showGeminiSpeechBubble(text, duration = 5000) {
+  const bubble = document.getElementById('geminiSpeechBubble');
+  if (!bubble) return;
+  bubble.innerHTML = text;
+  bubble.classList.add('active');
+  
+  if (window.geminiBubbleTimeout) {
+    clearTimeout(window.geminiBubbleTimeout);
+  }
+  
+  if (duration) {
+    window.geminiBubbleTimeout = setTimeout(() => {
+      bubble.classList.remove('active');
+    }, duration);
+  }
+}
+
+function hideGeminiSpeechBubble() {
+  const bubble = document.getElementById('geminiSpeechBubble');
+  if (bubble) bubble.classList.remove('active');
+}
+
 let recognition;
 let isGeminiListening = false;
 
 function toggleGemini() {
-  const sidebar = document.getElementById('geminiSidebar');
-  if (sidebar) {
-    if (!sidebar.classList.contains('open')) {
-      toggleGeminiSidebar();
-      setTimeout(() => {
-        if (!isGeminiListening) {
-          toggleGeminiMic();
-        }
-      }, 350);
-    } else {
-      toggleGeminiMic();
-    }
-  }
+  toggleGeminiMic();
 }
 
 function toggleGeminiSidebar() {
@@ -6455,6 +6520,7 @@ function addGeminiMessage(sender, text, htmlExtra = '', emotion = 'feliz') {
       ${htmlExtra ? `<div style="padding-left: 56px; width: 100%; box-sizing: border-box;">${htmlExtra}</div>` : ''}
     `;
     setGeminiEmotion(emotion);
+    showGeminiSpeechBubble(text, 10000);
   } else if (sender === 'user') {
     row.innerHTML = `
       <div class="gemini-bubble user" style="align-self: flex-end;">
@@ -6511,6 +6577,7 @@ function showGeminiTypingIndicator() {
   if (!container) return;
   
   hideGeminiTypingIndicator();
+  showGeminiSpeechBubble("🧠 <strong>Pensando...</strong>", 0);
   
   const row = document.createElement('div');
   row.id = 'geminiTypingIndicator';
@@ -6554,7 +6621,19 @@ function toggleGeminiMic() {
     isGeminiListening = false;
     micBtn.classList.remove('listening');
     if (gBtn) gBtn.classList.remove('listening');
-    toast('Grabación finalizada', 'info');
+    
+    // Automatically trigger processing
+    showGeminiSpeechBubble("⚡ <strong>Procesando tu solicitud...</strong>", 0);
+    setTimeout(() => {
+      const input = document.getElementById('geminiTextInput');
+      if (input && input.value.trim() !== '') {
+        const textToSend = input.value.trim();
+        input.value = '';
+        processWithGemini(textToSend);
+      } else {
+        showGeminiSpeechBubble("🤔 No alcancé a escucharte bien. ¡Vuelve a intentarlo!", 4000);
+      }
+    }, 450);
   } else {
     if (!('webkitSpeechRecognition' in window)) {
       toast('Tu navegador no soporta entrada de voz', 'error');
@@ -6572,7 +6651,7 @@ function toggleGeminiMic() {
       isGeminiListening = true;
       micBtn.classList.add('listening');
       if (gBtn) gBtn.classList.add('listening');
-      toast('Escuchando (habla libremente, vuelve a pulsar el micro para procesar)...', 'success');
+      showGeminiSpeechBubble("🎙️ <strong>Te estoy escuchando...</strong> Habla libremente y vuelve a hacerme click cuando termines.", 6000);
       finalTranscript = '';
       setGeminiEmotion('saludo');
     };
@@ -6586,10 +6665,13 @@ function toggleGeminiMic() {
           interimTranscript += e.results[i][0].transcript;
         }
       }
+      const text = finalTranscript + interimTranscript;
       const input = document.getElementById('geminiTextInput');
       if (input) {
-        input.value = finalTranscript + interimTranscript;
+        input.value = text;
       }
+      // Show transcribed text in speech bubble in real-time
+      showGeminiSpeechBubble(`🎙️ <em>"${text}"</em>`, 0);
     };
 
     recognition.onerror = (err) => {
@@ -6598,12 +6680,26 @@ function toggleGeminiMic() {
       micBtn.classList.remove('listening');
       if (gBtn) gBtn.classList.remove('listening');
       isGeminiListening = false;
+      showGeminiSpeechBubble("⚠️ <strong>El micrófono no respondió.</strong> Asegúrate de dar permisos de voz.", 5000);
     };
 
     recognition.onend = () => {
       micBtn.classList.remove('listening');
       if (gBtn) gBtn.classList.remove('listening');
-      isGeminiListening = false;
+      
+      // If ended automatically while still listening, let's process!
+      if (isGeminiListening) {
+        isGeminiListening = false;
+        showGeminiSpeechBubble("⚡ <strong>Procesando tu solicitud...</strong>", 0);
+        const input = document.getElementById('geminiTextInput');
+        if (input && input.value.trim() !== '') {
+          const textToSend = input.value.trim();
+          input.value = '';
+          processWithGemini(textToSend);
+        } else {
+          showGeminiSpeechBubble("🤔 No alcancé a escucharte bien. ¡Vuelve a intentarlo!", 4000);
+        }
+      }
     };
 
     recognition.start();
