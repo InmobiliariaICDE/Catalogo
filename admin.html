@@ -6330,26 +6330,66 @@ document.addEventListener('keydown', (e) => {
       toggleGeminiMic();
     }
   }
-  // Enter: Toggle Recording / Stop & Send
-  if (e.key === 'Enter') {
+  // Enter globally (only if NOT typing inside the main text input)
+  if (e.key === 'Enter' && document.activeElement !== document.getElementById('geminiTextInput')) {
     const sidebar = document.getElementById('geminiSidebar');
     if (sidebar && sidebar.classList.contains('open')) {
-      const input = document.getElementById('geminiTextInput');
-      const textVal = input ? input.value.trim() : '';
-
-      if (typeof isGeminiListening !== 'undefined' && isGeminiListening) {
-        e.preventDefault();
-        toggleGeminiMic();
-        setTimeout(() => {
-          sendGeminiTextMessage();
-        }, 450);
-      } else if (typeof isGeminiListening !== 'undefined' && !isGeminiListening && !textVal) {
-        e.preventDefault();
-        toggleGeminiMic();
-      }
+      e.preventDefault();
+      toggleGeminiMic();
     }
   }
 });
+
+// Dedicated listener bound directly to the input to prevent event bubbles from clashing
+document.addEventListener('DOMContentLoaded', () => {
+  const geminiInputEl = document.getElementById('geminiTextInput');
+  if (geminiInputEl) {
+    geminiInputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const textVal = geminiInputEl.value.trim();
+        if (typeof isGeminiListening !== 'undefined' && isGeminiListening) {
+          toggleGeminiMic();
+          setTimeout(() => {
+            sendGeminiTextMessage();
+          }, 450);
+        } else if (textVal) {
+          sendGeminiTextMessage();
+        } else {
+          toggleGeminiMic();
+        }
+      }
+    });
+  }
+});
+
+// Fallback initialization just in case DOMContentLoaded has already fired
+setTimeout(() => {
+  const geminiInputEl = document.getElementById('geminiTextInput');
+  if (geminiInputEl && !geminiInputEl._hasGeminiListener) {
+    geminiInputEl._hasGeminiListener = true;
+    geminiInputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const textVal = geminiInputEl.value.trim();
+        if (typeof isGeminiListening !== 'undefined' && isGeminiListening) {
+          toggleGeminiMic();
+          setTimeout(() => {
+            sendGeminiTextMessage();
+          }, 450);
+        } else if (textVal) {
+          sendGeminiTextMessage();
+        } else {
+          toggleGeminiMic();
+        }
+      }
+    });
+  }
+}, 1200);
 
 function addGeminiMessage(sender, text, htmlExtra = '', emotion = 'feliz') {
   const container = document.getElementById('geminiChatHistory');
@@ -6628,12 +6668,12 @@ function executeGeminiAction(action) {
       renderCitaPreviewCard(action);
       break;
     case 'BUSCAR_PROPIEDADES':
-      showTab('gestion');
+      showTab('nuevo');
       const searchQuery = action.query || action.codigo || '';
-      const inputCat = document.getElementById('fnBus_cat');
-      if (inputCat) {
-        inputCat.value = searchQuery;
-        if (typeof fnBuscar === 'function') fnBuscar('cat', searchQuery);
+      const inputNl = document.getElementById('fnBus_nl');
+      if (inputNl) {
+        inputNl.value = searchQuery;
+        if (typeof fnBuscar === 'function') fnBuscar('nl', searchQuery);
         toast(`Filtrado catálogo por: "${searchQuery}" ✓`, 'success');
       } else {
         toast(`Buscar propiedades: "${searchQuery}"`, 'info');
@@ -12507,7 +12547,7 @@ function cerrarBottomCard() {
       <button class="gemini-mic-btn" id="geminiMicBtn" onclick="toggleGeminiMic()" title="Hablar con Gemini">
         <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px;"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
       </button>
-      <input type="text" class="gemini-text-input" id="geminiTextInput" placeholder="Escribe un comando..." onkeydown="if(event.key==='Enter') sendGeminiTextMessage()">
+      <input type="text" class="gemini-text-input" id="geminiTextInput" placeholder="Escribe un comando...">
       <button class="gemini-send-btn" id="geminiSendBtn" onclick="sendGeminiTextMessage()" title="Enviar mensaje">
         <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px; height:16px; margin-left: 2px;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
