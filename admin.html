@@ -1731,7 +1731,7 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 <div id="app">
   <div class="topbar">
     <img src="https://i.imgur.com/YbnRomr.png" alt="ICDE"/>
-    <div class="brand" style="display: flex; align-items: baseline; gap: 8px;">ICDE Panel de Control <span>/ Gestión de Clientes</span><span style="font-size: 10px; font-weight: normal; color: var(--gold); opacity: 0.7; padding: 1px 6px; border: 1px solid rgba(212,168,75,0.3); border-radius: 6px; font-family: monospace;">v2.5</span></div>
+    <div class="brand" style="display: flex; align-items: baseline; gap: 8px;">ICDE Panel de Control <span>/ Gestión de Clientes</span><span style="font-size: 10px; font-weight: normal; color: var(--gold); opacity: 0.7; padding: 1px 6px; border: 1px solid rgba(212,168,75,0.3); border-radius: 6px; font-family: monospace;">v2.7</span></div>
     <div class="topbar-right">
       <span id="syncStatus" style="font-size:12px;color:#888;"></span>
       <span id="autoSyncIndicator" style="font-size:11px; color:#888; display:none; align-items:center; gap:5px;">
@@ -7632,8 +7632,12 @@ function initMapa(pfx) {
 
   // Unified map click handler: Add Property Mode OR Street View Reverse Geocoding
   leafletMap.on('click', (e) => {
+    console.log("Map clicked!", e.latlng);
+    console.log("Current mapAddMode state:", mapAddMode);
+    
     // --- MODO AGREGAR PROPIEDAD ---
     if (mapAddMode) {
+      console.log("Executing mapAddMode logic...");
       mapAddMode = false;
       document.querySelectorAll('.btn-map-add-mode').forEach(b => b.classList.remove('active'));
       leafletMap.getContainer().style.cursor = '';
@@ -7646,6 +7650,7 @@ function initMapa(pfx) {
       const clickedLng = e.latlng.lng;
       
       if (_pendingGeoProp !== null) {
+        console.log("Georeferencing existing property:", _pendingGeoProp['Código']);
         // PASO 2: GEOREFERENCIAR INMUEBLE EXISTENTE
         const cod = _pendingGeoProp['Código'];
         const idx = allProps.findIndex(x => x['Código'] === cod);
@@ -7671,9 +7676,11 @@ function initMapa(pfx) {
         }
         _pendingGeoProp = null; // Limpiar
       } else {
+        console.log("Adding new property at:", clickedLat, clickedLng);
         // PASO 3: CREAR NUEVO INMUEBLE DESDE CERO
         // Si venimos de reubicar desde adentro del formulario
         if (typeof originalEditorState !== 'undefined' && originalEditorState !== null) {
+          console.log("Restoring originalEditorState...");
           // Reabrir formulario con las nuevas coordenadas
           abrirEditorProp(originalEditorState.codigo, clickedLat, clickedLng);
           
@@ -7705,6 +7712,7 @@ function initMapa(pfx) {
           
           originalEditorState = null; // Limpiar estado
         } else {
+          console.log("Opening fresh editor...");
           abrirEditorProp(null, clickedLat, clickedLng);
         }
       }
@@ -7713,6 +7721,7 @@ function initMapa(pfx) {
     // Close any active marker popup
     leafletMap.closePopup();
     
+
     const lat = e.latlng.lat;
     const lng = e.latlng.lng;
     
@@ -8230,17 +8239,23 @@ function abrirNuevaPropiedad() {
 }
 
 function toggleMapAddMode(pfx) {
+  console.log("toggleMapAddMode called for pfx:", pfx);
   mapAddMode = !mapAddMode;
+  console.log("mapAddMode set to:", mapAddMode);
   const btn = document.getElementById(`btnAddProp_${pfx}`);
   if (btn) btn.classList.toggle('active', mapAddMode);
   
   if (mapAddMode) {
     toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
     if (leafletMap) {
+      console.log("Setting map cursor to crosshair");
       leafletMap.getContainer().style.cursor = 'crosshair';
+    } else {
+      console.warn("leafletMap is null when activating mapAddMode!");
     }
   } else {
     if (leafletMap) {
+      console.log("Restoring map cursor");
       leafletMap.getContainer().style.cursor = '';
     }
   }
