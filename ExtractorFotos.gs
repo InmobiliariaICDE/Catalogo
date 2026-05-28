@@ -552,6 +552,68 @@ var CAMPOS_FB = [
   'Reja Antejardín', 'Patio', 'Inventario', 'DIRECCIÓN'
 ];
  
+function buildHeaderIndex(headers) {
+  var idx = {};
+  headers.forEach(function(h, i) {
+    if (h) {
+      var headerStr = String(h).trim();
+      idx[headerStr] = i;
+      var nh = headerStr.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      
+      // Case-insensitive fallbacks to ensure compatibility with CAMPOS_FB
+      if (nh === 'codigo' || nh === 'cdigo' || nh === 'cod' || nh === 'id') { idx['Código'] = i; }
+      else if (nh === 'nombre' || nh === 'titulo') { idx['Nombre'] = i; }
+      else if (nh === 'tipo' || nh === 'tipo de inmueble') { idx['Tipo de inmueble'] = i; }
+      else if (nh === 'barrio') { idx['Barrio'] = i; }
+      else if (nh === 'conjunto') { idx['Conjunto'] = i; }
+      else if (nh === 'precio') { idx['Precio'] = i; }
+      else if (nh === 'rango de precio') { idx['Rango de precio'] = i; }
+      else if (nh === 'zona') { idx['Zona'] = i; }
+      else if (nh === 'comuna') { idx['Comuna'] = i; }
+      else if (nh === 'habitaciones') { idx['Habitaciones'] = i; }
+      else if (nh === 'banos') { idx['Baños'] = i; }
+      else if (nh === 'garaje') { idx['Garaje'] = i; }
+      else if (nh === 'pisos') { idx['Pisos'] = i; }
+      else if (nh === 'area construida' || nh === 'area') { idx['Área Construida'] = i; }
+      else if (nh === 'area lote') { idx['Área lote'] = i; }
+      else if (nh === 'rentabilidad') { idx['Rentabilidad'] = i; }
+      else if (nh === 'ciudad') { idx['Ciudad'] = i; }
+      else if (nh === 'estrato') { idx['Estrato'] = i; }
+      else if (nh === 'ubicacion') { idx['Ubicación'] = i; }
+      else if (nh === 'closet') { idx['Closet'] = i; }
+      else if (nh === 'piscina') { idx['Piscina'] = i; }
+      else if (nh === 'administracion') { idx['Administración'] = i; }
+      else if (nh === 'retorno de la inversion') { idx['Retorno de la Inversión'] = i; }
+      else if (nh === 'image') { idx['Image'] = i; }
+      else if (nh === 'google fotos') { idx['Google Fotos'] = i; }
+      else if (nh === 'descripcion') { idx['Descripción'] = i; }
+      else if (nh === 'puntos clave') { idx['Puntos Clave'] = i; }
+      else if (nh === 'buscar') { idx['Buscar'] = i; }
+      else if (nh === 'cocina') { idx['Cocina'] = i; }
+      else if (nh === 'contrato') { idx['Contrato'] = i; }
+      else if (nh === 'inmobiliaria') { idx['Inmobiliaria'] = i; }
+      else if (nh === 'imagenes') { idx['Imagenes'] = i; }
+      else if (nh === 'publicar') { idx['Publicar'] = i; }
+      else if (nh === 'celular' || nh === 'celular 1') { idx['CELULAR'] = i; }
+      else if (nh === 'celular 2') { idx['CELULAR 2'] = i; }
+      else if (nh === 'propietario') { idx['PROPIETARIO'] = i; }
+      else if (nh === 'rentab') { idx['RENTAB.'] = i; }
+      else if (nh === 'dimensiones') { idx['Dimensiones'] = i; }
+      
+      // Especificos
+      if (nh === 'ascenso' || nh === 'ascensor') { idx['Ascensor'] = i; idx['ASCENSO'] = i; }
+      else if (nh === 'cortinas' || nh === 'cortina' || nh.indexOf('cortina') >= 0) { idx['Número de Cortinas'] = i; idx['CORTINAS'] = i; }
+      else if (nh === 'aire' || nh === 'aire acondicionado' || nh.indexOf('aire') >= 0) { idx['Aire Acondicionado'] = i; idx['AIRE'] = i; }
+      else if (nh === 'reja' || nh === 'reja/' || nh.indexOf('reja') >= 0) { idx['Reja Antejardín'] = i; idx['REJA/'] = i; }
+      else if (nh === 'antiguedad' || nh.indexOf('antig') >= 0) { idx['Antigüedad del Inmueble'] = i; idx['ANTIGÜEDAD'] = i; }
+      else if (nh === 'patio') { idx['Patio'] = i; idx['PATIO'] = i; }
+      else if (nh === 'inventario') { idx['Inventario'] = i; }
+      else if (nh === 'direccion') { idx['DIRECCIÓN'] = i; }
+    }
+  });
+  return idx;
+}
+
 function mapRowToObj(row, idx) {
   var obj = {};
   CAMPOS_FB.forEach(function(campo) {
@@ -586,8 +648,7 @@ function FIREBASE_onEdit(e) {
 
   var data    = sheet.getDataRange().getValues();
   var headers = data[0];
-  var idx     = {};
-  headers.forEach(function(h, i) { if (h) idx[String(h).trim()] = i; });
+  var idx     = buildHeaderIndex(headers);
 
   var token = getAccessToken();
 
@@ -698,21 +759,8 @@ function leerPropiedades() {
   var ss    = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName(HOJA_NOMBRE);
   var data  = sheet.getDataRange().getValues();
-  var headers = data[0], idx = {};
-  headers.forEach(function(h, i) {
-    if (h) {
-      var headerStr = String(h).trim();
-      idx[headerStr] = i;
-      var nh = headerStr.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-      if (nh === 'ascenso' || nh === 'ascensor') { idx['Ascensor'] = i; idx['ASCENSO'] = i; }
-      else if (nh === 'cortinas' || nh === 'cortina' || nh.indexOf('cortina') >= 0) { idx['Número de Cortinas'] = i; idx['CORTINAS'] = i; }
-      else if (nh === 'aire' || nh === 'aire acondicionado' || nh.indexOf('aire') >= 0) { idx['Aire Acondicionado'] = i; idx['AIRE'] = i; }
-      else if (nh === 'reja' || nh === 'reja/' || nh.indexOf('reja') >= 0) { idx['Reja Antejardín'] = i; idx['REJA/'] = i; }
-      else if (nh === 'antiguedad' || nh.indexOf('antig') >= 0) { idx['Antigüedad del Inmueble'] = i; idx['ANTIGÜEDAD'] = i; }
-      else if (nh === 'patio') { idx['Patio'] = i; idx['PATIO'] = i; }
-      else if (nh === 'inventario') { idx['Inventario'] = i; }
-    }
-  });
+  var headers = data[0];
+  var idx = buildHeaderIndex(headers);
   var colPublicar = idx['Publicar'], rows = [];
   for (var r = 1; r < data.length; r++) {
     var row = data[r];
@@ -954,6 +1002,9 @@ function doPost(e) {
         var publicarVal = colPublicar > 0 ? String(sheet.getRange(newRow, colPublicar).getValue() || '').trim().toUpperCase() : 'NO';
         
         if (publicarVal === 'SI') {
+          var currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+          var currentFilaData = sheet.getRange(newRow, 1, 1, sheet.getLastColumn()).getValues()[0];
+          var currentIdx = buildHeaderIndex(currentHeaders);
           var fbObj = mapRowToObj(currentFilaData, currentIdx);
           fbObj['_sheetOrder'] = String(newRow);
           escribirDocumento(token, docId, fbObj);

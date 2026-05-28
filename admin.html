@@ -3645,8 +3645,8 @@ function normalizarPropiedades(data) {
         nuevo[key] = val;
       }
 
-      // Diagnóstico para Google Fotos e imágenes
-      if (nk.includes('foto') || nk.includes('google') || nk.includes('imagen')) {
+      // Diagnóstico para Google Fotos, imágenes y dimensiones
+      if (nk.includes('foto') || nk.includes('google') || nk.includes('imagen') || nk.includes('dimension')) {
         console.log(`[Diagnostic Log] Normalización: La llave original "${key}" (normalizada a "${nk}") se mapeó a "${k || key}" con valor:`, val);
       }
     }
@@ -3673,6 +3673,28 @@ async function cargarProps(){
     const urlBusca = "https://script.google.com/macros/s/AKfycbz-HipJ53KIf2JD1q9BUIBFUB45o4wRYcjvlqUbpg9TDAGK0q3hNQcSrV23dMCWaTgXcQ/exec?action=getData&t=" + Date.now();
     const res = await fetch(urlBusca);
     const data = await res.json();
+    
+    // LOG DE DIAGNÓSTICO CRÍTICO PARA EL USUARIO
+    console.log("[Diagnostic Log] --- NUEVO CARGUE DE PROPIEDADES ---");
+    console.log("[Diagnostic Log] Total de propiedades recibidas del API de Sheets:", data.length);
+    if (data && data.length > 0) {
+      console.log("[Diagnostic Log] Llaves (columnas) presentes en el primer elemento de la respuesta del API:", Object.keys(data[0]));
+      
+      // Buscar elementos que tengan algún valor en el campo dimensiones en los datos crudos del API
+      const conDimensionesCrudas = data.filter(p => {
+        return Object.keys(p).some(k => k.toLowerCase().includes('dimension') && String(p[k] || '').trim() !== '');
+      });
+      console.log("[Diagnostic Log] Cantidad de propiedades crudas con algún valor en columna de dimensión:", conDimensionesCrudas.length);
+      if (conDimensionesCrudas.length > 0) {
+        console.log("[Diagnostic Log] Muestra de 3 propiedades crudas con dimensiones del API:");
+        conDimensionesCrudas.slice(0, 3).forEach(p => {
+          const dimKey = Object.keys(p).find(k => k.toLowerCase().includes('dimension'));
+          console.log(` - Código: "${p['Código'] || p['codigo'] || p['id']}", Campo "${dimKey}": "${p[dimKey]}"`);
+        });
+      } else {
+        console.warn("[Diagnostic Log] ¡ALERTA! Ninguna propiedad cruda devuelta por el API tiene valores en ninguna columna que contenga la palabra 'dimension'.");
+      }
+    }
     
     // Validar si los datos de la nube contienen el campo Inventario
     const hasInventario = Array.isArray(data) && data.length > 0 && data.some(p => p.hasOwnProperty('Inventario') || p.hasOwnProperty('inventario'));
@@ -9778,6 +9800,7 @@ function autofillPropiedadPorCodigo(selectedCode) {
   setVal('gp_reja_antejardin', p['Reja Antejardín'] || p['rejaAntejardin'] || 'NO');
   setVal('gp_antiguedad', p['Antigüedad del Inmueble'] || p['Antigüedad'] || p['antiguedad'] || p['Antiguedad del Inmueble'] || '');
   setVal('gp_patio', p['Patio'] || p['patio'] || 'NO');
+  console.log(`[Diagnostic Log] Autocompletando Dimensiones para inmueble ${selectedCode || p['Código']}. Valor en p['Dimensiones']: "${p['Dimensiones'] || ''}"`);
   setVal('gp_dimensiones', p['Dimensiones'] || p['dimensiones'] || '');
   
   setVal('gp_lat', p['Latitud'] || p['latitud'] || p['Lat']);
