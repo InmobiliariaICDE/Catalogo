@@ -6313,8 +6313,34 @@ function toggleGeminiSidebar() {
   const sidebar = document.getElementById('geminiSidebar');
   if (sidebar) {
     sidebar.classList.toggle('open');
+    if (sidebar.classList.contains('open')) {
+      setTimeout(() => {
+        const input = document.getElementById('geminiTextInput');
+        if (input) input.focus();
+      }, 300);
+    }
   }
 }
+
+// Keyboard Shortcuts for Gemini Assistant
+document.addEventListener('keydown', (e) => {
+  // Alt + I / Alt + C: Toggle Gemini Sidebar (I de Inteligencia, C de Chat)
+  if (e.altKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'c')) {
+    e.preventDefault();
+    toggleGeminiSidebar();
+  }
+  // Alt + M / Alt + V: Toggle Voice Mic Recording
+  if (e.altKey && (e.key.toLowerCase() === 'm' || e.key.toLowerCase() === 'v')) {
+    e.preventDefault();
+    const sidebar = document.getElementById('geminiSidebar');
+    if (sidebar && !sidebar.classList.contains('open')) {
+      toggleGeminiSidebar();
+      setTimeout(() => toggleGeminiMic(), 350);
+    } else {
+      toggleGeminiMic();
+    }
+  }
+});
 
 function addGeminiMessage(sender, text, htmlExtra = '', emotion = 'feliz') {
   const container = document.getElementById('geminiChatHistory');
