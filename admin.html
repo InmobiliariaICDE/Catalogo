@@ -6308,7 +6308,7 @@ function toggleGeminiMic() {
     if (recognition) recognition.stop();
     isGeminiListening = false;
     micBtn.classList.remove('listening');
-    toast('Micrófono desactivado', 'info');
+    toast('Grabación finalizada', 'info');
   } else {
     if (!('webkitSpeechRecognition' in window)) {
       toast('Tu navegador no soporta entrada de voz', 'error');
@@ -6317,27 +6317,36 @@ function toggleGeminiMic() {
     
     recognition = new webkitSpeechRecognition();
     recognition.lang = 'es-CO';
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    let finalTranscript = '';
 
     recognition.onstart = () => {
       isGeminiListening = true;
       micBtn.classList.add('listening');
-      toast('Escuchando...', 'success');
+      toast('Escuchando (habla libremente, vuelve a pulsar el micro para procesar)...', 'success');
+      finalTranscript = '';
     };
 
     recognition.onresult = (e) => {
-      const text = e.results[0][0].transcript;
+      let interimTranscript = '';
+      for (let i = e.resultIndex; i < e.results.length; ++i) {
+        if (e.results[i].isFinal) {
+          finalTranscript += e.results[i][0].transcript;
+        } else {
+          interimTranscript += e.results[i][0].transcript;
+        }
+      }
       const input = document.getElementById('geminiTextInput');
       if (input) {
-        input.value = text;
+        input.value = finalTranscript + interimTranscript;
       }
-      sendGeminiTextMessage();
     };
 
     recognition.onerror = (err) => {
       console.error('Speech recognition error:', err);
-      toast('Error en reconocimiento de voz', 'error');
+      toast('Micrófono inactivo o sin señal', 'warning');
       micBtn.classList.remove('listening');
       isGeminiListening = false;
     };
@@ -6372,7 +6381,7 @@ async function processWithGemini(text) {
     return;
   }
 
-  // Visual typing indicator or quick toast
+  // Visual typing indicator
   toast('Gemini pensando...', 'success');
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -6380,7 +6389,7 @@ async function processWithGemini(text) {
 Tu objetivo es ayudar al usuario a gestionar de forma rápida e inteligente sus inmuebles, citas/visitas, leads y finanzas.
 Analiza la solicitud del usuario (en español) y responde estrictamente en formato JSON válido.
 No devuelvas NADA que no sea el JSON. No rodees tu JSON con bloques markdown como \`\`\`json. El JSON debe contener exactamente dos propiedades de primer nivel:
-1. "reply": Una frase de respuesta atenta, natural, profesional y amigable en español dirigida al usuario, explicando qué acción identificaste o respondiendo a su consulta.
+1. "reply": Una frase de respuesta atenta, natural, profesional y amigable en español dirigida al usuario, explaining qué acción identificaste o respondiendo a su consulta.
 2. "action": Un objeto que describe la acción técnica a ejecutar, con el campo "type" y sus parámetros correspondientes.
 
 Tipos de acciones soportadas ("type"):
@@ -6412,7 +6421,11 @@ Tipos de acciones soportadas ("type"):
       })
     });
 
-    if (!res.ok) throw new Error('API Error');
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      const errMsg = errData.error?.message || 'Error desconocido del servidor';
+      throw new Error(`API Error: ${errMsg} (Status: ${res.status})`);
+    }
     const data = await res.json();
     let resultText = data.candidates[0].content.parts[0].text;
     
@@ -6430,7 +6443,7 @@ Tipos de acciones soportadas ("type"):
     }
   } catch (err) {
     console.error('Error in processWithGemini:', err);
-    addGeminiMessage('assistant', '❌ Lo siento, ocurrió un error al procesar tu solicitud con Gemini. Verifica que tu clave de API sea válida.');
+    addGeminiMessage('assistant', `❌ Ocurrió un error al procesar tu solicitud con Gemini:<br><br><span style="color:#ef4444; font-family:monospace; font-size:11px; background:rgba(239,68,68,0.08); padding:8px; border-radius:6px; display:block; border:1px solid rgba(239,68,68,0.2); line-height:1.4;">${err.message}</span><br>Por favor verifica tu API Key en la configuración ⚙️.`);
   }
 }
 
