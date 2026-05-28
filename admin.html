@@ -820,6 +820,27 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
   gap: 10px;
   animation: slideUpIn 0.3s forwards;
 }
+.gemini-card-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  font-family: inherit;
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  outline: none;
+  width: 55%;
+  text-align: right;
+  transition: all 0.2s;
+}
+.gemini-card-input:focus {
+  background: rgba(255,255,255,0.08);
+  border-color: var(--gold);
+  box-shadow: 0 0 6px rgba(212,168,75,0.2);
+}
+textarea.gemini-card-input {
+  text-align: left;
+}
 .gemini-card-title {
   color: var(--gold);
   font-weight: 700;
@@ -6489,22 +6510,29 @@ async function processWithGemini(text) {
 Tu objetivo es ayudar al usuario a gestionar de forma rápida e inteligente sus inmuebles, citas/visitas, leads y finanzas.
 Analiza la solicitud del usuario (en español) y responde estrictamente en formato JSON válido.
 No devuelvas NADA que no sea el JSON. No rodees tu JSON con bloques markdown como \`\`\`json. El JSON debe contener exactamente dos propiedades de primer nivel:
-1. "reply": Una frase de respuesta atenta, natural, profesional y amigable en español dirigida al usuario, explaining qué acción identificaste o respondiendo a su consulta.
+1. "reply": Una frase de respuesta atenta, natural, profesional y amigable en español dirigida al usuario, explicando qué acción identificaste o respondiendo a su consulta.
 2. "action": Un objeto que describe la acción técnica a ejecutar, con el campo "type" y sus parámetros correspondientes.
 
+REGLAS DE ORO DE COHERENCIA (CLASIFICACIÓN ESTRICTA):
+⚠️ REGLA 1: "BUSCAR_PROPIEDADES" vs "AGENDAR_CITA_PREVIEW"
+   - Si el usuario dice "Necesito ver el inmueble 038", "Busca el apartamento 102", "Quiero mirar la propiedad 056" o similares, esto es de consulta de información. DEBES clasificarlo siempre como "BUSCAR_PROPIEDADES" y extraer el código en "query".
+   - NUNCA clasifiques la visualización o búsqueda de un inmueble como una cita ("AGENDAR_CITA_PREVIEW") a menos que el usuario diga explícitamente que quiere PROGRAMAR, AGENDAR, RESERVAR o REGISTRAR una visita con fecha, hora o un cliente específico (ej: "agenda visita para el lunes a las 4pm" o "programa cita con Carlos").
+⚠️ REGLA 2: "GENERAR_DESCRIPCION" vs "BUSCAR_PROPIEDADES"
+   - Usa "GENERAR_DESCRIPCION" únicamente si el usuario pide redactar, escribir, crear o generar el texto comercial de venta de un inmueble. Si solo quiere ver o buscar los datos de un inmueble, es "BUSCAR_PROPIEDADES".
+
 Tipos de acciones soportadas ("type"):
-- "AGENDAR_CITA_PREVIEW": Si el usuario expresa el deseo de agendar, registrar o programar una cita o visita. Debes extraer:
+- "AGENDAR_CITA_PREVIEW": Si el usuario expresa el deseo explícito de agendar, registrar, programar o reservar una cita/visita física de un cliente. Parámetros:
     * "codigo" (el código del inmueble, p. ej. "102")
     * "fecha" (en formato YYYY-MM-DD. Hoy es ${todayStr}. Si el usuario dice un día relativo como "el lunes", calcula la fecha correspondiente a partir de hoy)
     * "hora" (en formato HH:mm, ej. "16:00")
     * "cliente" (nombre de la persona)
     * "celular" (teléfono/celular de contacto)
-    * "notas" (cualquier detalle u observación de la cita)
-- "BUSCAR_PROPIEDADES": Si quiere buscar inmuebles en el catálogo, p. ej. "busca apartamentos en el norte" o "inmueble 102". Parámetros:
-    * "query": el texto de búsqueda (ej: "102" o "El Ingenio")
-- "BUSCAR_LEADS": Si quiere buscar o filtrar leads en el sistema, p. ej. "busca al cliente Juan" o "lead Carlos". Parámetros:
+    * "notes" o "notas" (cualquier detalle u observación de la cita)
+- "BUSCAR_PROPIEDADES": Si quiere buscar inmuebles en el catálogo (ej: "busca apartamentos en el norte", "inmueble 102", "necesito ver el inmueble 038"). Parámetros:
+    * "query": el texto de búsqueda (ej: "102", "038" o "El Ingenio")
+- "BUSCAR_LEADS": Si quiere buscar o filtrar leads en el sistema (ej: "busca al cliente Juan" o "lead Carlos"). Parámetros:
     * "query": nombre o teléfono a buscar
-- "GENERAR_DESCRIPCION": Si quiere redactar la descripción comercial y vendedora de un inmueble. Parámetros:
+- "GENERAR_DESCRIPCION": Si quiere redactar, escribir o generar la descripción comercial y vendedora de un inmueble. Parámetros:
     * "codigo": el código del inmueble (p. ej. "102")
 - "CONSULTAR_SALDO": Si pregunta por balances financieros, ingresos, cobros de administración o datos del edificio Silvia. Parámetros:
     * "consulta": un string identificando qué quiere consultar (p. ej. "mensual", "silvia", "KPI")
@@ -6601,33 +6629,91 @@ function renderCitaPreviewCard(action) {
   const cod = action.codigo || '';
   const fecha = action.fecha || '';
   const hora = action.hora || '';
-  const cliente = action.cliente || 'Genérico';
+  const cliente = action.cliente || '';
   const celular = action.celular || '';
   const notas = action.notas || '';
+  const id = 'card_' + Math.floor(Math.random() * 100000);
 
   const html = `
-    <div class="gemini-card">
-      <div class="gemini-card-title">📅 Confirmación de Cita</div>
-      <div class="gemini-card-row"><span class="gemini-card-lbl">Cliente:</span><span class="gemini-card-val">${cliente}</span></div>
-      <div class="gemini-card-row"><span class="gemini-card-lbl">Celular:</span><span class="gemini-card-val">${celular || '—'}</span></div>
-      <div class="gemini-card-row"><span class="gemini-card-lbl">Inmueble:</span><span class="gemini-card-val" style="color:var(--gold);">📍 ${cod}</span></div>
-      <div class="gemini-card-row"><span class="gemini-card-lbl">Fecha:</span><span class="gemini-card-val">${fecha}</span></div>
-      <div class="gemini-card-row"><span class="gemini-card-lbl">Hora:</span><span class="gemini-card-val">${hora || '—'}</span></div>
-      <div class="gemini-card-row"><span class="gemini-card-lbl">Detalles:</span><span class="gemini-card-val">${notas || 'Sin notas'}</span></div>
-      <div class="gemini-card-footer">
-        <button class="btn btn-primary btn-sm" style="flex:1; font-size:11px;" onclick="confirmarCitaGemini('${cod}', '${fecha}', '${hora}', '${cliente}', '${celular}', '${notas}')">Confirmar Cita</button>
-        <button class="btn btn-secondary btn-sm" style="font-size:11px;" onclick="cancelarCitaGemini(this)">Cancelar</button>
+    <div class="gemini-card" id="geminiCitaCard-${id}">
+      <div class="gemini-card-title">📅 Editar y Confirmar Cita</div>
+      
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Cliente:</span>
+        <input type="text" class="gemini-card-input" id="editCitaCliente-${id}" value="${cliente}" placeholder="Nombre cliente">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Celular:</span>
+        <input type="text" class="gemini-card-input" id="editCitaCelular-${id}" value="${celular}" placeholder="Añadir celular">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Inmueble:</span>
+        <input type="text" class="gemini-card-input" id="editCitaCod-${id}" value="${cod}" placeholder="Código" style="color:var(--gold); font-weight:700;">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Fecha:</span>
+        <input type="date" class="gemini-card-input" id="editCitaFecha-${id}" value="${fecha}">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Hora:</span>
+        <input type="time" class="gemini-card-input" id="editCitaHora-${id}" value="${hora}">
+      </div>
+
+      <div class="gemini-card-row" style="flex-direction: column; gap: 4px; align-items: flex-start; margin-top: 4px;">
+        <span class="gemini-card-lbl">Detalles/Notas:</span>
+        <textarea class="gemini-card-input" id="editCitaNotas-${id}" style="width: 100%; height: 45px; resize: none; margin-top: 2px; padding: 6px 10px; border-radius: 8px; text-align: left;" placeholder="Detalles de la visita...">${notas}</textarea>
+      </div>
+
+      <div class="gemini-card-footer" style="margin-top: 8px; display: flex; gap: 8px;">
+        <button class="btn btn-primary btn-sm" style="flex: 1; font-size: 11px; padding: 6px;" onclick="confirmarCitaEditadaGemini('${id}')">Confirmar Cita</button>
+        <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 6px;" onclick="cancelarCitaGemini(this)">Cancelar</button>
       </div>
     </div>
   `;
   addGeminiMessage('system-card', '', html);
 }
 
+function confirmarCitaEditadaGemini(id) {
+  const cod = document.getElementById(`editCitaCod-${id}`).value.trim();
+  const cliente = document.getElementById(`editCitaCliente-${id}`).value.trim();
+  const celular = document.getElementById(`editCitaCelular-${id}`).value.trim();
+  const fecha = document.getElementById(`editCitaFecha-${id}`).value;
+  const hora = document.getElementById(`editCitaHora-${id}`).value;
+  const notas = document.getElementById(`editCitaNotas-${id}`).value.trim();
+
+  if (!cod) {
+    toast('Ingresa el código de inmueble', 'error');
+    return;
+  }
+
+  confirmarCitaGemini(cod, fecha, hora, cliente, celular, notas);
+
+  const card = document.getElementById(`geminiCitaCard-${id}`);
+  if (card) {
+    card.style.border = '1px solid #22c55e';
+    card.style.background = 'linear-gradient(145deg, rgba(34, 197, 94, 0.05), rgba(10, 10, 10, 0.95))';
+    card.querySelector('.gemini-card-footer').innerHTML = '<span style="color:#22c55e; font-weight:700; display:flex; align-items:center; gap:4px; font-size:11px;">✓ Cita agendada y sincronizada</span>';
+    
+    card.querySelectorAll('.gemini-card-input').forEach(input => {
+      input.disabled = true;
+      input.style.opacity = '0.7';
+    });
+  }
+}
+
 function cancelarCitaGemini(btn) {
   const card = btn.closest('.gemini-card');
   if (card) {
     card.style.opacity = 0.5;
-    card.querySelector('.gemini-card-footer').innerHTML = '<span style="color:#ff4444; font-weight:700;">✕ Cita Cancelada</span>';
+    card.querySelector('.gemini-card-footer').innerHTML = '<span style="color:#ff4444; font-weight:700; font-size:11px;">✕ Cita Cancelada</span>';
+    card.querySelectorAll('.gemini-card-input').forEach(input => {
+      input.disabled = true;
+      input.style.opacity = '0.5';
+    });
   }
 }
 
