@@ -2141,7 +2141,7 @@ textarea.gemini-card-input {
 <!-- GEMINI ASSISTANT BTN -->
 <button class="gemini-btn" id="geminiBtn" onclick="toggleGemini()" title="Asistente Gemini AI">
   <div style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-    <img src="Saludo.png" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
+    <img id="geminiBtnAvatar" src="Saludo.png" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
     <span class="status-indicator online" style="position: absolute; bottom: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: #22c55e; border: 1.5px solid #141416; animation: pulse-green 2s infinite;"></span>
   </div>
 </button>
@@ -6338,7 +6338,19 @@ let recognition;
 let isGeminiListening = false;
 
 function toggleGemini() {
-  toggleGeminiSidebar();
+  const sidebar = document.getElementById('geminiSidebar');
+  if (sidebar) {
+    if (!sidebar.classList.contains('open')) {
+      toggleGeminiSidebar();
+      setTimeout(() => {
+        if (!isGeminiListening) {
+          toggleGeminiMic();
+        }
+      }, 350);
+    } else {
+      toggleGeminiMic();
+    }
+  }
 }
 
 function toggleGeminiSidebar() {
@@ -6465,7 +6477,8 @@ function addGeminiMessage(sender, text, htmlExtra = '', emotion = 'feliz') {
 
 function setGeminiEmotion(emotion) {
   const avatar = document.getElementById('geminiAvatar');
-  if (!avatar) return;
+  const btnAvatar = document.getElementById('geminiBtnAvatar');
+  const gBtn = document.getElementById('geminiBtn');
   
   let src = 'Saludo.png';
   if (emotion === 'escribiendo') src = 'escribiendo.png';
@@ -6473,13 +6486,24 @@ function setGeminiEmotion(emotion) {
   else if (emotion === 'feliz') src = 'feliz.png';
   else if (emotion === 'saludo') src = 'Saludo.png';
   
-  avatar.src = src;
+  if (avatar) avatar.src = src;
+  if (btnAvatar) btnAvatar.src = src;
+
+  if (gBtn) {
+    if (emotion === 'escribiendo') {
+      gBtn.classList.add('working');
+    } else {
+      gBtn.classList.remove('working');
+    }
+  }
   
   // Animation bounce/pop when changing emotion
-  avatar.style.transform = 'scale(1.2)';
-  setTimeout(() => {
-    avatar.style.transform = 'scale(1)';
-  }, 200);
+  if (avatar) {
+    avatar.style.transform = 'scale(1.2)';
+    setTimeout(() => {
+      avatar.style.transform = 'scale(1)';
+    }, 200);
+  }
 }
 
 function showGeminiTypingIndicator() {
@@ -6522,12 +6546,14 @@ function toggleGeminiMic() {
   }
 
   const micBtn = document.getElementById('geminiMicBtn');
+  const gBtn = document.getElementById('geminiBtn');
   if (!micBtn) return;
 
   if (isGeminiListening) {
     if (recognition) recognition.stop();
     isGeminiListening = false;
     micBtn.classList.remove('listening');
+    if (gBtn) gBtn.classList.remove('listening');
     toast('Grabación finalizada', 'info');
   } else {
     if (!('webkitSpeechRecognition' in window)) {
@@ -6545,6 +6571,7 @@ function toggleGeminiMic() {
     recognition.onstart = () => {
       isGeminiListening = true;
       micBtn.classList.add('listening');
+      if (gBtn) gBtn.classList.add('listening');
       toast('Escuchando (habla libremente, vuelve a pulsar el micro para procesar)...', 'success');
       finalTranscript = '';
       setGeminiEmotion('saludo');
@@ -6569,11 +6596,13 @@ function toggleGeminiMic() {
       console.error('Speech recognition error:', err);
       toast('Micrófono inactivo o sin señal', 'warning');
       micBtn.classList.remove('listening');
+      if (gBtn) gBtn.classList.remove('listening');
       isGeminiListening = false;
     };
 
     recognition.onend = () => {
       micBtn.classList.remove('listening');
+      if (gBtn) gBtn.classList.remove('listening');
       isGeminiListening = false;
     };
 
