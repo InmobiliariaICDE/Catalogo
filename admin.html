@@ -918,6 +918,10 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 }
 .listening { animation: pulse-blue-light 1.5s infinite; }
 @keyframes pulse-blue-light { 0% { box-shadow: 0 0 0 0 rgba(79, 172, 254, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(79, 172, 254, 0); } 100% { box-shadow: 0 0 0 0 rgba(79, 172, 254, 0); } }
+@keyframes typingBounce {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
 
 .settings-btn { background: none; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #888; cursor: pointer; }
 .settings-btn:hover { border-color: var(--gold); color: var(--gold); }
@@ -6279,19 +6283,102 @@ function toggleGeminiSidebar() {
   }
 }
 
-function addGeminiMessage(sender, text, htmlExtra = '') {
+function addGeminiMessage(sender, text, htmlExtra = '', emotion = 'feliz') {
   const container = document.getElementById('geminiChatHistory');
   if (!container) return;
 
-  const bubble = document.createElement('div');
-  bubble.className = `gemini-bubble ${sender}`;
-  bubble.innerHTML = text + htmlExtra;
-  container.appendChild(bubble);
+  const row = document.createElement('div');
+  row.style.display = 'flex';
+  row.style.width = '100%';
+  row.style.flexDirection = 'column';
+  row.style.gap = '4px';
+
+  if (sender === 'assistant') {
+    let imgSrc = 'feliz.png';
+    if (emotion === 'escribiendo') imgSrc = 'escribiendo.png';
+    else if (emotion === 'preguntando') imgSrc = 'preguntando.png';
+    else if (emotion === 'saludo') imgSrc = 'Saludo.png';
+    else if (emotion === 'feliz') imgSrc = 'feliz.png';
+    
+    row.innerHTML = `
+      <div style="display: flex; gap: 8px; align-self: flex-start; max-width: 85%; animation: slideUpIn 0.25s forwards;">
+        <img src="${imgSrc}" style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(212,168,75,0.25); object-fit: cover; flex-shrink: 0; margin-top: 2px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+        <div class="gemini-bubble assistant" style="max-width: 100%; margin: 0; animation: none;">
+          ${text}
+        </div>
+      </div>
+      ${htmlExtra ? `<div style="padding-left: 36px; width: 100%; box-sizing: border-box;">${htmlExtra}</div>` : ''}
+    `;
+    setGeminiEmotion(emotion);
+  } else if (sender === 'user') {
+    row.innerHTML = `
+      <div class="gemini-bubble user" style="align-self: flex-end;">
+        ${text}
+      </div>
+    `;
+  } else if (sender === 'system-card') {
+    row.innerHTML = `<div style="padding-left: 36px; width: 100%; box-sizing: border-box;">${htmlExtra}</div>`;
+  } else {
+    row.innerHTML = `<div class="gemini-bubble assistant" style="align-self: flex-start;">${text}</div>`;
+  }
+
+  container.appendChild(row);
 
   // Scroll to bottom
   setTimeout(() => {
     container.scrollTop = container.scrollHeight;
   }, 50);
+}
+
+function setGeminiEmotion(emotion) {
+  const avatar = document.getElementById('geminiAvatar');
+  if (!avatar) return;
+  
+  let src = 'Saludo.png';
+  if (emotion === 'escribiendo') src = 'escribiendo.png';
+  else if (emotion === 'preguntando') src = 'preguntando.png';
+  else if (emotion === 'feliz') src = 'feliz.png';
+  else if (emotion === 'saludo') src = 'Saludo.png';
+  
+  avatar.src = src;
+  
+  // Animation bounce/pop when changing emotion
+  avatar.style.transform = 'scale(1.2)';
+  setTimeout(() => {
+    avatar.style.transform = 'scale(1)';
+  }, 200);
+}
+
+function showGeminiTypingIndicator() {
+  const container = document.getElementById('geminiChatHistory');
+  if (!container) return;
+  
+  hideGeminiTypingIndicator();
+  
+  const row = document.createElement('div');
+  row.id = 'geminiTypingIndicator';
+  row.style.display = 'flex';
+  row.style.width = '100%';
+  row.style.flexDirection = 'column';
+  
+  row.innerHTML = `
+    <div style="display: flex; gap: 8px; align-self: flex-start; max-width: 85%; animation: slideUpIn 0.25s forwards;">
+      <img src="escribiendo.png" style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(212,168,75,0.2); object-fit: cover; flex-shrink: 0; margin-top: 2px;">
+      <div class="gemini-bubble assistant" style="max-width: 100%; margin: 0; display: flex; align-items: center; gap: 6px; padding: 12px 16px;">
+        <span class="typing-dot" style="width: 6px; height: 6px; background: #fff; border-radius: 50%; display: inline-block; animation: typingBounce 1.4s infinite both;"></span>
+        <span class="typing-dot" style="width: 6px; height: 6px; background: #fff; border-radius: 50%; display: inline-block; animation: typingBounce 1.4s infinite both 0.2s;"></span>
+        <span class="typing-dot" style="width: 6px; height: 6px; background: #fff; border-radius: 50%; display: inline-block; animation: typingBounce 1.4s infinite both 0.4s;"></span>
+      </div>
+    </div>
+  `;
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+  setGeminiEmotion('escribiendo');
+}
+
+function hideGeminiTypingIndicator() {
+  const el = document.getElementById('geminiTypingIndicator');
+  if (el) el.remove();
 }
 
 function toggleGeminiMic() {
@@ -6327,6 +6414,7 @@ function toggleGeminiMic() {
       micBtn.classList.add('listening');
       toast('Escuchando (habla libremente, vuelve a pulsar el micro para procesar)...', 'success');
       finalTranscript = '';
+      setGeminiEmotion('saludo');
     };
 
     recognition.onresult = (e) => {
@@ -6377,12 +6465,12 @@ function sendGeminiTextMessage() {
 
 async function processWithGemini(text) {
   if (!settings.geminiKey) {
-    addGeminiMessage('assistant', '⚠️ Por favor, configura tu API Key de Gemini en los ajustes ⚙️.');
+    addGeminiMessage('assistant', '⚠️ Por favor, configura tu API Key de Gemini en los ajustes ⚙️.', '', 'saludo');
     return;
   }
 
-  // Visual typing indicator
-  toast('Gemini pensando...', 'success');
+  // Visual typing indicator bubble
+  showGeminiTypingIndicator();
 
   const todayStr = new Date().toISOString().split('T')[0];
   const systemInstruction = `Eres el asistente de Inteligencia Artificial para el panel de administración de "ICDE Inmobiliaria" (Neiva, Colombia).
@@ -6421,6 +6509,8 @@ Tipos de acciones soportadas ("type"):
       })
     });
 
+    hideGeminiTypingIndicator();
+
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
       const errMsg = errData.error?.message || 'Error desconocido del servidor';
@@ -6434,16 +6524,26 @@ Tipos de acciones soportadas ("type"):
     
     const resultObj = JSON.parse(resultText);
     
-    // 1. Output conversational text
-    addGeminiMessage('assistant', resultObj.reply);
+    // Determine the emotion based on intent
+    let emotion = 'feliz';
+    if (resultObj.action) {
+      const type = resultObj.action.type;
+      if (type === 'AGENDAR_CITA_PREVIEW' || type === 'BUSCAR_PROPIEDADES' || type === 'BUSCAR_LEADS') {
+        emotion = 'preguntando';
+      }
+    }
+    
+    // 1. Output conversational text with custom emotion
+    addGeminiMessage('assistant', resultObj.reply, '', emotion);
 
     // 2. Process actions
     if (resultObj.action && resultObj.action.type !== 'CHAT_ONLY') {
       executeGeminiAction(resultObj.action);
     }
   } catch (err) {
+    hideGeminiTypingIndicator();
     console.error('Error in processWithGemini:', err);
-    addGeminiMessage('assistant', `❌ Ocurrió un error al procesar tu solicitud con Gemini:<br><br><span style="color:#ef4444; font-family:monospace; font-size:11px; background:rgba(239,68,68,0.08); padding:8px; border-radius:6px; display:block; border:1px solid rgba(239,68,68,0.2); line-height:1.4;">${err.message}</span><br>Por favor verifica tu API Key en la configuración ⚙️.`);
+    addGeminiMessage('assistant', `❌ Ocurrió un error al procesar tu solicitud con Gemini:<br><br><span style="color:#ef4444; font-family:monospace; font-size:11px; background:rgba(239,68,68,0.08); padding:8px; border-radius:6px; display:block; border:1px solid rgba(239,68,68,0.2); line-height:1.4;">${err.message}</span><br>Por favor verifica tu API Key en la configuración ⚙️.`, '', 'saludo');
   }
 }
 
@@ -12228,30 +12328,33 @@ function cerrarBottomCard() {
   <div class="gemini-sidebar" id="geminiSidebar">
     <div class="gemini-sidebar-header">
       <div style="display:flex; align-items:center; gap:8px;">
-        <div class="gemini-sparkle-icon">
-          <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px; color:var(--gold);"><path d="M12 2L14.24 8.76L21 11L14.24 13.24L12 20L9.76 13.24L3 11L9.76 8.76L12 2Z"/></svg>
+        <div class="gemini-avatar-container" style="position: relative; width: 34px; height: 34px; flex-shrink: 0;">
+          <img id="geminiAvatar" src="Saludo.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--gold); box-shadow: 0 0 8px rgba(212,168,75,0.3); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+          <span style="position: absolute; bottom: -1px; right: -1px; width: 8px; height: 8px; background: #22c55e; border: 1.5px solid #121212; border-radius: 50%;"></span>
         </div>
         <div>
           <h4 style="margin:0; font-size:13px; font-weight:700; color:#fff; font-family:'Outfit', sans-serif; line-height:1.2;">Asistente Gemini AI</h4>
-          <span style="font-size:10px; color:#aaa; display:flex; align-items:center; gap:4px; line-height:1;"><span style="width:6px; height:6px; background:#22c55e; border-radius:50%; display:inline-block;"></span>Online (2.0 Flash)</span>
+          <span style="font-size:10px; color:#aaa; display:flex; align-items:center; gap:4px; line-height:1;"><span style="width:5px; height:5px; background:#22c55e; border-radius:50%; display:inline-block;"></span>Online (2.0 Flash)</span>
         </div>
       </div>
       <button class="btn-close-gemini" onclick="toggleGeminiSidebar()" title="Cerrar panel">&times;</button>
     </div>
     
     <div class="gemini-chat-history" id="geminiChatHistory">
-      <div class="gemini-bubble assistant">
-        ¡Hola! Soy tu asistente de Gemini AI para **ICDE Inmobiliaria**. 🚀<br><br>
-        ¿En qué te puedo ayudar hoy? Puedes escribirme o usar el micrófono para:
-        <ul style="margin:8px 0 0 16px; padding:0; font-size:12px; line-height:1.45; color:rgba(255,255,255,0.85);">
-          <li style="margin-bottom: 4px;">🔍 **Buscar propiedades** (ej: *"Busca el apartamento 102"* o *"Buscar en El Ingenio"*)</li>
-          <li style="margin-bottom: 4px;">👥 **Filtrar leads** (ej: *"Busca al cliente Juan"*)</li>
-          <li style="margin-bottom: 4px;">📅 **Agendar citas/visitas** (ej: *"Agenda visita para el 205 el lunes a las 4pm con Carlos"*)</li>
-          <li style="margin-bottom: 4px;">✍️ **Generar descripciones** (ej: *"Genera descripción del inmueble 102"*)</li>
-          <li style="margin-bottom: 4px;">💼 **Consultar saldos/cobros** (ej: *"Cuánto se cobró este mes?"* o *"Ver estado de Silvia"*)</li>
-        </ul>
+      <div style="display: flex; gap: 8px; align-self: flex-start; max-width: 85%; animation: slideUpIn 0.25s forwards;">
+        <img src="Saludo.png" style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(212,168,75,0.25); object-fit: cover; flex-shrink: 0; margin-top: 2px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+        <div class="gemini-bubble assistant" style="max-width: 100%; margin: 0; animation: none;">
+          ¡Hola! Soy tu asistente de Gemini AI para **ICDE Inmobiliaria**. 🚀<br><br>
+          ¿En qué te puedo ayudar hoy? Puedes escribirme o usar el micrófono para:
+          <ul style="margin:8px 0 0 16px; padding:0; font-size:12px; line-height:1.45; color:rgba(255,255,255,0.85);">
+            <li style="margin-bottom: 4px;">🔍 **Buscar propiedades** (ej: *"Busca el apartamento 102"* o *"Buscar en El Ingenio"*)</li>
+            <li style="margin-bottom: 4px;">👥 **Filtrar leads** (ej: *"Busca al cliente Juan"*)</li>
+            <li style="margin-bottom: 4px;">📅 **Agendar citas/visitas** (ej: *"Agenda visita para el 205 el lunes a las 4pm con Carlos"*)</li>
+            <li style="margin-bottom: 4px;">✍️ **Generar descripciones** (ej: *"Genera descripción del inmueble 102"*)</li>
+            <li style="margin-bottom: 4px;">💼 **Consultar saldos/cobros** (ej: *"Cuánto se cobró este mes?"* o *"Ver estado de Silvia"*)</li>
+          </ul>
+        </div>
       </div>
-    </div>
     
     <div class="gemini-sidebar-footer">
       <button class="gemini-mic-btn" id="geminiMicBtn" onclick="toggleGeminiMic()" title="Hablar con Gemini">
