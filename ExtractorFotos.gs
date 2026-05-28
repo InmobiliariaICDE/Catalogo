@@ -693,6 +693,7 @@ function leerPropiedades() {
       else if (nh === 'reja' || nh === 'reja/' || nh.indexOf('reja') >= 0) { idx['Reja Antejardín'] = i; idx['REJA/'] = i; }
       else if (nh === 'antiguedad' || nh.indexOf('antig') >= 0) { idx['Antigüedad del Inmueble'] = i; idx['ANTIGÜEDAD'] = i; }
       else if (nh === 'patio') { idx['Patio'] = i; idx['PATIO'] = i; }
+      else if (nh === 'inventario') { idx['Inventario'] = i; }
     }
   });
   var colPublicar = idx['Publicar'], rows = [];

@@ -44,7 +44,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 
 /* LOGIN */
 #loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:24px;}
-#loginScreen img{width:80px;filter:drop-shadow(0 0 20px rgba(212,168,75,.4));}
+#loginScreen img{width:80px;}
 #loginScreen h1{font-size:1.4rem;font-weight:600;color:var(--gold);}
 .login-box{background:var(--bg2);border:none;border-radius:16px;padding:32px 40px;display:flex;flex-direction:column;gap:16px;min-width:320px;box-shadow:3px 3px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3);}
 .login-box input{background:rgba(0,0,0,0.2);border:none;border-radius:10px;padding:12px 16px;color:#fff;font-family:'Outfit',sans-serif;font-size:15px;outline:none;transition:all .2s;box-shadow:inset 3px 3px 6px rgba(0,0,0,0.6),inset -1px -1px 0px rgba(255,255,255,0.05);}
@@ -153,7 +153,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 /* LAYOUT */
 #app{display:none;flex-direction:column;height:100vh;}
 .topbar{height:64px;background:var(--bg2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:20px;flex-shrink:0;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.3);}
-.topbar img{width:42px;filter:drop-shadow(0 0 10px rgba(212,168,75,0.3));}
+.topbar img{width:42px;}
 .topbar .brand{font-size:1.1rem;font-weight:800;color:var(--gold);letter-spacing:0.02em;text-transform:uppercase;}
 .topbar .brand span{color:var(--muted);font-weight:400;font-size:.8rem;margin-left:8px;text-transform:none;}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:16px;}
@@ -1158,6 +1158,7 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
     z-index: 2000; opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   .matrix-detail-modal.active { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+  #adminPropertyEditModal { width: min(520px, 92vw); }
   .modal-overlay {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7);
     backdrop-filter: blur(4px); z-index: 1999; opacity: 0; pointer-events: none; transition: all 0.3s;
@@ -6272,13 +6273,19 @@ function renderAdministracion() {
     const overlay = document.createElement('div');
     overlay.id = 'modalOverlay';
     overlay.className = 'modal-overlay';
-    overlay.onclick = closeMatrixCellDetails;
+    overlay.onclick = () => { closeMatrixCellDetails(); closeAdminPropertyEdit(); };
     document.body.appendChild(overlay);
 
     const modal = document.createElement('div');
     modal.id = 'matrixDetailModal';
     modal.className = 'matrix-detail-modal';
     document.body.appendChild(modal);
+  }
+  if (!document.getElementById('adminPropertyEditModal')) {
+    const editModal = document.createElement('div');
+    editModal.id = 'adminPropertyEditModal';
+    editModal.className = 'matrix-detail-modal';
+    document.body.appendChild(editModal);
   }
 
   // Renderizar la base estructural
@@ -6529,6 +6536,11 @@ function renderResumenCobros(propertiesList) {
                             onclick="addIndividualToCalendar('${p.name}', '${p.owner}', ${p.monthly_rent}, '${currentAdminYear}', '${currentAdminMonth}', ${dueDay}, ${maxDueDay})" 
                             title="Agregar a Google Calendar">
                       📅
+                    </button>
+                    <button class="btn btn-sm btn-secondary" style="padding: 6px 10px; font-size: 14px;" 
+                            onclick="abrirEditarInmueble('${p.id}')" 
+                            title="Editar Inmueble">
+                      ✏️
                     </button>
                   </div>
                 </td>
@@ -6908,8 +6920,9 @@ function openMatrixCellDetails(propId, monthName, year) {
 
       <!-- Sección de Edición de Pago Bilateral -->
       <div style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">
-        <div style="font-size:11px; color:var(--gold); text-transform:uppercase; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:5px;">
-          ✏️ Registrar Pago (Sincronización Nube)
+        <div style="font-size:11px; color:var(--gold); text-transform:uppercase; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:5px; justify-content:space-between; width:100%;">
+          <span>✏️ Registrar Pago (Sincronización Nube)</span>
+          <button class="btn btn-sm btn-secondary" style="padding: 2px 6px; font-size: 10px; height: auto; background: rgba(255,255,255,0.05); color:#fff; border: 1px solid rgba(255,255,255,0.1);" onclick="abrirEditarInmueble('${p.id}')">✏️ Editar Inmueble</button>
         </div>
         <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:10px; margin-bottom:10px;">
           <div>
@@ -7063,6 +7076,189 @@ function closeMatrixCellDetails() {
   if (modal && overlay) {
     modal.classList.remove('active');
     overlay.classList.remove('active');
+  }
+}
+
+function abrirEditarInmueble(propId) {
+  // Ocultar modal de detalle por si acaso
+  closeMatrixCellDetails();
+
+  const p = adminData.properties.find(x => x.id === propId);
+  if (!p) return;
+
+  const modal = document.getElementById('adminPropertyEditModal');
+  const overlay = document.getElementById('modalOverlay');
+  if (!modal || !overlay) return;
+
+  modal.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px;">
+      <div style="font-size:16px; font-weight:800; color:var(--gold); display:flex; align-items:center; gap:8px;">
+        ✏️ Editar Inmueble
+      </div>
+      <button onclick="closeAdminPropertyEdit()" style="background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer; font-weight:700; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--muted)'">×</button>
+    </div>
+    
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:13px; color:rgba(255,255,255,0.9); max-height: 480px; overflow-y: auto; padding-right: 4px;">
+      <div>
+        <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Nombre del Inmueble</label>
+        <input type="text" id="editPropName" value="${p.name || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
+      </div>
+
+      <div>
+        <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Propietario / Inquilino</label>
+        <input type="text" id="editPropOwner" value="${p.owner || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div>
+          <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Canon Mensual</label>
+          <input type="number" id="editPropRent" value="${p.monthly_rent || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Depósito</label>
+          <input type="number" id="editPropDeposit" value="${p.deposit || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:10px;">
+        <div>
+          <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Inicio Contrato</label>
+          <input type="date" id="editPropStartDate" value="${p.start_date || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:5px 8px; font-size:12.5px; outline:none; box-sizing:border-box; height:32px;">
+        </div>
+        <div>
+          <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Duración (Meses)</label>
+          <input type="number" id="editPropDuration" value="${p.duration || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div>
+          <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Día Cobro</label>
+          <input type="number" id="editPropDueDay" value="${p.due_day || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Día Límite</label>
+          <input type="number" id="editPropMaxDueDay" value="${p.max_due_day || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Notas de Incremento</label>
+        <input type="text" id="editPropIncreaseNotes" value="${p.increase_notes || ''}" placeholder="Aumento Agosto 2026..." style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
+      </div>
+
+      <div>
+        <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Daños / Observaciones</label>
+        <textarea id="editPropDamageNotes" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box; resize:vertical; min-height:50px;">${p.damage_notes || ''}</textarea>
+      </div>
+
+      <button class="btn btn-gold btn-sm" id="btnSaveAdminProperty" style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; margin-top:8px;" onclick="saveAdminPropertyDetails('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
+        💾 Guardar Cambios en la Nube
+      </button>
+    </div>
+  `;
+
+  modal.classList.add('active');
+  overlay.classList.add('active');
+}
+
+function closeAdminPropertyEdit() {
+  const modal = document.getElementById('adminPropertyEditModal');
+  const overlay = document.getElementById('modalOverlay');
+  if (modal && overlay) {
+    modal.classList.remove('active');
+    const detailModal = document.getElementById('matrixDetailModal');
+    if (!detailModal || !detailModal.classList.contains('active')) {
+      overlay.classList.remove('active');
+    }
+  }
+}
+
+async function saveAdminPropertyDetails(propId, propNameOld) {
+  const saveBtn = document.getElementById('btnSaveAdminProperty');
+  if (!saveBtn) return;
+
+  const payload = {
+    action: 'saveAdminProperty',
+    propertyId: propId,
+    propertyNameOld: propNameOld,
+    name: document.getElementById('editPropName').value.trim(),
+    owner: document.getElementById('editPropOwner').value.trim(),
+    monthly_rent: parseFloat(document.getElementById('editPropRent').value) || 0,
+    deposit: document.getElementById('editPropDeposit').value.trim(),
+    start_date: document.getElementById('editPropStartDate').value,
+    duration: document.getElementById('editPropDuration').value.trim(),
+    due_day: parseInt(document.getElementById('editPropDueDay').value) || 5,
+    max_due_day: parseInt(document.getElementById('editPropMaxDueDay').value) || 10,
+    increase_notes: document.getElementById('editPropIncreaseNotes').value.trim(),
+    damage_notes: document.getElementById('editPropDamageNotes').value.trim()
+  };
+
+  if (!payload.name) {
+    toast('El nombre del inmueble no puede estar vacío', 'error');
+    return;
+  }
+
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
+
+  try {
+    const response = await fetch(CRM_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      const resData = await response.json();
+      if (resData.success) {
+        toast('Inmueble actualizado en la nube con éxito!', 'success');
+
+        const p = adminData.properties.find(x => x.id === propId);
+        if (p) {
+          p.name = payload.name;
+          p.owner = payload.owner;
+          p.monthly_rent = payload.monthly_rent;
+          p.deposit = payload.deposit;
+          p.start_date = payload.start_date;
+          p.duration = payload.duration;
+          p.due_day = payload.due_day;
+          p.max_due_day = payload.max_due_day;
+          p.increase_notes = payload.increase_notes;
+          p.damage_notes = payload.damage_notes;
+          
+          localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+        }
+
+        closeAdminPropertyEdit();
+        renderAdministracion();
+      } else {
+        throw new Error(resData.error || 'Error del servidor');
+      }
+    } else {
+      throw new Error('Error de red');
+    }
+  } catch (err) {
+    console.error(err);
+    toast('Error al guardar: ' + err.message + '. Guardado en caché local.', 'warning');
+    
+    const p = adminData.properties.find(x => x.id === propId);
+    if (p) {
+      p.name = payload.name;
+      p.owner = payload.owner;
+      p.monthly_rent = payload.monthly_rent;
+      p.deposit = payload.deposit;
+      p.start_date = payload.start_date;
+      p.duration = payload.duration;
+      p.due_day = payload.due_day;
+      p.max_due_day = payload.max_due_day;
+      p.increase_notes = payload.increase_notes;
+      p.damage_notes = payload.damage_notes;
+      
+      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+      closeAdminPropertyEdit();
+      renderAdministracion();
+    }
   }
 }
 

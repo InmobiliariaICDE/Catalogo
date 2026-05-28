@@ -49,6 +49,7 @@ function doPost(e) {
     if (params.action === 'saveProperty')     return savePropertyToSheet(JSON.parse(params.property));
     if (params.action === 'saveFeedback')     return saveLeadFeedback(params.leadId, params.cod, params.type, params.comment);
     if (params.action === 'saveAdminPayment') return saveAdminPaymentToSheet(params);
+    if (params.action === 'saveAdminProperty') return saveAdminPropertyToSheet(params);
     return createJsonResponse({ error: 'Acción no válida' });
   } catch (err) {
     return createJsonResponse({ error: err.toString() });
@@ -465,6 +466,48 @@ function saveAdminPaymentToSheet(params) {
   sheet.getRange(rowIdx, colIdx).setValue(params.value);
   return createJsonResponse({ success: true, row: rowIdx, column: colIdx });
 }
+
+function saveAdminPropertyToSheet(params) {
+  const sheet = getAdminSheet();
+  if (!sheet) return createJsonResponse({ success: false, error: 'No se encontró la hoja de administración' });
+
+  const values = sheet.getDataRange().getValues();
+  let rowIdx = -1;
+
+  for (let i = 0; i < values.length; i++) {
+    if (String(values[i][0]).trim() === String(params.propertyId).trim()) { rowIdx = i + 1; break; }
+  }
+  if (rowIdx === -1 && params.propertyNameOld) {
+    const cleanName = String(params.propertyNameOld).trim().toLowerCase();
+    for (let i = 0; i < values.length; i++) {
+      const cellName = String(values[i][5] || '').trim().toLowerCase();
+      if (cellName && (cellName.includes(cleanName) || cleanName.includes(cellName))) { rowIdx = i + 1; break; }
+    }
+  }
+  if (rowIdx === -1) return createJsonResponse({ success: false, error: 'Propiedad no encontrada' });
+
+  if (params.damage_notes !== undefined) sheet.getRange(rowIdx, 4).setValue(params.damage_notes);
+  if (params.owner !== undefined) sheet.getRange(rowIdx, 5).setValue(params.owner);
+  
+  if (params.name !== undefined) {
+    var rawNameVal = params.name;
+    if (params.increase_notes) {
+      rawNameVal += "  " + params.increase_notes;
+    }
+    sheet.getRange(rowIdx, 6).setValue(rawNameVal);
+  }
+  
+  if (params.duration !== undefined) sheet.getRange(rowIdx, 7).setValue(params.duration);
+  if (params.deposit !== undefined) sheet.getRange(rowIdx, 8).setValue(params.deposit);
+  if (params.start_date !== undefined) sheet.getRange(rowIdx, 9).setValue(params.start_date);
+  
+  if (params.due_day !== undefined) sheet.getRange(rowIdx, 10).setValue(Number(params.due_day));
+  if (params.max_due_day !== undefined) sheet.getRange(rowIdx, 11).setValue(Number(params.max_due_day));
+  if (params.monthly_rent !== undefined) sheet.getRange(rowIdx, 12).setValue(Number(params.monthly_rent));
+
+  return createJsonResponse({ success: true, row: rowIdx });
+}
+
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS
