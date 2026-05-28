@@ -704,12 +704,220 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 .citas-time { font-weight: 600; color: #fff; }
 .citas-weekday { color: var(--muted); font-size: 11px; }
 
-/* GEMINI ASSISTANT */
-.gemini-btn { position: fixed; bottom: 85px; right: 24px; width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #4285f4, #9b51e0); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(66, 133, 244, 0.4); z-index: 100; transition: transform .2s; }
-.gemini-btn:hover { transform: scale(1.1); }
-.gemini-btn svg { width: 24px; height: 24px; }
-.listening { animation: pulse-blue 1.5s infinite; }
-@keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(66, 133, 244, 0); } 100% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0); } }
+/* GEMINI ASSISTANT HYBRID SIDEBAR */
+.gemini-btn { position: fixed; bottom: 85px; right: 24px; width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #00f2fe, #4facfe, #9b51e0); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4); z-index: 100; transition: all .3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.gemini-btn:hover { transform: scale(1.15) rotate(15deg); box-shadow: 0 8px 25px rgba(155, 81, 224, 0.5); }
+.gemini-btn svg { width: 26px; height: 26px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3)); }
+
+.gemini-sidebar {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 390px;
+  height: 100vh;
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: -10px 0 35px rgba(0,0,0,0.6);
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: 'Outfit', sans-serif;
+}
+.gemini-sidebar.open {
+  right: 0;
+}
+.gemini-sidebar-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255,255,255,0.01);
+}
+.gemini-sparkle-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(212, 168, 75, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(212, 168, 75, 0.25);
+  box-shadow: 0 0 10px rgba(212, 168, 75, 0.1);
+}
+.btn-close-gemini {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 5px;
+  transition: color 0.2s, transform 0.2s;
+  line-height: 1;
+}
+.btn-close-gemini:hover {
+  color: var(--gold);
+  transform: scale(1.1);
+}
+.gemini-chat-history {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.gemini-chat-history::-webkit-scrollbar {
+  width: 4px;
+}
+.gemini-chat-history::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+}
+.gemini-bubble {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.45;
+  position: relative;
+  word-wrap: break-word;
+  animation: slideUpIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes slideUpIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.gemini-bubble.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(66, 133, 244, 0.15), rgba(155, 81, 224, 0.15));
+  border: 1px solid rgba(155, 81, 224, 0.25);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.05);
+}
+.gemini-bubble.assistant {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #e2e8f0;
+  border-bottom-left-radius: 4px;
+}
+.gemini-card {
+  align-self: stretch;
+  background: linear-gradient(145deg, rgba(20, 20, 20, 0.9), rgba(30, 30, 30, 0.95));
+  border: 1px solid rgba(212, 168, 75, 0.2);
+  border-radius: 14px;
+  padding: 15px;
+  font-size: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: slideUpIn 0.3s forwards;
+}
+.gemini-card-title {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.gemini-card-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.gemini-card-lbl {
+  color: #888;
+}
+.gemini-card-val {
+  font-weight: 600;
+  color: #fff;
+  max-width: 60%;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gemini-card-footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.gemini-sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.25);
+}
+.gemini-text-input {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 20px;
+  outline: none;
+  transition: all 0.2s;
+}
+.gemini-text-input:focus {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(79, 172, 254, 0.5);
+  box-shadow: 0 0 8px rgba(79, 172, 254, 0.2);
+}
+.gemini-mic-btn, .gemini-send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.gemini-mic-btn {
+  background: rgba(66, 133, 244, 0.12);
+  color: #4285f4;
+  border: 1px solid rgba(66, 133, 244, 0.25);
+}
+.gemini-mic-btn:hover {
+  background: rgba(66, 133, 244, 0.25);
+  transform: scale(1.08);
+}
+.gemini-mic-btn.listening {
+  background: linear-gradient(135deg, #ff416c, #ff4b2b);
+  color: #fff;
+  border: none;
+  animation: pulse-red-mic 1.2s infinite;
+}
+@keyframes pulse-red-mic {
+  0% { box-shadow: 0 0 0 0 rgba(255, 75, 43, 0.6); }
+  70% { box-shadow: 0 0 0 10px rgba(255, 75, 43, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 75, 43, 0); }
+}
+.gemini-send-btn {
+  background: linear-gradient(135deg, var(--gold) 0%, #b8860b 100%);
+  color: #000;
+}
+.gemini-send-btn:hover {
+  opacity: 0.9;
+  transform: scale(1.08);
+}
+.listening { animation: pulse-blue-light 1.5s infinite; }
+@keyframes pulse-blue-light { 0% { box-shadow: 0 0 0 0 rgba(79, 172, 254, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(79, 172, 254, 0); } 100% { box-shadow: 0 0 0 0 rgba(79, 172, 254, 0); } }
 
 .settings-btn { background: none; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #888; cursor: pointer; }
 .settings-btn:hover { border-color: var(--gold); color: var(--gold); }
@@ -1867,8 +2075,8 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 </div>
 
 <!-- GEMINI ASSISTANT BTN -->
-<button class="gemini-btn" id="geminiBtn" onclick="toggleGemini()" title="Asistente de Voz Gemini">
-  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+<button class="gemini-btn" id="geminiBtn" onclick="toggleGemini()" title="Asistente Gemini AI">
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L14.24 8.76L21 11L14.24 13.24L12 20L9.76 13.24L3 11L9.76 8.76L12 2Z"/></svg>
 </button>
 
 <!-- MODAL ENVIAR -->
@@ -6054,55 +6262,469 @@ function diagnosticarDatosLocales() {
     </div>`;
 }
 
+/* ═══════════════════════════════════════════════
+   HYBRID GEMINI AI ASSISTANT CORE
+   ═══════════════════════════════════════════════ */
 let recognition;
-function toggleGemini(){
-  if(!settings.geminiKey){ toast('Configura tu API Key de Gemini','error'); abrirSettings(); return; }
-  const btn = document.getElementById('geminiBtn');
-  if(btn.classList.contains('listening')){
-    recognition.stop();
-    btn.classList.remove('listening');
+let isGeminiListening = false;
+
+function toggleGemini() {
+  toggleGeminiSidebar();
+}
+
+function toggleGeminiSidebar() {
+  const sidebar = document.getElementById('geminiSidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('open');
+  }
+}
+
+function addGeminiMessage(sender, text, htmlExtra = '') {
+  const container = document.getElementById('geminiChatHistory');
+  if (!container) return;
+
+  const bubble = document.createElement('div');
+  bubble.className = `gemini-bubble ${sender}`;
+  bubble.innerHTML = text + htmlExtra;
+  container.appendChild(bubble);
+
+  // Scroll to bottom
+  setTimeout(() => {
+    container.scrollTop = container.scrollHeight;
+  }, 50);
+}
+
+function toggleGeminiMic() {
+  if (!settings.geminiKey) {
+    toast('Configura tu API Key de Gemini', 'error');
+    abrirSettings();
+    return;
+  }
+
+  const micBtn = document.getElementById('geminiMicBtn');
+  if (!micBtn) return;
+
+  if (isGeminiListening) {
+    if (recognition) recognition.stop();
+    isGeminiListening = false;
+    micBtn.classList.remove('listening');
+    toast('Micrófono desactivado', 'info');
   } else {
-    if(!('webkitSpeechRecognition' in window)){ toast('Tu navegador no soporta voz','error'); return; }
+    if (!('webkitSpeechRecognition' in window)) {
+      toast('Tu navegador no soporta entrada de voz', 'error');
+      return;
+    }
+    
     recognition = new webkitSpeechRecognition();
     recognition.lang = 'es-CO';
-    recognition.onstart = () => { btn.classList.add('listening'); toast('Escuchando...','success'); };
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      isGeminiListening = true;
+      micBtn.classList.add('listening');
+      toast('Escuchando...', 'success');
+    };
+
     recognition.onresult = (e) => {
       const text = e.results[0][0].transcript;
-      processWithGemini(text);
+      const input = document.getElementById('geminiTextInput');
+      if (input) {
+        input.value = text;
+      }
+      sendGeminiTextMessage();
     };
-    recognition.onend = () => { btn.classList.remove('listening'); };
+
+    recognition.onerror = (err) => {
+      console.error('Speech recognition error:', err);
+      toast('Error en reconocimiento de voz', 'error');
+      micBtn.classList.remove('listening');
+      isGeminiListening = false;
+    };
+
+    recognition.onend = () => {
+      micBtn.classList.remove('listening');
+      isGeminiListening = false;
+    };
+
     recognition.start();
   }
 }
 
-async function processWithGemini(text){
-  toast('Gemini procesando...','success');
-  const prompt = `Extrae información de una cita inmobiliaria del siguiente texto en español: "${text}". 
-  Responde UNICAMENTE en formato JSON con estos campos: codigo (solo el numero), fecha (YYYY-MM-DD), hora (HH:mm), cliente (nombre), notas. 
-  Si no encuentras un campo, ponlo vacío.`;
-  
+function sendGeminiTextMessage() {
+  const input = document.getElementById('geminiTextInput');
+  if (!input) return;
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  // Add user bubble
+  addGeminiMessage('user', text);
+  input.value = '';
+
+  // Process
+  processWithGemini(text);
+}
+
+async function processWithGemini(text) {
+  if (!settings.geminiKey) {
+    addGeminiMessage('assistant', '⚠️ Por favor, configura tu API Key de Gemini en los ajustes ⚙️.');
+    return;
+  }
+
+  // Visual typing indicator or quick toast
+  toast('Gemini pensando...', 'success');
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const systemInstruction = `Eres el asistente de Inteligencia Artificial para el panel de administración de "ICDE Inmobiliaria" (Neiva, Colombia).
+Tu objetivo es ayudar al usuario a gestionar de forma rápida e inteligente sus inmuebles, citas/visitas, leads y finanzas.
+Analiza la solicitud del usuario (en español) y responde estrictamente en formato JSON válido.
+No devuelvas NADA que no sea el JSON. No rodees tu JSON con bloques markdown como \`\`\`json. El JSON debe contener exactamente dos propiedades de primer nivel:
+1. "reply": Una frase de respuesta atenta, natural, profesional y amigable en español dirigida al usuario, explicando qué acción identificaste o respondiendo a su consulta.
+2. "action": Un objeto que describe la acción técnica a ejecutar, con el campo "type" y sus parámetros correspondientes.
+
+Tipos de acciones soportadas ("type"):
+- "AGENDAR_CITA_PREVIEW": Si el usuario expresa el deseo de agendar, registrar o programar una cita o visita. Debes extraer:
+    * "codigo" (el código del inmueble, p. ej. "102")
+    * "fecha" (en formato YYYY-MM-DD. Hoy es ${todayStr}. Si el usuario dice un día relativo como "el lunes", calcula la fecha correspondiente a partir de hoy)
+    * "hora" (en formato HH:mm, ej. "16:00")
+    * "cliente" (nombre de la persona)
+    * "celular" (teléfono/celular de contacto)
+    * "notas" (cualquier detalle u observación de la cita)
+- "BUSCAR_PROPIEDADES": Si quiere buscar inmuebles en el catálogo, p. ej. "busca apartamentos en el norte" o "inmueble 102". Parámetros:
+    * "query": el texto de búsqueda (ej: "102" o "El Ingenio")
+- "BUSCAR_LEADS": Si quiere buscar o filtrar leads en el sistema, p. ej. "busca al cliente Juan" o "lead Carlos". Parámetros:
+    * "query": nombre o teléfono a buscar
+- "GENERAR_DESCRIPCION": Si quiere redactar la descripción comercial y vendedora de un inmueble. Parámetros:
+    * "codigo": el código del inmueble (p. ej. "102")
+- "CONSULTAR_SALDO": Si pregunta por balances financieros, ingresos, cobros de administración o datos del edificio Silvia. Parámetros:
+    * "consulta": un string identificando qué quiere consultar (p. ej. "mensual", "silvia", "KPI")
+- "CHAT_ONLY": Para conversaciones generales, saludos o consultas de ayuda que no requieren comandos técnicos. Parámetros: {}
+`;
+
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${settings.geminiKey}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${settings.geminiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: text }] }],
+        systemInstruction: { parts: [{ text: systemInstruction }] }
+      })
     });
+
+    if (!res.ok) throw new Error('API Error');
     const data = await res.json();
-    const cleanJson = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
-    const result = JSON.parse(cleanJson);
+    let resultText = data.candidates[0].content.parts[0].text;
     
-    // Auto-llenar formulario de visita
-    abrirVisitaModal();
-    if(result.codigo) document.getElementById('visitaCodigo').value = result.codigo;
-    if(result.fecha) document.getElementById('visitaFecha').value = result.fecha;
-    if(result.notas) document.getElementById('visitaNotas').value = result.notas;
-    if(result.cliente) document.getElementById('visitaNotas').value += '\nCliente: ' + result.cliente;
-    if(result.hora) document.getElementById('visitaNotas').value += '\nHora: ' + result.hora;
+    // Clean potential markdown blocks
+    resultText = resultText.replace(/```json|```/gi, '').trim();
     
-    toast('Gemini ha extraído los datos ✓');
-  } catch(e) {
-    toast('Error con Gemini','error');
+    const resultObj = JSON.parse(resultText);
+    
+    // 1. Output conversational text
+    addGeminiMessage('assistant', resultObj.reply);
+
+    // 2. Process actions
+    if (resultObj.action && resultObj.action.type !== 'CHAT_ONLY') {
+      executeGeminiAction(resultObj.action);
+    }
+  } catch (err) {
+    console.error('Error in processWithGemini:', err);
+    addGeminiMessage('assistant', '❌ Lo siento, ocurrió un error al procesar tu solicitud con Gemini. Verifica que tu clave de API sea válida.');
   }
+}
+
+function executeGeminiAction(action) {
+  switch (action.type) {
+    case 'AGENDAR_CITA_PREVIEW':
+      renderCitaPreviewCard(action);
+      break;
+    case 'BUSCAR_PROPIEDADES':
+      showTab('leads'); // switch to Leads/Catalog tab if relevant, or simply apply search
+      const inputCat = document.getElementById('fnBus_cat');
+      if (inputCat) {
+        inputCat.value = action.query;
+        if (typeof fnBuscar === 'function') fnBuscar('cat', action.query);
+        toast(`Filtrado catálogo por: "${action.query}" ✓`, 'success');
+      } else {
+        toast(`Buscar propiedades: "${action.query}"`, 'info');
+      }
+      break;
+    case 'BUSCAR_LEADS':
+      showTab('leads');
+      const inputLead = document.getElementById('searchLeadsInput');
+      if (inputLead) {
+        inputLead.value = action.query;
+        if (typeof buscarLeads === 'function') buscarLeads(action.query);
+        toast(`Filtrado leads por: "${action.query}" ✓`, 'success');
+      }
+      break;
+    case 'GENERAR_DESCRIPCION':
+      renderDescripcionGeneradaCard(action.codigo);
+      break;
+    case 'CONSULTAR_SALDO':
+      renderFinanzasCard(action.consulta);
+      break;
+    default:
+      console.warn('Unknown action type:', action.type);
+  }
+}
+
+function renderCitaPreviewCard(action) {
+  const cod = action.codigo || '';
+  const fecha = action.fecha || '';
+  const hora = action.hora || '';
+  const cliente = action.cliente || 'Genérico';
+  const celular = action.celular || '';
+  const notas = action.notas || '';
+
+  const html = `
+    <div class="gemini-card">
+      <div class="gemini-card-title">📅 Confirmación de Cita</div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Cliente:</span><span class="gemini-card-val">${cliente}</span></div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Celular:</span><span class="gemini-card-val">${celular || '—'}</span></div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Inmueble:</span><span class="gemini-card-val" style="color:var(--gold);">📍 ${cod}</span></div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Fecha:</span><span class="gemini-card-val">${fecha}</span></div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Hora:</span><span class="gemini-card-val">${hora || '—'}</span></div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Detalles:</span><span class="gemini-card-val">${notas || 'Sin notas'}</span></div>
+      <div class="gemini-card-footer">
+        <button class="btn btn-primary btn-sm" style="flex:1; font-size:11px;" onclick="confirmarCitaGemini('${cod}', '${fecha}', '${hora}', '${cliente}', '${celular}', '${notas}')">Confirmar Cita</button>
+        <button class="btn btn-secondary btn-sm" style="font-size:11px;" onclick="cancelarCitaGemini(this)">Cancelar</button>
+      </div>
+    </div>
+  `;
+  addGeminiMessage('system-card', '', html);
+}
+
+function cancelarCitaGemini(btn) {
+  const card = btn.closest('.gemini-card');
+  if (card) {
+    card.style.opacity = 0.5;
+    card.querySelector('.gemini-card-footer').innerHTML = '<span style="color:#ff4444; font-weight:700;">✕ Cita Cancelada</span>';
+  }
+}
+
+async function confirmarCitaGemini(codigo, fecha, hora, cliente, celular, notas) {
+  try {
+    let lead = null;
+    if (celular) {
+      const cleanInput = String(celular).replace(/\D/g, '');
+      const matchInput = cleanInput.length >= 10 ? cleanInput.slice(-10) : cleanInput;
+      lead = leads.find(l => {
+        if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
+        const lRaw = String(l.celular || '').replace(/\D/g, '');
+        const lMatch = lRaw.length >= 10 ? lRaw.slice(-10) : lRaw;
+        return matchInput && lMatch && lMatch === matchInput;
+      });
+    }
+
+    if (!lead) {
+      lead = leads.find(l => l.id === 'LEAD-AGENDA-GLOBAL');
+      if (!lead) {
+        lead = {
+          id: 'LEAD-AGENDA-GLOBAL',
+          tipo: 'cliente',
+          nombre: 'Agenda Global (Citas Genéricas)',
+          celular: '0000000000',
+          notas: 'Contenedor para sincronizar citas sin lead asociado.',
+          metodoPago: [],
+          estado: 'visita',
+          etiqueta: 'activo',
+          filtros: {},
+          frecuencia: 'manual',
+          maxPorEnvio: 4,
+          nombreInmobiliaria: '',
+          nombreAgente: '',
+          propsFiltradas: [],
+          propsEnviadas: [],
+          proximosEnvios: [],
+          historialEnvios: [],
+          visitas: [],
+          creadoEn: new Date().toISOString()
+        };
+        leads.push(lead);
+      }
+    }
+
+    const citaId = Date.now().toString();
+    const newCita = {
+      id: citaId,
+      codigo: codigo,
+      fecha: fecha,
+      hora: hora,
+      estado: 'agendada',
+      oferto: 'no',
+      oferta: '',
+      notas: notas,
+      cliente: cliente,
+      celular: celular,
+      inmobiliaria: lead && lead.tipo === 'inmobiliaria' && lead.id !== 'LEAD-AGENDA-GLOBAL' ? lead.nombreInmobiliaria : '',
+      observaciones: notas,
+      leadId: lead.id,
+      creadoEn: new Date().toISOString()
+    };
+
+    if (!lead.visitas) lead.visitas = [];
+    lead.visitas.push({
+      id: citaId,
+      codigo: codigo,
+      fecha: fecha,
+      hora: hora,
+      estado: 'agendada',
+      oferto: 'no',
+      oferta: '',
+      notas: notas,
+      cliente: cliente,
+      celular: celular,
+      observaciones: notas
+    });
+
+    citas.push(newCita);
+    
+    saveLeads();
+    syncCita(newCita);
+    syncSheets(lead);
+    
+    if (currentTab === 'citas') renderCitas();
+    toast('Cita agendada con éxito ✓', 'success');
+    
+    // Replace footer card buttons with success status
+    const cards = document.querySelectorAll('.gemini-card');
+    const lastCard = cards[cards.length - 1];
+    if (lastCard) {
+      lastCard.querySelector('.gemini-card-footer').innerHTML = '<span style="color:#22c55e; font-weight:700;">✓ Agendado Correctamente</span>';
+    }
+    
+    addGeminiMessage('assistant', `✅ ¡Listo! La cita ha sido registrada para **${cliente}** en el inmueble **${codigo}** el **${fecha}**.`);
+  } catch (err) {
+    console.error("Error agendando cita por Gemini:", err);
+    toast('Error al guardar la cita', 'error');
+  }
+}
+
+async function renderDescripcionGeneradaCard(codigo) {
+  const prop = allProps.find(p => String(p['Código']).trim() === String(codigo).trim());
+  if (!prop) {
+    addGeminiMessage('assistant', `❌ No pude encontrar la propiedad con código **${codigo}** en el catálogo local para generar su descripción.`);
+    return;
+  }
+
+  toast('Redactando descripción...', 'success');
+  addGeminiMessage('assistant', `Escribiendo una descripción profesional y atractiva para la propiedad con código **${codigo}**... ✍️`);
+
+  try {
+    const details = JSON.stringify(prop);
+    const systemPrompt = `Eres un experto redactor inmobiliario senior. Toma los datos técnicos del inmueble y redacta una descripción vendedora, atractiva y elegante para publicarla en el sitio web y redes sociales de ICDE Inmobiliaria. 
+    Destaca los puntos fuertes (comuna, barrio, habitaciones, baños, parqueaderos, áreas, etc). Agrega una llamada a la acción emocionante al final. Responde UNICAMENTE con el texto de la descripción redactada.`;
+
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${settings.geminiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `Detalles de propiedad: ${details}` }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] }
+      })
+    });
+
+    if (!res.ok) throw new Error('API Error');
+    const data = await res.json();
+    const desc = data.candidates[0].content.parts[0].text;
+
+    const divId = 'desc_' + Date.now();
+    const html = `
+      <div class="gemini-card">
+        <div class="gemini-card-title">✨ Descripción Generada</div>
+        <div style="max-height:180px; overflow-y:auto; font-size:11.5px; line-height:1.5; color:#ddd; padding-right:4px;" id="${divId}">${desc.replace(/\n/g, '<br>')}</div>
+        <div class="gemini-card-footer">
+          <button class="btn btn-gold btn-sm" style="flex:1;" onclick="copiarAlPortapapeles('${divId}')">📋 Copiar al Portapapeles</button>
+        </div>
+      </div>
+    `;
+    addGeminiMessage('system-card', '', html);
+  } catch (err) {
+    console.error('Error generating description:', err);
+    addGeminiMessage('assistant', '❌ No fue posible generar la descripción del inmueble en este momento.');
+  }
+}
+
+function copiarAlPortapapeles(divId) {
+  const el = document.getElementById(divId);
+  if (el) {
+    const text = el.innerText || el.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      toast('¡Copiado con éxito! ✓', 'success');
+    }).catch(err => {
+      console.error('Error copying text:', err);
+      toast('Error al copiar', 'error');
+    });
+  }
+}
+
+function renderFinanzasCard(consulta) {
+  // Query actual admin data
+  let totalEsperado = 0;
+  let totalRecaudado = 0;
+  let totalPendiente = 0;
+  let ocupados = 0;
+  let totalActivos = 0;
+
+  if (adminData && Array.isArray(adminData.properties)) {
+    adminData.properties.forEach(p => {
+      const paymentsYear = p.payments[currentAdminYear] || [];
+      const paymentMonth = paymentsYear.find(m => m.month === currentAdminMonth);
+      if (paymentMonth) {
+        const st = paymentMonth.status;
+        const val = parseFloat(paymentMonth.value) || 0;
+        const rent = parseFloat(p.monthly_rent) || 0;
+
+        if (st === 'PAID') {
+          totalEsperado += rent;
+          totalRecaudado += val || rent;
+          ocupados++;
+          totalActivos++;
+        } else if (st === 'PENDING') {
+          totalEsperado += rent;
+          totalPendiente += rent;
+          ocupados++;
+          totalActivos++;
+        } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT') {
+          totalEsperado += rent;
+          if (val > 0) totalRecaudado += val;
+          else totalPendiente += rent;
+          ocupados++;
+          totalActivos++;
+        } else if (st === 'VACANT') {
+          totalActivos++;
+        }
+      }
+    });
+  }
+
+  let totalRecaudoSilvia = 0;
+  let totalAbonoSilvia = 0;
+  if (adminData && adminData.silvia_ledger) {
+    const silviaTx = adminData.silvia_ledger[currentAdminYear] || [];
+    silviaTx.forEach(t => {
+      totalRecaudoSilvia += parseFloat(t.recaudo) || 0;
+      totalAbonoSilvia += parseFloat(t.abono) || 0;
+    });
+  }
+  const balanceSilvia = totalRecaudoSilvia - totalAbonoSilvia;
+
+  const html = `
+    <div class="gemini-card">
+      <div class="gemini-card-title">💼 Reporte Financiero (${currentAdminMonth} ${currentAdminYear})</div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Canon Esperado:</span><span class="gemini-card-val">${safeFormatP(totalEsperado)}</span></div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Total Recaudado:</span><span class="gemini-card-val" style="color:#22c55e;">${safeFormatP(totalRecaudado)}</span></div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Saldo Pendiente:</span><span class="gemini-card-val" style="color:#ef4444;">${safeFormatP(totalPendiente)}</span></div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Edif. Silvia Recaudo:</span><span class="gemini-card-val">${safeFormatP(totalAbonoSilvia)}</span></div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Edif. Silvia Pendiente:</span><span class="gemini-card-val">${safeFormatP(balanceSilvia)}</span></div>
+      <div class="gemini-card-footer">
+        <button class="btn btn-secondary btn-sm" style="flex:1;" onclick="showTab('administracion')">⚙️ Ir a Módulo Administración</button>
+      </div>
+    </div>
+  `;
+  addGeminiMessage('system-card', '', html);
 }
 function toggleSection(header){
   const section = header.parentElement;
@@ -11588,6 +12210,46 @@ function cerrarBottomCard() {
   }
 }
 </script>
+
+  <!-- GEMINI SIDEBAR -->
+  <div class="gemini-sidebar" id="geminiSidebar">
+    <div class="gemini-sidebar-header">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div class="gemini-sparkle-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px; color:var(--gold);"><path d="M12 2L14.24 8.76L21 11L14.24 13.24L12 20L9.76 13.24L3 11L9.76 8.76L12 2Z"/></svg>
+        </div>
+        <div>
+          <h4 style="margin:0; font-size:13px; font-weight:700; color:#fff; font-family:'Outfit', sans-serif; line-height:1.2;">Asistente Gemini AI</h4>
+          <span style="font-size:10px; color:#aaa; display:flex; align-items:center; gap:4px; line-height:1;"><span style="width:6px; height:6px; background:#22c55e; border-radius:50%; display:inline-block;"></span>Online (2.0 Flash)</span>
+        </div>
+      </div>
+      <button class="btn-close-gemini" onclick="toggleGeminiSidebar()" title="Cerrar panel">&times;</button>
+    </div>
+    
+    <div class="gemini-chat-history" id="geminiChatHistory">
+      <div class="gemini-bubble assistant">
+        ¡Hola! Soy tu asistente de Gemini AI para **ICDE Inmobiliaria**. 🚀<br><br>
+        ¿En qué te puedo ayudar hoy? Puedes escribirme o usar el micrófono para:
+        <ul style="margin:8px 0 0 16px; padding:0; font-size:12px; line-height:1.45; color:rgba(255,255,255,0.85);">
+          <li style="margin-bottom: 4px;">🔍 **Buscar propiedades** (ej: *"Busca el apartamento 102"* o *"Buscar en El Ingenio"*)</li>
+          <li style="margin-bottom: 4px;">👥 **Filtrar leads** (ej: *"Busca al cliente Juan"*)</li>
+          <li style="margin-bottom: 4px;">📅 **Agendar citas/visitas** (ej: *"Agenda visita para el 205 el lunes a las 4pm con Carlos"*)</li>
+          <li style="margin-bottom: 4px;">✍️ **Generar descripciones** (ej: *"Genera descripción del inmueble 102"*)</li>
+          <li style="margin-bottom: 4px;">💼 **Consultar saldos/cobros** (ej: *"Cuánto se cobró este mes?"* o *"Ver estado de Silvia"*)</li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="gemini-sidebar-footer">
+      <button class="gemini-mic-btn" id="geminiMicBtn" onclick="toggleGeminiMic()" title="Hablar con Gemini">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px;"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+      </button>
+      <input type="text" class="gemini-text-input" id="geminiTextInput" placeholder="Escribe un comando..." onkeydown="if(event.key==='Enter') sendGeminiTextMessage()">
+      <button class="gemini-send-btn" id="geminiSendBtn" onclick="sendGeminiTextMessage()" title="Enviar mensaje">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px; height:16px; margin-left: 2px;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
 
   <!-- Google Street View Modal -->
   <div id="streetViewModal">
