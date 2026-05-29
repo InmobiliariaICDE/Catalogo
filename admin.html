@@ -1513,12 +1513,48 @@ textarea.gemini-card-input {
     z-index: 2000; opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   .matrix-detail-modal.active { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
-  #adminPropertyEditModal { width: min(520px, 92vw); }
+  #adminUnifiedModal {
+    width: min(760px, 96vw);
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+  }
   .modal-overlay {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7);
     backdrop-filter: blur(4px); z-index: 1999; opacity: 0; pointer-events: none; transition: all 0.3s;
   }
   .modal-overlay.active, .modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+  /* ── Unified Modal Tabs ─────────────────────────────── */
+  .u-modal-tabs {
+    display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.07); padding-bottom: 10px; flex-shrink: 0;
+  }
+  .u-tab-btn {
+    flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 8px; color: rgba(255,255,255,0.5); font-size: 11.5px; font-weight: 700;
+    padding: 7px 6px; cursor: pointer; transition: all 0.2s; font-family: inherit; letter-spacing: 0.01em;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .u-tab-btn:hover { background: rgba(212,168,75,0.08); color: rgba(255,255,255,0.8); border-color: rgba(212,168,75,0.2); }
+  .u-tab-btn.active { background: rgba(212,168,75,0.15); color: var(--gold); border-color: rgba(212,168,75,0.4); }
+  .u-tab-content { display: none; flex: 1; overflow-y: auto; padding-right: 4px; }
+  .u-tab-content.active { display: block; }
+
+  /* ── Unified Modal 2-col layout ── */
+  .u-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .u-field-label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 3px; }
+  .u-field-value { font-weight: 600; color: #fff; }
+  .u-field-gold { font-weight: 700; color: var(--gold); font-size: 14px; }
+  .u-field-green { font-weight: 600; color: #22c55e; }
+  .u-section-box { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 10px 12px; border-radius: 10px; margin-bottom: 10px; }
+  .u-section-box.gold { background: rgba(212,168,75,0.04); border-color: rgba(212,168,75,0.12); }
+  .u-section-box.purple { background: rgba(168,85,247,0.04); border-color: rgba(168,85,247,0.12); }
+  .u-inp { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 7px; color: #fff; padding: 6px 9px; font-size: 12.5px; outline: none; box-sizing: border-box; transition: border-color 0.2s; font-family: inherit; }
+  .u-inp:focus { border-color: rgba(212,168,75,0.5); }
+  .u-inp-label { font-size: 10.5px; color: var(--muted); display: block; margin-bottom: 3px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+  .u-silvia-row { display: grid; grid-template-columns: 90px 1fr 100px 100px 100px; gap: 6px; font-size: 11.5px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04); align-items: center; }
+  .u-silvia-row:last-child { border-bottom: none; }
+  .u-silvia-header { color: var(--muted); font-weight: 700; font-size: 10px; text-transform: uppercase; }
 
   .action-bar { display: flex; gap: 12px; margin-bottom: 20px; }
   /* --- Editor de Propiedad --- */
@@ -7450,24 +7486,18 @@ function renderAdministracion() {
     return;
   }
 
-  // Asegurar que el modal de detalle existe en el DOM
-  if (!document.getElementById('matrixDetailModal')) {
+  // Asegurar que el modal unificado existe en el DOM
+  if (!document.getElementById('adminUnifiedModal')) {
     const overlay = document.createElement('div');
     overlay.id = 'modalOverlay';
     overlay.className = 'modal-overlay';
-    overlay.onclick = () => { closeMatrixCellDetails(); closeAdminPropertyEdit(); };
+    overlay.onclick = () => { closeUnifiedModal(); };
     document.body.appendChild(overlay);
 
     const modal = document.createElement('div');
-    modal.id = 'matrixDetailModal';
+    modal.id = 'adminUnifiedModal';
     modal.className = 'matrix-detail-modal';
     document.body.appendChild(modal);
-  }
-  if (!document.getElementById('adminPropertyEditModal')) {
-    const editModal = document.createElement('div');
-    editModal.id = 'adminPropertyEditModal';
-    editModal.className = 'matrix-detail-modal';
-    document.body.appendChild(editModal);
   }
 
   // Renderizar la base estructural
@@ -8013,345 +8043,441 @@ function addIndividualToCalendar(propName, owner, rent, year, month, dueDay, max
   window.open(url, '_blank');
 }
 
-function openMatrixCellDetails(propId, monthName, year) {
-  const p = adminData.properties.find(x => x.id === propId);
-  if (!p) return;
+// ─────────────────────────────────────────────────────────────────────────────
+// MODAL UNIFICADO DE PROPIEDAD
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const paymentsYear = p.payments[year] || [];
+function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
+  const paymentsYear = p.payments[String(year)] || [];
   const pay = paymentsYear.find(m => m.month === monthName) || { status: 'UNSTARTED', value: 0 };
-  
   const dueDay = p.due_day ? Math.round(p.due_day) : 5;
   const maxDueDay = p.max_due_day ? Math.round(p.max_due_day) : 10;
-  
-  const modal = document.getElementById('matrixDetailModal');
-  const overlay = document.getElementById('modalOverlay');
-  if (!modal || !overlay) return;
 
-  modal.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px;">
-      <div style="font-size:16px; font-weight:800; color:var(--gold); display:flex; align-items:center; gap:8px;">
-        🏢 Detalle de Cobro
-      </div>
-      <button onclick="closeMatrixCellDetails()" style="background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer; font-weight:700; transition:color 0.2s;" onhover="this.style.color='#fff'">×</button>
-    </div>
-    
-    <div style="display:flex; flex-direction:column; gap:14px; font-size:13px; color:rgba(255,255,255,0.9); max-height: 480px; overflow-y: auto; padding-right: 4px;">
+  // Silvia transactions for this year
+  const silviaTxs = (adminData.silvia_ledger && adminData.silvia_ledger[String(year)]) || [];
+  const silviaTotal = { recaudo: 0, abono: 0 };
+  silviaTxs.forEach(t => { silviaTotal.recaudo += parseFloat(t.recaudo) || 0; silviaTotal.abono += parseFloat(t.abono) || 0; });
+
+  const tabs = [
+    { id: 'cobro',    icon: '💳', label: 'Cobro' },
+    { id: 'inmueble', icon: '🏠', label: 'Inmueble' },
+    { id: 'contrato', icon: '📄', label: 'Contrato' },
+    { id: 'silvia',   icon: '🏢', label: 'Silvia' }
+  ];
+
+  const tabsHTML = tabs.map(t => `
+    <button class="u-tab-btn ${t.id === activeTab ? 'active' : ''}"
+            onclick="switchUnifiedTab('${t.id}')">
+      ${t.icon} ${t.label}
+    </button>`).join('');
+
+  // ── TAB 1: COBRO ──────────────────────────────────────────────────────────
+  const tabCobro = `
+    <div style="display:flex; flex-direction:column; gap:12px;">
       <div>
-        <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:3px;">Inmueble</div>
-        <div style="font-size:15px; font-weight:700; color:#fff;">${p.name}</div>
-      </div>
-      
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-        <div>
-          <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:3px;">Mes / Año</div>
-          <div style="font-weight:600; color:#fff;">${monthName} ${year}</div>
-        </div>
-        <div>
-          <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:3px;">Estado</div>
-          <span class="${getStatusBadgeClass(pay.status)}" style="padding:3px 8px; font-size:10px;">${getStatusLabel(pay.status)}</span>
-        </div>
+        <div class="u-field-label">Inmueble</div>
+        <div style="font-size:17px; font-weight:800; color:#fff; letter-spacing:-0.01em;">${p.name}</div>
       </div>
 
-      <div>
-        <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:3px;">Inquilino / Dueño</div>
-        <div style="font-weight:600; color:#fff;">${p.owner}</div>
-      </div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <div class="u-modal-grid">
         <div>
-          <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:3px;">Valor Canon</div>
-          <div style="font-weight:700; color:var(--gold); font-size:14px;">${safeFormatP(p.monthly_rent)}</div>
+          <div class="u-field-label">Mes / Año</div>
+          <div class="u-field-value">${monthName} ${year}</div>
         </div>
         <div>
-          <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:3px;">Monto Transado</div>
-          <div style="font-weight:700; color:#fff;">${pay.value && parseFloat(pay.value) > 0 ? safeFormatP(pay.value) : '—'}</div>
+          <div class="u-field-label">Estado</div>
+          <span class="${getStatusBadgeClass(pay.status)}" style="padding:4px 10px; font-size:11px;">${getStatusLabel(pay.status)}</span>
         </div>
       </div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <div class="u-modal-grid">
         <div>
-          <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:3px;">Rango de Pago</div>
-          <div style="font-weight:600; color:#fff;">Día ${dueDay} al ${maxDueDay}</div>
+          <div class="u-field-label">Canon Mensual</div>
+          <div class="u-field-gold">${safeFormatP(p.monthly_rent)}</div>
         </div>
         <div>
-          <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:3px;">Inicio Contrato</div>
-          <div style="font-weight:600; color:#fff;">${p.start_date || 'N/A'}</div>
+          <div class="u-field-label">Monto Transado</div>
+          <div style="font-weight:700; color:${pay.value && parseFloat(pay.value) > 0 ? '#22c55e' : '#fff'};">
+            ${pay.value && parseFloat(pay.value) > 0 ? safeFormatP(pay.value) : '—'}
+          </div>
         </div>
       </div>
 
-      ${p.deposit > 0 ? `
+      <div class="u-modal-grid">
         <div>
-          <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:3px;">Depósito en Garantía</div>
-          <div style="font-weight:600; color:#22c55e;">${safeFormatP(p.deposit)}</div>
+          <div class="u-field-label">Rango de Pago</div>
+          <div class="u-field-value">Día ${dueDay} al ${maxDueDay}</div>
         </div>
-      ` : ''}
+        <div>
+          <div class="u-field-label">Inquilino / Dueño</div>
+          <div class="u-field-value">${p.owner}</div>
+        </div>
+      </div>
 
-      ${p.damage_notes ? `
-        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); padding:8px; border-radius:8px;">
-          <div style="font-size:10px; color:#a855f7; text-transform:uppercase; font-weight:700; margin-bottom:3px;">Daños / Depósito</div>
-          <div style="font-size:11px; color:#fff; font-style:italic;">${p.damage_notes}</div>
+      <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:12px; margin-top:4px;">
+        <div style="font-size:11px; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">
+          ✏️ Registrar Pago — Sincronización Nube
         </div>
-      ` : ''}
-
-      ${p.increase_notes ? `
-        <div style="background:rgba(212,168,75,0.03); border:1px solid rgba(212,168,75,0.08); padding:8px; border-radius:8px;">
-          <div style="font-size:10px; color:var(--gold); text-transform:uppercase; font-weight:700; margin-bottom:3px;">Incrementos y Notas</div>
-          <div style="font-size:11px; color:rgba(255,255,255,0.85);">${p.increase_notes.replace(/\|/g, '<br>')}</div>
-        </div>
-      ` : ''}
-
-      <!-- Sección de Edición de Pago Bilateral -->
-      <div style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">
-        <div style="font-size:11px; color:var(--gold); text-transform:uppercase; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:5px; justify-content:space-between; width:100%;">
-          <span>✏️ Registrar Pago (Sincronización Nube)</span>
-          <button class="btn btn-sm btn-secondary" style="padding: 2px 6px; font-size: 10px; height: auto; background: rgba(255,255,255,0.05); color:#fff; border: 1px solid rgba(255,255,255,0.1);" onclick="abrirEditarInmueble('${p.id}')">✏️ Editar Inmueble</button>
-        </div>
-        <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:10px; margin-bottom:10px;">
+        <div class="u-modal-grid" style="margin-bottom:10px;">
           <div>
-            <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:3px;">Nuevo Estado</label>
-            <select id="editPayStatus" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px; font-size:12px; outline:none; height:32px;">
-              <option value="PAID" ${pay.status === 'PAID' ? 'selected' : ''}>Pagado</option>
-              <option value="PENDING" ${pay.status === 'PENDING' ? 'selected' : ''}>Pendiente</option>
-              <option value="VACANT" ${pay.status === 'VACANT' ? 'selected' : ''}>Desocupado</option>
-              <option value="PREAVISO" ${pay.status === 'PREAVISO' ? 'selected' : ''}>Preaviso</option>
-              <option value="NEW_CONTRACT" ${pay.status === 'NEW_CONTRACT' ? 'selected' : ''}>Nuevo Contrato</option>
-              <option value="FUTURE" ${pay.status === 'FUTURE' ? 'selected' : ''}>Futuro (Vacío)</option>
+            <label class="u-inp-label">Nuevo Estado</label>
+            <select id="editPayStatus" class="u-inp" style="height:32px; padding:4px 8px;">
+              <option value="PAID" ${pay.status === 'PAID' ? 'selected' : ''}>✅ Pagado</option>
+              <option value="PENDING" ${pay.status === 'PENDING' ? 'selected' : ''}>⏳ Pendiente</option>
+              <option value="VACANT" ${pay.status === 'VACANT' ? 'selected' : ''}>🔲 Desocupado</option>
+              <option value="PREAVISO" ${pay.status === 'PREAVISO' ? 'selected' : ''}>⚠️ Preaviso</option>
+              <option value="NEW_CONTRACT" ${pay.status === 'NEW_CONTRACT' ? 'selected' : ''}>🌟 Nuevo Contrato</option>
+              <option value="FUTURE" ${pay.status === 'FUTURE' ? 'selected' : ''}>📅 Futuro (Vacío)</option>
             </select>
           </div>
           <div>
-            <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:3px;">Valor Recibido</label>
-            <input type="number" id="editPayValue" value="${pay.value && parseFloat(pay.value) > 0 ? parseFloat(pay.value) : ''}" placeholder="${p.monthly_rent}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12px; outline:none; height:32px; box-sizing:border-box;">
+            <label class="u-inp-label">Valor Recibido</label>
+            <input type="number" id="editPayValue" class="u-inp" style="height:32px;"
+                   value="${pay.value && parseFloat(pay.value) > 0 ? parseFloat(pay.value) : ''}"
+                   placeholder="${p.monthly_rent}">
           </div>
         </div>
-        <button class="btn btn-gold btn-sm" id="btnSaveAdminPay" style="width:100%; justify-content:center; gap:6px; font-weight:700; height:34px;" onclick="saveAdminPaymentStatus('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${monthName}', '${year}')">
+        <button class="btn btn-gold btn-sm" id="btnSaveAdminPay"
+                style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; margin-bottom:10px;"
+                onclick="saveAdminPaymentStatus('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${monthName}', '${year}')">
           💾 Guardar en la Nube
         </button>
       </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px;">
+        <button class="btn btn-secondary btn-sm"
+                style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; background:rgba(37,211,102,0.08); color:#25d366; border:1px solid rgba(37,211,102,0.2);"
+                onclick="sendAdminReminder('${p.owner}', '${p.name.replace(/'/g, "\\'")}', '${p.monthly_rent}', '${monthName}', '${year}', ${dueDay})">
+          💬 WhatsApp
+        </button>
+        <button class="btn btn-primary btn-sm"
+                style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700;"
+                onclick="addIndividualToCalendar('${p.name.replace(/'/g, "\\'")}', '${p.owner}', ${p.monthly_rent}, '${year}', '${monthName}', ${dueDay}, ${maxDueDay})">
+          📅 Calendar
+        </button>
+      </div>
+    </div>`;
+
+  // ── TAB 2: INMUEBLE (Edición) ─────────────────────────────────────────────
+  const tabInmueble = `
+    <div style="display:flex; flex-direction:column; gap:11px;">
+      <div>
+        <label class="u-inp-label">Nombre del Inmueble</label>
+        <input type="text" id="editPropName" class="u-inp" value="${p.name || ''}">
+      </div>
+      <div>
+        <label class="u-inp-label">Propietario / Inquilino</label>
+        <input type="text" id="editPropOwner" class="u-inp" value="${p.owner || ''}">
+      </div>
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Canon Mensual</label>
+          <input type="number" id="editPropRent" class="u-inp" value="${p.monthly_rent || ''}">
+        </div>
+        <div>
+          <label class="u-inp-label">Depósito</label>
+          <input type="number" id="editPropDeposit" class="u-inp" value="${p.deposit || ''}">
+        </div>
+      </div>
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Inicio Contrato</label>
+          <input type="date" id="editPropStartDate" class="u-inp" value="${p.start_date || ''}" style="height:32px; padding:4px 8px;">
+        </div>
+        <div>
+          <label class="u-inp-label">Duración (Meses)</label>
+          <input type="number" id="editPropDuration" class="u-inp" value="${p.duration || ''}">
+        </div>
+      </div>
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Día de Cobro</label>
+          <input type="number" id="editPropDueDay" class="u-inp" value="${p.due_day || ''}">
+        </div>
+        <div>
+          <label class="u-inp-label">Día Límite</label>
+          <input type="number" id="editPropMaxDueDay" class="u-inp" value="${p.max_due_day || ''}">
+        </div>
+      </div>
+      <div>
+        <label class="u-inp-label">Notas de Incremento</label>
+        <input type="text" id="editPropIncreaseNotes" class="u-inp" value="${p.increase_notes || ''}" placeholder="Ej: Aumento Agosto 2026...">
+      </div>
+      <div>
+        <label class="u-inp-label">Daños / Observaciones</label>
+        <textarea id="editPropDamageNotes" class="u-inp" style="resize:vertical; min-height:54px;">${p.damage_notes || ''}</textarea>
+      </div>
+      <button class="btn btn-gold btn-sm" id="btnSaveAdminProperty"
+              style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; margin-top:4px;"
+              onclick="saveAdminPropertyDetails('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
+        💾 Guardar Cambios en la Nube
+      </button>
+    </div>`;
+
+  // ── TAB 3: CONTRATO ───────────────────────────────────────────────────────
+  const depositVal = parseFloat(p.deposit) || 0;
+  const tabContrato = `
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div class="u-section-box" style="background:rgba(212,168,75,0.06); border-color:rgba(212,168,75,0.2);">
+        <div class="u-field-label" style="color:var(--gold); margin-bottom:6px;">Parte Arrendataria</div>
+        <div style="font-size:18px; font-weight:800; color:#fff;">${p.owner}</div>
+        <div style="font-size:11.5px; color:var(--muted); margin-top:3px;">Inquilino / Representante</div>
+      </div>
+
+      <div class="u-modal-grid">
+        <div class="u-section-box">
+          <div class="u-field-label">Inicio de Contrato</div>
+          <div class="u-field-value">${p.start_date || 'N/A'}</div>
+        </div>
+        <div class="u-section-box">
+          <div class="u-field-label">Duración</div>
+          <div class="u-field-value">${p.duration || '—'} meses</div>
+        </div>
+      </div>
+
+      <div class="u-modal-grid">
+        <div class="u-section-box">
+          <div class="u-field-label">Canon Mensual</div>
+          <div class="u-field-gold">${safeFormatP(p.monthly_rent)}</div>
+        </div>
+        <div class="u-section-box">
+          <div class="u-field-label">Depósito en Garantía</div>
+          <div class="u-field-green">${depositVal > 0 ? safeFormatP(depositVal) : 'Sin depósito'}</div>
+        </div>
+      </div>
+
+      <div class="u-modal-grid">
+        <div class="u-section-box">
+          <div class="u-field-label">Día de Cobro</div>
+          <div class="u-field-value">Día ${dueDay}</div>
+        </div>
+        <div class="u-section-box">
+          <div class="u-field-label">Día Límite</div>
+          <div class="u-field-value">Día ${maxDueDay}</div>
+        </div>
+      </div>
+
+      ${p.increase_notes ? `
+      <div class="u-section-box gold">
+        <div class="u-field-label" style="color:var(--gold); margin-bottom:5px;">📈 Incrementos y Notas</div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.85); line-height:1.6;">
+          ${p.increase_notes.replace(/\|/g, '<br>')}
+        </div>
+      </div>` : ''}
+
+      ${p.damage_notes ? `
+      <div class="u-section-box purple">
+        <div class="u-field-label" style="color:#a855f7; margin-bottom:5px;">🔧 Daños / Observaciones</div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.85); font-style:italic; line-height:1.5;">
+          ${p.damage_notes}
+        </div>
+      </div>` : ''}
+    </div>`;
+
+  // ── TAB 4: EDIFICIO SILVIA ────────────────────────────────────────────────
+  const silviaRows = silviaTxs.slice(0, 30).map(t => {
+    const rec = parseFloat(t.recaudo) || 0;
+    const abo = parseFloat(t.abono) || 0;
+    const sal = parseFloat(t.saldo) || 0;
+    return `
+      <div class="u-silvia-row">
+        <div style="color:rgba(255,255,255,0.5);">${t.date || '—'}</div>
+        <div style="color:#fff; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${t.description}">${t.description}</div>
+        <div style="text-align:right; color:rgba(255,255,255,0.85);">${rec > 0 ? safeFormatP(rec) : '—'}</div>
+        <div style="text-align:right; color:#22c55e; font-weight:600;">${abo > 0 ? safeFormatP(abo) : '—'}</div>
+        <div style="text-align:right; color:var(--gold); font-weight:700;">${sal !== 0 ? safeFormatP(sal) : '—'}</div>
+      </div>`;
+  }).join('');
+
+  const tabSilvia = `
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="font-size:13px; font-weight:700; color:var(--gold);">🏢 Edificio Silvia — Año ${year}</div>
+        <div style="font-size:11px; color:var(--muted);">${silviaTxs.length} movimientos</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px;">
+        <div class="u-section-box" style="text-align:center;">
+          <div class="u-field-label">Total Recaudado</div>
+          <div style="font-size:14px; font-weight:700; color:#fff;">${safeFormatP(silviaTotal.recaudo)}</div>
+        </div>
+        <div class="u-section-box" style="text-align:center;">
+          <div class="u-field-label">Total Abonado</div>
+          <div style="font-size:14px; font-weight:700; color:#22c55e;">${safeFormatP(silviaTotal.abono)}</div>
+        </div>
+        <div class="u-section-box" style="text-align:center;">
+          <div class="u-field-label">Balance</div>
+          <div style="font-size:14px; font-weight:700; color:${silviaTotal.recaudo - silviaTotal.abono > 0 ? '#ef4444' : 'var(--gold)'};">
+            ${safeFormatP(Math.abs(silviaTotal.recaudo - silviaTotal.abono))}
+            <span style="font-size:9px; display:block; color:var(--muted); font-weight:500; margin-top:1px;">
+              ${silviaTotal.recaudo - silviaTotal.abono > 0 ? 'por cobrar' : silviaTotal.recaudo - silviaTotal.abono < 0 ? 'a favor' : 'al día'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      ${silviaTxs.length > 0 ? `
+      <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:10px; max-height:260px; overflow-y:auto;">
+        <div class="u-silvia-row u-silvia-header">
+          <div>Fecha</div>
+          <div>Descripción</div>
+          <div style="text-align:right;">Recaudo</div>
+          <div style="text-align:right;">Abono</div>
+          <div style="text-align:right;">Saldo</div>
+        </div>
+        ${silviaRows}
+        ${silviaTxs.length > 30 ? `<div style="text-align:center; color:var(--muted); font-size:11px; padding:8px 0;">... y ${silviaTxs.length - 30} movimientos más. Ver pestaña 🏢 Edificio Silvia para el detalle completo.</div>` : ''}
+      </div>` : `
+      <div style="text-align:center; padding:30px; color:var(--muted); font-size:13px;">
+        No hay transacciones del Edificio Silvia para el año ${year}.
+      </div>`}
+    </div>`;
+
+  return `
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; flex-shrink:0;">
+      <div style="font-size:15px; font-weight:800; color:var(--gold); display:flex; align-items:center; gap:8px; letter-spacing:-0.01em;">
+        🏢 ${p.name}
+        <span style="font-size:11px; color:var(--muted); font-weight:500; letter-spacing:0; margin-left:2px;">${monthName} ${year}</span>
+      </div>
+      <button onclick="closeUnifiedModal()" style="background:transparent; border:none; color:var(--muted); font-size:20px; cursor:pointer; font-weight:700; line-height:1; padding:0 0 0 8px; transition:color 0.2s; flex-shrink:0;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--muted)'">×</button>
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; border-top:1px solid rgba(255,255,255,0.08); padding-top:12px;">
-      <button class="btn btn-secondary btn-sm" style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; background:rgba(255,255,255,0.05); color:#fff; border:1px solid rgba(255,255,255,0.1);" 
-              onclick="sendAdminReminder('${p.owner}', '${p.name.replace(/'/g, "\\'")}', '${p.monthly_rent}', '${monthName}', '${year}', ${dueDay})">
-        💬 WhatsApp
-      </button>
-      <button class="btn btn-primary btn-sm" style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700;" 
-              onclick="addIndividualToCalendar('${p.name.replace(/'/g, "\\'")}', '${p.owner}', ${p.monthly_rent}, '${year}', '${monthName}', ${dueDay}, ${maxDueDay})">
-        📅 Calendar
-      </button>
-    </div>
+    <div class="u-modal-tabs">${tabsHTML}</div>
+
+    <div id="uTab-cobro"    class="u-tab-content ${activeTab==='cobro'    ? 'active' : ''}">${tabCobro}</div>
+    <div id="uTab-inmueble" class="u-tab-content ${activeTab==='inmueble' ? 'active' : ''}">${tabInmueble}</div>
+    <div id="uTab-contrato" class="u-tab-content ${activeTab==='contrato' ? 'active' : ''}">${tabContrato}</div>
+    <div id="uTab-silvia"   class="u-tab-content ${activeTab==='silvia'   ? 'active' : ''}">${tabSilvia}</div>
   `;
+}
 
+function openMatrixCellDetails(propId, monthName, year) {
+  const p = adminData.properties.find(x => x.id === propId);
+  if (!p) return;
+  const modal = document.getElementById('adminUnifiedModal');
+  const overlay = document.getElementById('modalOverlay');
+  if (!modal || !overlay) return;
+
+  // Store context on modal for switchUnifiedTab
+  modal.dataset.propId    = propId;
+  modal.dataset.monthName = monthName;
+  modal.dataset.year      = year;
+
+  modal.innerHTML = _buildUnifiedModalHTML(p, monthName, year, 'cobro');
   modal.classList.add('active');
   overlay.classList.add('active');
 }
 
+function abrirEditarInmueble(propId, openTab) {
+  const p = adminData.properties.find(x => x.id === propId);
+  if (!p) return;
+  const modal = document.getElementById('adminUnifiedModal');
+  const overlay = document.getElementById('modalOverlay');
+  if (!modal || !overlay) return;
+
+  const monthName = modal.dataset.monthName || currentAdminMonth;
+  const year      = modal.dataset.year      || currentAdminYear;
+
+  modal.dataset.propId    = propId;
+  modal.dataset.monthName = monthName;
+  modal.dataset.year      = year;
+
+  modal.innerHTML = _buildUnifiedModalHTML(p, monthName, year, openTab || 'inmueble');
+  modal.classList.add('active');
+  overlay.classList.add('active');
+}
+
+function switchUnifiedTab(tabId) {
+  document.querySelectorAll('.u-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.toLowerCase().includes(tabId) || btn.onclick && btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + tabId + "'"));
+  });
+  // Re-check by reading onclick attribute properly
+  document.querySelectorAll('.u-tab-btn').forEach(btn => {
+    const onc = btn.getAttribute('onclick') || '';
+    btn.classList.toggle('active', onc.includes("'" + tabId + "'"));
+  });
+  document.querySelectorAll('.u-tab-content').forEach(tc => {
+    tc.classList.toggle('active', tc.id === 'uTab-' + tabId);
+  });
+}
+
+function closeUnifiedModal() {
+  const modal   = document.getElementById('adminUnifiedModal');
+  const overlay = document.getElementById('modalOverlay');
+  if (modal)   modal.classList.remove('active');
+  if (overlay) overlay.classList.remove('active');
+}
+
+// Legacy aliases so any remaining references don't break
+function closeMatrixCellDetails()   { closeUnifiedModal(); }
+function closeAdminPropertyEdit()   { closeUnifiedModal(); }
+
 async function saveAdminPaymentStatus(propId, propName, monthName, year) {
   const statusSelect = document.getElementById('editPayStatus');
-  const valueInput = document.getElementById('editPayValue');
-  const saveBtn = document.getElementById('btnSaveAdminPay');
-  
+  const valueInput   = document.getElementById('editPayValue');
+  const saveBtn      = document.getElementById('btnSaveAdminPay');
   if (!statusSelect || !saveBtn) return;
-  
+
   const status = statusSelect.value;
   let rawValue = valueInput ? valueInput.value.trim() : '';
-  
-  // Mapear el valor según el estado
+
   let finalValue = '';
   if (status === 'PAID') {
     const parsedVal = parseFloat(rawValue);
     if (isNaN(parsedVal) || parsedVal <= 0) {
       const p = adminData.properties.find(x => x.id === propId);
       finalValue = p ? p.monthly_rent : 0;
-    } else {
-      finalValue = parsedVal;
-    }
-  } else if (status === 'VACANT' || status === 'FUTURE') {
-    finalValue = 'DESOCUPADO';
-  } else if (status === 'PREAVISO') {
-    finalValue = 'PREAVISO';
-  } else if (status === 'NEW_CONTRACT') {
-    finalValue = 'CONTRATO NUEVO';
-  } else if (status === 'NO_RENEW') {
-    finalValue = 'NO RENOVARA';
-  } else {
-    finalValue = rawValue || '-';
-  }
-  
-  // Deshabilitar botón y mostrar spinner
+    } else { finalValue = parsedVal; }
+  } else if (status === 'VACANT' || status === 'FUTURE') { finalValue = 'DESOCUPADO'; }
+  else if (status === 'PREAVISO')      { finalValue = 'PREAVISO'; }
+  else if (status === 'NEW_CONTRACT')  { finalValue = 'CONTRATO NUEVO'; }
+  else if (status === 'NO_RENEW')      { finalValue = 'NO RENOVARA'; }
+  else { finalValue = rawValue || '-'; }
+
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
-  
-  const monthsNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+
+  const monthsNames = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
   const monthIdx = monthsNames.indexOf(monthName.toUpperCase());
-  
+
   const payload = {
     action: 'saveAdminPayment',
-    propertyId: propId,
-    propertyName: propName,
-    year: year,
-    monthIndex: monthIdx,
-    value: finalValue
+    propertyId: propId, propertyName: propName,
+    year: year, monthIndex: monthIdx, value: finalValue
   };
-  
+
   try {
     const response = await fetch(CRM_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     });
-    
     if (response.ok) {
       const resData = await response.json();
       if (resData.success) {
         toast('Pago actualizado en la nube con éxito!', 'success');
-        
-        // Actualizar localmente en memoria para renderizado inmediato
         const p = adminData.properties.find(x => x.id === propId);
         if (p) {
           if (!p.payments[year]) p.payments[year] = [];
           let mPay = p.payments[year].find(m => m.month === monthName);
-          if (mPay) {
-            mPay.status = status;
-            mPay.value = finalValue;
-          } else {
-            p.payments[year].push({
-              month: monthName,
-              value: finalValue,
-              status: status
-            });
-          }
-          // Guardar caché local
+          if (mPay) { mPay.status = status; mPay.value = finalValue; }
+          else p.payments[year].push({ month: monthName, value: finalValue, status: status });
           localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
         }
-        
-        closeMatrixCellDetails();
+        closeUnifiedModal();
         renderAdministracion();
-      } else {
-        throw new Error(resData.error || 'Error desconocido del servidor');
-      }
-    } else {
-      throw new Error('Error de conexión HTTP');
-    }
+      } else { throw new Error(resData.error || 'Error desconocido del servidor'); }
+    } else { throw new Error('Error de conexión HTTP'); }
   } catch (err) {
     console.error('Error al guardar pago en la nube:', err);
     toast('Error al guardar en la nube: ' + err.message + '. Se guardó en caché local.', 'warning');
-    
-    // Fallback local: Guardar al menos localmente
     const p = adminData.properties.find(x => x.id === propId);
     if (p) {
       if (!p.payments[year]) p.payments[year] = [];
       let mPay = p.payments[year].find(m => m.month === monthName);
-      if (mPay) {
-        mPay.status = status;
-        mPay.value = finalValue;
-      }
+      if (mPay) { mPay.status = status; mPay.value = finalValue; }
       localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
-      closeMatrixCellDetails();
+      closeUnifiedModal();
       renderAdministracion();
-    }
-  }
-}
-
-function closeMatrixCellDetails() {
-  const modal = document.getElementById('matrixDetailModal');
-  const overlay = document.getElementById('modalOverlay');
-  if (modal && overlay) {
-    modal.classList.remove('active');
-    overlay.classList.remove('active');
-  }
-}
-
-function abrirEditarInmueble(propId) {
-  // Ocultar modal de detalle por si acaso
-  closeMatrixCellDetails();
-
-  const p = adminData.properties.find(x => x.id === propId);
-  if (!p) return;
-
-  const modal = document.getElementById('adminPropertyEditModal');
-  const overlay = document.getElementById('modalOverlay');
-  if (!modal || !overlay) return;
-
-  modal.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px;">
-      <div style="font-size:16px; font-weight:800; color:var(--gold); display:flex; align-items:center; gap:8px;">
-        ✏️ Editar Inmueble
-      </div>
-      <button onclick="closeAdminPropertyEdit()" style="background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer; font-weight:700; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--muted)'">×</button>
-    </div>
-    
-    <div style="display:flex; flex-direction:column; gap:12px; font-size:13px; color:rgba(255,255,255,0.9); max-height: 480px; overflow-y: auto; padding-right: 4px;">
-      <div>
-        <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Nombre del Inmueble</label>
-        <input type="text" id="editPropName" value="${p.name || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
-      </div>
-
-      <div>
-        <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Propietario / Inquilino</label>
-        <input type="text" id="editPropOwner" value="${p.owner || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
-      </div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-        <div>
-          <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Canon Mensual</label>
-          <input type="number" id="editPropRent" value="${p.monthly_rent || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
-        </div>
-        <div>
-          <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Depósito</label>
-          <input type="number" id="editPropDeposit" value="${p.deposit || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
-        </div>
-      </div>
-
-      <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:10px;">
-        <div>
-          <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Inicio Contrato</label>
-          <input type="date" id="editPropStartDate" value="${p.start_date || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:5px 8px; font-size:12.5px; outline:none; box-sizing:border-box; height:32px;">
-        </div>
-        <div>
-          <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Duración (Meses)</label>
-          <input type="number" id="editPropDuration" value="${p.duration || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
-        </div>
-      </div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-        <div>
-          <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Día Cobro</label>
-          <input type="number" id="editPropDueDay" value="${p.due_day || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
-        </div>
-        <div>
-          <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Día Límite</label>
-          <input type="number" id="editPropMaxDueDay" value="${p.max_due_day || ''}" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
-        </div>
-      </div>
-
-      <div>
-        <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Notas de Incremento</label>
-        <input type="text" id="editPropIncreaseNotes" value="${p.increase_notes || ''}" placeholder="Aumento Agosto 2026..." style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box;">
-      </div>
-
-      <div>
-        <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:3px; font-weight:600;">Daños / Observaciones</label>
-        <textarea id="editPropDamageNotes" style="width:100%; background:#222; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; padding:6px 8px; font-size:12.5px; outline:none; box-sizing:border-box; resize:vertical; min-height:50px;">${p.damage_notes || ''}</textarea>
-      </div>
-
-      <button class="btn btn-gold btn-sm" id="btnSaveAdminProperty" style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; margin-top:8px;" onclick="saveAdminPropertyDetails('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
-        💾 Guardar Cambios en la Nube
-      </button>
-    </div>
-  `;
-
-  modal.classList.add('active');
-  overlay.classList.add('active');
-}
-
-function closeAdminPropertyEdit() {
-  const modal = document.getElementById('adminPropertyEditModal');
-  const overlay = document.getElementById('modalOverlay');
-  if (modal && overlay) {
-    modal.classList.remove('active');
-    const detailModal = document.getElementById('matrixDetailModal');
-    if (!detailModal || !detailModal.classList.contains('active')) {
-      overlay.classList.remove('active');
     }
   }
 }
@@ -8364,83 +8490,56 @@ async function saveAdminPropertyDetails(propId, propNameOld) {
     action: 'saveAdminProperty',
     propertyId: propId,
     propertyNameOld: propNameOld,
-    name: document.getElementById('editPropName').value.trim(),
-    owner: document.getElementById('editPropOwner').value.trim(),
-    monthly_rent: parseFloat(document.getElementById('editPropRent').value) || 0,
-    deposit: document.getElementById('editPropDeposit').value.trim(),
-    start_date: document.getElementById('editPropStartDate').value,
-    duration: document.getElementById('editPropDuration').value.trim(),
-    due_day: parseInt(document.getElementById('editPropDueDay').value) || 5,
-    max_due_day: parseInt(document.getElementById('editPropMaxDueDay').value) || 10,
+    name:           document.getElementById('editPropName').value.trim(),
+    owner:          document.getElementById('editPropOwner').value.trim(),
+    monthly_rent:   parseFloat(document.getElementById('editPropRent').value) || 0,
+    deposit:        document.getElementById('editPropDeposit').value.trim(),
+    start_date:     document.getElementById('editPropStartDate').value,
+    duration:       document.getElementById('editPropDuration').value.trim(),
+    due_day:        parseInt(document.getElementById('editPropDueDay').value) || 5,
+    max_due_day:    parseInt(document.getElementById('editPropMaxDueDay').value) || 10,
     increase_notes: document.getElementById('editPropIncreaseNotes').value.trim(),
-    damage_notes: document.getElementById('editPropDamageNotes').value.trim()
+    damage_notes:   document.getElementById('editPropDamageNotes').value.trim()
   };
 
-  if (!payload.name) {
-    toast('El nombre del inmueble no puede estar vacío', 'error');
-    return;
-  }
+  if (!payload.name) { toast('El nombre del inmueble no puede estar vacío', 'error'); return; }
 
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
 
+  const applyToMemory = () => {
+    const p = adminData.properties.find(x => x.id === propId);
+    if (p) {
+      Object.assign(p, {
+        name: payload.name, owner: payload.owner, monthly_rent: payload.monthly_rent,
+        deposit: payload.deposit, start_date: payload.start_date, duration: payload.duration,
+        due_day: payload.due_day, max_due_day: payload.max_due_day,
+        increase_notes: payload.increase_notes, damage_notes: payload.damage_notes
+      });
+      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+    }
+  };
+
   try {
     const response = await fetch(CRM_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     });
-
     if (response.ok) {
       const resData = await response.json();
       if (resData.success) {
         toast('Inmueble actualizado en la nube con éxito!', 'success');
-
-        const p = adminData.properties.find(x => x.id === propId);
-        if (p) {
-          p.name = payload.name;
-          p.owner = payload.owner;
-          p.monthly_rent = payload.monthly_rent;
-          p.deposit = payload.deposit;
-          p.start_date = payload.start_date;
-          p.duration = payload.duration;
-          p.due_day = payload.due_day;
-          p.max_due_day = payload.max_due_day;
-          p.increase_notes = payload.increase_notes;
-          p.damage_notes = payload.damage_notes;
-          
-          localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
-        }
-
-        closeAdminPropertyEdit();
+        applyToMemory();
+        closeUnifiedModal();
         renderAdministracion();
-      } else {
-        throw new Error(resData.error || 'Error del servidor');
-      }
-    } else {
-      throw new Error('Error de red');
-    }
+      } else { throw new Error(resData.error || 'Error del servidor'); }
+    } else { throw new Error('Error de red'); }
   } catch (err) {
     console.error(err);
     toast('Error al guardar: ' + err.message + '. Guardado en caché local.', 'warning');
-    
-    const p = adminData.properties.find(x => x.id === propId);
-    if (p) {
-      p.name = payload.name;
-      p.owner = payload.owner;
-      p.monthly_rent = payload.monthly_rent;
-      p.deposit = payload.deposit;
-      p.start_date = payload.start_date;
-      p.duration = payload.duration;
-      p.due_day = payload.due_day;
-      p.max_due_day = payload.max_due_day;
-      p.increase_notes = payload.increase_notes;
-      p.damage_notes = payload.damage_notes;
-      
-      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
-      closeAdminPropertyEdit();
-      renderAdministracion();
-    }
+    applyToMemory();
+    closeUnifiedModal();
+    renderAdministracion();
   }
 }
 
