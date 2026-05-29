@@ -10559,7 +10559,11 @@ function renderNuevaPropiedad() {
             <option value="Comunal">Comunal (Vieja)</option>
           </select>
         </div>
-        <div class="form-group"><label class="form-label">Pisos</label><input class="form-input" id="gp_pisos" type="number" placeholder="Nº de pisos" value="1"/></div>
+        <div class="form-group"><label class="form-label">Pisos</label>
+          <select class="form-input" id="gp_pisos">
+            ${Array.from({length: 18}, (_, i) => `<option value="${i}" \${i === 1 ? 'selected' : ''}>\${i}</option>`).join('')}
+          </select>
+        </div>
         <div class="form-group"><label class="form-label">Ubicación (Posición)</label>
           <select class="form-input" id="gp_ubicacion_posicion">
             <option value="Medianera">Medianera</option>
@@ -11548,7 +11552,7 @@ function resetNuevaPropForm() {
   ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   
   const selectIds = [
-    'gp_tipo', 'gp_contrato', 'gp_estrato', 'gp_habitaciones', 'gp_banos', 'gp_garaje', 'gp_piscina', 'gp_cocina',
+    'gp_tipo', 'gp_contrato', 'gp_estrato', 'gp_habitaciones', 'gp_banos', 'gp_garaje', 'gp_piscina', 'gp_cocina', 'gp_pisos',
     'gp_closets', 'gp_ascensor', 'gp_reja_antejardin', 'gp_patio'
   ];
   selectIds.forEach(id => { const el = document.getElementById(id); if (el) el.selectedIndex = 0; });
