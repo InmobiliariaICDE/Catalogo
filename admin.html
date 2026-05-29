@@ -7361,7 +7361,7 @@ async function sendMessageFromPanel(phone){
    MÓDULO ADMINISTRACIÓN (SISTEMA INTEGRADO ICDE)
    ═══════════════════════════════════════════════ */
 let adminData = { properties: [], silvia_ledger: {} };
-let currentAdminSubTab = 'resumen';
+let currentAdminSubTab = 'matriz';
 let currentAdminYear = '2026';
 let currentAdminMonth = 'MAYO';
 let waBridgeConnected = false;
@@ -7512,9 +7512,7 @@ function renderAdministracion() {
     <!-- Barra de Navegación del Módulo -->
     <div class="admin-nav-bar">
       <div class="admin-subtabs">
-        <button class="admin-subtab-btn ${currentAdminSubTab === 'resumen' ? 'active' : ''}" onclick="changeAdminSubTab('resumen')">📋 Resumen Cobros</button>
-        <button class="admin-subtab-btn ${currentAdminSubTab === 'matriz' ? 'active' : ''}" onclick="changeAdminSubTab('matriz')">🗓 Matriz de Pagos</button>
-        <button class="admin-subtab-btn ${currentAdminSubTab === 'silvia' ? 'active' : ''}" onclick="changeAdminSubTab('silvia')">🏢 Edificio Silvia</button>
+        <button class="admin-subtab-btn active" style="cursor:default;">🗓 Matriz de Pagos</button>
       </div>
       <div class="admin-actions">
         <div class="wa-status-badge">
@@ -7549,7 +7547,7 @@ function renderAdministracion() {
         </select>
       </div>
 
-      <div id="adminMonthSelectContainer" style="display: ${currentAdminSubTab === 'silvia' ? 'none' : 'flex'}; gap: 10px; align-items: center;">
+      <div id="adminMonthSelectContainer" style="display: flex; gap: 10px; align-items: center;">
         <span style="font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing:0.05em; margin-left: 10px;">MES:</span>
         <select id="adminMonthSelect" class="form-input" style="width: 130px; height: 38px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; cursor:pointer;" onchange="changeAdminMonth(this.value)">
           ${["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"].map(m => `
@@ -7578,112 +7576,59 @@ function renderAdministracionContent() {
   if (!tabContent || !kpisContainer) return;
 
   const filteredProperties = adminData.properties.filter(p => {
-    return p.name.toLowerCase().includes(searchVal) || 
-           (p.owner && p.owner.toLowerCase().includes(searchVal)) || 
+    return p.name.toLowerCase().includes(searchVal) ||
+           (p.owner && p.owner.toLowerCase().includes(searchVal)) ||
            (p.increase_notes && p.increase_notes.toLowerCase().includes(searchVal));
   });
 
-  if (currentAdminSubTab === 'silvia') {
-    const silviaTx = adminData.silvia_ledger[currentAdminYear] || [];
-    let totalRecaudo = 0;
-    let totalAbono = 0;
-    silviaTx.forEach(t => {
-      totalRecaudo += parseFloat(t.recaudo) || 0;
-      totalAbono += parseFloat(t.abono) || 0;
-    });
-    const balanceNeto = totalRecaudo - totalAbono;
+  // KPIs de arrendamiento
+  let totalEsperado = 0, totalRecaudado = 0, totalPendiente = 0, ocupados = 0, totalActivos = 0;
+  adminData.properties.forEach(p => {
+    const paymentsYear = p.payments[currentAdminYear] || [];
+    const paymentMonth = paymentsYear.find(m => m.month === currentAdminMonth);
+    if (paymentMonth) {
+      const st = paymentMonth.status;
+      const val = parseFloat(paymentMonth.value) || 0;
+      const rent = parseFloat(p.monthly_rent) || 0;
+      if (st === 'PAID') {
+        totalEsperado += rent; totalRecaudado += val || rent; ocupados++; totalActivos++;
+      } else if (st === 'PENDING') {
+        totalEsperado += rent; totalPendiente += rent; ocupados++; totalActivos++;
+      } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT') {
+        totalEsperado += rent;
+        if (val > 0) { totalRecaudado += val; } else { totalPendiente += rent; }
+        ocupados++; totalActivos++;
+      } else if (st === 'VACANT') { totalActivos++; }
+    }
+  });
+  const ocupacionPorcentaje = totalActivos > 0 ? Math.round((ocupados / totalActivos) * 100) : 0;
 
-    kpisContainer.innerHTML = `
-      <div class="admin-kpi-card">
-        <div class="admin-kpi-val">${safeFormatP(totalRecaudo)}</div>
-        <div class="admin-kpi-lbl">Recaudo Estimado (${currentAdminYear})</div>
-        <div class="admin-kpi-sub">Total de administración asignada</div>
-      </div>
-      <div class="admin-kpi-card" style="border-color: rgba(34,197,94,0.35);">
-        <div class="admin-kpi-val" style="color: #22c55e;">${safeFormatP(totalAbono)}</div>
-        <div class="admin-kpi-lbl">Total Recaudado / Pagado</div>
-        <div class="admin-kpi-sub">🟢 Depósitos confirmados en banco</div>
-      </div>
-      <div class="admin-kpi-card" style="border-color: ${balanceNeto > 0 ? 'rgba(239,68,68,0.35)' : 'rgba(212,168,75,0.15)'};">
-        <div class="admin-kpi-val" style="color: ${balanceNeto > 0 ? '#ef4444' : '#fff'};">${safeFormatP(balanceNeto)}</div>
-        <div class="admin-kpi-lbl">Saldo Pendiente</div>
-        <div class="admin-kpi-sub">${balanceNeto > 0 ? '🔴 Cartera morosa activa' : '✓ Cuentas completamente al día'}</div>
-      </div>
-    `;
-  } else {
-    let totalEsperado = 0;
-    let totalRecaudado = 0;
-    let totalPendiente = 0;
-    let ocupados = 0;
-    let totalActivos = 0;
+  kpisContainer.innerHTML = `
+    <div class="admin-kpi-card">
+      <div class="admin-kpi-val">${safeFormatP(totalEsperado)}</div>
+      <div class="admin-kpi-lbl">Canon Esperado (${currentAdminMonth})</div>
+      <div class="admin-kpi-sub">Total facturado este mes</div>
+    </div>
+    <div class="admin-kpi-card" style="border-color: rgba(34,197,94,0.3);">
+      <div class="admin-kpi-val" style="color: #22c55e;">${safeFormatP(totalRecaudado)}</div>
+      <div class="admin-kpi-lbl">Recaudado Efectivo</div>
+      <div class="admin-kpi-sub">🟢 Cobros liquidados con éxito</div>
+    </div>
+    <div class="admin-kpi-card" style="border-color: ${totalPendiente > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(212,168,75,0.15)'};">
+      <div class="admin-kpi-val" style="color: ${totalPendiente > 0 ? '#ef4444' : '#fff'};">${safeFormatP(totalPendiente)}</div>
+      <div class="admin-kpi-lbl">Cartera Pendiente</div>
+      <div class="admin-kpi-sub">${totalPendiente > 0 ? '🔴 Inquilinos con mora activa' : '✓ Arrendatarios al día'}</div>
+    </div>
+    <div class="admin-kpi-card">
+      <div class="admin-kpi-val">${ocupacionPorcentaje}%</div>
+      <div class="admin-kpi-lbl">Eficiencia / Ocupación</div>
+      <div class="admin-kpi-sub">🟢 ${ocupados} ocupados de ${totalActivos} unidades</div>
+    </div>
+  `;
 
-    adminData.properties.forEach(p => {
-      const paymentsYear = p.payments[currentAdminYear] || [];
-      const paymentMonth = paymentsYear.find(m => m.month === currentAdminMonth);
-      if (paymentMonth) {
-        const st = paymentMonth.status;
-        const val = parseFloat(paymentMonth.value) || 0;
-        const rent = parseFloat(p.monthly_rent) || 0;
-
-        if (st === 'PAID') {
-          totalEsperado += rent;
-          totalRecaudado += val || rent;
-          ocupados++;
-          totalActivos++;
-        } else if (st === 'PENDING') {
-          totalEsperado += rent;
-          totalPendiente += rent;
-          ocupados++;
-          totalActivos++;
-        } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT') {
-          totalEsperado += rent;
-          if (val > 0) {
-            totalRecaudado += val;
-          } else {
-            totalPendiente += rent;
-          }
-          ocupados++;
-          totalActivos++;
-        } else if (st === 'VACANT') {
-          totalActivos++;
-        }
-      }
-    });
-    
-    const ocupacionPorcentaje = totalActivos > 0 ? Math.round((ocupados / totalActivos) * 100) : 0;
-
-    kpisContainer.innerHTML = `
-      <div class="admin-kpi-card">
-        <div class="admin-kpi-val">${safeFormatP(totalEsperado)}</div>
-        <div class="admin-kpi-lbl">Canon Esperado (${currentAdminMonth})</div>
-        <div class="admin-kpi-sub">Total facturado este mes</div>
-      </div>
-      <div class="admin-kpi-card" style="border-color: rgba(34,197,94,0.3);">
-        <div class="admin-kpi-val" style="color: #22c55e;">${safeFormatP(totalRecaudado)}</div>
-        <div class="admin-kpi-lbl">Recaudado Efectivo</div>
-        <div class="admin-kpi-sub">🟢 Cobros liquidados con éxito</div>
-      </div>
-      <div class="admin-kpi-card" style="border-color: ${totalPendiente > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(212,168,75,0.15)'};">
-        <div class="admin-kpi-val" style="color: ${totalPendiente > 0 ? '#ef4444' : '#fff'};">${safeFormatP(totalPendiente)}</div>
-        <div class="admin-kpi-lbl">Cartera Pendiente</div>
-        <div class="admin-kpi-sub">${totalPendiente > 0 ? '🔴 Inquilinos con mora activa' : '✓ Arrendatarios al día'}</div>
-      </div>
-      <div class="admin-kpi-card">
-        <div class="admin-kpi-val">${ocupacionPorcentaje}%</div>
-        <div class="admin-kpi-lbl">Eficiencia / Ocupación</div>
-        <div class="admin-kpi-sub">🟢 ${ocupados} ocupados de ${totalActivos} unidades</div>
-      </div>
-    `;
-  }
-
-  if (currentAdminSubTab === 'resumen') {
-    tabContent.innerHTML = renderResumenCobros(filteredProperties);
-  } else if (currentAdminSubTab === 'matriz') {
-    tabContent.innerHTML = renderMatrizPagos(filteredProperties);
-  } else if (currentAdminSubTab === 'silvia') {
-    tabContent.innerHTML = renderEdificioSilvia(searchVal);
-  }
+  tabContent.innerHTML = renderMatrizPagos(filteredProperties);
 }
+
 
 function renderResumenCobros(propertiesList) {
   if (propertiesList.length === 0) {
