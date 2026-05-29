@@ -10612,7 +10612,23 @@ function renderNuevaPropiedad() {
             <option value="SI">SI</option>
           </select>
         </div>
-        <div class="form-group"><label class="form-label">Número de Cortinas</label><input class="form-input" id="gp_cortinas" type="number" placeholder="Nº de cortinas" value="0"/></div>
+        <div class="form-group"><label class="form-label">Número de Cortinas</label>
+          <select class="form-input" id="gp_cortinas">
+            <option value="0">0</option>
+            <option value="NO">NO</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="SI">SI</option>
+          </select>
+        </div>
         <div class="form-group"><label class="form-label">Aire Acondicionado</label><input class="form-input" id="gp_aire_acondicionado" type="text" placeholder="Ej: SI / NO / Cantidad"/></div>
         <div class="form-group"><label class="form-label">Reja Antejardín</label>
           <select class="form-input" id="gp_reja_antejardin">
@@ -11554,13 +11570,13 @@ function showDuplicateModal(newProp, oldProp, onConfirm) {
 function resetNuevaPropForm() {
   const ids = [
     'gp_codigo', 'gp_nombre', 'gp_precio', 'gp_barrio', 'gp_conjunto', 'gp_zona', 'gp_ubicacion', 'gp_area', 'gp_administracion', 'gp_rentabilidad', 'gp_descripcion', 'gp_puntos_clave', 'gp_lat', 'gp_lng', 'gp_gfotos', 'gp_inmobiliaria',
-    'gp_area_lote', 'gp_celulares', 'gp_celular_2', 'gp_propietario', 'gp_renta', 'gp_cortinas', 'gp_aire_acondicionado', 'gp_antiguedad', 'gp_dimensiones'
+    'gp_area_lote', 'gp_celulares', 'gp_celular_2', 'gp_propietario', 'gp_renta', 'gp_aire_acondicionado', 'gp_antiguedad', 'gp_dimensiones'
   ];
   ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   
   const selectIds = [
     'gp_tipo', 'gp_contrato', 'gp_estrato', 'gp_habitaciones', 'gp_banos', 'gp_garaje', 'gp_piscina', 'gp_cocina', 'gp_pisos',
-    'gp_comuna', 'gp_closets', 'gp_ascensor', 'gp_reja_antejardin', 'gp_patio'
+    'gp_comuna', 'gp_closets', 'gp_ascensor', 'gp_reja_antejardin', 'gp_patio', 'gp_cortinas'
   ];
   selectIds.forEach(id => { const el = document.getElementById(id); if (el) el.selectedIndex = 0; });
 
@@ -12268,7 +12284,15 @@ function swShowReviewForm(data) {
           <option value="SI" ${normSiNo(data.ascensor) === 'SI' ? 'selected' : ''}>SI</option>
         </select>
       </div>
-      <div class="form-group"><label class="form-label">Número de Cortinas</label><input class="form-input ${emptyClass(data.cortinas)}" id="gp_cortinas" type="number" value="${data.cortinas !== undefined && data.cortinas !== null ? data.cortinas : 0}" placeholder="Nº de cortinas"/></div>
+      <div class="form-group"><label class="form-label">Número de Cortinas</label>
+        <select class="form-input ${emptyClass(data.cortinas)}" id="gp_cortinas">
+          ${['0', 'NO', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'SI'].map(val => {
+            const isSelected = String(data.cortinas).trim().toUpperCase() === String(val).toUpperCase() ? 'selected' : '';
+            return `<option value="${val}" ${isSelected}>${val}</option>`;
+          }).join('')}
+          ${data.cortinas && !['0', 'NO', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'SI'].map(x => x.toUpperCase()).includes(String(data.cortinas).trim().toUpperCase()) ? `<option value="${data.cortinas}" selected>${data.cortinas}</option>` : ''}
+        </select>
+      </div>
       <div class="form-group"><label class="form-label">Aire Acondicionado</label><input class="form-input ${emptyClass(data.aireAcondicionado)}" id="gp_aire_acondicionado" type="text" value="${emptyCheck(data.aireAcondicionado)}" placeholder="Ej: SI / NO / Cantidad"/></div>
       <div class="form-group"><label class="form-label">Reja Antejardín</label>
         <select class="form-input ${emptyClass(data.rejaAntejardin)}" id="gp_reja_antejardin">
