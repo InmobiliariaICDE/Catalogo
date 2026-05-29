@@ -720,8 +720,8 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
   position: fixed;
   bottom: 85px;
   right: 24px;
-  width: 58px;
-  height: 58px;
+  width: 78px;
+  height: 78px;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -745,10 +745,41 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
   filter: drop-shadow(0 8px 16px rgba(212, 168, 75, 0.45));
 }
 
+/* Idle Happy Dance */
+.gemini-btn.idle-happy-dance img {
+  animation: idle-dance-anim 1.8s ease-in-out;
+}
+@keyframes idle-dance-anim {
+  0%, 100% { transform: scale(1) translateY(0) rotate(0deg); }
+  20% { transform: scale(1.1) translateY(-12px) rotate(-10deg); }
+  40% { transform: scale(1.1) translateY(-12px) rotate(10deg); }
+  60% { transform: scale(1.1) translateY(-8px) rotate(-10deg); }
+  80% { transform: scale(1.1) translateY(-8px) rotate(10deg); }
+}
+
+/* Idle Curious Tilt */
+.gemini-btn.idle-curious-tilt img {
+  animation: idle-tilt-anim 3s ease-in-out;
+}
+@keyframes idle-tilt-anim {
+  0%, 100% { transform: scale(1) rotate(0deg) translateY(0); }
+  15%, 85% { transform: scale(1.08) rotate(-15deg) translateY(-2px); }
+  50% { transform: scale(1.08) rotate(-15deg) translateY(-5px); }
+}
+
+/* Idle Super Float */
+.gemini-btn.idle-super-float img {
+  animation: idle-super-float-anim 3.5s ease-in-out;
+}
+@keyframes idle-super-float-anim {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-16px) scale(1.05) rotate(5deg); }
+}
+
 .gemini-speech-bubble {
   position: fixed;
-  bottom: 94px;
-  right: 92px;
+  bottom: 105px;
+  right: 110px;
   max-width: 280px;
   background: rgba(20, 20, 22, 0.95);
   border: 2px solid rgba(255, 255, 255, 0.08);
@@ -6409,6 +6440,44 @@ function showGeminiSpeechBubble(text, duration = 5000) {
 function hideGeminiSpeechBubble() {
   const bubble = document.getElementById('geminiSpeechBubble');
   if (bubble) bubble.classList.remove('active');
+}
+
+function initGeminiIdleActions() {
+  setInterval(() => {
+    const gBtn = document.getElementById('geminiBtn');
+    const btnAvatar = document.getElementById('geminiBtnAvatar');
+    
+    if (!gBtn || isGeminiListening || gBtn.classList.contains('working') || gBtn.classList.contains('listening')) {
+      return;
+    }
+    
+    const routine = Math.floor(Math.random() * 3) + 1;
+    
+    if (routine === 1) {
+      if (btnAvatar) btnAvatar.src = 'feliz.png';
+      gBtn.classList.add('idle-happy-dance');
+      setTimeout(() => {
+        gBtn.classList.remove('idle-happy-dance');
+        if (!isGeminiListening && !gBtn.classList.contains('working')) {
+          if (btnAvatar) btnAvatar.src = 'Saludo.png';
+        }
+      }, 2000);
+    } else if (routine === 2) {
+      if (btnAvatar) btnAvatar.src = 'preguntando.png';
+      gBtn.classList.add('idle-curious-tilt');
+      setTimeout(() => {
+        gBtn.classList.remove('idle-curious-tilt');
+        if (!isGeminiListening && !gBtn.classList.contains('working')) {
+          if (btnAvatar) btnAvatar.src = 'Saludo.png';
+        }
+      }, 3000);
+    } else if (routine === 3) {
+      gBtn.classList.add('idle-super-float');
+      setTimeout(() => {
+        gBtn.classList.remove('idle-super-float');
+      }, 3500);
+    }
+  }, 14000);
 }
 
 let recognition;
@@ -12694,6 +12763,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (panoramaDiv) panoramaDiv.innerHTML = ''; // reset panorama
     });
   }
+  initGeminiIdleActions();
 });
 
 function showSearchResultPinOnly(lat, lng) {
