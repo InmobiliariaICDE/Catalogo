@@ -10579,7 +10579,11 @@ function renderNuevaPropiedad() {
         <div class="form-group"><label class="form-label">Administración ($)</label><input class="form-input" id="gp_administracion" type="text" placeholder="Valor mensual" oninput="formatPrecioOnInput(this)"/></div>
         <div class="form-group"><label class="form-label">Retorno inversión (Rentabilidad)</label><input class="form-input" id="gp_rentabilidad" type="text" placeholder="Ej: 8% anual"/></div>
         
-        <div class="form-group"><label class="form-label">Comuna</label><input class="form-input" id="gp_comuna" type="text" placeholder="Comuna"/></div>
+        <div class="form-group"><label class="form-label">Comuna</label>
+          <select class="form-input" id="gp_comuna">
+            ${Array.from({length: 11}, (_, i) => '<option value="' + i + '">' + i + '</option>').join('')}
+          </select>
+        </div>
         <div class="form-group"><label class="form-label">Área de Lote (m²)</label><input class="form-input" id="gp_area_lote" type="number" placeholder="m²"/></div>
         <div class="form-group"><label class="form-label">Área Construida (m²)</label><input class="form-input" id="gp_area" type="number" placeholder="m²"/></div>
         <div class="form-group"><label class="form-label">Clósets</label>
@@ -11547,13 +11551,13 @@ function showDuplicateModal(newProp, oldProp, onConfirm) {
 function resetNuevaPropForm() {
   const ids = [
     'gp_codigo', 'gp_nombre', 'gp_precio', 'gp_barrio', 'gp_conjunto', 'gp_zona', 'gp_ubicacion', 'gp_area', 'gp_administracion', 'gp_rentabilidad', 'gp_descripcion', 'gp_puntos_clave', 'gp_lat', 'gp_lng', 'gp_gfotos', 'gp_inmobiliaria',
-    'gp_comuna', 'gp_area_lote', 'gp_celulares', 'gp_celular_2', 'gp_propietario', 'gp_renta', 'gp_cortinas', 'gp_aire_acondicionado', 'gp_antiguedad', 'gp_dimensiones'
+    'gp_area_lote', 'gp_celulares', 'gp_celular_2', 'gp_propietario', 'gp_renta', 'gp_cortinas', 'gp_aire_acondicionado', 'gp_antiguedad', 'gp_dimensiones'
   ];
   ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   
   const selectIds = [
     'gp_tipo', 'gp_contrato', 'gp_estrato', 'gp_habitaciones', 'gp_banos', 'gp_garaje', 'gp_piscina', 'gp_cocina', 'gp_pisos',
-    'gp_closets', 'gp_ascensor', 'gp_reja_antejardin', 'gp_patio'
+    'gp_comuna', 'gp_closets', 'gp_ascensor', 'gp_reja_antejardin', 'gp_patio'
   ];
   selectIds.forEach(id => { const el = document.getElementById(id); if (el) el.selectedIndex = 0; });
 
@@ -12229,7 +12233,15 @@ function swShowReviewForm(data) {
       <div class="form-group"><label class="form-label">Administración ($)</label><input class="form-input" id="gp_administracion" type="text" value="" oninput="formatPrecioOnInput(this)"/></div>
       <div class="form-group"><label class="form-label">Retorno inversión</label><input class="form-input" id="gp_rentabilidad" type="text" placeholder="Ej: 8% anual"/></div>
       
-      <div class="form-group"><label class="form-label">Comuna</label><input class="form-input ${emptyClass(data.comuna)}" id="gp_comuna" type="text" value="${emptyCheck(data.comuna)}" placeholder="Comuna"/></div>
+      <div class="form-group"><label class="form-label">Comuna</label>
+        <select class="form-input ${emptyClass(data.comuna)}" id="gp_comuna">
+          ${Array.from({length: 11}, (_, i) => {
+            const isSelected = String(data.comuna).trim() === String(i) ? 'selected' : '';
+            return `<option value="${i}" ${isSelected}>${i}</option>`;
+          }).join('')}
+          ${data.comuna && !Array.from({length: 11}, (_, i) => String(i)).includes(String(data.comuna).trim()) ? `<option value="${data.comuna}" selected>${data.comuna}</option>` : ''}
+        </select>
+      </div>
       <div class="form-group"><label class="form-label">Área de Lote (m²)</label><input class="form-input ${emptyClass(data.areaLote)}" id="gp_area_lote" type="number" value="${emptyCheck(data.areaLote)}" placeholder="m²"/></div>
       <div class="form-group"><label class="form-label">Área Construida (m²)</label><input class="form-input ${emptyClass(data.area)}" id="gp_area" type="number" value="${emptyCheck(data.area)}"/></div>
       <div class="form-group"><label class="form-label">Clósets</label>
