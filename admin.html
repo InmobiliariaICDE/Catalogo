@@ -10503,7 +10503,17 @@ function renderNuevaPropiedad() {
           <span class="autofilled-msg" id="gp_barrio_msg" style="display:none; position:absolute; right:10px; bottom:-16px;"></span>
         </div>
         <div class="form-group"><label class="form-label">Conjunto / Edificio</label><input class="form-input" id="gp_conjunto" type="text" placeholder="Ej: Condominio Real"/></div>
-        <div class="form-group"><label class="form-label">Zona</label><input class="form-input" id="gp_zona" type="text" placeholder="Ej: Sur"/></div>
+        <div class="form-group"><label class="form-label">Zona</label>
+          <select class="form-input" id="gp_zona">
+            <option value="">Selecciona...</option>
+            <option value="Centro">Centro</option>
+            <option value="Norte">Norte</option>
+            <option value="Occidente">Occidente</option>
+            <option value="Oriente">Oriente</option>
+            <option value="Rural">Rural</option>
+            <option value="Sur">Sur</option>
+          </select>
+        </div>
         <div class="form-group"><label class="form-label">Ciudad</label><input class="form-input" id="gp_ciudad" type="text" value="Cali"/></div>
         <div class="form-group"><label class="form-label">Estrato</label>
           <select class="form-input" id="gp_estrato">
@@ -12163,7 +12173,13 @@ function swShowReviewForm(data) {
         <span class="autofilled-msg" id="gp_barrio_msg" style="display:none; position:absolute; right:10px; bottom:-16px;"></span>
       </div>
       <div class="form-group"><label class="form-label">Conjunto / Edificio</label><input class="form-input ${emptyClass(data.conjunto)}" id="gp_conjunto" type="text" value="${emptyCheck(data.conjunto)}"/></div>
-      <div class="form-group"><label class="form-label">Zona</label><input class="form-input ${emptyClass(data.zona)}" id="gp_zona" type="text" value="${emptyCheck(data.zona)}"/></div>
+      <div class="form-group"><label class="form-label">Zona</label>
+        <select class="form-input ${emptyClass(data.zona)}" id="gp_zona">
+          <option value="">Selecciona...</option>
+          ${['Centro', 'Norte', 'Occidente', 'Oriente', 'Rural', 'Sur'].map(z => `<option value="${z}" ${data.zona === z ? 'selected' : ''}>${z}</option>`).join('')}
+          ${data.zona && !['Centro', 'Norte', 'Occidente', 'Oriente', 'Rural', 'Sur'].includes(data.zona) ? `<option value="${data.zona}" selected>${data.zona}</option>` : ''}
+        </select>
+      </div>
       <div class="form-group"><label class="form-label">Ciudad</label><input class="form-input ${emptyClass(data.ciudad)}" id="gp_ciudad" type="text" value="${data.ciudad || 'Cali'}"/></div>
       <div class="form-group"><label class="form-label">Estrato</label>
         <select class="form-input ${emptyClass(data.estrato)}" id="gp_estrato">
