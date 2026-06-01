@@ -1,21 +1,6 @@
 <!DOCTYPE html>
 <html lang="es-CO">
 <head>
-<script>
-window.onerror = function(message, source, lineno, colno, error) {
-  const errText = `JS Error: ${message} at ${source}:${lineno}:${colno}`;
-  console.error(errText);
-  localStorage.setItem('last_admin_error', errText);
-  setTimeout(() => {
-    const banner = document.createElement('div');
-    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:#ef4444;color:#fff;padding:15px;font-family:sans-serif;font-size:14px;font-weight:bold;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,0.3);';
-    const cleanSource = source ? source.split('/').pop() : 'unknown';
-    banner.innerHTML = `⚠️ Se detectó un error de JavaScript: <br/><code>${message}</code><br/>en la línea ${lineno} de ${cleanSource}. <br/><button onclick="localStorage.clear(); location.reload();" style="margin-top:10px;padding:5px 10px;background:#fff;color:#ef4444;border:none;border-radius:4px;font-weight:bold;cursor:pointer;">Limpiar Caché y Recargar</button>`;
-    document.body.appendChild(banner);
-  }, 100);
-  return false;
-};
-</script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Panel de Control | ICDE Inmobiliaria</title>
@@ -1413,6 +1398,46 @@ textarea.gemini-card-input {
 
   /* ADMIN DASHBOARD STYLES */
   .admin-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .admin-kpis-layout {
+    display: grid;
+    grid-template-columns: 2.2fr 1fr;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 16px;
+  }
+  .admin-kpis-left {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .admin-kpis-right {
+    display: flex;
+    flex-direction: column;
+  }
+  .admin-kpis-right .admin-kpi-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  @media (max-width: 1200px) {
+    .admin-kpis-left {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 992px) {
+    .admin-kpis-layout {
+      grid-template-columns: 1fr;
+    }
+    .admin-kpis-left {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 576px) {
+    .admin-kpis-left {
+      grid-template-columns: 1fr;
+    }
+  }
   .admin-kpi-card { 
     background: linear-gradient(145deg, rgba(30, 30, 30, 0.9) 0%, rgba(20, 20, 20, 0.95) 100%); 
     border: 1px solid rgba(212, 168, 75, 0.15); 
@@ -7525,10 +7550,9 @@ function renderAdministracion() {
     </div>
 
     <!-- KPI GRID DINÁMICO -->
-    <div class="admin-kpi-grid" id="adminKpisContainer" style="margin-bottom: 14px;">
+    <div id="adminKpisContainer" style="margin-bottom: 14px;">
       <!-- Se llena dinámicamente -->
     </div>
-
 
     <!-- BARRA DE ACCIÓN Y FILTROS -->
     <div class="action-bar" style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: rgba(255,255,255,0.01); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03);">
@@ -7602,34 +7626,91 @@ function renderAdministracionContent() {
       } else if (st === 'VACANT') { totalActivos++; }
     }
   });
+
   const ocupacionPorcentaje = totalActivos > 0 ? Math.round((ocupados / totalActivos) * 100) : 0;
+  const totalComision = totalRecaudado * 0.10;
+  const comisionObjetivo = 2000000;
+  const progressPercent = Math.round((totalComision / comisionObjetivo) * 100);
+  const dashOffset = 263.89 - (263.89 * Math.min(100, progressPercent)) / 100;
 
   kpisContainer.innerHTML = `
-    <div class="admin-kpi-card" style="--card-accent: var(--gold);">
-      <div class="admin-kpi-val">${safeFormatP(totalEsperado)}</div>
-      <div class="admin-kpi-lbl">Canon Esperado (${currentAdminMonth})</div>
-      <div class="admin-kpi-sub">Total facturado este mes</div>
-    </div>
-    <div class="admin-kpi-card" style="border-color: rgba(34,197,94,0.3); --card-accent: #22c55e;">
-      <div class="admin-kpi-val" style="color: #22c55e;">${safeFormatP(totalRecaudado)}</div>
-      <div class="admin-kpi-lbl">Recaudado Efectivo</div>
-      <div class="admin-kpi-sub">🟢 Cobros liquidados con éxito</div>
-    </div>
-    <div class="admin-kpi-card" style="border-color: ${totalPendiente > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(212,168,75,0.15)'}; --card-accent: ${totalPendiente > 0 ? '#ef4444' : 'var(--gold)'};">
-      <div class="admin-kpi-val" style="color: ${totalPendiente > 0 ? '#ef4444' : '#fff'};">${safeFormatP(totalPendiente)}</div>
-      <div class="admin-kpi-lbl">Cartera Pendiente</div>
-      <div class="admin-kpi-sub">${totalPendiente > 0 ? '🔴 Inquilinos con mora activa' : '✓ Arrendatarios al día'}</div>
-    </div>
-    <div class="admin-kpi-card" style="--card-accent: var(--gold);">
-      <div class="admin-kpi-val">${ocupacionPorcentaje}%</div>
-      <div class="admin-kpi-lbl">Eficiencia / Ocupación</div>
-      <div class="admin-kpi-sub">🟢 ${ocupados} ocupados de ${totalActivos} unidades</div>
+    <div class="admin-kpis-layout">
+      <!-- Standard Cards Grid -->
+      <div class="admin-kpis-left">
+        <!-- 1. INMUEBLES ADMINISTRADOS -->
+        <div class="admin-kpi-card" style="--card-accent: var(--gold);">
+          <div class="admin-kpi-val">${totalActivos}</div>
+          <div class="admin-kpi-lbl">Inmuebles Administrados</div>
+          <div class="admin-kpi-sub" style="font-weight:600;">
+            <span style="display:inline-flex; align-items:center; gap:4px;"><span style="font-size:8px; line-height:1;">🟢</span> ${ocupados} Arrendados</span>
+            <span style="color:rgba(255,255,255,0.15)">|</span>
+            <span style="display:inline-flex; align-items:center; gap:4px;"><span style="font-size:8px; line-height:1;">🟡</span> ${totalActivos - ocupados} Faltan</span>
+          </div>
+        </div>
+
+        <!-- 2. COMISIÓN TOTAL ACUMULADA -->
+        <div class="admin-kpi-card" style="--card-accent: var(--gold);">
+          <div class="admin-kpi-val">${safeFormatP(totalComision)}</div>
+          <div class="admin-kpi-lbl">Comisión Total Acumulada</div>
+          <div class="admin-kpi-sub">10% del valor recaudado</div>
+        </div>
+
+        <!-- 3. CANON ESPERADO -->
+        <div class="admin-kpi-card" style="--card-accent: var(--gold);">
+          <div class="admin-kpi-val">${safeFormatP(totalEsperado)}</div>
+          <div class="admin-kpi-lbl">Canon Esperado (${currentAdminMonth})</div>
+          <div class="admin-kpi-sub">Total facturado este mes</div>
+        </div>
+
+        <!-- 4. RECAUDADO EFECTIVO -->
+        <div class="admin-kpi-card" style="border-color: rgba(34,197,94,0.3); --card-accent: #22c55e;">
+          <div class="admin-kpi-val" style="color: #22c55e;">${safeFormatP(totalRecaudado)}</div>
+          <div class="admin-kpi-lbl">Recaudado Efectivo</div>
+          <div class="admin-kpi-sub">🟢 Cobros liquidados con éxito</div>
+        </div>
+
+        <!-- 5. CARTERA PENDIENTE -->
+        <div class="admin-kpi-card" style="border-color: ${totalPendiente > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(212,168,75,0.15)'}; --card-accent: ${totalPendiente > 0 ? '#ef4444' : 'var(--gold)'};">
+          <div class="admin-kpi-val" style="color: ${totalPendiente > 0 ? '#ef4444' : '#fff'};">${safeFormatP(totalPendiente)}</div>
+          <div class="admin-kpi-lbl">Cartera Pendiente</div>
+          <div class="admin-kpi-sub">${totalPendiente > 0 ? '🔴 Inquilinos con mora activa' : '✓ Arrendatarios al día'}</div>
+        </div>
+
+        <!-- 6. EFICIENCIA / OCUPACIÓN -->
+        <div class="admin-kpi-card" style="--card-accent: var(--gold);">
+          <div class="admin-kpi-val">${ocupacionPorcentaje}%</div>
+          <div class="admin-kpi-lbl">Eficiencia / Ocupación</div>
+          <div class="admin-kpi-sub">🟢 ${ocupados} ocupados de ${totalActivos} unidades</div>
+        </div>
+      </div>
+
+      <!-- Right Tall Column (Objetivo de Administración Chart) -->
+      <div class="admin-kpis-right">
+        <div class="admin-kpi-card" style="--card-accent: var(--gold); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding: 12px 16px;">
+          <div class="admin-kpi-lbl" style="margin-bottom: 6px; width: 100%; text-align: left; border-left: 3px solid var(--gold); padding-left: 6px;">Objetivo de Administración</div>
+          
+          <div style="position:relative; width:88px; height:88px; display:flex; align-items:center; justify-content:center; margin: 4px 0;">
+            <svg width="88" height="88" viewBox="0 0 100 100" style="transform: rotate(-90deg); width:100%; height:100%;">
+              <circle cx="50" cy="50" r="42" fill="transparent" stroke="rgba(255,255,255,0.04)" stroke-width="8"/>
+              <circle cx="50" cy="50" r="42" fill="transparent" stroke="var(--gold)" stroke-width="8"
+                      stroke-dasharray="263.89" stroke-dashoffset="${dashOffset}"
+                      stroke-linecap="round" style="transition: stroke-dashoffset 0.8s ease-in-out; filter: drop-shadow(0 0 4px rgba(212,168,75,0.25));"/>
+            </svg>
+            <div style="position:absolute; font-size:17px; font-weight:800; color:#fff; letter-spacing:-0.03em;">
+              ${progressPercent}%
+            </div>
+          </div>
+          
+          <div style="font-size:10px; color:var(--muted); font-weight:600; margin-top: 4px;">
+            Objetivo mensual: <span style="color:var(--gold); font-weight:700;">$2.000.000</span>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 
   tabContent.innerHTML = renderMatrizPagos(filteredProperties);
 }
-
 
 function renderResumenCobros(propertiesList) {
   if (propertiesList.length === 0) {
@@ -7833,8 +7914,6 @@ function renderEdificioSilvia(searchVal) {
       </table>
     </div>
   `;
-}
-
 function syncPropertyToCalendar(propertyId) {
   toast('Generando archivo de calendario...', 'success');
   try {
