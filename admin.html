@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="es-CO">
 <head>
+<script>
+window.onerror = function(message, source, lineno, colno, error) {
+  const errText = `JS Error: ${message} at ${source}:${lineno}:${colno}`;
+  console.error(errText);
+  localStorage.setItem('last_admin_error', errText);
+  setTimeout(() => {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:#ef4444;color:#fff;padding:15px;font-family:sans-serif;font-size:14px;font-weight:bold;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,0.3);';
+    const cleanSource = source ? source.split('/').pop() : 'unknown';
+    banner.innerHTML = `⚠️ Se detectó un error de JavaScript: <br/><code>${message}</code><br/>en la línea ${lineno} de ${cleanSource}. <br/><button onclick="localStorage.clear(); location.reload();" style="margin-top:10px;padding:5px 10px;background:#fff;color:#ef4444;border:none;border-radius:4px;font-weight:bold;cursor:pointer;">Limpiar Caché y Recargar</button>`;
+    document.body.appendChild(banner);
+  }, 100);
+  return false;
+};
+</script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Panel de Control | ICDE Inmobiliaria</title>
@@ -7818,6 +7833,8 @@ function renderEdificioSilvia(searchVal) {
       </table>
     </div>
   `;
+}
+
 function syncPropertyToCalendar(propertyId) {
   toast('Generando archivo de calendario...', 'success');
   try {
