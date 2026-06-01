@@ -7514,17 +7514,6 @@ function renderAdministracion() {
       <!-- Se llena dinámicamente -->
     </div>
 
-    <!-- Barra de Navegación del Módulo -->
-    <div class="admin-nav-bar" style="justify-content: flex-end; margin-bottom: 14px;">
-      <div class="admin-actions">
-        <div class="wa-status-badge">
-          <div id="waStatusDot" class="wa-status-dot inactive"></div>
-          <span id="waStatusText">Puente WA: Buscando...</span>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="syncAllToCalendar()">🗓 Sincronizar Todo (ICS)</button>
-        <button class="btn btn-gold btn-sm" onclick="sendBulkReminders()">💬 Enviar Masivos WA</button>
-      </div>
-    </div>
 
     <!-- BARRA DE ACCIÓN Y FILTROS -->
     <div class="action-bar" style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: rgba(255,255,255,0.01); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03);">
@@ -7829,6 +7818,29 @@ function renderEdificioSilvia(searchVal) {
       </table>
     </div>
   `;
+function syncPropertyToCalendar(propertyId) {
+  toast('Generando archivo de calendario...', 'success');
+  try {
+    const prop = adminData.properties.find(p => p.id === propertyId);
+    if (!prop) {
+      toast('Inmueble no encontrado', 'error');
+      return;
+    }
+    const icsContent = generateICS([prop], currentAdminYear);
+    
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `ICDE_${prop.name.replace(/\s+/g, '_')}_Calendario_${currentAdminYear}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast('Calendario individual descargado ✓', 'success');
+  } catch (e) {
+    console.error('Error generating property ICS:', e);
+    toast('Error al generar calendario', 'error');
+  }
 }
 
 function sendAdminReminder(owner, prop, amount, month, year, dueDay) {
@@ -8086,7 +8098,7 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
         </button>
       </div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px; margin-bottom:10px;">
         <button class="btn btn-secondary btn-sm"
                 style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; background:rgba(37,211,102,0.08); color:#25d366; border:1px solid rgba(37,211,102,0.2);"
                 onclick="sendAdminReminder('${p.owner}', '${p.name.replace(/'/g, "\\'")}', '${p.monthly_rent}', '${monthName}', '${year}', ${dueDay})">
@@ -8098,6 +8110,11 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
           📅 Calendar
         </button>
       </div>
+      <button class="btn btn-primary btn-sm"
+              style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; width:100%; background:rgba(212,168,75,0.08); color:var(--gold); border:1px solid rgba(212,168,75,0.2);"
+              onclick="syncPropertyToCalendar('${p.id}')">
+        📥 Sincronizar Calendario Anual (ICS)
+      </button>
     </div>`;
 
   // ── TAB 2: INMUEBLE (Edición) ─────────────────────────────────────────────
