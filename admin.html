@@ -6708,39 +6708,51 @@ function speakText(text) {
 
 function speakTextBrowserFallback(cleanText) {
   if ('speechSynthesis' in window) {
+    // Si las voces no se han cargado todavía en el navegador, esperar 150ms y reintentar
+    // Esto evita que el primer saludo se escuche con voz de mujer por falta de carga inicial
+    let voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) {
+      setTimeout(() => {
+        speakTextBrowserFallback(cleanText);
+      }, 150);
+      return;
+    }
+
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'es-MX';
     
-    const voices = window.speechSynthesis.getVoices();
     const esVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
     
-    const maleNames = ['raul', 'jorge', 'alvaro', 'david', 'mateo', 'pablo', 'julio', 'yago', 'jose', 'humberto', 'male', 'hombre'];
+    // Nombres típicos de voces masculinas en español
+    const maleNames = ['raul', 'jorge', 'alvaro', 'david', 'mateo', 'pablo', 'julio', 'yago', 'jose', 'humberto', 'male', 'hombre', 'es-co', 'es-mx', 'es-es'];
     
+    // 1. Intentar buscar voz masculina en español de alta calidad
     let selectedVoice = esVoices.find(v => {
       const name = v.name.toLowerCase();
-      return name.includes('natural') && maleNames.some(m => name.includes(m));
+      return (name.includes('natural') || name.includes('online')) && maleNames.some(m => name.includes(m));
     });
     
+    // 2. Intentar buscar cualquier voz masculina en español
     if (!selectedVoice) {
       selectedVoice = esVoices.find(v => {
         const name = v.name.toLowerCase();
-        return maleNames.some(m => name.includes(m));
+        return maleNames.some(m => name.includes(m)) && !name.includes('sabina') && !name.includes('dalia') && !name.includes('zira') && !name.includes('helena');
       });
     }
     
+    // 3. Fallback: cualquier voz que no sea explícitamente femenina si es posible
     if (!selectedVoice) {
-      selectedVoice = esVoices.find(v => v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('online'));
+      selectedVoice = esVoices.find(v => {
+        const name = v.name.toLowerCase();
+        return !name.includes('sabina') && !name.includes('dalia') && !name.includes('zira') && !name.includes('helena') && !name.includes('female') && !name.includes('mujer');
+      });
     }
-    
-    if (!selectedVoice) selectedVoice = esVoices.find(v => v.name.toLowerCase().includes('sabina'));
-    if (!selectedVoice) selectedVoice = esVoices.find(v => v.name.toLowerCase().includes('dalia'));
-    if (!selectedVoice) selectedVoice = esVoices.find(v => v.name.toLowerCase().includes('google'));
-    
-    if (!selectedVoice) selectedVoice = esVoices.find(v => v.lang.includes('es-CO'));
-    if (!selectedVoice) selectedVoice = esVoices.find(v => v.lang.includes('es-MX'));
-    if (!selectedVoice) selectedVoice = esVoices.find(v => v.lang.includes('es-ES'));
-    if (!selectedVoice) selectedVoice = esVoices.find(v => v.lang.startsWith('es'));
+
+    // 4. Último recurso: primera voz en español que encuentre
+    if (!selectedVoice) {
+      selectedVoice = esVoices[0];
+    }
     
     if (selectedVoice) {
       utterance.voice = selectedVoice;
