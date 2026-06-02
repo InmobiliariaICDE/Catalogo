@@ -2562,7 +2562,13 @@ try {
 let deletedLeads = JSON.parse(localStorage.getItem('icde_deleted_leads') || '[]');
 let citas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
 if (!Array.isArray(citas)) citas = []; // Ensure it's always an array
-let settings = JSON.parse(localStorage.getItem('icde_settings') || '{"waApi":"","geminiKey":"","elevenlabsKey":""}');
+let settings = JSON.parse(localStorage.getItem('icde_settings') || '{}');
+if (!settings.geminiKey) {
+  settings.geminiKey = "AIzaSyDDUVY269C4f735Q-GBBrEYO7B0bqABNeM";
+}
+if (!settings.elevenlabsKey) {
+  settings.elevenlabsKey = "";
+}
 let currentTab = 'nuevo';
 let selectedProps = [];
 let currentLeadId = null;
@@ -6741,8 +6747,8 @@ function speakTextBrowserFallback(cleanText) {
       utterance.lang = selectedVoice.lang;
     }
     
-    utterance.rate = 0.94;
-    utterance.pitch = 0.95;
+    utterance.rate = 0.88; // Cadencia imponente y pausada
+    utterance.pitch = 0.76; // Tono bajo y grueso (voz gruesa de señor)
     
     window.speechSynthesis.speak(utterance);
   }
