@@ -6742,9 +6742,37 @@ function verificarRecordatoriosDeCitas() {
       window._citasReminded.add(c.id);
 
       const cliente = c.cliente || c.nombre || "el cliente";
-      const recordatorioMsg = `⚠️ <strong>Confirmación:</strong> Recuerda confirmar la cita de las ${c.hora} con ${cliente} en 1 hora.`;
 
-      showGeminiSpeechBubble(recordatorioMsg, 12000);
+      // Build smart property description from inmueble data
+      let descPropiedad = '';
+      const prop = (typeof allProps !== 'undefined' ? allProps : []).find(p => String(p['Código']) === String(c.codigo));
+      if (prop) {
+        const tipo = (prop['Tipo de inmueble'] || '').toLowerCase();
+        const conjunto = (prop['Conjunto'] || '').trim();
+        const nombreProp = (prop['Nombre'] || '').trim();
+        if (tipo.includes('apartamento')) {
+          const lugar = conjunto || nombreProp || c.codigo;
+          descPropiedad = `del apartamento en ${lugar}`;
+        } else if (conjunto) {
+          descPropiedad = `del conjunto ${conjunto}`;
+        } else if (tipo.includes('casa')) {
+          const lugar = nombreProp || c.codigo;
+          descPropiedad = `de la casa en ${lugar}`;
+        } else if (tipo.includes('lote')) {
+          descPropiedad = `del lote ${nombreProp || c.codigo}`;
+        } else if (nombreProp) {
+          descPropiedad = `de ${nombreProp}`;
+        } else {
+          descPropiedad = `del inmueble ${c.codigo}`;
+        }
+      } else {
+        descPropiedad = c.codigo ? `del inmueble ${c.codigo}` : 'de la propiedad';
+      }
+
+      const textoHablado = `Atencion, la cita ${descPropiedad} es en 1 hora, recuerda confirmar la cita con Sergio Dussan.`;
+      const recordatorioMsg = `<strong>Atencion</strong>, la cita ${descPropiedad} es en <strong>1 hora</strong>. Recuerda confirmar la cita con <strong>Sergio Dussan</strong>.`;
+
+      showGeminiSpeechBubble(recordatorioMsg, 14000);
       
       const btnAvatar = document.getElementById('geminiBtnAvatar');
       const gBtn = document.getElementById('geminiBtn');
@@ -6757,9 +6785,48 @@ function verificarRecordatoriosDeCitas() {
         }, 3000);
       }
 
-      speakText(`Atención. Recuerda confirmar la cita de las ${c.hora} con ${cliente} dentro de una hora.`);
+      speakRecordatorio(textoHablado);
     }
   });
+}
+
+// Speaks reminder text using ElevenLabs TTS (consistent deep male voice across all computers).
+// To activate: set window.ELEVEN_LABS_KEY = 'sk_yourkey' in browser console or in a config file.
+// Falls back to speakText if ElevenLabs key is not configured.
+async function speakRecordatorio(texto) {
+  const ELEVEN_API_KEY = window.ELEVEN_LABS_KEY || '';
+  // "Adam" voice - deep, authoritative, motivational (ElevenLabs voice ID)
+  const ELEVEN_VOICE_ID = 'pNInz6obpgDQGcFmaJgB';
+
+  if (ELEVEN_API_KEY) {
+    try {
+      const resp = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN_VOICE_ID}`, {
+        method: 'POST',
+        headers: {
+          'xi-api-key': ELEVEN_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: texto,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: { stability: 0.55, similarity_boost: 0.85, style: 0.35, use_speaker_boost: true }
+        })
+      });
+      if (resp.ok) {
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.volume = typeof speechVolume !== 'undefined' ? Math.max(speechVolume / 100, 0.5) : 1.0;
+        audio.play();
+        audio.onended = () => URL.revokeObjectURL(url);
+        return;
+      }
+    } catch(e) {
+      console.warn('ElevenLabs TTS fallo, usando voz del navegador:', e);
+    }
+  }
+  // Fallback: browser built-in speakText
+  speakText(texto);
 }
 
 function formatoHoraNatural(horaStr) {
