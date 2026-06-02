@@ -6521,18 +6521,18 @@ function hideGeminiSpeechBubble() {
 }
 
 const MOTIVATIONAL_PHRASES = [
-  "¡Hoy conquistamos el mercado! Cada llamada y cada lead nos acerca a la cima. ¡Somos los líderes indiscutibles de la región!",
-  "El éxito no es una opción, es nuestro estándar. ¡Hagamos historia hoy en ICDE Inmobiliaria!",
-  "¡Siente la energía del cierre! Cada inmueble tiene su comprador ideal y tú tienes el poder de unirlos. ¡A ganar!",
-  "Lideramos con pasión, negociamos con audacia. En ICDE no seguimos tendencias, ¡nosotros las creamos!",
-  "¡Activa tu mentalidad ganadora! Hoy rompemos récords. El éxito pertenece a quienes toman acción inmediata.",
-  "Propósito claro y enfoque implacable. Estamos construyendo el futuro del corretaje inmobiliario. ¡Sé el mejor hoy!",
-  "¡El cliente de tus sueños te está esperando hoy! Ve por él con la seguridad y la fuerza del número uno.",
-  "El dominio del mercado se gana con consistencia. Cada llamada es una oportunidad de oro. ¡Vamos con todo!",
-  "¡Visualiza tu meta y tómala! Tu capacidad es ilimitada y hoy el mercado inmobiliario es nuestro territorio de victoria.",
-  "¡La excelencia no se negocia! Estamos liderando el sector porque trabajamos con el corazón y con mente ganadora.",
-  "¡En ICDE el límite es el cielo! Tu talento y determinación son la clave para cerrar los mejores tratos hoy.",
-  "Cada objeción de un cliente es solo un escalón más hacia el cierre. ¡Persiste, domina y triunfa!"
+  "¡Hoy conquistamos el mercado! ¡A ganar!",
+  "¡En ICDE el éxito es nuestro único estándar!",
+  "¡El cliente de tus sueños te espera hoy!",
+  "¡Hoy rompemos récords! ¡Vamos con todo!",
+  "¡Tu potencial es ilimitado, ve por el cierre!",
+  "¡Lideramos con pasión! ¡Somos los mejores!",
+  "¡Visualiza tu meta y hazla realidad hoy!",
+  "¡Cada llamada es una oportunidad de oro!",
+  "¡En ICDE lideramos el sector con orgullo!",
+  "¡Mente ganadora hoy! ¡El mercado es nuestro!",
+  "¡El límite es el cielo, cree en ti hoy!",
+  "¡Domina el día con fuerza y determinación!"
 ];
 
 let speechVolume = 1; // 1 = enabled, 0 = disabled
@@ -6545,16 +6545,27 @@ function speakText(text) {
     // Clean up text
     const cleanText = text.replace(/<[^>]*>/g, '').replace(/🦁/g, '').replace(/ICDE Motivación:/g, '');
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = 'es-CO'; // Colombian Spanish!
+    utterance.lang = 'es-MX';
     
     const voices = window.speechSynthesis.getVoices();
-    const spanishVoice = voices.find(v => v.lang.includes('es-CO') || v.lang.includes('es-ES') || v.lang.includes('es'));
+    
+    // Prioritize natural neural/online Spanish voices for premium quality
+    let spanishVoice = voices.find(v => v.lang.includes('es') && v.name.toLowerCase().includes('natural'));
+    if (!spanishVoice) spanishVoice = voices.find(v => v.lang.includes('es') && v.name.toLowerCase().includes('sabina'));
+    if (!spanishVoice) spanishVoice = voices.find(v => v.lang.includes('es') && v.name.toLowerCase().includes('dalia'));
+    if (!spanishVoice) spanishVoice = voices.find(v => v.lang.includes('es') && v.name.toLowerCase().includes('google'));
+    if (!spanishVoice) spanishVoice = voices.find(v => v.lang.includes('es-CO'));
+    if (!spanishVoice) spanishVoice = voices.find(v => v.lang.includes('es-ES'));
+    if (!spanishVoice) spanishVoice = voices.find(v => v.lang.includes('es-MX'));
+    if (!spanishVoice) spanishVoice = voices.find(v => v.lang.includes('es'));
+    
     if (spanishVoice) {
       utterance.voice = spanishVoice;
+      utterance.lang = spanishVoice.lang;
     }
     
-    utterance.rate = 0.95; // More natural cadence
-    utterance.pitch = 1.0;
+    utterance.rate = 0.92;  // Premium, friendly speed
+    utterance.pitch = 1.12; // Warm tone (less robotic)
     
     window.speechSynthesis.speak(utterance);
   }
