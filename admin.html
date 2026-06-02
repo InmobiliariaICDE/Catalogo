@@ -6605,6 +6605,51 @@ function decirMensajeMotivacional() {
   speakText(phrase);
 }
 
+function saludoEInteraccionInicial() {
+  // Determine greeting based on current hours
+  const hrs = new Date().getHours();
+  let saludoBase = "¡Buenos días!";
+  if (hrs >= 12 && hrs < 18) {
+    saludoBase = "¡Buenas tardes!";
+  } else if (hrs >= 18) {
+    saludoBase = "¡Buenas noches!";
+  }
+
+  // Find local today string: YYYY-MM-DD
+  const offset = new Date().getTimezoneOffset();
+  const localToday = new Date(new Date().getTime() - (offset * 60 * 1000)).toISOString().slice(0, 10);
+  
+  // Count appointments (citas) for today
+  const todayCitas = (typeof citas !== 'undefined' && Array.isArray(citas)) 
+    ? citas.filter(c => c.fecha === localToday) 
+    : [];
+    
+  let msg = "";
+  if (todayCitas.length > 0) {
+    msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy tienes ${todayCitas.length} ${todayCitas.length === 1 ? 'cita agendada' : 'citas agendadas'} para hoy. ¡Salgamos a ganar!`;
+  } else {
+    msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy no tienes citas en agenda. ¡Un gran día para captar nuevos clientes!`;
+  }
+
+  // Show in speech bubble
+  showGeminiSpeechBubble(`🦁 <strong>Asistente:</strong> ${msg}`, 9000);
+  
+  // Animate avatar
+  const btnAvatar = document.getElementById('geminiBtnAvatar');
+  const gBtn = document.getElementById('geminiBtn');
+  if (btnAvatar) btnAvatar.src = 'feliz.png';
+  if (gBtn) {
+    gBtn.classList.add('idle-happy-dance');
+    setTimeout(() => {
+      gBtn.classList.remove('idle-happy-dance');
+      if (btnAvatar) btnAvatar.src = 'Saludo.png';
+    }, 3000);
+  }
+  
+  // Speak aloud
+  speakText(msg);
+}
+
 function initGeminiIdleActions() {
   setInterval(() => {
     const gBtn = document.getElementById('geminiBtn');
@@ -6656,8 +6701,8 @@ function initGeminiIdleActions() {
     if (!firstInteractionDone) {
       firstInteractionDone = true;
       setTimeout(() => {
-        decirMensajeMotivacional();
-      }, 3000);
+        saludoEInteraccionInicial();
+      }, 2500);
     }
   });
 
