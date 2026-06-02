@@ -2315,6 +2315,9 @@ textarea.gemini-card-input {
       <div class="form-group full"><label class="form-label">Gemini API Key</label>
         <input class="form-input" id="setGeminiKey" type="password" placeholder="AIza..." value="${settings.geminiKey || ''}"/>
       </div>
+      <div class="form-group full"><label class="form-label">ElevenLabs API Key (Voz Tony Robbins)</label>
+        <input class="form-input" id="setElevenlabsKey" type="password" placeholder="sk_..." value="${settings.elevenlabsKey || ''}"/>
+      </div>
     </div>
 
     <!-- SECCIÓN DE SINCRONIZACIÓN -->
@@ -2559,7 +2562,7 @@ try {
 let deletedLeads = JSON.parse(localStorage.getItem('icde_deleted_leads') || '[]');
 let citas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
 if (!Array.isArray(citas)) citas = []; // Ensure it's always an array
-let settings = JSON.parse(localStorage.getItem('icde_settings') || '{"waApi":"","geminiKey":""}');
+let settings = JSON.parse(localStorage.getItem('icde_settings') || '{"waApi":"","geminiKey":"","elevenlabsKey":""}');
 let currentTab = 'nuevo';
 let selectedProps = [];
 let currentLeadId = null;
@@ -6533,8 +6536,10 @@ function abrirSettings(){
   // Poblar los campos con los valores actuales
   const waInput = document.getElementById('setWaApi');
   const geminiInput = document.getElementById('setGeminiKey');
+  const elevenlabsInput = document.getElementById('setElevenlabsKey');
   if (waInput)     waInput.value     = settings.waApi || '';
   if (geminiInput) geminiInput.value = settings.geminiKey || '';
+  if (elevenlabsInput) elevenlabsInput.value = settings.elevenlabsKey || '';
   document.getElementById('settingsModal').classList.add('open');
   // Limpiar diagnóstico previo
   const diag = document.getElementById('diagResultado');
@@ -6543,6 +6548,7 @@ function abrirSettings(){
 function guardarSettings(){
   settings.waApi = document.getElementById('setWaApi').value;
   settings.geminiKey = document.getElementById('setGeminiKey').value;
+  settings.elevenlabsKey = document.getElementById('setElevenlabsKey').value;
   localStorage.setItem('icde_settings', JSON.stringify(settings));
   closeModal('settingsModal');
   toast('Configuración guardada ✓');
@@ -6794,7 +6800,7 @@ function verificarRecordatoriosDeCitas() {
 // To activate: set window.ELEVEN_LABS_KEY = 'sk_yourkey' in browser console or in a config file.
 // Falls back to speakText if ElevenLabs key is not configured.
 async function speakRecordatorio(texto) {
-  const ELEVEN_API_KEY = window.ELEVEN_LABS_KEY || '';
+  const ELEVEN_API_KEY = (typeof settings !== 'undefined' && settings.elevenlabsKey) || window.ELEVEN_LABS_KEY || '';
   // "Adam" voice - deep, authoritative, motivational (ElevenLabs voice ID)
   const ELEVEN_VOICE_ID = 'pNInz6obpgDQGcFmaJgB';
 
