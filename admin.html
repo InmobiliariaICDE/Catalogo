@@ -6605,6 +6605,54 @@ function decirMensajeMotivacional() {
   speakText(phrase);
 }
 
+function verificarRecordatoriosDeCitas() {
+  if (typeof citas === 'undefined' || !Array.isArray(citas)) return;
+  window._citasReminded = window._citasReminded || new Set();
+
+  const ahora = new Date();
+  
+  // Local ISO Date: YYYY-MM-DD
+  const offset = ahora.getTimezoneOffset();
+  const localToday = new Date(ahora.getTime() - (offset * 60 * 1000)).toISOString().slice(0, 10);
+
+  citas.forEach(c => {
+    if (c.fecha !== localToday || !c.hora) return;
+    if (window._citasReminded.has(c.id)) return;
+
+    const parts = c.hora.split(':');
+    if (parts.length < 2) return;
+    const citaHrs = parseInt(parts[0], 10);
+    const citaMins = parseInt(parts[1], 10);
+
+    const citaDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), citaHrs, citaMins, 0, 0);
+    const diffMs = citaDate.getTime() - ahora.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+
+    // Trigger alert if we are 28 to 32 minutes before the appointment
+    if (diffMins >= 28 && diffMins <= 32) {
+      window._citasReminded.add(c.id);
+
+      const cliente = c.cliente || c.nombre || "el cliente";
+      const recordatorioMsg = `⚠️ <strong>Confirmación:</strong> Recuerda confirmar la cita de las ${c.hora} con ${cliente} en 30 minutos.`;
+
+      showGeminiSpeechBubble(recordatorioMsg, 12000);
+      
+      const btnAvatar = document.getElementById('geminiBtnAvatar');
+      const gBtn = document.getElementById('geminiBtn');
+      if (btnAvatar) btnAvatar.src = 'preguntando.png';
+      if (gBtn) {
+        gBtn.classList.add('idle-curious-tilt');
+        setTimeout(() => {
+          gBtn.classList.remove('idle-curious-tilt');
+          if (btnAvatar) btnAvatar.src = 'Saludo.png';
+        }, 3000);
+      }
+
+      speakText(`Atención. Recuerda confirmar la cita de las ${c.hora} con ${cliente} dentro de treinta minutos.`);
+    }
+  });
+}
+
 function saludoEInteraccionInicial() {
   // Determine greeting based on current hours
   const hrs = new Date().getHours();
@@ -6694,6 +6742,11 @@ function initGeminiIdleActions() {
       decirMensajeMotivacional();
     }
   }, 120000);
+
+  // Background check for appointment reminders (every 30 seconds)
+  setInterval(() => {
+    verificarRecordatoriosDeCitas();
+  }, 30000);
 
   // First user interaction welcome
   let firstInteractionDone = false;
