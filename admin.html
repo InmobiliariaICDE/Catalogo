@@ -6520,6 +6520,69 @@ function hideGeminiSpeechBubble() {
   if (bubble) bubble.classList.remove('active');
 }
 
+const MOTIVATIONAL_PHRASES = [
+  "¡Hoy conquistamos el mercado! Cada llamada y cada lead nos acerca a la cima. ¡Somos los líderes indiscutibles de la región!",
+  "El éxito no es una opción, es nuestro estándar. ¡Hagamos historia hoy en ICDE Inmobiliaria!",
+  "¡Siente la energía del cierre! Cada inmueble tiene su comprador ideal y tú tienes el poder de unirlos. ¡A ganar!",
+  "Lideramos con pasión, negociamos con audacia. En ICDE no seguimos tendencias, ¡nosotros las creamos!",
+  "¡Activa tu mentalidad ganadora! Hoy rompemos récords. El éxito pertenece a quienes toman acción inmediata.",
+  "Propósito claro y enfoque implacable. Estamos construyendo el futuro del corretaje inmobiliario. ¡Sé el mejor hoy!",
+  "¡El cliente de tus sueños te está esperando hoy! Ve por él con la seguridad y la fuerza del número uno.",
+  "El dominio del mercado se gana con consistencia. Cada llamada es una oportunidad de oro. ¡Vamos con todo!",
+  "¡Visualiza tu meta y tómala! Tu capacidad es ilimitada y hoy el mercado inmobiliario es nuestro territorio de victoria.",
+  "¡La excelencia no se negocia! Estamos liderando el sector porque trabajamos con el corazón y con mente ganadora.",
+  "¡En ICDE el límite es el cielo! Tu talento y determinación son la clave para cerrar los mejores tratos hoy.",
+  "Cada objeción de un cliente es solo un escalón más hacia el cierre. ¡Persiste, domina y triunfa!"
+];
+
+let speechVolume = 1; // 1 = enabled, 0 = disabled
+
+function speakText(text) {
+  if (speechVolume === 0) return;
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    
+    // Clean up text
+    const cleanText = text.replace(/<[^>]*>/g, '').replace(/🦁/g, '').replace(/ICDE Motivación:/g, '');
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = 'es-CO'; // Colombian Spanish!
+    
+    const voices = window.speechSynthesis.getVoices();
+    const spanishVoice = voices.find(v => v.lang.includes('es-CO') || v.lang.includes('es-ES') || v.lang.includes('es'));
+    if (spanishVoice) {
+      utterance.voice = spanishVoice;
+    }
+    
+    utterance.rate = 0.95; // More natural cadence
+    utterance.pitch = 1.0;
+    
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+function decirMensajeMotivacional() {
+  const index = Math.floor(Math.random() * MOTIVATIONAL_PHRASES.length);
+  const phrase = MOTIVATIONAL_PHRASES[index];
+  
+  // Show in speech bubble
+  showGeminiSpeechBubble(`🦁 <strong>ICDE Motivación:</strong> ${phrase}`, 8000);
+  
+  // Animate avatar
+  const btnAvatar = document.getElementById('geminiBtnAvatar');
+  const gBtn = document.getElementById('geminiBtn');
+  if (btnAvatar) btnAvatar.src = 'feliz.png';
+  if (gBtn) {
+    gBtn.classList.add('idle-happy-dance');
+    setTimeout(() => {
+      gBtn.classList.remove('idle-happy-dance');
+      if (btnAvatar) btnAvatar.src = 'Saludo.png';
+    }, 3000);
+  }
+  
+  // Speak text
+  speakText(phrase);
+}
+
 function initGeminiIdleActions() {
   setInterval(() => {
     const gBtn = document.getElementById('geminiBtn');
@@ -6556,6 +6619,37 @@ function initGeminiIdleActions() {
       }, 3500);
     }
   }, 14000);
+
+  // Auto motivation interval (every 120 seconds)
+  setInterval(() => {
+    const gBtn = document.getElementById('geminiBtn');
+    if (gBtn && !isGeminiListening && !gBtn.classList.contains('working') && !gBtn.classList.contains('listening')) {
+      decirMensajeMotivacional();
+    }
+  }, 120000);
+
+  // First user interaction welcome
+  let firstInteractionDone = false;
+  document.addEventListener('click', () => {
+    if (!firstInteractionDone) {
+      firstInteractionDone = true;
+      setTimeout(() => {
+        decirMensajeMotivacional();
+      }, 3000);
+    }
+  });
+
+  // Double click on mascot to trigger phrase
+  setTimeout(() => {
+    const gBtn = document.getElementById('geminiBtn');
+    if (gBtn) {
+      gBtn.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        decirMensajeMotivacional();
+      });
+      gBtn.title = "Doble click para motivarte | Asistente Gemini";
+    }
+  }, 1000);
 }
 
 let recognition;
