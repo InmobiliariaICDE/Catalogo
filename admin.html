@@ -6725,7 +6725,12 @@ function saludoEInteraccionInicial() {
   if (todayCitas.length > 0) {
     // Sort chronologically
     todayCitas.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
-    const listadoHoras = todayCitas.map(c => `a las ${formatoHoraNatural(c.hora)}`).join(', ').replace(/,([^,]*)$/, ' y$1');
+    const listadoHoras = todayCitas.map((c, idx) => {
+      if (idx > 0 && c.hora === todayCitas[idx - 1].hora) {
+        return "otra a la misma hora";
+      }
+      return `a las ${formatoHoraNatural(c.hora)}`;
+    }).join(', ').replace(/,([^,]*)$/, ' y$1');
     msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy tienes ${todayCitas.length} ${todayCitas.length === 1 ? 'cita agendada' : 'citas agendadas'}: ${listadoHoras}. ¡Salgamos a ganar!`;
   } else {
     msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy no tienes citas en agenda. ¡Un gran día para captar nuevos clientes!`;
