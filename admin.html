@@ -6546,9 +6546,10 @@ function abrirSettings(){
   if (diag) diag.style.display = 'none';
 }
 function guardarSettings(){
-  settings.waApi = document.getElementById('setWaApi').value;
-  settings.geminiKey = document.getElementById('setGeminiKey').value;
-  settings.elevenlabsKey = document.getElementById('setElevenlabsKey').value;
+  settings.waApi = document.getElementById('setWaApi').value.trim();
+  settings.geminiKey = document.getElementById('setGeminiKey').value.trim();
+  settings.elevenlabsKey = document.getElementById('setElevenlabsKey').value.trim();
+  console.log("Guardando claves - Gemini largo:", settings.geminiKey.length, "ElevenLabs largo:", settings.elevenlabsKey.length);
   localStorage.setItem('icde_settings', JSON.stringify(settings));
   closeModal('settingsModal');
   toast('Configuración guardada ✓');
