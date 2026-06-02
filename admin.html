@@ -6640,27 +6640,75 @@ let speechVolume = 1; // 1 = enabled, 0 = disabled
 
 function speakText(text) {
   if (speechVolume === 0) return;
+
+  // Clean up text
+  const cleanText = text.replace(/<[^>]*>/g, '').replace(/🦁/g, '').replace(/ICDE Motivación:/g, '');
+
+  // 1. Try to use ElevenLabs if API key is configured
+  const ELEVEN_API_KEY = (typeof settings !== 'undefined' && settings.elevenlabsKey) || window.ELEVEN_LABS_KEY || '';
+  const ELEVEN_VOICE_ID = 'YKrm0N1EAM9Bw27j8kuD';
+
+  if (ELEVEN_API_KEY) {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); // Stop any local speech
+    }
+    // Stop previous ElevenLabs audio if playing
+    if (window._currentElevenAudio) {
+      try { window._currentElevenAudio.pause(); } catch(e){}
+    }
+    
+    fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN_VOICE_ID}`, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': ELEVEN_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text: cleanText,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: { stability: 0.55, similarity_boost: 0.85, style: 0.35, use_speaker_boost: true }
+      })
+    })
+    .then(resp => {
+      if (resp.ok) return resp.blob();
+      throw new Error('ElevenLabs API response not ok');
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      window._currentElevenAudio = audio;
+      audio.volume = typeof speechVolume !== 'undefined' ? Math.max(speechVolume / 100, 0.5) : 1.0;
+      audio.play();
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        if (window._currentElevenAudio === audio) window._currentElevenAudio = null;
+      };
+    })
+    .catch(e => {
+      console.warn('ElevenLabs TTS fallo en speakText, usando voz del navegador:', e);
+      speakTextBrowserFallback(cleanText);
+    });
+  } else {
+    speakTextBrowserFallback(cleanText);
+  }
+}
+
+function speakTextBrowserFallback(cleanText) {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
-    
-    // Clean up text
-    const cleanText = text.replace(/<[^>]*>/g, '').replace(/🦁/g, '').replace(/ICDE Motivación:/g, '');
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'es-MX';
     
     const voices = window.speechSynthesis.getVoices();
     const esVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
     
-    // List of typical male Spanish voices names (online natural/neural and offline local)
     const maleNames = ['raul', 'jorge', 'alvaro', 'david', 'mateo', 'pablo', 'julio', 'yago', 'jose', 'humberto', 'male', 'hombre'];
     
-    // 1. Try to find Microsoft/Google natural/neural Spanish male voices (extremely high quality)
     let selectedVoice = esVoices.find(v => {
       const name = v.name.toLowerCase();
       return name.includes('natural') && maleNames.some(m => name.includes(m));
     });
     
-    // 2. Try to find any Spanish male voice
     if (!selectedVoice) {
       selectedVoice = esVoices.find(v => {
         const name = v.name.toLowerCase();
@@ -6668,17 +6716,14 @@ function speakText(text) {
       });
     }
     
-    // 3. Try to find any online natural/neural Spanish voice (even if female, they sound beautiful)
     if (!selectedVoice) {
       selectedVoice = esVoices.find(v => v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('online'));
     }
     
-    // 4. Try standard offline fallbacks
     if (!selectedVoice) selectedVoice = esVoices.find(v => v.name.toLowerCase().includes('sabina'));
     if (!selectedVoice) selectedVoice = esVoices.find(v => v.name.toLowerCase().includes('dalia'));
     if (!selectedVoice) selectedVoice = esVoices.find(v => v.name.toLowerCase().includes('google'));
     
-    // 5. Try geographical fallbacks
     if (!selectedVoice) selectedVoice = esVoices.find(v => v.lang.includes('es-CO'));
     if (!selectedVoice) selectedVoice = esVoices.find(v => v.lang.includes('es-MX'));
     if (!selectedVoice) selectedVoice = esVoices.find(v => v.lang.includes('es-ES'));
@@ -6689,9 +6734,8 @@ function speakText(text) {
       utterance.lang = selectedVoice.lang;
     }
     
-    // Optimize speech parameters specifically for male resonance
-    utterance.rate = 0.94;  // Fluent, professional cadence
-    utterance.pitch = 0.95; // Lower pitch to sound warm and masculine (avoiding high-pitched robotic tones)
+    utterance.rate = 0.94;
+    utterance.pitch = 0.95;
     
     window.speechSynthesis.speak(utterance);
   }
