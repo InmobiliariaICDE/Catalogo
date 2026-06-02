@@ -6657,6 +6657,7 @@ function speakText(text) {
       try { window._currentElevenAudio.pause(); } catch(e){}
     }
     
+    console.log("Iniciando llamada a ElevenLabs con Voz:", ELEVEN_VOICE_ID);
     fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN_VOICE_ID}`, {
       method: 'POST',
       headers: {
@@ -6669,23 +6670,28 @@ function speakText(text) {
         voice_settings: { stability: 0.55, similarity_boost: 0.85, style: 0.35, use_speaker_boost: true }
       })
     })
-    .then(resp => {
+    .then(async resp => {
       if (resp.ok) return resp.blob();
-      throw new Error('ElevenLabs API response not ok');
+      const errDetail = await resp.text();
+      throw new Error(`Código ${resp.status}: ${errDetail}`);
     })
     .then(blob => {
+      console.log("Audio de ElevenLabs recibido con éxito.");
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       window._currentElevenAudio = audio;
       audio.volume = typeof speechVolume !== 'undefined' ? Math.max(speechVolume / 100, 0.5) : 1.0;
-      audio.play();
+      audio.play().catch(playErr => {
+        console.error("Error reproduciendo audio:", playErr);
+      });
       audio.onended = () => {
         URL.revokeObjectURL(url);
         if (window._currentElevenAudio === audio) window._currentElevenAudio = null;
       };
     })
     .catch(e => {
-      console.warn('ElevenLabs TTS fallo en speakText, usando voz del navegador:', e);
+      console.error('ElevenLabs falló:', e.message);
+      toast('Error en voz ElevenLabs (revisa consola o API key)', 'error');
       speakTextBrowserFallback(cleanText);
     });
   } else {
