@@ -6559,24 +6559,49 @@ function speakText(text) {
     utterance.lang = 'es-MX';
     
     const voices = window.speechSynthesis.getVoices();
+    const esVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
     
-    // Prioritize natural neural/online Spanish voices for premium quality
-    let spanishVoice = voices.find(v => v.lang.includes('es') && v.name.toLowerCase().includes('natural'));
-    if (!spanishVoice) spanishVoice = voices.find(v => v.lang.includes('es') && v.name.toLowerCase().includes('sabina'));
-    if (!spanishVoice) spanishVoice = voices.find(v => v.lang.includes('es') && v.name.toLowerCase().includes('dalia'));
-    if (!spanishVoice) spanishVoice = voices.find(v => v.lang.includes('es') && v.name.toLowerCase().includes('google'));
-    if (!spanishVoice) spanishVoice = voices.find(v => v.lang.includes('es-CO'));
-    if (!spanishVoice) spanishVoice = voices.find(v => v.lang.includes('es-ES'));
-    if (!spanishVoice) spanishVoice = voices.find(v => v.lang.includes('es-MX'));
-    if (!spanishVoice) spanishVoice = voices.find(v => v.lang.includes('es'));
+    // List of typical male Spanish voices names (online natural/neural and offline local)
+    const maleNames = ['raul', 'jorge', 'alvaro', 'david', 'mateo', 'pablo', 'julio', 'yago', 'jose', 'humberto', 'male', 'hombre'];
     
-    if (spanishVoice) {
-      utterance.voice = spanishVoice;
-      utterance.lang = spanishVoice.lang;
+    // 1. Try to find Microsoft/Google natural/neural Spanish male voices (extremely high quality)
+    let selectedVoice = esVoices.find(v => {
+      const name = v.name.toLowerCase();
+      return name.includes('natural') && maleNames.some(m => name.includes(m));
+    });
+    
+    // 2. Try to find any Spanish male voice
+    if (!selectedVoice) {
+      selectedVoice = esVoices.find(v => {
+        const name = v.name.toLowerCase();
+        return maleNames.some(m => name.includes(m));
+      });
     }
     
-    utterance.rate = 0.92;  // Premium, friendly speed
-    utterance.pitch = 1.12; // Warm tone (less robotic)
+    // 3. Try to find any online natural/neural Spanish voice (even if female, they sound beautiful)
+    if (!selectedVoice) {
+      selectedVoice = esVoices.find(v => v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('online'));
+    }
+    
+    // 4. Try standard offline fallbacks
+    if (!selectedVoice) selectedVoice = esVoices.find(v => v.name.toLowerCase().includes('sabina'));
+    if (!selectedVoice) selectedVoice = esVoices.find(v => v.name.toLowerCase().includes('dalia'));
+    if (!selectedVoice) selectedVoice = esVoices.find(v => v.name.toLowerCase().includes('google'));
+    
+    // 5. Try geographical fallbacks
+    if (!selectedVoice) selectedVoice = esVoices.find(v => v.lang.includes('es-CO'));
+    if (!selectedVoice) selectedVoice = esVoices.find(v => v.lang.includes('es-MX'));
+    if (!selectedVoice) selectedVoice = esVoices.find(v => v.lang.includes('es-ES'));
+    if (!selectedVoice) selectedVoice = esVoices.find(v => v.lang.startsWith('es'));
+    
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      utterance.lang = selectedVoice.lang;
+    }
+    
+    // Optimize speech parameters specifically for male resonance
+    utterance.rate = 0.94;  // Fluent, professional cadence
+    utterance.pitch = 0.95; // Lower pitch to sound warm and masculine (avoiding high-pitched robotic tones)
     
     window.speechSynthesis.speak(utterance);
   }
@@ -6653,6 +6678,30 @@ function verificarRecordatoriosDeCitas() {
   });
 }
 
+function formatoHoraNatural(horaStr) {
+  if (!horaStr) return "";
+  const parts = horaStr.split(':');
+  if (parts.length < 2) return horaStr;
+  let hrs = parseInt(parts[0], 10);
+  const mins = parseInt(parts[1], 10);
+  
+  let periodo = "de la mañana";
+  if (hrs === 12) {
+    periodo = "del mediodía";
+  } else if (hrs > 12 && hrs < 19) {
+    hrs = hrs - 12;
+    periodo = "de la tarde";
+  } else if (hrs >= 19) {
+    hrs = hrs - 12;
+    periodo = "de la noche";
+  } else if (hrs === 0) {
+    hrs = 12;
+  }
+  
+  const minText = mins === 0 ? "" : ` y ${mins}`;
+  return `${hrs}${minText} ${periodo}`;
+}
+
 function saludoEInteraccionInicial() {
   // Determine greeting based on current hours
   const hrs = new Date().getHours();
@@ -6674,7 +6723,10 @@ function saludoEInteraccionInicial() {
     
   let msg = "";
   if (todayCitas.length > 0) {
-    msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy tienes ${todayCitas.length} ${todayCitas.length === 1 ? 'cita agendada' : 'citas agendadas'} para hoy. ¡Salgamos a ganar!`;
+    // Sort chronologically
+    todayCitas.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
+    const listadoHoras = todayCitas.map(c => `a las ${formatoHoraNatural(c.hora)}`).join(', ').replace(/,([^,]*)$/, ' y$1');
+    msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy tienes ${todayCitas.length} ${todayCitas.length === 1 ? 'cita agendada' : 'citas agendadas'}: ${listadoHoras}. ¡Salgamos a ganar!`;
   } else {
     msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy no tienes citas en agenda. ¡Un gran día para captar nuevos clientes!`;
   }
