@@ -1505,7 +1505,8 @@ textarea.gemini-card-input {
   .badge-status.new { color: #3b82f6; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); }
 
   /* Matriz de Pagos */
-  .matrix-wrapper { overflow-x: auto; background: var(--bg2); border-radius: 16px; border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); }
+  .matrix-wrapper { overflow-x: auto; background: transparent; border-radius: 0; border: none; box-shadow: none; }
+  .unified-admin-panel { background: var(--bg2); border-radius: 16px; border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); padding: 15px; margin-bottom: 20px; }
   .matrix-table { width: 100%; border-collapse: collapse; }
   .matrix-table th { padding: 14px 10px; font-size: 11px; font-weight: 700; text-align: center; text-transform: uppercase; color: var(--gold); border-bottom: 1px solid rgba(212,168,75,0.15); background: rgba(212,168,75,0.02); }
   .matrix-table th.col-prop { text-align: left; padding-left: 20px; font-size: 12px; }
@@ -8056,49 +8057,52 @@ function renderAdministracion() {
       <!-- Se llena dinámicamente -->
     </div>
 
-    <!-- LEYENDA DEL TABLERO -->
-    <div style="display:flex; flex-wrap:wrap; gap:15px; margin-bottom:15px; justify-content:center; background:rgba(255,255,255,0.02); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04);">
-      <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.8);"><div style="width:12px; height:12px; border-radius:3px; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.3);"></div> ✓ Pagado</div>
-      <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.8);"><div style="width:12px; height:12px; border-radius:3px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35);"></div> $ Pendiente</div>
-      <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.8);"><div style="width:12px; height:12px; border-radius:3px; background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.3);"></div> ⚠ Preaviso</div>
-      <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.8);"><div style="width:12px; height:12px; border-radius:3px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3);"></div> ★ Nuevo Contrato</div>
-      <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.8);"><div style="width:12px; height:12px; border-radius:3px; background:rgba(156,163,175,0.08); border:1px solid rgba(156,163,175,0.15);"></div> - Desocupado</div>
-      <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.8);"><div style="width:12px; height:12px; border-radius:3px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04);"></div> . No Iniciado/Futuro</div>
-    </div>
-
-    <!-- BARRA DE ACCIÓN Y FILTROS -->
-    <div class="action-bar" style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: rgba(255,255,255,0.01); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03);">
-      <div class="search-box" style="flex: 1; max-width: 320px; position: relative;">
-        <input type="text" id="adminPropertySearch" class="form-input" style="padding-left: 35px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); font-size: 13px;" placeholder="Buscar inmueble, dueño o inquilino..." oninput="renderAdministracionContent()">
-        <span style="position: absolute; left: 12px; top: 10px; color: var(--muted); font-size: 13px;">🔍</span>
-      </div>
-      
-      <div style="display: flex; gap: 10px; align-items: center; margin-left: auto;">
-        <span style="font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing:0.05em;">AÑO:</span>
-        <select id="adminYearSelect" class="form-input" style="width: 100px; height: 38px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; cursor:pointer;" onchange="changeAdminYear(this.value)">
-          <option value="2023" ${currentAdminYear === '2023' ? 'selected' : ''}>2023</option>
-          <option value="2024" ${currentAdminYear === '2024' ? 'selected' : ''}>2024</option>
-          <option value="2025" ${currentAdminYear === '2025' ? 'selected' : ''}>2025</option>
-          <option value="2026" ${currentAdminYear === '2026' ? 'selected' : ''}>2026</option>
-          <option value="2027" ${currentAdminYear === '2027' ? 'selected' : ''}>2027</option>
-        </select>
+    <!-- PANEL UNIFICADO DE ADMINISTRACIÓN -->
+    <div class="unified-admin-panel">
+      <!-- LEYENDA DEL TABLERO -->
+      <div style="display:flex; flex-wrap:wrap; gap:15px; justify-content:center; padding-bottom:12px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.8);"><div style="width:12px; height:12px; border-radius:3px; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.3);"></div> ✓ Pagado</div>
+        <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.8);"><div style="width:12px; height:12px; border-radius:3px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35);"></div> $ Pendiente</div>
+        <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.8);"><div style="width:12px; height:12px; border-radius:3px; background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.3);"></div> ⚠ Preaviso</div>
+        <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.8);"><div style="width:12px; height:12px; border-radius:3px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3);"></div> ★ Nuevo Contrato</div>
+        <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.8);"><div style="width:12px; height:12px; border-radius:3px; background:rgba(156,163,175,0.08); border:1px solid rgba(156,163,175,0.15);"></div> - Desocupado</div>
+        <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.8);"><div style="width:12px; height:12px; border-radius:3px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04);"></div> . No Iniciado/Futuro</div>
       </div>
 
-      <div id="adminMonthSelectContainer" style="display: flex; gap: 10px; align-items: center;">
-        <span style="font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing:0.05em; margin-left: 10px;">MES:</span>
-        <select id="adminMonthSelect" class="form-input" style="width: 130px; height: 38px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; cursor:pointer;" onchange="changeAdminMonth(this.value)">
-          ${["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"].map(m => `
-            <option value="${m}" ${currentAdminMonth === m ? 'selected' : ''}>${m}</option>
-          `).join('')}
-        </select>
+      <!-- BARRA DE ACCIÓN Y FILTROS -->
+      <div class="action-bar" style="display: flex; gap: 15px; align-items: center; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px;">
+        <div class="search-box" style="flex: 1; max-width: 320px; position: relative;">
+          <input type="text" id="adminPropertySearch" class="form-input" style="padding-left: 35px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); font-size: 13px;" placeholder="Buscar inmueble, dueño o inquilino..." oninput="renderAdministracionContent()">
+          <span style="position: absolute; left: 12px; top: 10px; color: var(--muted); font-size: 13px;">🔍</span>
+        </div>
+        
+        <div style="display: flex; gap: 10px; align-items: center; margin-left: auto;">
+          <span style="font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing:0.05em;">AÑO:</span>
+          <select id="adminYearSelect" class="form-input" style="width: 100px; height: 38px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; cursor:pointer;" onchange="changeAdminYear(this.value)">
+            <option value="2023" ${currentAdminYear === '2023' ? 'selected' : ''}>2023</option>
+            <option value="2024" ${currentAdminYear === '2024' ? 'selected' : ''}>2024</option>
+            <option value="2025" ${currentAdminYear === '2025' ? 'selected' : ''}>2025</option>
+            <option value="2026" ${currentAdminYear === '2026' ? 'selected' : ''}>2026</option>
+            <option value="2027" ${currentAdminYear === '2027' ? 'selected' : ''}>2027</option>
+          </select>
+        </div>
+
+        <div id="adminMonthSelectContainer" style="display: flex; gap: 10px; align-items: center;">
+          <span style="font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing:0.05em; margin-left: 10px;">MES:</span>
+          <select id="adminMonthSelect" class="form-input" style="width: 130px; height: 38px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; cursor:pointer;" onchange="changeAdminMonth(this.value)">
+            ${["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"].map(m => `
+              <option value="${m}" ${currentAdminMonth === m ? 'selected' : ''}>${m}</option>
+            `).join('')}
+          </select>
+        </div>
+
+        <button class="btn btn-secondary btn-sm" style="height: 38px; border-radius: 10px; margin-left: 10px;" onclick="refreshAdminData()">⟳ Recargar</button>
       </div>
 
-      <button class="btn btn-secondary btn-sm" style="height: 38px; border-radius: 10px; margin-left: 10px;" onclick="refreshAdminData()">⟳ Recargar</button>
-    </div>
-
-    <!-- CONTENIDO GENERAL -->
-    <div id="adminTabContent" style="position:relative; min-height: 200px;">
-      <!-- Se renderiza según subpestaña -->
+      <!-- CONTENIDO GENERAL -->
+      <div id="adminTabContent" style="position:relative; min-height: 200px;">
+        <!-- Se renderiza según subpestaña -->
+      </div>
     </div>
   `;
 
