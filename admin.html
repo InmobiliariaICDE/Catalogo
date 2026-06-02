@@ -2207,7 +2207,46 @@ textarea.gemini-card-input {
       <div class="form-group"><label class="form-label">Cliente</label><input class="form-input" id="visitaCliente" placeholder="Nombre del cliente"/></div>
       <div class="form-group"><label class="form-label">WhatsApp / Celular</label><input class="form-input" id="visitaCelular" placeholder="3001234567"/></div>
       <div class="form-group"><label class="form-label">Fecha</label><input class="form-input" type="date" id="visitaFecha"/></div>
-      <div class="form-group"><label class="form-label">Hora</label><input class="form-input" type="time" id="visitaHora"/></div>
+      <div class="form-group">
+        <label class="form-label">Hora</label>
+        <input type="hidden" id="visitaHora"/>
+        <div style="display:flex; gap:6px; width:100%;">
+          <select class="form-input" id="visitaHoraHH" onchange="sincronizarVisitaHora()" style="padding:12px 6px; text-align:center; flex:1;">
+            <option value="">HH</option>
+            <option value="01">01</option>
+            <option value="02">02</option>
+            <option value="03">03</option>
+            <option value="04">04</option>
+            <option value="05">05</option>
+            <option value="06">06</option>
+            <option value="07">07</option>
+            <option value="08">08</option>
+            <option value="09">09</option>
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+          </select>
+          <select class="form-input" id="visitaHoraMM" onchange="sincronizarVisitaHora()" style="padding:12px 6px; text-align:center; flex:1;">
+            <option value="">MM</option>
+            <option value="00">00</option>
+            <option value="05">05</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="25">25</option>
+            <option value="30">30</option>
+            <option value="35">35</option>
+            <option value="40">40</option>
+            <option value="45">45</option>
+            <option value="50">50</option>
+            <option value="55">55</option>
+          </select>
+          <select class="form-input" id="visitaHoraAP" onchange="sincronizarVisitaHora()" style="padding:12px 6px; text-align:center; flex:1;">
+            <option value="AM">AM</option>
+            <option value="PM">PM</option>
+          </select>
+        </div>
+      </div>
       <div class="form-group"><label class="form-label">Estado</label>
         <select class="form-input" id="visitaEstado">
           <option value="solicito_visita">Solicitó visita</option>
@@ -5721,6 +5760,26 @@ function abrirVisitaModal(lid, prefilledCod, citaId){
     if (elFecha) elFecha.value = v ? v.fecha : new Date().toISOString().split('T')[0];
 
     setVal('visitaHora', v ? v.hora : '');
+    // Populate AM/PM selects from existing hora (HH:MM in 24h)
+    (function() {
+      const horaStr = v ? v.hora : '';
+      const elHH = document.getElementById('visitaHoraHH');
+      const elMM = document.getElementById('visitaHoraMM');
+      const elAP = document.getElementById('visitaHoraAP');
+      if (!elHH || !elMM || !elAP) return;
+      if (!horaStr) {
+        elHH.value = ''; elMM.value = ''; elAP.value = 'AM'; return;
+      }
+      const parts = horaStr.split(':');
+      let h = parseInt(parts[0], 10);
+      const m = parts[1] ? parts[1].padStart(2,'0') : '00';
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      if (h === 0) h = 12;
+      else if (h > 12) h = h - 12;
+      elHH.value = String(h).padStart(2,'0');
+      elMM.value = m;
+      elAP.value = ampm;
+    })();
     setVal('visitaEstado', v ? v.estado : 'agendada');
     setVal('visitaOferto', v ? v.oferto : 'no');
     setVal('visitaOferta', v ? v.oferta : '');
@@ -5755,6 +5814,31 @@ function marcarVisitaRealizada(lid, cod){
     syncSheets(lead);
   }
 }
+function sincronizarVisitaHora() {
+  const elHH = document.getElementById('visitaHoraHH');
+  const elMM = document.getElementById('visitaHoraMM');
+  const elAP = document.getElementById('visitaHoraAP');
+  const elHora = document.getElementById('visitaHora');
+  if (!elHH || !elMM || !elAP || !elHora) return;
+
+  const hhStr = elHH.value;
+  const mmStr = elMM.value;
+  const ap = elAP.value;
+  if (!hhStr || !mmStr) { elHora.value = ''; return; }
+
+  let h = parseInt(hhStr, 10);
+  const m = parseInt(mmStr, 10);
+
+  // Convert 12h → 24h
+  if (ap === 'AM') {
+    if (h === 12) h = 0; // 12 AM → 00
+  } else {
+    if (h !== 12) h = h + 12; // 1-11 PM → 13-23
+  }
+
+  elHora.value = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+}
+
 function guardarVisita(){
   try {
     const cod=document.getElementById('visitaCodigo').value.trim(); if(!cod){ toast('Ingresa el código','error'); return; }
@@ -6653,12 +6737,12 @@ function verificarRecordatoriosDeCitas() {
     const diffMs = citaDate.getTime() - ahora.getTime();
     const diffMins = Math.floor(diffMs / 60000);
 
-    // Trigger alert if we are 28 to 32 minutes before the appointment
-    if (diffMins >= 28 && diffMins <= 32) {
+    // Trigger alert if we are 58 to 62 minutes before the appointment (approx. 1 hour)
+    if (diffMins >= 58 && diffMins <= 62) {
       window._citasReminded.add(c.id);
 
       const cliente = c.cliente || c.nombre || "el cliente";
-      const recordatorioMsg = `⚠️ <strong>Confirmación:</strong> Recuerda confirmar la cita de las ${c.hora} con ${cliente} en 30 minutos.`;
+      const recordatorioMsg = `⚠️ <strong>Confirmación:</strong> Recuerda confirmar la cita de las ${c.hora} con ${cliente} en 1 hora.`;
 
       showGeminiSpeechBubble(recordatorioMsg, 12000);
       
@@ -6673,7 +6757,7 @@ function verificarRecordatoriosDeCitas() {
         }, 3000);
       }
 
-      speakText(`Atención. Recuerda confirmar la cita de las ${c.hora} con ${cliente} dentro de treinta minutos.`);
+      speakText(`Atención. Recuerda confirmar la cita de las ${c.hora} con ${cliente} dentro de una hora.`);
     }
   });
 }
