@@ -2184,7 +2184,6 @@ textarea.gemini-card-input {
     <button class="tab active" onclick="showTab('nuevo')">➕ Nuevo Lead</button>
     <button class="tab" onclick="showTab('leads')">👥 Leads</button>
     <button class="tab" onclick="showTab('citas')">🗓 Citas</button>
-    <button class="tab" onclick="showTab('pedidos')">🏢 Pedidos Inmob.</button>
     <button class="tab" onclick="showTab('administracion')">💼 Administración</button>
     <button class="tab" onclick="showTab('estadisticas')">📊 Estadísticas</button>
     <button class="tab" onclick="showTab('gestion')">🏠 Gestión de Inmuebles</button>
@@ -2490,7 +2489,6 @@ async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
       if (typeof currentTab !== 'undefined') {
         if (currentTab === 'leads' && typeof renderLeadsBody === 'function') renderLeadsBody(leads);
         if (currentTab === 'citas' && typeof renderCitas === 'function') renderCitas();
-        if (currentTab === 'pedidos' && typeof renderPedidosInmob === 'function') renderPedidosInmob();
       }
 
       // Borrar de la nube de forma silenciosa
@@ -3783,7 +3781,6 @@ async function autoSyncLeads() {
       saveLeads();
       if (currentTab === 'citas')  renderCitas();
       if (currentTab === 'leads')  renderLeadsBody(leads);
-      if (currentTab === 'pedidos') renderPedidosInmob();
       if (currentLeadId) {
         const l = leads.find(x => String(x.id).trim() === String(currentLeadId).trim());
         if (l) renderSidePanel(l);
@@ -3885,7 +3882,6 @@ async function cargarLeads(){
       saveLeads();
       if(currentTab === 'leads') renderLeadsBody(leads);
       if(currentTab === 'citas') renderCitas();
-      if(currentTab === 'pedidos') renderPedidosInmob();
     }
   } catch(e){ console.error("Error cargando leads:", e); }
 }
@@ -4214,7 +4210,7 @@ async function cargarProps(){
 ═══════════════════════════════════════════════ */
 function showTab(tab){
   currentTab=tab;
-  const tabNames = ['nuevo','leads','citas','pedidos','administracion','estadisticas','gestion'];
+  const tabNames = ['nuevo','leads','citas','administracion','estadisticas','gestion'];
   document.querySelectorAll('.tab').forEach((t,i)=> {
     if (tabNames[i]) t.classList.toggle('active',tabNames[i]===tab);
   });
@@ -4222,7 +4218,6 @@ function showTab(tab){
   if(tab==='nuevo') renderNuevo(); 
   else if(tab==='leads') renderLeads();
   else if(tab==='citas') renderCitas();
-  else if(tab==='pedidos') renderPedidosInmob();
   else if(tab==='administracion') renderAdministracion();
   else if(tab==='estadisticas') renderEstadisticas();
   else if(tab==='gestion') renderGestion();
