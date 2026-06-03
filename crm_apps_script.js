@@ -145,8 +145,21 @@ function saveLeadToSheet(lead) {
 
   const data = sheet.getDataRange().getValues();
   let rowIndex = -1;
+  const cleanPhoneInput = String(lead.celular || '').replace(/\D/g, '');
+  const targetId = String(lead.id || '').trim();
+
   for (let i = 1; i < data.length; i++) {
-    if (data[i][0] == lead.id) { rowIndex = i + 1; break; }
+    const rowId = String(data[i][0] || '').trim();
+    const rowPhone = String(data[i][3] || '').replace(/\D/g, '');
+    
+    if (targetId && rowId === targetId) {
+      rowIndex = i + 1;
+      break;
+    }
+    if (cleanPhoneInput && rowPhone === cleanPhoneInput) {
+      rowIndex = i + 1;
+      break;
+    }
   }
 
   if (rowIndex > 0) {
