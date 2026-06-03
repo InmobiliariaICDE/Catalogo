@@ -31,6 +31,8 @@ function doGet(e) {
       e.parameter.leadId, e.parameter.cod, e.parameter.type, e.parameter.comment
     );
     if (action === 'getAdminData') return getAdminData();
+    if (action === 'deleteLead')   return deleteLeadFromSheet(e.parameter.id);
+    if (action === 'deleteLeadByPhone') return deleteLeadByPhoneFromSheet(e.parameter.celular);
     return createJsonResponse({ error: 'Acción no válida' });
   } catch (err) {
     return createJsonResponse({ error: err.toString() });
@@ -169,6 +171,26 @@ function deleteLeadFromSheet(id) {
     }
   }
   return createJsonResponse({ success: false, error: 'Lead no encontrado' });
+}
+
+function deleteLeadByPhoneFromSheet(phone) {
+  const ss = getSpreadsheet();
+  const sheet = ss.getSheetByName('CRM_Leads');
+  if (!sheet) return createJsonResponse({ error: 'No se encontró CRM_Leads' });
+
+  const data = sheet.getDataRange().getValues();
+  const cleanPhoneInput = String(phone || '').replace(/\D/g, '');
+  if (!cleanPhoneInput) return createJsonResponse({ error: 'Teléfono vacío o inválido' });
+
+  let deletedCount = 0;
+  for (let i = data.length - 1; i >= 1; i--) {
+    const rowPhone = String(data[i][3] || '').replace(/\D/g, '');
+    if (rowPhone === cleanPhoneInput) {
+      sheet.deleteRow(i + 1);
+      deletedCount++;
+    }
+  }
+  return createJsonResponse({ success: true, deletedCount: deletedCount });
 }
 
 function getLeadName(leadId) {
