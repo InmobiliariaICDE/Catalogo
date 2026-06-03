@@ -7,7 +7,7 @@
  *    (lo encuentras en la URL del Sheet: docs.google.com/spreadsheets/d/[ID_AQUI]/edit)
  */
 
-const SPREADSHEET_ID = '1aMucFmmKbvA0HRONGfDGwHIPTEgf1dBx';
+const SPREADSHEET_ID = '1TwqwHBo0yvkKwu9ZK1xm7fyRFEdaxSfDuNoeHA3KV-c';
 
 /**
  * CRÍTICO: Siempre abrir por ID en Web Apps desplegados.
