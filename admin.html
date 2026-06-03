@@ -2423,6 +2423,7 @@ const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz1FNSXco-emauyp
 /* ═══════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════ */
+let deletedLeads = JSON.parse(localStorage.getItem('icde_deleted_leads') || '[]');
 let allProps = [];
 let leads = []; // Fuente de verdad: solo la nube. Se carga en cargarLeads() al inicio.
 async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
@@ -2436,9 +2437,19 @@ async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
     // Obtener teléfonos eliminados para bloquearlos
     let deletedPhones = JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]');
 
-    // Filtrar leads que correspondan a teléfonos eliminados
+    // Filtrar leads que correspondan a teléfonos eliminados o IDs eliminados
     leads = leads.filter(l => {
       if (l.id === 'LEAD-AGENDA-GLOBAL') return true;
+      
+      // Filtrar por ID eliminado
+      if (l.id && deletedLeads.includes(String(l.id).trim())) {
+        huboCambio = true;
+        if (!String(l.id).startsWith('U-')) {
+          idsParaBorrarDeNube.push(l.id);
+        }
+        return false;
+      }
+
       let telLimpio = String(l.celular || '').replace(/\D/g, '');
       if (telLimpio && deletedPhones.includes(telLimpio)) {
         huboCambio = true;
@@ -2525,7 +2536,7 @@ async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
       }
     });
 
-    if (leads.length !== leadsUnicos.length) {
+    if (huboCambio || leads.length !== leadsUnicos.length) {
       leads = leadsUnicos;
       if (typeof saveLeads === 'function') {
         saveLeads();
@@ -2563,7 +2574,6 @@ async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
 try {
   limpiarYFusionarDuplicados(true);
 } catch(e) { console.error("Error deduplicando inicial:", e); }
-let deletedLeads = JSON.parse(localStorage.getItem('icde_deleted_leads') || '[]');
 let citas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
 if (!Array.isArray(citas)) citas = []; // Ensure it's always an array
 let settings = JSON.parse(localStorage.getItem('icde_settings') || '{}');
