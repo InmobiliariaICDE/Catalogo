@@ -3767,14 +3767,20 @@ async function autoSyncLeads() {
         .filter(([phone]) => phone !== '')
     );
 
+    const deletedPhonesSet = new Set(JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]'));
+
     cloudData.forEach(cloudLead => {
       const id = String(cloudLead.id).trim();
       if (deletedLeads.includes(id)) return;
 
+      // Filtrar también por teléfono eliminado
+      const phoneCheck = String(cloudLead.celular || '').replace(/\D/g, '');
+      if (phoneCheck && deletedPhonesSet.has(phoneCheck)) return;
+
       const local = localMap.get(id);
       if (!local) {
         // Verificar que no exista ya un lead local con el mismo teléfono
-        const phone = String(cloudLead.celular || '').replace(/\D/g, '');
+        const phone = phoneCheck;
         if (phone && localPhoneMap.has(phone) && cloudLead.id !== 'LEAD-AGENDA-GLOBAL') {
           // Existe duplicado por teléfono — hacer merge de visitas en el lead existente
           const existingId = localPhoneMap.get(phone);
@@ -3899,6 +3905,9 @@ async function cargarLeads(){
         const phone = String(cloudLead.celular || '').replace(/[^\d]/g, "");
         
         if (deletedLeads.includes(id)) return;
+        // Filtrar también por teléfono eliminado
+        const deletedPhonesSetCarga = new Set(JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]'));
+        if (phone && deletedPhonesSetCarga.has(phone)) return;
 
         // Si ya existe un lead con este teléfono, lo unimos
         let targetId = id;
@@ -5450,21 +5459,29 @@ async function eliminarLead(id){
   
   // Sincronizar eliminación con Google Sheets
   if(CRM_SCRIPT_URL) {
-    try {
-      for (let bId of idsABorrar) {
-        fetch(CRM_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors', // Apps Script suele requerir no-cors o manejarlo con redirect
-          body: JSON.stringify({ action: 'deleteLead', id: bId })
-        });
+    (async () => {
+      try {
+        for (let bId of idsABorrar) {
+          await fetch(CRM_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'deleteLead', id: bId })
+          });
+        }
+        // También eliminar por teléfono si existe
+        if (celularABorrar) {
+          await fetch(CRM_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'deleteLeadByPhone', celular: celularABorrar })
+          });
+        }
+        toast('Eliminado de la nube ✓', 'success');
+      } catch(e) {
+        console.error("Error sincronizando eliminación:", e);
+        toast('Borrado localmente. Error de red con la nube.', 'error');
       }
-      toast('Eliminado correctamente ✓', 'success');
-    } catch(e) {
-      console.error("Error sincronizando eliminación:", e);
-      // No revertimos el borrado local para no confundir al usuario, 
-      // pero avisamos que hubo un problema de red.
-      toast('Borrado localmente. Error de red con la nube.', 'error');
-    }
+    })();
   }
 }
 
