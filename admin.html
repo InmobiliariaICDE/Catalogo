@@ -2177,7 +2177,7 @@ textarea.gemini-card-input {
 <div id="app">
   <div class="topbar">
     <img src="https://i.imgur.com/YbnRomr.png" alt="ICDE"/>
-    <div class="brand" style="display: flex; align-items: baseline; gap: 8px;">ICDE Panel de Control <span>/ Gestión de Clientes</span><span style="font-size: 10px; font-weight: normal; color: var(--gold); opacity: 0.7; padding: 1px 6px; border: 1px solid rgba(212,168,75,0.3); border-radius: 6px; font-family: monospace;">v3.2</span></div>
+    <div class="brand" style="display: flex; align-items: baseline; gap: 8px;">ICDE Panel de Control <span>/ Gestión de Clientes</span><span style="font-size: 10px; font-weight: normal; color: var(--gold); opacity: 0.7; padding: 1px 6px; border: 1px solid rgba(212,168,75,0.3); border-radius: 6px; font-family: monospace;">v3.3</span></div>
     <div class="topbar-right">
       <span id="syncStatus" style="font-size:12px;color:#888;"></span>
       <span id="autoSyncIndicator" style="font-size:11px; color:#888; display:none; align-items:center; gap:5px;">
@@ -3747,7 +3747,23 @@ async function autoSyncLeads() {
       if (!local) {
         mergedMap.set(targetId, cloudLead);
         if (phone) phoneMap.set(phone, targetId);
+        huboNuevos = true;
       } else {
+        // Comprobar si hay cambios reales en visitas, historial, estado o datos básicos
+        const localVisits = local.visitas || [];
+        const cloudVisits = cloudLead.visitas || [];
+        const localHist = local.historialEnvios || [];
+        const cloudHist = cloudLead.historialEnvios || [];
+        
+        if (localVisits.length !== cloudVisits.length || 
+            localHist.length !== cloudHist.length || 
+            local.estado !== cloudLead.estado ||
+            local.etiqueta !== cloudLead.etiqueta ||
+            local.nombre !== cloudLead.nombre ||
+            local.celular !== cloudLead.celular) {
+          huboNuevos = true;
+        }
+
         mergedMap.set(targetId, {
           ...cloudLead,
           ...local,
@@ -3763,16 +3779,31 @@ async function autoSyncLeads() {
       }
     });
 
-    leads = Array.from(mergedMap.values());
-    await limpiarYFusionarDuplicados(true);
-    rebuildCitas();
-    saveLeads();
-    if (currentTab === 'citas') renderCitas();
-    if (currentTab === 'leads') renderLeadsBody(leads);
-    if (currentLeadId) {
-      const l = leads.find(x => String(x.id).trim() === String(currentLeadId).trim());
-      if (l) renderSidePanel(l); else closeSidePanel();
+    if (huboNuevos) {
+      console.log('[autoSyncLeads] Cambios detectados de la nube. Actualizando local storage y UI.');
+      leads = Array.from(mergedMap.values());
+      await limpiarYFusionarDuplicados(true);
+      rebuildCitas();
+      saveLeads();
+      
+      const activeEl = document.activeElement;
+      const isUserTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+
+      if (!isUserTyping) {
+        if (currentTab === 'citas') renderCitas();
+        if (currentTab === 'leads') renderLeadsBody(leads);
+        if (currentLeadId) {
+          const l = leads.find(x => String(x.id).trim() === String(currentLeadId).trim());
+          if (l) renderSidePanel(l); else closeSidePanel();
+        }
+      } else {
+        console.log('[autoSyncLeads] Se detectaron cambios pero se omitió el re-render de la UI para no interrumpir al usuario que está escribiendo.');
+      }
+    } else {
+      // Si no hay cambios, simplemente actualizamos la referencia local interna sin re-renderizar la UI
+      leads = Array.from(mergedMap.values());
     }
+    
     if (dot) { dot.style.background = '#22c55e'; dot.style.boxShadow = '0 0 8px #22c55e'; }
     if (txt) txt.textContent = 'En vivo';
     setTimeout(() => { if (dot) dot.style.boxShadow = ''; }, 1500);
