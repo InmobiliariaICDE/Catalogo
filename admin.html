@@ -2423,7 +2423,10 @@ const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz1FNSXco-emauyp
 /* ═══════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════ */
-let deletedLeads = JSON.parse(localStorage.getItem('icde_deleted_leads') || '[]');
+let deletedLeads = [];
+localStorage.removeItem('icde_deleted_leads');
+localStorage.removeItem('icde_deleted_phones');
+localStorage.removeItem('icde_leads');
 let allProps = [];
 let leads = []; // Fuente de verdad: solo la nube. Se carga en cargarLeads() al inicio.
 async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
@@ -2435,7 +2438,7 @@ async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
 
     // Ordenar leads: más recientes o con más info primero
     // Obtener teléfonos eliminados para bloquearlos
-    let deletedPhones = JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]');
+    let deletedPhones = [];
 
     // Filtrar leads que correspondan a teléfonos eliminados o IDs eliminados
     leads = leads.filter(l => {
@@ -3673,107 +3676,55 @@ async function autoSyncLeads() {
     const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
     const data = await res.json();
     if (!Array.isArray(data)) throw new Error('Respuesta inválida');
-    
-    const deletedPhonesSet = new Set(JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]'));
-    const deletedLeadsSet = new Set(JSON.parse(localStorage.getItem('icde_deleted_leads') || '[]'));
-    
-    // 1. Mapear y filtrar datos frescos de la nube
-    const cloudLeads = data.map(l => {
-      let id = String(l.id || '').trim();
-      if (!id || id === 'undefined' || id === 'null') {
-        const s = String(l.nombre||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'')
-                + String(l.celular||'').replace(/[^\d]/g,'');
-        let h = 0;
-        for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
-        id = 'C-' + Math.abs(h).toString(16);
-      }
-      return { ...l, id };
-    }).filter(l => {
-      if (deletedLeadsSet.has(String(l.id).trim())) return false;
-      const ph = String(l.celular || '').replace(/\D/g, '');
-      if (ph && deletedPhonesSet.has(ph)) return false;
-      return true;
+
+    // Fuente de verdad 100% Drive. Sin filtros locales.
+    const cloudLeads = normalizarIdsLeads(data);
+
+    // Preservar solo leads recién creados localmente (U-) que aún no llegaron a la nube
+    const localTemps = leads.filter(l => {
+      if (!String(l.id).startsWith('U-')) return false;
+      const phone = String(l.celular || '').replace(/\D/g, '');
+      const yaSincronizado = cloudLeads.some(c =>
+        String(c.id) === String(l.id) || (phone && String(c.celular||'').replace(/\D/g,'') === phone)
+      );
+      return !yaSincronizado;
     });
 
-    // 2. Preservar leads locales temporales (U-) que se crearon en este dispositivo y que aún no aparecen en la nube
-    // (para que no desaparezcan de la UI temporalmente mientras se sincronizan)
-    const localTemps = leads.filter(l => String(l.id).startsWith('U-'));
-    
-    // Unir cloudLeads y localTemps
-    const newLeadsList = [...cloudLeads];
-    localTemps.forEach(local => {
-      const localPhone = String(local.celular || '').replace(/\D/g, '');
-      const yaSincronizado = cloudLeads.some(cloud => {
-        const cloudPhone = String(cloud.celular || '').replace(/\D/g, '');
-        return String(cloud.id) === String(local.id) || (localPhone && cloudPhone && localPhone === cloudPhone);
-      });
-      if (!yaSincronizado) {
-        newLeadsList.push(local);
-      }
+    const newList = [...cloudLeads, ...localTemps];
+
+    // Detectar cambio real para evitar re-renders innecesarios
+    const cambio = leads.length !== newList.length || newList.some(n => {
+      const prev = leads.find(p => String(p.id) === String(n.id));
+      if (!prev) return true;
+      return prev.estado !== n.estado || prev.etiqueta !== n.etiqueta ||
+             prev.nombre !== n.nombre || prev.celular !== n.celular ||
+             (prev.visitas||[]).length !== (n.visitas||[]).length ||
+             (prev.historialEnvios||[]).length !== (n.historialEnvios||[]).length;
     });
 
-    // 3. Comprobar si hay cambios con respecto a la lista actual de leads
-    let huboCambioReal = false;
-    if (leads.length !== newLeadsList.length) {
-      huboCambioReal = true;
-    } else {
-      // Comparar elementos individuales
-      for (let i = 0; i < leads.length; i++) {
-        const current = leads[i];
-        const matching = newLeadsList.find(x => String(x.id) === String(current.id));
-        if (!matching) {
-          huboCambioReal = true;
-          break;
-        }
-        
-        const currentVisits = current.visitas || [];
-        const matchingVisits = matching.visitas || [];
-        const currentHist = current.historialEnvios || [];
-        const matchingHist = matching.historialEnvios || [];
-        
-        if (currentVisits.length !== matchingVisits.length || 
-            currentHist.length !== matchingHist.length || 
-            current.estado !== matching.estado ||
-            current.etiqueta !== matching.etiqueta ||
-            current.nombre !== matching.nombre ||
-            current.celular !== matching.celular) {
-          huboCambioReal = true;
-          break;
-        }
-      }
-    }
+    leads = newList;
 
-    if (huboCambioReal) {
-      console.log('[autoSyncLeads] Cambios detectados de la nube. Actualizando UI.');
-      leads = newLeadsList;
-      await limpiarYFusionarDuplicados(true);
+    if (cambio) {
       rebuildCitas();
-      saveLeads();
-      
       const activeEl = document.activeElement;
-      const isUserTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-
-      if (!isUserTyping) {
+      const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+      if (!isTyping) {
         if (currentTab === 'citas') renderCitas();
         if (currentTab === 'leads') renderLeadsBody(leads);
         if (currentLeadId) {
-          const l = leads.find(x => String(x.id).trim() === String(currentLeadId).trim());
+          const l = leads.find(x => String(x.id) === String(currentLeadId));
           if (l) renderSidePanel(l); else closeSidePanel();
         }
-      } else {
-        console.log('[autoSyncLeads] Se detectaron cambios pero se omitió el re-render de la UI para no interrumpir al usuario que está escribiendo.');
       }
-    } else {
-      leads = newLeadsList;
     }
-    
+
     if (dot) { dot.style.background = '#22c55e'; dot.style.boxShadow = '0 0 8px #22c55e'; }
     if (txt) txt.textContent = 'En vivo';
     setTimeout(() => { if (dot) dot.style.boxShadow = ''; }, 1500);
   } catch (e) {
     console.warn('[AutoSync] Error:', e);
     if (dot) { dot.style.background = '#ef4444'; }
-    if (txt) txt.textContent = 'Sin conexiÃ³n';
+    if (txt) txt.textContent = 'Sin conexión';
     setTimeout(() => { if (dot) dot.style.background = '#888'; if (txt) txt.textContent = 'En vivo'; }, 10000);
   }
 }
@@ -3784,52 +3735,38 @@ async function cargarLeads(){
     const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
     const data = await res.json();
     if(Array.isArray(data)){
-      const deletedPhonesSet = new Set(JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]'));
-      const deletedLeadsSet = new Set(JSON.parse(localStorage.getItem('icde_deleted_leads') || '[]'));
-
-      // Preservar leads locales temporales (U-)
-      const localTemps = leads.filter(l => String(l.id).startsWith('U-'));
-
-      const cloudLeads = data.map(l => {
-        let id = String(l.id || '').trim();
-        if(!id || id === 'undefined' || id === 'null') {
-          const normName = String(l.nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g,'');
-          const normPhone = String(l.celular || '').replace(/[^\d]/g, '');
-          const hashStr = normName + normPhone;
-          let h = 0;
-          for (let i = 0; i < hashStr.length; i++) { h = ((h << 5) - h) + hashStr.charCodeAt(i); h |= 0; }
-          id = 'C-' + Math.abs(h).toString(16);
-        }
-        return { ...l, id };
-      }).filter(l => {
-        if (!l.id) return false;
-        if (deletedLeadsSet.has(String(l.id).trim())) return false;
-        const ph = String(l.celular || '').replace(/\D/g, '');
-        if (ph && deletedPhonesSet.has(ph)) return false;
-        return true;
-      });
-
-      // Combinar nube con locales temporales
-      leads = [...cloudLeads];
-      localTemps.forEach(local => {
-        const localPhone = String(local.celular || '').replace(/\D/g, '');
-        const yaSincronizado = cloudLeads.some(cloud => {
-          const cloudPhone = String(cloud.celular || '').replace(/\D/g, '');
-          return String(cloud.id) === String(local.id) || (localPhone && cloudPhone && localPhone === cloudPhone);
-        });
-        if (!yaSincronizado) {
-          leads.push(local);
-        }
-      });
-
-      await limpiarYFusionarDuplicados(true);
+      // 100% Drive. Sin filtros locales.
+      leads = normalizarIdsLeads(data);
       rebuildCitas();
-      saveLeads();
       if(currentTab === 'leads') renderLeadsBody(leads);
       if(currentTab === 'citas') renderCitas();
     }
   } catch(e){ console.error("Error cargando leads:", e); }
 }
+
+function normalizarIdsLeads(data) {
+  const seen = new Map(); // phone -> lead (deduplicar en memoria)
+  return data.map(l => {
+    let id = String(l.id || '').trim();
+    if(!id || id === 'undefined' || id === 'null') {
+      const s = String(l.nombre||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'')
+              + String(l.celular||'').replace(/[^\d]/g,'');
+      let h = 0;
+      for(let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
+      id = 'C-' + Math.abs(h).toString(16);
+    }
+    return { ...l, id };
+  }).filter(l => {
+    if(!l.id) return false;
+    const phone = String(l.celular||'').replace(/\D/g,'');
+    if(phone && seen.has(phone)) return false; // duplicado por teléfono
+    if(phone) seen.set(phone, true);
+    return true;
+  });
+}
+
+
+
 
 function rebuildCitas() {
   const allVisitas = [];
@@ -4564,12 +4501,7 @@ function guardarLead(enviarAhora, btn){
   
   const celularLimpio = String(nuevoLead.celular||'').trim().replace(/\D/g, '');
   
-  // Si el teléfono estaba en la lista de eliminados, desbloquearlo para permitir su re-registro
-  let deletedPhones = JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]');
-  if (deletedPhones.includes(celularLimpio)) {
-    deletedPhones = deletedPhones.filter(p => p !== celularLimpio);
-    localStorage.setItem('icde_deleted_phones', JSON.stringify(deletedPhones));
-  }
+
 
   const existe = leads.find(l => {
     if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
@@ -5322,25 +5254,11 @@ async function eliminarLead(id){
         }
       });
       
-      // Guardar el teléfono en la lista de teléfonos eliminados
-      let deletedPhones = JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]');
-      if (!deletedPhones.includes(celularABorrar)) {
-        deletedPhones.push(celularABorrar);
-        localStorage.setItem('icde_deleted_phones', JSON.stringify(deletedPhones));
-        console.log('[eliminarLead] Teléfono añadido a icde_deleted_phones:', celularABorrar);
-      }
+      console.log('[eliminarLead] Marcando para eliminación en la nube celular:', celularABorrar);
     }
   }
 
-  // Registrar todos los IDs a borrar en deletedLeads
-  // Registrar todos los IDs a borrar en deletedLeads
-  idsABorrar.forEach(bId => {
-    if(!deletedLeads.includes(bId)) {
-      deletedLeads.push(bId);
-    }
-  });
-  localStorage.setItem('icde_deleted_leads', JSON.stringify(deletedLeads));
-  console.log('[eliminarLead] Listado de IDs eliminados guardado en localStorage (deletedLeads):', deletedLeads);
+  console.log('[eliminarLead] Marcando para eliminación en la nube IDs:', idsABorrar);
 
   // Eliminar localmente primero (por ID y por teléfono celular para barrer duplicados locales)
   leads = leads.filter(l => {
