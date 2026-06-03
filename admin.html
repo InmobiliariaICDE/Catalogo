@@ -3678,10 +3678,11 @@ async function autoSyncLeads() {
     if (!Array.isArray(data)) throw new Error('Respuesta inválida');
 
     // Fuente de verdad 100% Drive. Sin filtros locales.
-    const cloudLeads = normalizarIdsLeads(data);
+    const cloudLeads = normalizarIdsLeads(data).map(l => ({ ...l, fromCloud: true }));
 
-    // Preservar solo leads recién creados localmente (U-) que aún no llegaron a la nube
+    // Preservar solo leads recién creados localmente (U-) que aún no llegaron a la nube (nunca estuvieron en la nube)
     const localTemps = leads.filter(l => {
+      if (l.fromCloud) return false;
       if (!String(l.id).startsWith('U-')) return false;
       const phone = String(l.celular || '').replace(/\D/g, '');
       const yaSincronizado = cloudLeads.some(c =>
@@ -3692,7 +3693,7 @@ async function autoSyncLeads() {
 
     const newList = [...cloudLeads, ...localTemps];
 
-    // Detectar cambio real para evitar re-renders innecesarios
+    // Detectar cambio real para evitar re-renders innecesarios (o detección de borrados)
     const cambio = leads.length !== newList.length || newList.some(n => {
       const prev = leads.find(p => String(p.id) === String(n.id));
       if (!prev) return true;
@@ -3700,7 +3701,7 @@ async function autoSyncLeads() {
              prev.nombre !== n.nombre || prev.celular !== n.celular ||
              (prev.visitas||[]).length !== (n.visitas||[]).length ||
              (prev.historialEnvios||[]).length !== (n.historialEnvios||[]).length;
-    });
+    }) || leads.some(p => !newList.some(n => String(n.id) === String(p.id))); // Detección de leads eliminados
 
     leads = newList;
 
@@ -3736,7 +3737,7 @@ async function cargarLeads(){
     const data = await res.json();
     if(Array.isArray(data)){
       // 100% Drive. Sin filtros locales.
-      leads = normalizarIdsLeads(data);
+      leads = normalizarIdsLeads(data).map(l => ({ ...l, fromCloud: true }));
       rebuildCitas();
       if(currentTab === 'leads') renderLeadsBody(leads);
       if(currentTab === 'citas') renderCitas();
