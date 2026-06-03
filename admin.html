@@ -5348,11 +5348,11 @@ async function eliminarLead(id){
       try {
         // Borrar por ID(s)
         for (let bId of idsABorrar) {
-          await fetch(CRM_SCRIPT_URL + '?action=deleteLead&id=' + encodeURIComponent(bId) + '&t=' + Date.now());
+          await fetch(CRM_SCRIPT_URL + '?action=deleteLead&id=' + encodeURIComponent(bId) + '&t=' + Date.now(), { mode: 'no-cors' });
         }
         // Borrar por teléfono (barre duplicados con distinto ID en Sheets)
         if (celularABorrar) {
-          await fetch(CRM_SCRIPT_URL + '?action=deleteLeadByPhone&celular=' + encodeURIComponent(celularABorrar) + '&t=' + Date.now());
+          await fetch(CRM_SCRIPT_URL + '?action=deleteLeadByPhone&celular=' + encodeURIComponent(celularABorrar) + '&t=' + Date.now(), { mode: 'no-cors' });
         }
         toast('Eliminado de la nube ✓', 'success');
       } catch(e) {
