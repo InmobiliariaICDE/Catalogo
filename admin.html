@@ -6873,7 +6873,17 @@ function saludoEInteraccionInicial() {
     }).join(', ').replace(/,([^,]*)$/, ' y$1');
     msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy tienes ${todayCitas.length} ${todayCitas.length === 1 ? 'cita agendada' : 'citas agendadas'}: ${listadoHoras}. ¡Salgamos a ganar!`;
   } else {
-    msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy no tienes citas en agenda. ¡Un gran día para captar nuevos clientes!`;
+    if (hrs >= 20) { // De las 8:00 PM en adelante
+      if (hrs === 20) {
+        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy fue un gran día y lo hiciste muy bien hoy, se acerca la hora de descansar.`;
+      } else {
+        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Lo hiciste muy bien hoy, ya es hora de descansar y recargar energías para mañana.`;
+      }
+    } else if (hrs >= 18) { // De las 6:00 PM a las 7:59 PM (Buenas noches antes del descanso formal)
+      msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Ya estamos cerrando la jornada laboral, ¡hoy fue un gran día! Ve preparándote para un merecido descanso.`;
+    } else {
+      msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy no tienes citas en agenda. ¡Un gran día para captar nuevos clientes!`;
+    }
   }
 
   // Show in speech bubble
