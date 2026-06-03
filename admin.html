@@ -4599,7 +4599,7 @@ function formatShortPrice(p){
 function formatP(p){ return formatFullPrice(p); }
 
 function estadoLbl(e){
-  const map = { enviando:'Enviando propuestas', proceso:'Venta en proceso', visita:'Visita pendiente', banco:'Referido banco', inactivo:'Inactivo' };
+  const map = { enviando:'Enviando propuestas', proceso:'Proceso de venta', visita:'Visita pendiente', banco:'Referido banco', inactivo:'Inactivo' };
   return map[e] || e;
 }
 
@@ -4704,6 +4704,11 @@ function renderLeadsBody(lista){
   const ordenEstado = { visita: 1, enviando: 2, proceso: 3, banco: 4, inactivo: 5 };
   
   listaFiltrada.sort((a,b) => {
+    // 0. Super Primario: Estado Proceso de venta (proceso) primero indiscutiblemente
+    const isProcA = a.estado === 'proceso' ? 1 : 0;
+    const isProcB = b.estado === 'proceso' ? 1 : 0;
+    if (isProcA !== isProcB) return isProcB - isProcA;
+
     // 1. Primario: Etiqueta (Activo > Tibio > Inactivo)
     const oEtA = ordenEtiqueta[a.etiqueta] || 99;
     const oEtB = ordenEtiqueta[b.etiqueta] || 99;
@@ -4788,7 +4793,7 @@ function renderLeadsBody(lista){
     </div>`;
   }
 }
-function estadoLbl(e){ return {proceso:'Proceso',enviando:'Enviando',visita:'Pdte. visita',banco:'Banco',inactivo:'Inactivo'}[e]||e; }
+function estadoLbl(e){ return {proceso:'Proceso de venta',enviando:'Enviando',visita:'Pdte. visita',banco:'Banco',inactivo:'Inactivo'}[e]||e; }
 
 /* ═══════════════════════════════════════════════
    PANEL LEAD
