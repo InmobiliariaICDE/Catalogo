@@ -2177,7 +2177,7 @@ textarea.gemini-card-input {
 <div id="app">
   <div class="topbar">
     <img src="https://i.imgur.com/YbnRomr.png" alt="ICDE"/>
-    <div class="brand" style="display: flex; align-items: baseline; gap: 8px;">ICDE Panel de Control <span>/ Gestión de Clientes</span><span style="font-size: 10px; font-weight: normal; color: var(--gold); opacity: 0.7; padding: 1px 6px; border: 1px solid rgba(212,168,75,0.3); border-radius: 6px; font-family: monospace;">v3.0</span></div>
+    <div class="brand" style="display: flex; align-items: baseline; gap: 8px;">ICDE Panel de Control <span>/ Gestión de Clientes</span><span style="font-size: 10px; font-weight: normal; color: var(--gold); opacity: 0.7; padding: 1px 6px; border: 1px solid rgba(212,168,75,0.3); border-radius: 6px; font-family: monospace;">v3.1</span></div>
     <div class="topbar-right">
       <span id="syncStatus" style="font-size:12px;color:#888;"></span>
       <span id="autoSyncIndicator" style="font-size:11px; color:#888; display:none; align-items:center; gap:5px;">
@@ -3696,6 +3696,9 @@ async function autoSyncLeads() {
       return true;
     });
     
+    console.log('[autoSyncLeads] leads crudos de la nube antes de filtrar:', data.length);
+    console.log('[autoSyncLeads] leads de la nube después de filtrar:', cloudData.length, cloudData);
+
     let huboNuevos = false;
     const cloudIds = new Set(cloudData.map(l => String(l.id).trim()));
     const localCleaned = leads.filter(l => {
@@ -3704,12 +3707,14 @@ async function autoSyncLeads() {
       
       const idStr = String(l.id).trim();
       if (!cloudIds.has(idStr)) {
+        console.log('[autoSyncLeads] Lead eliminado detectado (ya no está en la nube, borrando de local):', l);
         huboNuevos = true;
         return false;
       }
       return true;
     });
     if (leads.length !== localCleaned.length) {
+      console.log(`[autoSyncLeads] Limpieza local: leads pasó de ${leads.length} a ${localCleaned.length}`);
       leads = localCleaned;
     }
 
@@ -5324,10 +5329,12 @@ function addNota(lid,idx){
 }
 
 async function eliminarLead(id){ 
+  console.log('[eliminarLead] Solicitando eliminación para ID:', id);
   if(!confirm('¿Estás seguro de eliminar este cliente? Esta acción también lo eliminará de la nube y no se puede deshacer.')) return; 
   
   // Encontrar el lead para obtener su teléfono y buscar posibles duplicados locales con otras IDs
   const leadABorrar = leads.find(l => String(l.id) === String(id));
+  console.log('[eliminarLead] Lead a borrar encontrado localmente:', leadABorrar);
   let celularABorrar = '';
   let idsABorrar = [String(id)];
   
@@ -5349,10 +5356,12 @@ async function eliminarLead(id){
       if (!deletedPhones.includes(celularABorrar)) {
         deletedPhones.push(celularABorrar);
         localStorage.setItem('icde_deleted_phones', JSON.stringify(deletedPhones));
+        console.log('[eliminarLead] Teléfono añadido a icde_deleted_phones:', celularABorrar);
       }
     }
   }
 
+  // Registrar todos los IDs a borrar en deletedLeads
   // Registrar todos los IDs a borrar en deletedLeads
   idsABorrar.forEach(bId => {
     if(!deletedLeads.includes(bId)) {
@@ -5360,6 +5369,7 @@ async function eliminarLead(id){
     }
   });
   localStorage.setItem('icde_deleted_leads', JSON.stringify(deletedLeads));
+  console.log('[eliminarLead] Listado de IDs eliminados guardado en localStorage (deletedLeads):', deletedLeads);
 
   // Eliminar localmente primero (por ID y por teléfono celular para barrer duplicados locales)
   leads = leads.filter(l => {
@@ -5383,10 +5393,12 @@ async function eliminarLead(id){
         if (celularABorrar) url += '&celular=' + encodeURIComponent(celularABorrar);
         url += '&t=' + Date.now();
         
+        console.log('[eliminarLead] Ejecutando fetch de eliminación en la nube:', url);
         await fetch(url, { mode: 'no-cors' });
+        console.log('[eliminarLead] Fetch de eliminación en la nube completado (no-cors).');
         toast('Eliminado de la nube ✓', 'success');
       } catch(e) {
-        console.error('Error eliminando de la nube:', e);
+        console.error('[eliminarLead] Error eliminando de la nube:', e);
         toast('Sin conexión — se reintentará en el próximo sync', 'error');
       }
     })();
