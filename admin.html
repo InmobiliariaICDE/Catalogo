@@ -3695,6 +3695,24 @@ async function autoSyncLeads() {
       if (ph && deletedPhonesSet.has(ph)) return false;
       return true;
     });
+    
+    let huboNuevos = false;
+    const cloudIds = new Set(cloudData.map(l => String(l.id).trim()));
+    const localCleaned = leads.filter(l => {
+      if (l.id === 'LEAD-AGENDA-GLOBAL') return true;
+      if (String(l.id).startsWith('U-')) return true;
+      
+      const idStr = String(l.id).trim();
+      if (!cloudIds.has(idStr)) {
+        huboNuevos = true;
+        return false;
+      }
+      return true;
+    });
+    if (leads.length !== localCleaned.length) {
+      leads = localCleaned;
+    }
+
     const mergedMap = new Map();
     const phoneMap = new Map();
 
