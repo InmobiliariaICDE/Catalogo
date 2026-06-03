@@ -2538,11 +2538,6 @@ async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
 
     if (huboCambio || leads.length !== leadsUnicos.length) {
       leads = leadsUnicos;
-      if (typeof saveLeads === 'function') {
-        saveLeads();
-      } else {
-        try { localStorage.setItem('icde_leads', JSON.stringify(leads)); } catch(e){}
-      }
       
       if (typeof rebuildCitas === 'function') rebuildCitas();
       
@@ -3677,9 +3672,13 @@ async function autoSyncLeads() {
   try {
     const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
     const data = await res.json();
-    if (!Array.isArray(data)) throw new Error('Respuesta invÃ¡lida');
+    if (!Array.isArray(data)) throw new Error('Respuesta inválida');
+    
     const deletedPhonesSet = new Set(JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]'));
-    const cloudData = data.map(l => {
+    const deletedLeadsSet = new Set(JSON.parse(localStorage.getItem('icde_deleted_leads') || '[]'));
+    
+    // 1. Mapear y filtrar datos frescos de la nube
+    const cloudLeads = data.map(l => {
       let id = String(l.id || '').trim();
       if (!id || id === 'undefined' || id === 'null') {
         const s = String(l.nombre||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'')
@@ -3690,98 +3689,63 @@ async function autoSyncLeads() {
       }
       return { ...l, id };
     }).filter(l => {
-      if (deletedLeads.includes(String(l.id).trim())) return false;
+      if (deletedLeadsSet.has(String(l.id).trim())) return false;
       const ph = String(l.celular || '').replace(/\D/g, '');
       if (ph && deletedPhonesSet.has(ph)) return false;
       return true;
     });
-    
-    console.log('[autoSyncLeads] leads crudos de la nube antes de filtrar:', data.length);
-    console.log('[autoSyncLeads] leads de la nube después de filtrar:', cloudData.length, cloudData);
 
-    let huboNuevos = false;
-    const cloudIds = new Set(cloudData.map(l => String(l.id).trim()));
-    const localCleaned = leads.filter(l => {
-      if (l.id === 'LEAD-AGENDA-GLOBAL') return true;
-      if (String(l.id).startsWith('U-')) return true;
-      
-      const idStr = String(l.id).trim();
-      if (!cloudIds.has(idStr)) {
-        console.log('[autoSyncLeads] Lead eliminado detectado (ya no está en la nube, borrando de local):', l);
-        huboNuevos = true;
-        return false;
+    // 2. Preservar leads locales temporales (U-) que se crearon en este dispositivo y que aún no aparecen en la nube
+    // (para que no desaparezcan de la UI temporalmente mientras se sincronizan)
+    const localTemps = leads.filter(l => String(l.id).startsWith('U-'));
+    
+    // Unir cloudLeads y localTemps
+    const newLeadsList = [...cloudLeads];
+    localTemps.forEach(local => {
+      const localPhone = String(local.celular || '').replace(/\D/g, '');
+      const yaSincronizado = cloudLeads.some(cloud => {
+        const cloudPhone = String(cloud.celular || '').replace(/\D/g, '');
+        return String(cloud.id) === String(local.id) || (localPhone && cloudPhone && localPhone === cloudPhone);
+      });
+      if (!yaSincronizado) {
+        newLeadsList.push(local);
       }
-      return true;
     });
-    if (leads.length !== localCleaned.length) {
-      console.log(`[autoSyncLeads] Limpieza local: leads pasó de ${leads.length} a ${localCleaned.length}`);
-      leads = localCleaned;
+
+    // 3. Comprobar si hay cambios con respecto a la lista actual de leads
+    let huboCambioReal = false;
+    if (leads.length !== newLeadsList.length) {
+      huboCambioReal = true;
+    } else {
+      // Comparar elementos individuales
+      for (let i = 0; i < leads.length; i++) {
+        const current = leads[i];
+        const matching = newLeadsList.find(x => String(x.id) === String(current.id));
+        if (!matching) {
+          huboCambioReal = true;
+          break;
+        }
+        
+        const currentVisits = current.visitas || [];
+        const matchingVisits = matching.visitas || [];
+        const currentHist = current.historialEnvios || [];
+        const matchingHist = matching.historialEnvios || [];
+        
+        if (currentVisits.length !== matchingVisits.length || 
+            currentHist.length !== matchingHist.length || 
+            current.estado !== matching.estado ||
+            current.etiqueta !== matching.etiqueta ||
+            current.nombre !== matching.nombre ||
+            current.celular !== matching.celular) {
+          huboCambioReal = true;
+          break;
+        }
+      }
     }
 
-    const mergedMap = new Map();
-    const phoneMap = new Map();
-
-    // Preservar primero los leads locales (U-)
-    leads.forEach(l => {
-      const id = String(l.id || '').trim();
-      const phone = String(l.celular || '').replace(/[^\d]/g, "");
-      if (id && id.startsWith('U-')) {
-        mergedMap.set(id, l);
-        if (phone) phoneMap.set(phone, id);
-      }
-    });
-
-    // Unir cloudData con los existentes
-    cloudData.forEach(cloudLead => {
-      const id = String(cloudLead.id).trim();
-      const phone = String(cloudLead.celular || '').replace(/[^\d]/g, "");
-      
-      let targetId = id;
-      if (phone && phoneMap.has(phone)) {
-        targetId = phoneMap.get(phone);
-      }
-
-      const prevMap = new Map(leads.map(l => [String(l.id).trim(), l]));
-      const local = prevMap.get(targetId);
-
-      if (!local) {
-        mergedMap.set(targetId, cloudLead);
-        if (phone) phoneMap.set(phone, targetId);
-        huboNuevos = true;
-      } else {
-        // Comprobar si hay cambios reales en visitas, historial, estado o datos básicos
-        const localVisits = local.visitas || [];
-        const cloudVisits = cloudLead.visitas || [];
-        const localHist = local.historialEnvios || [];
-        const cloudHist = cloudLead.historialEnvios || [];
-        
-        if (localVisits.length !== cloudVisits.length || 
-            localHist.length !== cloudHist.length || 
-            local.estado !== cloudLead.estado ||
-            local.etiqueta !== cloudLead.etiqueta ||
-            local.nombre !== cloudLead.nombre ||
-            local.celular !== cloudLead.celular) {
-          huboNuevos = true;
-        }
-
-        mergedMap.set(targetId, {
-          ...cloudLead,
-          ...local,
-          id: targetId,
-          visitas: mergeVisitas(local.visitas, cloudLead.visitas),
-          historialEnvios: (() => {
-            const hMap = new Map((local.historialEnvios || []).map(h => [h.fecha + (h.codigos||[]).join(','), h]));
-            (cloudLead.historialEnvios || []).forEach(h => hMap.set(h.fecha + (h.codigos||[]).join(','), h));
-            return Array.from(hMap.values()).sort((a,b) => a.fecha < b.fecha ? 1 : -1);
-          })(),
-          feedback: cloudLead.feedback || local.feedback || {}
-        });
-      }
-    });
-
-    if (huboNuevos) {
-      console.log('[autoSyncLeads] Cambios detectados de la nube. Actualizando local storage y UI.');
-      leads = Array.from(mergedMap.values());
+    if (huboCambioReal) {
+      console.log('[autoSyncLeads] Cambios detectados de la nube. Actualizando UI.');
+      leads = newLeadsList;
       await limpiarYFusionarDuplicados(true);
       rebuildCitas();
       saveLeads();
@@ -3800,8 +3764,7 @@ async function autoSyncLeads() {
         console.log('[autoSyncLeads] Se detectaron cambios pero se omitió el re-render de la UI para no interrumpir al usuario que está escribiendo.');
       }
     } else {
-      // Si no hay cambios, simplemente actualizamos la referencia local interna sin re-renderizar la UI
-      leads = Array.from(mergedMap.values());
+      leads = newLeadsList;
     }
     
     if (dot) { dot.style.background = '#22c55e'; dot.style.boxShadow = '0 0 8px #22c55e'; }
@@ -3818,79 +3781,47 @@ async function autoSyncLeads() {
 async function cargarLeads(){
   if(!CRM_SCRIPT_URL) return;
   try {
-    const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads');
+    const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
     const data = await res.json();
     if(Array.isArray(data)){
-      const cloudData = data.map(l => {
+      const deletedPhonesSet = new Set(JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]'));
+      const deletedLeadsSet = new Set(JSON.parse(localStorage.getItem('icde_deleted_leads') || '[]'));
+
+      // Preservar leads locales temporales (U-)
+      const localTemps = leads.filter(l => String(l.id).startsWith('U-'));
+
+      const cloudLeads = data.map(l => {
         let id = String(l.id || '').trim();
         if(!id || id === 'undefined' || id === 'null') {
-           const normName = String(l.nombre || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g,'');
-           const normPhone = String(l.celular || '').replace(/[^\d]/g, "");
-           const hashStr = normName + normPhone;
-           let h = 0;
-           for (let i = 0; i < hashStr.length; i++) { h = ((h << 5) - h) + hashStr.charCodeAt(i); h |= 0; }
-           id = 'C-' + Math.abs(h).toString(16);
+          const normName = String(l.nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g,'');
+          const normPhone = String(l.celular || '').replace(/[^\d]/g, '');
+          const hashStr = normName + normPhone;
+          let h = 0;
+          for (let i = 0; i < hashStr.length; i++) { h = ((h << 5) - h) + hashStr.charCodeAt(i); h |= 0; }
+          id = 'C-' + Math.abs(h).toString(16);
         }
-        return { ...l, id: id };
+        return { ...l, id };
+      }).filter(l => {
+        if (!l.id) return false;
+        if (deletedLeadsSet.has(String(l.id).trim())) return false;
+        const ph = String(l.celular || '').replace(/\D/g, '');
+        if (ph && deletedPhonesSet.has(ph)) return false;
+        return true;
       });
 
-      // 2. MERGE AGRESIVO: Unir por Teléfono o por ID para eliminar "fantasmas"
-      const mergedMap = new Map();
-      const phoneMap = new Map();
-
-      // Procesar primero locales (U-) para darles prioridad
-      leads.forEach(l => {
-        const id = String(l.id || '').trim();
-        const phone = String(l.celular || '').replace(/[^\d]/g, "");
-        if (id && id.startsWith('U-')) {
-          mergedMap.set(id, l);
-          if (phone) phoneMap.set(phone, id);
-        }
-      });
-
-      // Procesar nube (C-) con unión por teléfono
-      cloudData.forEach(cloudLead => {
-        const id = String(cloudLead.id).trim();
-        const phone = String(cloudLead.celular || '').replace(/[^\d]/g, "");
-        
-        if (deletedLeads.includes(id)) return;
-        // Filtrar también por teléfono eliminado
-        const deletedPhonesSetCarga = new Set(JSON.parse(localStorage.getItem('icde_deleted_phones') || '[]'));
-        if (phone && deletedPhonesSetCarga.has(phone)) return;
-
-        // Si ya existe un lead con este teléfono, lo unimos
-        let targetId = id;
-        if (phone && phoneMap.has(phone)) {
-           targetId = phoneMap.get(phone);
-        }
-
-        if (!mergedMap.has(targetId)) {
-          mergedMap.set(targetId, cloudLead);
-          if (phone) phoneMap.set(phone, targetId);
-        } else {
-          const localLead = mergedMap.get(targetId);
-          // Unimos historiales para no perder nada
-          const combinedHist = [...(localLead.historialEnvios || []), ...(cloudLead.historialEnvios || [])];
-          const seenHist = new Set();
-          const cleanHist = combinedHist.filter(h => {
-             const key = h.fecha + h.codigo;
-             if(seenHist.has(key)) return false;
-             seenHist.add(key);
-             return true;
-          });
-
-          mergedMap.set(targetId, {
-             ...cloudLead,
-             ...localLead,
-             id: targetId,
-             feedback: cloudLead.feedback || localLead.feedback || {},
-             historialEnvios: cleanHist,
-             propsEnviadas: Array.from(new Set([...(localLead.propsEnviadas || []), ...(cloudLead.propsEnviadas || [])]))
-          });
+      // Combinar nube con locales temporales
+      leads = [...cloudLeads];
+      localTemps.forEach(local => {
+        const localPhone = String(local.celular || '').replace(/\D/g, '');
+        const yaSincronizado = cloudLeads.some(cloud => {
+          const cloudPhone = String(cloud.celular || '').replace(/\D/g, '');
+          return String(cloud.id) === String(local.id) || (localPhone && cloudPhone && localPhone === cloudPhone);
+        });
+        if (!yaSincronizado) {
+          leads.push(local);
         }
       });
 
-      leads = Array.from(mergedMap.values());
       await limpiarYFusionarDuplicados(true);
       rebuildCitas();
       saveLeads();
