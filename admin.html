@@ -6606,8 +6606,16 @@ function speakTextBrowserFallback(cleanText) {
   }
 }
 
+let lastMotivationalIndex = -1;
+
 function decirMensajeMotivacional() {
-  const index = Math.floor(Math.random() * MOTIVATIONAL_PHRASES.length);
+  if (typeof MOTIVATIONAL_PHRASES === 'undefined' || !MOTIVATIONAL_PHRASES.length) return;
+  let index;
+  do {
+    index = Math.floor(Math.random() * MOTIVATIONAL_PHRASES.length);
+  } while (index === lastMotivationalIndex && MOTIVATIONAL_PHRASES.length > 1);
+  
+  lastMotivationalIndex = index;
   const phrase = MOTIVATIONAL_PHRASES[index];
   
   // Show in speech bubble
