@@ -5346,14 +5346,13 @@ async function eliminarLead(id){
   if(CRM_SCRIPT_URL) {
     (async () => {
       try {
-        // Borrar por ID(s)
-        for (let bId of idsABorrar) {
-          await fetch(CRM_SCRIPT_URL + '?action=deleteLead&id=' + encodeURIComponent(bId) + '&t=' + Date.now(), { mode: 'no-cors' });
-        }
-        // Borrar por teléfono (barre duplicados con distinto ID en Sheets)
-        if (celularABorrar) {
-          await fetch(CRM_SCRIPT_URL + '?action=deleteLeadByPhone&celular=' + encodeURIComponent(celularABorrar) + '&t=' + Date.now(), { mode: 'no-cors' });
-        }
+        // Enviar ID y celular en una sola llamada para evitar condiciones de carrera en Google Sheets
+        let url = CRM_SCRIPT_URL + '?action=deleteLead';
+        if (id) url += '&id=' + encodeURIComponent(id);
+        if (celularABorrar) url += '&celular=' + encodeURIComponent(celularABorrar);
+        url += '&t=' + Date.now();
+        
+        await fetch(url, { mode: 'no-cors' });
         toast('Eliminado de la nube ✓', 'success');
       } catch(e) {
         console.error('Error eliminando de la nube:', e);
