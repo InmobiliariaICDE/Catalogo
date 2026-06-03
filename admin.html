@@ -6005,8 +6005,8 @@ function renderCitas(){
           <div style="display:flex; align-items:center; gap:8px;"><div style="width:6px; height:6px; border-radius:50%; background:var(--red);"></div> <span>Cancelada</span></div>
         </div>
       </div>
-      <div id="listContainer">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap: 15px; flex-wrap: wrap;">
+      <div id="listContainer" class="panel-section" style="padding: 0; overflow: hidden; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3);">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding: 16px 20px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.06); gap: 15px; flex-wrap: wrap;">
           <div style="display:flex; gap:8px; flex-shrink: 0;">
             <button class="chip-filtro ${citasActiveFilterType === 'semana' ? 'sel' : ''}" onclick="filterCitas('semana',this)">Semana</button>
             <button class="chip-filtro ${citasActiveFilterType === 'mes' ? 'sel' : ''}" onclick="filterCitas('mes',this)">Mes</button>
@@ -6030,9 +6030,16 @@ function renderCitas(){
             </button>
           </div>
         </div>
-        <div class="citas-table-wrap">
-          <table class="citas-table">
-            <thead><tr><th>Día / Hora</th><th>Cliente</th><th>Inmueble</th><th>Observaciones</th></tr></thead>
+        <div class="citas-table-wrap" style="margin-top: 0;">
+          <table class="citas-table" style="border: none; border-radius: 0; background: transparent;">
+            <thead>
+              <tr>
+                <th style="padding-left: 20px; border-bottom: 1px solid rgba(255,255,255,0.06);">Día / Hora</th>
+                <th style="border-bottom: 1px solid rgba(255,255,255,0.06);">Cliente</th>
+                <th style="border-bottom: 1px solid rgba(255,255,255,0.06);">Inmueble</th>
+                <th style="padding-right: 20px; border-bottom: 1px solid rgba(255,255,255,0.06);">Observaciones</th>
+              </tr>
+            </thead>
             <tbody id="citasBody"></tbody>
           </table>
         </div>
@@ -6262,7 +6269,7 @@ function renderCitasBody(lista){
     else stBadge = `<span class="badge badge-agendada">Agendada</span>`;
 
     return `<tr class="clickable" onclick="abrirEditarCita('${c.id}')">
-      <td><div class="citas-time">${c.hora || '--:--'}</div><div class="citas-weekday">${isNaN(d.getDay()) ? '—' : diasSem[d.getDay()]} ${c.fecha}</div></td>
+      <td style="padding-left: 20px;"><div class="citas-time">${c.hora || '--:--'}</div><div class="citas-weekday">${isNaN(d.getDay()) ? '—' : diasSem[d.getDay()]} ${c.fecha}</div></td>
       <td>
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
           <div>
@@ -6277,7 +6284,7 @@ function renderCitasBody(lista){
         <div style="font-weight:600;color:var(--gold);">${c.codigo}</div>
         <div style="font-size:10px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px;" title="${inmobProp}">${inmobProp || '—'}</div>
       </td>
-      <td style="font-size:12px;color:#aaa;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${c.observaciones||c.notas||''}">${c.observaciones || c.notas || ''}</td>
+      <td style="padding-right: 20px; font-size:12px;color:#aaa;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${c.observaciones||c.notas||''}">${c.observaciones || c.notas || ''}</td>
     </tr>`;
   }).join('');
 }
