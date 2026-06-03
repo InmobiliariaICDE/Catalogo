@@ -2546,11 +2546,7 @@ async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
         console.log("Borrando duplicados de la nube:", idsParaBorrarDeNube);
         for (let id of idsParaBorrarDeNube) {
           try {
-            fetch(CRM_SCRIPT_URL, {
-              method: 'POST',
-              mode: 'no-cors',
-              body: JSON.stringify({ action: 'deleteLead', id: id })
-            });
+            fetch(CRM_SCRIPT_URL + '?action=deleteLead&id=' + encodeURIComponent(id) + '&t=' + Date.now());
           } catch (e) {
             console.error("Error al borrar duplicado de la nube:", id, e);
           }
@@ -3689,21 +3685,53 @@ async function autoSyncLeads() {
       if (ph && deletedPhonesSet.has(ph)) return false;
       return true;
     });
-    const prevMap = new Map(leads.map(l => [String(l.id).trim(), l]));
-    leads = cloudData.map(cloudLead => {
-      const local = prevMap.get(String(cloudLead.id).trim());
-      if (!local) return cloudLead;
-      return {
-        ...cloudLead,
-        visitas: mergeVisitas(local.visitas, cloudLead.visitas),
-        historialEnvios: (() => {
-          const hMap = new Map((local.historialEnvios || []).map(h => [h.fecha + (h.codigos||[]).join(','), h]));
-          (cloudLead.historialEnvios || []).forEach(h => hMap.set(h.fecha + (h.codigos||[]).join(','), h));
-          return Array.from(hMap.values()).sort((a,b) => a.fecha < b.fecha ? 1 : -1);
-        })(),
-        feedback: cloudLead.feedback || local.feedback || {}
-      };
+    const mergedMap = new Map();
+    const phoneMap = new Map();
+
+    // Preservar primero los leads locales (U-)
+    leads.forEach(l => {
+      const id = String(l.id || '').trim();
+      const phone = String(l.celular || '').replace(/[^\d]/g, "");
+      if (id && id.startsWith('U-')) {
+        mergedMap.set(id, l);
+        if (phone) phoneMap.set(phone, id);
+      }
     });
+
+    // Unir cloudData con los existentes
+    cloudData.forEach(cloudLead => {
+      const id = String(cloudLead.id).trim();
+      const phone = String(cloudLead.celular || '').replace(/[^\d]/g, "");
+      
+      let targetId = id;
+      if (phone && phoneMap.has(phone)) {
+        targetId = phoneMap.get(phone);
+      }
+
+      const prevMap = new Map(leads.map(l => [String(l.id).trim(), l]));
+      const local = prevMap.get(targetId);
+
+      if (!local) {
+        mergedMap.set(targetId, cloudLead);
+        if (phone) phoneMap.set(phone, targetId);
+      } else {
+        mergedMap.set(targetId, {
+          ...cloudLead,
+          ...local,
+          id: targetId,
+          visitas: mergeVisitas(local.visitas, cloudLead.visitas),
+          historialEnvios: (() => {
+            const hMap = new Map((local.historialEnvios || []).map(h => [h.fecha + (h.codigos||[]).join(','), h]));
+            (cloudLead.historialEnvios || []).forEach(h => hMap.set(h.fecha + (h.codigos||[]).join(','), h));
+            return Array.from(hMap.values()).sort((a,b) => a.fecha < b.fecha ? 1 : -1);
+          })(),
+          feedback: cloudLead.feedback || local.feedback || {}
+        });
+      }
+    });
+
+    leads = Array.from(mergedMap.values());
+    await limpiarYFusionarDuplicados(true);
     rebuildCitas();
     saveLeads();
     if (currentTab === 'citas') renderCitas();
@@ -3799,7 +3827,7 @@ async function cargarLeads(){
       });
 
       leads = Array.from(mergedMap.values());
-      limpiarYFusionarDuplicados(true);
+      await limpiarYFusionarDuplicados(true);
       rebuildCitas();
       saveLeads();
       if(currentTab === 'leads') renderLeadsBody(leads);
@@ -6809,13 +6837,28 @@ function saludoEInteraccionInicial() {
     saludoBase = "¡Buenas noches!";
   }
 
-  // Find local today string: YYYY-MM-DD
-  const offset = new Date().getTimezoneOffset();
-  const localToday = new Date(new Date().getTime() - (offset * 60 * 1000)).toISOString().slice(0, 10);
-  
-  // Count appointments (citas) for today
+  const now = new Date();
+  const nowHrs = now.getHours();
+  const nowMins = now.getMinutes();
+  const offset = now.getTimezoneOffset();
+  const localToday = new Date(now.getTime() - (offset * 60 * 1000)).toISOString().slice(0, 10);
+
+  // Count appointments (citas) for today (only future appointments)
   const todayCitas = (typeof citas !== 'undefined' && Array.isArray(citas)) 
-    ? citas.filter(c => c.fecha === localToday) 
+    ? citas.filter(c => {
+        if (c.fecha !== localToday) return false;
+        if (c.hora) {
+          const parts = c.hora.split(':');
+          if (parts.length >= 2) {
+            const appHrs = parseInt(parts[0], 10);
+            const appMins = parseInt(parts[1], 10);
+            if (appHrs < nowHrs || (appHrs === nowHrs && appMins < nowMins)) {
+              return false;
+            }
+          }
+        }
+        return true;
+      }) 
     : [];
     
   let msg = "";
