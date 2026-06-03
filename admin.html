@@ -6005,32 +6005,37 @@ function renderCitas(){
           <div style="display:flex; align-items:center; gap:8px;"><div style="width:6px; height:6px; border-radius:50%; background:var(--red);"></div> <span>Cancelada</span></div>
         </div>
       </div>
-      <div id="listContainer" class="panel-section" style="padding: 0; overflow: hidden; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3);">
-        <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px 20px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.06); gap: 15px; flex-wrap: wrap;">
-          <div style="display:flex; gap:8px; flex-shrink: 0;">
-            <button class="chip-filtro ${citasActiveFilterType === 'todas' ? 'sel' : ''}" onclick="filterCitas('todas',this)">Todas</button>
-            <button class="chip-filtro ${citasActiveFilterType === 'mes' ? 'sel' : ''}" onclick="filterCitas('mes',this)">Mes</button>
-            <button class="chip-filtro ${citasActiveFilterType === 'semana' ? 'sel' : ''}" onclick="filterCitas('semana',this)">Semana</button>
-          </div>
-
-          <div id="citasSelFecha" style="font-size:12px; color:var(--gold); font-weight:600; flex-shrink: 0; margin-right: auto;">${citasActiveFilterType === 'fecha' ? 'Filtrado por: ' + citasActiveFilterValue : ''}</div>
-
-          <div style="display:flex; align-items:center; gap:12px; flex-grow:1; justify-content: flex-end;">
-            <div class="pc-buscar-row-premium">
-              <span class="bn-icon" style="padding:0 8px 0 12px; color: var(--gold);">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              </span>
-              <input type="text" id="searchCitasInput" placeholder="Buscar por cliente o celular..." value="${searchTermCitas}" oninput="buscarCitas(this.value)" style="font-size:13px; background: transparent; color: #fff; border: none; outline: none; width: 100%;"/>
-              ${searchTermCitas ? `<button class="btn-limpiar-pc" style="padding:0 12px; border-radius:0 8px 8px 0; font-size:12px; color: #aaa; background: transparent; cursor: pointer; transition: color 0.2s; border: none;" onclick="buscarCitas(''); document.getElementById('searchCitasInput').value=''" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">✕</button>` : ''}
+      <div id="listContainer">
+        <!-- PANEL DE CONTROLES -->
+        <div class="panel-section" style="padding: 10px 20px; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); margin-bottom: 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap: 15px; flex-wrap: wrap;">
+            <div style="display:flex; gap:8px; flex-shrink: 0;">
+              <button class="chip-filtro ${citasActiveFilterType === 'todas' ? 'sel' : ''}" onclick="filterCitas('todas',this)">Todas</button>
+              <button class="chip-filtro ${citasActiveFilterType === 'mes' ? 'sel' : ''}" onclick="filterCitas('mes',this)">Mes</button>
+              <button class="chip-filtro ${citasActiveFilterType === 'semana' ? 'sel' : ''}" onclick="filterCitas('semana',this)">Semana</button>
             </div>
 
-            <button class="btn-nueva-cita-premium" onclick="abrirVisitaModal()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              Nueva Cita
-            </button>
+            <div id="citasSelFecha" style="font-size:12px; color:var(--gold); font-weight:600; flex-shrink: 0; margin-right: auto;">${citasActiveFilterType === 'fecha' ? 'Filtrado por: ' + citasActiveFilterValue : ''}</div>
+
+            <div style="display:flex; align-items:center; gap:12px; flex-grow:1; justify-content: flex-end;">
+              <div class="pc-buscar-row-premium">
+                <span class="bn-icon" style="padding:0 8px 0 12px; color: var(--gold);">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </span>
+                <input type="text" id="searchCitasInput" placeholder="Buscar por cliente o celular..." value="${searchTermCitas}" oninput="buscarCitas(this.value)" style="font-size:13px; background: transparent; color: #fff; border: none; outline: none; width: 100%;"/>
+                ${searchTermCitas ? `<button class="btn-limpiar-pc" style="padding:0 12px; border-radius:0 8px 8px 0; font-size:12px; color: #aaa; background: transparent; cursor: pointer; transition: color 0.2s; border: none;" onclick="buscarCitas(''); document.getElementById('searchCitasInput').value=''" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">✕</button>` : ''}
+              </div>
+
+              <button class="btn-nueva-cita-premium" onclick="abrirVisitaModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Nueva Cita
+              </button>
+            </div>
           </div>
         </div>
-        <div class="citas-table-wrap" style="margin-top: 0;">
+
+        <!-- TABLA DE CITAS -->
+        <div class="citas-table-wrap panel-section" style="padding: 0; overflow: hidden; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); margin-top: 0;">
           <table class="citas-table" style="border: none; border-radius: 0; background: transparent;">
             <thead>
               <tr style="background: rgba(212, 168, 75, 0.04);">
