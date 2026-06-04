@@ -3722,12 +3722,26 @@ async function autoSyncLeads() {
       return !yaSincronizado;
     });
 
-    const newList = [...cloudLeads, ...localTemps];
+    const newList = [...cloudLeads, ...localTemps].map(n => {
+      const prev = leads.find(p => String(p.id) === String(n.id));
+      if (prev) {
+        // Fallback: si la nube no retornó método de pago (porque corre script viejo), preservar el local
+        if ((n.metodoPago === undefined || !n.metodoPago || !n.metodoPago.length) && (prev.metodoPago && prev.metodoPago.length)) {
+          n.metodoPago = prev.metodoPago;
+        }
+      }
+      return n;
+    });
 
     // Detectar cambio real para evitar re-renders innecesarios (o detección de borrados)
     const cambio = leads.length !== newList.length || newList.some(n => {
       const prev = leads.find(p => String(p.id) === String(n.id));
       if (!prev) return true;
+      
+      const prevMetodo = (prev.metodoPago || []).join(',');
+      const nMetodo = (n.metodoPago || []).join(',');
+      if (prevMetodo !== nMetodo) return true;
+
       return prev.estado !== n.estado || prev.etiqueta !== n.etiqueta ||
              prev.nombre !== n.nombre || prev.celular !== n.celular ||
              (prev.visitas||[]).length !== (n.visitas||[]).length ||
@@ -3787,7 +3801,13 @@ function normalizarIdsLeads(data) {
       for(let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
       id = 'C-' + Math.abs(h).toString(16);
     }
-    return { ...l, id };
+    let metodoPago = l.metodoPago;
+    if (typeof metodoPago === 'string') {
+      metodoPago = metodoPago.split(',').map(s => s.trim()).filter(s => s);
+    } else if (!Array.isArray(metodoPago)) {
+      metodoPago = [];
+    }
+    return { ...l, id, metodoPago };
   }).filter(l => {
     if(!l.id) return false;
     const phone = String(l.celular||'').replace(/\D/g,'');
