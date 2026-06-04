@@ -3783,9 +3783,9 @@ async function autoSyncLeads() {
 
     const newList = [...cloudLeads, ...localTemps].map(n => {
       const prev = leads.find(p => String(p.id) === String(n.id));
+      if (!Array.isArray(n.metodoPago)) n.metodoPago = [];
       if (prev) {
-        // Fallback: si la nube no retornó método de pago (porque corre script viejo), preservar el local
-        if ((n.metodoPago === undefined || !n.metodoPago || !n.metodoPago.length) && (prev.metodoPago && prev.metodoPago.length)) {
+        if ((!n.metodoPago || n.metodoPago.length === 0) && (prev.metodoPago && prev.metodoPago.length)) {
           n.metodoPago = prev.metodoPago;
         }
       }
@@ -3863,6 +3863,10 @@ function normalizarIdsLeads(data) {
     let metodoPago = l.metodoPago;
     if (typeof metodoPago === 'string') {
       metodoPago = metodoPago.split(',').map(s => s.trim()).filter(s => s);
+    } else if (l['Método Pago'] && typeof l['Método Pago'] === 'string') {
+      metodoPago = l['Método Pago'].split(',').map(s => s.trim()).filter(s => s);
+    } else if (l['Método Pago'] && Array.isArray(l['Método Pago'])) {
+      metodoPago = l['Método Pago'];
     } else if (!Array.isArray(metodoPago)) {
       metodoPago = [];
     }
