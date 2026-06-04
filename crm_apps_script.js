@@ -71,15 +71,43 @@ function getLeads() {
 
   const headers = data[0];
   const jsonIdx = headers.indexOf('Full_JSON');
+  const idIdx = headers.indexOf('ID');
+  const nombreIdx = headers.indexOf('Nombre');
+  const celularIdx = headers.indexOf('Celular');
+  const tipoIdx = headers.indexOf('Tipo');
+  const estadoIdx = headers.indexOf('Estado');
+  const etiquetaIdx = headers.indexOf('Etiqueta');
+  const notasIdx = headers.indexOf('Notas');
+  const metodoPagoIdx = headers.indexOf('Método Pago');
+  const frecuenciaIdx = headers.indexOf('Frecuencia');
 
   const leads = data.slice(1).map(row => {
+    let lead = {};
     if (jsonIdx !== -1 && row[jsonIdx]) {
-      try { return JSON.parse(row[jsonIdx]); } catch (e) {}
+      try { lead = JSON.parse(row[jsonIdx]); } catch (e) {}
     }
-    return {
-      id: row[0], fecha: row[1], nombre: row[2], celular: row[3],
-      tipo: row[4], estado: row[6], etiqueta: row[7], notas: row[8]
-    };
+    
+    // Sobrescribir con valores de las columnas para respetar ediciones manuales
+    if (idIdx !== -1 && row[idIdx] !== undefined && row[idIdx] !== '') lead.id = String(row[idIdx]);
+    if (nombreIdx !== -1 && row[nombreIdx] !== undefined) lead.nombre = String(row[nombreIdx]);
+    if (celularIdx !== -1 && row[celularIdx] !== undefined) lead.celular = String(row[celularIdx]);
+    if (tipoIdx !== -1 && row[tipoIdx] !== undefined) lead.tipo = String(row[tipoIdx]);
+    if (estadoIdx !== -1 && row[estadoIdx] !== undefined) lead.estado = String(row[estadoIdx]);
+    if (etiquetaIdx !== -1 && row[etiquetaIdx] !== undefined) lead.etiqueta = String(row[etiquetaIdx]);
+    if (notasIdx !== -1 && row[notasIdx] !== undefined) lead.notas = String(row[notasIdx]);
+    if (frecuenciaIdx !== -1 && row[frecuenciaIdx] !== undefined) lead.frecuencia = String(row[frecuenciaIdx]);
+    
+    if (metodoPagoIdx !== -1 && row[metodoPagoIdx] !== undefined) {
+      const val = String(row[metodoPagoIdx]).trim();
+      lead.metodoPago = val ? val.split(',').map(s => s.trim()).filter(s => s) : [];
+    } else if (!lead.metodoPago) {
+      lead.metodoPago = [];
+    }
+    
+    if (!lead.id && row[0]) {
+      lead.id = String(row[0]);
+    }
+    return lead;
   }).filter(l => l && l.id); // Filtrar filas vacías
 
   return createJsonResponse(leads);
