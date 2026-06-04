@@ -3422,20 +3422,52 @@ async function forzarPushTotal() {
 async function repararFullJSON() {
   if (!CRM_SCRIPT_URL) { toast('No hay URL configurada', 'error'); return; }
   const btn = document.getElementById('btnRepairJSON');
-  if (btn) { btn.disabled = true; btn.textContent = 'Reparando...'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Cargando leads del Drive...'; }
+
   try {
-    const res = await fetch(CRM_SCRIPT_URL + '?action=repairFullJSON&t=' + Date.now());
-    const data = await res.json();
-    if (data.success) {
-      toast(`✓ Reparación completa: ${data.repaired} filas actualizadas en Drive`, 'success');
-      console.log('[repararFullJSON] Filas reparadas:', data.repaired);
-      // Recargar los leads del Drive para ver los datos actualizados
-      await cargarLeads();
-    } else {
-      toast('Error al reparar: ' + (data.error || 'desconocido'), 'error');
+    // 1. Obtener todos los leads directamente del Drive
+    const resp = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
+    const driveLeads = await resp.json();
+
+    if (!Array.isArray(driveLeads) || driveLeads.length === 0) {
+      toast('No se encontraron leads en el Drive', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '🛠 Reparar datos faltantes en Drive (Full_JSON)'; }
+      return;
     }
+
+    // 2. Re-enviar CADA lead al Drive usando el endpoint saveLead ya desplegado
+    //    Esto fuerza la escritura del Full_JSON para cada fila
+    let ok = 0, err = 0;
+    const total = driveLeads.length;
+
+    for (let i = 0; i < driveLeads.length; i++) {
+      const lead = driveLeads[i];
+      if (!lead || !lead.id) continue;
+      if (btn) btn.textContent = `Reparando ${i + 1}/${total}...`;
+      try {
+        await fetch(CRM_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: JSON.stringify({ action: 'saveLead', lead: JSON.stringify(lead) })
+        });
+        ok++;
+      } catch(e) {
+        err++;
+        console.error('[repararFullJSON] Error en lead', lead.id, e);
+      }
+      // Pequeña pausa para no saturar el script
+      if (i % 5 === 4) await new Promise(r => setTimeout(r, 300));
+    }
+
+    toast(`✓ Reparación completa: ${ok} leads actualizados en Drive${err ? `, ${err} errores` : ''}`, ok > 0 ? 'success' : 'error');
+    console.log('[repararFullJSON] OK:', ok, 'ERR:', err);
+
+    // 3. Recargar leads del Drive para mostrar datos corregidos
+    await new Promise(r => setTimeout(r, 1500)); // esperar que el Drive procese
+    await cargarLeads();
+
   } catch(e) {
-    console.error('[repararFullJSON] Error:', e);
+    console.error('[repararFullJSON] Error general:', e);
     toast('Error de conexión al reparar', 'error');
   }
   if (btn) { btn.disabled = false; btn.textContent = '🛠 Reparar datos faltantes en Drive (Full_JSON)'; }
