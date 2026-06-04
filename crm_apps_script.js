@@ -33,6 +33,7 @@ function doGet(e) {
     if (action === 'getAdminData') return getAdminData();
     if (action === 'deleteLead')   return deleteLeadFromSheet(e.parameter.id, e.parameter.celular);
     if (action === 'deleteLeadByPhone') return deleteLeadByPhoneFromSheet(e.parameter.celular);
+    if (action === 'repairFullJSON')    return repairFullJSON();
     return createJsonResponse({ error: 'Acción no válida' });
   } catch (err) {
     return createJsonResponse({ error: err.toString() });
@@ -242,6 +243,95 @@ function deleteLeadFromSheet(id, phone) {
 
 function deleteLeadByPhoneFromSheet(phone) {
   return deleteLeadFromSheet(null, phone);
+}
+
+// ─────────────────────────────────────────────────────────────
+// REPAIR: Regenerar Full_JSON para filas que lo tienen vacío
+// ─────────────────────────────────────────────────────────────
+function repairFullJSON() {
+  const ss = getSpreadsheet();
+  const sheet = ss.getSheetByName('CRM_Leads');
+  if (!sheet) return createJsonResponse({ error: 'No se encontró CRM_Leads' });
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return createJsonResponse({ repaired: 0 });
+
+  const headers = data[0];
+  const idIdx       = headers.indexOf('ID');
+  const fechaIdx    = headers.indexOf('Fecha Actualización');
+  const nombreIdx   = headers.indexOf('Nombre');
+  const celularIdx  = headers.indexOf('Celular');
+  const tipoIdx     = headers.indexOf('Tipo');
+  const inmoIdx     = headers.indexOf('Inmobiliaria/Agente');
+  const estadoIdx   = headers.indexOf('Estado');
+  const etiquetaIdx = headers.indexOf('Etiqueta');
+  const notasIdx    = headers.indexOf('Notas');
+  const filtrosIdx  = headers.indexOf('Preferencias (Filtros)');
+  const metodoIdx   = headers.indexOf('Método Pago');
+  const frecIdx     = headers.indexOf('Frecuencia');
+  const jsonIdx     = headers.indexOf('Full_JSON');
+
+  if (jsonIdx === -1) return createJsonResponse({ error: 'Columna Full_JSON no encontrada' });
+
+  let repaired = 0;
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const existingJson = row[jsonIdx];
+
+    // Solo reparar filas que tienen ID pero sin Full_JSON
+    const rowId = idIdx !== -1 ? String(row[idIdx] || '').trim() : '';
+    if (!rowId) continue;
+    if (existingJson && String(existingJson).trim().startsWith('{')) continue; // ya tiene JSON válido
+
+    // Construir objeto base desde columnas
+    const metodoPagoRaw = metodoIdx !== -1 ? String(row[metodoIdx] || '').trim() : '';
+    const metodoPago = metodoPagoRaw ? metodoPagoRaw.split(',').map(s => s.trim()).filter(s => s) : [];
+
+    const lead = {
+      id:                rowId,
+      fecha:             fechaIdx !== -1 ? String(row[fechaIdx] || '') : '',
+      nombre:            nombreIdx !== -1 ? String(row[nombreIdx] || '') : '',
+      celular:           celularIdx !== -1 ? String(row[celularIdx] || '') : '',
+      tipo:              tipoIdx !== -1 ? String(row[tipoIdx] || 'cliente') : 'cliente',
+      nombreInmobiliaria: inmoIdx !== -1 ? String(row[inmoIdx] || '') : '',
+      nombreAgente:      inmoIdx !== -1 ? String(row[inmoIdx] || '') : '',
+      estado:            estadoIdx !== -1 ? String(row[estadoIdx] || 'enviando') : 'enviando',
+      etiqueta:          etiquetaIdx !== -1 ? String(row[etiquetaIdx] || 'activo') : 'activo',
+      notas:             notasIdx !== -1 ? String(row[notasIdx] || '') : '',
+      metodoPago:        metodoPago,
+      frecuencia:        frecIdx !== -1 ? String(row[frecIdx] || 'manual') : 'manual',
+      filtros:           {},
+      propsEnviadas:     [],
+      proximosEnvios:    [],
+      historialEnvios:   [],
+      visitas:           [],
+      creadoEn:          fechaIdx !== -1 ? String(row[fechaIdx] || new Date().toISOString()) : new Date().toISOString()
+    };
+
+    // Intentar parsear los filtros del texto resumido
+    if (filtrosIdx !== -1 && row[filtrosIdx]) {
+      const fTxt = String(row[filtrosIdx]);
+      const tiposM = fTxt.match(/Tipos:\s*([^|]+)/);
+      if (tiposM) lead.filtros.tipoInmueble = tiposM[1].split(',').map(s => s.trim());
+      const zonaM = fTxt.match(/Zonas:\s*([^|]+)/);
+      if (zonaM) lead.filtros.zona = zonaM[1].split(',').map(s => s.trim());
+      const precioM = fTxt.match(/Precio:\s*(\d+)\s*-\s*(\w+)/);
+      if (precioM) {
+        lead.filtros.minPrice = parseInt(precioM[1]) || null;
+        lead.filtros.maxPrice = precioM[2] === 'Max' ? null : (parseInt(precioM[2]) || null);
+      }
+    }
+
+    try {
+      sheet.getRange(i + 1, jsonIdx + 1).setValue(JSON.stringify(lead));
+      repaired++;
+    } catch(e) {
+      Logger.log('Error reparando fila ' + (i + 1) + ': ' + e);
+    }
+  }
+
+  return createJsonResponse({ success: true, repaired: repaired });
 }
 
 function getLeadName(leadId) {

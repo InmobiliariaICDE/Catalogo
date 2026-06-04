@@ -2373,6 +2373,11 @@ textarea.gemini-card-input {
           🔍 Diagnóstico
         </button>
       </div>
+      <div style="margin-top:10px;">
+        <button id="btnRepairJSON" class="btn btn-secondary" style="width:100%; background:rgba(212,168,75,0.08); border-color:rgba(212,168,75,0.3);" onclick="repararFullJSON()">
+          🛠 Reparar datos faltantes en Drive (Full_JSON)
+        </button>
+      </div>
 
       <div id="diagResultado" style="margin-top:12px; font-size:11px; color:#888; background:rgba(255,255,255,0.03); border-radius:8px; padding:10px; display:none;"></div>
     </div>
@@ -3412,6 +3417,28 @@ async function forzarPushTotal() {
   if (btn) { btn.disabled = false; btn.textContent = '☁️ Subir todo a la nube'; }
   toast(`Push total: ${ok} leads subidos${err ? `, ${err} con error` : ''} ✓`, ok > 0 ? 'success' : 'error');
   console.log(`[forzarPushTotal] OK: ${ok}, ERR: ${err}`);
+}
+
+async function repararFullJSON() {
+  if (!CRM_SCRIPT_URL) { toast('No hay URL configurada', 'error'); return; }
+  const btn = document.getElementById('btnRepairJSON');
+  if (btn) { btn.disabled = true; btn.textContent = 'Reparando...'; }
+  try {
+    const res = await fetch(CRM_SCRIPT_URL + '?action=repairFullJSON&t=' + Date.now());
+    const data = await res.json();
+    if (data.success) {
+      toast(`✓ Reparación completa: ${data.repaired} filas actualizadas en Drive`, 'success');
+      console.log('[repararFullJSON] Filas reparadas:', data.repaired);
+      // Recargar los leads del Drive para ver los datos actualizados
+      await cargarLeads();
+    } else {
+      toast('Error al reparar: ' + (data.error || 'desconocido'), 'error');
+    }
+  } catch(e) {
+    console.error('[repararFullJSON] Error:', e);
+    toast('Error de conexión al reparar', 'error');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '🛠 Reparar datos faltantes en Drive (Full_JSON)'; }
 }
 function doLogout(){
   document.getElementById('loginScreen').style.display='flex';
