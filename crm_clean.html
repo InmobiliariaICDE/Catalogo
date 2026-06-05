@@ -462,8 +462,8 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
         <input class="form-input" id="setWaApi" placeholder="https://api.tuservidor.com" value="${settings.waApi || ''}"/>
         <div style="font-size:11px;color:#888;margin-top:4px;">Deja vacío para usar WhatsApp Web (wa.me)</div>
       </div>
-      <div class="form-group full"><label class="form-label">Gemini API Key</label>
-        <input class="form-input" id="setGeminiKey" type="password" placeholder="AIza..." value="${settings.geminiKey || ''}"/>
+      <div class="form-group full"><label class="form-label">API Key de IA (Grok xAI)</label>
+        <input class="form-input" id="setGeminiKey" type="password" placeholder="xai-..." value="${settings.geminiKey || ''}"/>
       </div>
     </div>
     <div class="modal-footer">
@@ -517,7 +517,7 @@ const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3J23EaKCPKnHHQ
 let allProps = [];
 let leads = JSON.parse(localStorage.getItem('icde_leads') || '[]');
 let citas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
-let settings = JSON.parse(localStorage.getItem('icde_settings') || '{"waApi":"","geminiKey":"AIzaSyALjX93RBFLp7AFEC-oK271rf3B1T3UpXo"}');
+let settings = JSON.parse(localStorage.getItem('icde_settings') || '{"waApi":"","geminiKey":"xai-Q8AGm6yQ4IMYjHGX7Wen3dxavFgmUSjJIDjwW23jVKebh2tzOAbqFecBEMlVSLeKVgdNEzKTNxL67rGe"}');
 let currentTab = 'nuevo';
 let selectedProps = [];
 let currentLeadId = null;
@@ -1766,7 +1766,7 @@ function guardarSettings(){
 
 let recognition;
 function toggleGemini(){
-  if(!settings.geminiKey){ toast('Configura tu API Key de Gemini','error'); abrirSettings(); return; }
+  if(!settings.geminiKey){ toast('Configura tu API Key de IA en Ajustes','error'); abrirSettings(); return; }
   const btn = document.getElementById('geminiBtn');
   if(btn.classList.contains('listening')){
     recognition.stop();
@@ -1786,32 +1786,46 @@ function toggleGemini(){
 }
 
 async function processWithGemini(text){
-  toast('Gemini procesando...','success');
+  toast('IA procesando...','success');
   const prompt = `Extrae información de una cita inmobiliaria del siguiente texto en español: "${text}". 
   Responde UNICAMENTE en formato JSON con estos campos: codigo (solo el numero), fecha (YYYY-MM-DD), hora (HH:mm), cliente (nombre), notas. 
   Si no encuentras un campo, ponlo vacío.`;
   
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${settings.geminiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-    });
-    const data = await res.json();
-    const cleanJson = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
-    const result = JSON.parse(cleanJson);
+    const isGrok = settings.geminiKey.startsWith('xai-');
+    let data;
+    
+    if (isGrok) {
+      const res = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.geminiKey}` },
+        body: JSON.stringify({ model: 'grok-2-latest', messages: [{ role: 'user', content: prompt }], stream: false })
+      });
+      const raw = await res.json();
+      const cleanJson = raw.choices[0].message.content.replace(/```json|```/g, '').trim();
+      data = JSON.parse(cleanJson);
+    } else {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${settings.geminiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+      const raw = await res.json();
+      const cleanJson = raw.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
+      data = JSON.parse(cleanJson);
+    }
     
     // Auto-llenar formulario de visita
     abrirVisitaModal();
-    if(result.codigo) document.getElementById('visitaCodigo').value = result.codigo;
-    if(result.fecha) document.getElementById('visitaFecha').value = result.fecha;
-    if(result.notas) document.getElementById('visitaNotas').value = result.notas;
-    if(result.cliente) document.getElementById('visitaNotas').value += '\nCliente: ' + result.cliente;
-    if(result.hora) document.getElementById('visitaNotas').value += '\nHora: ' + result.hora;
+    if(data.codigo) document.getElementById('visitaCodigo').value = data.codigo;
+    if(data.fecha) document.getElementById('visitaFecha').value = data.fecha;
+    if(data.notas) document.getElementById('visitaNotas').value = data.notas;
+    if(data.cliente) document.getElementById('visitaNotas').value += '\nCliente: ' + data.cliente;
+    if(data.hora) document.getElementById('visitaNotas').value += '\nHora: ' + data.hora;
     
-    toast('Gemini ha extraído los datos ✓');
+    toast('IA ha extraído los datos ✓');
   } catch(e) {
-    toast('Error con Gemini','error');
+    toast('Error con la IA','error');
   }
 }
 function toggleSection(header){
