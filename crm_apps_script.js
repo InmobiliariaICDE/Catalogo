@@ -34,6 +34,7 @@ function doGet(e) {
     if (action === 'deleteLead')   return deleteLeadFromSheet(e.parameter.id, e.parameter.celular);
     if (action === 'deleteLeadByPhone') return deleteLeadByPhoneFromSheet(e.parameter.celular);
     if (action === 'repairFullJSON')    return repairFullJSON();
+    if (action === 'deduplicateLeads')  return deduplicateLeads();
     return createJsonResponse({ error: 'Acción no válida' });
   } catch (err) {
     return createJsonResponse({ error: err.toString() });
@@ -195,17 +196,25 @@ function saveLeadToSheet(lead) {
   const cleanPhoneInput = String(lead.celular || '').replace(/\D/g, '');
   const targetId = String(lead.id || '').trim();
 
-  for (let i = 1; i < data.length; i++) {
-    const rowId = String(data[i][0] || '').trim();
-    const rowPhone = String(data[i][3] || '').replace(/\D/g, '');
-    
-    if (targetId && rowId === targetId) {
-      rowIndex = i + 1;
-      break;
+  // 1. Buscar primero por ID exacto
+  if (targetId) {
+    for (let i = 1; i < data.length; i++) {
+      const rowId = String(data[i][0] || '').trim();
+      if (rowId === targetId) {
+        rowIndex = i + 1;
+        break;
+      }
     }
-    if (cleanPhoneInput && rowPhone === cleanPhoneInput) {
-      rowIndex = i + 1;
-      break;
+  }
+
+  // 2. Si no coincide por ID, buscar por teléfono celular
+  if (rowIndex === -1 && cleanPhoneInput) {
+    for (let i = 1; i < data.length; i++) {
+      const rowPhone = String(data[i][3] || '').replace(/\D/g, '');
+      if (rowPhone === cleanPhoneInput) {
+        rowIndex = i + 1;
+        break;
+      }
     }
   }
 
@@ -354,6 +363,59 @@ function repairFullJSON() {
   }
 
   return createJsonResponse({ success: true, repaired: repaired });
+}
+
+function deduplicateLeads() {
+  try {
+    const ss = getSpreadsheet();
+    const sheet = ss.getSheetByName('CRM_Leads');
+    if (!sheet) return createJsonResponse({ error: 'No se encontró CRM_Leads' });
+
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return createJsonResponse({ deduplicated: 0 });
+
+    const headers = data[0];
+    const celularIdx = headers.indexOf('Celular');
+    const idIdx = headers.indexOf('ID');
+    const jsonIdx = headers.indexOf('Full_JSON');
+
+    if (celularIdx === -1) return createJsonResponse({ error: 'Columna Celular no encontrada' });
+
+    const seenPhones = new Map();
+    const rowsToDelete = [];
+
+    for (let i = 1; i < data.length; i++) {
+      const phone = String(data[i][celularIdx] || '').replace(/\D/g, '');
+      if (!phone) continue;
+
+      const hasJson = jsonIdx !== -1 && String(data[i][jsonIdx] || '').trim().startsWith('{');
+      const rowNum = i + 1;
+
+      if (seenPhones.has(phone)) {
+        const prevRowIdx = seenPhones.get(phone);
+        const prevRow = data[prevRowIdx - 1];
+        const prevHasJson = jsonIdx !== -1 && String(prevRow[jsonIdx] || '').trim().startsWith('{');
+
+        if (hasJson && !prevHasJson) {
+          rowsToDelete.push(prevRowIdx);
+          seenPhones.set(phone, rowNum);
+        } else {
+          rowsToDelete.push(rowNum);
+        }
+      } else {
+        seenPhones.set(phone, rowNum);
+      }
+    }
+
+    rowsToDelete.sort((a, b) => b - a);
+    rowsToDelete.forEach(r => {
+      sheet.deleteRow(r);
+    });
+
+    return createJsonResponse({ success: true, deletedCount: rowsToDelete.length });
+  } catch(e) {
+    return createJsonResponse({ error: e.toString() });
+  }
 }
 
 function getLeadName(leadId) {
