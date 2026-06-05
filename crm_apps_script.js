@@ -80,6 +80,7 @@ function getLeads() {
   const etiquetaIdx = headers.indexOf('Etiqueta');
   const notasIdx = headers.indexOf('Notas');
   const metodoPagoIdx = headers.indexOf('Método Pago');
+  const presupuestoIdx = headers.indexOf('Presupuesto');
   const frecuenciaIdx = headers.indexOf('Frecuencia');
 
   const leads = data.slice(1).map(row => {
@@ -104,6 +105,11 @@ function getLeads() {
     } else if (!lead.metodoPago) {
       lead.metodoPago = [];
     }
+
+    if (presupuestoIdx !== -1 && row[presupuestoIdx] !== undefined && row[presupuestoIdx] !== '') {
+      if (!lead.filtros) lead.filtros = {};
+      lead.filtros.maxPrice = parseFloat(String(row[presupuestoIdx]).replace(/[^\d.]/g, '')) || null;
+    }
     
     if (!lead.id && row[0]) {
       lead.id = String(row[0]);
@@ -121,7 +127,7 @@ function saveLeadToSheet(lead) {
   const headers = [
     'ID', 'Fecha Actualización', 'Nombre', 'Celular', 'Tipo',
     'Inmobiliaria/Agente', 'Estado', 'Etiqueta', 'Notas',
-    'Preferencias (Filtros)', 'Método Pago', 'Frecuencia',
+    'Preferencias (Filtros)', 'Método Pago', 'Presupuesto', 'Frecuencia',
     'Total Enviadas', 'Historial (Resumen)', 'Full_JSON'
   ];
 
@@ -166,6 +172,7 @@ function saveLeadToSheet(lead) {
     lead.notas || '',
     filtrosTxt,
     (lead.metodoPago || []).join(', '),
+    lead.filtros && lead.filtros.maxPrice ? lead.filtros.maxPrice : '',
     lead.frecuencia,
     (lead.propsEnviadas || []).length,
     historialTxt,
@@ -268,6 +275,7 @@ function repairFullJSON() {
   const notasIdx    = headers.indexOf('Notas');
   const filtrosIdx  = headers.indexOf('Preferencias (Filtros)');
   const metodoIdx   = headers.indexOf('Método Pago');
+  const presIdx     = headers.indexOf('Presupuesto');
   const frecIdx     = headers.indexOf('Frecuencia');
   const jsonIdx     = headers.indexOf('Full_JSON');
 
@@ -301,7 +309,9 @@ function repairFullJSON() {
       notas:             notasIdx !== -1 ? String(row[notasIdx] || '') : '',
       metodoPago:        metodoPago,
       frecuencia:        frecIdx !== -1 ? String(row[frecIdx] || 'manual') : 'manual',
-      filtros:           {},
+      filtros:           {
+        maxPrice: presIdx !== -1 && row[presIdx] !== '' ? (parseFloat(String(row[presIdx]).replace(/[^\d.]/g, '')) || null) : null
+      },
       propsEnviadas:     [],
       proximosEnvios:    [],
       historialEnvios:   [],
