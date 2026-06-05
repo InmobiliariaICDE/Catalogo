@@ -160,24 +160,35 @@ function saveLeadToSheet(lead) {
   const historialTxt = (lead.historialEnvios || [])
     .map(h => h.fecha + ' (' + (h.codigos || []).length + ')').join(' | ');
 
-  const rowData = [
-    lead.id,
-    new Date().toISOString(),
-    lead.nombre,
-    lead.celular,
-    lead.tipo,
-    (lead.nombreInmobiliaria || lead.nombreAgente || ''),
-    lead.estado,
-    lead.etiqueta,
-    lead.notas || '',
-    filtrosTxt,
-    (lead.metodoPago || []).join(', '),
-    lead.filtros && lead.filtros.maxPrice ? lead.filtros.maxPrice : '',
-    lead.frecuencia,
-    (lead.propsEnviadas || []).length,
-    historialTxt,
-    JSON.stringify(lead)
-  ];
+  // Buscar los índices dinámicamente según la cabecera actual de la hoja
+  const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
+  
+  // Mapear campos a sus correspondientes columnas actuales en la hoja
+  const rowData = new Array(currentHeaders.length).fill('');
+  
+  const setValByHeader = (headerName, val) => {
+    const idx = currentHeaders.indexOf(headerName);
+    if (idx !== -1) {
+      rowData[idx] = val;
+    }
+  };
+
+  setValByHeader('ID', lead.id);
+  setValByHeader('Fecha Actualización', new Date().toISOString());
+  setValByHeader('Nombre', lead.nombre);
+  setValByHeader('Celular', lead.celular);
+  setValByHeader('Tipo', lead.tipo);
+  setValByHeader('Inmobiliaria/Agente', (lead.nombreInmobiliaria || lead.nombreAgente || ''));
+  setValByHeader('Estado', lead.estado);
+  setValByHeader('Etiqueta', lead.etiqueta);
+  setValByHeader('Notas', lead.notes || lead.notas || '');
+  setValByHeader('Preferencias (Filtros)', filtrosTxt);
+  setValByHeader('Método Pago', (lead.metodoPago || []).join(', '));
+  setValByHeader('Presupuesto', lead.filtros && lead.filtros.maxPrice ? lead.filtros.maxPrice : '');
+  setValByHeader('Frecuencia', lead.frecuencia);
+  setValByHeader('Total Enviadas', (lead.propsEnviadas || []).length);
+  setValByHeader('Historial (Resumen)', historialTxt);
+  setValByHeader('Full_JSON', JSON.stringify(lead));
 
   const data = sheet.getDataRange().getValues();
   let rowIndex = -1;
@@ -199,6 +210,7 @@ function saveLeadToSheet(lead) {
   }
 
   if (rowIndex > 0) {
+    // Asegurarse de no recortar columnas si la fila es más larga que rowData
     sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
   } else {
     sheet.appendRow(rowData);
