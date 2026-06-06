@@ -1575,6 +1575,8 @@ textarea.gemini-card-input {
   .matrix-table th.col-prop { text-align: left; padding-left: 20px; font-size: 12px; }
   .matrix-table td { padding: 12px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); text-align: center; vertical-align: middle; }
   .matrix-table td.cell-prop { text-align: left; padding-left: 20px; font-weight: 600; color: #fff; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .matrix-table tbody tr { transition: background 0.15s ease; }
+  .matrix-table tbody tr:hover { background: rgba(255,255,255,0.02); cursor: pointer; }
   
   .matrix-cell { 
     width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; margin: 0 auto; 
@@ -8509,7 +8511,7 @@ function renderMatrizPagos(propertiesList) {
             const paymentsYear = p.payments[currentAdminYear] || [];
             
             return `
-              <tr>
+              <tr onclick="abrirEditarInmueble('${p.id}')">
                 <td class="cell-prop" title="${p.name} (${p.owner})">
                   <div style="font-weight:700; color:#fff; font-size:13px;">${p.name}</div>
                   <div style="font-size:10px; color:var(--muted); font-weight:500;">${p.owner}</div>
@@ -8529,7 +8531,7 @@ function renderMatrizPagos(propertiesList) {
                     <td>
                       <div class="matrix-cell status-cell-${pay.status}" 
                            data-tooltip="${tooltipText}" 
-                           onclick="openMatrixCellDetails('${p.id}', '${mFull}', '${currentAdminYear}')">
+                           onclick="event.stopPropagation(); openMatrixCellDetails('${p.id}', '${mFull}', '${currentAdminYear}')">
                         ${cellContent}
                       </div>
                     </td>
