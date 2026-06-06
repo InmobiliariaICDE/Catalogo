@@ -6390,6 +6390,15 @@ function renderCalendario(){
   container.innerHTML = html;
 }
 
+function changeCalMonth(offset){
+  calDate.setMonth(calDate.getMonth() + offset);
+  renderCalendario();
+  if (citasActiveFilterType === 'mes') {
+    aplicarFiltroYBusquedaCitas();
+  }
+}
+
+
 let feedbackOmitidos = JSON.parse(localStorage.getItem('icde_feedback_omitidos') || '[]');
 function checkCitasFeedback(){
   if(document.querySelector('.modal-overlay.open')) return; // No interrumpir si hay modal abierto
@@ -6570,7 +6579,9 @@ function aplicarFiltroYBusquedaCitas(){
     const end = new Date(hoy.setDate(hoy.getDate() - hoy.getDay() + 6));
     filtered = citas.filter(c => { const d = new Date(c.fecha); return d >= start && d <= end; });
   } else if (citasActiveFilterType === 'mes') {
-    filtered = citas.filter(c => c.fecha.startsWith(new Date().toISOString().slice(0,7)));
+    const yyyy = calDate.getFullYear();
+    const mm = String(calDate.getMonth() + 1).padStart(2, '0');
+    filtered = citas.filter(c => c.fecha.startsWith(`${yyyy}-${mm}`));
   } else if (citasActiveFilterType === 'fecha') {
     filtered = citas.filter(c => c.fecha === citasActiveFilterValue);
   }
