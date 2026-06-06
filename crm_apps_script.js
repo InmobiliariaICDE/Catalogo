@@ -72,17 +72,19 @@ function getLeads() {
   if (data.length <= 1) return createJsonResponse([]);
 
   const headers = data[0].map(h => String(h).trim());
-  const jsonIdx = headers.indexOf('Full_JSON');
-  const idIdx = headers.indexOf('ID');
-  const nombreIdx = headers.indexOf('Nombre');
-  const celularIdx = headers.indexOf('Celular');
-  const tipoIdx = headers.indexOf('Tipo');
-  const estadoIdx = headers.indexOf('Estado');
-  const etiquetaIdx = headers.indexOf('Etiqueta');
-  const notasIdx = headers.indexOf('Notas');
-  const metodoPagoIdx = headers.indexOf('Método Pago');
-  const presupuestoIdx = headers.indexOf('Presupuesto');
-  const frecuenciaIdx = headers.indexOf('Frecuencia');
+  const nh = h => headers.findIndex(c => normalizeHeader(c) === normalizeHeader(h));
+
+  const jsonIdx       = nh('Full_JSON');
+  const idIdx         = nh('ID');
+  const nombreIdx     = nh('Nombre');
+  const celularIdx    = nh('Celular');
+  const tipoIdx       = nh('Tipo');
+  const estadoIdx     = nh('Estado');
+  const etiquetaIdx   = nh('Etiqueta');
+  const notasIdx      = nh('Notas');
+  const metodoPagoIdx = nh('Método Pago');
+  const presupuestoIdx= nh('Presupuesto');
+  const frecuenciaIdx = nh('Frecuencia');
 
   const leads = data.slice(1).map(row => {
     let lead = {};
@@ -121,6 +123,12 @@ function getLeads() {
   return createJsonResponse(leads);
 }
 
+// Helper: normaliza un header para comparación robusta (sin acentos, minúsculas, sin espacios extra)
+function normalizeHeader(s) {
+  return String(s || '').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 function saveLeadToSheet(lead) {
   const ss = getSpreadsheet();
   let sheet = ss.getSheetByName('CRM_Leads');
@@ -137,11 +145,14 @@ function saveLeadToSheet(lead) {
     sheet.appendRow(headers);
     sheet.setFrozenRows(1);
   } else {
-    const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
+    // Leer headers actuales del sheet y detectar cuáles faltan
+    const rawHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
+    const normalizedExisting = rawHeaders.map(h => normalizeHeader(h));
     headers.forEach((h) => {
-      if (currentHeaders.indexOf(h) === -1) {
-        sheet.getRange(1, currentHeaders.length + 1).setValue(h);
-        currentHeaders.push(h);
+      if (normalizedExisting.indexOf(normalizeHeader(h)) === -1) {
+        sheet.getRange(1, rawHeaders.length + 1).setValue(h);
+        rawHeaders.push(h);
+        normalizedExisting.push(normalizeHeader(h));
       }
     });
   }
@@ -161,14 +172,15 @@ function saveLeadToSheet(lead) {
   const historialTxt = (lead.historialEnvios || [])
     .map(h => h.fecha + ' (' + (h.codigos || []).length + ')').join(' | ');
 
-  // Buscar los índices dinámicamente según la cabecera actual de la hoja
+  // Leer cabeceras actuales UNA SOLA VEZ (después de haber añadido las que faltan)
   const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(h => String(h).trim());
-  
-  // Mapear campos a sus correspondientes columnas actuales en la hoja
+  const normalizedHeaders = currentHeaders.map(h => normalizeHeader(h));
+
+  // Mapear campos a sus correspondientes columnas actuales en la hoja (con comparación normalizada)
   const rowData = new Array(currentHeaders.length).fill('');
-  
+
   const setValByHeader = (headerName, val) => {
-    const idx = currentHeaders.indexOf(headerName);
+    const idx = normalizedHeaders.indexOf(normalizeHeader(headerName));
     if (idx !== -1) {
       rowData[idx] = val;
     }
@@ -195,8 +207,9 @@ function saveLeadToSheet(lead) {
   let rowIndex = -1;
   const cleanPhoneInput = String(lead.celular || '').replace(/\D/g, '');
   const targetId = String(lead.id || '').trim();
-  const idColIdx = currentHeaders.indexOf('ID');
-  const phoneColIdx = currentHeaders.indexOf('Celular');
+  // Usar índices normalizados para la búsqueda de filas
+  const idColIdx    = normalizedHeaders.indexOf(normalizeHeader('ID'));
+  const phoneColIdx = normalizedHeaders.indexOf(normalizeHeader('Celular'));
 
   // 1. Buscar primero por ID exacto
   if (targetId && idColIdx !== -1) {
@@ -248,10 +261,10 @@ function deleteLeadFromSheet(id, phone) {
     return createJsonResponse({ error: 'ID o teléfono requerido' });
   }
 
-  // Determinar índices de columnas dinámicamente desde la fila de cabecera
+  // Determinar índices de columnas dinámicamente desde la fila de cabecera (comparación normalizada)
   const headerRow = data[0].map(h => String(h).trim());
-  const idColIdx  = headerRow.indexOf('ID');
-  const celColIdx = headerRow.indexOf('Celular');
+  const idColIdx  = headerRow.findIndex(c => normalizeHeader(c) === normalizeHeader('ID'));
+  const celColIdx = headerRow.findIndex(c => normalizeHeader(c) === normalizeHeader('Celular'));
 
   let deletedCount = 0;
   for (let i = data.length - 1; i >= 1; i--) {
