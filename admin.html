@@ -3805,7 +3805,7 @@ async function autoSyncLeads() {
         // conservar los campos editables del local (estado, etiqueta, notas, nombre, celular)
         // Esto protege en caso de que el pendingWriteUntil no fue suficiente (Apps Script lento)
         const prevFecha = new Date(prev._localEditedAt || 0).getTime();
-        const cloudFecha = new Date(n.fecha || n['Fecha Actualización'] || 0).getTime();
+        const cloudFecha = new Date(n['Fecha Actualización'] || n.fecha || 0).getTime();
         if (prev._localEditedAt && prevFecha > cloudFecha) {
           // El local es más nuevo: conservar campos editables del local
           n.estado = prev.estado;
