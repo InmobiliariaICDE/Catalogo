@@ -176,68 +176,61 @@ function saveLeadToSheet(lead) {
   const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(h => String(h).trim());
   const normalizedHeaders = currentHeaders.map(h => normalizeHeader(h));
 
-  // Mapear campos a sus correspondientes columnas actuales en la hoja (con comparación normalizada)
-  const rowData = new Array(currentHeaders.length).fill('');
-
-  const setValByHeader = (headerName, val) => {
-    const idx = normalizedHeaders.indexOf(normalizeHeader(headerName));
-    if (idx !== -1) {
-      rowData[idx] = val;
-    }
-  };
-
-  setValByHeader('ID', lead.id);
-  setValByHeader('Fecha Actualización', new Date().toISOString());
-  setValByHeader('Nombre', lead.nombre);
-  setValByHeader('Celular', lead.celular);
-  setValByHeader('Tipo', lead.tipo);
-  setValByHeader('Inmobiliaria/Agente', (lead.nombreInmobiliaria || lead.nombreAgente || ''));
-  setValByHeader('Estado', lead.estado);
-  setValByHeader('Etiqueta', lead.etiqueta);
-  setValByHeader('Notas', lead.notes || lead.notas || '');
-  setValByHeader('Preferencias (Filtros)', filtrosTxt);
-  setValByHeader('Método Pago', (lead.metodoPago || []).join(', '));
-  setValByHeader('Presupuesto', lead.filtros && lead.filtros.maxPrice ? lead.filtros.maxPrice : '');
-  setValByHeader('Frecuencia', lead.frecuencia);
-  setValByHeader('Total Enviadas', (lead.propsEnviadas || []).length);
-  setValByHeader('Historial (Resumen)', historialTxt);
-  setValByHeader('Full_JSON', JSON.stringify(lead));
-
+  // ── Buscar fila existente ──────────────────────────────────
   const data = sheet.getDataRange().getValues();
   let rowIndex = -1;
   const cleanPhoneInput = String(lead.celular || '').replace(/\D/g, '');
   const targetId = String(lead.id || '').trim();
-  // Usar índices normalizados para la búsqueda de filas
   const idColIdx    = normalizedHeaders.indexOf(normalizeHeader('ID'));
   const phoneColIdx = normalizedHeaders.indexOf(normalizeHeader('Celular'));
 
   // 1. Buscar primero por ID exacto
   if (targetId && idColIdx !== -1) {
     for (let i = 1; i < data.length; i++) {
-      const rowId = String(data[i][idColIdx] || '').trim();
-      if (rowId === targetId) {
-        rowIndex = i + 1;
-        break;
-      }
+      if (String(data[i][idColIdx] || '').trim() === targetId) { rowIndex = i + 1; break; }
     }
   }
-
-  // 2. Si no coincide por ID, buscar por teléfono celular (usando índice dinámico)
+  // 2. Si no coincide por ID, buscar por teléfono celular
   if (rowIndex === -1 && cleanPhoneInput && phoneColIdx !== -1) {
     for (let i = 1; i < data.length; i++) {
-      const rowPhone = String(data[i][phoneColIdx] || '').replace(/\D/g, '');
-      if (rowPhone === cleanPhoneInput) {
-        rowIndex = i + 1;
-        break;
-      }
+      if (String(data[i][phoneColIdx] || '').replace(/\D/g, '') === cleanPhoneInput) { rowIndex = i + 1; break; }
     }
   }
 
+  // Mapa de: nombre de header normalizado → valor a escribir
+  const fieldMap = {
+    [normalizeHeader('ID')]:                     lead.id,
+    [normalizeHeader('Fecha Actualización')]:    new Date().toISOString(),
+    [normalizeHeader('Nombre')]:                 lead.nombre,
+    [normalizeHeader('Celular')]:                lead.celular,
+    [normalizeHeader('Tipo')]:                   lead.tipo,
+    [normalizeHeader('Inmobiliaria/Agente')]:    (lead.nombreInmobiliaria || lead.nombreAgente || ''),
+    [normalizeHeader('Estado')]:                 lead.estado,
+    [normalizeHeader('Etiqueta')]:               lead.etiqueta,
+    [normalizeHeader('Notas')]:                  (lead.notes || lead.notas || ''),
+    [normalizeHeader('Preferencias (Filtros)')]: filtrosTxt,
+    [normalizeHeader('Método Pago')]:            (lead.metodoPago || []).join(', '),
+    [normalizeHeader('Presupuesto')]:            (lead.filtros && lead.filtros.maxPrice) ? lead.filtros.maxPrice : '',
+    [normalizeHeader('Frecuencia')]:             (lead.frecuencia || ''),
+    [normalizeHeader('Total Enviadas')]:         (lead.propsEnviadas || []).length,
+    [normalizeHeader('Historial (Resumen)')]:    historialTxt,
+    [normalizeHeader('Full_JSON')]:              JSON.stringify(lead),
+  };
+
   if (rowIndex > 0) {
-    // Asegurarse de no recortar columnas si la fila es más larga que rowData
-    sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+    // ESCRIBIR CELDA POR CELDA para evitar corrimiento de columnas
+    normalizedHeaders.forEach((nh, colIdx) => {
+      if (nh in fieldMap) {
+        sheet.getRange(rowIndex, colIdx + 1).setValue(fieldMap[nh]);
+      }
+    });
   } else {
-    sheet.appendRow(rowData);
+    // Fila nueva: construir rowData completo y agregar
+    const newRow = new Array(currentHeaders.length).fill('');
+    normalizedHeaders.forEach((nh, colIdx) => {
+      if (nh in fieldMap) newRow[colIdx] = fieldMap[nh];
+    });
+    sheet.appendRow(newRow);
   }
 
   return createJsonResponse({ success: true });
