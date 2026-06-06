@@ -3767,12 +3767,29 @@ async function autoSyncLeads() {
       const prev = leads.find(p => String(p.id) === String(n.id));
       if (!Array.isArray(n.metodoPago)) n.metodoPago = [];
       if (prev) {
+        // Preservar metodoPago local si la nube lo tiene vacío
         if ((!n.metodoPago || n.metodoPago.length === 0) && (prev.metodoPago && prev.metodoPago.length)) {
           n.metodoPago = prev.metodoPago;
+        }
+        // Segunda defensa: si el registro local fue editado más recientemente que el de la nube,
+        // conservar los campos editables del local (estado, etiqueta, notas, nombre, celular)
+        // Esto protege en caso de que el pendingWriteUntil no fue suficiente (Apps Script lento)
+        const prevFecha = new Date(prev._localEditedAt || 0).getTime();
+        const cloudFecha = new Date(n.fecha || n['Fecha Actualización'] || 0).getTime();
+        if (prev._localEditedAt && prevFecha > cloudFecha) {
+          // El local es más nuevo: conservar campos editables del local
+          n.estado = prev.estado;
+          n.etiqueta = prev.etiqueta;
+          n.notas = prev.notas;
+          n.nombre = prev.nombre;
+          n.celular = prev.celular;
+          n.metodoPago = prev.metodoPago;
+          n._localEditedAt = prev._localEditedAt;
         }
       }
       return n;
     });
+
 
     // Detectar cambio real para evitar re-renders innecesarios (o detección de borrados)
     const cambio = leads.length !== newList.length || newList.some(n => {
@@ -5172,7 +5189,8 @@ function updLead(id,campo,val){
   const tid = String(id || '').trim();
   const l=leads.find(x=>String(x.id || '').trim()===tid); 
   if(!l) return; 
-  l[campo]=val; 
+  l[campo]=val;
+  l._localEditedAt = new Date().toISOString(); // marca de tiempo de edición local
   saveLeads(); 
   syncSheets(l);
   
@@ -5200,6 +5218,7 @@ function toggleLeadMetodo(id, m, el) {
   } else {
     l.metodoPago = l.metodoPago.filter(x => x !== m);
   }
+  l._localEditedAt = new Date().toISOString(); // marca de tiempo de edición local
   el.closest('.check-item').classList.toggle('active', el.checked);
   saveLeads();
   syncSheets(l);
