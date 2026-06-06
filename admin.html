@@ -3725,7 +3725,7 @@ async function initApp(){
   setInterval(checkCitasFeedback, 1000 * 60 * 5);
   const ind = document.getElementById('autoSyncIndicator');
   if (ind) ind.style.display = 'flex';
-  setInterval(autoSyncLeads, 15 * 1000);
+  setInterval(autoSyncLeads, 4 * 1000);
 }
 
 function cleanupLocalData() {
@@ -3830,8 +3830,14 @@ async function autoSyncLeads() {
       const nMetodo = (n.metodoPago || []).join(',');
       if (prevMetodo !== nMetodo) return true;
 
+      const prevMaxPrice = prev.filtros?.maxPrice || 0;
+      const nMaxPrice = n.filtros?.maxPrice || 0;
+
       return prev.estado !== n.estado || prev.etiqueta !== n.etiqueta ||
              prev.nombre !== n.nombre || prev.celular !== n.celular ||
+             prev.notas !== n.notas || prev.frecuencia !== n.frecuencia ||
+             prevMaxPrice !== nMaxPrice ||
+             (prev.propsEnviadas||[]).length !== (n.propsEnviadas||[]).length ||
              (prev.visitas||[]).length !== (n.visitas||[]).length ||
              (prev.historialEnvios||[]).length !== (n.historialEnvios||[]).length;
     }) || leads.some(p => !newList.some(n => String(n.id) === String(p.id))); // Detección de leads eliminados
@@ -3844,7 +3850,12 @@ async function autoSyncLeads() {
       const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
       if (!isTyping) {
         if (currentTab === 'citas') renderCitas();
-        if (currentTab === 'leads') renderLeadsBody(leads);
+        if (currentTab === 'leads') {
+          let lista = leads;
+          if(currentLeadFilter==='inmobiliaria') lista=leads.filter(l=>l.tipo==='inmobiliaria');
+          else if(currentLeadFilter!=='todos')   lista=leads.filter(l=>l.etiqueta===currentLeadFilter);
+          renderLeadsBody(lista);
+        }
         if (currentLeadId) {
           const l = leads.find(x => String(x.id) === String(currentLeadId));
           if (l) renderSidePanel(l); else closeSidePanel();
