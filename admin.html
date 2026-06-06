@@ -452,6 +452,19 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 .leads-table td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;}
 .leads-table tr:hover td{background:rgba(255,255,255,.02);}
 .leads-table tr.clickable{cursor:pointer;}
+.active-lead-row td {
+  background: rgba(212, 168, 75, 0.08) !important;
+  border-top: 1px solid rgba(212, 168, 75, 0.3) !important;
+  border-bottom: 1px solid rgba(212, 168, 75, 0.3) !important;
+}
+.active-lead-row td:first-child {
+  border-left: 4px solid var(--gold) !important;
+}
+.active-lead-card {
+  border: 1px solid var(--gold) !important;
+  box-shadow: 0 0 15px rgba(212, 168, 75, 0.15) !important;
+  background: rgba(212, 168, 75, 0.04) !important;
+}
 /* MAP MARKERS & CONTROLS */
 .z-marker-wrap { pointer-events: none; }
 .z-marker {
@@ -4971,7 +4984,8 @@ function renderLeadsBody(lista){
             const currentMatches = filtrarProps(l.filtros);
             const pend = currentMatches.filter(d => !(l.propsEnviadas || []).includes(d['Código'])).length;
             const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
-            return `<tr class="clickable" onclick="abrirLead('${String(l.id).trim()}', '${String(l.celular).trim()}')">
+            const isSelected = String(l.id).trim() === String(currentLeadId).trim() && document.getElementById('leadPanel')?.classList.contains('open');
+            return `<tr class="clickable ${isSelected ? 'active-lead-row' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead(\'${String(l.id).trim()}\', \'${String(l.celular).trim()}\')">
               <td style="padding-left: 20px;"><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">📱 ${l.celular}</div></td>
               <td>${l.tipo==='inmobiliaria'?'<span class="badge badge-inmobiliaria">🏢</span>':'<span style="opacity:0.5;">👤</span>'}</td>
               <td onclick="event.stopPropagation()">
@@ -5020,7 +5034,9 @@ function renderLeadsBody(lista){
         const pend = currentMatches.filter(d => !(l.propsEnviadas || []).includes(d['Código'])).length;
         const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
         return `
-        <div class="lead-card" onclick="abrirLead('${String(l.id).trim()}', '${String(l.celular).trim()}')">
+        const isSelected = String(l.id).trim() === String(currentLeadId).trim() && document.getElementById('leadPanel')?.classList.contains('open');
+        return `
+        <div class="lead-card ${isSelected ? 'active-lead-card' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead(\'${String(l.id).trim()}\', \'${String(l.celular).trim()}\')">
           <div class="lc-header">
             <div>
               <div class="lc-name">${l.nombre}</div>
@@ -5078,6 +5094,14 @@ function abrirLead(id, celular){
   }
   document.getElementById('leadPanel').classList.add('open'); 
   renderSidePanel(l); 
+  document.querySelectorAll('.leads-table tbody tr, .lead-card').forEach(row => {
+    const rowId = row.getAttribute('data-lead-id');
+    if (rowId === id) {
+      row.classList.add(row.tagName === 'TR' ? 'active-lead-row' : 'active-lead-card');
+    } else {
+      row.classList.remove('active-lead-row', 'active-lead-card');
+    }
+  });
 }
 function closePanelIfOuter(e){ if(e.target===document.getElementById('leadPanel')) closeSidePanel(); }
 function closeSidePanel(){ 
@@ -5086,6 +5110,9 @@ function closeSidePanel(){
     clearInterval(window.chatInterval);
     window.chatInterval = null;
   }
+  document.querySelectorAll('.active-lead-row, .active-lead-card').forEach(el => {
+    el.classList.remove('active-lead-row', 'active-lead-card');
+  });
 }
 
 function renderSidePanel(lead){
@@ -8097,6 +8124,8 @@ let adminData = { properties: [], silvia_ledger: {} };
 let currentAdminSubTab = 'matriz';
 let currentAdminYear = '2026';
 let currentAdminMonth = 'MAYO';
+let currentAdminFilter = 'todos'; // 'todos', 'ocupados', 'disponibles'
+let currentAdminSort = 'nombre'; // 'nombre', 'precio', 'disponibles', 'ocupados'
 let waBridgeConnected = false;
 
 // Formateador seguro de moneda
@@ -8200,6 +8229,19 @@ function changeAdminMonth(month) {
   renderAdministracion();
 }
 
+function setAdminFilter(filterVal) {
+  currentAdminFilter = filterVal;
+  document.querySelectorAll('#adminFiltersContainer .chip-filtro').forEach(btn => {
+    btn.classList.toggle('sel', btn.getAttribute('data-filter') === filterVal);
+  });
+  renderAdministracionContent();
+}
+
+function setAdminSort(sortVal) {
+  currentAdminSort = sortVal;
+  renderAdministracionContent();
+}
+
 function renderAdministracion() {
   const c = document.getElementById('mainContent');
   if (!c) return;
@@ -8249,7 +8291,7 @@ function renderAdministracion() {
 
     <!-- PANEL DE CONTROLES DE ADMINISTRACIÓN -->
     <div class="panel-section" style="padding: 10px 0; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); margin-bottom: 16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap: nowrap; width: 100%; padding: 0 20px; box-sizing: border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap: wrap; row-gap: 10px; width: 100%; padding: 0 20px; box-sizing: border-box;">
         <!-- BUSCADOR (IZQUIERDA) -->
         <div class="pc-buscar-row-premium" style="max-width: 320px; margin-bottom: 0; flex-shrink: 1; min-width: 140px;">
           <span style="padding:0 8px 0 12px; color: var(--gold); display: flex; align-items: center; flex-shrink: 0;">
@@ -8258,8 +8300,26 @@ function renderAdministracion() {
           <input type="text" id="adminPropertySearch" placeholder="Buscar inmueble, dueño o inquilino..." oninput="renderAdministracionContent()" style="font-size:13px; background: transparent; color: #fff; border: none; outline: none; width: 100%; min-width: 0;"/>
         </div>
 
+        <!-- FILTROS DE ESTADO (CENTRO) -->
+        <div id="adminFiltersContainer" style="display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap;">
+          <button class="chip-filtro ${currentAdminFilter==='todos'?'sel':''}" data-filter="todos" onclick="setAdminFilter('todos')">Todos</button>
+          <button class="chip-filtro ${currentAdminFilter==='ocupados'?'sel':''}" data-filter="ocupados" onclick="setAdminFilter('ocupados')">🟢 Ocupados</button>
+          <button class="chip-filtro ${currentAdminFilter==='disponibles'?'sel':''}" data-filter="disponibles" onclick="setAdminFilter('disponibles')">🟡 Disponibles</button>
+        </div>
+
+        <!-- ORDENACIÓN (DERECHA-CENTRO) -->
+        <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+          <span style="font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing:0.05em; flex-shrink: 0;">ORDENAR:</span>
+          <select id="adminSortSelect" class="form-input" style="width: 130px; height: 38px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; cursor:pointer; flex-shrink: 0;" onchange="setAdminSort(this.value)">
+            <option value="nombre" ${currentAdminSort === 'nombre' ? 'selected' : ''}>Nombre</option>
+            <option value="precio" ${currentAdminSort === 'precio' ? 'selected' : ''}>Precio</option>
+            <option value="disponibles" ${currentAdminSort === 'disponibles' ? 'selected' : ''}>Disponibles</option>
+            <option value="ocupados" ${currentAdminSort === 'ocupados' ? 'selected' : ''}>Ocupados</option>
+          </select>
+        </div>
+
         <!-- ACCIONES Y FILTROS (DERECHA) -->
-        <div style="display: flex; gap: 10px; align-items: center; flex-shrink: 0; flex-wrap: nowrap; min-width: 0;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-shrink: 0; flex-wrap: wrap; min-width: 0; row-gap: 8px;">
           <span style="font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing:0.05em; flex-shrink: 0;">AÑO:</span>
           <select id="adminYearSelect" class="form-input" style="width: 80px; height: 38px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; cursor:pointer; flex-shrink: 0;" onchange="changeAdminYear(this.value)">
             <option value="2023" ${currentAdminYear === '2023' ? 'selected' : ''}>2023</option>
@@ -8300,10 +8360,44 @@ function renderAdministracionContent() {
   const kpisContainer = document.getElementById('adminKpisContainer');
   if (!tabContent || !kpisContainer) return;
 
+  const isOccupied = (p) => {
+    const paymentsYear = p.payments[currentAdminYear] || [];
+    const payMonth = paymentsYear.find(m => m.month === currentAdminMonth);
+    if (!payMonth) return false;
+    const st = payMonth.status;
+    return st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT';
+  };
+
   const filteredProperties = adminData.properties.filter(p => {
-    return p.name.toLowerCase().includes(searchVal) ||
-           (p.owner && p.owner.toLowerCase().includes(searchVal)) ||
-           (p.increase_notes && p.increase_notes.toLowerCase().includes(searchVal));
+    const matchesSearch = p.name.toLowerCase().includes(searchVal) ||
+                          (p.owner && p.owner.toLowerCase().includes(searchVal)) ||
+                          (p.increase_notes && p.increase_notes.toLowerCase().includes(searchVal));
+    if (!matchesSearch) return false;
+
+    const occupied = isOccupied(p);
+    if (currentAdminFilter === 'ocupados') return occupied;
+    if (currentAdminFilter === 'disponibles') return !occupied;
+    return true; // 'todos'
+  });
+
+  filteredProperties.sort((a, b) => {
+    if (currentAdminSort === 'precio') {
+      return (parseFloat(b.monthly_rent) || 0) - (parseFloat(a.monthly_rent) || 0);
+    }
+    if (currentAdminSort === 'disponibles') {
+      const aOcc = isOccupied(a) ? 1 : 0;
+      const bOcc = isOccupied(b) ? 1 : 0;
+      if (aOcc !== bOcc) return aOcc - bOcc; // 0 (disponible) antes de 1 (ocupado)
+      return a.name.localeCompare(b.name);
+    }
+    if (currentAdminSort === 'ocupados') {
+      const aOcc = isOccupied(a) ? 1 : 0;
+      const bOcc = isOccupied(b) ? 1 : 0;
+      if (aOcc !== bOcc) return bOcc - aOcc; // 1 (ocupado) antes de 0 (disponible)
+      return a.name.localeCompare(b.name);
+    }
+    // Default: nombre
+    return a.name.localeCompare(b.name);
   });
 
   // KPIs de arrendamiento
