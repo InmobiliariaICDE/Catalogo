@@ -195,11 +195,13 @@ function saveLeadToSheet(lead) {
   let rowIndex = -1;
   const cleanPhoneInput = String(lead.celular || '').replace(/\D/g, '');
   const targetId = String(lead.id || '').trim();
+  const idColIdx = currentHeaders.indexOf('ID');
+  const phoneColIdx = currentHeaders.indexOf('Celular');
 
   // 1. Buscar primero por ID exacto
-  if (targetId) {
+  if (targetId && idColIdx !== -1) {
     for (let i = 1; i < data.length; i++) {
-      const rowId = String(data[i][0] || '').trim();
+      const rowId = String(data[i][idColIdx] || '').trim();
       if (rowId === targetId) {
         rowIndex = i + 1;
         break;
@@ -207,10 +209,10 @@ function saveLeadToSheet(lead) {
     }
   }
 
-  // 2. Si no coincide por ID, buscar por teléfono celular
-  if (rowIndex === -1 && cleanPhoneInput) {
+  // 2. Si no coincide por ID, buscar por teléfono celular (usando índice dinámico)
+  if (rowIndex === -1 && cleanPhoneInput && phoneColIdx !== -1) {
     for (let i = 1; i < data.length; i++) {
-      const rowPhone = String(data[i][3] || '').replace(/\D/g, '');
+      const rowPhone = String(data[i][phoneColIdx] || '').replace(/\D/g, '');
       if (rowPhone === cleanPhoneInput) {
         rowIndex = i + 1;
         break;
@@ -246,10 +248,15 @@ function deleteLeadFromSheet(id, phone) {
     return createJsonResponse({ error: 'ID o teléfono requerido' });
   }
 
+  // Determinar índices de columnas dinámicamente desde la fila de cabecera
+  const headerRow = data[0].map(h => String(h).trim());
+  const idColIdx  = headerRow.indexOf('ID');
+  const celColIdx = headerRow.indexOf('Celular');
+
   let deletedCount = 0;
   for (let i = data.length - 1; i >= 1; i--) {
-    const rowId = String(data[i][0] || '').trim();
-    const rowPhone = String(data[i][3] || '').replace(/\D/g, '');
+    const rowId    = idColIdx  !== -1 ? String(data[i][idColIdx]  || '').trim()            : '';
+    const rowPhone = celColIdx !== -1 ? String(data[i][celColIdx] || '').replace(/\D/g, '') : '';
     
     let match = false;
     if (targetId && rowId === targetId) {
