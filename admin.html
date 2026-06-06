@@ -3775,7 +3775,7 @@ async function autoSyncLeads() {
   if (dot) { dot.style.background = '#d4a84b'; dot.style.boxShadow = '0 0 6px #d4a84b'; }
   if (txt) txt.textContent = 'Sincronizando...';
   try {
-    const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
+    const res = await fetch(CRM_SCRIPT_URL + '?action=getData&t=' + Date.now());
     const data = await res.json();
     if (!Array.isArray(data)) throw new Error('Respuesta inválida');
 
@@ -3866,7 +3866,7 @@ async function autoSyncLeads() {
 async function cargarLeads(){
   if(!CRM_SCRIPT_URL) return;
   try {
-    const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
+    const res = await fetch(CRM_SCRIPT_URL + '?action=getData&t=' + Date.now());
     const data = await res.json();
     if(Array.isArray(data)){
       // 100% Drive. Sin filtros locales.
@@ -3881,25 +3881,69 @@ async function cargarLeads(){
 function normalizarIdsLeads(data) {
   const seen = new Map(); // phone -> lead (deduplicar en memoria)
   return data.map(l => {
-    let id = String(l.id || '').trim();
-    if(!id || id === 'undefined' || id === 'null') {
-      const s = String(l.nombre||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'')
-              + String(l.celular||'').replace(/[^\d]/g,'');
+    let lead = {};
+    const rawJson = l.Full_JSON || l.full_json || l.FullJSON;
+    if (rawJson && typeof rawJson === 'string' && rawJson.trim().startsWith('{')) {
+      try { lead = JSON.parse(rawJson); } catch (e) { console.error("Error al parsear Full_JSON:", e); }
+    } else {
+      lead = { ...l };
+    }
+
+    const cleanStr = val => (val === undefined || val === null) ? '' : String(val).trim();
+    
+    const idVal = cleanStr(l.ID || l.id);
+    if (idVal) lead.id = idVal;
+    
+    const nombreVal = cleanStr(l.Nombre || l.nombre);
+    if (nombreVal) lead.nombre = nombreVal;
+    
+    let celularVal = cleanStr(l.Celular || l.celular);
+    if (celularVal.startsWith('=')) {
+      celularVal = celularVal.substring(1).replace(/['\"]/g, '').trim();
+    }
+    if (celularVal) lead.celular = celularVal;
+    
+    const tipoVal = cleanStr(l.Tipo || l.tipo);
+    if (tipoVal) lead.tipo = tipoVal.toLowerCase();
+    
+    const estadoVal = cleanStr(l.Estado || l.estado);
+    if (estadoVal) lead.estado = estadoVal.toLowerCase();
+    
+    const etiquetaVal = cleanStr(l.Etiqueta || l.etiqueta);
+    if (etiquetaVal) lead.etiqueta = etiquetaVal.toLowerCase();
+    
+    const notasVal = cleanStr(l.Notas || l.notas);
+    if (notasVal) lead.notas = notasVal;
+    
+    const frecVal = cleanStr(l.Frecuencia || l.frecuencia);
+    if (frecVal) lead.frecuencia = frecVal.toLowerCase();
+    
+    const mpVal = l['Método Pago'] || l.metodoPago;
+    if (mpVal) {
+      if (typeof mpVal === 'string') {
+        lead.metodoPago = mpVal.split(',').map(s => s.trim()).filter(s => s);
+      } else if (Array.isArray(mpVal)) {
+        lead.metodoPago = mpVal;
+      }
+    }
+    if (!Array.isArray(lead.metodoPago)) lead.metodoPago = [];
+    
+    const presVal = l.Presupuesto || (l.filtros && l.filtros.maxPrice);
+    if (presVal !== undefined && presVal !== null && presVal !== '') {
+      if (!lead.filtros) lead.filtros = {};
+      const cleanNum = String(presVal).replace(/[^\d]/g, '');
+      lead.filtros.maxPrice = cleanNum ? parseInt(cleanNum, 10) : 0;
+    }
+
+    if(!lead.id || lead.id === 'undefined' || lead.id === 'null') {
+      const s = String(lead.nombre||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'')
+              + String(lead.celular||'').replace(/[^\d]/g,'');
       let h = 0;
       for(let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
-      id = 'C-' + Math.abs(h).toString(16);
+      lead.id = 'C-' + Math.abs(h).toString(16);
     }
-    let metodoPago = l.metodoPago;
-    if (typeof metodoPago === 'string') {
-      metodoPago = metodoPago.split(',').map(s => s.trim()).filter(s => s);
-    } else if (l['Método Pago'] && typeof l['Método Pago'] === 'string') {
-      metodoPago = l['Método Pago'].split(',').map(s => s.trim()).filter(s => s);
-    } else if (l['Método Pago'] && Array.isArray(l['Método Pago'])) {
-      metodoPago = l['Método Pago'];
-    } else if (!Array.isArray(metodoPago)) {
-      metodoPago = [];
-    }
-    return { ...l, id, metodoPago };
+
+    return lead;
   }).filter(l => {
     if(!l.id) return false;
     const phone = String(l.celular||'').replace(/\D/g,'');
