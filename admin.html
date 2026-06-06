@@ -4913,20 +4913,24 @@ function renderLeadsBody(lista){
               <td>${l.tipo==='inmobiliaria'?'<span class="badge badge-inmobiliaria">🏢</span>':'<span style="opacity:0.5;">👤</span>'}</td>
               <td onclick="event.stopPropagation()">
                 <select class="estado-badge estado-${l.estado}" style="border:none;outline:none;cursor:pointer;max-width:120px;"
-                  onchange="updLead('${String(l.id).trim()}','estado',this.value)">
-                  <option value="enviando" ${l.estado==='enviando'?'selected':''}>🟠 Enviando</option>
-                  <option value="visita"   ${l.estado==='visita'?'selected':''}>🟢 Pdte. visita</option>
-                  <option value="proceso"  ${l.estado==='proceso'?'selected':''}>🔵 Proceso venta</option>
-                  <option value="banco"    ${l.estado==='banco'?'selected':''}>🟣 Banco</option>
-                  <option value="inactivo" ${l.estado==='inactivo'?'selected':''}>⚫ Inactivo</option>
+                  onfocus="Array.from(this.options).forEach(o=>o.text=o.getAttribute('data-emoji')+' '+o.getAttribute('data-short'))"
+                  onblur="Array.from(this.options).forEach(o=>o.text=o.getAttribute('data-short'))"
+                  onchange="updLead('${String(l.id).trim()}','estado',this.value); this.blur();">
+                  <option value="enviando" data-emoji="🟠" data-short="Enviando" ${l.estado==='enviando'?'selected':''}>Enviando</option>
+                  <option value="visita"   data-emoji="🟢" data-short="Pdte. visita" ${l.estado==='visita'?'selected':''}>Pdte. visita</option>
+                  <option value="proceso"  data-emoji="🔵" data-short="Proceso venta" ${l.estado==='proceso'?'selected':''}>Proceso venta</option>
+                  <option value="banco"    data-emoji="🟣" data-short="Banco" ${l.estado==='banco'?'selected':''}>Banco</option>
+                  <option value="inactivo" data-emoji="⚫" data-short="Inactivo" ${l.estado==='inactivo'?'selected':''}>Inactivo</option>
                 </select>
               </td>
               <td onclick="event.stopPropagation()">
                 <select class="badge badge-${l.etiqueta}" style="border:none;outline:none;cursor:pointer;"
-                  onchange="updLead('${String(l.id).trim()}','etiqueta',this.value)">
-                  <option value="activo"   ${l.etiqueta==='activo'?'selected':''}>🟢 ACTIVO</option>
-                  <option value="tibio"    ${l.etiqueta==='tibio'?'selected':''}>🟡 TIBIO</option>
-                  <option value="inactivo" ${l.etiqueta==='inactivo'?'selected':''}>⚫ INACTIVO</option>
+                  onfocus="Array.from(this.options).forEach(o=>o.text=o.getAttribute('data-emoji')+' '+o.getAttribute('data-short'))"
+                  onblur="Array.from(this.options).forEach(o=>o.text=o.getAttribute('data-short'))"
+                  onchange="updLead('${String(l.id).trim()}','etiqueta',this.value); this.blur();">
+                  <option value="activo"   data-emoji="🟢" data-short="ACTIVO" ${l.etiqueta==='activo'?'selected':''}>ACTIVO</option>
+                  <option value="tibio"    data-emoji="🟡" data-short="TIBIO" ${l.etiqueta==='tibio'?'selected':''}>TIBIO</option>
+                  <option value="inactivo" data-emoji="⚫" data-short="INACTIVO" ${l.etiqueta==='inactivo'?'selected':''}>INACTIVO</option>
                 </select>
               </td>
               <td><div style="font-weight:700; color:var(--gold);">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div><div style="font-size:10px;color:#888;margin-top:2px;">${(l.metodoPago || []).join(', ') || '—'}</div></td>
