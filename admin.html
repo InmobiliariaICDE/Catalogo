@@ -2465,6 +2465,7 @@ localStorage.removeItem('icde_deleted_phones');
 localStorage.removeItem('icde_leads');
 let allProps = [];
 let leads = []; // Fuente de verdad: solo la nube. Se carga en cargarLeads() al inicio.
+let pendingWriteUntil = 0; // Timestamp hasta el que el autoSync no debe sobreescribir datos locales
 async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
   try {
     let leadsUnicos = [];
@@ -3734,6 +3735,11 @@ function mergeVisitas(localArr, cloudArr) {
 
 async function autoSyncLeads() {
   if (!CRM_SCRIPT_URL) return;
+  // Si hay una escritura pendiente reciente, no descargar de Drive todavía (evita revertir cambios locales)
+  if (Date.now() < pendingWriteUntil) {
+    console.log('[AutoSync] Pausado — escritura pendiente en Drive, esperando...');
+    return;
+  }
   const dot = document.getElementById('autoSyncDot');
   const txt = document.getElementById('autoSyncTxt');
   if (dot) { dot.style.background = '#d4a84b'; dot.style.boxShadow = '0 0 6px #d4a84b'; }
@@ -5985,7 +5991,9 @@ function toast(msg,type='success'){
 }
 
 async function syncSheets(lead){ 
-  if(!CRM_SCRIPT_URL) return; 
+  if(!CRM_SCRIPT_URL) return;
+  // Bloquear autoSync por 12 segundos para que Drive procese antes de que autoSync descargue datos viejos
+  pendingWriteUntil = Date.now() + 12000;
   try { 
     await fetch(CRM_SCRIPT_URL,{
       method:'POST',
