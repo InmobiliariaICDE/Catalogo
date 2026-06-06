@@ -4984,7 +4984,7 @@ function renderLeadsBody(lista){
             const currentMatches = filtrarProps(l.filtros);
             const pend = currentMatches.filter(d => !(l.propsEnviadas || []).includes(d['Código'])).length;
             const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
-            const isSelected = String(l.id).trim() === String(currentLeadId).trim() && document.getElementById('leadPanel')?.classList.contains('open');
+            const isSelected = String(l.id).trim() === String(currentLeadId).trim();
             return `<tr class="clickable ${isSelected ? 'active-lead-row' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead(\'${String(l.id).trim()}\', \'${String(l.celular).trim()}\')">
               <td style="padding-left: 20px;"><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">📱 ${l.celular}</div></td>
               <td>${l.tipo==='inmobiliaria'?'<span class="badge badge-inmobiliaria">🏢</span>':'<span style="opacity:0.5;">👤</span>'}</td>
@@ -5033,7 +5033,7 @@ function renderLeadsBody(lista){
         const currentMatches = filtrarProps(l.filtros);
         const pend = currentMatches.filter(d => !(l.propsEnviadas || []).includes(d['Código'])).length;
         const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
-        const isSelected = String(l.id).trim() === String(currentLeadId).trim() && document.getElementById('leadPanel')?.classList.contains('open');
+        const isSelected = String(l.id).trim() === String(currentLeadId).trim();
         return `
         <div class="lead-card ${isSelected ? 'active-lead-card' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead(\'${String(l.id).trim()}\', \'${String(l.celular).trim()}\')">
           <div class="lc-header">
@@ -5109,9 +5109,6 @@ function closeSidePanel(){
     clearInterval(window.chatInterval);
     window.chatInterval = null;
   }
-  document.querySelectorAll('.active-lead-row, .active-lead-card').forEach(el => {
-    el.classList.remove('active-lead-row', 'active-lead-card');
-  });
 }
 
 function renderSidePanel(lead){
