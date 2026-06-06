@@ -3939,6 +3939,9 @@ function normalizarIdsLeads(data) {
     }
     if (!Array.isArray(lead.metodoPago)) lead.metodoPago = [];
     
+    const fechaActVal = cleanStr(l['Fecha Actualización'] || l.fechaActualizacion || l.fecha_actualizacion || l.fechaActualizacion);
+    if (fechaActVal) lead['Fecha Actualización'] = fechaActVal;
+
     const presVal = l.Presupuesto || (l.filtros && l.filtros.maxPrice);
     if (presVal !== undefined && presVal !== null && presVal !== '') {
       if (!lead.filtros) lead.filtros = {};
