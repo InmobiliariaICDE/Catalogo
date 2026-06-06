@@ -71,7 +71,7 @@ function getLeads() {
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return createJsonResponse([]);
 
-  const headers = data[0];
+  const headers = data[0].map(h => String(h).trim());
   const jsonIdx = headers.indexOf('Full_JSON');
   const idIdx = headers.indexOf('ID');
   const nombreIdx = headers.indexOf('Nombre');
@@ -162,7 +162,7 @@ function saveLeadToSheet(lead) {
     .map(h => h.fecha + ' (' + (h.codigos || []).length + ')').join(' | ');
 
   // Buscar los índices dinámicamente según la cabecera actual de la hoja
-  const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
+  const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(h => String(h).trim());
   
   // Mapear campos a sus correspondientes columnas actuales en la hoja
   const rowData = new Array(currentHeaders.length).fill('');
@@ -284,7 +284,7 @@ function repairFullJSON() {
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return createJsonResponse({ repaired: 0 });
 
-  const headers = data[0];
+  const headers = data[0].map(h => String(h).trim());
   const idIdx       = headers.indexOf('ID');
   const fechaIdx    = headers.indexOf('Fecha Actualización');
   const nombreIdx   = headers.indexOf('Nombre');
