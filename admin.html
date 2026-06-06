@@ -310,7 +310,7 @@ select.estado-visita  { background-color:rgba(34,197,94,.15);   color:#22c55e; }
 select.estado-banco   { background-color:rgba(168,85,247,.15);  color:#a855f7; }
 select.estado-inactivo{ background-color:rgba(100,100,100,.2);  color:#888; }
 /* Opciones del dropdown */
-select.estado-badge option, select.badge option { background:#1a1a2e; color:#fff; }
+select.estado-badge option, select.badge option { background:#18181b; color:#fff; }
 
 
 /* ═══════════════════════════════════════════════════════
@@ -4331,19 +4331,19 @@ function renderNuevo(){
             <div class="form-group">
               <label class="form-label">Estado Inicial</label>
               <select class="form-input" onchange="nuevoLead.estado=this.value">
-                <option value="enviando" ${nuevoLead.estado==='enviando'?'selected':''}>Enviando propuestas</option>
-                <option value="proceso"  ${nuevoLead.estado==='proceso'?'selected':''}>Proceso de venta</option>
-                <option value="visita"   ${nuevoLead.estado==='visita'?'selected':''}>Pendiente visita</option>
-                <option value="banco"    ${nuevoLead.estado==='banco'?'selected':''}>Referido al banco</option>
-                <option value="inactivo" ${nuevoLead.estado==='inactivo'?'selected':''}>Inactivo</option>
+                <option value="enviando" ${nuevoLead.estado==='enviando'?'selected':''}>🟠 Enviando propuestas</option>
+                <option value="proceso"  ${nuevoLead.estado==='proceso'?'selected':''}>🔵 Proceso de venta</option>
+                <option value="visita"   ${nuevoLead.estado==='visita'?'selected':''}>🟢 Pendiente visita</option>
+                <option value="banco"    ${nuevoLead.estado==='banco'?'selected':''}>🟣 Referido al banco</option>
+                <option value="inactivo" ${nuevoLead.estado==='inactivo'?'selected':''}>⚫ Inactivo</option>
               </select>
             </div>
             <div class="form-group">
               <label class="form-label">Prioridad / Etiqueta</label>
               <select class="form-input" onchange="nuevoLead.etiqueta=this.value">
-                <option value="activo"   ${nuevoLead.etiqueta==='activo'?'selected':''}>Activo (Interesado)</option>
-                <option value="tibio"    ${nuevoLead.etiqueta==='tibio'?'selected':''}>Tibio (Explorando)</option>
-                <option value="inactivo" ${nuevoLead.etiqueta==='inactivo'?'selected':''}>Inactivo (No responde)</option>
+                <option value="activo"   ${nuevoLead.etiqueta==='activo'?'selected':''}>🟢 Activo (Interesado)</option>
+                <option value="tibio"    ${nuevoLead.etiqueta==='tibio'?'selected':''}>🟡 Tibio (Explorando)</option>
+                <option value="inactivo" ${nuevoLead.etiqueta==='inactivo'?'selected':''}>⚫ Inactivo (No responde)</option>
               </select>
             </div>
           </div>
@@ -4914,19 +4914,19 @@ function renderLeadsBody(lista){
               <td onclick="event.stopPropagation()">
                 <select class="estado-badge estado-${l.estado}" style="border:none;outline:none;cursor:pointer;max-width:120px;"
                   onchange="updLead('${String(l.id).trim()}','estado',this.value)">
-                  <option value="enviando" ${l.estado==='enviando'?'selected':''}>Enviando</option>
-                  <option value="visita"   ${l.estado==='visita'?'selected':''}>Pdte. visita</option>
-                  <option value="proceso"  ${l.estado==='proceso'?'selected':''}>Proceso venta</option>
-                  <option value="banco"    ${l.estado==='banco'?'selected':''}>Banco</option>
-                  <option value="inactivo" ${l.estado==='inactivo'?'selected':''}>Inactivo</option>
+                  <option value="enviando" ${l.estado==='enviando'?'selected':''}>🟠 Enviando</option>
+                  <option value="visita"   ${l.estado==='visita'?'selected':''}>🟢 Pdte. visita</option>
+                  <option value="proceso"  ${l.estado==='proceso'?'selected':''}>🔵 Proceso venta</option>
+                  <option value="banco"    ${l.estado==='banco'?'selected':''}>🟣 Banco</option>
+                  <option value="inactivo" ${l.estado==='inactivo'?'selected':''}>⚫ Inactivo</option>
                 </select>
               </td>
               <td onclick="event.stopPropagation()">
                 <select class="badge badge-${l.etiqueta}" style="border:none;outline:none;cursor:pointer;"
                   onchange="updLead('${String(l.id).trim()}','etiqueta',this.value)">
-                  <option value="activo"   ${l.etiqueta==='activo'?'selected':''}>ACTIVO</option>
-                  <option value="tibio"    ${l.etiqueta==='tibio'?'selected':''}>TIBIO</option>
-                  <option value="inactivo" ${l.etiqueta==='inactivo'?'selected':''}>INACTIVO</option>
+                  <option value="activo"   ${l.etiqueta==='activo'?'selected':''}>🟢 ACTIVO</option>
+                  <option value="tibio"    ${l.etiqueta==='tibio'?'selected':''}>🟡 TIBIO</option>
+                  <option value="inactivo" ${l.etiqueta==='inactivo'?'selected':''}>⚫ INACTIVO</option>
                 </select>
               </td>
               <td><div style="font-weight:700; color:var(--gold);">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div><div style="font-size:10px;color:#888;margin-top:2px;">${(l.metodoPago || []).join(', ') || '—'}</div></td>
@@ -5094,11 +5094,11 @@ function renderSidePanel(lead){
       <div class="form-grid" style="margin-top:20px; padding-top:20px; border-top:1px solid var(--glass-border);">
         <div class="form-group"><label class="form-label">Estado</label>
           <select class="form-input" onchange="updLead('${lead.id}','estado',this.value)">
-            <option value="enviando" ${lead.estado==='enviando'?'selected':''}>Enviando propuestas</option>
-            <option value="proceso"  ${lead.estado==='proceso'?'selected':''}>Proceso de venta</option>
-            <option value="visita"   ${lead.estado==='visita'?'selected':''}>Pendiente visita</option>
-            <option value="banco"    ${lead.estado==='banco'?'selected':''}>Referido al banco</option>
-            <option value="inactivo" ${lead.estado==='inactivo'?'selected':''}>Inactivo</option>
+            <option value="enviando" ${lead.estado==='enviando'?'selected':''}>🟠 Enviando propuestas</option>
+            <option value="proceso"  ${lead.estado==='proceso'?'selected':''}>🔵 Proceso de venta</option>
+            <option value="visita"   ${lead.estado==='visita'?'selected':''}>🟢 Pendiente visita</option>
+            <option value="banco"    ${lead.estado==='banco'?'selected':''}>🟣 Referido al banco</option>
+            <option value="inactivo" ${lead.estado==='inactivo'?'selected':''}>⚫ Inactivo</option>
           </select>
         </div>
         <div class="form-group"><label class="form-label">Prioridad</label>
