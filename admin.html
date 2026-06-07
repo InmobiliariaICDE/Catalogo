@@ -8135,7 +8135,7 @@ let currentAdminYear = '2026';
 let currentAdminMonth = 'MAYO';
 let currentAdminFilter = 'todos'; // 'todos', 'ocupados', 'disponibles'
 let currentAdminSort = 'nombre'; // 'nombre', 'precio', 'disponibles', 'ocupados'
-let currentAdminPropId = null;
+let currentAdminPropName = null;
 let currentCitaId = null;
 let waBridgeConnected = false;
 
@@ -8621,9 +8621,9 @@ function renderMatrizPagos(propertiesList) {
           ${propertiesList.map(p => {
             const paymentsYear = p.payments[currentAdminYear] || [];
             
-            const isSelected = String(p.id).trim() === String(currentAdminPropId).trim();
+            const isSelected = String(p.name).trim() === String(currentAdminPropName).trim();
             return `
-              <tr class="${isSelected ? 'active-admin-row' : ''}" data-prop-id="${String(p.id).trim()}" onclick="abrirEditarInmueble('${p.id}', 'cobro')">
+              <tr class="${isSelected ? 'active-admin-row' : ''}" data-prop-name="${String(p.name).trim()}" onclick="abrirEditarInmueble('${p.id}', 'cobro')">
                 <td class="cell-prop" title="${p.name} (${p.owner})">
                   <div style="font-weight:700; color:#fff; font-size:13px;">${p.name}</div>
                   <div style="font-size:10px; color:var(--muted); font-weight:500;">${p.owner}</div>
@@ -9208,20 +9208,21 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
 }
 
 function openMatrixCellDetails(propId, monthName, year) {
-  propId = String(propId || '').trim();
-  currentAdminPropId = propId;
+  const p = adminData.properties.find(x => x.id === propId);
+  if (!p) return;
+
+  const pName = String(p.name || '').trim();
+  currentAdminPropName = pName;
 
   document.querySelectorAll('.matrix-table tbody tr').forEach(row => {
-    const rowId = row.getAttribute('data-prop-id');
-    if (rowId === propId) {
+    const rowName = row.getAttribute('data-prop-name');
+    if (rowName === pName) {
       row.classList.add('active-admin-row');
     } else {
       row.classList.remove('active-admin-row');
     }
   });
 
-  const p = adminData.properties.find(x => x.id === propId);
-  if (!p) return;
   const modal = document.getElementById('adminUnifiedModal');
   const overlay = document.getElementById('modalOverlay');
   if (!modal || !overlay) return;
@@ -9237,20 +9238,21 @@ function openMatrixCellDetails(propId, monthName, year) {
 }
 
 function abrirEditarInmueble(propId, openTab) {
-  propId = String(propId || '').trim();
-  currentAdminPropId = propId;
+  const p = adminData.properties.find(x => x.id === propId);
+  if (!p) return;
+
+  const pName = String(p.name || '').trim();
+  currentAdminPropName = pName;
 
   document.querySelectorAll('.matrix-table tbody tr').forEach(row => {
-    const rowId = row.getAttribute('data-prop-id');
-    if (rowId === propId) {
+    const rowName = row.getAttribute('data-prop-name');
+    if (rowName === pName) {
       row.classList.add('active-admin-row');
     } else {
       row.classList.remove('active-admin-row');
     }
   });
 
-  const p = adminData.properties.find(x => x.id === propId);
-  if (!p) return;
   const modal = document.getElementById('adminUnifiedModal');
   const overlay = document.getElementById('modalOverlay');
   if (!modal || !overlay) return;
