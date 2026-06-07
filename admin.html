@@ -452,12 +452,12 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 .leads-table td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;}
 .leads-table tr:hover td{background:rgba(255,255,255,.02);}
 .leads-table tr.clickable{cursor:pointer;}
-.active-lead-row td {
+.active-lead-row td, .active-cita-row td, .active-admin-row td {
   background: rgba(212, 168, 75, 0.08) !important;
   border-top: 1px solid rgba(212, 168, 75, 0.3) !important;
   border-bottom: 1px solid rgba(212, 168, 75, 0.3) !important;
 }
-.active-lead-row td:first-child {
+.active-lead-row td:first-child, .active-cita-row td:first-child, .active-admin-row td:first-child {
   border-left: 4px solid var(--gold) !important;
 }
 .active-lead-card {
@@ -6535,7 +6535,8 @@ function renderCitasBody(lista){
     else if(c.estado === 'cancelada') stBadge = `<span class="badge badge-inactivo" style="font-size:9px;">Cancelada</span>`;
     else stBadge = `<span class="badge badge-agendada">Agendada</span>`;
 
-    return `<tr class="clickable" onclick="abrirEditarCita('${c.id}')">
+    const isSelected = String(c.id).trim() === String(currentCitaId).trim();
+    return `<tr class="clickable ${isSelected ? 'active-cita-row' : ''}" data-cita-id="${String(c.id).trim()}" onclick="abrirEditarCita('${c.id}')">
       <td style="padding-left: 20px;"><div class="citas-time">${c.hora || '--:--'}</div><div class="citas-weekday">${isNaN(d.getDay()) ? '—' : diasSem[d.getDay()]} ${c.fecha}</div></td>
       <td>
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
@@ -6557,6 +6558,18 @@ function renderCitasBody(lista){
 }
 
 function abrirEditarCita(citaId) {
+  citaId = String(citaId || '').trim();
+  currentCitaId = citaId;
+
+  document.querySelectorAll('.citas-table tbody tr').forEach(row => {
+    const rowId = row.getAttribute('data-cita-id');
+    if (rowId === citaId) {
+      row.classList.add('active-cita-row');
+    } else {
+      row.classList.remove('active-cita-row');
+    }
+  });
+
   const cita = citas.find(c => String(c.id) === String(citaId));
   if (!cita) return;
   
@@ -8122,6 +8135,8 @@ let currentAdminYear = '2026';
 let currentAdminMonth = 'MAYO';
 let currentAdminFilter = 'todos'; // 'todos', 'ocupados', 'disponibles'
 let currentAdminSort = 'nombre'; // 'nombre', 'precio', 'disponibles', 'ocupados'
+let currentAdminPropId = null;
+let currentCitaId = null;
 let waBridgeConnected = false;
 
 // Formateador seguro de moneda
@@ -8606,8 +8621,9 @@ function renderMatrizPagos(propertiesList) {
           ${propertiesList.map(p => {
             const paymentsYear = p.payments[currentAdminYear] || [];
             
+            const isSelected = String(p.id).trim() === String(currentAdminPropId).trim();
             return `
-              <tr onclick="abrirEditarInmueble('${p.id}', 'cobro')">
+              <tr class="${isSelected ? 'active-admin-row' : ''}" data-prop-id="${String(p.id).trim()}" onclick="abrirEditarInmueble('${p.id}', 'cobro')">
                 <td class="cell-prop" title="${p.name} (${p.owner})">
                   <div style="font-weight:700; color:#fff; font-size:13px;">${p.name}</div>
                   <div style="font-size:10px; color:var(--muted); font-weight:500;">${p.owner}</div>
@@ -9192,6 +9208,18 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
 }
 
 function openMatrixCellDetails(propId, monthName, year) {
+  propId = String(propId || '').trim();
+  currentAdminPropId = propId;
+
+  document.querySelectorAll('.matrix-table tbody tr').forEach(row => {
+    const rowId = row.getAttribute('data-prop-id');
+    if (rowId === propId) {
+      row.classList.add('active-admin-row');
+    } else {
+      row.classList.remove('active-admin-row');
+    }
+  });
+
   const p = adminData.properties.find(x => x.id === propId);
   if (!p) return;
   const modal = document.getElementById('adminUnifiedModal');
@@ -9209,6 +9237,18 @@ function openMatrixCellDetails(propId, monthName, year) {
 }
 
 function abrirEditarInmueble(propId, openTab) {
+  propId = String(propId || '').trim();
+  currentAdminPropId = propId;
+
+  document.querySelectorAll('.matrix-table tbody tr').forEach(row => {
+    const rowId = row.getAttribute('data-prop-id');
+    if (rowId === propId) {
+      row.classList.add('active-admin-row');
+    } else {
+      row.classList.remove('active-admin-row');
+    }
+  });
+
   const p = adminData.properties.find(x => x.id === propId);
   if (!p) return;
   const modal = document.getElementById('adminUnifiedModal');
