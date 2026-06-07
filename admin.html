@@ -8145,6 +8145,17 @@ const safeFormatP = (v) => {
   return '$' + Math.round(v).toLocaleString('es-CO');
 };
 
+function ensureUniqueIds(data) {
+  if (data && data.properties) {
+    data.properties.forEach(p => {
+      if (p.excel_row) {
+        p.id = String(p.excel_row);
+      }
+    });
+  }
+  return data;
+}
+
 async function loadAdminData() {
   try {
     console.log('Cargando datos de administración desde la nube...');
@@ -8159,7 +8170,7 @@ async function loadAdminData() {
     if (res.ok) {
       const data = await res.json();
       if (data && !data.error && data.properties && data.properties.length) {
-        adminData = data;
+        adminData = ensureUniqueIds(data);
         localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
         console.log('Datos de administración cargados desde la nube con éxito.');
         return;
@@ -8173,7 +8184,7 @@ async function loadAdminData() {
   const cached = localStorage.getItem('icde_admin_data');
   if (cached) {
     try {
-      adminData = JSON.parse(cached);
+      adminData = ensureUniqueIds(JSON.parse(cached));
       console.log('Datos de administración cargados desde la caché de localStorage.');
       return;
     } catch (err) {
@@ -8185,7 +8196,7 @@ async function loadAdminData() {
   try {
     const res = await fetch('admin_data.json');
     if (res.ok) {
-      adminData = await res.json();
+      adminData = ensureUniqueIds(await res.json());
       console.log('Datos de administración cargados desde el archivo estático local.');
     }
   } catch (e) {
