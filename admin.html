@@ -8338,6 +8338,7 @@ function renderAdministracion() {
           <select id="adminSortSelect" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 13px;" onchange="setAdminSort(this.value)">
             <option value="nombre" ${currentAdminSort === 'nombre' ? 'selected' : ''}>Nombre</option>
             <option value="precio" ${currentAdminSort === 'precio' ? 'selected' : ''}>Precio</option>
+            <option value="propietario" ${currentAdminSort === 'propietario' ? 'selected' : ''}>Propietario</option>
             <option value="disponibles" ${currentAdminSort === 'disponibles' ? 'selected' : ''}>Disponibles</option>
             <option value="ocupados" ${currentAdminSort === 'ocupados' ? 'selected' : ''}>Ocupados</option>
           </select>
@@ -8408,6 +8409,9 @@ function renderAdministracionContent() {
   filteredProperties.sort((a, b) => {
     if (currentAdminSort === 'precio') {
       return (parseFloat(b.monthly_rent) || 0) - (parseFloat(a.monthly_rent) || 0);
+    }
+    if (currentAdminSort === 'propietario') {
+      return (a.owner || '').localeCompare(b.owner || '');
     }
     if (currentAdminSort === 'disponibles') {
       const aOcc = isOccupied(a) ? 1 : 0;
