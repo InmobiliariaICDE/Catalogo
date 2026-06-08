@@ -8656,10 +8656,20 @@ function renderMatrizPagos(propertiesList) {
                   
                   return `
                     <td>
-                      <div class="matrix-cell status-cell-${pay.status}" 
-                           data-tooltip="${tooltipText}" 
-                           onclick="event.stopPropagation(); openMatrixCellDetails('${p.id}', '${mFull}', '${currentAdminYear}')">
+                      <div id="cell-${p.id}-${mFull}-${currentAdminYear}" class="matrix-cell status-cell-${pay.status}" 
+                           data-tooltip="${tooltipText}"
+                           style="position: relative;">
                         ${cellContent}
+                        <select style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;"
+                                onclick="event.stopPropagation();"
+                                onchange="quickSaveAdminPaymentStatus('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${mFull}', '${currentAdminYear}', this.value)">
+                          <option value="PAID" ${pay.status === 'PAID' ? 'selected' : ''}>Pagado</option>
+                          <option value="PENDING" ${pay.status === 'PENDING' ? 'selected' : ''}>Pendiente</option>
+                          <option value="VACANT" ${pay.status === 'VACANT' ? 'selected' : ''}>Desocupado</option>
+                          <option value="PREAVISO" ${pay.status === 'PREAVISO' ? 'selected' : ''}>Preaviso</option>
+                          <option value="NEW_CONTRACT" ${pay.status === 'NEW_CONTRACT' ? 'selected' : ''}>Nuevo Contrato</option>
+                          <option value="FUTURE" ${pay.status === 'FUTURE' ? 'selected' : ''}>Futuro</option>
+                        </select>
                       </div>
                     </td>
                   `;
@@ -9412,6 +9422,70 @@ async function saveAdminPaymentStatus(propId, propName, monthName, year) {
       localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
       closeUnifiedModal();
       renderAdministracion();
+    }
+  }
+}
+
+async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, status) {
+  const monthsNames = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+  const monthIdx = monthsNames.indexOf(monthName.toUpperCase());
+
+  let finalValue = '';
+  if (status === 'PAID') {
+    const p = adminData.properties.find(x => x.id === propId);
+    finalValue = p ? p.monthly_rent : 0;
+  } else if (status === 'VACANT' || status === 'FUTURE') { finalValue = 'DESOCUPADO'; }
+  else if (status === 'PREAVISO')      { finalValue = 'PREAVISO'; }
+  else if (status === 'NEW_CONTRACT')  { finalValue = 'CONTRATO NUEVO'; }
+  else if (status === 'NO_RENEW')      { finalValue = 'NO RENOVARA'; }
+  else { finalValue = '-'; }
+
+  const payload = {
+    action: 'saveAdminPayment',
+    propertyId: propId, propertyName: propName,
+    year: year, monthIndex: monthIdx, value: finalValue
+  };
+
+  const cellId = `cell-${propId}-${monthName}-${year}`;
+  const cellEl = document.getElementById(cellId);
+  let oldContent = '';
+  if (cellEl) {
+    oldContent = cellEl.innerHTML;
+    cellEl.innerHTML = '<span class="spinner" style="width:12px; height:12px; border-width:2px; display:inline-block; vertical-align:middle;"></span>';
+  }
+
+  try {
+    const response = await fetch(CRM_SCRIPT_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    if (response.ok) {
+      const resData = await response.json();
+      if (resData.success) {
+        toast('Pago actualizado en la nube con éxito!', 'success');
+        const p = adminData.properties.find(x => x.id === propId);
+        if (p) {
+          if (!p.payments[year]) p.payments[year] = [];
+          let mPay = p.payments[year].find(m => m.month === monthName);
+          if (mPay) { mPay.status = status; mPay.value = finalValue; }
+          else p.payments[year].push({ month: monthName, value: finalValue, status: status });
+          localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+        }
+        renderAdministracion();
+      } else { throw new Error(resData.error || 'Error desconocido del servidor'); }
+    } else { throw new Error('Error de conexión HTTP'); }
+  } catch (err) {
+    console.error('Error al guardar pago rápido:', err);
+    toast('Error al guardar en la nube: ' + err.message + '. Se guardó en caché local.', 'warning');
+    const p = adminData.properties.find(x => x.id === propId);
+    if (p) {
+      if (!p.payments[year]) p.payments[year] = [];
+      let mPay = p.payments[year].find(m => m.month === monthName);
+      if (mPay) { mPay.status = status; mPay.value = finalValue; }
+      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+      renderAdministracion();
+    } else if (cellEl) {
+      cellEl.innerHTML = oldContent;
     }
   }
 }
