@@ -9082,63 +9082,61 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
     </div>`;
 
   // ── TAB 3: CONTRATO ───────────────────────────────────────────────────────
-  const depositVal = parseFloat(p.deposit) || 0;
   const tabContrato = `
-    <div style="display:flex; flex-direction:column; gap:12px;">
-      <div class="u-section-box" style="background:rgba(212,168,75,0.06); border-color:rgba(212,168,75,0.2);">
-        <div class="u-field-label" style="color:var(--gold); margin-bottom:6px;">Parte Arrendataria</div>
-        <div style="font-size:18px; font-weight:800; color:#fff;">${p.owner}</div>
-        <div style="font-size:11.5px; color:var(--muted); margin-top:3px;">Inquilino / Representante</div>
+    <div style="display:flex; flex-direction:column; gap:11px;">
+      <div>
+        <label class="u-inp-label">Parte Arrendataria (Inquilino / Representante)</label>
+        <input type="text" id="editContraOwner" class="u-inp" value="${p.owner || ''}">
       </div>
 
       <div class="u-modal-grid">
-        <div class="u-section-box">
-          <div class="u-field-label">Inicio de Contrato</div>
-          <div class="u-field-value">${p.start_date || 'N/A'}</div>
+        <div>
+          <label class="u-inp-label">Inicio Contrato</label>
+          <input type="date" id="editContraStartDate" class="u-inp" value="${p.start_date || ''}" style="height:32px; padding:4px 8px;">
         </div>
-        <div class="u-section-box">
-          <div class="u-field-label">Duración</div>
-          <div class="u-field-value">${p.duration || '—'} meses</div>
-        </div>
-      </div>
-
-      <div class="u-modal-grid">
-        <div class="u-section-box">
-          <div class="u-field-label">Canon Mensual</div>
-          <div class="u-field-gold">${safeFormatP(p.monthly_rent)}</div>
-        </div>
-        <div class="u-section-box">
-          <div class="u-field-label">Depósito en Garantía</div>
-          <div class="u-field-green">${depositVal > 0 ? safeFormatP(depositVal) : 'Sin depósito'}</div>
+        <div>
+          <label class="u-inp-label">Duración (Meses)</label>
+          <input type="number" id="editContraDuration" class="u-inp" value="${p.duration || ''}">
         </div>
       </div>
 
       <div class="u-modal-grid">
-        <div class="u-section-box">
-          <div class="u-field-label">Día de Cobro</div>
-          <div class="u-field-value">Día ${dueDay}</div>
+        <div>
+          <label class="u-inp-label">Canon Mensual</label>
+          <input type="number" id="editContraRent" class="u-inp" value="${p.monthly_rent || ''}">
         </div>
-        <div class="u-section-box">
-          <div class="u-field-label">Día Límite</div>
-          <div class="u-field-value">Día ${maxDueDay}</div>
+        <div>
+          <label class="u-inp-label">Depósito en Garantía</label>
+          <input type="text" id="editContraDeposit" class="u-inp" value="${p.deposit || ''}">
         </div>
       </div>
 
-      ${p.increase_notes ? `
-      <div class="u-section-box gold">
-        <div class="u-field-label" style="color:var(--gold); margin-bottom:5px;">📈 Incrementos y Notas</div>
-        <div style="font-size:12px; color:rgba(255,255,255,0.85); line-height:1.6;">
-          ${p.increase_notes.replace(/\|/g, '<br>')}
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Día de Cobro</label>
+          <input type="number" id="editContraDueDay" class="u-inp" value="${p.due_day || ''}">
         </div>
-      </div>` : ''}
+        <div>
+          <label class="u-inp-label">Día Límite</label>
+          <input type="number" id="editContraMaxDueDay" class="u-inp" value="${p.max_due_day || ''}">
+        </div>
+      </div>
 
-      ${p.damage_notes ? `
-      <div class="u-section-box purple">
-        <div class="u-field-label" style="color:#a855f7; margin-bottom:5px;">🔧 Daños / Observaciones</div>
-        <div style="font-size:12px; color:rgba(255,255,255,0.85); font-style:italic; line-height:1.5;">
-          ${p.damage_notes}
-        </div>
-      </div>` : ''}
+      <div>
+        <label class="u-inp-label">Incrementos y Notas</label>
+        <input type="text" id="editContraIncreaseNotes" class="u-inp" value="${p.increase_notes || ''}" placeholder="Ej: Aumento Agosto 2026...">
+      </div>
+
+      <div>
+        <label class="u-inp-label">Daños / Observaciones</label>
+        <textarea id="editContraDamageNotes" class="u-inp" style="resize:vertical; min-height:54px;">${p.damage_notes || ''}</textarea>
+      </div>
+
+      <button class="btn btn-gold btn-sm" id="btnSaveAdminContract"
+              style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; margin-top:4px;"
+              onclick="saveAdminContractDetails('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
+        💾 Guardar Cambios del Contrato
+      </button>
     </div>`;
 
   // ── TAB 4: EDIFICIO SILVIA ────────────────────────────────────────────────
@@ -9422,6 +9420,67 @@ async function saveAdminPropertyDetails(propId, propNameOld) {
       const resData = await response.json();
       if (resData.success) {
         toast('Inmueble actualizado en la nube con éxito!', 'success');
+        applyToMemory();
+        closeUnifiedModal();
+        renderAdministracion();
+      } else { throw new Error(resData.error || 'Error del servidor'); }
+    } else { throw new Error('Error de red'); }
+  } catch (err) {
+    console.error(err);
+    toast('Error al guardar: ' + err.message + '. Guardado en caché local.', 'warning');
+    applyToMemory();
+    closeUnifiedModal();
+    renderAdministracion();
+  }
+}
+
+async function saveAdminContractDetails(propId, propNameOld) {
+  const saveBtn = document.getElementById('btnSaveAdminContract');
+  if (!saveBtn) return;
+
+  const p = adminData.properties.find(x => x.id === propId);
+  const propName = p ? p.name : propNameOld;
+
+  const payload = {
+    action: 'saveAdminProperty',
+    propertyId: propId,
+    propertyNameOld: propNameOld,
+    name:           propName,
+    owner:          document.getElementById('editContraOwner').value.trim(),
+    monthly_rent:   parseFloat(document.getElementById('editContraRent').value) || 0,
+    deposit:        document.getElementById('editContraDeposit').value.trim(),
+    start_date:     document.getElementById('editContraStartDate').value,
+    duration:       document.getElementById('editContraDuration').value.trim(),
+    due_day:        parseInt(document.getElementById('editContraDueDay').value) || 5,
+    max_due_day:    parseInt(document.getElementById('editContraMaxDueDay').value) || 10,
+    increase_notes: document.getElementById('editContraIncreaseNotes').value.trim(),
+    damage_notes:   document.getElementById('editContraDamageNotes').value.trim()
+  };
+
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
+
+  const applyToMemory = () => {
+    if (p) {
+      Object.assign(p, {
+        owner: payload.owner, monthly_rent: payload.monthly_rent,
+        deposit: payload.deposit, start_date: payload.start_date, duration: payload.duration,
+        due_day: payload.due_day, max_due_day: payload.max_due_day,
+        increase_notes: payload.increase_notes, damage_notes: payload.damage_notes
+      });
+      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+    }
+  };
+
+  try {
+    const response = await fetch(CRM_SCRIPT_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    if (response.ok) {
+      const resData = await response.json();
+      if (resData.success) {
+        toast('Contrato actualizado en la nube con éxito!', 'success');
         applyToMemory();
         closeUnifiedModal();
         renderAdministracion();
