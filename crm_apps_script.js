@@ -744,23 +744,7 @@ function saveAdminPropertyToSheet(params) {
       if (cellName && (cellName.includes(cleanName) || cleanName.includes(cellName))) { rowIdx = i + 1; break; }
     }
   }
-  if (rowIdx === -1) {
-    if (String(params.propertyId).toUpperCase() === 'NEW' || params.isNew) {
-      let maxId = 0;
-      for (let i = 5; i < values.length; i++) {
-        const idVal = parseInt(values[i][0], 10);
-        if (!isNaN(idVal) && idVal > maxId) maxId = idVal;
-      }
-      const newId = maxId + 1;
-      rowIdx = sheet.getLastRow() + 1;
-      const colsCount = Math.max(sheet.getLastColumn(), 76);
-      const newRowData = new Array(colsCount).fill('');
-      newRowData[0] = newId;
-      sheet.appendRow(newRowData);
-    } else {
-      return createJsonResponse({ success: false, error: 'Propiedad no encontrada' });
-    }
-  }
+  if (rowIdx === -1) return createJsonResponse({ success: false, error: 'Propiedad no encontrada' });
 
   if (params.damage_notes !== undefined) sheet.getRange(rowIdx, 4).setValue(params.damage_notes);
   if (params.owner !== undefined) sheet.getRange(rowIdx, 5).setValue(params.owner);
