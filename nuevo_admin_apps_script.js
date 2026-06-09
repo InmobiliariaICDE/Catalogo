@@ -110,9 +110,10 @@ function importAdminDataFromJSON(data) {
   const ss = getSpreadsheet();
   let sheet = ss.getSheetByName('ADMINISTRACION DETALLADA');
   if (sheet) {
-    ss.deleteSheet(sheet);
+    sheet.clear();
+  } else {
+    sheet = ss.insertSheet('ADMINISTRACION DETALLADA');
   }
-  sheet = ss.insertSheet('ADMINISTRACION DETALLADA');
 
   const headers = new Array(76).fill('');
   headers[0] = 'ID';
@@ -144,7 +145,7 @@ function importAdminDataFromJSON(data) {
   const rowsToWrite = [];
   data.properties.forEach((p, index) => {
     const row = new Array(76).fill('');
-    row[0] = p.id || String(index + 1);
+    row[0] = String(p.excel_row || (index + 5));
     row[1] = index + 1;
     row[3] = p.damage_notes || '';
     row[4] = p.owner || 'Sin Propietario';

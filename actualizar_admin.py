@@ -222,7 +222,7 @@ def parse_silvia_ledger(file):
 
 def pull_from_cloud():
     print("Obteniendo datos actualizados desde la nube...")
-    url = "https://script.google.com/macros/s/AKfycbzyH6zlGGfSt4B_NKfXl6M3GgTlcIg6QAncU6Xlw8HvTxvWXl4SLoR-4N1zVNdJP94d2w/exec?action=getAdminData"
+    url = "https://script.google.com/macros/s/AKfycbwwqVgccbr31wYkGYrE71SeHEuB2DladyiZSOwUN8YjYKB9M-ZztK7xjOthiyYV3dbq6w/exec?action=getAdminData"
     try:
         res = requests.get(url, timeout=15)
         if res.status_code != 200:
