@@ -2503,6 +2503,7 @@ const PASSWORD = 'icde2024';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxki98uXR_fXbFCPynfzvQN5ibiwQY23zKpLkLKTL7A26GlipdC20oQTKOrUwAMeIJ2gw/exec?action=getData';
 // CRM URL apunta al mismo script nuevo que maneja getData, getLeads, getCitas, etc.
 const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz1FNSXco-emauypAbJXIhn2om9RH1fhgro9EzdKjLm2HKPBFE1Y4tvZ4sqvFaeeOJyhw/exec';
+const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzyH6zlGGfSt4B_NKfXl6M3GgTlcIg6QAncU6Xlw8HvTxvWXl4SLoR-4N1zVNdJP94d2w/exec';
 
 /* ═══════════════════════════════════════════════
    STATE
@@ -8163,7 +8164,7 @@ async function loadAdminData() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 7000); // 7s
     
-    const url = CRM_SCRIPT_URL + '?action=getAdminData&t=' + Date.now();
+    const url = ADMIN_SCRIPT_URL + '?action=getAdminData&t=' + Date.now();
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
     
@@ -9391,7 +9392,7 @@ async function saveAdminPaymentStatus(propId, propName, monthName, year) {
   };
 
   try {
-    const response = await fetch(CRM_SCRIPT_URL, {
+    const response = await fetch(ADMIN_SCRIPT_URL, {
       method: 'POST', headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     });
@@ -9455,7 +9456,7 @@ async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, st
   }
 
   try {
-    const response = await fetch(CRM_SCRIPT_URL, {
+    const response = await fetch(ADMIN_SCRIPT_URL, {
       method: 'POST', headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     });
@@ -9529,7 +9530,7 @@ async function saveAdminPropertyDetails(propId, propNameOld) {
   };
 
   try {
-    const response = await fetch(CRM_SCRIPT_URL, {
+    const response = await fetch(ADMIN_SCRIPT_URL, {
       method: 'POST', headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     });
@@ -9590,7 +9591,7 @@ async function saveAdminContractDetails(propId, propNameOld) {
   };
 
   try {
-    const response = await fetch(CRM_SCRIPT_URL, {
+    const response = await fetch(ADMIN_SCRIPT_URL, {
       method: 'POST', headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     });
