@@ -186,29 +186,44 @@ function importAdminDataFromJSON(data) {
 // GUARDAR ESTADO DE PAGO DE UN INMUEBLE
 function saveAdminPaymentToSheet(params) {
   const sheet = getAdminSheet();
-  if (!sheet) return createJsonResponse({ success: false, error: 'No se encontró la hoja de administración' });
+  if (!sheet) return createJsonResponse({ success: false, error: 'No se encontró la hoja de administración en el Sheet' });
 
   const yearsMap = { 2023: 12, 2024: 25, 2025: 38, 2026: 51, 2027: 64 };
   const year = parseInt(params.year, 10);
   const monthIndex = parseInt(params.monthIndex, 10);
   const colStart = yearsMap[year];
-  if (colStart === undefined) return createJsonResponse({ success: false, error: 'Año no válido' });
+  if (colStart === undefined) return createJsonResponse({ success: false, error: 'Año no válido: ' + year });
 
   const colIdx = colStart + monthIndex + 1; // 1-based index para getRange
   const values = sheet.getDataRange().getValues();
   let rowIdx = -1;
 
   for (let i = 0; i < values.length; i++) {
-    if (String(values[i][0]).trim() === String(params.propertyId).trim()) { rowIdx = i + 1; break; }
+    const sheetId = String(values[i][0]).trim();
+    const targetId = String(params.propertyId).trim();
+    if (sheetId === targetId || (parseFloat(sheetId) === parseFloat(targetId) && !isNaN(parseFloat(sheetId)))) {
+      rowIdx = i + 1;
+      break;
+    }
   }
+  
   if (rowIdx === -1 && params.propertyName) {
     const cleanName = String(params.propertyName).trim().toLowerCase();
     for (let i = 0; i < values.length; i++) {
       const cellName = String(values[i][5] || '').trim().toLowerCase();
-      if (cellName && (cellName.includes(cleanName) || cleanName.includes(cellName))) { rowIdx = i + 1; break; }
+      if (cellName && (cellName.indexOf(cleanName) !== -1 || cleanName.indexOf(cellName) !== -1)) {
+        rowIdx = i + 1;
+        break;
+      }
     }
   }
-  if (rowIdx === -1) return createJsonResponse({ success: false, error: 'Propiedad no encontrada' });
+  
+  if (rowIdx === -1) {
+    return createJsonResponse({ 
+      success: false, 
+      error: 'Inmueble no encontrado en el Sheet. ID buscado: ' + params.propertyId + ', Nombre buscado: ' + params.propertyName 
+    });
+  }
 
   sheet.getRange(rowIdx, colIdx).setValue(params.value);
   return createJsonResponse({ success: true, row: rowIdx, column: colIdx });
@@ -217,22 +232,37 @@ function saveAdminPaymentToSheet(params) {
 // GUARDAR DETALLES DE UN INMUEBLE / CONTRATO
 function saveAdminPropertyToSheet(params) {
   const sheet = getAdminSheet();
-  if (!sheet) return createJsonResponse({ success: false, error: 'No se encontró la hoja de administración' });
+  if (!sheet) return createJsonResponse({ success: false, error: 'No se encontró la hoja de administración en el Sheet' });
 
   const values = sheet.getDataRange().getValues();
   let rowIdx = -1;
 
   for (let i = 0; i < values.length; i++) {
-    if (String(values[i][0]).trim() === String(params.propertyId).trim()) { rowIdx = i + 1; break; }
+    const sheetId = String(values[i][0]).trim();
+    const targetId = String(params.propertyId).trim();
+    if (sheetId === targetId || (parseFloat(sheetId) === parseFloat(targetId) && !isNaN(parseFloat(sheetId)))) {
+      rowIdx = i + 1;
+      break;
+    }
   }
+  
   if (rowIdx === -1 && params.propertyNameOld) {
     const cleanName = String(params.propertyNameOld).trim().toLowerCase();
     for (let i = 0; i < values.length; i++) {
       const cellName = String(values[i][5] || '').trim().toLowerCase();
-      if (cellName && (cellName.includes(cleanName) || cleanName.includes(cellName))) { rowIdx = i + 1; break; }
+      if (cellName && (cellName.indexOf(cleanName) !== -1 || cleanName.indexOf(cellName) !== -1)) {
+        rowIdx = i + 1;
+        break;
+      }
     }
   }
-  if (rowIdx === -1) return createJsonResponse({ success: false, error: 'Propiedad no encontrada' });
+  
+  if (rowIdx === -1) {
+    return createJsonResponse({ 
+      success: false, 
+      error: 'Inmueble no encontrado en el Sheet para editar. ID buscado: ' + params.propertyId + ', Nombre: ' + params.propertyNameOld 
+    });
+  }
 
   if (params.damage_notes !== undefined) sheet.getRange(rowIdx, 4).setValue(params.damage_notes);
   if (params.owner !== undefined) sheet.getRange(rowIdx, 5).setValue(params.owner);
