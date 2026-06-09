@@ -8930,6 +8930,9 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
   const dueDay = p.due_day ? Math.round(p.due_day) : 5;
   const maxDueDay = p.max_due_day ? Math.round(p.max_due_day) : 10;
 
+  const lead = (leads || []).find(l => l.nombre && p.owner && (l.nombre.toLowerCase().includes(p.owner.toLowerCase()) || p.owner.toLowerCase().includes(l.nombre.toLowerCase())));
+  const phone = (lead && lead.celular) ? lead.celular : '—';
+
   // Silvia transactions for this year
   const silviaTxs = (adminData.silvia_ledger && adminData.silvia_ledger[String(year)]) || [];
   const silviaTotal = { recaudo: 0, abono: 0 };
@@ -9000,7 +9003,9 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
         </div>
         <div>
           <div class="u-field-label">Inquilino</div>
-          <div class="u-field-value">${p.owner}</div>
+          <div class="u-field-value" style="margin-bottom: 8px;">${p.owner}</div>
+          <div class="u-field-label">Celulares</div>
+          <div class="u-field-value">${phone}</div>
         </div>
       </div>
 
