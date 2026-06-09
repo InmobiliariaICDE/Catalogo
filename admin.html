@@ -8954,15 +8954,11 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
   // ── TAB 1: COBRO ──────────────────────────────────────────────────────────
   const tabCobro = `
     <div style="display:flex; flex-direction:column; gap:12px;">
-      <div>
-        <div class="u-field-label">Inmueble</div>
-        <div style="font-size:17px; font-weight:800; color:#fff; letter-spacing:-0.01em;">${p.name}</div>
-      </div>
-
-      <div class="u-modal-grid">
+      <div class="u-modal-grid" style="row-gap: 12px;">
+        <!-- Fila 1 -->
         <div>
-          <div class="u-field-label">Mes / Año</div>
-          <div class="u-field-value">${monthName} ${year}</div>
+          <div class="u-field-label">Inmueble</div>
+          <div style="font-size:17px; font-weight:800; color:#fff; letter-spacing:-0.01em;">${p.name}</div>
         </div>
         <div>
           <div class="u-field-label">Estado</div>
@@ -8981,12 +8977,11 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
             </select>
           </div>
         </div>
-      </div>
 
-      <div class="u-modal-grid">
+        <!-- Fila 2 -->
         <div>
-          <div class="u-field-label">Canon Mensual</div>
-          <div class="u-field-gold">${safeFormatP(p.monthly_rent)}</div>
+          <div class="u-field-label">Mes / Año</div>
+          <div class="u-field-value">${monthName} ${year}</div>
         </div>
         <div>
           <div class="u-field-label">Monto Transado</div>
@@ -8994,16 +8989,23 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
             ${pay.value && parseFloat(pay.value) > 0 ? safeFormatP(pay.value) : '—'}
           </div>
         </div>
-      </div>
 
-      <div class="u-modal-grid">
+        <!-- Fila 3 -->
+        <div>
+          <div class="u-field-label">Canon Mensual</div>
+          <div class="u-field-gold">${safeFormatP(p.monthly_rent)}</div>
+        </div>
+        <div>
+          <div class="u-field-label">Inquilino</div>
+          <div class="u-field-value">${p.owner}</div>
+        </div>
+
+        <!-- Fila 4 -->
         <div>
           <div class="u-field-label">Rango de Pago</div>
           <div class="u-field-value">Día ${dueDay} al ${maxDueDay}</div>
         </div>
         <div>
-          <div class="u-field-label">Inquilino</div>
-          <div class="u-field-value" style="margin-bottom: 8px;">${p.owner}</div>
           <div class="u-field-label">Celulares</div>
           <div class="u-field-value">${phone}</div>
         </div>
