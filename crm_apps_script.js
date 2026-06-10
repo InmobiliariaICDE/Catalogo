@@ -639,42 +639,132 @@ function getAdminData() {
 
   const values = sheet.getDataRange().getValues();
   const properties = [];
+  
+  if (values.length <= 5) {
+    return createJsonResponse({ last_update: new Date().toISOString(), properties: [], silvia_ledger: {} });
+  }
 
-  const yearsMap = {
-    2023: [15,16,17,18,19,20,21,22,23,24,25,26],
-    2024: [28,29,30,31,32,33,34,35,36,37,38,39],
-    2025: [41,42,43,44,45,46,47,48,49,50,51,52],
-    2026: [54,55,56,57,58,59,60,61,62,63,64,65],
-    2027: [67,68,69,70,71,72,73,74,75,76,77,78]
-  };
+  // Row 5 is values[4]
+  const headers = values[4];
+  
+  // Find column indices (0-based) dynamically
+  let ownerColIdx = -1;
+  let ownerPhoneColIdx = -1;
+  let nameColIdx = -1;
+  let tenantColIdx = -1;
+  let tenantPhoneColIdx = -1;
+  let durationColIdx = -1;
+  let depositColIdx = -1;
+  let startDateColIdx = -1;
+  let dueDayColIdx = -1;
+  let maxDueDayColIdx = -1;
+  let rentColIdx = -1;
+  let damageNotesColIdx = -1;
+
+  for (let c = 0; c < headers.length; c++) {
+    const h = String(headers[c]).trim().toUpperCase();
+    if (h === 'PROPIETARIO') {
+      ownerColIdx = c;
+    } else if (h === 'INQUILINO') {
+      tenantColIdx = c;
+    } else if (h.includes('DAÑOS Y REPORTES') || h.includes('DAÑOS') || h.includes('REPORTES')) {
+      damageNotesColIdx = c;
+    } else if (h.includes('INMUEBLE') || h.includes('INCREMENTOS')) {
+      nameColIdx = c;
+    } else if (h.includes('CONTRATO')) {
+      durationColIdx = c;
+    } else if (h.includes('DEPÓSITO') || h.includes('DEPOSITO')) {
+      depositColIdx = c;
+    } else if (h.includes('FECHA INICIO') || h.includes('FECHA')) {
+      startDateColIdx = c;
+    } else if (h.includes('DÍA PAGO') || h.includes('DIA PAGO') || h.includes('DÍA DE PAGO')) {
+      dueDayColIdx = c;
+    } else if (h.includes('LÍMITE PAGO') || h.includes('LIMITE PAGO') || h.includes('LÍMITE DE PAGO')) {
+      maxDueDayColIdx = c;
+    } else if (h === 'CANON') {
+      rentColIdx = c;
+    } else if (h === 'CELULAR') {
+      if (ownerColIdx !== -1 && tenantColIdx === -1) {
+        ownerPhoneColIdx = c;
+      } else {
+        tenantPhoneColIdx = c;
+      }
+    }
+  }
+
+  // Fallbacks if not found (defaulting to the expected indices)
+  if (damageNotesColIdx === -1) damageNotesColIdx = 3;
+  if (ownerColIdx === -1) ownerColIdx = 4;
+  if (ownerPhoneColIdx === -1) ownerPhoneColIdx = 5;
+  if (nameColIdx === -1) nameColIdx = 6;
+  if (tenantColIdx === -1) tenantColIdx = 7;
+  if (tenantPhoneColIdx === -1) tenantPhoneColIdx = 8;
+  if (durationColIdx === -1) durationColIdx = 9;
+  if (depositColIdx === -1) depositColIdx = 10;
+  if (startDateColIdx === -1) startDateColIdx = 11;
+  if (dueDayColIdx === -1) dueDayColIdx = 12;
+  if (maxDueDayColIdx === -1) maxDueDayColIdx = 13;
+  if (rentColIdx === -1) rentColIdx = 14;
+
+  const yearsMap = {};
   const monthsNames = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+
+  for (let c = 0; c < headers.length; c++) {
+    const h = String(headers[c]).trim().toUpperCase();
+    const match = h.match(/([A-Z]+)\s*\((\d{4})\)/);
+    if (match) {
+      const monthName = match[1];
+      const year = match[2];
+      const mIdx = monthsNames.indexOf(monthName);
+      if (mIdx !== -1) {
+        if (!yearsMap[year]) {
+          yearsMap[year] = new Array(12).fill(-1);
+        }
+        yearsMap[year][mIdx] = c;
+      }
+    }
+  }
+
+  if (Object.keys(yearsMap).length === 0) {
+    const standardYearsMap = {
+      2023: [15,16,17,18,19,20,21,22,23,24,25,26],
+      2024: [28,29,30,31,32,33,34,35,36,37,38,39],
+      2025: [41,42,43,44,45,46,47,48,49,50,51,52],
+      2026: [54,55,56,57,58,59,60,61,62,63,64,65],
+      2027: [67,68,69,70,71,72,73,74,75,76,77,78]
+    };
+    Object.assign(yearsMap, standardYearsMap);
+  }
 
   for (let i = 5; i < values.length; i++) {
     const row = values[i];
-    if (!row || row.length < 15) continue;
-    const rawName = row[6] ? String(row[6]).trim() : '';
+    if (!row || row.length <= nameColIdx) continue;
+    const rawName = row[nameColIdx] ? String(row[nameColIdx]).trim() : '';
     if (!rawName || rawName.toLowerCase() === 'nan') continue;
 
     const rowId = row[0] ? String(row[0]).trim() : String(i - 4);
-    const owner = row[4] ? String(row[4]).trim() : 'Sin Propietario';
-    const ownerPhone = row[5] ? String(row[5]).trim() : '';
+    const owner = row[ownerColIdx] ? String(row[ownerColIdx]).trim() : 'Sin Propietario';
+    const ownerPhone = ownerPhoneColIdx !== -1 && row[ownerPhoneColIdx] ? String(row[ownerPhoneColIdx]).trim() : '';
     const nameParts = rawName.split(/\s{2,}|(?=Aumento)/);
     const propName = nameParts[0].trim().replace(/\.$/, '');
     const increaseNotes = nameParts.slice(1).map(p => p.trim()).filter(p => p).join(' | ');
 
-    const tenantName = row[7] ? String(row[7]).trim() : '';
-    const tenantPhone = row[8] ? String(row[8]).trim() : '';
+    const tenantName = tenantColIdx !== -1 && row[tenantColIdx] ? String(row[tenantColIdx]).trim() : '';
+    const tenantPhone = tenantPhoneColIdx !== -1 && row[tenantPhoneColIdx] ? String(row[tenantPhoneColIdx]).trim() : '';
 
-    const duration = row[9] ? String(row[9]).trim() : '';
-    const deposit = row[10] ? String(row[10]).trim() : '';
-    const startDate = _formatDate(row[11]);
-    const dueDay = _parseNum(row[12]);
-    const maxDueDay = _parseNum(row[13]);
-    const monthlyRent = _parseNum(row[14]);
+    const duration = durationColIdx !== -1 && row[durationColIdx] ? String(row[durationColIdx]).trim() : '';
+    const deposit = depositColIdx !== -1 && row[depositColIdx] ? String(row[depositColIdx]).trim() : '';
+    const startDate = startDateColIdx !== -1 ? _formatDate(row[startDateColIdx]) : '';
+    const dueDay = dueDayColIdx !== -1 ? _parseNum(row[dueDayColIdx]) : 5;
+    const maxDueDay = maxDueDayColIdx !== -1 ? _parseNum(row[maxDueDayColIdx]) : 10;
+    const monthlyRent = rentColIdx !== -1 ? _parseNum(row[rentColIdx]) : 0;
 
     const paymentsHistory = {};
     Object.keys(yearsMap).forEach(year => {
       paymentsHistory[year] = yearsMap[year].map((colIdx, mIdx) => {
+        if (colIdx === -1 || colIdx >= row.length) {
+          return { month: monthsNames[mIdx], value: '-', status: 'FUTURE' };
+        }
         const cell = row[colIdx];
         const { status, value } = _getMonthStatus(cell, parseInt(year), mIdx, startDate, monthlyRent);
         return { month: monthsNames[mIdx], value, status };
@@ -689,7 +779,7 @@ function getAdminData() {
     properties.push({
       id: rowId, excel_row: i, owner, owner_phone: ownerPhone, name: propName,
       tenant_name: tenantName, tenant_phone: tenantPhone,
-      increase_notes: increaseNotes, damage_notes: row[3] ? String(row[3]).trim() : '',
+      increase_notes: increaseNotes, damage_notes: damageNotesColIdx !== -1 && row[damageNotesColIdx] ? String(row[damageNotesColIdx]).trim() : '',
       duration: duration,
       deposit: deposit,
       start_date: startDate, due_day: dueDay, max_due_day: maxDueDay,
@@ -708,13 +798,37 @@ function saveAdminPaymentToSheet(params) {
   const sheet = getAdminSheet();
   if (!sheet) return createJsonResponse({ success: false, error: 'No se encontró la hoja de administración' });
 
-  const yearsMap = { 2023: 16, 2024: 29, 2025: 42, 2026: 55, 2027: 68 };
   const year = parseInt(params.year, 10);
   const monthIndex = parseInt(params.monthIndex, 10);
-  const colStart = yearsMap[year];
-  if (!colStart) return createJsonResponse({ success: false, error: 'Año no válido' });
+  const monthsNames = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  const targetMonthName = monthsNames[monthIndex];
 
-  const colIdx = colStart + monthIndex;
+  // Dynamic header search to find the correct column for payment status
+  const lastCol = sheet.getLastColumn();
+  const headers = sheet.getRange(5, 1, 1, lastCol).getValues()[0];
+  let colIdx = -1;
+
+  for (let c = 0; c < headers.length; c++) {
+    const h = String(headers[c]).trim().toUpperCase();
+    if (h.includes(targetMonthName) && h.includes(String(year))) {
+      colIdx = c + 1;
+      break;
+    }
+  }
+
+  // Fallback to static mapping if not found dynamically
+  if (colIdx === -1) {
+    const standardYearsMap = { 2023: 16, 2024: 29, 2025: 42, 2026: 55, 2027: 68 };
+    const colStart = standardYearsMap[year];
+    if (colStart !== undefined) {
+      colIdx = colStart + monthIndex;
+    }
+  }
+
+  if (colIdx === -1) {
+    return createJsonResponse({ success: false, error: 'Columna de pago no encontrada para ' + targetMonthName + ' (' + year + ')' });
+  }
+
   const values = sheet.getDataRange().getValues();
   let rowIdx = -1;
 
@@ -723,8 +837,19 @@ function saveAdminPaymentToSheet(params) {
   }
   if (rowIdx === -1 && params.propertyName) {
     const cleanName = String(params.propertyName).trim().toLowerCase();
+    
+    // Find Name Column index dynamically to perform safe approximate lookup
+    let nameCol0Idx = 6; // default 0-indexed column 7
+    for (let c = 0; c < headers.length; c++) {
+      const h = String(headers[c]).trim().toUpperCase();
+      if (h.includes('INMUEBLE') || h.includes('INCREMENTOS')) {
+        nameCol0Idx = c;
+        break;
+      }
+    }
+
     for (let i = 0; i < values.length; i++) {
-      const cellName = String(values[i][6] || '').trim().toLowerCase();
+      const cellName = String(values[i][nameCol0Idx] || '').trim().toLowerCase();
       if (cellName && (cellName.includes(cleanName) || cleanName.includes(cellName))) { rowIdx = i + 1; break; }
     }
   }
@@ -738,6 +863,72 @@ function saveAdminPropertyToSheet(params) {
   const sheet = getAdminSheet();
   if (!sheet) return createJsonResponse({ success: false, error: 'No se encontró la hoja de administración' });
 
+  // Read headers from row 5
+  const lastCol = sheet.getLastColumn();
+  const headers = sheet.getRange(5, 1, 1, lastCol).getValues()[0];
+  
+  // Find column indices (1-based) dynamically
+  let ownerCol = -1;
+  let ownerPhoneCol = -1;
+  let nameCol = -1;
+  let tenantCol = -1;
+  let tenantPhoneCol = -1;
+  let durationCol = -1;
+  let depositCol = -1;
+  let startDateCol = -1;
+  let dueDayCol = -1;
+  let maxDueDayCol = -1;
+  let rentCol = -1;
+  let damageNotesCol = -1;
+
+  for (let c = 0; c < headers.length; c++) {
+    const h = String(headers[c]).trim().toUpperCase();
+    const colNum = c + 1;
+    
+    if (h === 'PROPIETARIO') {
+      ownerCol = colNum;
+    } else if (h === 'INQUILINO') {
+      tenantCol = colNum;
+    } else if (h.includes('DAÑOS Y REPORTES') || h.includes('DAÑOS') || h.includes('REPORTES')) {
+      damageNotesCol = colNum;
+    } else if (h.includes('INMUEBLE') || h.includes('INCREMENTOS')) {
+      nameCol = colNum;
+    } else if (h.includes('CONTRATO')) {
+      durationCol = colNum;
+    } else if (h.includes('DEPÓSITO') || h.includes('DEPOSITO')) {
+      depositCol = colNum;
+    } else if (h.includes('FECHA INICIO') || h.includes('FECHA')) {
+      startDateCol = colNum;
+    } else if (h.includes('DÍA PAGO') || h.includes('DIA PAGO') || h.includes('DÍA DE PAGO')) {
+      dueDayCol = colNum;
+    } else if (h.includes('LÍMITE PAGO') || h.includes('LIMITE PAGO') || h.includes('LÍMITE DE PAGO')) {
+      maxDueDayCol = colNum;
+    } else if (h === 'CANON') {
+      rentCol = colNum;
+    } else if (h === 'CELULAR') {
+      // Disambiguate owner vs tenant phone based on position relative to Propietario and Inquilino
+      if (ownerCol !== -1 && tenantCol === -1) {
+        ownerPhoneCol = colNum;
+      } else {
+        tenantPhoneCol = colNum;
+      }
+    }
+  }
+
+  // Fallbacks if not found (defaulting to the expected indices)
+  if (damageNotesCol === -1) damageNotesCol = 4;
+  if (ownerCol === -1) ownerCol = 5;
+  if (ownerPhoneCol === -1) ownerPhoneCol = 6;
+  if (nameCol === -1) nameCol = 7;
+  if (tenantCol === -1) tenantCol = 8;
+  if (tenantPhoneCol === -1) tenantPhoneCol = 9;
+  if (durationCol === -1) durationCol = 10;
+  if (depositCol === -1) depositCol = 11;
+  if (startDateCol === -1) startDateCol = 12;
+  if (dueDayCol === -1) dueDayCol = 13;
+  if (maxDueDayCol === -1) maxDueDayCol = 14;
+  if (rentCol === -1) rentCol = 15;
+
   const values = sheet.getDataRange().getValues();
   let rowIdx = -1;
 
@@ -746,35 +937,36 @@ function saveAdminPropertyToSheet(params) {
   }
   if (rowIdx === -1 && params.propertyNameOld) {
     const cleanName = String(params.propertyNameOld).trim().toLowerCase();
+    const nameCol0Idx = nameCol - 1;
     for (let i = 0; i < values.length; i++) {
-      const cellName = String(values[i][6] || '').trim().toLowerCase();
+      const cellName = String(values[i][nameCol0Idx] || '').trim().toLowerCase();
       if (cellName && (cellName.includes(cleanName) || cleanName.includes(cellName))) { rowIdx = i + 1; break; }
     }
   }
   if (rowIdx === -1) return createJsonResponse({ success: false, error: 'Propiedad no encontrada' });
 
-  if (params.damage_notes !== undefined) sheet.getRange(rowIdx, 4).setValue(params.damage_notes);
-  if (params.owner !== undefined) sheet.getRange(rowIdx, 5).setValue(params.owner);
-  if (params.owner_phone !== undefined) sheet.getRange(rowIdx, 6).setValue(params.owner_phone);
+  if (params.damage_notes !== undefined) sheet.getRange(rowIdx, damageNotesCol).setValue(params.damage_notes);
+  if (params.owner !== undefined) sheet.getRange(rowIdx, ownerCol).setValue(params.owner);
+  if (params.owner_phone !== undefined) sheet.getRange(rowIdx, ownerPhoneCol).setValue(params.owner_phone);
   
   if (params.name !== undefined) {
     var rawNameVal = params.name;
     if (params.increase_notes) {
       rawNameVal += "  " + params.increase_notes;
     }
-    sheet.getRange(rowIdx, 7).setValue(rawNameVal);
+    sheet.getRange(rowIdx, nameCol).setValue(rawNameVal);
   }
   
-  if (params.tenant_name !== undefined) sheet.getRange(rowIdx, 8).setValue(params.tenant_name);
-  if (params.tenant_phone !== undefined) sheet.getRange(rowIdx, 9).setValue(params.tenant_phone);
+  if (params.tenant_name !== undefined) sheet.getRange(rowIdx, tenantCol).setValue(params.tenant_name);
+  if (params.tenant_phone !== undefined) sheet.getRange(rowIdx, tenantPhoneCol).setValue(params.tenant_phone);
   
-  if (params.duration !== undefined) sheet.getRange(rowIdx, 10).setValue(params.duration);
-  if (params.deposit !== undefined) sheet.getRange(rowIdx, 11).setValue(params.deposit);
-  if (params.start_date !== undefined) sheet.getRange(rowIdx, 12).setValue(params.start_date);
+  if (params.duration !== undefined) sheet.getRange(rowIdx, durationCol).setValue(params.duration);
+  if (params.deposit !== undefined) sheet.getRange(rowIdx, depositCol).setValue(params.deposit);
+  if (params.start_date !== undefined) sheet.getRange(rowIdx, startDateCol).setValue(params.start_date);
   
-  if (params.due_day !== undefined) sheet.getRange(rowIdx, 13).setValue(Number(params.due_day));
-  if (params.max_due_day !== undefined) sheet.getRange(rowIdx, 14).setValue(Number(params.max_due_day));
-  if (params.monthly_rent !== undefined) sheet.getRange(rowIdx, 15).setValue(Number(params.monthly_rent));
+  if (params.due_day !== undefined) sheet.getRange(rowIdx, dueDayCol).setValue(Number(params.due_day));
+  if (params.max_due_day !== undefined) sheet.getRange(rowIdx, maxDueDayCol).setValue(Number(params.max_due_day));
+  if (params.monthly_rent !== undefined) sheet.getRange(rowIdx, rentCol).setValue(Number(params.monthly_rent));
 
   return createJsonResponse({ success: true, row: rowIdx });
 }
