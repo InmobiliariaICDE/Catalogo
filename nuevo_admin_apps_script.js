@@ -198,7 +198,11 @@ function getAdminData() {
   return createJsonResponse({
     last_update: new Date().toISOString(),
     properties: properties,
-    silvia_ledger: {}
+    silvia_ledger: {},
+    debug_raw_row_and_headers: {
+      headers: headers,
+      first_row: values[5] || []
+    }
   });
 }
 
