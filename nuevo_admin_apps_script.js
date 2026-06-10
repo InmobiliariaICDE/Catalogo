@@ -11,9 +11,21 @@ function getSpreadsheet() {
 
 function getAdminSheet() {
   const ss = getSpreadsheet();
-  let sheet = ss.getSheetByName('ADMINISTRACION DETALLADA');
+  const sheets = ss.getSheets();
+  
+  // 1. Buscar "ADMINISTRACION DETALLADA" (insensible a acentos y mayúsculas)
+  let sheet = sheets.find(s => {
+    const name = s.getName().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return name === "ADMINISTRACION DETALLADA";
+  });
   if (sheet) return sheet;
-  return ss.getSheets().find(s => s.getName().toUpperCase().includes('ADMINISTRACION')) || null;
+  
+  // 2. Fallback: buscar cualquier hoja que contenga "ADMINISTRACION"
+  sheet = sheets.find(s => {
+    const name = s.getName().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return name.includes("ADMINISTRACION");
+  });
+  return sheet || null;
 }
 
 // ROUTER GET
