@@ -1554,6 +1554,8 @@ textarea.gemini-card-input {
   .badge-status.vacant { color: #9ca3af; background: rgba(156,163,175,0.1); border: 1px solid rgba(156,163,175,0.2); }
   .badge-status.preaviso { color: #a855f7; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.2); }
   .badge-status.new { color: #3b82f6; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); }
+  .badge-status.norenew { color: #eab308; background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.2); }
+  .badge-status.delivery { color: #f97316; background: rgba(249,115,22,0.1); border: 1px solid rgba(249,115,22,0.2); }
 
   /* Matriz de Pagos */
   .matrix-wrapper { overflow-x: auto; background: transparent; border-radius: 0; border: none; box-shadow: none; }
@@ -1604,6 +1606,8 @@ textarea.gemini-card-input {
   .matrix-cell.status-cell-VACANT { color: #9ca3af; background: rgba(156,163,175,0.08); border: 1px solid rgba(156,163,175,0.15); }
   .matrix-cell.status-cell-PREAVISO { color: #a855f7; background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.3); }
   .matrix-cell.status-cell-NEW_CONTRACT { color: #3b82f6; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); }
+  .matrix-cell.status-cell-NO_RENEW { color: #eab308; background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.3); }
+  .matrix-cell.status-cell-DELIVERY { color: #f97316; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); }
   .matrix-cell.status-cell-FUTURE { color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); cursor: not-allowed; }
   .matrix-cell.status-cell-UNSTARTED { color: rgba(255,255,255,0.15); background: transparent; border: 1px dashed rgba(255,255,255,0.06); cursor: not-allowed; }
 
@@ -8392,12 +8396,15 @@ function renderAdministracionContent() {
     const payMonth = paymentsYear.find(m => m.month === currentAdminMonth);
     if (!payMonth) return false;
     const st = payMonth.status;
-    return st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT';
+    return st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY';
   };
 
   const filteredProperties = adminData.properties.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchVal) ||
                           (p.owner && p.owner.toLowerCase().includes(searchVal)) ||
+                          (p.owner_phone && p.owner_phone.includes(searchVal)) ||
+                          (p.tenant_name && p.tenant_name.toLowerCase().includes(searchVal)) ||
+                          (p.tenant_phone && p.tenant_phone.includes(searchVal)) ||
                           (p.increase_notes && p.increase_notes.toLowerCase().includes(searchVal));
     if (!matchesSearch) return false;
 
@@ -8443,7 +8450,7 @@ function renderAdministracionContent() {
         totalEsperado += rent; totalRecaudado += val || rent; ocupados++; totalActivos++;
       } else if (st === 'PENDING') {
         totalEsperado += rent; totalPendiente += rent; ocupados++; totalActivos++;
-      } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT') {
+      } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY') {
         totalEsperado += rent;
         if (val > 0) { totalRecaudado += val; } else { totalPendiente += rent; }
         ocupados++; totalActivos++;
@@ -8640,9 +8647,9 @@ function renderMatrizPagos(propertiesList) {
             const isSelected = String(p.name).trim() === String(currentAdminPropName).trim();
             return `
               <tr class="${isSelected ? 'active-admin-row' : ''}" data-prop-name="${String(p.name).trim()}" onclick="abrirEditarInmueble('${p.id}', 'cobro')">
-                <td class="cell-prop" title="${p.name} (${p.owner})">
+                <td class="cell-prop" title="${p.name} (Propietario: ${p.owner}${p.tenant_name ? `, Inquilino: ${p.tenant_name}` : ''})">
                   <div style="font-weight:700; color:#fff; font-size:13px;">${p.name}</div>
-                  <div style="font-size:10px; color:var(--muted); font-weight:500;">${p.owner}</div>
+                  <div style="font-size:10px; color:var(--muted); font-weight:500;">${p.tenant_name || p.owner}</div>
                 </td>
                 ${monthsFull.map(mFull => {
                   const pay = paymentsYear.find(m => m.month === mFull) || { status: 'UNSTARTED', value: 0 };
@@ -8652,6 +8659,8 @@ function renderMatrizPagos(propertiesList) {
                   else if (pay.status === 'PREAVISO') cellContent = '⚠';
                   else if (pay.status === 'NEW_CONTRACT') cellContent = '★';
                   else if (pay.status === 'VACANT') cellContent = '-';
+                  else if (pay.status === 'NO_RENEW') cellContent = '⌛';
+                  else if (pay.status === 'DELIVERY') cellContent = '⛳';
                   
                   const tooltipText = `${p.name} - ${mFull}: ${getStatusLabel(pay.status)} ${pay.value && parseFloat(pay.value) > 0 ? safeFormatP(pay.value) : ''}`;
                   
@@ -8669,6 +8678,10 @@ function renderMatrizPagos(propertiesList) {
                           <option value="VACANT" style="background-color: #121212; color: #fff;" ${pay.status === 'VACANT' ? 'selected' : ''}>⚪ Desocupado</option>
                           <option value="PREAVISO" style="background-color: #121212; color: #fff;" ${pay.status === 'PREAVISO' ? 'selected' : ''}>🟣 Preaviso</option>
                           <option value="NEW_CONTRACT" style="background-color: #121212; color: #fff;" ${pay.status === 'NEW_CONTRACT' ? 'selected' : ''}>🔵 Nuevo Contrato</option>
+              <option value="NO_RENEW" style="background-color: #121212; color: #fff;" ${pay.status === 'NO_RENEW' ? 'selected' : ''}>🟡 No Renovará</option>
+              <option value="DELIVERY" style="background-color: #121212; color: #fff;" ${pay.status === 'DELIVERY' ? 'selected' : ''}>🟠 Entrega</option>
+                          <option value="NO_RENEW" style="background-color: #121212; color: #fff;" ${pay.status === 'NO_RENEW' ? 'selected' : ''}>🟡 No Renovará</option>
+                          <option value="DELIVERY" style="background-color: #121212; color: #fff;" ${pay.status === 'DELIVERY' ? 'selected' : ''}>🟠 Entrega</option>
                           <option value="FUTURE" style="background-color: #121212; color: #fff;" ${pay.status === 'FUTURE' ? 'selected' : ''}>⚫ Futuro</option>
                         </select>
                       </div>
@@ -8766,9 +8779,12 @@ function syncPropertyToCalendar(propertyId) {
   }
 }
 
-function sendAdminReminder(owner, prop, amount, month, year, dueDay) {
-  const lead = leads.find(l => l.nombre.toLowerCase().includes(owner.toLowerCase()) || owner.toLowerCase().includes(l.nombre.toLowerCase()));
-  const phone = lead ? lead.celular : prompt(`No se encontró el teléfono del arrendatario para ${owner}. Por favor ingrésalo (código de país incluido sin '+', ej: 573001234567):`);
+function sendAdminReminder(owner, prop, amount, month, year, dueDay, directPhone) {
+  let phone = directPhone || '';
+  if (!phone) {
+    const lead = leads.find(l => l.nombre.toLowerCase().includes(owner.toLowerCase()) || owner.toLowerCase().includes(l.nombre.toLowerCase()));
+    phone = lead ? lead.celular : prompt(`No se encontró el teléfono del arrendatario para ${owner}. Por favor ingrésalo (código de país incluido sin '+', ej: 573001234567):`);
+  }
   
   if (!phone) return;
   
@@ -8930,8 +8946,9 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
   const dueDay = p.due_day ? Math.round(p.due_day) : 5;
   const maxDueDay = p.max_due_day ? Math.round(p.max_due_day) : 10;
 
-  const lead = (leads || []).find(l => l.nombre && p.owner && (l.nombre.toLowerCase().includes(p.owner.toLowerCase()) || p.owner.toLowerCase().includes(l.nombre.toLowerCase())));
-  const phone = (lead && lead.celular) ? lead.celular : '—';
+  const searchName = p.tenant_name || p.owner;
+  const lead = (leads || []).find(l => l.nombre && searchName && (l.nombre.toLowerCase().includes(searchName.toLowerCase()) || searchName.toLowerCase().includes(l.nombre.toLowerCase())));
+  const phone = p.tenant_phone || ((lead && lead.celular) ? lead.celular : '—');
 
   // Silvia transactions for this year
   const silviaTxs = (adminData.silvia_ledger && adminData.silvia_ledger[String(year)]) || [];
@@ -8973,6 +8990,8 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
               <option value="VACANT" style="background-color: #121212; color: #fff;" ${pay.status === 'VACANT' ? 'selected' : ''}>⚪ Desocupado</option>
               <option value="PREAVISO" style="background-color: #121212; color: #fff;" ${pay.status === 'PREAVISO' ? 'selected' : ''}>🟣 Preaviso</option>
               <option value="NEW_CONTRACT" style="background-color: #121212; color: #fff;" ${pay.status === 'NEW_CONTRACT' ? 'selected' : ''}>🔵 Nuevo Contrato</option>
+              <option value="NO_RENEW" style="background-color: #121212; color: #fff;" ${pay.status === 'NO_RENEW' ? 'selected' : ''}>🟡 No Renovará</option>
+              <option value="DELIVERY" style="background-color: #121212; color: #fff;" ${pay.status === 'DELIVERY' ? 'selected' : ''}>🟠 Entrega</option>
               <option value="FUTURE" style="background-color: #121212; color: #fff;" ${pay.status === 'FUTURE' ? 'selected' : ''}>⚫ Futuro</option>
             </select>
           </div>
@@ -8985,7 +9004,7 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
         </div>
         <div>
           <div class="u-field-label">Inquilino</div>
-          <div class="u-field-value">${p.owner}</div>
+          <div class="u-field-value">${p.tenant_name || p.owner}</div>
         </div>
 
         <!-- Fila 3 -->
@@ -8995,7 +9014,7 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
         </div>
         <div>
           <div class="u-field-label">Celulares</div>
-          <div class="u-field-value">${phone}</div>
+          <div class="u-field-value">${p.tenant_phone || phone}</div>
         </div>
 
         <!-- Fila 4 -->
@@ -9019,6 +9038,8 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
               <option value="VACANT" style="background-color: #121212; color: #fff;" ${pay.status === 'VACANT' ? 'selected' : ''}>⚪ Desocupado</option>
               <option value="PREAVISO" style="background-color: #121212; color: #fff;" ${pay.status === 'PREAVISO' ? 'selected' : ''}>🟣 Preaviso</option>
               <option value="NEW_CONTRACT" style="background-color: #121212; color: #fff;" ${pay.status === 'NEW_CONTRACT' ? 'selected' : ''}>🔵 Nuevo Contrato</option>
+              <option value="NO_RENEW" style="background-color: #121212; color: #fff;" ${pay.status === 'NO_RENEW' ? 'selected' : ''}>🟡 No Renovará</option>
+              <option value="DELIVERY" style="background-color: #121212; color: #fff;" ${pay.status === 'DELIVERY' ? 'selected' : ''}>🟠 Entrega</option>
               <option value="FUTURE" style="background-color: #121212; color: #fff;" ${pay.status === 'FUTURE' ? 'selected' : ''}>⚫ Futuro</option>
             </select>
           </div>
@@ -9039,7 +9060,7 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px; margin-bottom:10px;">
         <button class="btn btn-secondary btn-sm"
                 style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; background:rgba(37,211,102,0.08); color:#25d366; border:1px solid rgba(37,211,102,0.2);"
-                onclick="sendAdminReminder('${p.owner}', '${p.name.replace(/'/g, "\\'")}', '${p.monthly_rent}', '${monthName}', '${year}', ${dueDay})">
+                onclick="sendAdminReminder('${p.tenant_name || p.owner}', '${p.name.replace(/'/g, "\\'")}', '${p.monthly_rent}', '${monthName}', '${year}', ${dueDay}, '${p.tenant_phone || ''}')">
           💬 WhatsApp
         </button>
         <button class="btn btn-primary btn-sm"
@@ -9065,6 +9086,10 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
       <div>
         <label class="u-inp-label">Propietario</label>
         <input type="text" id="editPropOwner" class="u-inp" value="${p.owner || ''}">
+      </div>
+      <div>
+        <label class="u-inp-label">Celular Propietario</label>
+        <input type="text" id="editPropOwnerPhone" class="u-inp" value="${p.owner_phone || ''}">
       </div>
       <div class="u-modal-grid">
         <div>
@@ -9116,7 +9141,11 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
     <div style="display:flex; flex-direction:column; gap:11px;">
       <div>
         <label class="u-inp-label">Nombre del inquilino</label>
-        <input type="text" id="editContraOwner" class="u-inp" value="${p.owner || ''}">
+        <input type="text" id="editContraTenantName" class="u-inp" value="${p.tenant_name || ''}">
+      </div>
+      <div>
+        <label class="u-inp-label">Celular del inquilino</label>
+        <input type="text" id="editContraTenantPhone" class="u-inp" value="${p.tenant_phone || ''}">
       </div>
 
       <div class="u-modal-grid">
@@ -9379,6 +9408,7 @@ async function saveAdminPaymentStatus(propId, propName, monthName, year) {
   else if (status === 'PREAVISO')      { finalValue = 'PREAVISO'; }
   else if (status === 'NEW_CONTRACT')  { finalValue = 'CONTRATO NUEVO'; }
   else if (status === 'NO_RENEW')      { finalValue = 'NO RENOVARA'; }
+  else if (status === 'DELIVERY')      { finalValue = 'ENTREGA'; }
   else { finalValue = rawValue || '-'; }
 
   saveBtn.disabled = true;
@@ -9441,6 +9471,7 @@ async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, st
   else if (status === 'PREAVISO')      { finalValue = 'PREAVISO'; }
   else if (status === 'NEW_CONTRACT')  { finalValue = 'CONTRATO NUEVO'; }
   else if (status === 'NO_RENEW')      { finalValue = 'NO RENOVARA'; }
+  else if (status === 'DELIVERY')      { finalValue = 'ENTREGA'; }
   else { finalValue = '-'; }
 
   const payload = {
@@ -9503,6 +9534,7 @@ async function saveAdminPropertyDetails(propId, propNameOld) {
     propertyNameOld: propNameOld,
     name:           document.getElementById('editPropName').value.trim(),
     owner:          document.getElementById('editPropOwner').value.trim(),
+    owner_phone:    document.getElementById('editPropOwnerPhone').value.trim(),
     monthly_rent:   parseFloat(document.getElementById('editPropRent').value) || 0,
     deposit:        document.getElementById('editPropDeposit').value.trim(),
     start_date:     document.getElementById('editPropStartDate').value,
@@ -9522,7 +9554,7 @@ async function saveAdminPropertyDetails(propId, propNameOld) {
     const p = adminData.properties.find(x => x.id === propId);
     if (p) {
       Object.assign(p, {
-        name: payload.name, owner: payload.owner, monthly_rent: payload.monthly_rent,
+        name: payload.name, owner: payload.owner, owner_phone: payload.owner_phone, monthly_rent: payload.monthly_rent,
         deposit: payload.deposit, start_date: payload.start_date, duration: payload.duration,
         due_day: payload.due_day, max_due_day: payload.max_due_day,
         increase_notes: payload.increase_notes, damage_notes: payload.damage_notes
@@ -9566,7 +9598,8 @@ async function saveAdminContractDetails(propId, propNameOld) {
     propertyId: propId,
     propertyNameOld: propNameOld,
     name:           propName,
-    owner:          document.getElementById('editContraOwner').value.trim(),
+    tenant_name:    document.getElementById('editContraTenantName').value.trim(),
+    tenant_phone:   document.getElementById('editContraTenantPhone').value.trim(),
     monthly_rent:   parseFloat(document.getElementById('editContraRent').value) || 0,
     deposit:        document.getElementById('editContraDeposit').value.trim(),
     start_date:     document.getElementById('editContraStartDate').value,
@@ -9583,7 +9616,7 @@ async function saveAdminContractDetails(propId, propNameOld) {
   const applyToMemory = () => {
     if (p) {
       Object.assign(p, {
-        owner: payload.owner, monthly_rent: payload.monthly_rent,
+        tenant_name: payload.tenant_name, tenant_phone: payload.tenant_phone, monthly_rent: payload.monthly_rent,
         deposit: payload.deposit, start_date: payload.start_date, duration: payload.duration,
         due_day: payload.due_day, max_due_day: payload.max_due_day,
         increase_notes: payload.increase_notes, damage_notes: payload.damage_notes
@@ -9622,6 +9655,8 @@ function getStatusBadgeClass(status) {
     case 'VACANT': return 'badge-status vacant';
     case 'PREAVISO': return 'badge-status preaviso';
     case 'NEW_CONTRACT': return 'badge-status new';
+    case 'NO_RENEW': return 'badge-status norenew';
+    case 'DELIVERY': return 'badge-status delivery';
     case 'FUTURE': return 'badge-status vacant';
     case 'UNSTARTED': return 'badge-status vacant';
     default: return 'badge-status vacant';
@@ -9635,6 +9670,8 @@ function getStatusLabel(status) {
     case 'VACANT': return 'Desocupado';
     case 'PREAVISO': return 'Preaviso';
     case 'NEW_CONTRACT': return 'Nuevo Contrato';
+    case 'NO_RENEW': return 'No Renovara';
+    case 'DELIVERY': return 'Entrega';
     case 'FUTURE': return 'Futuro';
     case 'UNSTARTED': return 'No Iniciado';
     default: return status || 'Sin Estado';

@@ -62,6 +62,8 @@ def get_month_status(val, year, month_idx, start_date_str, due_day, monthly_rent
         return "NEW_CONTRACT", val_str
     elif "NO RENOVARA" in val_str:
         return "NO_RENEW", val_str
+    elif "ENTREGA" in val_str:
+        return "DELIVERY", val_str
     
     # If the value is a positive number
     num_val = parse_number(val)
@@ -103,35 +105,41 @@ def parse_properties(file):
     df = pd.read_excel(file, sheet_name='ADMINISTRACION DETALLADA', header=None)
     properties = []
     
-    # We loop from row index 5 to row index 24 (which has active properties)
-    for i in range(5, 25):
+    # Loop from row index 5 through the end of the sheet dynamically
+    for i in range(5, df.shape[0]):
         row = df.iloc[i]
-        
-        # Parse basic fields
+        if len(row) < 15:
+            continue
+            
+        # Parse basic fields according to new columns
         row_id = str(row[0]).strip() if not pd.isna(row[0]) else str(i-4)
         damage_notes = str(row[3]).strip() if not pd.isna(row[3]) else ""
         owner = str(row[4]).strip() if not pd.isna(row[4]) else "Sin Propietario"
-        raw_name = str(row[5]).strip() if not pd.isna(row[5]) else ""
+        owner_phone = str(row[5]).strip() if not pd.isna(row[5]) else ""
+        raw_name = str(row[6]).strip() if not pd.isna(row[6]) else ""
         
-        if not raw_name:
+        if not raw_name or raw_name.lower() == 'nan':
             continue
             
         prop_name, increase_notes = clean_prop_name(raw_name)
         
-        duration = str(row[6]).strip() if not pd.isna(row[6]) else ""
-        deposit = str(row[7]).strip() if not pd.isna(row[7]) else ""
-        start_date = parse_date(row[8])
-        due_day = parse_number(row[9])
-        max_due_day = parse_number(row[10])
-        monthly_rent = parse_number(row[11])
+        tenant_name = str(row[7]).strip() if not pd.isna(row[7]) else ""
+        tenant_phone = str(row[8]).strip() if not pd.isna(row[8]) else ""
         
-        # Payment columns mappings
+        duration = str(row[9]).strip() if not pd.isna(row[9]) else ""
+        deposit = str(row[10]).strip() if not pd.isna(row[10]) else ""
+        start_date = parse_date(row[11])
+        due_day = parse_number(row[12])
+        max_due_day = parse_number(row[13])
+        monthly_rent = parse_number(row[14])
+        
+        # Payment columns mappings (shifted by 3)
         years_map = {
-            2023: list(range(12, 24)),
-            2024: list(range(25, 37)),
-            2025: list(range(38, 50)),
-            2026: list(range(51, 63)),
-            2027: list(range(64, 76))
+            2023: list(range(15, 27)),
+            2024: list(range(28, 40)),
+            2025: list(range(41, 53)),
+            2026: list(range(54, 66)),
+            2027: list(range(67, 79))
         }
         
         months_names = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
@@ -148,7 +156,7 @@ def parse_properties(file):
                     "status": status
                 })
         
-        # Overal status is usually Occupied, unless latest May 2026 status is VACANT
+        # Overall status is usually Occupied, unless latest May 2026 status is VACANT
         overall_status = "Ocupado"
         if "DESOCUPAD" in raw_name.upper():
             overall_status = "Desocupado"
@@ -162,8 +170,11 @@ def parse_properties(file):
             "id": row_id,
             "excel_row": i,
             "owner": owner,
+            "owner_phone": owner_phone,
             "name": prop_name,
             "increase_notes": increase_notes,
+            "tenant_name": tenant_name,
+            "tenant_phone": tenant_phone,
             "damage_notes": damage_notes,
             "duration": duration,
             "deposit": deposit,
@@ -241,7 +252,7 @@ def pull_from_cloud():
             
         print(f"Se obtuvieron {len(properties)} propiedades de la nube. Actualizando Excel local en el lugar...")
         
-        file_path = "Pagos - Control.xlsx"
+        file_path = "Base de datos Admin.xlsx"
         if not os.path.exists(file_path):
             print(f"Error: El archivo {file_path} no existe.")
             return False
@@ -262,13 +273,13 @@ def pull_from_cloud():
                 
         ws = wb[sheet_name]
         
-        # Mapeo de columnas por año (1-indexed para openpyxl)
+        # Mapeo de columnas por año (1-indexed para openpyxl, shifted +3)
         years_map = {
-            2023: 13,
-            2024: 26,
-            2025: 39,
-            2026: 52,
-            2027: 65
+            2023: 16,
+            2024: 29,
+            2025: 42,
+            2026: 55,
+            2027: 68
         }
         
         updated_cells_count = 0
@@ -290,7 +301,7 @@ def pull_from_cloud():
                 # Buscar por coincidencia aproximada de nombre
                 clean_prop_name = str(prop_name).strip().lower()
                 for r in range(6, ws.max_row + 1):
-                    cell_name = ws.cell(row=r, column=6).value
+                    cell_name = ws.cell(row=r, column=7).value
                     if cell_name is not None:
                         clean_cell_name = str(cell_name).strip().lower()
                         if clean_prop_name in clean_cell_name or clean_cell_name in clean_prop_name:
@@ -369,8 +380,8 @@ def main():
         "silvia_ledger": {}
     }
     
-    # 1. Parse Properties from Pagos - Control.xlsx
-    all_data["properties"] = parse_properties("Pagos - Control.xlsx")
+    # 1. Parse Properties from Base de datos Admin.xlsx
+    all_data["properties"] = parse_properties("Base de datos Admin.xlsx")
     
     # 2. Parse Silvia Ledger from Edif. Silvia - Pagos Admt. CRA7 No. 33-20.xlsx
     all_data["silvia_ledger"] = parse_silvia_ledger("Edif. Silvia - Pagos Admt. CRA7 No. 33-20.xlsx")

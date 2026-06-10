@@ -49,30 +49,36 @@ function getAdminData() {
   const properties = [];
 
   const yearsMap = {
-    2023: [12,13,14,15,16,17,18,19,20,21,22,23],
-    2024: [25,26,27,28,29,30,31,32,33,34,35,36],
-    2025: [38,39,40,41,42,43,44,45,46,47,48,49],
-    2026: [51,52,53,54,55,56,57,58,59,60,61,62],
-    2027: [64,65,66,67,68,69,70,71,72,73,74,75]
+    2023: [15,16,17,18,19,20,21,22,23,24,25,26],
+    2024: [28,29,30,31,32,33,34,35,36,37,38,39],
+    2025: [41,42,43,44,45,46,47,48,49,50,51,52],
+    2026: [54,55,56,57,58,59,60,61,62,63,64,65],
+    2027: [67,68,69,70,71,72,73,74,75,76,77,78]
   };
   const monthsNames = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
 
   for (let i = 5; i < values.length; i++) {
     const row = values[i];
-    if (!row || row.length < 12) continue;
-    const rawName = row[5] ? String(row[5]).trim() : '';
+    if (!row || row.length < 15) continue;
+    const rawName = row[6] ? String(row[6]).trim() : '';
     if (!rawName || rawName.toLowerCase() === 'nan') continue;
 
     const rowId = row[0] ? String(row[0]).trim() : String(i - 4);
     const owner = row[4] ? String(row[4]).trim() : 'Sin Propietario';
+    const ownerPhone = row[5] ? String(row[5]).trim() : '';
     const nameParts = rawName.split(/\s{2,}|(?=Aumento)/);
     const propName = nameParts[0].trim().replace(/\.$/, '');
     const increaseNotes = nameParts.slice(1).map(p => p.trim()).filter(p => p).join(' | ');
 
-    const startDate = _formatDate(row[8]);
-    const dueDay = _parseNum(row[9]);
-    const maxDueDay = _parseNum(row[10]);
-    const monthlyRent = _parseNum(row[11]);
+    const tenantName = row[7] ? String(row[7]).trim() : '';
+    const tenantPhone = row[8] ? String(row[8]).trim() : '';
+
+    const duration = row[9] ? String(row[9]).trim() : '';
+    const deposit = row[10] ? String(row[10]).trim() : '';
+    const startDate = _formatDate(row[11]);
+    const dueDay = _parseNum(row[12]);
+    const maxDueDay = _parseNum(row[13]);
+    const monthlyRent = _parseNum(row[14]);
 
     const paymentsHistory = {};
     Object.keys(yearsMap).forEach(year => {
@@ -89,10 +95,11 @@ function getAdminData() {
     }
 
     properties.push({
-      id: rowId, excel_row: i, owner, name: propName,
+      id: rowId, excel_row: i, owner, owner_phone: ownerPhone, name: propName,
+      tenant_name: tenantName, tenant_phone: tenantPhone,
       increase_notes: increaseNotes, damage_notes: row[3] ? String(row[3]).trim() : '',
-      duration: row[6] ? String(row[6]).trim() : '',
-      deposit: row[7] ? String(row[7]).trim() : '',
+      duration: duration,
+      deposit: deposit,
       start_date: startDate, due_day: dueDay, max_due_day: maxDueDay,
       monthly_rent: monthlyRent, status: overallStatus, payments: paymentsHistory
     });
@@ -115,21 +122,24 @@ function importAdminDataFromJSON(data) {
     sheet = ss.insertSheet('ADMINISTRACION DETALLADA');
   }
 
-  const headers = new Array(76).fill('');
+  const headers = new Array(79).fill('');
   headers[0] = 'ID';
   headers[1] = 'Item';
   headers[2] = 'CRA';
   headers[3] = 'Daños y Reportes';
   headers[4] = 'Propietario';
-  headers[5] = 'Inmueble / Incrementos';
-  headers[6] = 'Contrato (Meses)';
-  headers[7] = 'Depósito';
-  headers[8] = 'Fecha Inicio';
-  headers[9] = 'Día Pago';
-  headers[10] = 'Límite Pago';
-  headers[11] = 'Canon';
+  headers[5] = 'Celular';
+  headers[6] = 'Inmueble / Incrementos';
+  headers[7] = 'Inquilino';
+  headers[8] = 'Celular';
+  headers[9] = 'Contrato (Meses)';
+  headers[10] = 'Depósito';
+  headers[11] = 'Fecha Inicio';
+  headers[12] = 'Día Pago';
+  headers[13] = 'Límite Pago';
+  headers[14] = 'Canon';
 
-  const yearsMap = { 2023: 12, 2024: 25, 2025: 38, 2026: 51, 2027: 64 };
+  const yearsMap = { 2023: 15, 2024: 28, 2025: 41, 2026: 54, 2027: 67 };
   const months = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
 
   Object.keys(yearsMap).forEach(year => {
@@ -144,23 +154,26 @@ function importAdminDataFromJSON(data) {
 
   const rowsToWrite = [];
   data.properties.forEach((p, index) => {
-    const row = new Array(76).fill('');
+    const row = new Array(79).fill('');
     row[0] = String(p.excel_row || (index + 5));
     row[1] = index + 1;
     row[3] = p.damage_notes || '';
     row[4] = p.owner || 'Sin Propietario';
+    row[5] = p.owner_phone || '';
     
     let rawNameVal = p.name || '';
     if (p.increase_notes) {
       rawNameVal += '  ' + p.increase_notes;
     }
-    row[5] = rawNameVal;
-    row[6] = p.duration || '';
-    row[7] = p.deposit || '';
-    row[8] = p.start_date || '';
-    row[9] = p.due_day || 5;
-    row[10] = p.max_due_day || 10;
-    row[11] = p.monthly_rent || 0;
+    row[6] = rawNameVal;
+    row[7] = p.tenant_name || '';
+    row[8] = p.tenant_phone || '';
+    row[9] = p.duration || '';
+    row[10] = p.deposit || '';
+    row[11] = p.start_date || '';
+    row[12] = p.due_day || 5;
+    row[13] = p.max_due_day || 10;
+    row[14] = p.monthly_rent || 0;
 
     Object.keys(yearsMap).forEach(year => {
       const startIdx = yearsMap[year];
@@ -174,11 +187,11 @@ function importAdminDataFromJSON(data) {
   });
 
   if (rowsToWrite.length > 0) {
-    sheet.getRange(6, 1, rowsToWrite.length, 76).setValues(rowsToWrite);
+    sheet.getRange(6, 1, rowsToWrite.length, 79).setValues(rowsToWrite);
   }
 
   sheet.setFrozenRows(5);
-  sheet.setFrozenColumns(6);
+  sheet.setFrozenColumns(7);
 
   return createJsonResponse({ success: true, count: rowsToWrite.length });
 }
@@ -188,7 +201,7 @@ function saveAdminPaymentToSheet(params) {
   const sheet = getAdminSheet();
   if (!sheet) return createJsonResponse({ success: false, error: 'No se encontró la hoja de administración en el Sheet' });
 
-  const yearsMap = { 2023: 12, 2024: 25, 2025: 38, 2026: 51, 2027: 64 };
+  const yearsMap = { 2023: 15, 2024: 28, 2025: 41, 2026: 54, 2027: 67 };
   const year = parseInt(params.year, 10);
   const monthIndex = parseInt(params.monthIndex, 10);
   const colStart = yearsMap[year];
@@ -210,7 +223,7 @@ function saveAdminPaymentToSheet(params) {
   if (rowIdx === -1 && params.propertyName) {
     const cleanName = String(params.propertyName).trim().toLowerCase();
     for (let i = 0; i < values.length; i++) {
-      const cellName = String(values[i][5] || '').trim().toLowerCase();
+      const cellName = String(values[i][6] || '').trim().toLowerCase();
       if (cellName && (cellName.indexOf(cleanName) !== -1 || cleanName.indexOf(cellName) !== -1)) {
         rowIdx = i + 1;
         break;
@@ -249,7 +262,7 @@ function saveAdminPropertyToSheet(params) {
   if (rowIdx === -1 && params.propertyNameOld) {
     const cleanName = String(params.propertyNameOld).trim().toLowerCase();
     for (let i = 0; i < values.length; i++) {
-      const cellName = String(values[i][5] || '').trim().toLowerCase();
+      const cellName = String(values[i][6] || '').trim().toLowerCase();
       if (cellName && (cellName.indexOf(cleanName) !== -1 || cleanName.indexOf(cellName) !== -1)) {
         rowIdx = i + 1;
         break;
@@ -266,24 +279,27 @@ function saveAdminPropertyToSheet(params) {
 
   if (params.damage_notes !== undefined) sheet.getRange(rowIdx, 4).setValue(params.damage_notes);
   if (params.owner !== undefined) sheet.getRange(rowIdx, 5).setValue(params.owner);
+  if (params.owner_phone !== undefined) sheet.getRange(rowIdx, 6).setValue(params.owner_phone);
   
   if (params.name !== undefined) {
     let rawNameVal = params.name;
     if (params.increase_notes) {
       rawNameVal += "  " + params.increase_notes;
     }
-    sheet.getRange(rowIdx, 6).setValue(rawNameVal);
+    sheet.getRange(rowIdx, 7).setValue(rawNameVal);
   }
   
-  if (params.duration !== undefined) sheet.getRange(rowIdx, 7).setValue(params.duration);
-  if (params.deposit !== undefined) sheet.getRange(rowIdx, 8).setValue(params.deposit);
-  if (params.start_date !== undefined) sheet.getRange(rowIdx, 9).setValue(params.start_date);
+  if (params.tenant_name !== undefined) sheet.getRange(rowIdx, 8).setValue(params.tenant_name);
+  if (params.tenant_phone !== undefined) sheet.getRange(rowIdx, 9).setValue(params.tenant_phone);
   
-  if (params.due_day !== undefined) sheet.getRange(rowIdx, 10).setValue(Number(params.due_day));
-  if (params.max_due_day !== undefined) sheet.getRange(rowIdx, 11).setValue(Number(params.max_due_day));
-  if (params.monthly_rent !== undefined) sheet.getRange(rowIdx, 12).setValue(Number(params.monthly_rent));
+  if (params.duration !== undefined) sheet.getRange(rowIdx, 10).setValue(params.duration);
+  if (params.deposit !== undefined) sheet.getRange(rowIdx, 11).setValue(params.deposit);
+  if (params.start_date !== undefined) sheet.getRange(rowIdx, 12).setValue(params.start_date);
+  
+  if (params.due_day !== undefined) sheet.getRange(rowIdx, 13).setValue(Number(params.due_day));
+  if (params.max_due_day !== undefined) sheet.getRange(rowIdx, 14).setValue(Number(params.max_due_day));
+  if (params.monthly_rent !== undefined) sheet.getRange(rowIdx, 15).setValue(Number(params.monthly_rent));
 
-  return createJsonResponse({ success: true, row: rowIdx });
 }
 
 // AUXILIARES
@@ -319,6 +335,7 @@ function _getMonthStatus(val, year, monthIdx, startDateStr, monthlyRent) {
   if (valStr.includes('PREAVISO'))   return { status: 'PREAVISO', value: 'PREAVISO' };
   if (valStr.includes('NUEVO') || valStr.includes('CONTRATO NUEVO')) return { status: 'NEW_CONTRACT', value: 'CONTRATO NUEVO' };
   if (valStr.includes('NO RENOVARA')) return { status: 'NO_RENEW', value: 'NO RENOVARA' };
+  if (valStr.includes('ENTREGA'))     return { status: 'DELIVERY', value: 'ENTREGA' };
 
   const numVal = _parseNum(val);
   if (numVal > 0) return { status: 'PAID', value: numVal };
