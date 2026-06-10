@@ -8636,7 +8636,7 @@ function renderResumenCobros(propertiesList) {
                   </div>
                 </td>
                 <td>
-                  <div style="font-weight:600; color:rgba(255,255,255,0.9);">${p.owner}</div>
+                  <div style="font-weight:600; color:rgba(255,255,255,0.9);">${p.tenant_name || ''}</div>
                   <div style="font-size:11px; color:var(--muted); margin-top:2px;">Inicio: ${p.start_date || 'N/A'} (${p.duration || 12} meses)</div>
                 </td>
                 <td>
@@ -8656,12 +8656,12 @@ function renderResumenCobros(propertiesList) {
                 <td style="text-align:center;">
                   <div style="display:flex; gap:8px; justify-content:center;">
                     <button class="btn btn-sm btn-secondary" style="padding: 6px 10px; font-size: 14px;" 
-                            onclick="sendAdminReminder('${p.owner}', '${p.name}', '${p.monthly_rent}', '${currentAdminMonth}', '${currentAdminYear}', ${dueDay})" 
+                            onclick="sendAdminReminder('${p.tenant_name || ''}', '${p.name}', '${p.monthly_rent}', '${currentAdminMonth}', '${currentAdminYear}', ${dueDay})" 
                             title="Enviar recordatorio WhatsApp">
                       💬
                     </button>
                     <button class="btn btn-sm btn-secondary" style="padding: 6px 10px; font-size: 14px;" 
-                            onclick="addIndividualToCalendar('${p.name}', '${p.owner}', ${p.monthly_rent}, '${currentAdminYear}', '${currentAdminMonth}', ${dueDay}, ${maxDueDay})" 
+                            onclick="addIndividualToCalendar('${p.name}', '${p.tenant_name || ''}', ${p.monthly_rent}, '${currentAdminYear}', '${currentAdminMonth}', ${dueDay}, ${maxDueDay})" 
                             title="Agregar a Google Calendar">
                       📅
                     </button>
@@ -8706,8 +8706,8 @@ function renderMatrizPagos(propertiesList) {
             return `
               <tr class="${isSelected ? 'active-admin-row' : ''}" data-prop-name="${String(p.name).trim()}" onclick="abrirEditarInmueble('${p.id}', 'cobro')">
                 <td class="cell-prop" title="${p.name} (Propietario: ${p.owner}${p.tenant_name ? `, Inquilino: ${p.tenant_name}` : ''})">
-                  <div style="font-weight:700; color:#fff; font-size:13px;">${p.name} - ${p.tenant_name || p.owner}</div>
-                  <div style="font-size:10px; color:var(--muted); font-weight:500;">${p.owner}</div>
+                  <div style="font-weight:700; color:#fff; font-size:13px;">${p.name}${p.tenant_name ? ' - ' + p.tenant_name : ''}</div>
+                  <div style="font-size:10px; color:var(--muted); font-weight:500;">${p.tenant_name || ''}</div>
                 </td>
                 ${monthsFull.map(mFull => {
                   const pay = paymentsYear.find(m => m.month === mFull) || { status: 'UNSTARTED', value: 0 };
@@ -8837,24 +8837,24 @@ function syncPropertyToCalendar(propertyId) {
   }
 }
 
-function sendAdminReminder(owner, prop, amount, month, year, dueDay, directPhone) {
+function sendAdminReminder(tenantName, prop, amount, month, year, dueDay, directPhone) {
   let phone = directPhone || '';
-  if (!phone) {
-    const lead = leads.find(l => l.nombre.toLowerCase().includes(owner.toLowerCase()) || owner.toLowerCase().includes(l.nombre.toLowerCase()));
-    phone = lead ? lead.celular : prompt(`No se encontró el teléfono del arrendatario para ${owner}. Por favor ingrésalo (código de país incluido sin '+', ej: 573001234567):`);
+  if (!phone && tenantName) {
+    const lead = leads.find(l => l.nombre && (l.nombre.toLowerCase().includes(tenantName.toLowerCase()) || tenantName.toLowerCase().includes(l.nombre.toLowerCase())));
+    phone = lead ? lead.celular : prompt(`No se encontró el teléfono del arrendatario para ${tenantName}. Por favor ingrésalo (código de país incluido sin '+', ej: 573001234567):`);
   }
   
   if (!phone) return;
   
   const cleanPhone = phone.replace(/[^\d]/g, '');
-  const msg = `Hola ${owner}, te escribimos de ICDE Inmobiliaria para recordarte el pago del canon de arrendamiento de la propiedad *${prop}* por valor de *${safeFormatP(amount)}* correspondiente a *${month}/${year}*. Recuerda que el día límite de pago es el ${dueDay}. ¡Muchas gracias!`;
+  const msg = `Hola ${tenantName || 'Inquilino'}, te escribimos de ICDE Inmobiliaria para recordarte el pago del canon de arrendamiento de la propiedad *${prop}* por valor de *${safeFormatP(amount)}* correspondiente a *${month}/${year}*. Recuerda que el día límite de pago es el ${dueDay}. ¡Muchas gracias!`;
   
   if (waBridgeConnected) {
     toast('Enviando recordatorio automático...', 'info');
     fetch('http://localhost:3000/send-reminder', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ number: cleanPhone, name: owner, property: prop, amount: amount, dueDate: dueDay })
+      body: JSON.stringify({ number: cleanPhone, name: tenantName || 'Inquilino', property: prop, amount: amount, dueDate: dueDay })
     }).then(res => {
       if (res.ok) {
         toast('Recordatorio WhatsApp enviado ✓', 'success');
@@ -8898,8 +8898,12 @@ async function sendBulkReminders() {
     
     for (const item of pending) {
       const p = item.prop;
-      const lead = leads.find(l => l.nombre.toLowerCase().includes(p.owner.toLowerCase()) || p.owner.toLowerCase().includes(l.nombre.toLowerCase()));
-      const phone = lead ? lead.celular : null;
+      const searchName = p.tenant_name || p.owner;
+      let phone = p.tenant_phone;
+      if (!phone && searchName) {
+        const lead = leads.find(l => l.nombre && (l.nombre.toLowerCase().includes(searchName.toLowerCase()) || searchName.toLowerCase().includes(l.nombre.toLowerCase())));
+        phone = lead ? lead.celular : null;
+      }
       if (!phone) continue;
       
       const cleanPhone = phone.replace(/[^\d]/g, '');
@@ -8909,7 +8913,7 @@ async function sendBulkReminders() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             number: cleanPhone, 
-            name: p.owner, 
+            name: p.tenant_name || p.owner, 
             property: p.name, 
             amount: p.monthly_rent, 
             dueDate: p.due_day 
@@ -8966,8 +8970,8 @@ function generateICS(properties, year) {
         icsContent += "BEGIN:VEVENT\n";
         icsContent += `UID:rent-${p.id}-${year}-${monthStr}@icde.com\n`;
         icsContent += `DTSTART;VALUE=DATE:${dateStr}\n`;
-        icsContent += `SUMMARY:Cobro Arriendo - ${p.name} (${p.owner})\n`;
-        icsContent += `DESCRIPTION:Cobro de canon de arrendamiento de la propiedad ${p.name} por valor de ${safeFormatP(rent)}. Inquilino/Propietario: ${p.owner}. Pagar antes del dia ${maxDueDay}.\n`;
+        icsContent += `SUMMARY:Cobro Arriendo - ${p.name} (${p.tenant_name || ''})\n`;
+        icsContent += `DESCRIPTION:Cobro de canon de arrendamiento de la propiedad ${p.name} por valor de ${safeFormatP(rent)}. Inquilino: ${p.tenant_name || ''}. Pagar antes del dia ${maxDueDay}.\n`;
         icsContent += "SEQUENCE:0\nSTATUS:CONFIRMED\nTRANSP:TRANSPARENT\nEND:VEVENT\n";
       }
     });
@@ -8977,7 +8981,7 @@ function generateICS(properties, year) {
   return icsContent;
 }
 
-function addIndividualToCalendar(propName, owner, rent, year, month, dueDay, maxDueDay) {
+function addIndividualToCalendar(propName, tenantName, rent, year, month, dueDay, maxDueDay) {
   const monthsMap = {
     "ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, "MAYO": 5, "JUNIO": 6,
     "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12
@@ -8987,8 +8991,8 @@ function addIndividualToCalendar(propName, owner, rent, year, month, dueDay, max
   const dayStr = dueDay < 10 ? '0' + dueDay : '' + dueDay;
   
   const eventDate = `${year}${monthStr}${dayStr}`;
-  const title = `Cobro Arriendo - ${propName} (${owner})`;
-  const details = `Cobro de canon de arrendamiento de la propiedad ${propName} por valor de ${safeFormatP(rent)}. Inquilino: ${owner}. Plazo maximo de pago: dia ${maxDueDay}.`;
+  const title = `Cobro Arriendo - ${propName} (${tenantName || ''})`;
+  const details = `Cobro de canon de arrendamiento de la propiedad ${propName} por valor de ${safeFormatP(rent)}. Inquilino: ${tenantName || ''}. Plazo maximo de pago: dia ${maxDueDay}.`;
   
   const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${eventDate}/${eventDate}&details=${encodeURIComponent(details)}&sf=true&output=xml`;
   window.open(url, '_blank');
@@ -9187,12 +9191,12 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px; margin-bottom:10px;">
         <button class="btn btn-secondary btn-sm"
                 style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; background:rgba(37,211,102,0.08); color:#25d366; border:1px solid rgba(37,211,102,0.2);"
-                onclick="sendAdminReminder('${p.tenant_name || p.owner}', '${p.name.replace(/'/g, "\\'")}', '${p.monthly_rent}', '${monthName}', '${year}', ${dueDay}, '${p.tenant_phone || ''}')">
+                onclick="sendAdminReminder('${p.tenant_name || ''}', '${p.name.replace(/'/g, "\\'")}', '${p.monthly_rent}', '${monthName}', '${year}', ${dueDay}, '${p.tenant_phone || ''}')">
           💬 WhatsApp
         </button>
         <button class="btn btn-primary btn-sm"
                 style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700;"
-                onclick="addIndividualToCalendar('${p.name.replace(/'/g, "\\'")}', '${p.owner}', ${p.monthly_rent}, '${year}', '${monthName}', ${dueDay}, ${maxDueDay})">
+                onclick="addIndividualToCalendar('${p.name.replace(/'/g, "\\'")}', '${p.tenant_name || ''}', ${p.monthly_rent}, '${year}', '${monthName}', ${dueDay}, ${maxDueDay})">
           📅 Calendar
         </button>
       </div>
