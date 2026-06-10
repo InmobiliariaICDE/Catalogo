@@ -8999,6 +8999,11 @@ function addIndividualToCalendar(propName, owner, rent, year, month, dueDay, max
 // ─────────────────────────────────────────────────────────────────────────────
 
 function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
+  let currentActiveTab = activeTab;
+  if (currentActiveTab === 'contrato') {
+    currentActiveTab = 'cobro';
+  }
+
   const paymentsYear = p.payments[String(year)] || [];
   const pay = paymentsYear.find(m => m.month === monthName) || { status: 'UNSTARTED', value: 0 };
   const dueDay = p.due_day ? Math.round(p.due_day) : 5;
@@ -9015,18 +9020,17 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
 
   const tabs = [
     { id: 'cobro',    icon: '💳', label: 'Cobro' },
-    { id: 'contrato', icon: '📄', label: 'Contrato' },
     { id: 'inmueble', icon: '🏠', label: 'Inmueble' },
     { id: 'silvia',   icon: '🏢', label: 'Silvia' }
   ];
 
   const tabsHTML = tabs.map(t => `
-    <button class="u-tab-btn ${t.id === activeTab ? 'active' : ''}"
+    <button class="u-tab-btn ${t.id === currentActiveTab ? 'active' : ''}"
             onclick="switchUnifiedTab('${t.id}')">
       ${t.icon} ${t.label}
     </button>`).join('');
 
-  // ── TAB 1: COBRO ──────────────────────────────────────────────────────────
+  // ── TAB 1: COBRO Y CONTRATO UNIFICADOS ──────────────────────────────────────
   const tabCobro = `
     <div style="display:flex; flex-direction:column; gap:12px;">
       <div class="u-modal-grid" style="row-gap: 12px;">
@@ -9132,6 +9136,70 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
               onclick="syncPropertyToCalendar('${p.id}')">
         📥 Sincronizar Calendario Anual (ICS)
       </button>
+
+      <!-- SECCIÓN DEL CONTRATO UNIFICADA -->
+      <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:12px; margin-top:8px; display:flex; flex-direction:column; gap:11px;">
+        <div style="font-size:11px; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">
+          📄 Detalles del Contrato
+        </div>
+        <div>
+          <label class="u-inp-label">Nombre del inquilino</label>
+          <input type="text" id="editContraTenantName" class="u-inp" value="${p.tenant_name || ''}">
+        </div>
+        <div>
+          <label class="u-inp-label">Celular del inquilino</label>
+          <input type="text" id="editContraTenantPhone" class="u-inp" value="${p.tenant_phone || ''}">
+        </div>
+
+        <div class="u-modal-grid">
+          <div>
+            <label class="u-inp-label">Inicio Contrato</label>
+            <input type="date" id="editContraStartDate" class="u-inp" value="${p.start_date || ''}" style="height:32px; padding:4px 8px;">
+          </div>
+          <div>
+            <label class="u-inp-label">Duración (Meses)</label>
+            <input type="number" id="editContraDuration" class="u-inp" value="${p.duration || ''}">
+          </div>
+        </div>
+
+        <div class="u-modal-grid">
+          <div>
+            <label class="u-inp-label">Canon Mensual</label>
+            <input type="number" id="editContraRent" class="u-inp" value="${p.monthly_rent || ''}">
+          </div>
+          <div>
+            <label class="u-inp-label">Depósito en Garantía</label>
+            <input type="text" id="editContraDeposit" class="u-inp" value="${p.deposit || ''}">
+          </div>
+        </div>
+
+        <div class="u-modal-grid">
+          <div>
+            <label class="u-inp-label">Día de Cobro</label>
+            <input type="number" id="editContraDueDay" class="u-inp" value="${p.due_day || ''}">
+          </div>
+          <div>
+            <label class="u-inp-label">Día Límite</label>
+            <input type="number" id="editContraMaxDueDay" class="u-inp" value="${p.max_due_day || ''}">
+          </div>
+        </div>
+
+        <div>
+          <label class="u-inp-label">Incrementos y Notas</label>
+          <input type="text" id="editContraIncreaseNotes" class="u-inp" value="${p.increase_notes || ''}" placeholder="Ej: Aumento Agosto 2026...">
+        </div>
+
+        <div>
+          <label class="u-inp-label">Daños / Observaciones</label>
+          <textarea id="editContraDamageNotes" class="u-inp" style="resize:vertical; min-height:54px;">${p.damage_notes || ''}</textarea>
+        </div>
+
+        <button class="btn btn-gold btn-sm" id="btnSaveAdminContract"
+                style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; margin-top:4px;"
+                onclick="saveAdminContractDetails('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
+          💾 Guardar Cambios del Contrato
+        </button>
+      </div>
     </div>`;
 
   // ── TAB 2: INMUEBLE (Edición) ─────────────────────────────────────────────
@@ -9194,69 +9262,7 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
       </button>
     </div>`;
 
-  // ── TAB 3: CONTRATO ───────────────────────────────────────────────────────
-  const tabContrato = `
-    <div style="display:flex; flex-direction:column; gap:11px;">
-      <div>
-        <label class="u-inp-label">Nombre del inquilino</label>
-        <input type="text" id="editContraTenantName" class="u-inp" value="${p.tenant_name || ''}">
-      </div>
-      <div>
-        <label class="u-inp-label">Celular del inquilino</label>
-        <input type="text" id="editContraTenantPhone" class="u-inp" value="${p.tenant_phone || ''}">
-      </div>
-
-      <div class="u-modal-grid">
-        <div>
-          <label class="u-inp-label">Inicio Contrato</label>
-          <input type="date" id="editContraStartDate" class="u-inp" value="${p.start_date || ''}" style="height:32px; padding:4px 8px;">
-        </div>
-        <div>
-          <label class="u-inp-label">Duración (Meses)</label>
-          <input type="number" id="editContraDuration" class="u-inp" value="${p.duration || ''}">
-        </div>
-      </div>
-
-      <div class="u-modal-grid">
-        <div>
-          <label class="u-inp-label">Canon Mensual</label>
-          <input type="number" id="editContraRent" class="u-inp" value="${p.monthly_rent || ''}">
-        </div>
-        <div>
-          <label class="u-inp-label">Depósito en Garantía</label>
-          <input type="text" id="editContraDeposit" class="u-inp" value="${p.deposit || ''}">
-        </div>
-      </div>
-
-      <div class="u-modal-grid">
-        <div>
-          <label class="u-inp-label">Día de Cobro</label>
-          <input type="number" id="editContraDueDay" class="u-inp" value="${p.due_day || ''}">
-        </div>
-        <div>
-          <label class="u-inp-label">Día Límite</label>
-          <input type="number" id="editContraMaxDueDay" class="u-inp" value="${p.max_due_day || ''}">
-        </div>
-      </div>
-
-      <div>
-        <label class="u-inp-label">Incrementos y Notas</label>
-        <input type="text" id="editContraIncreaseNotes" class="u-inp" value="${p.increase_notes || ''}" placeholder="Ej: Aumento Agosto 2026...">
-      </div>
-
-      <div>
-        <label class="u-inp-label">Daños / Observaciones</label>
-        <textarea id="editContraDamageNotes" class="u-inp" style="resize:vertical; min-height:54px;">${p.damage_notes || ''}</textarea>
-      </div>
-
-      <button class="btn btn-gold btn-sm" id="btnSaveAdminContract"
-              style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; margin-top:4px;"
-              onclick="saveAdminContractDetails('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
-        💾 Guardar Cambios del Contrato
-      </button>
-    </div>`;
-
-  // ── TAB 4: EDIFICIO SILVIA ────────────────────────────────────────────────
+  // ── TAB 3: EDIFICIO SILVIA ────────────────────────────────────────────────
   const silviaRows = silviaTxs.slice(0, 30).map(t => {
     const rec = parseFloat(t.recaudo) || 0;
     const abo = parseFloat(t.abono) || 0;
@@ -9326,10 +9332,9 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
 
     <div class="u-modal-tabs">${tabsHTML}</div>
 
-    <div id="uTab-cobro"    class="u-tab-content ${activeTab==='cobro'    ? 'active' : ''}">${tabCobro}</div>
-    <div id="uTab-contrato" class="u-tab-content ${activeTab==='contrato' ? 'active' : ''}">${tabContrato}</div>
-    <div id="uTab-inmueble" class="u-tab-content ${activeTab==='inmueble' ? 'active' : ''}">${tabInmueble}</div>
-    <div id="uTab-silvia"   class="u-tab-content ${activeTab==='silvia'   ? 'active' : ''}">${tabSilvia}</div>
+    <div id="uTab-cobro"    class="u-tab-content ${currentActiveTab==='cobro'    ? 'active' : ''}">${tabCobro}</div>
+    <div id="uTab-inmueble" class="u-tab-content ${currentActiveTab==='inmueble' ? 'active' : ''}">${tabInmueble}</div>
+    <div id="uTab-silvia"   class="u-tab-content ${currentActiveTab==='silvia'   ? 'active' : ''}">${tabSilvia}</div>
   `;
 }
 
