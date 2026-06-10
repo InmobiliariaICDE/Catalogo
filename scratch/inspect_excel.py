@@ -1,8 +1,8 @@
 import openpyxl
 
-wb = openpyxl.load_workbook("Pagos - Control.xlsx", data_only=True)
+wb = openpyxl.load_workbook("Base de datos Admin.xlsx", data_only=True)
 sheet = wb['ADMINISTRACION DETALLADA']
-rows = [ [cell.value for cell in sheet[r]] for r in range(1, 6) ]
+rows = [ [cell.value for cell in sheet[r]] for r in range(1, 10) ]
 
 for r_idx, row in enumerate(rows):
     print(f"\nRow {r_idx + 1}:")

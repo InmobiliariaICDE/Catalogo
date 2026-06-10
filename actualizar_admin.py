@@ -111,35 +111,35 @@ def parse_properties(file):
         if len(row) < 15:
             continue
             
-        # Parse basic fields according to new columns
+        # Parse basic fields according to Base de datos Admin.xlsx columns
         row_id = str(row[0]).strip() if not pd.isna(row[0]) else str(i-4)
-        damage_notes = str(row[3]).strip() if not pd.isna(row[3]) else ""
-        owner = str(row[4]).strip() if not pd.isna(row[4]) else "Sin Propietario"
-        owner_phone = str(row[5]).strip() if not pd.isna(row[5]) else ""
-        raw_name = str(row[6]).strip() if not pd.isna(row[6]) else ""
+        damage_notes = str(row[5]).strip() if not pd.isna(row[5]) else ""
+        owner = str(row[6]).strip() if not pd.isna(row[6]) else "Sin Propietario"
+        owner_phone = str(row[7]).strip() if not pd.isna(row[7]) else ""
+        raw_name = str(row[8]).strip() if not pd.isna(row[8]) else ""
         
         if not raw_name or raw_name.lower() == 'nan':
             continue
             
         prop_name, increase_notes = clean_prop_name(raw_name)
         
-        tenant_name = str(row[7]).strip() if not pd.isna(row[7]) else ""
-        tenant_phone = str(row[8]).strip() if not pd.isna(row[8]) else ""
+        tenant_name = str(row[9]).strip() if not pd.isna(row[9]) else ""
+        tenant_phone = str(row[10]).strip() if not pd.isna(row[10]) else ""
         
-        duration = str(row[9]).strip() if not pd.isna(row[9]) else ""
-        deposit = str(row[10]).strip() if not pd.isna(row[10]) else ""
-        start_date = parse_date(row[11])
-        due_day = parse_number(row[12])
-        max_due_day = parse_number(row[13])
-        monthly_rent = parse_number(row[14])
+        duration = str(row[11]).strip() if not pd.isna(row[11]) else ""
+        deposit = str(row[12]).strip() if not pd.isna(row[12]) else ""
+        start_date = parse_date(row[13])
+        due_day = parse_number(row[14])
+        max_due_day = parse_number(row[15])
+        monthly_rent = parse_number(row[16])
         
-        # Payment columns mappings (shifted by 3)
+        # Payment columns mappings
         years_map = {
-            2023: list(range(15, 27)),
-            2024: list(range(28, 40)),
-            2025: list(range(41, 53)),
-            2026: list(range(54, 66)),
-            2027: list(range(67, 79))
+            2023: list(range(17, 29)),
+            2024: list(range(30, 42)),
+            2025: list(range(43, 55)),
+            2026: list(range(56, 68)),
+            2027: list(range(69, 81))
         }
         
         months_names = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
@@ -233,7 +233,7 @@ def parse_silvia_ledger(file):
 
 def pull_from_cloud():
     print("Obteniendo datos actualizados desde la nube...")
-    url = "https://script.google.com/macros/s/AKfycbwwqVgccbr31wYkGYrE71SeHEuB2DladyiZSOwUN8YjYKB9M-ZztK7xjOthiyYV3dbq6w/exec?action=getAdminData"
+    url = "https://script.google.com/macros/s/AKfycbwAUUSYRhDX6Eik4KA-B6luk74YjCNRanwv13CmmZg4La8NzVuNyBC0T5GH6f4-ke-Xig/exec?action=getAdminData"
     try:
         res = requests.get(url, timeout=15)
         if res.status_code != 200:
@@ -273,13 +273,13 @@ def pull_from_cloud():
                 
         ws = wb[sheet_name]
         
-        # Mapeo de columnas por año (1-indexed para openpyxl, shifted +3)
+        # Mapeo de columnas por año (1-indexed para openpyxl)
         years_map = {
-            2023: 16,
-            2024: 29,
-            2025: 42,
-            2026: 55,
-            2027: 68
+            2023: 13,
+            2024: 26,
+            2025: 39,
+            2026: 52,
+            2027: 65
         }
         
         updated_cells_count = 0
