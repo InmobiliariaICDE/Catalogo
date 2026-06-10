@@ -181,30 +181,29 @@ function importAdminDataFromJSON(data) {
   }
 
   const values = sheet.getDataRange().getValues();
-  const rowsToWrite = [];
   
   data.properties.forEach((p) => {
-    // Escribir los datos respetando la estructura física sin alterar las cabeceras
     const rowIdx = p.excel_row;
     if (rowIdx) {
-      sheet.getRange(rowIdx + 1, 1).setValue(String(rowIdx)); // ID
-      sheet.getRange(rowIdx + 1, 4).setValue(p.damage_notes || '');
-      sheet.getRange(rowIdx + 1, 5).setValue(p.owner || 'Sin Propietario');
-      sheet.getRange(rowIdx + 1, 6).setValue(p.owner_phone || '');
+      // Usar el mapeo de columnas exacto de 1-based index (Col F = 6, Col G = 7, etc.)
+      sheet.getRange(rowIdx + 1, 1).setValue(String(rowIdx)); // ID (Col A)
+      sheet.getRange(rowIdx + 1, 6).setValue(p.damage_notes || ''); // Daños (Col F)
+      sheet.getRange(rowIdx + 1, 7).setValue(p.owner || 'Sin Propietario'); // Propietario (Col G)
+      sheet.getRange(rowIdx + 1, 8).setValue(p.owner_phone || ''); // Celular Propietario (Col H)
       
       let rawNameVal = p.name || '';
       if (p.increase_notes) {
         rawNameVal += '  ' + p.increase_notes;
       }
-      sheet.getRange(rowIdx + 1, 7).setValue(rawNameVal);
-      sheet.getRange(rowIdx + 1, 8).setValue(p.tenant_name || '');
-      sheet.getRange(rowIdx + 1, 9).setValue(p.tenant_phone || '');
-      sheet.getRange(rowIdx + 1, 10).setValue(p.duration || '');
-      sheet.getRange(rowIdx + 1, 11).setValue(p.deposit || '');
-      sheet.getRange(rowIdx + 1, 12).setValue(p.start_date || '');
-      sheet.getRange(rowIdx + 1, 13).setValue(p.due_day || 5);
-      sheet.getRange(rowIdx + 1, 14).setValue(p.max_due_day || 10);
-      sheet.getRange(rowIdx + 1, 15).setValue(p.monthly_rent || 0);
+      sheet.getRange(rowIdx + 1, 9).setValue(rawNameVal); // Inmueble (Col I)
+      sheet.getRange(rowIdx + 1, 10).setValue(p.tenant_name || ''); // Inquilino (Col J)
+      sheet.getRange(rowIdx + 1, 11).setValue(p.tenant_phone || ''); // Celular Inquilino (Col K)
+      sheet.getRange(rowIdx + 1, 12).setValue(p.duration || ''); // Contrato Meses (Col L)
+      sheet.getRange(rowIdx + 1, 13).setValue(p.deposit || ''); // Depósito (Col M)
+      sheet.getRange(rowIdx + 1, 14).setValue(p.start_date || ''); // Fecha Inicio (Col N)
+      sheet.getRange(rowIdx + 1, 15).setValue(p.due_day || 5); // Día Pago (Col O)
+      sheet.getRange(rowIdx + 1, 16).setValue(p.max_due_day || 10); // Límite Pago (Col P)
+      sheet.getRange(rowIdx + 1, 17).setValue(p.monthly_rent || 0); // Canon (Col Q)
     }
   });
 
