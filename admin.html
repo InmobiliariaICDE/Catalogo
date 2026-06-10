@@ -8185,7 +8185,22 @@ async function loadAdminData() {
     console.warn('No se pudo cargar desde la nube. Usando caché local...', e);
   }
 
-  // Fallback 1: localStorage
+  // Fallback 1: admin_data.json local
+  try {
+    const res = await fetch('admin_data.json');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.properties && data.properties.length) {
+        adminData = ensureUniqueIds(data);
+        console.log('Datos de administración cargados desde el archivo estático local.');
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('No se pudo cargar desde admin_data.json:', e);
+  }
+
+  // Fallback 2: localStorage
   const cached = localStorage.getItem('icde_admin_data');
   if (cached) {
     try {
@@ -8195,17 +8210,6 @@ async function loadAdminData() {
     } catch (err) {
       console.error('Error parseando caché de adminData:', err);
     }
-  }
-
-  // Fallback 2: admin_data.json local
-  try {
-    const res = await fetch('admin_data.json');
-    if (res.ok) {
-      adminData = ensureUniqueIds(await res.json());
-      console.log('Datos de administración cargados desde el archivo estático local.');
-    }
-  } catch (e) {
-    console.error('Error fatal al cargar admin_data.json:', e);
   }
 }
 
@@ -9679,7 +9683,8 @@ function getStatusLabel(status) {
 }
 
 async function refreshAdminData() {
-  toast('Recargando datos...', 'success');
+  toast('Limpiando caché y recargando...', 'success');
+  localStorage.removeItem('icde_admin_data');
   await loadAdminData();
   renderAdministracion();
 }
