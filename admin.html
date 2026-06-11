@@ -8425,7 +8425,7 @@ function renderAdministracion() {
             `).join('')}
           </select>
 
-          <button class="btn btn-gold btn-sm" style="height: 38px; border-radius: 10px; margin-left: 5px; flex-shrink: 0; padding: 0 16px; font-weight: 700;" onclick="abrirNuevaPropiedad()">➕ Crear Nueva Propiedad</button>
+          <button class="btn btn-gold btn-sm" style="height: 38px; border-radius: 10px; margin-left: 5px; flex-shrink: 0; padding: 0 16px; font-weight: 700;" onclick="abrirCrearInmuebleAdmin()">➕ Crear Nueva Propiedad</button>
         </div>
       </div>
     </div>
@@ -9355,6 +9355,204 @@ function openMatrixCellDetails(propId, monthName, year) {
   modal.innerHTML = _buildUnifiedModalHTML(p, monthName, year, 'cobro');
   modal.classList.add('active');
   overlay.classList.add('active');
+}
+
+function abrirCrearInmuebleAdmin() {
+  const modal = document.getElementById('adminUnifiedModal');
+  const overlay = document.getElementById('modalOverlay');
+  if (!modal || !overlay) return;
+
+  modal.dataset.propId = 'NEW';
+  modal.dataset.monthName = currentAdminMonth;
+  modal.dataset.year = currentAdminYear;
+
+  modal.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; flex-shrink:0;">
+      <div style="font-size:15px; font-weight:800; color:var(--gold); display:flex; align-items:center; gap:8px; letter-spacing:-0.01em;">
+        🏢 Crear Nuevo Inmueble (Administración)
+      </div>
+      <button onclick="closeUnifiedModal()" style="background:transparent; border:none; color:var(--muted); font-size:20px; cursor:pointer; font-weight:700; line-height:1; padding:0 0 0 8px; transition:color 0.2s; flex-shrink:0;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--muted)'">×</button>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:11px; max-height:480px; overflow-y:auto; padding-right:4px;">
+      <div>
+        <label class="u-inp-label">Nombre del Inmueble *</label>
+        <input type="text" id="newAdminPropName" class="u-inp" placeholder="Ej: APTO 1011">
+      </div>
+      
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Propietario</label>
+          <input type="text" id="newAdminPropOwner" class="u-inp" placeholder="Nombre dueño">
+        </div>
+        <div>
+          <label class="u-inp-label">Celular Propietario</label>
+          <input type="text" id="newAdminPropOwnerPhone" class="u-inp" placeholder="Celular dueño">
+        </div>
+      </div>
+
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Inquilino</label>
+          <input type="text" id="newAdminPropTenant" class="u-inp" placeholder="Nombre inquilino">
+        </div>
+        <div>
+          <label class="u-inp-label">Celular Inquilino</label>
+          <input type="text" id="newAdminPropTenantPhone" class="u-inp" placeholder="Celular inquilino">
+        </div>
+      </div>
+
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Inicio Contrato</label>
+          <input type="date" id="newAdminPropStartDate" class="u-inp" style="height:32px; padding:4px 8px;">
+        </div>
+        <div>
+          <label class="u-inp-label">Duración (Meses)</label>
+          <input type="number" id="newAdminPropDuration" class="u-inp" value="12">
+        </div>
+      </div>
+
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Canon Mensual *</label>
+          <input type="number" id="newAdminPropRent" class="u-inp" placeholder="Valor arriendo">
+        </div>
+        <div>
+          <label class="u-inp-label">Depósito en Garantía</label>
+          <input type="text" id="newAdminPropDeposit" class="u-inp" placeholder="Valor depósito">
+        </div>
+      </div>
+
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Día de Cobro</label>
+          <input type="number" id="newAdminPropDueDay" class="u-inp" value="5">
+        </div>
+        <div>
+          <label class="u-inp-label">Día Límite</label>
+          <input type="number" id="newAdminPropMaxDueDay" class="u-inp" value="10">
+        </div>
+      </div>
+
+      <div>
+        <label class="u-inp-label">Incrementos y Notas</label>
+        <input type="text" id="newAdminPropIncreaseNotes" class="u-inp" placeholder="Ej: Aumento Octubre 2026...">
+      </div>
+
+      <div>
+        <label class="u-inp-label">Daños / Observaciones</label>
+        <textarea id="newAdminPropDamageNotes" class="u-inp" style="resize:vertical; min-height:54px;"></textarea>
+      </div>
+
+      <button class="btn btn-gold btn-sm" id="btnSaveNewAdminProp"
+              style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; margin-top:4px;"
+              onclick="saveNewAdminProperty()">
+        💾 Crear Propiedad en la Nube
+      </button>
+    </div>
+  `;
+
+  modal.classList.add('active');
+  overlay.classList.add('active');
+}
+
+async function saveNewAdminProperty() {
+  const saveBtn = document.getElementById('btnSaveNewAdminProp');
+  if (!saveBtn) return;
+
+  const name = document.getElementById('newAdminPropName').value.trim();
+  const owner = document.getElementById('newAdminPropOwner').value.trim();
+  const owner_phone = document.getElementById('newAdminPropOwnerPhone').value.trim();
+  const tenant_name = document.getElementById('newAdminPropTenant').value.trim();
+  const tenant_phone = document.getElementById('newAdminPropTenantPhone').value.trim();
+  const monthly_rent = parseFloat(document.getElementById('newAdminPropRent').value) || 0;
+  const deposit = document.getElementById('newAdminPropDeposit').value.trim();
+  const start_date = document.getElementById('newAdminPropStartDate').value;
+  const duration = document.getElementById('newAdminPropDuration').value.trim();
+  const due_day = parseInt(document.getElementById('newAdminPropDueDay').value) || 5;
+  const max_due_day = parseInt(document.getElementById('newAdminPropMaxDueDay').value) || 10;
+  const increase_notes = document.getElementById('newAdminPropIncreaseNotes').value.trim();
+  const damage_notes = document.getElementById('newAdminPropDamageNotes').value.trim();
+
+  if (!name) { toast('El nombre del inmueble es obligatorio.', 'error'); return; }
+  if (monthly_rent <= 0) { toast('El canon mensual es obligatorio y debe ser mayor que 0.', 'error'); return; }
+
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Creando...';
+
+  const payload = {
+    action: 'saveAdminProperty',
+    isNew: true,
+    name,
+    owner,
+    owner_phone,
+    tenant_name,
+    tenant_phone,
+    monthly_rent,
+    deposit,
+    start_date,
+    duration,
+    due_day,
+    max_due_day,
+    increase_notes,
+    damage_notes
+  };
+
+  try {
+    const response = await fetch(ADMIN_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    if (response.ok) {
+      const resData = await response.json();
+      if (resData.success) {
+        toast('¡Inmueble creado en la nube con éxito!', 'success');
+        
+        const newId = String(resData.propertyId);
+        const newProp = {
+          id: newId,
+          name: name,
+          owner: owner,
+          owner_phone: owner_phone,
+          tenant_name: tenant_name,
+          tenant_phone: tenant_phone,
+          monthly_rent: monthly_rent,
+          deposit: deposit,
+          start_date: start_date,
+          duration: duration,
+          due_day: due_day,
+          max_due_day: max_due_day,
+          increase_notes: increase_notes,
+          damage_notes: damage_notes,
+          payments: {}
+        };
+        
+        const currentYear = new Date().getFullYear();
+        newProp.payments[String(currentYear)] = [];
+        
+        adminData.properties.push(newProp);
+        localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+        
+        closeUnifiedModal();
+        
+        toast('Recargando datos de administración...', 'info');
+        loadAdminData().then(() => {
+          renderAdministracion();
+        });
+      } else {
+        throw new Error(resData.error || 'Error del servidor');
+      }
+    } else {
+      throw new Error('Error HTTP');
+    }
+  } catch (err) {
+    console.error('Error al crear inmueble:', err);
+    toast('Error al crear en la nube: ' + err.message + '. Intenta de nuevo.', 'error');
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '💾 Crear Propiedad en la Nube';
+  }
 }
 
 function abrirEditarInmueble(propId, openTab) {

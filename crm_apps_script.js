@@ -932,6 +932,64 @@ function saveAdminPropertyToSheet(params) {
   const values = sheet.getDataRange().getValues();
   let rowIdx = -1;
 
+  const isNew = params.isNew === true || params.isNew === 'true';
+
+  if (isNew) {
+    let maxId = 0;
+    let maxItem = 0;
+    for (let i = 5; i < values.length; i++) {
+      const idVal = parseFloat(values[i][0]);
+      if (!isNaN(idVal) && idVal > maxId) maxId = idVal;
+      const itemVal = parseFloat(values[i][1]);
+      if (!isNaN(itemVal) && itemVal > maxItem) maxItem = itemVal;
+    }
+    const newId = maxId + 1;
+    const newItem = maxItem + 1;
+
+    const totalCols = sheet.getLastColumn() || 81;
+    const newRowValues = [];
+    for (let c = 0; c < totalCols; c++) {
+      newRowValues.push('');
+    }
+
+    newRowValues[0] = newId;
+    newRowValues[1] = newItem;
+    newRowValues[2] = newId;
+    newRowValues[3] = newItem;
+    newRowValues[4] = '';
+    if (damageNotesCol !== -1) newRowValues[damageNotesCol - 1] = params.damage_notes || '';
+    if (ownerCol !== -1) newRowValues[ownerCol - 1] = params.owner || '';
+    if (ownerPhoneCol !== -1) newRowValues[ownerPhoneCol - 1] = params.owner_phone || '';
+
+    let rawNameVal = params.name || '';
+    if (params.increase_notes) {
+      rawNameVal += "  " + params.increase_notes;
+    }
+    if (nameCol !== -1) newRowValues[nameCol - 1] = rawNameVal;
+
+    if (tenantCol !== -1) newRowValues[tenantCol - 1] = params.tenant_name || '';
+    if (tenantPhoneCol !== -1) newRowValues[tenantPhoneCol - 1] = params.tenant_phone || '';
+    if (durationCol !== -1) newRowValues[durationCol - 1] = params.duration || '';
+    if (depositCol !== -1) newRowValues[depositCol - 1] = params.deposit || '';
+    if (startDateCol !== -1) newRowValues[startDateCol - 1] = params.start_date || '';
+    if (dueDayCol !== -1) newRowValues[dueDayCol - 1] = params.due_day !== undefined ? Number(params.due_day) : 5;
+    if (maxDueDayCol !== -1) newRowValues[maxDueDayCol - 1] = params.max_due_day !== undefined ? Number(params.max_due_day) : 10;
+    if (rentCol !== -1) newRowValues[rentCol - 1] = params.monthly_rent !== undefined ? Number(params.monthly_rent) : 0;
+
+    for (let c = 17; c < totalCols; c++) {
+      const headerVal = String(values[4][c] || '').trim();
+      if (headerVal && headerVal !== 'None' && headerVal !== '') {
+        newRowValues[c] = '-';
+      } else {
+        newRowValues[c] = '';
+      }
+    }
+
+    rowIdx = sheet.getLastRow() + 1;
+    sheet.getRange(rowIdx, 1, 1, totalCols).setValues([newRowValues]);
+    return createJsonResponse({ success: true, row: rowIdx, propertyId: newId });
+  }
+
   for (let i = 0; i < values.length; i++) {
     if (String(values[i][0]).trim() === String(params.propertyId).trim()) { rowIdx = i + 1; break; }
   }
