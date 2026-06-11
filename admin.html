@@ -9147,12 +9147,6 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
           <label class="u-inp-label">Daños / Observaciones</label>
           <textarea id="editContraDamageNotes" class="u-inp" style="resize:vertical; min-height:54px;">${p.damage_notes || ''}</textarea>
         </div>
-
-        <button class="btn btn-gold btn-sm" id="btnSaveAdminContract"
-                style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; margin-top:4px;"
-                onclick="saveAdminContractDetails('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
-          💾 Guardar Cambios del Contrato
-        </button>
       </div>
 
       <!-- SECCIÓN REGISTRAR PAGO (AL FINAL) -->
@@ -9181,10 +9175,10 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
                    placeholder="${p.monthly_rent}">
           </div>
         </div>
-        <button class="btn btn-gold btn-sm" id="btnSaveAdminPay"
+        <button class="btn btn-gold btn-sm" id="btnSaveUnifiedCobro"
                 style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; margin-bottom:10px;"
-                onclick="saveAdminPaymentStatus('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${monthName}', '${year}')">
-          💾 Guardar en la Nube
+                onclick="saveUnifiedAdminCobro('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${monthName}', '${year}')">
+          💾 Guardar
         </button>
       </div>
 
@@ -9454,6 +9448,156 @@ function updatePayStatusFromBottom(val) {
     textSpan.textContent = getStatusLabel(val);
     badge.className = getStatusBadgeClass(val);
   }
+}
+
+async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
+  const saveBtn = document.getElementById('btnSaveUnifiedCobro');
+  if (!saveBtn) return;
+
+  const tenant_name = document.getElementById('editContraTenantName').value.trim();
+  const tenant_phone = document.getElementById('editContraTenantPhone').value.trim();
+  const monthly_rent = parseFloat(document.getElementById('editContraRent').value) || 0;
+  const deposit = document.getElementById('editContraDeposit').value.trim();
+  const start_date = document.getElementById('editContraStartDate').value;
+  const duration = document.getElementById('editContraDuration').value.trim();
+  const due_day = parseInt(document.getElementById('editContraDueDay').value) || 5;
+  const max_due_day = parseInt(document.getElementById('editContraMaxDueDay').value) || 10;
+  const increase_notes = document.getElementById('editContraIncreaseNotes').value.trim();
+  const damage_notes = document.getElementById('editContraDamageNotes').value.trim();
+
+  const statusSelect = document.getElementById('editPayStatus');
+  const valueInput   = document.getElementById('editPayValue');
+  const status = statusSelect ? statusSelect.value : 'PENDING';
+  let rawValue = valueInput ? valueInput.value.trim() : '';
+
+  let finalValue = '';
+  if (status === 'PAID') {
+    const parsedVal = parseFloat(rawValue);
+    if (isNaN(parsedVal) || parsedVal <= 0) {
+      const p = adminData.properties.find(x => x.id === propId);
+      finalValue = monthly_rent || (p ? p.monthly_rent : 0);
+    } else { finalValue = parsedVal; }
+  } else if (status === 'VACANT' || status === 'FUTURE') { finalValue = 'DESOCUPADO'; }
+  else if (status === 'PREAVISO')      { finalValue = 'PREAVISO'; }
+  else if (status === 'NEW_CONTRACT')  { finalValue = 'CONTRATO NUEVO'; }
+  else if (status === 'NO_RENEW')      { finalValue = 'NO RENOVARA'; }
+  else if (status === 'DELIVERY')      { finalValue = 'ENTREGA'; }
+  else { finalValue = rawValue || '-'; }
+
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
+
+  const payloadProp = {
+    action: 'saveAdminProperty',
+    propertyId: propId,
+    propertyNameOld: propName,
+    name:           propName,
+    tenant_name,
+    tenant_phone,
+    monthly_rent,
+    deposit,
+    start_date,
+    duration,
+    due_day,
+    max_due_day,
+    increase_notes,
+    damage_notes
+  };
+
+  const monthsNames = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+  const monthIdx = monthsNames.indexOf(monthName.toUpperCase());
+
+  const payloadPay = {
+    action: 'saveAdminPayment',
+    propertyId: propId, propertyName: propName,
+    year: year, monthIndex: monthIdx, value: finalValue
+  };
+
+  const applyPropToMemory = () => {
+    const p = adminData.properties.find(x => x.id === propId);
+    if (p) {
+      Object.assign(p, {
+        tenant_name, tenant_phone, monthly_rent,
+        deposit, start_date, duration,
+        due_day, max_due_day,
+        increase_notes, damage_notes
+      });
+    }
+  };
+
+  const applyPayToMemory = () => {
+    const p = adminData.properties.find(x => x.id === propId);
+    if (p) {
+      if (!p.payments[year]) p.payments[year] = [];
+      let mPay = p.payments[year].find(m => m.month === monthName);
+      if (mPay) { mPay.status = status; mPay.value = finalValue; }
+      else p.payments[year].push({ month: monthName, value: finalValue, status: status });
+    }
+  };
+
+  const promises = [];
+
+  promises.push(
+    fetch(ADMIN_SCRIPT_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payloadProp)
+    }).then(async res => {
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) return { ok: true };
+        else throw new Error(data.error || 'Error del servidor');
+      }
+      throw new Error('Error HTTP');
+    })
+  );
+
+  promises.push(
+    fetch(ADMIN_SCRIPT_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payloadPay)
+    }).then(async res => {
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) return { ok: true };
+        else throw new Error(data.error || 'Error del servidor');
+      }
+      throw new Error('Error HTTP');
+    })
+  );
+
+  let results;
+  try {
+    results = await Promise.allSettled(promises);
+  } catch (e) {
+    results = [{ status: 'rejected', reason: e }, { status: 'rejected', reason: e }];
+  }
+
+  const propRes = results[0];
+  const payRes = results[1];
+
+  const propOk = propRes && propRes.status === 'fulfilled';
+  const payOk = payRes && payRes.status === 'fulfilled';
+
+  applyPropToMemory();
+  applyPayToMemory();
+  localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+
+  if (propOk && payOk) {
+    toast('¡Datos y pago guardados en la nube con éxito!', 'success');
+  } else if (!propOk && !payOk) {
+    const err1 = propRes ? propRes.reason.message : 'Error desconocido';
+    const err2 = payRes ? payRes.reason.message : 'Error desconocido';
+    toast(`Error al guardar: Contrato (${err1}), Pago (${err2}). Guardado localmente.`, 'warning');
+  } else if (!propOk) {
+    const err1 = propRes ? propRes.reason.message : 'Error desconocido';
+    toast(`Pago guardado en la nube. Contrato no guardado: ${err1}. Guardado localmente.`, 'warning');
+  } else {
+    const err2 = payRes ? payRes.reason.message : 'Error desconocido';
+    toast(`Contrato guardado en la nube. Pago no guardado: ${err2}. Guardado localmente.`, 'warning');
+  }
+
+  closeUnifiedModal();
+  renderAdministracion();
 }
 
 async function saveAdminPaymentStatus(propId, propName, monthName, year) {
