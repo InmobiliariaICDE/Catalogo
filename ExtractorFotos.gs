@@ -549,7 +549,7 @@ var CAMPOS_FB = [
   'Buscar', 'Cocina', 'Contrato', 'Inmobiliaria', 'Imagenes', 'Publicar',
   'CELULAR', 'CELULAR 2', 'PROPIETARIO', 'RENTAB.', 'Dimensiones',
   'Aire Acondicionado', 'Antigüedad del Inmueble', 'Ascensor', 'Número de Cortinas',
-  'Reja Antejardín', 'Patio', 'Inventario', 'DIRECCIÓN'
+  'Reja Antejardín', 'Patio', 'Inventario', 'DIRECCIÓN', 'Latitud', 'Longitud'
 ];
  
 function buildHeaderIndex(headers) {
@@ -568,6 +568,8 @@ function buildHeaderIndex(headers) {
       else if (nh === 'conjunto') { idx['Conjunto'] = i; }
       else if (nh === 'precio') { idx['Precio'] = i; }
       else if (nh === 'rango de precio') { idx['Rango de precio'] = i; }
+      else if (nh === 'latitud' || nh === 'lat') { idx['Latitud'] = i; }
+      else if (nh === 'longitud' || nh === 'lng' || nh === 'lon') { idx['Longitud'] = i; }
       else if (nh === 'zona') { idx['Zona'] = i; }
       else if (nh === 'comuna') { idx['Comuna'] = i; }
       else if (nh === 'habitaciones') { idx['Habitaciones'] = i; }
