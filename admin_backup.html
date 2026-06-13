@@ -2504,7 +2504,7 @@ textarea.gemini-card-input {
    CONFIG
 ═══════════════════════════════════════════════ */
 const PASSWORD = 'icde2024';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-HipJ53KIf2JD1q9BUIBFUB45o4wRYcjvlqUbpg9TDAGK0q3hNQcSrV23dMCWaTgXcQ/exec?action=getData';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxki98uXR_fXbFCPynfzvQN5ibiwQY23zKpLkLKTL7A26GlipdC20oQTKOrUwAMeIJ2gw/exec?action=getData';
 // CRM URL apunta al mismo script nuevo que maneja getData, getLeads, getCitas, etc.
 const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz1FNSXco-emauypAbJXIhn2om9RH1fhgro9EzdKjLm2HKPBFE1Y4tvZ4sqvFaeeOJyhw/exec';
 const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAUUSYRhDX6Eik4KA-B6luk74YjCNRanwv13CmmZg4La8NzVuNyBC0T5GH6f4-ke-Xig/exec';
@@ -4223,7 +4223,7 @@ function normalizarPropiedades(data) {
 async function cargarProps(){
   try {
     document.getElementById('syncStatus').textContent='⟳ Cargando...';
-    const urlBusca = "https://script.google.com/macros/s/AKfycbz-HipJ53KIf2JD1q9BUIBFUB45o4wRYcjvlqUbpg9TDAGK0q3hNQcSrV23dMCWaTgXcQ/exec?action=getData&t=" + Date.now();
+    const urlBusca = "https://script.google.com/macros/s/AKfycbxki98uXR_fXbFCPynfzvQN5ibiwQY23zKpLkLKTL7A26GlipdC20oQTKOrUwAMeIJ2gw/exec?action=getData&t=" + Date.now();
     const res = await fetch(urlBusca);
     const data = await res.json();
     
@@ -10652,6 +10652,7 @@ function initMapa(pfx) {
       return;
     }
 
+    // 2. Geocode with Google Maps
     let searchQuery = query;
     if (!query.toLowerCase().includes("neiva") && !query.toLowerCase().includes("colombia") && !query.toLowerCase().includes("huila")) {
       searchQuery += ", Neiva, Huila, Colombia";
@@ -10659,26 +10660,6 @@ function initMapa(pfx) {
 
     try {
       searchInput.disabled = true;
-
-      // Try Nominatim Geocoder first (free and has no key/billing requirements)
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&addressdetails=1&limit=1&countrycodes=co`;
-        const res = await fetch(url, { headers: { 'User-Agent': 'ICDE_Catalog_Admin/1.0' } });
-        if (res.ok) {
-          const results = await res.json();
-          if (results && results.length > 0) {
-            const lat = parseFloat(results[0].lat);
-            const lng = parseFloat(results[0].lon);
-            showSearchResult(lat, lng, results[0].display_name);
-            searchInput.disabled = false;
-            return;
-          }
-        }
-      } catch (err) {
-        console.error("Nominatim geocoding failed, trying Google Maps:", err);
-      }
-
-      // 2. Geocode with Google Maps (Fallback)
       if (typeof google !== 'undefined' && google.maps && google.maps.Geocoder) {
         const geocoder = new google.maps.Geocoder();
         geocoder.geocode({ address: searchQuery, componentRestrictions: { country: 'CO' } }, (results, status) => {
@@ -10774,67 +10755,7 @@ function initMapa(pfx) {
     }
 
     const cleanQuery = query.toLowerCase().trim();
-    const suggestionsList = [];
 
-    // 1. Search in local catalog properties (allProps)
-    if (typeof allProps !== 'undefined' && Array.isArray(allProps)) {
-      const localMatches = allProps.filter(p => {
-        if (!p || p.isKmzOnly) return false;
-        const code = String(p['Código'] || '').toLowerCase();
-        const name = String(p['Nombre'] || '').toLowerCase();
-        const barrio = String(p['Barrio'] || '').toLowerCase();
-        return code.includes(cleanQuery) || name.includes(cleanQuery) || barrio.includes(cleanQuery);
-      }).slice(0, 3);
-
-      localMatches.forEach(p => {
-        const lat = parseFloat(String(p['Latitud'] || p['Lat'] || '0').replace(',', '.'));
-        const lng = parseFloat(String(p['Longitud'] || p['Lng'] || '0').replace(',', '.'));
-        if (!isNaN(lat) && lat !== 0 && !isNaN(lng) && lng !== 0) {
-          suggestionsList.push({
-            main: `${p['Código']} · ${p['Nombre']}`,
-            secondary: p['Barrio'] || p['Zona'] || 'Propiedad del catálogo',
-            lat: lat,
-            lng: lng,
-            fullName: `${p['Nombre']} (${p['Código']})`,
-            type: 'prop'
-          });
-        }
-      });
-    }
-
-    // 2. Query Nominatim (OpenStreetMap) for suggestions in Neiva/Colombia
-    try {
-      let searchQuery = query;
-      if (!cleanQuery.includes('neiva') && !cleanQuery.includes('colombia') && !cleanQuery.includes('huila')) {
-        searchQuery += ', Neiva, Huila, Colombia';
-      }
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&addressdetails=1&limit=5&countrycodes=co`;
-      const res = await fetch(url, { headers: { 'User-Agent': 'ICDE_Catalog_Admin/1.0' } });
-      if (res.ok) {
-        const results = await res.json();
-        results.forEach(item => {
-          const displayName = item.display_name;
-          const parts = displayName.split(',');
-          const mainText = parts[0].trim();
-          const secondaryText = parts.slice(1).map(p => p.trim()).join(', ');
-          
-          if (!suggestionsList.some(s => s.main.toLowerCase() === mainText.toLowerCase())) {
-            suggestionsList.push({
-              main: mainText,
-              secondary: secondaryText,
-              lat: parseFloat(item.lat),
-              lng: parseFloat(item.lon),
-              fullName: displayName,
-              type: 'place'
-            });
-          }
-        });
-      }
-    } catch (err) {
-      console.error("Nominatim suggestions query failed:", err);
-    }
-
-    // 3. Fallback to Google Places Autocomplete if available
     try {
       if (typeof google !== 'undefined' && google.maps && google.maps.places) {
         if (!autocompleteService) autocompleteService = new google.maps.places.AutocompleteService();
@@ -10850,20 +10771,19 @@ function initMapa(pfx) {
         };
 
         autocompleteService.getPlacePredictions(request, (predictions, status) => {
+          const suggestionsList = [];
           if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
             predictions.slice(0, 5).forEach(place => {
+              // Split into main text and secondary text (context), identical to Google Maps UI
               const mainText = place.structured_formatting ? place.structured_formatting.main_text : place.description.split(',')[0].trim();
               const secondaryText = place.structured_formatting ? place.structured_formatting.secondary_text : place.description.split(',').slice(1).join(',').trim();
-              
-              if (!suggestionsList.some(s => s.main.toLowerCase() === mainText.toLowerCase())) {
-                suggestionsList.push({
-                  main: mainText,
-                  secondary: secondaryText,
-                  placeId: place.place_id,
-                  fullName: place.description,
-                  type: 'google_place'
-                });
-              }
+              suggestionsList.push({
+                main: mainText,
+                secondary: secondaryText,
+                placeId: place.place_id,
+                fullName: place.description,
+                type: 'place'
+              });
             });
           }
           renderSuggestions(suggestionsList);
@@ -10873,8 +10793,7 @@ function initMapa(pfx) {
     } catch (e) {
       console.error('Google Places fetch error:', e);
     }
-    
-    renderSuggestions(suggestionsList);
+    renderSuggestions([]);
   }
 
   function renderSuggestions(list) {
@@ -10903,9 +10822,7 @@ function initMapa(pfx) {
       row.addEventListener('click', (e) => {
         e.stopPropagation();
         searchInput.value = item.main + (item.secondary ? ', ' + item.secondary : '');
-        if (item.lat && item.lng) {
-          showSearchResult(item.lat, item.lng, item.fullName || item.main);
-        } else if (item.placeId && typeof google !== 'undefined') {
+        if (item.placeId && typeof google !== 'undefined') {
           const geocoder = new google.maps.Geocoder();
           geocoder.geocode({ placeId: item.placeId }, (results, status) => {
             if (status === 'OK' && results[0]) {
@@ -14426,16 +14343,6 @@ function abrirStreetView(lat, lng) {
   if (!modal || !panoramaDiv) return;
   
   modal.style.display = 'block';
-
-  // Configurar botón externo
-  const externalBtn = document.getElementById('openExternalStreetView');
-  if (externalBtn) {
-    externalBtn.onclick = (e) => {
-      e.stopPropagation();
-      const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
-      window.open(url, '_blank');
-    };
-  }
   
   try {
     const panorama = new google.maps.StreetViewPanorama(panoramaDiv, {
@@ -14452,12 +14359,8 @@ function abrirStreetView(lat, lng) {
     google.maps.event.trigger(panorama, 'resize');
   } catch (e) {
     console.error("Error loading Google Street View:", e);
-    toast("No se pudo cargar Street View en esta ubicación. Abriendo en pestaña externa...", "warning");
-    setTimeout(() => {
-      const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
-      window.open(url, '_blank');
-      modal.style.display = 'none';
-    }, 1500);
+    toast("No se pudo cargar Street View en esta ubicación", "error");
+    modal.style.display = 'none';
   }
 }
 
@@ -14588,10 +14491,6 @@ function cerrarBottomCard() {
   <div id="streetViewModal">
     <div id="streetViewPanorama"></div>
     <button id="closeStreetView" title="Cerrar Street View">&times;</button>
-    <button id="openExternalStreetView" title="Abrir en Google Maps" style="position: absolute; top: 20px; right: 80px; z-index: 1000000; background: rgba(0,0,0,0.65); color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 22px; height: 44px; padding: 0 16px; font-size: 13px; font-family: 'Outfit', sans-serif; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: background 0.2s, transform 0.15s;">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="display:inline-block; vertical-align:middle;"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-      Abrir en Maps (Pestaña nueva)
-    </button>
   </div>
 </body>
 </html>
