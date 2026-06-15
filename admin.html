@@ -10602,9 +10602,9 @@ function initMapa(pfx) {
   bottomCard.className = 'google-maps-bottom-card';
   bottomCard.innerHTML = `
     <button class="bottom-card-close" onclick="cerrarBottomCard()">&times;</button>
-    <div class="bottom-card-thumbnail" id="bottomCardThumbnail">
-      <img id="bottomCardImg" src="" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'"/>
-      <div class="bottom-card-thumbnail-overlay">
+    <div class="bottom-card-thumbnail" id="bottomCardThumbnail" style="position:relative; overflow:hidden;">
+      <iframe id="bottomCardImg" src="" style="width:100%; height:100%; border:none; pointer-events:none;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <div class="bottom-card-thumbnail-overlay" style="pointer-events:none;">
          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 2px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
          <span>Street View</span>
          <span class="bottom-card-google-text">Google</span>
@@ -11831,7 +11831,7 @@ function _activarModoAgregarMapaDirecto() {
             <div style="position: relative;">
               <div id="mpMapa" style="width:100%; height:350px; border-radius:12px; border:1px solid var(--border); background:var(--bg2); position:relative; overflow:hidden; z-index:5;"></div>
               <div id="mpStreetViewThumb" onclick="abrirStreetView(window._mpSvLat, window._mpSvLng)" style="display:none; position:absolute; bottom:14px; right:14px; width:100px; height:70px; border-radius:8px; overflow:hidden; cursor:pointer; border:2px solid rgba(255,255,255,0.8); box-shadow:0 2px 8px rgba(0,0,0,0.4); z-index:10; background:#222;">
-                <img id="mpStreetViewImg" src="" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'"/>
+                <iframe id="mpStreetViewImg" src="" style="width:100%; height:100%; border:none; pointer-events:none;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                 <div style="position:absolute; inset:0; background:rgba(0,0,0,0.3); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.3)'">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1px; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                   <span style="font-family:'Outfit',sans-serif; font-size:9px; font-weight:700; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.8);">Street View</span>
@@ -12087,13 +12087,13 @@ function initMpMapa(p) {
 
   mpMapaMarker = L.marker([lat, lng], { icon }).addTo(mpMapaInstance);
 
-  // Update Street View thumbnail in the modal map corner
+  // Update Street View thumbnail in the modal map corner via embed iframe
   const svThumb = document.getElementById('mpStreetViewThumb');
   const svImg = document.getElementById('mpStreetViewImg');
   if (svThumb && svImg) {
     window._mpSvLat = lat;
     window._mpSvLng = lng;
-    svImg.src = `https://maps.googleapis.com/maps/api/streetview?size=100x70&scale=2&location=${lat},${lng}&key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0`;
+    svImg.src = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
     svImg.style.display = 'block';
     svThumb.style.display = 'block';
   }
@@ -14488,10 +14488,10 @@ function mostrarBottomCard(lat, lng, main, sub, full) {
   document.getElementById('bottomCardAddressSub').textContent = sub;
   document.getElementById('bottomCardLatLng').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   
-  // Set street view preview image (enlarged and scale=2 for HD)
-  const staticSvUrl = `https://maps.googleapis.com/maps/api/streetview?size=110x75&scale=2&location=${lat},${lng}&key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0`;
+  // Set street view preview via embed iframe (no Static API needed)
+  const embedSvUrl = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
   const imgEl = document.getElementById('bottomCardImg');
-  imgEl.src = staticSvUrl;
+  imgEl.src = embedSvUrl;
   imgEl.style.display = 'block';
   
   // Thumbnail click starts Street View
