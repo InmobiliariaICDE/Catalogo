@@ -14437,28 +14437,17 @@ function abrirStreetView(lat, lng) {
     };
   }
   
-  try {
-    const panorama = new google.maps.StreetViewPanorama(panoramaDiv, {
-      position: { lat: lat, lng: lng },
-      pov: { heading: 165, pitch: 0 },
-      zoom: 1,
-      visible: true,
-      addressControlOptions: {
-        position: google.maps.ControlPosition.TOP_LEFT
-      }
-    });
-    
-    // Resize event trigger to ensure panorama fits perfectly
-    google.maps.event.trigger(panorama, 'resize');
-  } catch (e) {
-    console.error("Error loading Google Street View:", e);
-    toast("No se pudo cargar Street View en esta ubicación. Abriendo en pestaña externa...", "warning");
-    setTimeout(() => {
-      const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
-      window.open(url, '_blank');
-      modal.style.display = 'none';
-    }, 1500);
-  }
+  // Usar iframe embed de Street View (no requiere SDK de google.maps)
+  panoramaDiv.innerHTML = '';
+  const iframe = document.createElement('iframe');
+  iframe.style.width = '100%';
+  iframe.style.height = '100%';
+  iframe.style.border = 'none';
+  iframe.allowFullscreen = true;
+  iframe.loading = 'lazy';
+  iframe.referrerPolicy = 'no-referrer-when-downgrade';
+  iframe.src = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
+  panoramaDiv.appendChild(iframe);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
