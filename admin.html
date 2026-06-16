@@ -17,26 +17,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script async defer src="https://apis.google.com/js/api.js"></script>
 <script async defer src="https://accounts.google.com/gsi/client"></script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&libraries=places,streetView&callback=Function.prototype"></script>
-<script>
-// Suprime el diálogo de error de dominio de Google Maps sin afectar la funcionalidad
-(function() {
-  const _alert = window.alert;
-  window.alert = function(msg) {
-    if (typeof msg === 'string' && (msg.includes('Google Maps') || msg.includes('InvalidKeyMapError') || msg.includes('MapsRequestError'))) return;
-    _alert.apply(this, arguments);
-  };
-  // Oculta el div de error de Google Maps si aparece
-  const observer = new MutationObserver(() => {
-    document.querySelectorAll('div').forEach(el => {
-      if (el.innerText && el.innerText.includes('Esta página no puede cargar Google Maps') && el.style.display !== 'none') {
-        el.style.display = 'none';
-      }
-    });
-  });
-  observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
-})();
-</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&libraries=places&loading=async"></script>
+
 <style>
 :root {
   --gold: #d4a84b; 
@@ -14454,7 +14436,25 @@ function abrirStreetView(lat, lng) {
     };
   }
 
-  // Usar Maps Embed API v1/streetview — muestra el panorama de calle directamente
+  // Intentar con el SDK (igual que el original)
+  if (typeof google !== 'undefined' && google.maps && google.maps.StreetViewPanorama) {
+    try {
+      panoramaDiv.innerHTML = '';
+      const panorama = new google.maps.StreetViewPanorama(panoramaDiv, {
+        position: { lat: lat, lng: lng },
+        pov: { heading: 165, pitch: 0 },
+        zoom: 1,
+        visible: true,
+        addressControlOptions: { position: google.maps.ControlPosition.TOP_LEFT }
+      });
+      google.maps.event.trigger(panorama, 'resize');
+      return;
+    } catch (e) {
+      console.warn('StreetViewPanorama falló, usando iframe embed:', e);
+    }
+  }
+
+  // Fallback: iframe embed (Maps Embed API)
   panoramaDiv.innerHTML = '';
   const iframe = document.createElement('iframe');
   iframe.style.cssText = 'width:100%;height:100%;border:none;';
