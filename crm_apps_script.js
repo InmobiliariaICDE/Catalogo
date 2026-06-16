@@ -1066,6 +1066,7 @@ function _getMonthStatus(val, year, monthIdx, startDateStr, monthlyRent) {
   if (valStr.includes('NUEVO') || valStr.includes('CONTRATO NUEVO')) return { status: 'NEW_CONTRACT', value: valStr };
   if (valStr.includes('NO RENOVARA'))       return { status: 'NO_RENEW', value: valStr };
   if (valStr.includes('ENTREGA'))           return { status: 'DELIVERY', value: valStr };
+  if (valStr.includes('PENDIENTE'))          return { status: 'PENDING', value: 'Pendiente' };
 
   const numVal = _parseNum(val);
   if (numVal > 0) return { status: 'PAID', value: numVal };
