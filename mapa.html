@@ -370,32 +370,7 @@ h3{font-weight:500}
 </div>
 
 <div id="container-principal">
-  <div id="map">
-    <!-- Street View Card -->
-    <div id="sv-card">
-      <button class="sv-close" onclick="document.getElementById('sv-card').style.display='none'">&times;</button>
-      <div class="sv-body">
-        <img class="sv-thumb" id="sv-thumb" src="" alt="Street View"/>
-        <div class="sv-info">
-          <div class="sv-name" id="sv-name">Cargando...</div>
-          <div class="sv-addr" id="sv-addr"></div>
-          <div class="sv-coords" id="sv-coords"></div>
-        </div>
-      </div>
-      <div class="sv-actions">
-        <a class="sv-btn-sv" id="sv-btn-sv" href="#" target="_blank" rel="noopener">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
-          Street View
-        </a>
-        <a class="sv-btn-dir" id="sv-btn-dir" href="#" target="_blank" rel="noopener" title="C&#xF3;mo llegar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21.71 11.29l-9-9a1 1 0 00-1.42 0l-9 9a1 1 0 000 1.42l9 9a1 1 0 001.42 0l9-9a1 1 0 000-1.42zM14 14.5V12h-4v3H8v-4a1 1 0 011-1h5V7.5l3.5 3.5-3.5 3.5z"/></svg>
-        </a>
-        <button class="sv-btn-share" id="sv-btn-share" title="Compartir" onclick="(function(){var c=document.getElementById('sv-coords').textContent;if(navigator.clipboard){navigator.clipboard.writeText(c);}var t=document.getElementById('sv-btn-share');t.title='\u00a1Copiado!';setTimeout(function(){t.title='Compartir'},1500);})()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
-        </button>
-      </div>
-    </div>
-  </div>
+  <div id="map"></div>
   <div id="panel-lateral">
     <button id="panel-close-btn" style="display:none;">&times;</button>
     <div id="panel-contenido"></div>
@@ -471,56 +446,105 @@ function initMap() {
     loadMsg.addTo(map);
     window._loadMsg = loadMsg;
 
-    // ── STREET VIEW CARD: click en cualquier punto del mapa ──────────────
-    map.on('click', function(e) {
-        var lat = e.latlng.lat, lng = e.latlng.lng;
-        var card    = document.getElementById('sv-card');
-        var svName  = document.getElementById('sv-name');
-        var svAddr  = document.getElementById('sv-addr');
-        var svCoords= document.getElementById('sv-coords');
-        var svBtnSv = document.getElementById('sv-btn-sv');
-        var svBtnDir= document.getElementById('sv-btn-dir');
-        var svThumb = document.getElementById('sv-thumb');
+    // ── STREET VIEW CARD ────────────────────────────────────────────────────
+    // Se crea dinámicamente y se inyecta en el contenedor del mapa para
+    // garantizar posicionamiento correcto con z-index sobre todo lo de Leaflet.
+    var svCard = document.createElement('div');
+    svCard.id = 'sv-card';
+    svCard.innerHTML =
+        '<button class="sv-close" id="sv-close-btn">&times;</button>' +
+        '<div class="sv-body">' +
+          '<img class="sv-thumb" id="sv-thumb" src="" alt="Street View"/>' +
+          '<div class="sv-info">' +
+            '<div class="sv-name" id="sv-name">Cargando...</div>' +
+            '<div class="sv-addr" id="sv-addr"></div>' +
+            '<div class="sv-coords" id="sv-coords"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="sv-actions">' +
+          '<a class="sv-btn-sv" id="sv-btn-sv" href="#" target="_blank" rel="noopener">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>' +
+            ' Street View' +
+          '</a>' +
+          '<a class="sv-btn-dir" id="sv-btn-dir" href="#" target="_blank" rel="noopener" title="C\u00f3mo llegar">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21.71 11.29l-9-9a1 1 0 00-1.42 0l-9 9a1 1 0 000 1.42l9 9a1 1 0 001.42 0l9-9a1 1 0 000-1.42zM14 14.5V12h-4v3H8v-4a1 1 0 011-1h5V7.5l3.5 3.5-3.5 3.5z"/></svg>' +
+          '</a>' +
+          '<button class="sv-btn-share" id="sv-btn-share" title="Compartir">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>' +
+          '</button>' +
+        '</div>';
+    map.getContainer().appendChild(svCard);
 
-        // Mostrar coordenadas inmediatamente
+    // Botón cerrar
+    document.getElementById('sv-close-btn').addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        svCard.style.display = 'none';
+    });
+    // Botón compartir: copia coordenadas al portapapeles
+    document.getElementById('sv-btn-share').addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var coords = document.getElementById('sv-coords').textContent;
+        if (navigator.clipboard) navigator.clipboard.writeText(coords);
+        this.title = '\u00a1Copiado!';
+        var btn = this;
+        setTimeout(function(){ btn.title = 'Compartir'; }, 1500);
+    });
+
+    // ── Listener de click: se escucha sobre el contenedor nativo del mapa ──
+    // Se usa 'click' directamente en el DOM del contenedor para evitar la
+    // demora interna de Leaflet en distinguir click vs doble-click.
+    map.getContainer().addEventListener('click', function(ev) {
+        // Ignorar clicks en la propia card o sus hijos
+        if (svCard.contains(ev.target)) return;
+        // Ignorar clicks en controles de Leaflet
+        if (ev.target.closest('.leaflet-control-container')) return;
+
+        // Convertir pixel → latlng usando el objeto map de Leaflet
+        var containerPoint = map.mouseEventToContainerPoint(ev);
+        var latlng = map.containerPointToLatLng(containerPoint);
+        var lat = latlng.lat, lng = latlng.lng;
         var latFmt = lat.toFixed(6), lngFmt = lng.toFixed(6);
-        svName.textContent  = 'Cargando...';
-        svAddr.textContent  = '';
-        svCoords.textContent= latFmt + ', ' + lngFmt;
 
-        // URLs de Google Maps
+        // Actualizar contenido
+        document.getElementById('sv-name').textContent   = 'Cargando...';
+        document.getElementById('sv-addr').textContent   = '';
+        document.getElementById('sv-coords').textContent = latFmt + ', ' + lngFmt;
+
         var svUrl  = 'https://www.google.com/maps?q=&layer=c&cbll=' + lat + ',' + lng;
         var dirUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + lat + ',' + lng;
-        svBtnSv.href  = svUrl;
-        svBtnDir.href = dirUrl;
+        document.getElementById('sv-btn-sv').href  = svUrl;
+        document.getElementById('sv-btn-dir').href = dirUrl;
 
-        // Thumbnail de Street View (Google Static Street View)
+        // Thumbnail Street View
+        var svThumb = document.getElementById('sv-thumb');
+        svThumb.onerror = null;
         svThumb.src = 'https://maps.googleapis.com/maps/api/streetview?size=160x120&location=' + lat + ',' + lng + '&fov=90&source=outdoor';
         svThumb.onerror = function() {
-            this.style.background = '#e0e0e0';
-            this.src = '';
-            this.style.backgroundImage = 'url(\'https://maps.gstatic.com/tactile/pane/default_geocode-2x.png\')';
-            this.style.backgroundSize = 'cover';
             this.onerror = null;
+            this.src = '';
+            this.style.cssText += ';background:#e0e0e0;background-image:none;';
         };
 
-        card.style.display = 'block';
+        // Mostrar card inmediatamente
+        svCard.style.display = 'block';
 
-        // Geocodificación inversa con Nominatim (gratuita, sin API key)
+        // Geocodificación inversa (Nominatim)
         fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&addressdetails=1&accept-language=es')
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 var addr = data.address || {};
                 var name = addr.road || addr.pedestrian || addr.neighbourhood ||
-                           addr.suburb || addr.city_district || addr.city || 'Ubicación';
+                           addr.suburb || addr.city_district || addr.city || 'Ubicaci\u00f3n';
                 var parts = [
                     addr.suburb || addr.neighbourhood || addr.city_district,
                     addr.city   || addr.town || addr.village
                 ].filter(Boolean);
-                svName.textContent = name;
-                svAddr.textContent = parts.join(', ');
+                document.getElementById('sv-name').textContent = name;
+                document.getElementById('sv-addr').textContent = parts.join(', ');
             })
-            .catch(function() { svName.textContent = 'Ubicación seleccionada'; });
+            .catch(function() {
+                document.getElementById('sv-name').textContent = 'Ubicaci\u00f3n seleccionada';
+            });
     });
 }
 
