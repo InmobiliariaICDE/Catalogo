@@ -14422,32 +14422,67 @@ function deleteAlly(id) {
 function abrirStreetView(lat, lng) {
   const modal = document.getElementById('streetViewModal');
   const panoramaDiv = document.getElementById('streetViewPanorama');
-  
   if (!modal || !panoramaDiv) return;
-  
+
   modal.style.display = 'block';
 
-  // Configurar botón externo
+  // Spinner mientras carga
+  panoramaDiv.innerHTML = `
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; background:#111; color:#fff; font-family:'Outfit',sans-serif; gap:14px;">
+      <svg width="48" height="48" viewBox="0 0 50 50" style="animation:svSpin 1s linear infinite;"><circle cx="25" cy="25" r="20" fill="none" stroke="#4285f4" stroke-width="4" stroke-dasharray="90 60"/></svg>
+      <span style="font-size:15px; opacity:0.8;">Cargando Street View...</span>
+    </div>
+    <style>@keyframes svSpin{to{transform:rotate(360deg)}}</style>`;
+
+  // Botón externo
   const externalBtn = document.getElementById('openExternalStreetView');
   if (externalBtn) {
     externalBtn.onclick = (e) => {
       e.stopPropagation();
-      const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
-      window.open(url, '_blank');
+      window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
     };
   }
-  
-  // Usar iframe embed de Street View (no requiere SDK de google.maps)
-  panoramaDiv.innerHTML = '';
-  const iframe = document.createElement('iframe');
-  iframe.style.width = '100%';
-  iframe.style.height = '100%';
-  iframe.style.border = 'none';
-  iframe.allowFullscreen = true;
-  iframe.loading = 'lazy';
-  iframe.referrerPolicy = 'no-referrer-when-downgrade';
-  iframe.src = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
-  panoramaDiv.appendChild(iframe);
+
+  // Intentar con el SDK de Google Maps (tiene verificación de disponibilidad)
+  if (typeof google !== 'undefined' && google.maps && google.maps.StreetViewService) {
+    const sv = new google.maps.StreetViewService();
+    sv.getPanorama({ location: { lat: lat, lng: lng }, radius: 150 }, (data, status) => {
+      if (status === google.maps.StreetViewStatus.OK) {
+        panoramaDiv.innerHTML = '';
+        const panorama = new google.maps.StreetViewPanorama(panoramaDiv, {
+          position: { lat: lat, lng: lng },
+          pov: { heading: 165, pitch: 0 },
+          zoom: 1,
+          visible: true,
+          addressControlOptions: { position: google.maps.ControlPosition.TOP_LEFT }
+        });
+        google.maps.event.trigger(panorama, 'resize');
+      } else {
+        // Sin imágenes disponibles
+        panoramaDiv.innerHTML = `
+          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; background:#111; color:#fff; font-family:'Outfit',sans-serif; gap:16px; text-align:center; padding:24px; box-sizing:border-box;">
+            <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="#facc15" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="#facc15" stroke="none"/></svg>
+            <p style="font-size:16px; font-weight:600; margin:0;">Sin imágenes disponibles</p>
+            <p style="font-size:13px; opacity:0.65; margin:0;">Google no tiene Street View en esta ubicación exacta.<br>Prueba buscar un punto sobre una calle.</p>
+            <button onclick="window.open('https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}','_blank')" style="background:#4285f4; color:#fff; border:none; border-radius:20px; padding:10px 22px; font-size:13px; font-family:'Outfit',sans-serif; cursor:pointer; font-weight:600;">
+              Buscar en Google Maps 🔍
+            </button>
+          </div>`;
+      }
+    });
+  } else {
+    // Fallback: iframe embed si el SDK no está disponible
+    panoramaDiv.innerHTML = '';
+    const iframe = document.createElement('iframe');
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.allowFullscreen = true;
+    iframe.loading = 'lazy';
+    iframe.referrerPolicy = 'no-referrer-when-downgrade';
+    iframe.src = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
+    panoramaDiv.appendChild(iframe);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
