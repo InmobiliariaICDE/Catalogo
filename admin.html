@@ -10726,7 +10726,7 @@ function initMapa(pfx) {
 
     leafletMap._tempSearchMarker = L.marker([lat, lng], { icon: searchIcon }).addTo(leafletMap);
 
-    const embedSvUrl = `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=12,0,0,0,0&output=embed`;
+    const embedSvUrl = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
     const popupContent = `
       <div style="font-family: 'Outfit', sans-serif; padding: 4px 6px; color: #333; width: 220px;">
         <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px; color: #1a73e8;">📍 Dirección Encontrada</div>
@@ -12087,13 +12087,13 @@ function initMpMapa(p) {
 
   mpMapaMarker = L.marker([lat, lng], { icon }).addTo(mpMapaInstance);
 
-  // Update Street View thumbnail via embed (sin API key, sin restricciones de dominio)
+  // Update Street View thumbnail — Maps Embed API v1/streetview
   const svThumb = document.getElementById('mpStreetViewThumb');
   const svImg = document.getElementById('mpStreetViewImg');
   if (svThumb && svImg) {
     window._mpSvLat = lat;
     window._mpSvLng = lng;
-    svImg.src = `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=12,0,0,0,0&output=embed`;
+    svImg.src = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
     svImg.style.display = 'block';
     svThumb.style.display = 'block';
   }
@@ -14435,14 +14435,13 @@ function abrirStreetView(lat, lng) {
     };
   }
 
-  // Siempre usar iframe embed (el Maps JS SDK tiene restricciones de dominio)
+  // Usar Maps Embed API v1/streetview — muestra el panorama de calle directamente
   panoramaDiv.innerHTML = '';
   const iframe = document.createElement('iframe');
   iframe.style.cssText = 'width:100%;height:100%;border:none;';
   iframe.allowFullscreen = true;
   iframe.referrerPolicy = 'no-referrer-when-downgrade';
-  // URL de embed sin API key (no tiene restricciones de dominio)
-  iframe.src = `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=12,0,0,0,0&output=embed`;
+  iframe.src = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
   panoramaDiv.appendChild(iframe);
 }
 
@@ -14484,8 +14483,8 @@ function mostrarBottomCard(lat, lng, main, sub, full) {
   document.getElementById('bottomCardAddressSub').textContent = sub;
   document.getElementById('bottomCardLatLng').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   
-  // Set street view preview via embed (sin API key, sin restricciones de dominio)
-  const embedSvUrl = `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=12,0,0,0,0&output=embed`;
+  // Street View embed — muestra el panorama directamente
+  const embedSvUrl = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
   const imgEl = document.getElementById('bottomCardImg');
   imgEl.src = embedSvUrl;
   imgEl.style.display = 'block';
