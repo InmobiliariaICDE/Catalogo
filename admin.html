@@ -605,6 +605,38 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
   position: absolute; bottom: 6px; right: 8px;
   background: rgba(0,0,0,0.65); color: #fff; font-size: 10px;
   padding: 1px 8px; border-radius: 10px;
+  z-index: 10;
+}
+.popup-arrow-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.45);
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 11;
+  transition: background 0.2s, transform 0.15s;
+  padding: 0;
+}
+.popup-arrow-btn:hover {
+  background: rgba(0,0,0,0.65);
+  transform: translateY(-50%) scale(1.1);
+}
+.popup-arrow-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+.popup-arrow-btn.prev {
+  left: 8px;
+}
+.popup-arrow-btn.next {
+  right: 8px;
 }
 .popup-prop-body { padding: 8px 10px 6px; background: #fff; }
 .popup-prop-table { width: 100%; font-size: 11.5px; border-collapse: collapse; }
@@ -11016,9 +11048,29 @@ function actualizarPinesMapa(pfx, forceFit = false) {
     const marker = L.marker([lat, lng], { icon }).addTo(leafletMap);
     
     // Popup compacto estilo Google Maps
-    const imgSrc2 = (p['Imagenes']||'').split('|')[0].trim() || p['Image'] || 'https://i.imgur.com/Pc9M3I8.png';
-    const numFotos2 = (p['Imagenes']||'').split('|').filter(x=>x.trim()).length || 1;
+    const imagesArr = (p['Imagenes']||'').split('|').map(x=>x.trim()).filter(x=>x);
+    if (imagesArr.length === 0) {
+      imagesArr.push(p['Image'] || 'https://i.imgur.com/Pc9M3I8.png');
+    }
+    window.popupImagesRegistry = window.popupImagesRegistry || {};
+    window.popupImagesRegistry[code] = imagesArr;
+
+    const imgSrc2 = imagesArr[0];
+    const numFotos2 = imagesArr.length;
     const priceLbl2 = formatShortPrice(p['Precio'] || 0) || 'N/A';
+    
+    const prevArrowHtml = numFotos2 > 1 ? `
+      <button onclick="L.DomEvent.stopPropagation(event); changePopupImage('${code}', -1)" class="popup-arrow-btn prev" title="Anterior foto">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" style="display:block;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+    ` : '';
+    
+    const nextArrowHtml = numFotos2 > 1 ? `
+      <button onclick="L.DomEvent.stopPropagation(event); changePopupImage('${code}', 1)" class="popup-arrow-btn next" title="Siguiente foto">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" style="display:block;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    ` : '';
+
     const popupHtml = `
       <div class="popup-prop-card">
         <div class="popup-prop-header">
@@ -11026,8 +11078,10 @@ function actualizarPinesMapa(pfx, forceFit = false) {
           <span class="popup-prop-price">${priceLbl2}</span>
         </div>
         <div class="popup-prop-img-wrap" style="position: relative;">
-          <img class="popup-prop-img" src="${imgSrc2}" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
-          <div class="popup-prop-counter">1 de ${numFotos2} ›</div>
+          <img class="popup-prop-img" id="popup-img-${code}" data-index="0" src="${imgSrc2}" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+          <div class="popup-prop-counter" id="popup-counter-${code}">1 de ${numFotos2} ›</div>
+          ${prevArrowHtml}
+          ${nextArrowHtml}
           <button onclick="L.DomEvent.stopPropagation(event); abrirStreetView(${lat}, ${lng})" class="pegman-btn" title="Ver Street View" style="position: absolute; bottom: 8px; left: 8px; height: 28px; padding: 0 10px; border-radius: 14px; background: #ffffff; border: 1px solid rgba(0,0,0,0.15); box-shadow: 0 2px 5px rgba(0,0,0,0.25); cursor: pointer; display: flex; align-items: center; gap: 6px; z-index: 10;">
             <svg viewBox="0 0 32 32" style="width: 16px; height: 16px; flex-shrink: 0;">
               <path d="M16,2.5C18.2,2.5,20,4.3,20,6.5S18.2,10.5,16,10.5S12,8.7,12,6.5S13.8,2.5,16,2.5z" fill="#f4b400"/>
@@ -14399,6 +14453,30 @@ function deleteAlly(id) {
 function abrirStreetView(lat, lng) {
   // Street View eliminado — abre en Google Maps en nueva pestaña
   window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
+}
+
+// Function to change property popup images
+window.popupImagesRegistry = window.popupImagesRegistry || {};
+function changePopupImage(code, direction) {
+  const images = window.popupImagesRegistry[code];
+  if (!images || images.length <= 1) return;
+  
+  const imgEl = document.getElementById(`popup-img-${code}`);
+  const counterEl = document.getElementById(`popup-counter-${code}`);
+  if (!imgEl || !counterEl) return;
+  
+  let currentIndex = parseInt(imgEl.getAttribute('data-index') || '0', 10);
+  let newIndex = currentIndex + direction;
+  
+  if (newIndex < 0) {
+    newIndex = images.length - 1;
+  } else if (newIndex >= images.length) {
+    newIndex = 0;
+  }
+  
+  imgEl.src = images[newIndex];
+  imgEl.setAttribute('data-index', newIndex);
+  counterEl.textContent = `${newIndex + 1} de ${images.length} ›`;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
