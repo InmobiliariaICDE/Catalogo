@@ -10603,9 +10603,9 @@ function initMapa(pfx) {
   bottomCard.className = 'google-maps-bottom-card';
   bottomCard.innerHTML = `
     <button class="bottom-card-close" onclick="cerrarBottomCard()">&times;</button>
-    <div class="bottom-card-thumbnail" id="bottomCardThumbnail" style="position:relative; overflow:hidden;">
-      <iframe id="bottomCardImg" src="" style="width:100%; height:100%; border:none; pointer-events:none;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-      <div class="bottom-card-thumbnail-overlay" style="pointer-events:none;">
+    <div class="bottom-card-thumbnail" id="bottomCardThumbnail">
+      <img id="bottomCardImg" src="" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'"/>
+      <div class="bottom-card-thumbnail-overlay">
          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 2px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
          <span>Street View</span>
          <span class="bottom-card-google-text">Google</span>
@@ -10727,15 +10727,15 @@ function initMapa(pfx) {
 
     leafletMap._tempSearchMarker = L.marker([lat, lng], { icon: searchIcon }).addTo(leafletMap);
 
-    const embedSvUrl = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
+    const staticSvUrl = `https://maps.googleapis.com/maps/api/streetview?size=220x115&scale=2&location=${lat},${lng}&key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0`;
     const popupContent = `
       <div style="font-family: 'Outfit', sans-serif; padding: 4px 6px; color: #333; width: 220px;">
         <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px; color: #1a73e8;">📍 Dirección Encontrada</div>
         <div style="font-size: 11.5px; color: #555; margin-bottom: 8px; line-height: 1.3;">${title}</div>
         
-        <div style="position: relative; width: 100%; height: 115px; margin-bottom: 8px; border-radius: 8px; overflow: hidden; cursor: pointer; border: 1px solid #ddd;" onclick="abrirStreetView(${lat}, ${lng})">
-          <iframe src="${embedSvUrl}" style="width:100%; height:100%; border:none; pointer-events:none;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-          <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.18); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.35)'" onmouseout="this.style.background='rgba(0,0,0,0.18)'">
+        <div style="position: relative; width: 100%; height: 115px; margin-bottom: 8px; border-radius: 8px; overflow: hidden; cursor: pointer; border: 1px solid #ddd; background: #eaeaea; background-image: linear-gradient(135deg, #e5e5e5 25%, transparent 25%), linear-gradient(225deg, #e5e5e5 25%, transparent 25%), linear-gradient(45deg, #e5e5e5 25%, transparent 25%), linear-gradient(315deg, #e5e5e5 25%, #eaeaea 25%); background-position: 10px 0, 10px 0, 0 0, 0 0; background-size: 10px 10px;" onclick="abrirStreetView(${lat}, ${lng})">
+          <img src="${staticSvUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'"/>
+          <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.25); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.35)'" onmouseout="this.style.background='rgba(0,0,0,0.25)'">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 2px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
             </svg>
@@ -11832,7 +11832,7 @@ function _activarModoAgregarMapaDirecto() {
             <div style="position: relative;">
               <div id="mpMapa" style="width:100%; height:350px; border-radius:12px; border:1px solid var(--border); background:var(--bg2); position:relative; overflow:hidden; z-index:5;"></div>
               <div id="mpStreetViewThumb" onclick="abrirStreetView(window._mpSvLat, window._mpSvLng)" style="display:none; position:absolute; bottom:14px; right:14px; width:100px; height:70px; border-radius:8px; overflow:hidden; cursor:pointer; border:2px solid rgba(255,255,255,0.8); box-shadow:0 2px 8px rgba(0,0,0,0.4); z-index:10; background:#222;">
-                <iframe id="mpStreetViewImg" src="" style="width:100%; height:100%; border:none; pointer-events:none;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                <img id="mpStreetViewImg" src="" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'"/>
                 <div style="position:absolute; inset:0; background:rgba(0,0,0,0.3); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.3)'">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1px; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                   <span style="font-family:'Outfit',sans-serif; font-size:9px; font-weight:700; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.8);">Street View</span>
@@ -12088,13 +12088,13 @@ function initMpMapa(p) {
 
   mpMapaMarker = L.marker([lat, lng], { icon }).addTo(mpMapaInstance);
 
-  // Update Street View thumbnail — Maps Embed API v1/streetview
+  // Update Street View thumbnail
   const svThumb = document.getElementById('mpStreetViewThumb');
   const svImg = document.getElementById('mpStreetViewImg');
   if (svThumb && svImg) {
     window._mpSvLat = lat;
     window._mpSvLng = lng;
-    svImg.src = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
+    svImg.src = `https://maps.googleapis.com/maps/api/streetview?size=100x70&scale=2&location=${lat},${lng}&key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0`;
     svImg.style.display = 'block';
     svThumb.style.display = 'block';
   }
@@ -14427,41 +14427,40 @@ function abrirStreetView(lat, lng) {
 
   modal.style.display = 'block';
 
-  // Botón externo
-  const externalBtn = document.getElementById('openExternalStreetView');
-  if (externalBtn) {
-    externalBtn.onclick = (e) => {
-      e.stopPropagation();
-      window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
-    };
-  }
+  const usarIframe = () => {
+    panoramaDiv.innerHTML = '';
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'width:100%;height:100%;border:none;';
+    iframe.allowFullscreen = true;
+    iframe.referrerPolicy = 'no-referrer-when-downgrade';
+    iframe.src = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
+    panoramaDiv.appendChild(iframe);
+  };
 
-  // Intentar con el SDK (igual que el original)
-  if (typeof google !== 'undefined' && google.maps && google.maps.StreetViewPanorama) {
-    try {
-      panoramaDiv.innerHTML = '';
-      const panorama = new google.maps.StreetViewPanorama(panoramaDiv, {
-        position: { lat: lat, lng: lng },
-        pov: { heading: 165, pitch: 0 },
-        zoom: 1,
-        visible: true,
-        addressControlOptions: { position: google.maps.ControlPosition.TOP_LEFT }
-      });
-      google.maps.event.trigger(panorama, 'resize');
-      return;
-    } catch (e) {
-      console.warn('StreetViewPanorama falló, usando iframe embed:', e);
+  const intentarSDK = (intentos) => {
+    if (typeof google !== 'undefined' && google.maps && google.maps.StreetViewPanorama) {
+      try {
+        panoramaDiv.innerHTML = '';
+        const panorama = new google.maps.StreetViewPanorama(panoramaDiv, {
+          position: { lat: lat, lng: lng },
+          pov: { heading: 165, pitch: 0 },
+          zoom: 1,
+          visible: true,
+          addressControlOptions: { position: google.maps.ControlPosition.TOP_LEFT }
+        });
+        google.maps.event.trigger(panorama, 'resize');
+      } catch (e) {
+        console.warn('SDK falló, usando iframe:', e);
+        usarIframe();
+      }
+    } else if (intentos > 0) {
+      setTimeout(() => intentarSDK(intentos - 1), 400);
+    } else {
+      usarIframe();
     }
-  }
+  };
 
-  // Fallback: iframe embed (Maps Embed API)
-  panoramaDiv.innerHTML = '';
-  const iframe = document.createElement('iframe');
-  iframe.style.cssText = 'width:100%;height:100%;border:none;';
-  iframe.allowFullscreen = true;
-  iframe.referrerPolicy = 'no-referrer-when-downgrade';
-  iframe.src = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
-  panoramaDiv.appendChild(iframe);
+  intentarSDK(10);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -14502,10 +14501,10 @@ function mostrarBottomCard(lat, lng, main, sub, full) {
   document.getElementById('bottomCardAddressSub').textContent = sub;
   document.getElementById('bottomCardLatLng').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   
-  // Street View embed — muestra el panorama directamente
-  const embedSvUrl = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
+  // Set street view preview image
+  const staticSvUrl = `https://maps.googleapis.com/maps/api/streetview?size=110x75&scale=2&location=${lat},${lng}&key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0`;
   const imgEl = document.getElementById('bottomCardImg');
-  imgEl.src = embedSvUrl;
+  imgEl.src = staticSvUrl;
   imgEl.style.display = 'block';
   
   // Thumbnail click starts Street View
