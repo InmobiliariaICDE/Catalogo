@@ -28,7 +28,7 @@ from pathlib import Path
 # ──────────────────────────────────────────────
 APPS_SCRIPT_URL = (
     "https://script.google.com/macros/s/"
-    "AKfycbz-HipJ53KIf2JD1q9BUIBFUB45o4wRYcjvlqUbpg9TDAGK0q3hNQcSrV23dMCWaTgXcQ"
+    "AKfycbxki98uXR_fXbFCPynfzvQN5ibiwQY23zKpLkLKTL7A26GlipdC20oQTKOrUwAMeIJ2gw"
     "/exec?action=getData"
 )
 
