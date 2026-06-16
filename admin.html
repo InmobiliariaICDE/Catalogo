@@ -2047,49 +2047,6 @@ textarea.gemini-card-input {
     }
   }
 
-  /* --- STREET VIEW MODAL --- */
-  #streetViewModal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 999999;
-    background: #000;
-  }
-  #streetViewPanorama {
-    width: 100%;
-    height: 100%;
-  }
-  #closeStreetView {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 1000000;
-    background: rgba(0,0,0,0.65);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
-    font-size: 24px;
-    font-weight: 300;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    transition: background 0.2s, transform 0.15s;
-  }
-  #closeStreetView:hover {
-    background: rgba(0,0,0,0.85);
-    transform: scale(1.08);
-  }
-  .pegman-btn {
-    transition: transform 0.2s, background-color 0.2s;
-  }
-  .pegman-btn:hover {
-    transform: scale(1.15) !important;
-    background-color: #f8f9fa !important;
-  }
 
   .google-maps-bottom-card {
     position: absolute;
@@ -14434,46 +14391,8 @@ function deleteAlly(id) {
 
 // --- GOOGLE STREET VIEW INTEGRATION ---
 function abrirStreetView(lat, lng) {
-  const modal = document.getElementById('streetViewModal');
-  const panoramaDiv = document.getElementById('streetViewPanorama');
-  if (!modal || !panoramaDiv) return;
-
-  modal.style.display = 'block';
-
-  const usarIframe = () => {
-    panoramaDiv.innerHTML = '';
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'width:100%;height:100%;border:none;';
-    iframe.allowFullscreen = true;
-    iframe.referrerPolicy = 'no-referrer-when-downgrade';
-    iframe.src = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&location=${lat},${lng}&heading=165&pitch=0&fov=90`;
-    panoramaDiv.appendChild(iframe);
-  };
-
-  const intentarSDK = (intentos) => {
-    if (typeof google !== 'undefined' && google.maps && google.maps.StreetViewPanorama) {
-      try {
-        panoramaDiv.innerHTML = '';
-        const panorama = new google.maps.StreetViewPanorama(panoramaDiv, {
-          position: { lat: lat, lng: lng },
-          pov: { heading: 165, pitch: 0 },
-          zoom: 1,
-          visible: true,
-          addressControlOptions: { position: google.maps.ControlPosition.TOP_LEFT }
-        });
-        google.maps.event.trigger(panorama, 'resize');
-      } catch (e) {
-        console.warn('SDK falló, usando iframe:', e);
-        usarIframe();
-      }
-    } else if (intentos > 0) {
-      setTimeout(() => intentarSDK(intentos - 1), 400);
-    } else {
-      usarIframe();
-    }
-  };
-
-  intentarSDK(10);
+  // Street View eliminado — abre en Google Maps en nueva pestaña
+  window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -14599,14 +14518,6 @@ function cerrarBottomCard() {
     </div>
   </div>
 
-  <!-- Google Street View Modal -->
-  <div id="streetViewModal">
-    <div id="streetViewPanorama"></div>
-    <button id="closeStreetView" title="Cerrar Street View">&times;</button>
-    <button id="openExternalStreetView" title="Abrir en Google Maps" style="position: absolute; top: 20px; right: 80px; z-index: 1000000; background: rgba(0,0,0,0.65); color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 22px; height: 44px; padding: 0 16px; font-size: 13px; font-family: 'Outfit', sans-serif; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: background 0.2s, transform 0.15s;">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="display:inline-block; vertical-align:middle;"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-      Abrir en Maps (Pestaña nueva)
-    </button>
-  </div>
+
 </body>
 </html>
