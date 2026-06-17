@@ -275,11 +275,11 @@ def pull_from_cloud():
         
         # Mapeo de columnas por año (1-indexed para openpyxl)
         years_map = {
-            2023: 13,
-            2024: 26,
-            2025: 39,
-            2026: 52,
-            2027: 65
+            2023: 18,
+            2024: 31,
+            2025: 44,
+            2026: 57,
+            2027: 70
         }
         
         updated_cells_count = 0
