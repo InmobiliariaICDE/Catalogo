@@ -8537,26 +8537,34 @@ function renderAdministracionContent() {
     return a.name.localeCompare(b.name);
   });
 
-  // KPIs de arrendamiento
+  // KPIs de arrendamiento — suma todos los meses del año actual
   let totalEsperado = 0, totalRecaudado = 0, totalPendiente = 0, ocupados = 0, totalActivos = 0;
+  const monthsFull = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+  // Track which properties count as occupied (at least 1 active month)
+  const occupiedProps = new Set();
+  const activeProps = new Set();
   adminData.properties.forEach(p => {
     const paymentsYear = p.payments[currentAdminYear] || [];
-    const paymentMonth = paymentsYear.find(m => m.month === currentAdminMonth);
-    if (paymentMonth) {
+    paymentsYear.forEach(paymentMonth => {
+      if (!paymentMonth) return;
       const st = paymentMonth.status;
       const val = parseFloat(paymentMonth.value) || 0;
       const rent = parseFloat(p.monthly_rent) || 0;
       if (st === 'PAID') {
-        totalEsperado += rent; totalRecaudado += val || rent; ocupados++; totalActivos++;
+        totalEsperado += rent; totalRecaudado += val || rent;
+        occupiedProps.add(p.id); activeProps.add(p.id);
       } else if (st === 'PENDING') {
-        totalEsperado += rent; totalPendiente += rent; ocupados++; totalActivos++;
+        totalEsperado += rent; totalPendiente += rent;
+        occupiedProps.add(p.id); activeProps.add(p.id);
       } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY') {
         totalEsperado += rent;
         if (val > 0) { totalRecaudado += val; } else { totalPendiente += rent; }
-        ocupados++; totalActivos++;
-      } else if (st === 'VACANT') { totalActivos++; }
-    }
+        occupiedProps.add(p.id); activeProps.add(p.id);
+      } else if (st === 'VACANT') { activeProps.add(p.id); }
+    });
   });
+  ocupados = occupiedProps.size;
+  totalActivos = activeProps.size || adminData.properties.length;
 
   const ocupacionPorcentaje = totalActivos > 0 ? Math.round((ocupados / totalActivos) * 100) : 0;
   const totalComision = totalRecaudado * 0.10;
