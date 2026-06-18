@@ -8103,11 +8103,19 @@ function renderFinanzasCard(consulta) {
   if (adminData && Array.isArray(adminData.properties)) {
     adminData.properties.forEach(p => {
       const paymentsYear = p.payments[currentAdminYear] || [];
+      const rent = parseFloat(p.monthly_rent) || 0;
+
+      // Sumar todos los cobros pendientes del año actual
+      paymentsYear.forEach(m => {
+        if (m.status === 'PENDING') {
+          totalPendiente += rent;
+        }
+      });
+
       const paymentMonth = paymentsYear.find(m => m.month === currentAdminMonth);
       if (paymentMonth) {
         const st = paymentMonth.status;
         const val = parseFloat(paymentMonth.value) || 0;
-        const rent = parseFloat(p.monthly_rent) || 0;
 
         if (st === 'PAID') {
           totalEsperado += rent;
@@ -8116,7 +8124,6 @@ function renderFinanzasCard(consulta) {
           totalActivos++;
         } else if (st === 'PENDING') {
           totalEsperado += rent;
-          totalPendiente += rent;
           ocupados++;
           totalActivos++;
         } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT') {
@@ -8236,7 +8243,7 @@ async function sendMessageFromPanel(phone){
 let adminData = { properties: [], silvia_ledger: {} };
 let currentAdminSubTab = 'matriz';
 let currentAdminYear = '2026';
-let currentAdminMonth = 'MAYO';
+let currentAdminMonth = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"][new Date().getMonth()] || 'MAYO';
 let currentAdminFilter = 'todos'; // 'todos', 'ocupados', 'disponibles'
 let currentAdminSort = 'nombre'; // 'nombre', 'precio', 'disponibles', 'ocupados'
 let currentAdminPropName = null;
@@ -8540,15 +8547,23 @@ function renderAdministracionContent() {
   let totalEsperado = 0, totalRecaudado = 0, totalPendiente = 0, ocupados = 0, totalActivos = 0;
   adminData.properties.forEach(p => {
     const paymentsYear = p.payments[currentAdminYear] || [];
+    const rent = parseFloat(p.monthly_rent) || 0;
+
+    // Sumar todos los cobros pendientes del año actual
+    paymentsYear.forEach(m => {
+      if (m.status === 'PENDING') {
+        totalPendiente += rent;
+      }
+    });
+
     const paymentMonth = paymentsYear.find(m => m.month === currentAdminMonth);
     if (paymentMonth) {
       const st = paymentMonth.status;
       const val = parseFloat(paymentMonth.value) || 0;
-      const rent = parseFloat(p.monthly_rent) || 0;
       if (st === 'PAID') {
         totalEsperado += rent; totalRecaudado += val || rent; ocupados++; totalActivos++;
       } else if (st === 'PENDING') {
-        totalEsperado += rent; totalPendiente += rent; ocupados++; totalActivos++;
+        totalEsperado += rent; ocupados++; totalActivos++;
       } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY') {
         totalEsperado += rent;
         if (val > 0) { totalRecaudado += val; }
