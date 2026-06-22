@@ -7107,6 +7107,90 @@ function verificarRecordatoriosDeCitas() {
   });
 }
 
+function verificarRecordatoriosDeArriendo() {
+  if (typeof adminData === 'undefined' || !adminData.properties) return;
+  window._arriendoReminded = window._arriendoReminded || { cobros: new Set(), incrementos: new Set() };
+
+  const ahora = new Date();
+  
+  // Calcular mañana
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowYear = tomorrow.getFullYear();
+  const tomorrowMonth = tomorrow.getMonth(); // 0-indexed
+  const tomorrowDay = tomorrow.getDate();
+
+  adminData.properties.forEach(p => {
+    // Solo verificar inmuebles ocupados
+    if (p.status !== 'Ocupado') return;
+    const inquilino = p.tenant_name ? p.tenant_name.trim() : '';
+
+    // 1. Recordatorio de cobro de arriendo
+    if (p.due_day) {
+      const dueDay = Math.round(p.due_day);
+      if (tomorrowDay === dueDay) {
+        const key = `${p.id}-${tomorrowYear}-${tomorrowMonth}`;
+        if (!window._arriendoReminded.cobros.has(key)) {
+          window._arriendoReminded.cobros.add(key);
+
+          const propName = p.name ? p.name.trim() : 'la propiedad';
+          const rentNum = parseFloat(p.monthly_rent) || 0;
+          const rentVal = rentNum > 0 ? safeFormatP(rentNum) : 'el arriendo';
+          
+          const inquilinoText = inquilino ? `al inquilino ${inquilino}` : 'al inquilino';
+          
+          const msgHablado = `Atencion, mañana se vence el plazo para cobrar el arriendo de la propiedad ${propName} ${inquilinoText} por valor de ${rentVal}.`;
+          const msgVisual = `🔔 <strong>Cobro de Arriendo:</strong> Mañana vence el plazo para cobrar el arriendo de <strong>${propName}</strong> ${inquilinoText} por valor de <strong>${rentVal}</strong>.`;
+
+          triggerMascotReminder(msgVisual, msgHablado);
+        }
+      }
+    }
+
+    // 2. Recordatorio de incremento de arriendo (aniversario del contrato)
+    if (p.start_date) {
+      const parts = p.start_date.split('-');
+      if (parts.length === 3) {
+        const startYear = parseInt(parts[0], 10);
+        const startMonth = parseInt(parts[1], 10) - 1; // 0-indexed
+        const startDay = parseInt(parts[2], 10);
+
+        if (tomorrowYear > startYear && tomorrowMonth === startMonth && tomorrowDay === startDay) {
+          const key = `${p.id}-${tomorrowYear}`;
+          if (!window._arriendoReminded.incrementos.has(key)) {
+            window._arriendoReminded.incrementos.add(key);
+
+            const propName = p.name ? p.name.trim() : 'la propiedad';
+            const inquilinoCon = inquilino ? `con el inquilino ${inquilino}` : '';
+            
+            const msgHablado = `Atencion, mañana se cumple el año del contrato de la propiedad ${propName} ${inquilinoCon}. Recuerda subir el valor del arriendo.`;
+            const msgVisual = `📈 <strong>Incremento de Arriendo:</strong> Mañana se cumple el aniversario del contrato de <strong>${propName}</strong> ${inquilinoCon}. Recuerda aplicar el incremento del arriendo.`;
+
+            triggerMascotReminder(msgVisual, msgHablado);
+          }
+        }
+      }
+    }
+  });
+}
+
+function triggerMascotReminder(msgVisual, msgHablado) {
+  showGeminiSpeechBubble(msgVisual, 15000);
+  
+  const btnAvatar = document.getElementById('geminiBtnAvatar');
+  const gBtn = document.getElementById('geminiBtn');
+  if (btnAvatar) btnAvatar.src = 'preguntando.png';
+  if (gBtn) {
+    gBtn.classList.add('idle-curious-tilt');
+    setTimeout(() => {
+      gBtn.classList.remove('idle-curious-tilt');
+      if (btnAvatar) btnAvatar.src = 'Saludo.png';
+    }, 3000);
+  }
+
+  speakRecordatorio(msgHablado);
+}
+
 // Speaks reminder text using ElevenLabs TTS (consistent deep male voice across all computers).
 // To activate: set window.ELEVEN_LABS_KEY = 'sk_yourkey' in browser console or in a config file.
 // Falls back to speakText if ElevenLabs key is not configured.
@@ -7297,6 +7381,16 @@ function initGeminiIdleActions() {
   setInterval(() => {
     verificarRecordatoriosDeCitas();
   }, 30000);
+
+  // Background check for rent and increase reminders (every 30 seconds)
+  setInterval(() => {
+    verificarRecordatoriosDeArriendo();
+  }, 30000);
+
+  // Initial check for rent and increase reminders after 5 seconds
+  setTimeout(() => {
+    verificarRecordatoriosDeArriendo();
+  }, 5000);
 
   // First user interaction welcome
   let firstInteractionDone = false;
