@@ -1654,7 +1654,7 @@ textarea.gemini-card-input {
   .matrix-cell.status-cell-NEW_CONTRACT { color: #3b82f6; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); }
   .matrix-cell.status-cell-NO_RENEW { color: #eab308; background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.3); }
   .matrix-cell.status-cell-DELIVERY { color: #f97316; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); }
-  .matrix-cell.status-cell-FUTURE { color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); cursor: not-allowed; }
+  .matrix-cell.status-cell-FUTURE, .matrix-cell.status-cell-AL_DIA { color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); cursor: not-allowed; }
   .matrix-cell.status-cell-UNSTARTED { color: rgba(255,255,255,0.15); background: transparent; border: 1px dashed rgba(255,255,255,0.06); cursor: not-allowed; }
 
   @keyframes pulse-border {
@@ -8636,7 +8636,7 @@ function renderAdministracionContent() {
     const payMonth = paymentsYear.find(m => m.month === currentAdminMonth);
     if (!payMonth) return false;
     const st = payMonth.status;
-    return st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY';
+    return st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY' || st === 'AL_DIA';
   };
 
   const filteredProperties = adminData.properties.filter(p => {
@@ -8698,7 +8698,7 @@ function renderAdministracionContent() {
         totalEsperado += rent; totalRecaudado += val || rent; ocupados++; totalActivos++;
       } else if (st === 'PENDING') {
         totalEsperado += rent; ocupados++; totalActivos++;
-      } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY') {
+      } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY' || st === 'AL_DIA') {
         totalEsperado += rent;
         if (val > 0) { totalRecaudado += val; }
         ocupados++; totalActivos++;
@@ -8920,7 +8920,7 @@ function renderMatrizPagos(propertiesList) {
                           <option value="NEW_CONTRACT" style="background-color: #121212; color: #fff;" ${pay.status === 'NEW_CONTRACT' ? 'selected' : ''}>🔵 Nuevo Contrato</option>
                           <option value="NO_RENEW" style="background-color: #121212; color: #fff;" ${pay.status === 'NO_RENEW' ? 'selected' : ''}>🟡 No Renovará</option>
                           <option value="DELIVERY" style="background-color: #121212; color: #fff;" ${pay.status === 'DELIVERY' ? 'selected' : ''}>🟠 Entrega</option>
-                          <option value="FUTURE" style="background-color: #121212; color: #fff;" ${pay.status === 'FUTURE' ? 'selected' : ''}>⚫ Al día</option>
+                          <option value="FUTURE" style="background-color: #121212; color: #fff;" ${pay.status === 'FUTURE' ? 'selected' : ''}>⚫ Futuro</option>
                         </select>
                       </div>
                     </td>
@@ -9238,7 +9238,7 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
               <option value="NEW_CONTRACT" style="background-color: #121212; color: #fff;" ${pay.status === 'NEW_CONTRACT' ? 'selected' : ''}>🔵 Nuevo Contrato</option>
               <option value="NO_RENEW" style="background-color: #121212; color: #fff;" ${pay.status === 'NO_RENEW' ? 'selected' : ''}>🟡 No Renovará</option>
               <option value="DELIVERY" style="background-color: #121212; color: #fff;" ${pay.status === 'DELIVERY' ? 'selected' : ''}>🟠 Entrega</option>
-              <option value="FUTURE" style="background-color: #121212; color: #fff;" ${pay.status === 'FUTURE' ? 'selected' : ''}>⚫ Al día</option>
+              <option value="FUTURE" style="background-color: #121212; color: #fff;" ${pay.status === 'FUTURE' ? 'selected' : ''}>⚫ Futuro</option>
             </select>
           </div>
         </div>
@@ -9335,7 +9335,7 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
               <option value="NEW_CONTRACT" style="background-color: #121212; color: #fff;" ${pay.status === 'NEW_CONTRACT' ? 'selected' : ''}>🔵 Nuevo Contrato</option>
               <option value="NO_RENEW" style="background-color: #121212; color: #fff;" ${pay.status === 'NO_RENEW' ? 'selected' : ''}>🟡 No Renovará</option>
               <option value="DELIVERY" style="background-color: #121212; color: #fff;" ${pay.status === 'DELIVERY' ? 'selected' : ''}>🟠 Entrega</option>
-              <option value="FUTURE" style="background-color: #121212; color: #fff;" ${pay.status === 'FUTURE' ? 'selected' : ''}>⚫ Al día</option>
+              <option value="FUTURE" style="background-color: #121212; color: #fff;" ${pay.status === 'FUTURE' ? 'selected' : ''}>⚫ Futuro</option>
             </select>
           </div>
           <div>
@@ -10241,6 +10241,7 @@ function getStatusBadgeClass(status) {
     case 'NO_RENEW': return 'badge-status norenew';
     case 'DELIVERY': return 'badge-status delivery';
     case 'FUTURE': return 'badge-status vacant';
+    case 'AL_DIA': return 'badge-status vacant';
     case 'UNSTARTED': return 'badge-status vacant';
     default: return 'badge-status vacant';
   }
@@ -10255,7 +10256,8 @@ function getStatusLabel(status) {
     case 'NEW_CONTRACT': return 'Nuevo Contrato';
     case 'NO_RENEW': return 'No Renovara';
     case 'DELIVERY': return 'Entrega';
-    case 'FUTURE': return 'Al día';
+    case 'FUTURE': return 'Futuro';
+    case 'AL_DIA': return 'Al día';
     case 'UNSTARTED': return 'No Iniciado';
     default: return status || 'Sin Estado';
   }

@@ -1082,7 +1082,7 @@ function _getMonthStatus(val, year, monthIdx, startDateStr, monthlyRent, dueDay)
     const todayDay = today.getDate();
     const limitDay = (dueDay && dueDay > 0) ? dueDay : 1;
     if (todayDay < limitDay) {
-      return { status: 'FUTURE', value: valStr };
+      return { status: 'AL_DIA', value: valStr };
     }
   }
 
