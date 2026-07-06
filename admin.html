@@ -1654,7 +1654,8 @@ textarea.gemini-card-input {
   .matrix-cell.status-cell-NEW_CONTRACT { color: #3b82f6; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); }
   .matrix-cell.status-cell-NO_RENEW { color: #eab308; background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.3); }
   .matrix-cell.status-cell-DELIVERY { color: #f97316; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); }
-  .matrix-cell.status-cell-FUTURE, .matrix-cell.status-cell-AL_DIA { color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); cursor: not-allowed; }
+  .matrix-cell.status-cell-FUTURE { color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); cursor: not-allowed; }
+  .matrix-cell.status-cell-AL_DIA { color: #eab308; background: rgba(234,179,8,0.10); border: 1px solid rgba(234,179,8,0.28); cursor: pointer; }
   .matrix-cell.status-cell-UNSTARTED { color: rgba(255,255,255,0.15); background: transparent; border: 1px dashed rgba(255,255,255,0.06); cursor: not-allowed; }
 
   @keyframes pulse-border {
@@ -8901,6 +8902,7 @@ function renderMatrizPagos(propertiesList) {
                   else if (pay.status === 'VACANT') cellContent = '-';
                   else if (pay.status === 'NO_RENEW') cellContent = '⌛';
                   else if (pay.status === 'DELIVERY') cellContent = '⛳';
+                  else if (pay.status === 'AL_DIA') cellContent = '☀';
                   
                   const tooltipText = `${p.name} - ${mFull}: ${getStatusLabel(pay.status)} ${pay.value && parseFloat(pay.value) > 0 ? safeFormatP(pay.value) : ''}`;
                   
@@ -10241,7 +10243,7 @@ function getStatusBadgeClass(status) {
     case 'NO_RENEW': return 'badge-status norenew';
     case 'DELIVERY': return 'badge-status delivery';
     case 'FUTURE': return 'badge-status vacant';
-    case 'AL_DIA': return 'badge-status vacant';
+    case 'AL_DIA': return 'badge-status norenew';
     case 'UNSTARTED': return 'badge-status vacant';
     default: return 'badge-status vacant';
   }
