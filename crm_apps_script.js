@@ -787,6 +787,33 @@ function getAdminData() {
       });
     }
 
+    if (overallStatus === 'Ocupado') {
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const currentMonthIdx = today.getMonth();
+      Object.keys(paymentsHistory).forEach(year => {
+        paymentsHistory[year].forEach((m, mIdx) => {
+          const y = parseInt(year, 10);
+          const isCurrent = (y === currentYear && mIdx === currentMonthIdx);
+          const isFuture = (y > currentYear || (y === currentYear && mIdx > currentMonthIdx));
+          
+          if (m.status === 'VACANT' && (isCurrent || isFuture)) {
+            if (isCurrent) {
+              const todayDay = today.getDate();
+              const limitDay = (dueDay && dueDay > 0) ? dueDay : 1;
+              if (todayDay < limitDay) {
+                m.status = 'AL_DIA';
+              } else {
+                m.status = 'PENDING';
+              }
+            } else {
+              m.status = 'FUTURE';
+            }
+          }
+        });
+      });
+    }
+
     properties.push({
       id: rowId, excel_row: i, owner, owner_phone: ownerPhone, name: propName,
       tenant_name: tenantName, tenant_phone: tenantPhone,

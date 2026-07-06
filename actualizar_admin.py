@@ -180,6 +180,27 @@ def parse_properties(file):
                     if m["status"] in ("PENDING", "AL_DIA", "FUTURE") and m["value"] in ("-", ""):
                         m["status"] = "VACANT"
                         m["value"] = "DESOCUPADO"
+                        
+        if overall_status == "Ocupado":
+            today = datetime.now()
+            current_year = today.year
+            current_month_idx = today.month - 1
+            for year_str in payments_history:
+                for m_idx, m in enumerate(payments_history[year_str]):
+                    y = int(year_str)
+                    is_current = (y == current_year and m_idx == current_month_idx)
+                    is_future = (y > current_year or (y == current_year and m_idx > current_month_idx))
+                    
+                    if m["status"] == "VACANT" and (is_current or is_future):
+                        if is_current:
+                            today_day = today.day
+                            limit_day = due_day if (due_day and due_day > 0) else 1
+                            if today_day < limit_day:
+                                m["status"] = "AL_DIA"
+                            else:
+                                m["status"] = "PENDING"
+                        else:
+                            m["status"] = "FUTURE"
                 
         properties.append({
             "id": row_id,
