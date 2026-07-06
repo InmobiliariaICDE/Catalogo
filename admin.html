@@ -7109,7 +7109,7 @@ function verificarRecordatoriosDeCitas() {
 
 function verificarRecordatoriosDeArriendo() {
   if (typeof adminData === 'undefined' || !adminData.properties) return;
-  window._arriendoReminded = window._arriendoReminded || { cobros: new Set(), incrementos: new Set() };
+  window._arriendoReminded = window._arriendoReminded || { cobros: new Set(), incrementos: new Set(), preavisos: new Set() };
 
   const ahora = new Date();
   
@@ -7139,7 +7139,8 @@ function verificarRecordatoriosDeArriendo() {
           
           const inquilinoText = inquilino ? `al inquilino ${inquilino}` : 'al inquilino';
           
-          const msgHablado = `Atencion, mañana se vence el plazo para cobrar el arriendo de la propiedad ${propName} ${inquilinoText} por valor de ${rentVal}.`;
+          const spokenRent = rentNum > 0 ? `${Math.round(rentNum)} pesos` : 'el arriendo';
+          const msgHablado = `Atencion, mañana se vence el plazo para cobrar el arriendo de la propiedad ${propName} ${inquilinoText} por valor de ${spokenRent}.`;
           const msgVisual = `🔔 <strong>Cobro de Arriendo:</strong> Mañana vence el plazo para cobrar el arriendo de <strong>${propName}</strong> ${inquilinoText} por valor de <strong>${rentVal}</strong>.`;
 
           triggerMascotReminder(msgVisual, msgHablado);
@@ -7155,6 +7156,7 @@ function verificarRecordatoriosDeArriendo() {
         const startMonth = parseInt(parts[1], 10) - 1; // 0-indexed
         const startDay = parseInt(parts[2], 10);
 
+        // a) Aniversario exacto (mañana se cumple 1 año o múltiplos)
         if (tomorrowYear > startYear && tomorrowMonth === startMonth && tomorrowDay === startDay) {
           const key = `${p.id}-${tomorrowYear}`;
           if (!window._arriendoReminded.incrementos.has(key)) {
@@ -7167,6 +7169,44 @@ function verificarRecordatoriosDeArriendo() {
             const msgVisual = `📈 <strong>Incremento de Arriendo:</strong> Mañana se cumple el aniversario del contrato de <strong>${propName}</strong> ${inquilinoCon}. Recuerda aplicar el incremento del arriendo.`;
 
             triggerMascotReminder(msgVisual, msgHablado);
+          }
+        }
+
+        // b) Aviso 3 meses antes del aniversario anual del contrato (preaviso de incremento)
+        // Buscamos el mes objetivo de aumento restando 3 meses (ejemplo: si el contrato inició en Octubre (9), se debe avisar en Julio (6))
+        let targetMonth = startMonth - 3;
+        if (targetMonth < 0) {
+          targetMonth += 12;
+        }
+
+        if (tomorrowMonth === targetMonth && tomorrowDay === startDay) {
+          // El aumento será en el aniversario del contrato de este ciclo/año
+          // Si el mes de mañana es menor que startMonth, el aumento ocurre este año. Si es mayor, ocurre el próximo año.
+          let increaseYear = tomorrowYear;
+          if (tomorrowMonth > startMonth) {
+            increaseYear = tomorrowYear + 1;
+          }
+
+          if (increaseYear > startYear) {
+            const key = `${p.id}-${increaseYear}`;
+            if (!window._arriendoReminded.preavisos.has(key)) {
+              window._arriendoReminded.preavisos.add(key);
+
+              const propName = p.name ? p.name.trim() : 'la propiedad';
+              const rentNum = parseFloat(p.monthly_rent) || 0;
+              
+              // IPC de Colombia para 2025 certificado por el DANE: 5.10%
+              const ipcRate = 0.051; 
+              const incrementoVal = Math.round(rentNum * ipcRate);
+              const nuevoArriendoVal = rentNum + incrementoVal;
+
+              const inquilinoCon = inquilino ? `a ${inquilino}` : 'al inquilino';
+
+              const msgHablado = `Atencion, recuerda avisar ${inquilinoCon} de la propiedad ${propName} que se le subirá el arriendo en tres meses. El incremento por el IPC de 5.10% es de ${incrementoVal} pesos, quedando en ${nuevoArriendoVal} pesos.`;
+              const msgVisual = `📢 <strong>Preaviso de Aumento (IPC 5.10%):</strong> Recuerda avisar <strong>${inquilinoCon}</strong> de la propiedad <strong>${propName}</strong> que se le subirá el arriendo en 3 meses. El incremento será de <strong>${safeFormatP(incrementoVal)}</strong>, quedando en <strong>${safeFormatP(nuevoArriendoVal)}</strong>.`;
+
+              triggerMascotReminder(msgVisual, msgHablado);
+            }
           }
         }
       }

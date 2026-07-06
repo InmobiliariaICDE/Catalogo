@@ -44,9 +44,10 @@ def parse_number(val):
         return 0
 
 def get_month_status(val, year, month_idx, start_date_str, due_day, monthly_rent):
-    # Current system date for comparison is May 21st, 2026
-    current_year = 2026
-    current_month_idx = 4  # 0-indexed for May
+    # Current system date for comparison
+    today = datetime.now()
+    current_year = today.year
+    current_month_idx = today.month - 1  # 0-indexed: 0 = Enero, 1 = Febrero...
     
     if pd.isna(val):
         val_str = "-"

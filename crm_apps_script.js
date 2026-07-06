@@ -1057,7 +1057,9 @@ function _parseNum(val) {
 }
 
 function _getMonthStatus(val, year, monthIdx, startDateStr, monthlyRent) {
-  const currentYear = 2026, currentMonthIdx = 4; // Mayo 2026
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonthIdx = today.getMonth(); // 0-based: 0 = Enero, 1 = Febrero...
   if (val === null || val === undefined || val === '') val = '-';
   const valStr = String(val).trim().toUpperCase();
 
