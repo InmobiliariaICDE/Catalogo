@@ -766,7 +766,7 @@ function getAdminData() {
           return { month: monthsNames[mIdx], value: '-', status: 'FUTURE' };
         }
         const cell = row[colIdx];
-        const { status, value } = _getMonthStatus(cell, parseInt(year), mIdx, startDate, monthlyRent);
+        const { status, value } = _getMonthStatus(cell, parseInt(year), mIdx, startDate, monthlyRent, dueDay);
         return { month: monthsNames[mIdx], value, status };
       });
     });
@@ -1056,7 +1056,7 @@ function _parseNum(val) {
   return isNaN(parsed) ? 0 : parsed;
 }
 
-function _getMonthStatus(val, year, monthIdx, startDateStr, monthlyRent) {
+function _getMonthStatus(val, year, monthIdx, startDateStr, monthlyRent, dueDay) {
   const today = new Date();
   const currentYear = today.getFullYear();
   const currentMonthIdx = today.getMonth(); // 0-based: 0 = Enero, 1 = Febrero...
@@ -1075,6 +1075,15 @@ function _getMonthStatus(val, year, monthIdx, startDateStr, monthlyRent) {
 
   if (year > currentYear || (year === currentYear && monthIdx > currentMonthIdx)) {
     return { status: 'FUTURE', value: valStr };
+  }
+
+  // Si es el mes actual pero aún no se llega al día de cobro
+  if (year === currentYear && monthIdx === currentMonthIdx) {
+    const todayDay = today.getDate();
+    const limitDay = (dueDay && dueDay > 0) ? dueDay : 1;
+    if (todayDay < limitDay) {
+      return { status: 'FUTURE', value: valStr };
+    }
   }
 
   if (startDateStr) {

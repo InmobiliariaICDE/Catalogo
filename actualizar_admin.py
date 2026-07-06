@@ -76,6 +76,13 @@ def get_month_status(val, year, month_idx, start_date_str, due_day, monthly_rent
     if year > current_year or (year == current_year and month_idx > current_month_idx):
         return "FUTURE", val_str
         
+    # If it is the current month but before the due day, treat as FUTURE
+    if year == current_year and month_idx == current_month_idx:
+        today_day = today.day
+        limit_day = due_day if (due_day and due_day > 0) else 1
+        if today_day < limit_day:
+            return "FUTURE", val_str
+        
     # 2. Check if the contract had not started yet
     if start_date_str:
         try:
