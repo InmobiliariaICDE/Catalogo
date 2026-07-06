@@ -173,6 +173,13 @@ def parse_properties(file):
             may_2026_pay = payments_history["2026"][4] # index 4 is May
             if may_2026_pay["status"] == "VACANT":
                 overall_status = "Desocupado"
+
+        if overall_status == "Desocupado":
+            for year_str in payments_history:
+                for m in payments_history[year_str]:
+                    if m["status"] in ("PENDING", "AL_DIA", "FUTURE") and m["value"] in ("-", ""):
+                        m["status"] = "VACANT"
+                        m["value"] = "DESOCUPADO"
                 
         properties.append({
             "id": row_id,

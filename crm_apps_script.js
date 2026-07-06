@@ -776,6 +776,17 @@ function getAdminData() {
       overallStatus = 'Desocupado';
     }
 
+    if (overallStatus === 'Desocupado') {
+      Object.keys(paymentsHistory).forEach(year => {
+        paymentsHistory[year].forEach(m => {
+          if ((m.status === 'PENDING' || m.status === 'AL_DIA' || m.status === 'FUTURE') && (m.value === '-' || m.value === '')) {
+            m.status = 'VACANT';
+            m.value = 'DESOCUPADO';
+          }
+        });
+      });
+    }
+
     properties.push({
       id: rowId, excel_row: i, owner, owner_phone: ownerPhone, name: propName,
       tenant_name: tenantName, tenant_phone: tenantPhone,
