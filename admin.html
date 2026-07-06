@@ -8893,7 +8893,14 @@ function renderMatrizPagos(propertiesList) {
                   <div style="font-size:10px; color:var(--muted); font-weight:500;">${p.owner || ''}</div>
                 </td>
                 ${monthsFull.map(mFull => {
-                  const pay = paymentsYear.find(m => m.month === mFull) || { status: 'UNSTARTED', value: 0 };
+                  let pay = paymentsYear.find(m => m.month === mFull) || { status: 'UNSTARTED', value: 0 };
+                  // Si AL_DIA pero hay pagos pendientes o en entrega, mostrar como Futuro
+                  if (pay.status === 'AL_DIA') {
+                    const hasPendingOrDelivery = Object.values(p.payments || {}).some(months =>
+                      months.some(m => m.status === 'PENDING' || m.status === 'DELIVERY')
+                    );
+                    if (hasPendingOrDelivery) pay = { ...pay, status: 'FUTURE' };
+                  }
                   let cellContent = '·';
                   if (pay.status === 'PAID') cellContent = '✓';
                   else if (pay.status === 'PENDING') cellContent = '$';
