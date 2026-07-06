@@ -201,7 +201,20 @@ def parse_properties(file):
                                 m["status"] = "PENDING"
                         else:
                             m["status"] = "FUTURE"
-                
+        # Propagar desocupado después de una entrega
+        is_vacant_after_delivery = False
+        sorted_years = sorted(payments_history.keys(), key=int)
+        for year_str in sorted_years:
+            for m in payments_history[year_str]:
+                if m["status"] == "DELIVERY":
+                    is_vacant_after_delivery = True
+                elif m["status"] in ("PAID", "NEW_CONTRACT"):
+                    is_vacant_after_delivery = False
+                elif is_vacant_after_delivery:
+                    if m["status"] in ("PENDING", "AL_DIA", "FUTURE", "UNSTARTED"):
+                        m["status"] = "VACANT"
+                        m["value"] = "DESOCUPADO"
+
         properties.append({
             "id": row_id,
             "excel_row": i,

@@ -183,6 +183,23 @@ function getAdminData() {
         });
       });
     }
+    // Propagar desocupado después de una entrega
+    let isVacantAfterDelivery = false;
+    const sortedYears = Object.keys(paymentsHistory).map(Number).sort((a, b) => a - b);
+    sortedYears.forEach(year => {
+      paymentsHistory[year].forEach(m => {
+        if (m.status === 'DELIVERY') {
+          isVacantAfterDelivery = true;
+        } else if (m.status === 'PAID' || m.status === 'NEW_CONTRACT') {
+          isVacantAfterDelivery = false;
+        } else if (isVacantAfterDelivery) {
+          if (m.status === 'PENDING' || m.status === 'AL_DIA' || m.status === 'FUTURE' || m.status === 'UNSTARTED') {
+            m.status = 'VACANT';
+            m.value = 'DESOCUPADO';
+          }
+        }
+      });
+    });
 
     properties.push({
       id: rowId, excel_row: i, owner, owner_phone: ownerPhone, name: propName,
