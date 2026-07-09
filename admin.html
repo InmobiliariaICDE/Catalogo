@@ -9148,17 +9148,16 @@ function renderMatrizPagos(propertiesList) {
                   if (pay.status === 'PENDING' && p.status === 'Desocupado') {
                     pay = { ...pay, status: 'VACANT' };
                   }
-                  // Si AL_DIA pero hay pagos PENDIENTES en meses PASADOS, mostrar como Futuro
+                  // Si AL_DIA pero hay pagos PENDIENTES en meses PASADOS del año actual, mostrar como Futuro
                   if (pay.status === 'AL_DIA') {
-                    const _nowY = new Date().getFullYear();
-                    const _nowM = new Date().getMonth(); // 0-based
-                    const hasPastPending = Object.entries(p.payments || {}).some(([yr, months]) =>
-                      months.some((m, mIdx) => {
-                        const mYear = parseInt(yr);
-                        const isPast = mYear < _nowY || (mYear === _nowY && mIdx < _nowM);
-                        return isPast && m.status === 'PENDING';
-                      })
-                    );
+                    const _viewY = parseInt(currentAdminYear, 10);
+                    const _now = new Date();
+                    const _nowY = _now.getFullYear();
+                    const _nowM = _now.getMonth(); // 0-based
+                    const hasPastPending = (p.payments[_viewY] || []).some((m, mIdx) => {
+                      const isPast = _viewY < _nowY || (_viewY === _nowY && mIdx < _nowM);
+                      return isPast && m.status === 'PENDING';
+                    });
                     if (hasPastPending) pay = { ...pay, status: 'FUTURE' };
                   }
                   let cellContent = '·';
