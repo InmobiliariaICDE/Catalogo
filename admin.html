@@ -2530,6 +2530,102 @@ textarea.gemini-card-input {
   </div>
 </div>
 
+<!-- MODAL CONTABILIDAD — AGREGAR MOVIMIENTO -->
+<div class="modal-overlay" id="modalContabilidad" onclick="if(event.target===this) closeModal('modalContabilidad')">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-title" id="contModalTitle">➕ Agregar Movimiento</div>
+    <input type="hidden" id="contMovId"/>
+    <div class="cont-form-row" style="margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label">Tipo</label>
+        <select class="form-input" id="contMovTipo" onchange="contToggleTipo()">
+          <option value="ingreso">💚 Ingreso</option>
+          <option value="egreso">🔴 Egreso</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoría</label>
+        <select class="form-input" id="contMovCat">
+          <option value="Venta de Inmueble">🏠 Venta de Inmueble</option>
+          <option value="Arriendo">🔑 Arriendo</option>
+          <option value="Avalúo">📋 Avalúo</option>
+          <option value="Remodelación">🔨 Remodelación</option>
+          <option value="Reparación">🔧 Reparación</option>
+          <option value="Arquitectura">📐 Arquitectura</option>
+          <option value="Gestión/Administración">💼 Gestión/Administración</option>
+          <option value="Consultoría">💡 Consultoría</option>
+          <option value="Otro Servicio">⭐ Otro Servicio</option>
+          <option value="Nómina/Personal">👥 Nómina/Personal</option>
+          <option value="Arriendo Oficina">🏢 Arriendo Oficina</option>
+          <option value="Marketing">📣 Marketing</option>
+          <option value="Servicios Públicos">💡 Servicios Públicos</option>
+          <option value="Impuestos">📝 Impuestos</option>
+          <option value="Software/Tecnología">💻 Software/Tecnología</option>
+          <option value="Inversión">📈 Inversión</option>
+          <option value="Otro Gasto">❌ Otro Gasto</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label">Descripción</label>
+      <input class="form-input" id="contMovDesc" placeholder="Ej: Venta casa El Caguán, cliente Carlos López"/>
+    </div>
+    <div class="cont-form-row" style="margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label">Monto ($)</label>
+        <input class="form-input" id="contMovMonto" type="number" placeholder="0" min="0" step="1000"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha</label>
+        <input class="form-input" id="contMovFecha" type="date"/>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label">Mes contable</label>
+      <select class="form-input" id="contMovMes">
+        <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+        <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+        <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+        <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:4px;">
+      <label class="form-label">Notas (opcional)</label>
+      <textarea class="form-input" id="contMovNotas" placeholder="Notas adicionales..." style="min-height:70px;"></textarea>
+    </div>
+    <div class="modal-footer" style="display:flex; gap:10px; justify-content:space-between; width:100%;">
+      <button class="btn btn-danger btn-sm" id="contMovBtnEliminar" style="display:none;" onclick="contEliminarMovimiento()">🗑 Eliminar</button>
+      <div style="display:flex; gap:10px; margin-left:auto;">
+        <button class="btn btn-secondary" onclick="closeModal('modalContabilidad')">Cancelar</button>
+        <button class="btn btn-primary" onclick="contGuardarMovimiento()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONTABILIDAD — META MENSUAL -->
+<div class="modal-overlay" id="modalContMeta" onclick="if(event.target===this) closeModal('modalContMeta')">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-title">🎯 Definir Metas Financieras</div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label">Meta de Ingresos Mensuales ($)</label>
+      <input class="form-input" id="metaIngMes" type="number" placeholder="ej: 20000000" min="0" step="500000"/>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label">Meta de Ingresos Anuales ($)</label>
+      <input class="form-input" id="metaIngAnual" type="number" placeholder="ej: 240000000" min="0" step="1000000"/>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label">Presupuesto de Gastos Mensuales ($)</label>
+      <input class="form-input" id="metaGastoMes" type="number" placeholder="ej: 8000000" min="0" step="500000"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalContMeta')">Cancelar</button>
+      <button class="btn btn-primary" onclick="contGuardarMetas()">Guardar Metas</button>
+    </div>
+  </div>
+</div>
+
 <!-- GEMINI SPEECH BUBBLE -->
 <div class="gemini-speech-bubble" id="geminiSpeechBubble"></div>
 
