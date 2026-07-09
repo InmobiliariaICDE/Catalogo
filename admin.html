@@ -8591,6 +8591,7 @@ function renderAdministracion() {
             <option value="propietario" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'propietario' ? 'selected' : ''}>Propietario</option>
             <option value="disponibles" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'disponibles' ? 'selected' : ''}>Disponibles</option>
             <option value="ocupados" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'ocupados' ? 'selected' : ''}>Ocupados</option>
+            <option value="fecha_inicio" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'fecha_inicio' ? 'selected' : ''}>Inicio de contrato</option>
           </select>
         </div>
 
@@ -8656,6 +8657,12 @@ function renderAdministracionContent() {
   });
 
   filteredProperties.sort((a, b) => {
+    if (currentAdminSort === 'fecha_inicio') {
+      const dateA = a.start_date || '9999-12-31';
+      const dateB = b.start_date || '9999-12-31';
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      return a.name.localeCompare(b.name);
+    }
     if (currentAdminSort === 'precio') {
       return (parseFloat(b.monthly_rent) || 0) - (parseFloat(a.monthly_rent) || 0);
     }
