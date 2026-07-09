@@ -8775,10 +8775,31 @@ function renderAdministracionContent() {
         </div>
 
         <!-- 6. EDIFICIO SILVIA -->
-        <div class="admin-kpi-card" style="border-color: rgba(245,158,11,0.3); --card-accent: #f59e0b;">
-          <div class="admin-kpi-val" style="color: #f59e0b;">${safeFormatP(silviaRecaudado)}</div>
-          <div class="admin-kpi-lbl">Edificio Silvia (Recaudado)</div>
-          <div class="admin-kpi-sub">Mora: ${safeFormatP(silviaPendiente)} | Ocupado: ${silviaOcupados}/${silviaActivos}</div>
+        <div class="admin-kpi-card" style="border-color: rgba(245,158,11,0.3); --card-accent: #f59e0b; display: flex; flex-direction: column; gap: 8px; justify-content: center;">
+          <div class="admin-kpi-lbl" style="font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #f59e0b; margin-bottom: 2px;">Edificio Silvia</div>
+          
+          <div style="display: flex; flex-direction: column; gap: 5px; font-size: 11px; color: rgba(255,255,255,0.85); width: 100%;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 3px;">
+              <span>Inmuebles Administrados:</span>
+              <strong style="color: #fff;">${silviaActivos} (${silviaOcupados} ocupados)</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 3px;">
+              <span>Canon Esperado:</span>
+              <strong style="color: #fff;">${safeFormatP(silviaEsperado)}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 3px;">
+              <span>Recaudado Efectivo:</span>
+              <strong style="color: #22c55e;">${safeFormatP(silviaRecaudado)}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 3px;">
+              <span>Cartera Pendiente:</span>
+              <strong style="color: ${silviaPendiente > 0 ? '#ef4444' : '#fff'};">${safeFormatP(silviaPendiente)}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding-bottom: 1px;">
+              <span>Comisión Acumulada (10%):</span>
+              <strong style="color: #eab308;">${safeFormatP(silviaRecaudado * 0.10)}</strong>
+            </div>
+          </div>
         </div>
 
       </div>
