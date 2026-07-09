@@ -4505,19 +4505,28 @@ async function cargarProps(){
    TABS
 ═══════════════════════════════════════════════ */
 function showTab(tab){
-  currentTab=tab;
-  const tabNames = ['nuevo','leads','citas','administracion','estadisticas','gestion','contabilidad'];
-  document.querySelectorAll('.tab').forEach((t,i)=> {
-    if (tabNames[i]) t.classList.toggle('active',tabNames[i]===tab);
-  });
-  
-  if(tab==='nuevo') renderNuevo(); 
-  else if(tab==='leads') renderLeads();
-  else if(tab==='citas') renderCitas();
-  else if(tab==='administracion') renderAdministracion();
-  else if(tab==='estadisticas') renderEstadisticas();
-  else if(tab==='gestion') renderGestion();
-  else if(tab==='contabilidad') renderContabilidad();
+  try {
+    currentTab=tab;
+    const tabNames = ['nuevo','leads','citas','administracion','estadisticas','gestion','contabilidad'];
+    document.querySelectorAll('.tab').forEach((t,i)=> {
+      if (tabNames[i]) t.classList.toggle('active',tabNames[i]===tab);
+    });
+    
+    if(tab==='nuevo') renderNuevo(); 
+    else if(tab==='leads') renderLeads();
+    else if(tab==='citas') renderCitas();
+    else if(tab==='administracion') renderAdministracion();
+    else if(tab==='estadisticas') renderEstadisticas();
+    else if(tab==='gestion') renderGestion();
+    else if(tab==='contabilidad') renderContabilidad();
+  } catch (err) {
+    console.error("Error al abrir pestaña " + tab + ":", err);
+    if (typeof toast === 'function') {
+      toast("Error al abrir pestaña: " + err.message, "error");
+    } else {
+      alert("Error al abrir pestaña " + tab + ": " + err.message);
+    }
+  }
 }
 function toggleNlData(){
   nlShowData = !nlShowData;
@@ -12595,11 +12604,13 @@ function updTimelineNota(leadId, idx, val) {
 
 function sincronizarAliadosConPropiedades() {
   let aliados = JSON.parse(localStorage.getItem('icde_aliados') || '[]');
+  if (!Array.isArray(aliados)) aliados = [];
   
   // Limpiar las que se insertaron automáticamente por etiquetas en pruebas anteriores
   // También limpiar Finca Raíz, Metrocuadrado y Ciencuadras ya que el usuario no las quiere.
   const lenOriginal = aliados.length;
   aliados = aliados.filter(a => {
+    if (!a || typeof a !== 'object') return false;
     if (a.notas === 'Autosincronizado desde propiedad') return false;
     if (['finca raiz', 'metrocuadrado', 'ciencuadras'].includes(norm(a.nombre))) return false;
     return true;
@@ -12621,7 +12632,7 @@ function sincronizarAliadosConPropiedades() {
     { nombre: "Menber", urlBase: "https://casasenventaneiva.com/", notas: "Carrusel Index" }
   ];
 
-  const nombresExistentes = new Set(aliados.map(a => norm(a.nombre)));
+  const nombresExistentes = new Set(aliados.map(a => a && a.nombre ? norm(a.nombre) : ''));
   let updated = (aliados.length !== lenOriginal);
 
   LW_PARTNERS.forEach((p, idx) => {
@@ -14977,8 +14988,25 @@ function cerrarBottomCard() {
 /* ═══════════════════════════════════════════════════════════════
    MÓDULO CONTABILIDAD — ICDE Inmobiliaria
 ═══════════════════════════════════════════════════════════════ */
-let contMovimientos = JSON.parse(localStorage.getItem('icde_contabilidad') || '[]');
-let contMetas = JSON.parse(localStorage.getItem('icde_cont_metas') || '{"ingMes":20000000,"ingAnual":240000000,"gastoMes":8000000}');
+let contMovimientos = [];
+try {
+  contMovimientos = JSON.parse(localStorage.getItem('icde_contabilidad') || '[]');
+  if (!Array.isArray(contMovimientos)) contMovimientos = [];
+} catch (e) {
+  console.error("Error al inicializar contMovimientos:", e);
+  contMovimientos = [];
+}
+
+let contMetas = {"ingMes":20000000,"ingAnual":240000000,"gastoMes":8000000};
+try {
+  const savedMetas = localStorage.getItem('icde_cont_metas');
+  if (savedMetas) {
+    contMetas = JSON.parse(savedMetas);
+  }
+} catch (e) {
+  console.error("Error al inicializar contMetas:", e);
+}
+
 let contActiveTab = 'resumen';
 let contAnoFiltro = new Date().getFullYear();
 let contMesFiltro = 0;
@@ -15134,10 +15162,14 @@ function contRenderResumen(el){
   '<div class="cont-panel-body">'+(lista.length===0?'<div class="cont-empty">Ninguno a\u00FAn.<br><br><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Primero</button></div>':
     '<div class="cont-tx-list">'+txList.map(function(m){return'<div class="cont-tx-item" onclick="contEditarMovimiento(\''+m.id+'\')" style="cursor:pointer;"><div class="cont-tx-icon '+m.tipo+'">'+(CONT_CAT_ICONS[m.categoria]||'\uD83D\uDCB0')+'</div><div class="cont-tx-info"><div class="cont-tx-desc">'+(m.descripcion||m.categoria)+'</div><div class="cont-tx-cat">'+m.categoria+' \u00B7 '+(m.fecha||'\u2014')+'</div></div><div style="text-align:right;"><div class="cont-tx-amount '+m.tipo+'">'+(m.tipo==='ingreso'?'+':'-')+contFmt(parseFloat(m.monto||0))+'</div><div class="cont-tx-date">'+CONT_MESES_FULL[(parseInt(m.mes)||1)-1]+'</div></div></div>';}).join('')+'</div>')+'</div></div>';
   setTimeout(function(){
-    const ciC=['#22c55e','#16a34a','#4ade80','#86efac','#d4a84b','#f97316','#3b82f6','#a855f7'];
-    if(ingresos>0&&sI.length){const ctx=document.getElementById('chartIngCat');if(ctx){contCharts['chartIngCat']=new Chart(ctx,{type:'doughnut',data:{labels:sI.map(function(e){return e[0];}),datasets:[{data:sI.map(function(e){return e[1];}),backgroundColor:ciC,borderWidth:2,borderColor:'#18181b'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+contFmt(ctx.raw);}}}},cutout:'62%'}});}}
-    const ceC=['#ef4444','#dc2626','#f87171','#fca5a5','#f97316','#a855f7','#eab308','#888'];
-    if(egresos>0&&sE.length){const ctx=document.getElementById('chartEgrCat');if(ctx){contCharts['chartEgrCat']=new Chart(ctx,{type:'doughnut',data:{labels:sE.map(function(e){return e[0];}),datasets:[{data:sE.map(function(e){return e[1];}),backgroundColor:ceC,borderWidth:2,borderColor:'#18181b'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+contFmt(ctx.raw);}}}},cutout:'62%'}});}}
+    try {
+      const ciC=['#22c55e','#16a34a','#4ade80','#86efac','#d4a84b','#f97316','#3b82f6','#a855f7'];
+      if(ingresos>0&&sI.length){const ctx=document.getElementById('chartIngCat');if(ctx){contCharts['chartIngCat']=new Chart(ctx,{type:'doughnut',data:{labels:sI.map(function(e){return e[0];}),datasets:[{data:sI.map(function(e){return e[1];}),backgroundColor:ciC,borderWidth:2,borderColor:'#18181b'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+contFmt(ctx.raw);}}}},cutout:'62%'}});}}
+      const ceC=['#ef4444','#dc2626','#f87171','#fca5a5','#f97316','#a855f7','#eab308','#888'];
+      if(egresos>0&&sE.length){const ctx=document.getElementById('chartEgrCat');if(ctx){contCharts['chartEgrCat']=new Chart(ctx,{type:'doughnut',data:{labels:sE.map(function(e){return e[0];}),datasets:[{data:sE.map(function(e){return e[1];}),backgroundColor:ceC,borderWidth:2,borderColor:'#18181b'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+contFmt(ctx.raw);}}}},cutout:'62%'}});}}
+    } catch (e) {
+      console.warn("No se pudieron cargar los gráficos de resumen:", e);
+    }
   },80);
 }
 
@@ -15154,7 +15186,14 @@ function contRenderFlujo(el){
   '<tbody>'+md.map(function(m,i){return'<tr style="border-bottom:1px solid rgba(255,255,255,0.03);" onmouseover="this.style.background=\'rgba(255,255,255,0.02)\'" onmouseout="this.style.background=\'\'"><td style="padding:10px 16px;color:#fff;opacity:'+(m.ingreso||m.egreso?1:0.4)+';">'+CONT_MESES_FULL[i]+'</td><td style="padding:10px 16px;text-align:right;color:#22c55e;font-weight:600;">'+(m.ingreso?contFmt(m.ingreso):'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:#ef4444;font-weight:600;">'+(m.egreso?contFmt(m.egreso):'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:'+(m.utilidad>=0?'#22c55e':'#ef4444')+';font-weight:700;">'+(m.ingreso||m.egreso?contFmt(m.utilidad):'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:#888;">'+(m.ingreso>0?((m.utilidad/m.ingreso)*100).toFixed(0)+'%':'\u2014')+'</td></tr>';}).join('')+
   '<tr style="background:rgba(212,168,75,0.05);border-top:2px solid rgba(212,168,75,0.2);"><td style="padding:12px 16px;font-weight:800;color:var(--gold);">TOTAL</td><td style="padding:12px 16px;text-align:right;color:#22c55e;font-weight:800;">'+contFmt(ti)+'</td><td style="padding:12px 16px;text-align:right;color:#ef4444;font-weight:800;">'+contFmt(te)+'</td><td style="padding:12px 16px;text-align:right;color:'+(tu>=0?'#22c55e':'#ef4444')+';font-weight:800;">'+contFmt(tu)+'</td><td style="padding:12px 16px;text-align:right;color:var(--gold);font-weight:800;">'+(ti>0?((tu/ti)*100).toFixed(0)+'%':'\u2014')+'</td></tr>'+
   '</tbody></table></div></div>';
-  setTimeout(function(){const ctx=document.getElementById('chartFlujo');if(ctx){contCharts['chartFlujo']=new Chart(ctx,{type:'bar',data:{labels:CONT_MESES,datasets:[{label:'Ingresos',data:md.map(function(m){return m.ingreso;}),backgroundColor:'rgba(34,197,94,0.7)',borderColor:'#22c55e',borderWidth:1.5,borderRadius:5},{label:'Egresos',data:md.map(function(m){return m.egreso;}),backgroundColor:'rgba(239,68,68,0.65)',borderColor:'#ef4444',borderWidth:1.5,borderRadius:5},{label:'Utilidad',data:md.map(function(m){return m.utilidad;}),type:'line',borderColor:'#d4a84b',backgroundColor:'rgba(212,168,75,0.08)',borderWidth:2.5,pointRadius:4,tension:0.35,fill:true}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+ctx.dataset.label+': '+contFmt(ctx.raw);}}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:11},callback:function(v){return contFmt(v);}},beginAtZero:true}}}});}},80);
+  setTimeout(function(){
+    try {
+      const ctx=document.getElementById('chartFlujo');
+      if(ctx){contCharts['chartFlujo']=new Chart(ctx,{type:'bar',data:{labels:CONT_MESES,datasets:[{label:'Ingresos',data:md.map(function(m){return m.ingreso;}),backgroundColor:'rgba(34,197,94,0.7)',borderColor:'#22c55e',borderWidth:1.5,borderRadius:5},{label:'Egresos',data:md.map(function(m){return m.egreso;}),backgroundColor:'rgba(239,68,68,0.65)',borderColor:'#ef4444',borderWidth:1.5,borderRadius:5},{label:'Utilidad',data:md.map(function(m){return m.utilidad;}),type:'line',borderColor:'#d4a84b',backgroundColor:'rgba(212,168,75,0.08)',borderWidth:2.5,pointRadius:4,tension:0.35,fill:true}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+ctx.dataset.label+': '+contFmt(ctx.raw);}}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:11},callback:function(v){return contFmt(v);}},beginAtZero:true}}}});}}
+    } catch (e) {
+      console.warn("No se pudo cargar el gráfico de flujo:", e);
+    }
+  },80);
 }
 
 function contRenderPareto(el){
@@ -15175,7 +15214,13 @@ function contRenderPareto(el){
     '<div class="cont-chart-wrap" style="height:280px;"><canvas id="chartPareto"></canvas></div>'+
     '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:16px;"><thead><tr style="border-bottom:1px solid rgba(255,255,255,0.06);"><th style="padding:8px 10px;text-align:left;color:var(--gold);font-size:10px;text-transform:uppercase;">Categor\u00EDa</th><th style="padding:8px 10px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">Ingresos</th><th style="padding:8px 10px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">%</th><th style="padding:8px 10px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">% Acum.</th><th style="padding:8px 10px;text-align:center;color:var(--gold);font-size:10px;text-transform:uppercase;">Impacto</th></tr></thead>'+
     '<tbody>'+pd.map(function(p){return'<tr style="border-bottom:1px solid rgba(255,255,255,0.03);background:'+(p.is80?'rgba(34,197,94,0.04)':'')+'"><td style="padding:8px 10px;color:#fff;font-weight:'+(p.is80?700:400)+';">'+(CONT_CAT_ICONS[p.cat]||'\u2022')+' '+p.cat+'</td><td style="padding:8px 10px;text-align:right;color:#22c55e;font-weight:600;">'+contFmt(p.total)+'</td><td style="padding:8px 10px;text-align:right;color:#ccc;">'+p.pct.toFixed(1)+'%</td><td style="padding:8px 10px;text-align:right;color:'+(p.pctAcum<=80?'#22c55e':'#888')+';">'+p.pctAcum.toFixed(1)+'%</td><td style="padding:8px 10px;text-align:center;">'+(p.is80?'<span style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">\u2B50 VITAL</span>':'<span style="color:#555;font-size:10px;">Complementario</span>')+'</td></tr>';}).join('')+'</tbody></table>')+'</div></div>';
-  setTimeout(function(){if(totalIng>0&&pd.length){const ctx=document.getElementById('chartPareto');if(ctx){const cols=pd.map(function(p){return p.is80?'rgba(34,197,94,0.75)':'rgba(100,100,100,0.45)';});contCharts['chartPareto']=new Chart(ctx,{type:'bar',data:{labels:pd.map(function(p){return p.cat;}),datasets:[{label:'Ingresos',data:pd.map(function(p){return p.total;}),backgroundColor:cols,borderWidth:1.5,borderRadius:5,order:2},{label:'% Acumulado',data:pd.map(function(p){return p.pctAcum;}),type:'line',borderColor:'#d4a84b',backgroundColor:'rgba(212,168,75,0.08)',borderWidth:2,pointRadius:4,tension:0.3,yAxisID:'y1',order:1}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.datasetIndex===0?' '+contFmt(ctx.raw):' '+ctx.raw.toFixed(1)+'%';}}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:10},maxRotation:30}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:10},callback:function(v){return contFmt(v);}},beginAtZero:true},y1:{position:'right',min:0,max:100,grid:{display:false},ticks:{color:'#d4a84b',font:{size:10},callback:function(v){return v+'%';}}}}}}});}},80);
+  setTimeout(function(){
+    try {
+      if(totalIng>0&&pd.length){const ctx=document.getElementById('chartPareto');if(ctx){const cols=pd.map(function(p){return p.is80?'rgba(34,197,94,0.75)':'rgba(100,100,100,0.45)';});contCharts['chartPareto']=new Chart(ctx,{type:'bar',data:{labels:pd.map(function(p){return p.cat;}),datasets:[{label:'Ingresos',data:pd.map(function(p){return p.total;}),backgroundColor:cols,borderWidth:1.5,borderRadius:5,order:2},{label:'% Acumulado',data:pd.map(function(p){return p.pctAcum;}),type:'line',borderColor:'#d4a84b',backgroundColor:'rgba(212,168,75,0.08)',borderWidth:2,pointRadius:4,tension:0.3,yAxisID:'y1',order:1}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.datasetIndex===0?' '+contFmt(ctx.raw):' '+ctx.raw.toFixed(1)+'%';}}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:10},maxRotation:30}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:10},callback:function(v){return contFmt(v);}},beginAtZero:true},y1:{position:'right',min:0,max:100,grid:{display:false},ticks:{color:'#d4a84b',font:{size:10},callback:function(v){return v+'%';}}}}}}});}}
+    } catch (e) {
+      console.warn("No se pudo cargar el gráfico de Pareto:", e);
+    }
+  },80);
 }
 
 function contRenderInversiones(el){
