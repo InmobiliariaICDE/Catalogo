@@ -1507,7 +1507,7 @@ textarea.gemini-card-input {
   }
   .admin-kpis-left {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 8px;
   }
   .admin-kpis-right {
@@ -8680,14 +8680,20 @@ function renderAdministracionContent() {
 
   // KPIs de arrendamiento
   let totalEsperado = 0, totalRecaudado = 0, totalPendiente = 0, ocupados = 0, totalActivos = 0;
+  
+  // Metricas Edificio Silvia
+  let silviaEsperado = 0, silviaRecaudado = 0, silviaPendiente = 0, silviaOcupados = 0, silviaActivos = 0;
+
   adminData.properties.forEach(p => {
     const paymentsYear = p.payments[currentAdminYear] || [];
     const rent = parseFloat(p.monthly_rent) || 0;
+    const isSilvia = p.owner && String(p.owner).toLowerCase().trim() === 'silvia';
 
     // Sumar todos los cobros pendientes del año actual
     paymentsYear.forEach(m => {
       if (m.status === 'PENDING') {
         totalPendiente += rent;
+        if (isSilvia) silviaPendiente += rent;
       }
     });
 
@@ -8697,13 +8703,27 @@ function renderAdministracionContent() {
       const val = parseFloat(paymentMonth.value) || 0;
       if (st === 'PAID') {
         totalEsperado += rent; totalRecaudado += val || rent; ocupados++; totalActivos++;
+        if (isSilvia) {
+          silviaEsperado += rent; silviaRecaudado += val || rent; silviaOcupados++; silviaActivos++;
+        }
       } else if (st === 'PENDING') {
         totalEsperado += rent; ocupados++; totalActivos++;
+        if (isSilvia) {
+          silviaEsperado += rent; silviaOcupados++; silviaActivos++;
+        }
       } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY' || st === 'AL_DIA') {
         totalEsperado += rent;
         if (val > 0) { totalRecaudado += val; }
         ocupados++; totalActivos++;
-      } else if (st === 'VACANT') { totalActivos++; }
+        if (isSilvia) {
+          silviaEsperado += rent;
+          if (val > 0) { silviaRecaudado += val; }
+          silviaOcupados++; silviaActivos++;
+        }
+      } else if (st === 'VACANT') {
+        totalActivos++;
+        if (isSilvia) silviaActivos++;
+      }
     }
   });
 
@@ -8752,6 +8772,17 @@ function renderAdministracionContent() {
           <div class="admin-kpi-val" style="color: ${totalPendiente > 0 ? '#ef4444' : '#fff'};">${safeFormatP(totalPendiente)}</div>
           <div class="admin-kpi-lbl">Cartera Pendiente</div>
           <div class="admin-kpi-sub">${totalPendiente > 0 ? '🔴 Inquilinos con mora activa' : '✓ Arrendatarios al día'}</div>
+        </div>
+
+        <!-- 6. EDIFICIO SILVIA -->
+        <div class="admin-kpi-card" style="border-color: rgba(245,158,11,0.3); --card-accent: #f59e0b;">
+          <div class="admin-kpi-val" style="color: #f59e0b; font-size: 19px; line-height: 1.2;">${safeFormatP(silviaRecaudado)}</div>
+          <div class="admin-kpi-lbl">Edificio Silvia (Recaudado)</div>
+          <div class="admin-kpi-sub" style="font-size:10px; line-height: 1.45; color: rgba(255,255,255,0.7);">
+            Facturado: <strong>${safeFormatP(silviaEsperado)}</strong><br>
+            Mora: <strong style="color: ${silviaPendiente > 0 ? '#ef4444' : '#22c55e'};">${safeFormatP(silviaPendiente)}</strong><br>
+            🟢 ${silviaOcupados} ocupados de ${silviaActivos} (${silviaActivos > 0 ? Math.round((silviaOcupados/silviaActivos)*100) : 0}%)
+          </div>
         </div>
 
       </div>
