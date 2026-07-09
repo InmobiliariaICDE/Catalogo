@@ -2244,6 +2244,88 @@ textarea.gemini-card-input {
   .map-add-mode-active .leaflet-popup-pane {
     pointer-events: none !important;
   }
+
+/* ═══════════════════════════════════════════════════════
+   MÓDULO CONTABILIDAD — ESTILOS
+═══════════════════════════════════════════════════════ */
+.cont-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 14px; margin-bottom: 24px; }
+.cont-hero-card { background: linear-gradient(145deg, rgba(30,30,30,0.95), rgba(20,20,20,0.98)); border-radius: 16px; padding: 18px 20px; position: relative; overflow: hidden; box-shadow: 3px 3px 0px rgba(0,0,0,0.35), inset 1px 1px 0px rgba(255,255,255,0.12), inset -1px -1px 0px rgba(0,0,0,0.3); transition: all 0.25s; }
+.cont-hero-card:hover { transform: translateY(-2px); box-shadow: 5px 5px 0px rgba(0,0,0,0.45), inset 1px 1px 0px rgba(255,255,255,0.18); }
+.cont-hero-card::before { content:''; position:absolute; top:0; left:0; width:4px; height:100%; background: var(--card-accent, var(--gold)); border-radius: 4px 0 0 4px; }
+.cont-hero-card .ch-icon { font-size: 22px; margin-bottom: 8px; display: block; }
+.cont-hero-card .ch-lbl { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.cont-hero-card .ch-val { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+.cont-hero-card .ch-sub { font-size: 11px; color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 5px; }
+.cont-hero-card .ch-delta-up { color: #22c55e; }
+.cont-hero-card .ch-delta-down { color: #ef4444; }
+
+.cont-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+@media (max-width: 900px) { .cont-layout { grid-template-columns: 1fr; } }
+
+.cont-panel { background: var(--bg2); border-radius: 16px; border: none; padding: 0; overflow: hidden; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.1), inset -1px -1px 0px rgba(0,0,0,0.3); }
+.cont-panel-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02); }
+.cont-panel-title { font-size: 13px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 8px; }
+.cont-panel-body { padding: 16px 20px; }
+
+.cont-tx-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 4px; }
+.cont-tx-list::-webkit-scrollbar { width: 3px; }
+.cont-tx-list::-webkit-scrollbar-thumb { background: rgba(212,168,75,0.3); border-radius: 2px; }
+.cont-tx-item { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 10px 14px; transition: all 0.2s; cursor: default; }
+.cont-tx-item:hover { background: rgba(255,255,255,0.04); }
+.cont-tx-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.cont-tx-icon.ingreso { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.25); }
+.cont-tx-icon.egreso { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.25); }
+.cont-tx-info { flex: 1; min-width: 0; }
+.cont-tx-desc { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cont-tx-cat { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.cont-tx-amount { font-size: 14px; font-weight: 700; flex-shrink: 0; }
+.cont-tx-amount.ingreso { color: #22c55e; }
+.cont-tx-amount.egreso { color: #ef4444; }
+.cont-tx-date { font-size: 10px; color: #555; margin-top: 2px; text-align: right; }
+
+.cont-chart-wrap { height: 260px; position: relative; }
+.cont-chart-wrap canvas { max-height: 260px !important; }
+
+.cont-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cont-form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+@media (max-width: 600px) { .cont-form-row { grid-template-columns: 1fr; } .cont-form-row.triple { grid-template-columns: 1fr; } }
+
+.cont-section-full { grid-column: 1 / -1; }
+
+/* Pareto & Inversiones */
+.cont-pareto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 800px) { .cont-pareto-grid { grid-template-columns: 1fr; } }
+.cont-inv-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; transition: all 0.2s; }
+.cont-inv-card:hover { background: rgba(212,168,75,0.04); border-color: rgba(212,168,75,0.2); }
+.cont-inv-title { font-size: 14px; font-weight: 700; color: #fff; }
+.cont-inv-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.cont-inv-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+.cont-inv-badge { padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.cont-inv-badge.alta { background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.25); }
+.cont-inv-badge.media { background: rgba(212,168,75,0.12); color: var(--gold); border: 1px solid rgba(212,168,75,0.25); }
+.cont-inv-badge.baja { background: rgba(239,68,68,0.10); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+.cont-inv-roi { font-size: 18px; font-weight: 800; color: var(--gold); letter-spacing: -0.01em; }
+.cont-inv-roi span { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 4px; }
+
+.cont-tabs { display: flex; gap: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 4px; margin-bottom: 18px; }
+.cont-tab-btn { flex: 1; background: transparent; border: none; color: var(--muted); font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600; padding: 7px 10px; border-radius: 7px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.cont-tab-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
+.cont-tab-btn.active { background: var(--gold); color: #000; font-weight: 700; box-shadow: 0 3px 10px rgba(212,168,75,0.3); }
+
+.cont-meta-anual { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+@media (max-width: 700px) { .cont-meta-anual { grid-template-columns: 1fr; } }
+.cont-meta-item { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px; }
+.cont-meta-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px; }
+.cont-meta-val { font-size: 18px; font-weight: 800; color: #fff; }
+.cont-meta-prog { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-top: 8px; }
+.cont-meta-prog-fill { height: 4px; border-radius: 2px; transition: width 0.6s ease; }
+
+.cont-empty { text-align: center; padding: 32px; color: #555; font-size: 13px; }
+.cont-btn-add { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; background: rgba(212,168,75,0.12); border: 1px solid rgba(212,168,75,0.3); color: var(--gold); border-radius: 10px; cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+.cont-btn-add:hover { background: rgba(212,168,75,0.2); transform: translateY(-1px); }
+
+/* Modal Contabilidad */
+#modalContabilidad .modal-box { max-width: 560px; }
 </style>
 </head>
 <body>
@@ -2284,6 +2366,7 @@ textarea.gemini-card-input {
     <button class="tab" onclick="showTab('administracion')">💼 Administración</button>
     <button class="tab" onclick="showTab('estadisticas')">📊 Estadísticas</button>
     <button class="tab" onclick="showTab('gestion')">🏠 Gestión de Inmuebles</button>
+    <button class="tab" onclick="showTab('contabilidad')">💰 Contabilidad</button>
     <button class="settings-btn" onclick="abrirSettings()" title="Configuración" style="margin: 8px 12px 8px auto;">⚙️</button>
   </div>
   <div class="content" id="mainContent"></div>
@@ -4327,7 +4410,7 @@ async function cargarProps(){
 ═══════════════════════════════════════════════ */
 function showTab(tab){
   currentTab=tab;
-  const tabNames = ['nuevo','leads','citas','administracion','estadisticas','gestion'];
+  const tabNames = ['nuevo','leads','citas','administracion','estadisticas','gestion','contabilidad'];
   document.querySelectorAll('.tab').forEach((t,i)=> {
     if (tabNames[i]) t.classList.toggle('active',tabNames[i]===tab);
   });
@@ -4338,6 +4421,7 @@ function showTab(tab){
   else if(tab==='administracion') renderAdministracion();
   else if(tab==='estadisticas') renderEstadisticas();
   else if(tab==='gestion') renderGestion();
+  else if(tab==='contabilidad') renderContabilidad();
 }
 function toggleNlData(){
   nlShowData = !nlShowData;
@@ -8658,9 +8742,20 @@ function renderAdministracionContent() {
 
   filteredProperties.sort((a, b) => {
     if (currentAdminSort === 'fecha_inicio') {
-      const dateA = a.start_date || '9999-12-31';
-      const dateB = b.start_date || '9999-12-31';
-      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      const getDayNum = (p) => {
+        if (p.due_day && p.due_day > 0) return parseInt(p.due_day, 10);
+        if (p.start_date) {
+          const parts = p.start_date.split('-');
+          if (parts.length === 3) {
+            const d = parseInt(parts[2], 10);
+            if (!isNaN(d)) return d;
+          }
+        }
+        return 31;
+      };
+      const dayA = getDayNum(a);
+      const dayB = getDayNum(b);
+      if (dayA !== dayB) return dayA - dayB;
       return a.name.localeCompare(b.name);
     }
     if (currentAdminSort === 'precio') {
