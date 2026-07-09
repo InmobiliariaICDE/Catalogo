@@ -3804,7 +3804,7 @@ async function autoSyncLeads() {
   if (dot) { dot.style.background = '#d4a84b'; dot.style.boxShadow = '0 0 6px #d4a84b'; }
   if (txt) txt.textContent = 'Sincronizando...';
   try {
-    const res = await fetch(CRM_SCRIPT_URL + '?action=getData&t=' + Date.now());
+    const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
     const data = await res.json();
     if (!Array.isArray(data)) throw new Error('Respuesta inválida');
 
@@ -3906,7 +3906,7 @@ async function autoSyncLeads() {
 async function cargarLeads(){
   if(!CRM_SCRIPT_URL) return;
   try {
-    const res = await fetch(CRM_SCRIPT_URL + '?action=getData&t=' + Date.now());
+    const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
     const data = await res.json();
     if(Array.isArray(data)){
       // 100% Drive. Sin filtros locales.
