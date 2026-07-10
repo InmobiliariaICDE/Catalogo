@@ -8816,6 +8816,42 @@ function renderAdministracion() {
   renderAdministracionContent();
 }
 
+function getMonthlyComisionesData(year) {
+  const monthsNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+  const expected = new Array(12).fill(0);
+  const collected = new Array(12).fill(0);
+
+  adminData.properties.forEach(p => {
+    const rent = parseFloat(p.monthly_rent) || 0;
+    const paymentsYear = p.payments[year] || [];
+    
+    paymentsYear.forEach(m => {
+      const mIdx = monthsNames.indexOf(m.month.toUpperCase());
+      if (mIdx !== -1) {
+        const st = m.status;
+        const val = parseFloat(m.value) || 0;
+
+        if (st === 'PAID') {
+          expected[mIdx] += rent;
+          collected[mIdx] += val || rent;
+        } else if (st === 'PENDING') {
+          expected[mIdx] += rent;
+        } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY' || st === 'AL_DIA') {
+          expected[mIdx] += rent;
+          if (val > 0) {
+            collected[mIdx] += val;
+          }
+        }
+      }
+    });
+  });
+
+  return {
+    expected: expected.map(v => v * 0.10),
+    collected: collected.map(v => v * 0.10)
+  };
+}
+
 function renderAdministracionContent() {
   const searchVal = document.getElementById('adminPropertySearch') ? document.getElementById('adminPropertySearch').value.toLowerCase().trim() : '';
   const tabContent = document.getElementById('adminTabContent');
@@ -9040,7 +9076,105 @@ function renderAdministracionContent() {
     </div>
   `;
 
-  tabContent.innerHTML = renderMatrizPagos(filteredProperties);
+  tabContent.innerHTML = `
+    <!-- Comisión Chart Panel -->
+    <div class="panel-section" style="margin-bottom:12px; padding:15px; border-radius:16px; background: linear-gradient(145deg, rgba(30, 30, 30, 0.9) 0%, rgba(20, 20, 20, 0.95) 100%); border: 1px solid rgba(255,255,255,0.06);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <span style="font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; color:var(--gold);">Comisiones de Administración (${currentAdminYear})</span>
+        <span style="font-size:10px; color:var(--muted); font-weight:600;">Comisión Esperada (10% del esperado) vs. Recaudada</span>
+      </div>
+      <div style="height:140px; position:relative; width:100%;">
+        <canvas id="adminComisionesChart"></canvas>
+      </div>
+    </div>
+    
+    ${renderMatrizPagos(filteredProperties)}
+  `;
+
+  setTimeout(() => {
+    try {
+      const ctx = document.getElementById('adminComisionesChart');
+      if (ctx) {
+        const data = getMonthlyComisionesData(currentAdminYear);
+        const monthsAbbr = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+        
+        if (window.adminComisionesChartInstance) {
+          window.adminComisionesChartInstance.destroy();
+        }
+        
+        window.adminComisionesChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: monthsAbbr,
+            datasets: [
+              {
+                label: 'Comisión Recaudada',
+                data: data.collected,
+                backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                borderColor: '#22c55e',
+                borderWidth: 1.5,
+                borderRadius: 4
+              },
+              {
+                label: 'Comisión Esperada',
+                data: data.expected,
+                backgroundColor: 'rgba(212, 168, 75, 0.25)',
+                borderColor: 'var(--gold)',
+                borderWidth: 1.5,
+                borderRadius: 4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false
+            },
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                  color: '#ccc',
+                  font: { size: 9, weight: '600' },
+                  boxWidth: 10,
+                  padding: 8
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return ' ' + context.dataset.label + ': $' + Math.round(context.raw).toLocaleString('es-CO');
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: 'rgba(255,255,255,0.03)' },
+                ticks: { color: '#888', font: { size: 9 } }
+              },
+              y: {
+                grid: { color: 'rgba(255,255,255,0.03)' },
+                ticks: {
+                  color: '#888',
+                  font: { size: 9 },
+                  callback: function(value) {
+                    return '$' + value.toLocaleString('es-CO');
+                  }
+                },
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      }
+    } catch (e) {
+      console.error("Error al cargar el gráfico de comisiones de administración:", e);
+    }
+  }, 100);
 }
 
 function renderResumenCobros(propertiesList) {
