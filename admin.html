@@ -9103,25 +9103,41 @@ function renderAdministracionContent() {
         }
         
         window.adminComisionesChartInstance = new Chart(ctx, {
-          type: 'bar',
+          type: 'line',
           data: {
             labels: monthsAbbr,
             datasets: [
               {
                 label: 'Comisión Recaudada',
                 data: data.collected,
-                backgroundColor: 'rgba(34, 197, 94, 0.7)',
                 borderColor: '#22c55e',
-                borderWidth: 1.5,
-                borderRadius: 4
+                backgroundColor: 'rgba(34, 197, 94, 0.05)',
+                borderWidth: 2.5,
+                tension: 0.3,
+                pointRadius: 3.5,
+                pointBackgroundColor: '#22c55e',
+                fill: true
               },
               {
                 label: 'Comisión Esperada',
                 data: data.expected,
-                backgroundColor: 'rgba(212, 168, 75, 0.25)',
                 borderColor: 'var(--gold)',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                tension: 0.3,
+                pointRadius: 3,
+                pointBackgroundColor: 'var(--gold)',
+                borderDash: [3, 3],
+                fill: false
+              },
+              {
+                label: 'Meta Mensual ($2.000.000)',
+                data: new Array(12).fill(2000000),
+                borderColor: '#ef4444',
                 borderWidth: 1.5,
-                borderRadius: 4
+                borderDash: [6, 6],
+                pointRadius: 0,
+                fill: false
               }
             ]
           },
