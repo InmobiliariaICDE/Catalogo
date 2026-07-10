@@ -8750,6 +8750,11 @@ function renderAdministracion() {
       <!-- Se llena dinámicamente -->
     </div>
 
+    <!-- GRÁFICO DE COMISIONES -->
+    <div id="adminChartContainer" style="margin-bottom: 14px; display: none;">
+      <!-- Se llena dinámicamente -->
+    </div>
+
     <!-- PANEL DE CONTROLES DE ADMINISTRACIÓN -->
     <div class="panel-section" style="padding: 10px 0; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); margin-bottom: 16px;">
       <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap: wrap; row-gap: 10px; width: 100%; padding: 0 20px; box-sizing: border-box;">
@@ -9076,20 +9081,23 @@ function renderAdministracionContent() {
     </div>
   `;
 
-  tabContent.innerHTML = `
-    <!-- Comisión Chart Panel -->
-    <div class="panel-section" style="margin-bottom:12px; padding:15px; border-radius:16px; background: linear-gradient(145deg, rgba(30, 30, 30, 0.9) 0%, rgba(20, 20, 20, 0.95) 100%); border: 1px solid rgba(255,255,255,0.06);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <span style="font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; color:var(--gold);">Comisiones de Administración (${currentAdminYear})</span>
-        <span style="font-size:10px; color:var(--muted); font-weight:600;">Comisión Esperada (10% del esperado) vs. Recaudada</span>
+  const chartContainer = document.getElementById('adminChartContainer');
+  if (chartContainer) {
+    chartContainer.style.display = 'block';
+    chartContainer.innerHTML = `
+      <div class="panel-section" style="padding:15px; border-radius:16px; background: linear-gradient(145deg, rgba(30, 30, 30, 0.9) 0%, rgba(20, 20, 20, 0.95) 100%); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; color:var(--gold);">Comisiones de Administración (${currentAdminYear})</span>
+          <span style="font-size:10px; color:var(--muted); font-weight:600;">Comisión Esperada (10% del esperado) vs. Recaudada</span>
+        </div>
+        <div style="height:140px; position:relative; width:100%;">
+          <canvas id="adminComisionesChart"></canvas>
+        </div>
       </div>
-      <div style="height:140px; position:relative; width:100%;">
-        <canvas id="adminComisionesChart"></canvas>
-      </div>
-    </div>
-    
-    ${renderMatrizPagos(filteredProperties)}
-  `;
+    `;
+  }
+
+  tabContent.innerHTML = renderMatrizPagos(filteredProperties);
 
   setTimeout(() => {
     try {
