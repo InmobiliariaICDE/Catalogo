@@ -2333,7 +2333,6 @@ textarea.gemini-card-input {
     <button class="tab active" onclick="showTab('nuevo')">➕ Catálogo</button>
     <button class="tab" onclick="showTab('leads')">👥 Leads</button>
     <button class="tab" onclick="showTab('citas')">📅 Citas</button>
-    <button class="tab" onclick="showTab('gestion')">🏠 Gestión de Inmuebles</button>
     <button class="tab" onclick="showTab('administracion')">💼 Administración</button>
     <button class="tab" onclick="showTab('contabilidad')">💰 Contabilidad</button>
     <button class="settings-btn" onclick="abrirSettings()" title="Configuración" style="margin: 8px 12px 8px auto;">⚙️</button>
@@ -4478,7 +4477,7 @@ async function cargarProps(){
 function showTab(tab){
   try {
     currentTab=tab;
-    const tabNames = ['nuevo','leads','citas','gestion','administracion','contabilidad'];
+    const tabNames = ['nuevo','leads','citas','administracion','contabilidad'];
     document.querySelectorAll('.tab').forEach((t,i)=> {
       if (tabNames[i]) t.classList.toggle('active',tabNames[i]===tab);
     });
@@ -4522,8 +4521,11 @@ function renderNuevo(){
     <!-- COLUMNA 1: FILTROS E INMUEBLES (30%) -->
     <div class="nl-col-1">
       <div class="panel-section">
-        <div class="form-section-header">
+        <div class="form-section-header" style="display:flex; justify-content:space-between; align-items:center;">
           <div class="panel-section-title">Intereses y Filtros</div>
+          <button class="btn btn-gold btn-sm" onclick="showTab('gestion')" style="padding:6px 14px; font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; border-radius:8px;">
+            <span>+ Agregar inmuebles</span>
+          </button>
         </div>
         <div class="section-content">
           <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Selecciona los filtros para encontrar las propiedades ideales automáticamente.</p>
@@ -6655,11 +6657,11 @@ function renderVisitasPorMes() {
   const counts = {};
   const now = new Date();
 
-  // Inicializar últimos 8 meses
-  for (let i = 7; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    counts[key] = { label: `${monthNames[d.getMonth()]} ${d.getFullYear() !== now.getFullYear() ? d.getFullYear() : ''}`.trim(), count: 0 };
+  // Inicializar meses del año actual (desde Enero hasta el mes actual)
+  const currentYear = now.getFullYear();
+  for (let m = 0; m <= now.getMonth(); m++) {
+    const key = `${currentYear}-${String(m + 1).padStart(2, '0')}`;
+    counts[key] = { label: monthNames[m], count: 0 };
   }
 
   citas.forEach(c => {
