@@ -14976,8 +14976,6 @@ document.addEventListener('DOMContentLoaded', () => {
     closeBtn.addEventListener('click', () => {
       const modal = document.getElementById('streetViewModal');
       const panoramaDiv = document.getElementById('streetViewPanorama');
-      if (modal) modal.style.display = 'none';
-      if (panoramaDiv) panoramaDiv.innerHTML = ''; // reset panorama
     });
   }
   initGeminiIdleActions();
@@ -15126,53 +15124,46 @@ function contObtenerComisionAdministracionEsperada(year, month) {
   return totalEsperado;
 }
 
-function contGetFiltrado(){
-  let lista = contMovimientos.filter(m=>{
-    if(contMesFiltro>0&&parseInt(m.mes)!==contMesFiltro)return false;
-    const fecha=m.fecha?new Date(m.fecha):null;
-    if(fecha&&fecha.getFullYear()!==contAnoFiltro)return false;
-    if(!fecha&&m.ano&&parseInt(m.ano)!==contAnoFiltro)return false;
+function contGetParaAno(year) {
+  let lista = contMovimientos.filter(m => {
+    const fecha = m.fecha ? new Date(m.fecha) : null;
+    if (fecha && fecha.getFullYear() !== year) return false;
+    if (!fecha && m.ano && parseInt(m.ano) !== year) return false;
     return true;
   });
 
   if (typeof adminData !== 'undefined' && adminData && adminData.properties) {
-    if (contMesFiltro > 0) {
-      const comEsperada = contObtenerComisionAdministracionEsperada(contAnoFiltro, contMesFiltro);
+    for (let mIdx = 1; mIdx <= 12; mIdx++) {
+      const comEsperada = contObtenerComisionAdministracionEsperada(year, mIdx);
       if (comEsperada > 0) {
         lista.push({
-          id: 'AUTO-ADMIN-COMISION-' + contAnoFiltro + '-' + contMesFiltro,
+          id: 'AUTO-ADMIN-COMISION-' + year + '-' + mIdx,
           tipo: 'ingreso',
           categoria: 'Gestión/Administración',
-          descripcion: 'Comisión Administración Esperada (Automático)',
+          descripcion: 'Comisión Administración Esperada (Automático - ' + CONT_MESES_FULL[mIdx - 1] + ')',
           monto: comEsperada,
-          fecha: contAnoFiltro + '-' + String(contMesFiltro).padStart(2, '0') + '-01',
-          mes: contMesFiltro,
-          ano: contAnoFiltro,
+          fecha: year + '-' + String(mIdx).padStart(2, '0') + '-01',
+          mes: mIdx,
+          ano: year,
           notas: 'Generado automáticamente a partir de los inmuebles administrados.',
           isAuto: true
         });
       }
-    } else {
-      for (let mIdx = 1; mIdx <= 12; mIdx++) {
-        const comEsperada = contObtenerComisionAdministracionEsperada(contAnoFiltro, mIdx);
-        if (comEsperada > 0) {
-          lista.push({
-            id: 'AUTO-ADMIN-COMISION-' + contAnoFiltro + '-' + mIdx,
-            tipo: 'ingreso',
-            categoria: 'Gestión/Administración',
-            descripcion: 'Comisión Administración Esperada (Automático - ' + CONT_MESES_FULL[mIdx - 1] + ')',
-            monto: comEsperada,
-            fecha: contAnoFiltro + '-' + String(mIdx).padStart(2, '0') + '-01',
-            mes: mIdx,
-            ano: contAnoFiltro,
-            notas: 'Generado automáticamente a partir de los inmuebles administrados.',
-            isAuto: true
-          });
-        }
-      }
     }
   }
+  return lista;
+}
 
+function contGetFiltrado(){
+  let lista = contGetParaAno(contAnoFiltro);
+  if (contMesFiltro > 0) {
+    lista = lista.filter(m => parseInt(m.mes) === contMesFiltro);
+    lista.forEach(m => {
+      if (m.isAuto && m.id.startsWith('AUTO-ADMIN-COMISION-')) {
+        m.descripcion = 'Comisión Administración Esperada (Automático)';
+      }
+    });
+  }
   return lista;
 }
 
@@ -15306,7 +15297,8 @@ function contRenderResumen(el){
 }
 
 function contRenderFlujo(el){
-  const md=CONT_MESES.map(function(label,idx){const mn=idx+1;const ml=contMovimientos.filter(function(m){if(parseInt(m.mes)!==mn)return false;const f=m.fecha?new Date(m.fecha):null;if(f&&f.getFullYear()!==contAnoFiltro)return false;if(!f&&m.ano&&parseInt(m.ano)!==contAnoFiltro)return false;return true;});return{label:label,ingreso:contSumTipo(ml,'ingreso'),egreso:contSumTipo(ml,'egreso'),utilidad:contSumTipo(ml,'ingreso')-contSumTipo(ml,'egreso')};});
+  const listaAno=contGetParaAno(contAnoFiltro);
+  const md=CONT_MESES.map(function(label,idx){const mn=idx+1;const ml=listaAno.filter(function(m){return parseInt(m.mes)===mn;});return{label:label,ingreso:contSumTipo(ml,'ingreso'),egreso:contSumTipo(ml,'egreso'),utilidad:contSumTipo(ml,'ingreso')-contSumTipo(ml,'egreso')};});
   const ti=md.reduce(function(a,m){return a+m.ingreso;},0);
   const te=md.reduce(function(a,m){return a+m.egreso;},0);
   const tu=ti-te;
