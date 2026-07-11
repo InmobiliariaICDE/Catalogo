@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es-CO">
 <head>
 <meta charset="UTF-8"/>
@@ -2533,6 +2533,7 @@ textarea.gemini-card-input {
           <option value="Software/Tecnología">💻 Software/Tecnología</option>
           <option value="Inversión">📈 Inversión</option>
           <option value="Aseo/Mantenimiento">🧹 Aseo/Mantenimiento</option>
+          <option value="Cafetería">☕ Cafetería</option>
           <option value="Otro Gasto">❌ Otro Gasto</option>
         </select>
       </div>
@@ -6553,8 +6554,37 @@ function renderCitas(){
         </div>
       </div>
     </div>
+
+    <!-- SECCIÓN ANALYTICS CITAS -->
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:24px;">
+
+      <!-- TOP INMUEBLES MÁS VISITADOS -->
+      <div style="background:var(--bg2); border-radius:20px; padding:24px; box-shadow:3px 3px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3);">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;">
+          <div style="width:3px; height:18px; background:var(--gold); border-radius:2px;"></div>
+          <span style="font-size:13px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.08em;">Top Inmuebles más Visitados</span>
+        </div>
+        <div id="citasTopInmuebles" style="display:flex; flex-direction:column; gap:10px;">
+          <div style="color:var(--muted); font-size:13px; text-align:center; padding:20px 0;">Calculando...</div>
+        </div>
+      </div>
+
+      <!-- VISITAS POR MES -->
+      <div style="background:var(--bg2); border-radius:20px; padding:24px; box-shadow:3px 3px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3);">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;">
+          <div style="width:3px; height:18px; background:var(--gold); border-radius:2px;"></div>
+          <span style="font-size:13px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.08em;">Visitas por Mes</span>
+        </div>
+        <div id="citasVisitasMes" style="display:flex; flex-direction:column; gap:8px;">
+          <div style="color:var(--muted); font-size:13px; text-align:center; padding:20px 0;">Calculando...</div>
+        </div>
+      </div>
+
+    </div>
+
     <style>
       @media(max-width:900px){ .citas-layout-nuevo { grid-template-columns: 1fr !important; } }
+      @media(max-width:700px){ #citasAnalyticsGrid { grid-template-columns: 1fr !important; } }
       .pc-buscar-row-premium {
         display: flex;
         align-items: center;
@@ -6572,12 +6602,112 @@ function renderCitas(){
         box-shadow: inset 3px 3px 6px rgba(0,0,0,0.8),inset -1px -1px 0px rgba(212,168,75,0.3), 0 0 0 2px rgba(212,168,75,0.15);
       }
     </style>`;
-  
+
   renderCalendario();
   aplicarFiltroYBusquedaCitas();
+  renderTopVisitados();
+  renderVisitasPorMes();
+}
+
+function renderTopVisitados() {
+  const container = document.getElementById('citasTopInmuebles');
+  if (!container) return;
+
+  // Contar visitas por código de inmueble usando el array de citas
+  const counts = {};
+  citas.forEach(c => {
+    if (!c.codigo) return;
+    counts[c.codigo] = (counts[c.codigo] || 0) + 1;
+  });
+
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+
+  if (!sorted.length) {
+    container.innerHTML = '<div style="color:var(--muted); font-size:13px; text-align:center; padding:20px 0;">Sin visitas registradas</div>';
+    return;
+  }
+
+  const maxVal = sorted[0][1];
+
+  container.innerHTML = sorted.map(([cod, count], i) => {
+    const p = (typeof allProps !== 'undefined' ? allProps : []).find(x => x['Código'] === cod || x['Codigo'] === cod);
+    const nombre = p ? (p['Nombre'] || p['nombre'] || cod) : 'Propiedad Desconocida';
+    const img = p ? ((p['Imagenes'] || p['Image'] || '').split('|')[0].trim() || 'https://i.imgur.com/Pc9M3I8.png') : 'https://i.imgur.com/Pc9M3I8.png';
+    const pct = Math.round((count / maxVal) * 100);
+    const rankColors = ['var(--gold)', '#c0c0c0', '#cd7f32', 'var(--muted)', 'var(--muted)', 'var(--muted)'];
+
+    return `
+      <div style="display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.03); border-radius:12px; padding:10px 14px; box-shadow:2px 2px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.08);">
+        <span style="font-size:12px; font-weight:800; color:${rankColors[i]}; width:16px; text-align:center; flex-shrink:0;">#${i+1}</span>
+        <img src="${img}" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'" style="width:42px; height:42px; border-radius:8px; object-fit:cover; flex-shrink:0;"/>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:12px; font-weight:700; color:var(--gold); line-height:1.2;">${cod}</div>
+          <div style="font-size:12px; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${nombre}</div>
+          <div style="margin-top:5px; height:3px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden;">
+            <div style="height:100%; width:${pct}%; background:linear-gradient(90deg, var(--gold), rgba(212,168,75,0.4)); border-radius:2px; transition:width 0.6s ease;"></div>
+          </div>
+        </div>
+        <div style="font-size:14px; font-weight:800; color:var(--green); flex-shrink:0;">${count} <span style="font-size:10px; font-weight:500; color:var(--muted);">visita${count!==1?'s':''}</span></div>
+      </div>`;
+  }).join('');
+}
+
+function renderVisitasPorMes() {
+  const container = document.getElementById('citasVisitasMes');
+  if (!container) return;
+
+  // Agrupar citas por mes (últimos 8 meses)
+  const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const counts = {};
+  const now = new Date();
+
+  // Inicializar últimos 8 meses
+  for (let i = 7; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    counts[key] = { label: `${monthNames[d.getMonth()]} ${d.getFullYear() !== now.getFullYear() ? d.getFullYear() : ''}`.trim(), count: 0 };
+  }
+
+  citas.forEach(c => {
+    if (!c.fecha) return;
+    const key = c.fecha.substring(0, 7); // YYYY-MM
+    if (counts[key]) counts[key].count++;
+  });
+
+  const entries = Object.values(counts);
+  const maxVal = Math.max(...entries.map(e => e.count), 1);
+  const totalVisitas = entries.reduce((acc, e) => acc + e.count, 0);
+
+  // Tarjeta de total
+  const totalHtml = `
+    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); border-radius:12px; padding:12px 16px; margin-bottom:4px; box-shadow:inset 2px 2px 4px rgba(0,0,0,0.4);">
+      <div>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em;">Total registrado</div>
+        <div style="font-size:26px; font-weight:800; color:#fff; line-height:1.1; margin-top:2px;">${totalVisitas}</div>
+        <div style="font-size:11px; color:var(--gold); font-weight:600; margin-top:2px;">Histórico acumulado</div>
+      </div>
+      <div style="font-size:28px; opacity:0.15;">📅</div>
+    </div>`;
+
+  // Barras por mes
+  const barsHtml = entries.map(e => {
+    const pct = Math.round((e.count / maxVal) * 100);
+    const isCurrentMonth = e.label.startsWith(monthNames[now.getMonth()]);
+    return `
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="font-size:11px; color:var(--muted); width:36px; flex-shrink:0; text-align:right;">${e.label}</div>
+        <div style="flex:1; height:20px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden; position:relative;">
+          <div style="position:absolute; left:0; top:0; height:100%; width:${pct}%; background:${isCurrentMonth ? 'linear-gradient(90deg, var(--gold), rgba(212,168,75,0.6))' : 'linear-gradient(90deg, rgba(59,130,246,0.7), rgba(59,130,246,0.3))'}; border-radius:4px; transition:width 0.6s ease;"></div>
+          ${e.count > 0 ? `<span style="position:absolute; right:6px; top:50%; transform:translateY(-50%); font-size:10px; font-weight:700; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.8);">${e.count}</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = totalHtml + `<div style="display:flex; flex-direction:column; gap:6px; margin-top:12px;">${barsHtml}</div>`;
 }
 
 function selectCalDate(fecha){
+
   citasActiveFilterType = 'fecha';
   citasActiveFilterValue = fecha;
 
@@ -14882,7 +15012,7 @@ const CONT_CAT_ICONS = {
   'Gesti\u00F3n/Administraci\u00F3n':'\uD83D\uDCBC','Consultor\u00EDa':'\uD83D\uDCA1','Otro Servicio':'\u2B50',
   'N\u00F3mina/Personal':'\uD83D\uDC65','Arriendo Oficina':'\uD83C\uDFE2','Marketing':'\uD83D\uDCE3',
   'Servicios P\u00FAblicos':'\uD83D\uDCA1','Impuestos':'\uD83D\uDCDD','Software/Tecnolog\u00EDa':'\uD83D\uDCBB',
-  'Inversi\u00F3n':'\uD83D\uDCC8','Aseo/Mantenimiento':'\uD83E\uDDF9','Otro Gasto':'\u274C'
+  'Inversi\u00F3n':'\uD83D\uDCC8','Aseo/Mantenimiento':'\uD83E\uDDF9','Cafeter\u00EDa':'\u2615','Otro Gasto':'\u274C'
 };
 
 function contFmt(n){
@@ -15220,7 +15350,7 @@ function contEditarMovimiento(id){
 function contToggleTipo(){
   const tipo=document.getElementById('contMovTipo').value;
   const catSel=document.getElementById('contMovCat');
-  const egresosCats=['N\u00F3mina/Personal','Arriendo Oficina','Marketing','Servicios P\u00FAblicos','Impuestos','Software/Tecnolog\u00EDa','Inversi\u00F3n','Aseo/Mantenimiento','Otro Gasto'];
+  const egresosCats=['N\u00F3mina/Personal','Arriendo Oficina','Marketing','Servicios P\u00FAblicos','Impuestos','Software/Tecnolog\u00EDa','Inversi\u00F3n','Aseo/Mantenimiento','Cafeter\u00EDa','Otro Gasto'];
   const ingresosCats=['Venta de Inmueble','Arriendo','Avalu\u00F3','Remodelaci\u00F3n','Reparaci\u00F3n','Arquitectura','Gesti\u00F3n/Administraci\u00F3n','Consultor\u00EDa','Otro Servicio'];
   Array.from(catSel.options).forEach(function(opt){
     if(tipo==='egreso')opt.style.display=egresosCats.includes(opt.value)?'':'none';

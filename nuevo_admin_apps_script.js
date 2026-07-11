@@ -142,7 +142,10 @@ function getAdminData() {
     });
 
     let overallStatus = rawName.toUpperCase().includes('DESOCUPAD') ? 'Desocupado' : 'Ocupado';
-    if (paymentsHistory['2026'] && paymentsHistory['2026'][4] && paymentsHistory['2026'][4].status === 'VACANT') {
+    const _todayStatus = new Date();
+    const _currYearStatus = String(_todayStatus.getFullYear());
+    const _currMonthStatus = _todayStatus.getMonth();
+    if (paymentsHistory[_currYearStatus] && paymentsHistory[_currYearStatus][_currMonthStatus] && paymentsHistory[_currYearStatus][_currMonthStatus].status === 'VACANT') {
       overallStatus = 'Desocupado';
     }
 
