@@ -7387,8 +7387,11 @@ function verificarRecordatoriosDeArriendo() {
               
               // IPC de Colombia para 2025 certificado por el DANE: 5.10%
               const ipcRate = 0.051; 
-              const incrementoVal = Math.round(rentNum * ipcRate);
-              const nuevoArriendoVal = rentNum + incrementoVal;
+              const rawIncremento = Math.round(rentNum * ipcRate);
+              let nuevoArriendoVal = rentNum + rawIncremento;
+              // Redondear siempre a favor del arrendatario (al menor múltiplo de 10.000)
+              nuevoArriendoVal = Math.floor(nuevoArriendoVal / 10000) * 10000;
+              const incrementoVal = nuevoArriendoVal - rentNum;
 
               const inquilinoCon = inquilino ? `a ${inquilino}` : 'al inquilino';
 
@@ -15185,14 +15188,81 @@ function contSaveMetas(){localStorage.setItem('icde_cont_metas',JSON.stringify(c
 function contDestroyChart(id){if(contCharts[id]){try{contCharts[id].destroy();}catch(e){}delete contCharts[id];}}
 function contSumTipo(lista,tipo){return lista.filter(m=>m.tipo===tipo).reduce((a,m)=>a+(parseFloat(m.monto)||0),0);}
 
+function contObtenerComisionAdministracionEsperada(year, month) {
+  if (typeof adminData === 'undefined' || !adminData || !adminData.properties) {
+    return 0;
+  }
+  const monthsNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+  let totalEsperado = 0;
+  
+  adminData.properties.forEach(p => {
+    const rent = parseFloat(p.monthly_rent) || 0;
+    const paymentsYear = p.payments[year] || [];
+    
+    paymentsYear.forEach(m => {
+      const mIdx = monthsNames.indexOf(m.month.toUpperCase());
+      if (mIdx !== -1) {
+        if (month === 0 || mIdx === (month - 1)) {
+          const st = m.status;
+          if (st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY' || st === 'AL_DIA' || st === 'FUTURE') {
+            totalEsperado += rent * 0.10;
+          }
+        }
+      }
+    });
+  });
+  
+  return totalEsperado;
+}
+
 function contGetFiltrado(){
-  return contMovimientos.filter(m=>{
+  let lista = contMovimientos.filter(m=>{
     if(contMesFiltro>0&&parseInt(m.mes)!==contMesFiltro)return false;
     const fecha=m.fecha?new Date(m.fecha):null;
     if(fecha&&fecha.getFullYear()!==contAnoFiltro)return false;
     if(!fecha&&m.ano&&parseInt(m.ano)!==contAnoFiltro)return false;
     return true;
   });
+
+  if (typeof adminData !== 'undefined' && adminData && adminData.properties) {
+    if (contMesFiltro > 0) {
+      const comEsperada = contObtenerComisionAdministracionEsperada(contAnoFiltro, contMesFiltro);
+      if (comEsperada > 0) {
+        lista.push({
+          id: 'AUTO-ADMIN-COMISION-' + contAnoFiltro + '-' + contMesFiltro,
+          tipo: 'ingreso',
+          categoria: 'Gestión/Administración',
+          descripcion: 'Comisión Administración Esperada (Automático)',
+          monto: comEsperada,
+          fecha: contAnoFiltro + '-' + String(contMesFiltro).padStart(2, '0') + '-01',
+          mes: contMesFiltro,
+          ano: contAnoFiltro,
+          notas: 'Generado automáticamente a partir de los inmuebles administrados.',
+          isAuto: true
+        });
+      }
+    } else {
+      for (let mIdx = 1; mIdx <= 12; mIdx++) {
+        const comEsperada = contObtenerComisionAdministracionEsperada(contAnoFiltro, mIdx);
+        if (comEsperada > 0) {
+          lista.push({
+            id: 'AUTO-ADMIN-COMISION-' + contAnoFiltro + '-' + mIdx,
+            tipo: 'ingreso',
+            categoria: 'Gestión/Administración',
+            descripcion: 'Comisión Administración Esperada (Automático - ' + CONT_MESES_FULL[mIdx - 1] + ')',
+            monto: comEsperada,
+            fecha: contAnoFiltro + '-' + String(mIdx).padStart(2, '0') + '-01',
+            mes: mIdx,
+            ano: contAnoFiltro,
+            notas: 'Generado automáticamente a partir de los inmuebles administrados.',
+            isAuto: true
+          });
+        }
+      }
+    }
+  }
+
+  return lista;
 }
 
 function renderContabilidad(){
@@ -15309,7 +15379,7 @@ function contRenderResumen(el){
   '</div>'+
   '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDCCB \u00DAltimos Movimientos</div><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Nuevo</button></div>'+
   '<div class="cont-panel-body">'+(lista.length===0?'<div class="cont-empty">Ninguno a\u00FAn.<br><br><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Primero</button></div>':
-    '<div class="cont-tx-list">'+txList.map(function(m){return'<div class="cont-tx-item" onclick="contEditarMovimiento(\''+m.id+'\')" style="cursor:pointer;"><div class="cont-tx-icon '+m.tipo+'">'+(CONT_CAT_ICONS[m.categoria]||'\uD83D\uDCB0')+'</div><div class="cont-tx-info"><div class="cont-tx-desc">'+(m.descripcion||m.categoria)+'</div><div class="cont-tx-cat">'+m.categoria+' \u00B7 '+(m.fecha||'\u2014')+'</div></div><div style="text-align:right;"><div class="cont-tx-amount '+m.tipo+'">'+(m.tipo==='ingreso'?'+':'-')+contFmt(parseFloat(m.monto||0))+'</div><div class="cont-tx-date">'+CONT_MESES_FULL[(parseInt(m.mes)||1)-1]+'</div></div></div>';}).join('')+'</div>')+'</div></div>';
+    '<div class="cont-tx-list">'+txList.map(function(m){return'<div class="cont-tx-item" '+(m.isAuto?'':'onclick="contEditarMovimiento(\''+m.id+'\')" style="cursor:pointer;"')+'><div class="cont-tx-icon '+m.tipo+'">'+(CONT_CAT_ICONS[m.categoria]||'\uD83D\uDCB0')+'</div><div class="cont-tx-info"><div class="cont-tx-desc">'+(m.descripcion||m.categoria)+'</div><div class="cont-tx-cat">'+m.categoria+' \u00B7 '+(m.fecha||'\u2014')+'</div></div><div style="text-align:right;"><div class="cont-tx-amount '+m.tipo+'">'+(m.tipo==='ingreso'?'+':'-')+contFmt(parseFloat(m.monto||0))+'</div><div class="cont-tx-date">'+CONT_MESES_FULL[(parseInt(m.mes)||1)-1]+'</div></div></div>';}).join('')+'</div>')+'</div></div>';
   setTimeout(function(){
     try {
       const ciC=['#22c55e','#16a34a','#4ade80','#86efac','#d4a84b','#f97316','#3b82f6','#a855f7'];
@@ -15405,7 +15475,7 @@ function contRenderMovimientos(el){
   (lista.length===0?'<div class="cont-empty" style="padding:40px;">Ninguno a\u00FAn.<br><br><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Primero</button></div>':
   '<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
   '<thead><tr style="background:rgba(212,168,75,0.04);border-bottom:1px solid rgba(212,168,75,0.15);"><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Fecha</th><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Categor\u00EDa</th><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Descripci\u00F3n</th><th style="padding:12px 16px;text-align:right;color:var(--gold);font-size:11px;text-transform:uppercase;">Monto</th><th style="padding:12px 16px;text-align:center;color:var(--gold);font-size:11px;text-transform:uppercase;">Tipo</th><th style="padding:12px 16px;text-align:center;color:var(--gold);font-size:11px;text-transform:uppercase;">Acc.</th></tr></thead>'+
-  '<tbody>'+lista.map(function(m){return'<tr style="border-bottom:1px solid rgba(255,255,255,0.03);" onmouseover="this.style.background=\'rgba(255,255,255,0.025)\'" onmouseout="this.style.background=\'\'"><td style="padding:10px 16px;color:#888;white-space:nowrap;">'+(m.fecha||'\u2014')+'</td><td style="padding:10px 16px;color:#ccc;">'+(CONT_CAT_ICONS[m.categoria]||'\u2022')+' '+m.categoria+'</td><td style="padding:10px 16px;color:#fff;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(m.descripcion||'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:'+(m.tipo==='ingreso'?'#22c55e':'#ef4444')+';font-weight:700;">'+(m.tipo==='ingreso'?'+':'-')+contFmt(parseFloat(m.monto||0))+'</td><td style="padding:10px 16px;text-align:center;"><span style="padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;'+(m.tipo==='ingreso'?'background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.25)':'background:rgba(239,68,68,0.10);color:#ef4444;border:1px solid rgba(239,68,68,0.2)')+';">'+(m.tipo==='ingreso'?'\uD83D\uDCB9 Ingreso':'\uD83D\uDD34 Egreso')+'</span></td><td style="padding:10px 16px;text-align:center;"><button onclick="contEditarMovimiento(\''+m.id+'\')" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#888;padding:4px 8px;cursor:pointer;font-size:11px;" onmouseover="this.style.borderColor=\'var(--gold)\';this.style.color=\'var(--gold)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.1)\';this.style.color=\'#888\'">\u270F\uFE0F</button></td></tr>';}).join('')+'</tbody></table>')+'</div></div>';
+  '<tbody>'+lista.map(function(m){return'<tr style="border-bottom:1px solid rgba(255,255,255,0.03);" onmouseover="this.style.background=\'rgba(255,255,255,0.025)\'" onmouseout="this.style.background=\'\'"><td style="padding:10px 16px;color:#888;white-space:nowrap;">'+(m.fecha||'\u2014')+'</td><td style="padding:10px 16px;color:#ccc;">'+(CONT_CAT_ICONS[m.categoria]||'\u2022')+' '+m.categoria+'</td><td style="padding:10px 16px;color:#fff;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(m.descripcion||'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:'+(m.tipo==='ingreso'?'#22c55e':'#ef4444')+';font-weight:700;">'+(m.tipo==='ingreso'?'+':'-')+contFmt(parseFloat(m.monto||0))+'</td><td style="padding:10px 16px;text-align:center;"><span style="padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;'+(m.tipo==='ingreso'?'background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.25)':'background:rgba(239,68,68,0.10);color:#ef4444;border:1px solid rgba(239,68,68,0.2)')+';">'+(m.tipo==='ingreso'?'\uD83D\uDCB9 Ingreso':'\uD83D\uDD34 Egreso')+'</span></td><td style="padding:10px 16px;text-align:center;">'+(m.isAuto?'<span style="color:#555;font-size:11px;">Auto</span>':'<button onclick="contEditarMovimiento(\''+m.id+'\')" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#888;padding:4px 8px;cursor:pointer;font-size:11px;" onmouseover="this.style.borderColor=\'var(--gold)\';this.style.color=\'var(--gold)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.1)\';this.style.color=\'#888\'">\u270F\uFE0F</button>')+'</td></tr>';}).join('')+'</tbody></table>')+'</div></div>';
 }
 
 function contAbrirModal(tipoDefault){
