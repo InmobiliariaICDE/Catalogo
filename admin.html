@@ -8668,6 +8668,7 @@ let currentAdminSubTab = 'matriz';
 let currentAdminYear = '2026';
 let currentAdminMonth = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"][new Date().getMonth()] || 'MAYO';
 let currentAdminFilter = 'todos'; // 'todos', 'ocupados', 'disponibles'
+let showAdminCharts = false;
 let currentAdminSort = 'nombre'; // 'nombre', 'precio', 'disponibles', 'ocupados'
 let currentAdminPropName = null;
 let currentCitaId = null;
@@ -8862,6 +8863,21 @@ function setAdminSort(sortVal) {
   renderAdministracionContent();
 }
 
+function toggleAdminCharts() {
+  showAdminCharts = !showAdminCharts;
+  const wrapper = document.getElementById('adminAnalyticsWrapper');
+  if (wrapper) {
+    wrapper.style.display = showAdminCharts ? 'block' : 'none';
+  }
+  if (showAdminCharts) {
+    setTimeout(() => {
+      if (window.adminComisionesChartInstance) {
+        window.adminComisionesChartInstance.resize();
+      }
+    }, 50);
+  }
+}
+
 function renderAdministracion() {
   const c = document.getElementById('mainContent');
   if (!c) return;
@@ -8897,21 +8913,29 @@ function renderAdministracion() {
 
   // Renderizar la base estructural
   c.innerHTML = `
-    <div class="section-header" style="margin-bottom:15px;">
-      <div class="section-title">💼 Administración de Inmuebles</div>
+    <div class="section-header" style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="section-title" style="margin-bottom:0;">💼 Administración de Inmuebles</div>
+        <button class="btn-nueva-cita-premium" onclick="toggleAdminCharts()" style="height:32px; font-size:12px; padding:0 12px; border-radius:8px;">
+          <span>📊 Gráficas</span>
+        </button>
+      </div>
       <div style="font-size:12px; color:var(--muted); font-weight:500;">
         Última actualización: ${adminData.last_update ? new Date(adminData.last_update).toLocaleString() : 'N/A'}
       </div>
     </div>
 
-    <!-- KPI GRID DINÁMICO -->
-    <div id="adminKpisContainer" style="margin-bottom: 14px;">
-      <!-- Se llena dinámicamente -->
-    </div>
+    <!-- WRAPPER ANALYTICS -->
+    <div id="adminAnalyticsWrapper" style="display: ${showAdminCharts ? 'block' : 'none'};">
+      <!-- KPI GRID DINÁMICO -->
+      <div id="adminKpisContainer" style="margin-bottom: 14px;">
+        <!-- Se llena dinámicamente -->
+      </div>
 
-    <!-- GRÁFICO DE COMISIONES -->
-    <div id="adminChartContainer" style="margin-bottom: 14px; display: none;">
-      <!-- Se llena dinámicamente -->
+      <!-- GRÁFICO DE COMISIONES -->
+      <div id="adminChartContainer" style="margin-bottom: 14px; display: none;">
+        <!-- Se llena dinámicamente -->
+      </div>
     </div>
 
     <!-- PANEL DE CONTROLES DE ADMINISTRACIÓN -->
