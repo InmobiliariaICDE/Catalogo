@@ -15,6 +15,85 @@ function getSpreadsheet() {
   return SpreadsheetApp.openById(SPREADSHEET_ID);
 }
 
+// Obtener o crear la hoja de Movimientos de forma inteligente
+function getOrCreateMovimientosSheet(ss) {
+  let sheet = ss.getSheetByName("Movimientos");
+  if (!sheet) {
+    const sheets = ss.getSheets();
+    
+    // 1. Buscar por nombre que contenga "movimiento", "transaccion", "registro" o "contabilidad"
+    sheet = sheets.find(s => {
+      const name = s.getName().toUpperCase();
+      return name.includes("MOVIMIENTO") || name.includes("TRANSACCION") || name.includes("REGISTRO") || name.includes("CONTABILIDAD");
+    });
+    
+    // 2. Buscar por cabeceras típicas
+    if (!sheet) {
+      sheet = sheets.find(s => {
+        const values = s.getDataRange().getValues();
+        if (values.length > 0) {
+          const headers = values[0].map(h => String(h).toUpperCase().trim());
+          return headers.includes("ID") && (headers.includes("FECHA") || headers.includes("MONTO"));
+        }
+        return false;
+      });
+    }
+    
+    // 3. Fallback: Usar la primera hoja existente en el documento
+    if (!sheet && sheets.length > 0) {
+      sheet = sheets[0];
+    }
+    
+    // 4. Si el documento está vacío, insertar una nueva hoja
+    if (!sheet) {
+      sheet = ss.insertSheet("Movimientos");
+    }
+    
+    // Renombrar la hoja encontrada para estandarizar
+    try {
+      sheet.setName("Movimientos");
+    } catch(e) {}
+  }
+  
+  // Asegurarnos de escribir los encabezados correctos si la hoja está en blanco
+  const values = sheet.getDataRange().getValues();
+  if (values.length === 0 || (values.length === 1 && values[0].join("").trim() === "")) {
+    sheet.getRange(1, 1, 1, 10).setValues([['ID', 'Fecha', 'Tipo', 'Categoría', 'Monto', 'Mes', 'Año', 'Descripción', 'Notas', 'Creado En']]);
+  }
+  
+  return sheet;
+}
+
+// Obtener o crear la hoja de Metas de forma inteligente
+function getOrCreateMetasSheet(ss) {
+  let sheet = ss.getSheetByName("Metas");
+  if (!sheet) {
+    const sheets = ss.getSheets();
+    sheet = sheets.find(s => s.getName().toUpperCase().includes("META"));
+    
+    if (!sheet) {
+      sheet = ss.insertSheet("Metas");
+    }
+    
+    try {
+      sheet.setName("Metas");
+    } catch(e) {}
+  }
+  
+  // Escribir cabeceras y valores por defecto si la hoja de metas está vacía
+  const values = sheet.getDataRange().getValues();
+  if (values.length === 0 || (values.length === 1 && values[0].join("").trim() === "")) {
+    sheet.getRange(1, 1, 4, 3).setValues([
+      ['Clave / Meta', 'Descripción', 'Valor (COP)'],
+      ['ingMes', 'Meta de Ingresos Mensual', 20000000],
+      ['ingAnual', 'Meta de Ingresos Anual', 240000000],
+      ['gastoMes', 'Presupuesto de Gastos Mensual', 8000000]
+    ]);
+  }
+  
+  return sheet;
+}
+
 // ROUTER GET: Procesa las peticiones GET desde el Panel de Control
 function doGet(e) {
   try {
@@ -56,25 +135,11 @@ function doPost(e) {
 // OBTENER TODOS LOS MOVIMIENTOS Y METAS
 function getContabilidad() {
   const ss = getSpreadsheet();
-  
-  // 1. Obtener la hoja de Movimientos
-  let sheetMovs = ss.getSheetByName("Movimientos");
-  if (!sheetMovs) {
-    const sheets = ss.getSheets();
-    sheetMovs = sheets.find(s => s.getName().toUpperCase().includes("MOVIMIENTO"));
-  }
-  if (!sheetMovs) {
-    return createJsonResponse({ error: 'No se encontró la hoja "Movimientos"' });
-  }
-  
+  const sheetMovs = getOrCreateMovimientosSheet(ss);
   const valuesMovs = sheetMovs.getDataRange().getValues();
-  if (valuesMovs.length <= 1) {
-    return createJsonResponse({ movimientos: [], metas: { ingMes: 0, ingAnual: 0, gastoMes: 0 } });
-  }
   
   const headersMovs = valuesMovs[0].map(h => String(h).trim().toLowerCase());
   
-  // Buscar índices de las columnas necesarias
   const colIndices = {
     id: headersMovs.indexOf("id"),
     fecha: headersMovs.indexOf("fecha"),
@@ -108,12 +173,9 @@ function getContabilidad() {
     });
   }
   
-  // 2. Obtener la hoja de Metas
-  let sheetMetas = ss.getSheetByName("Metas");
-  if (!sheetMetas) {
-    const sheets = ss.getSheets();
-    sheetMetas = sheets.find(s => s.getName().toUpperCase().includes("META"));
-  }
+  // Obtener metas
+  const sheetMetas = getOrCreateMetasSheet(ss);
+  const valuesMetas = sheetMetas.getDataRange().getValues();
   
   const metas = {
     ingMes: 20000000,
@@ -121,17 +183,14 @@ function getContabilidad() {
     gastoMes: 8000000
   };
   
-  if (sheetMetas) {
-    const valuesMetas = sheetMetas.getDataRange().getValues();
-    for (let i = 1; i < valuesMetas.length; i++) {
-      const row = valuesMetas[i];
-      if (row.length < 3) continue;
-      const key = String(row[0]).trim();
-      const val = _parseNum(row[2]);
-      if (key === 'ingMes') metas.ingMes = val;
-      else if (key === 'ingAnual') metas.ingAnual = val;
-      else if (key === 'gastoMes') metas.gastoMes = val;
-    }
+  for (let i = 1; i < valuesMetas.length; i++) {
+    const row = valuesMetas[i];
+    if (row.length < 3) continue;
+    const key = String(row[0]).trim();
+    const val = _parseNum(row[2]);
+    if (key === 'ingMes') metas.ingMes = val;
+    else if (key === 'ingAnual') metas.ingAnual = val;
+    else if (key === 'gastoMes') metas.gastoMes = val;
   }
   
   return createJsonResponse({ movimientos: movimientos, metas: metas });
@@ -140,15 +199,7 @@ function getContabilidad() {
 // GUARDAR O ACTUALIZAR UN MOVIMIENTO INDIVIDUAL
 function saveMovimiento(m) {
   const ss = getSpreadsheet();
-  let sheetMovs = ss.getSheetByName("Movimientos");
-  if (!sheetMovs) {
-    const sheets = ss.getSheets();
-    sheetMovs = sheets.find(s => s.getName().toUpperCase().includes("MOVIMIENTO"));
-  }
-  if (!sheetMovs) {
-    return createJsonResponse({ error: 'No se encontró la hoja "Movimientos"' });
-  }
-  
+  const sheetMovs = getOrCreateMovimientosSheet(ss);
   const valuesMovs = sheetMovs.getDataRange().getValues();
   const headersMovs = valuesMovs[0].map(h => String(h).trim().toLowerCase());
   
@@ -220,17 +271,7 @@ function saveMovimiento(m) {
 // IMPORTACIÓN MASIVA (SOBREESCRIBE TODO PARA LIMPIAR Y REEMPLAZAR)
 function importContabilidad(movimientos, metas) {
   const ss = getSpreadsheet();
-  
-  // 1. Limpiar y sobreescribir Movimientos
-  let sheetMovs = ss.getSheetByName("Movimientos");
-  if (!sheetMovs) {
-    const sheets = ss.getSheets();
-    sheetMovs = sheets.find(s => s.getName().toUpperCase().includes("MOVIMIENTO"));
-  }
-  if (!sheetMovs) {
-    return createJsonResponse({ error: 'No se encontró la hoja "Movimientos"' });
-  }
-  
+  const sheetMovs = getOrCreateMovimientosSheet(ss);
   const valuesMovs = sheetMovs.getDataRange().getValues();
   const headersMovs = valuesMovs[0].map(h => String(h).trim().toLowerCase());
   
@@ -288,7 +329,7 @@ function importContabilidad(movimientos, metas) {
     sheetMovs.getRange(2, 1, rowsToWrite.length, rowsToWrite[0].length).setValues(rowsToWrite);
   }
   
-  // 2. Guardar las metas
+  // Guardar las metas
   if (metas) {
     saveMetas(metas);
   }
@@ -299,15 +340,7 @@ function importContabilidad(movimientos, metas) {
 // ELIMINAR UN MOVIMIENTO POR ID
 function deleteMovimiento(id) {
   const ss = getSpreadsheet();
-  let sheetMovs = ss.getSheetByName("Movimientos");
-  if (!sheetMovs) {
-    const sheets = ss.getSheets();
-    sheetMovs = sheets.find(s => s.getName().toUpperCase().includes("MOVIMIENTO"));
-  }
-  if (!sheetMovs) {
-    return createJsonResponse({ error: 'No se encontró la hoja "Movimientos"' });
-  }
-  
+  const sheetMovs = getOrCreateMovimientosSheet(ss);
   const valuesMovs = sheetMovs.getDataRange().getValues();
   const headersMovs = valuesMovs[0].map(h => String(h).trim().toLowerCase());
   const idColIdx = headersMovs.indexOf("id");
@@ -330,16 +363,9 @@ function deleteMovimiento(id) {
 // GUARDAR LAS METAS FINANCIERAS
 function saveMetas(metas) {
   const ss = getSpreadsheet();
-  let sheetMetas = ss.getSheetByName("Metas");
-  if (!sheetMetas) {
-    const sheets = ss.getSheets();
-    sheetMetas = sheets.find(s => s.getName().toUpperCase().includes("META"));
-  }
-  if (!sheetMetas) {
-    return createJsonResponse({ error: 'No se encontró la hoja "Metas"' });
-  }
-  
+  const sheetMetas = getOrCreateMetasSheet(ss);
   const valuesMetas = sheetMetas.getDataRange().getValues();
+  
   for (let i = 1; i < valuesMetas.length; i++) {
     const key = String(valuesMetas[i][0]).trim();
     let updatedVal = null;
