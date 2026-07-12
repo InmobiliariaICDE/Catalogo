@@ -15505,13 +15505,10 @@ function contToggleTipo(){
 async function contSincronizarMovimientoDrive(obj) {
   if (!CONT_SCRIPT_URL) return;
   try {
-    const params = new URLSearchParams();
-    params.append('action', 'saveMovimiento');
-    params.append('movimiento', JSON.stringify(obj));
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'saveMovimiento', movimiento: obj })
     });
     console.log('Movimiento sincronizado en Drive exitosamente.');
   } catch (err) {
@@ -15522,13 +15519,10 @@ async function contSincronizarMovimientoDrive(obj) {
 async function contEliminarMovimientoDrive(id) {
   if (!CONT_SCRIPT_URL) return;
   try {
-    const params = new URLSearchParams();
-    params.append('action', 'deleteMovimiento');
-    params.append('id', id);
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'deleteMovimiento', id: id })
     });
     console.log('Movimiento eliminado de Drive exitosamente.');
   } catch (err) {
@@ -15539,13 +15533,10 @@ async function contEliminarMovimientoDrive(id) {
 async function contSincronizarMetasDrive(metasObj) {
   if (!CONT_SCRIPT_URL) return;
   try {
-    const params = new URLSearchParams();
-    params.append('action', 'saveMetas');
-    params.append('metas', JSON.stringify(metasObj));
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'saveMetas', metas: metasObj })
     });
     console.log('Metas sincronizadas en Drive exitosamente.');
   } catch (err) {
@@ -15643,14 +15634,10 @@ async function contPushTotal() {
     await Promise.all(chunk.map(async mov => {
       if (mov.isAuto) return; // Omitir automáticos
       try {
-        const params = new URLSearchParams();
-        params.append('action', 'saveMovimiento');
-        params.append('movimiento', JSON.stringify(mov));
-        
         await fetch(CONT_SCRIPT_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: params
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'saveMovimiento', movimiento: mov })
         });
         ok++;
       } catch (e) { err++; }
@@ -15659,13 +15646,10 @@ async function contPushTotal() {
   }
 
   try {
-    const params = new URLSearchParams();
-    params.append('action', 'saveMetas');
-    params.append('metas', JSON.stringify(contMetas));
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'saveMetas', metas: contMetas })
     });
   } catch(e) {}
 
