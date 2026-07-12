@@ -1,0 +1,58 @@
+# GUÍA DE CONFIGURACIÓN - SINCRONIZACIÓN DE CONTABILIDAD ICDE CON GOOGLE DRIVE
+
+Esta guía te explicará paso a paso cómo conectar tu módulo de Contabilidad del Panel de Control con tu hoja de cálculo de Google Drive "Contabilidad ICDE", de forma automática y sin necesidad de saber programar.
+
+---
+
+## PASO 1: INSTALAR EL CÓDIGO EN TU EXCEL DE GOOGLE DRIVE
+1. Abre tu navegador de internet e ingresa a tu hoja de cálculo de Google Drive llamada **Contabilidad ICDE**.
+2. En el menú superior de la hoja de cálculo, haz clic en **Extensiones** y luego selecciona **Apps Script**.
+3. Se abrirá una nueva pestaña con un editor de código. Si hay algún código de ejemplo (como `function myFunction() {}`), selecciónalo todo y bórralo para que la pantalla quede totalmente en blanco.
+4. Abre el archivo llamado `contabilidad_apps_script.js` que está en esta misma carpeta, copia todo su contenido y pégalo en esa pantalla en blanco del editor de Google Apps Script.
+5. Haz clic en el icono del disquete (💾) en la barra superior para **Guardar** el proyecto.
+
+---
+
+## PASO 2: PUBLICAR EL CÓDIGO COMO APLICACIÓN WEB
+Para que el Panel de Control pueda enviar la información a la hoja, debemos publicar este script:
+1. En la parte superior derecha de la pantalla de Apps Script, haz clic en el botón azul que dice **Implementar** (o *Deploy*) y selecciona **Nueva implementación**.
+2. En la ventana que aparece, haz clic en el icono del engranaje (⚙️) al lado de "Seleccionar tipo" y elige **Aplicación web**.
+3. Rellena los siguientes campos con cuidado:
+   - **Descripción:** `Sincronización Contabilidad`
+   - **Ejecutar como (Execute as):** **Yo (tu-correo@gmail.com)**
+   - **Quién tiene acceso (Who has access):** **Cualquiera** (o *Anyone*).
+     *(Nota: Es indispensable seleccionar "Cualquiera" para que el Panel pueda enviar los datos sin pedirte iniciar sesión constantemente).*
+4. Haz clic en el botón azul de abajo que dice **Implementar**.
+
+---
+
+## PASO 3: AUTORIZAR LOS PERMISOS DE GOOGLE
+Como es un script tuyo que va a modificar tu propio archivo de Excel, Google te pedirá autorización por seguridad:
+1. Haz clic en el botón **Autorizar acceso**.
+2. Selecciona tu cuenta de Google.
+3. Te aparecerá un aviso de advertencia ("Google no ha verificado esta aplicación"). No te preocupes, esto sale porque es un script personalizado creado por ti. Haz clic abajo a la izquierda en **Configuración avanzada** (o *Advanced*).
+4. Luego, haz clic en el enlace de abajo que dice **Ir a Proyecto sin título (no seguro)** (o *Go to Untitled project*).
+5. En la siguiente pantalla, haz clic en **Permitir** (o *Allow*).
+
+---
+
+## PASO 4: COPIAR LA DIRECCIÓN DE ENLACE (URL)
+1. Una vez completado el paso anterior, verás una pantalla que dice "Implementación completada correctamente".
+2. Busca la sección que dice **URL de la aplicación web**. Es un enlace largo que empieza por `https://script.google.com/macros/s/.../exec`.
+3. Haz clic en el botón **Copiar** que está al lado de esa URL.
+
+---
+
+## PASO 5: CONECTARLO EN TU PANEL DE CONTROL
+1. Abre tu panel de control (`admin.html`).
+2. En la barra superior, haz clic en el botón del engranaje (**⚙️ Configuración**).
+3. Desliza hacia abajo hasta encontrar el campo: **Contabilidad Google Apps Script URL (Sincronización Drive)**.
+4. Pega la URL que acabas de copiar de Google Drive en ese campo.
+5. Haz clic en el botón azul **Guardar**.
+6. ¡Listo! Verás que en la esquina superior del módulo de Contabilidad ahora dirá **Sincronizado con Drive ☁️** en verde.
+
+### ¿Cómo subir la información que ya tenías guardada localmente?
+Si ya habías registrado transacciones en tu panel y quieres que se suban ahora mismo a tu Excel del Drive:
+1. Abre de nuevo **⚙️ Configuración**.
+2. Haz clic en el botón que dice **☁️ Subir contabilidad local a Drive**.
+3. El panel subirá todas tus transacciones guardadas en el computador directamente a tu hoja de cálculo.
