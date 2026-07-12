@@ -15507,8 +15507,8 @@ async function contSincronizarMovimientoDrive(obj) {
   try {
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'saveMovimiento', movimiento: obj })
+      mode: 'no-cors',
+      body: JSON.stringify({ action: 'saveMovimiento', movimiento: JSON.stringify(obj) })
     });
     console.log('Movimiento sincronizado en Drive exitosamente.');
   } catch (err) {
@@ -15521,7 +15521,7 @@ async function contEliminarMovimientoDrive(id) {
   try {
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
+      mode: 'no-cors',
       body: JSON.stringify({ action: 'deleteMovimiento', id: id })
     });
     console.log('Movimiento eliminado de Drive exitosamente.');
@@ -15535,8 +15535,8 @@ async function contSincronizarMetasDrive(metasObj) {
   try {
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'saveMetas', metas: metasObj })
+      mode: 'no-cors',
+      body: JSON.stringify({ action: 'saveMetas', metas: JSON.stringify(metasObj) })
     });
     console.log('Metas sincronizadas en Drive exitosamente.');
   } catch (err) {
@@ -15619,37 +15619,38 @@ async function contPushTotal() {
     localMovs = JSON.parse(localStorage.getItem('icde_contabilidad') || '[]');
   } catch (e) {}
   
-  if (!localMovs.length) { toast('No hay movimientos locales para subir', 'error'); return; }
+  // Filtrar los que no son automáticos
+  const manualMovs = localMovs.filter(m => !m.isAuto);
+  if (!manualMovs.length) { toast('No hay movimientos locales manuales para subir', 'error'); return; }
 
   const btn = document.getElementById('btnContPush');
   if (btn) { btn.disabled = true; btn.textContent = 'Subiendo...'; }
 
   let ok = 0, err = 0;
   const chunks = [];
-  for (let i = 0; i < localMovs.length; i += 3) {
-    chunks.push(localMovs.slice(i, i + 3));
+  for (let i = 0; i < manualMovs.length; i += 3) {
+    chunks.push(manualMovs.slice(i, i + 3));
   }
 
   for (const chunk of chunks) {
     await Promise.all(chunk.map(async mov => {
-      if (mov.isAuto) return; // Omitir automáticos
       try {
         await fetch(CONT_SCRIPT_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({ action: 'saveMovimiento', movimiento: mov })
+          mode: 'no-cors',
+          body: JSON.stringify({ action: 'saveMovimiento', movimiento: JSON.stringify(mov) })
         });
         ok++;
       } catch (e) { err++; }
     }));
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 400));
   }
 
   try {
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'saveMetas', metas: contMetas })
+      mode: 'no-cors',
+      body: JSON.stringify({ action: 'saveMetas', metas: JSON.stringify(contMetas) })
     });
   } catch(e) {}
 
