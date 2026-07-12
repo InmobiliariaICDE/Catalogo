@@ -2486,6 +2486,11 @@ textarea.gemini-card-input {
         </button>
       </div>
       <div style="margin-top:10px;">
+        <button id="btnContPush" class="btn btn-gold" style="width:100%; background:rgba(212,168,75,0.15); border-color:var(--gold); color:var(--gold);" onclick="contPushTotal()">
+          ☁️ Subir contabilidad local a Drive
+        </button>
+      </div>
+      <div style="margin-top:10px;">
         <button id="btnRepairJSON" class="btn btn-secondary" style="width:100%; background:rgba(212,168,75,0.08); border-color:rgba(212,168,75,0.3);" onclick="repararFullJSON()">
           🛠 Reparar datos faltantes en Drive (Full_JSON)
         </button>
@@ -15087,12 +15092,19 @@ async function contCargarDatos() {
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.movimientos)) {
-        contMovimientos = data.movimientos;
+        // Combinación inteligente: preservar transacciones locales no automáticas que no existan en la nube
+        const cloudIds = new Set(data.movimientos.map(m => m.id));
+        const pendingUpload = contMovimientos.filter(m => !m.isAuto && m.id && !cloudIds.has(m.id));
+        
+        contMovimientos = [...data.movimientos, ...pendingUpload];
         localStorage.setItem('icde_contabilidad', JSON.stringify(contMovimientos));
       }
       if (data && data.metas) {
-        contMetas = data.metas;
-        localStorage.setItem('icde_cont_metas', JSON.stringify(contMetas));
+        // Sólo actualizamos metas si tienen datos válidos y no están en 0
+        if (data.metas.ingMes > 0 || data.metas.ingAnual > 0) {
+          contMetas = data.metas;
+          localStorage.setItem('icde_cont_metas', JSON.stringify(contMetas));
+        }
       }
       console.log('Datos de contabilidad sincronizados desde Drive.');
     }
@@ -15608,6 +15620,62 @@ function contGuardarMetas(){
     });
   }
 }
+async function contPushTotal() {
+  if (!CONT_SCRIPT_URL) { toast('No hay URL de contabilidad configurada', 'error'); return; }
+  
+  let localMovs = [];
+  try {
+    localMovs = JSON.parse(localStorage.getItem('icde_contabilidad') || '[]');
+  } catch (e) {}
+  
+  if (!localMovs.length) { toast('No hay movimientos locales para subir', 'error'); return; }
+
+  const btn = document.getElementById('btnContPush');
+  if (btn) { btn.disabled = true; btn.textContent = 'Subiendo...'; }
+
+  let ok = 0, err = 0;
+  const chunks = [];
+  for (let i = 0; i < localMovs.length; i += 3) {
+    chunks.push(localMovs.slice(i, i + 3));
+  }
+
+  for (const chunk of chunks) {
+    await Promise.all(chunk.map(async mov => {
+      if (mov.isAuto) return; // Omitir automáticos
+      try {
+        const params = new URLSearchParams();
+        params.append('action', 'saveMovimiento');
+        params.append('movimiento', JSON.stringify(mov));
+        
+        await fetch(CONT_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params
+        });
+        ok++;
+      } catch (e) { err++; }
+    }));
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  try {
+    const params = new URLSearchParams();
+    params.append('action', 'saveMetas');
+    params.append('metas', JSON.stringify(contMetas));
+    await fetch(CONT_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params
+    });
+  } catch(e) {}
+
+  if (btn) { btn.disabled = false; btn.textContent = '☁\uFE0F Subir contabilidad local a Drive'; }
+  toast(`Subidos ${ok} movimientos a Drive${err ? `, ${err} con error` : ''} \u2713`, 'success');
+  
+  await contCargarDatos();
+  renderContabilidad();
+}
+
 /* FIN MÓDULO CONTABILIDAD */
 </script>
 
