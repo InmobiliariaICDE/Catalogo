@@ -2466,6 +2466,9 @@ textarea.gemini-card-input {
       <div class="form-group full"><label class="form-label">ElevenLabs API Key (Voz Tony Robbins)</label>
         <input class="form-input" id="setElevenlabsKey" type="password" placeholder="sk_..." value="${settings.elevenlabsKey || ''}"/>
       </div>
+      <div class="form-group full"><label class="form-label">Contabilidad Google Apps Script URL (Sincronización Drive)</label>
+        <input class="form-input" id="setContScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" value="${settings.contScriptUrl || ''}"/>
+      </div>
     </div>
 
     <!-- SECCIÓN DE SINCRONIZACIÓN -->
@@ -2663,6 +2666,7 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxki98uXR_fXbFC
 // CRM URL apunta al mismo script nuevo que maneja getData, getLeads, getCitas, etc.
 const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz1FNSXco-emauypAbJXIhn2om9RH1fhgro9EzdKjLm2HKPBFE1Y4tvZ4sqvFaeeOJyhw/exec';
 const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAUUSYRhDX6Eik4KA-B6luk74YjCNRanwv13CmmZg4La8NzVuNyBC0T5GH6f4-ke-Xig/exec';
+let CONT_SCRIPT_URL = (JSON.parse(localStorage.getItem('icde_settings') || '{}')).contScriptUrl || '';
 
 /* ═══════════════════════════════════════════════
    STATE
@@ -7014,9 +7018,11 @@ function abrirSettings(){
   const waInput = document.getElementById('setWaApi');
   const geminiInput = document.getElementById('setGeminiKey');
   const elevenlabsInput = document.getElementById('setElevenlabsKey');
+  const contInput = document.getElementById('setContScriptUrl');
   if (waInput)     waInput.value     = settings.waApi || '';
   if (geminiInput) geminiInput.value = settings.geminiKey || '';
   if (elevenlabsInput) elevenlabsInput.value = settings.elevenlabsKey || '';
+  if (contInput)   contInput.value   = settings.contScriptUrl || '';
   document.getElementById('settingsModal').classList.add('open');
   // Limpiar diagnóstico previo
   const diag = document.getElementById('diagResultado');
@@ -7026,6 +7032,8 @@ function guardarSettings(){
   settings.waApi = document.getElementById('setWaApi').value.trim();
   settings.geminiKey = document.getElementById('setGeminiKey').value.trim();
   settings.elevenlabsKey = document.getElementById('setElevenlabsKey').value.trim();
+  settings.contScriptUrl = document.getElementById('setContScriptUrl').value.trim();
+  CONT_SCRIPT_URL = settings.contScriptUrl;
   console.log("Guardando claves - Gemini largo:", settings.geminiKey.length, "ElevenLabs largo:", settings.elevenlabsKey.length);
   localStorage.setItem('icde_settings', JSON.stringify(settings));
   closeModal('settingsModal');
@@ -15072,6 +15080,27 @@ try {
   console.error("Error al inicializar contMetas:", e);
 }
 
+async function contCargarDatos() {
+  if (!CONT_SCRIPT_URL) return;
+  try {
+    const res = await fetch(CONT_SCRIPT_URL + '?action=getContabilidad&t=' + Date.now());
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.movimientos)) {
+        contMovimientos = data.movimientos;
+        localStorage.setItem('icde_contabilidad', JSON.stringify(contMovimientos));
+      }
+      if (data && data.metas) {
+        contMetas = data.metas;
+        localStorage.setItem('icde_cont_metas', JSON.stringify(contMetas));
+      }
+      console.log('Datos de contabilidad sincronizados desde Drive.');
+    }
+  } catch (err) {
+    console.error('Error cargando contabilidad de Drive:', err);
+  }
+}
+
 let contActiveTab = 'resumen';
 let contAnoFiltro = new Date().getFullYear();
 let contMesFiltro = 0;
@@ -15167,13 +15196,22 @@ function contGetFiltrado(){
   return lista;
 }
 
-function renderContabilidad(){
+async function renderContabilidad(){
   contAnoFiltro = new Date().getFullYear();
   contMesFiltro = new Date().getMonth() + 1;
   const c=document.getElementById('mainContent');
+  
+  // Dibujar estructura básica de contabilidad
+  const syncMsg = CONT_SCRIPT_URL ? 'Sincronizando con Drive... 🔄' : 'Modo Local 💻';
   c.innerHTML=`
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-    <div><div class="section-title" style="font-size:1.3rem;">\uD83D\uDCB0 Contabilidad</div><div style="font-size:12px;color:var(--muted);margin-top:3px;">Control financiero de ICDE Inmobiliaria</div></div>
+    <div>
+      <div class="section-title" style="font-size:1.3rem;">\uD83D\uDCB0 Contabilidad</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:6px;">
+        <span>Control financiero de ICDE Inmobiliaria</span>
+        <span id="contSyncIndicator" style="background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:12px;color:#aaa;font-size:10px;font-weight:600;">${syncMsg}</span>
+      </div>
+    </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
       <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:6px 12px;">
         <span style="font-size:12px;color:var(--muted);">A\u00F1o:</span>
@@ -15199,7 +15237,32 @@ function renderContabilidad(){
     <button class="cont-tab-btn${contActiveTab==='movimientos'?' active':''}" onclick="contSwitchTab('movimientos')">\uD83D\uDCCB Movimientos</button>
   </div>
   <div id="contTabContent"></div>`;
+  
+  // Render inicial de héroe y metas rápido (con caché/local)
   contRenderHero(); contRenderMetas(); contRenderTabContent();
+  
+  // Carga asíncrona en segundo plano desde Drive
+  if (CONT_SCRIPT_URL) {
+    try {
+      await contCargarDatos();
+      const indicator = document.getElementById('contSyncIndicator');
+      if (indicator) {
+        indicator.textContent = 'Sincronizado con Drive ☁️';
+        indicator.style.color = '#22c55e';
+        indicator.style.background = 'rgba(34,197,94,0.1)';
+      }
+      // Re-renderizar paneles con los datos actualizados
+      contRenderHero(); contRenderMetas(); contRenderTabContent();
+    } catch(err) {
+      console.warn("Fallo de sincronización al renderizar contabilidad:", err);
+      const indicator = document.getElementById('contSyncIndicator');
+      if (indicator) {
+        indicator.textContent = 'Error de Conexión ⚠️';
+        indicator.style.color = '#ef4444';
+        indicator.style.background = 'rgba(239,68,68,0.1)';
+      }
+    }
+  }
 }
 
 function contCambiarAno(d){contAnoFiltro+=d;const el=document.getElementById('contAnoLabel');if(el)el.textContent=contAnoFiltro;contRenderHero();contRenderMetas();contRenderTabContent();}
@@ -15427,6 +15490,57 @@ function contToggleTipo(){
   if(vis&&!Array.from(catSel.options).find(function(o){return o.selected&&o.style.display!=='none';}))catSel.value=vis.value;
 }
 
+async function contSincronizarMovimientoDrive(obj) {
+  if (!CONT_SCRIPT_URL) return;
+  try {
+    const params = new URLSearchParams();
+    params.append('action', 'saveMovimiento');
+    params.append('movimiento', JSON.stringify(obj));
+    await fetch(CONT_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params
+    });
+    console.log('Movimiento sincronizado en Drive exitosamente.');
+  } catch (err) {
+    console.error('Error al sincronizar movimiento en Drive:', err);
+  }
+}
+
+async function contEliminarMovimientoDrive(id) {
+  if (!CONT_SCRIPT_URL) return;
+  try {
+    const params = new URLSearchParams();
+    params.append('action', 'deleteMovimiento');
+    params.append('id', id);
+    await fetch(CONT_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params
+    });
+    console.log('Movimiento eliminado de Drive exitosamente.');
+  } catch (err) {
+    console.error('Error al eliminar movimiento en Drive:', err);
+  }
+}
+
+async function contSincronizarMetasDrive(metasObj) {
+  if (!CONT_SCRIPT_URL) return;
+  try {
+    const params = new URLSearchParams();
+    params.append('action', 'saveMetas');
+    params.append('metas', JSON.stringify(metasObj));
+    await fetch(CONT_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params
+    });
+    console.log('Metas sincronizadas en Drive exitosamente.');
+  } catch (err) {
+    console.error('Error al sincronizar metas en Drive:', err);
+  }
+}
+
 function contGuardarMovimiento(){
   const id=document.getElementById('contMovId').value||('C'+Date.now());
   const tipo=document.getElementById('contMovTipo').value;
@@ -15441,14 +15555,34 @@ function contGuardarMovimiento(){
   const obj={id:id,tipo:tipo,categoria:cat,descripcion:desc,monto:monto,fecha:fecha,mes:mes,ano:new Date(fecha).getFullYear(),notas:notas,creadoEn:new Date().toISOString()};
   const idx=contMovimientos.findIndex(function(m){return m.id===id;});
   if(idx>=0)contMovimientos[idx]=obj;else contMovimientos.push(obj);
-  contSave();closeModal('modalContabilidad');renderContabilidad();toast('Movimiento guardado \u2713','success');
+  
+  contSave();
+  closeModal('modalContabilidad');
+  renderContabilidad();
+  toast('Movimiento guardado \u2713','success');
+  
+  if (CONT_SCRIPT_URL) {
+    contSincronizarMovimientoDrive(obj).then(() => {
+      renderContabilidad();
+    });
+  }
 }
 
 function contEliminarMovimiento(){
   const id=document.getElementById('contMovId').value;if(!id)return;
   if(!confirm('\u00BFEliminar este movimiento?'))return;
   contMovimientos=contMovimientos.filter(function(m){return m.id!==id;});
-  contSave();closeModal('modalContabilidad');renderContabilidad();toast('Movimiento eliminado','success');
+  
+  contSave();
+  closeModal('modalContabilidad');
+  renderContabilidad();
+  toast('Movimiento eliminado','success');
+  
+  if (CONT_SCRIPT_URL) {
+    contEliminarMovimientoDrive(id).then(() => {
+      renderContabilidad();
+    });
+  }
 }
 
 function contAbrirMetas(){
@@ -15462,9 +15596,17 @@ function contGuardarMetas(){
   contMetas.ingMes=parseFloat(document.getElementById('metaIngMes').value)||0;
   contMetas.ingAnual=parseFloat(document.getElementById('metaIngAnual').value)||0;
   contMetas.gastoMes=parseFloat(document.getElementById('metaGastoMes').value)||0;
-  contSaveMetas();closeModal('modalContMeta');
+  
+  contSaveMetas();
+  closeModal('modalContMeta');
   if(currentTab==='contabilidad')renderContabilidad();
   toast('Metas guardadas \u2713','success');
+  
+  if (CONT_SCRIPT_URL) {
+    contSincronizarMetasDrive(contMetas).then(() => {
+      if(currentTab==='contabilidad')renderContabilidad();
+    });
+  }
 }
 /* FIN MÓDULO CONTABILIDAD */
 </script>
