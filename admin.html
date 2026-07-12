@@ -15507,7 +15507,7 @@ async function contSincronizarMovimientoDrive(obj) {
   try {
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'saveMovimiento', movimiento: JSON.stringify(obj) })
     });
     console.log('Movimiento sincronizado en Drive exitosamente.');
@@ -15521,7 +15521,7 @@ async function contEliminarMovimientoDrive(id) {
   try {
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'deleteMovimiento', id: id })
     });
     console.log('Movimiento eliminado de Drive exitosamente.');
@@ -15535,7 +15535,7 @@ async function contSincronizarMetasDrive(metasObj) {
   try {
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'saveMetas', metas: JSON.stringify(metasObj) })
     });
     console.log('Metas sincronizadas en Drive exitosamente.');
@@ -15621,42 +15621,36 @@ async function contPushTotal() {
   
   // Filtrar los que no son automáticos
   const manualMovs = localMovs.filter(m => !m.isAuto);
-  if (!manualMovs.length) { toast('No hay movimientos locales manuales para subir', 'error'); return; }
-
+  
   const btn = document.getElementById('btnContPush');
   if (btn) { btn.disabled = true; btn.textContent = 'Subiendo...'; }
 
-  let ok = 0, err = 0;
-  const chunks = [];
-  for (let i = 0; i < manualMovs.length; i += 3) {
-    chunks.push(manualMovs.slice(i, i + 3));
-  }
-
-  for (const chunk of chunks) {
-    await Promise.all(chunk.map(async mov => {
-      try {
-        await fetch(CONT_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          body: JSON.stringify({ action: 'saveMovimiento', movimiento: JSON.stringify(mov) })
-        });
-        ok++;
-      } catch (e) { err++; }
-    }));
-    await new Promise(r => setTimeout(r, 400));
-  }
-
   try {
-    await fetch(CONT_SCRIPT_URL, {
+    const payload = {
+      action: 'importContabilidad',
+      data: JSON.stringify({
+        movimientos: manualMovs,
+        metas: contMetas
+      })
+    };
+    
+    const res = await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify({ action: 'saveMetas', metas: JSON.stringify(contMetas) })
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
     });
-  } catch(e) {}
+    
+    if (res.ok || res.type === 'opaque') {
+      toast('Contabilidad sincronizada en Drive correctamente ✓', 'success');
+    } else {
+      throw new Error('Error al sincronizar');
+    }
+  } catch (err) {
+    console.error('Error en contPushTotal:', err);
+    toast('Error al subir contabilidad a Drive', 'error');
+  }
 
-  if (btn) { btn.disabled = false; btn.textContent = '☁\uFE0F Subir contabilidad local a Drive'; }
-  toast(`Subidos ${ok} movimientos a Drive${err ? `, ${err} con error` : ''} \u2713`, 'success');
-  
+  if (btn) { btn.disabled = false; btn.textContent = '☁️ Subir contabilidad local a Drive'; }
   await contCargarDatos();
   renderContabilidad();
 }

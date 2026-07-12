@@ -3,6 +3,18 @@
  * Este script debe ser vinculado a la hoja de cálculo de Google Drive "Contabilidad ICDE"
  */
 
+// ID de la hoja de cálculo obtenido de tu enlace
+const SPREADSHEET_ID = '1fmgYqtny-G22powVhBrE90RCX-P4lNA5YKDku10sAOI';
+
+// Función para obtener la hoja de cálculo, compatible con scripts vinculados o independientes
+function getSpreadsheet() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (ss) return ss;
+  } catch (e) {}
+  return SpreadsheetApp.openById(SPREADSHEET_ID);
+}
+
 // ROUTER GET: Procesa las peticiones GET desde el Panel de Control
 function doGet(e) {
   try {
@@ -31,6 +43,10 @@ function doPost(e) {
       const metas = JSON.parse(params.metas);
       return saveMetas(metas);
     }
+    if (params.action === 'importContabilidad') {
+      const data = JSON.parse(params.data);
+      return importContabilidad(data.movimientos, data.metas);
+    }
     return createJsonResponse({ error: 'Acción no válida en POST' });
   } catch (err) {
     return createJsonResponse({ error: err.toString() });
@@ -39,7 +55,7 @@ function doPost(e) {
 
 // OBTENER TODOS LOS MOVIMIENTOS Y METAS
 function getContabilidad() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   
   // 1. Obtener la hoja de Movimientos
   let sheetMovs = ss.getSheetByName("Movimientos");
@@ -52,7 +68,7 @@ function getContabilidad() {
   }
   
   const valuesMovs = sheetMovs.getDataRange().getValues();
-  if (valuesMovs.length === 0) {
+  if (valuesMovs.length <= 1) {
     return createJsonResponse({ movimientos: [], metas: { ingMes: 0, ingAnual: 0, gastoMes: 0 } });
   }
   
@@ -75,7 +91,6 @@ function getContabilidad() {
   const movimientos = [];
   for (let i = 1; i < valuesMovs.length; i++) {
     const row = valuesMovs[i];
-    // Se salta filas vacías. Debe tener al menos ID.
     const idVal = colIndices.id !== -1 ? row[colIndices.id] : "";
     if (idVal === null || idVal === undefined || String(idVal).trim() === "") continue;
     
@@ -108,7 +123,6 @@ function getContabilidad() {
   
   if (sheetMetas) {
     const valuesMetas = sheetMetas.getDataRange().getValues();
-    // Se espera que la columna A sea la Clave, y la columna C sea el Valor
     for (let i = 1; i < valuesMetas.length; i++) {
       const row = valuesMetas[i];
       if (row.length < 3) continue;
@@ -123,9 +137,9 @@ function getContabilidad() {
   return createJsonResponse({ movimientos: movimientos, metas: metas });
 }
 
-// GUARDAR O ACTUALIZAR UN MOVIMIENTO
+// GUARDAR O ACTUALIZAR UN MOVIMIENTO INDIVIDUAL
 function saveMovimiento(m) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   let sheetMovs = ss.getSheetByName("Movimientos");
   if (!sheetMovs) {
     const sheets = ss.getSheets();
@@ -155,11 +169,10 @@ function saveMovimiento(m) {
     return createJsonResponse({ error: 'No se encontró la columna ID en la hoja "Movimientos"' });
   }
   
-  // Buscar si el ID ya existe en la hoja para actualizarlo
   let rowIdx = -1;
   for (let i = 1; i < valuesMovs.length; i++) {
     if (String(valuesMovs[i][colIndices.id]).trim() === String(m.id).trim()) {
-      rowIdx = i + 1; // Fila real en la hoja (1-indexed)
+      rowIdx = i + 1;
       break;
     }
   }
@@ -167,7 +180,6 @@ function saveMovimiento(m) {
   const numCols = sheetMovs.getLastColumn();
   
   if (rowIdx !== -1) {
-    // Actualizar fila existente
     if (colIndices.fecha !== -1) sheetMovs.getRange(rowIdx, colIndices.fecha + 1).setValue(m.fecha);
     if (colIndices.tipo !== -1) sheetMovs.getRange(rowIdx, colIndices.tipo + 1).setValue(m.tipo);
     if (colIndices.categoria !== -1) sheetMovs.getRange(rowIdx, colIndices.categoria + 1).setValue(m.categoria);
@@ -178,7 +190,6 @@ function saveMovimiento(m) {
     if (colIndices.notas !== -1) sheetMovs.getRange(rowIdx, colIndices.notas + 1).setValue(m.notas);
     if (colIndices.creadoEn !== -1) sheetMovs.getRange(rowIdx, colIndices.creadoEn + 1).setValue(m.creadoEn);
   } else {
-    // Construir nueva fila alineada con el orden de las columnas
     const newRow = new Array(numCols > 0 ? numCols : 10).fill("");
     
     const assign = (key, val) => {
@@ -206,9 +217,88 @@ function saveMovimiento(m) {
   return createJsonResponse({ success: true, row: rowIdx });
 }
 
+// IMPORTACIÓN MASIVA (SOBREESCRIBE TODO PARA LIMPIAR Y REEMPLAZAR)
+function importContabilidad(movimientos, metas) {
+  const ss = getSpreadsheet();
+  
+  // 1. Limpiar y sobreescribir Movimientos
+  let sheetMovs = ss.getSheetByName("Movimientos");
+  if (!sheetMovs) {
+    const sheets = ss.getSheets();
+    sheetMovs = sheets.find(s => s.getName().toUpperCase().includes("MOVIMIENTO"));
+  }
+  if (!sheetMovs) {
+    return createJsonResponse({ error: 'No se encontró la hoja "Movimientos"' });
+  }
+  
+  const valuesMovs = sheetMovs.getDataRange().getValues();
+  const headersMovs = valuesMovs[0].map(h => String(h).trim().toLowerCase());
+  
+  const colIndices = {
+    id: headersMovs.indexOf("id"),
+    fecha: headersMovs.indexOf("fecha"),
+    tipo: headersMovs.indexOf("tipo"),
+    categoria: headersMovs.indexOf("categoría") !== -1 ? headersMovs.indexOf("categoría") : headersMovs.indexOf("categoria"),
+    monto: headersMovs.indexOf("monto"),
+    mes: headersMovs.indexOf("mes"),
+    ano: headersMovs.indexOf("año") !== -1 ? headersMovs.indexOf("año") : headersMovs.indexOf("ano"),
+    descripcion: headersMovs.indexOf("descripción") !== -1 ? headersMovs.indexOf("descripción") : headersMovs.indexOf("descripcion"),
+    notas: headersMovs.indexOf("notas"),
+    creadoEn: headersMovs.indexOf("creado en") !== -1 ? headersMovs.indexOf("creado en") : headersMovs.indexOf("creadoen")
+  };
+  
+  if (colIndices.id === -1) {
+    return createJsonResponse({ error: 'No se encontró la columna ID en la hoja "Movimientos"' });
+  }
+  
+  // Limpiar todo el contenido viejo debajo del encabezado
+  if (sheetMovs.getLastRow() > 1) {
+    sheetMovs.getRange(2, 1, sheetMovs.getLastRow() - 1, sheetMovs.getLastColumn()).clearContent();
+  }
+  
+  // Insertar en bloque los nuevos movimientos
+  if (movimientos && movimientos.length > 0) {
+    const numCols = sheetMovs.getLastColumn();
+    const rowsToWrite = [];
+    
+    movimientos.forEach(m => {
+      const newRow = new Array(numCols > 0 ? numCols : 10).fill("");
+      
+      const assign = (key, val) => {
+        const idx = colIndices[key];
+        if (idx !== -1 && idx < newRow.length) {
+          newRow[idx] = val;
+        }
+      };
+      
+      assign('id', m.id);
+      assign('fecha', m.fecha);
+      assign('tipo', m.tipo);
+      assign('categoria', m.categoria);
+      assign('monto', m.monto);
+      assign('mes', m.mes);
+      assign('ano', m.ano);
+      assign('descripcion', m.descripcion);
+      assign('notas', m.notas);
+      assign('creadoEn', m.creadoEn);
+      
+      rowsToWrite.push(newRow);
+    });
+    
+    sheetMovs.getRange(2, 1, rowsToWrite.length, rowsToWrite[0].length).setValues(rowsToWrite);
+  }
+  
+  // 2. Guardar las metas
+  if (metas) {
+    saveMetas(metas);
+  }
+  
+  return createJsonResponse({ success: true });
+}
+
 // ELIMINAR UN MOVIMIENTO POR ID
 function deleteMovimiento(id) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   let sheetMovs = ss.getSheetByName("Movimientos");
   if (!sheetMovs) {
     const sheets = ss.getSheets();
@@ -227,7 +317,6 @@ function deleteMovimiento(id) {
   }
   
   let deleted = false;
-  // Buscar y eliminar la fila (recorremos de abajo hacia arriba)
   for (let i = valuesMovs.length - 1; i >= 1; i--) {
     if (String(valuesMovs[i][idColIdx]).trim() === String(id).trim()) {
       sheetMovs.deleteRow(i + 1);
@@ -240,7 +329,7 @@ function deleteMovimiento(id) {
 
 // GUARDAR LAS METAS FINANCIERAS
 function saveMetas(metas) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   let sheetMetas = ss.getSheetByName("Metas");
   if (!sheetMetas) {
     const sheets = ss.getSheets();
@@ -251,7 +340,6 @@ function saveMetas(metas) {
   }
   
   const valuesMetas = sheetMetas.getDataRange().getValues();
-  // Clave en columna A (0), Valor en columna C (2)
   for (let i = 1; i < valuesMetas.length; i++) {
     const key = String(valuesMetas[i][0]).trim();
     let updatedVal = null;
