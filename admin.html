@@ -15101,6 +15101,10 @@ try {
 
 async function contCargarDatos() {
   if (!CONT_SCRIPT_URL) return;
+  if (window.contSyncCount && window.contSyncCount > 0) {
+    console.log('Sincronización en curso, omitiendo recarga desde Drive.');
+    return;
+  }
   try {
     const res = await fetch(CONT_SCRIPT_URL + '?action=getContabilidad&t=' + Date.now());
     if (res.ok) {
@@ -15223,8 +15227,11 @@ function contGetFiltrado(){
 }
 
 async function renderContabilidad(){
-  contAnoFiltro = new Date().getFullYear();
-  contMesFiltro = new Date().getMonth() + 1;
+  if (window.contFiltersInitialized === undefined) {
+    contAnoFiltro = new Date().getFullYear();
+    contMesFiltro = new Date().getMonth() + 1;
+    window.contFiltersInitialized = true;
+  }
   const c=document.getElementById('mainContent');
   
   // Dibujar estructura básica de contabilidad
@@ -15522,6 +15529,7 @@ function contToggleTipo(){
 
 async function contSincronizarMovimientoDrive(obj) {
   if (!CONT_SCRIPT_URL) return;
+  window.contSyncCount = (window.contSyncCount || 0) + 1;
   try {
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
@@ -15537,12 +15545,15 @@ async function contSincronizarMovimientoDrive(obj) {
     }
   } catch (err) {
     console.error('Error al sincronizar movimiento en Drive:', err);
+  } finally {
+    window.contSyncCount = Math.max(0, (window.contSyncCount || 0) - 1);
   }
 }
 
 
 async function contEliminarMovimientoDrive(id) {
   if (!CONT_SCRIPT_URL) return;
+  window.contSyncCount = (window.contSyncCount || 0) + 1;
   try {
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
@@ -15553,6 +15564,8 @@ async function contEliminarMovimientoDrive(id) {
     console.log('Movimiento eliminado de Drive exitosamente.');
   } catch (err) {
     console.error('Error al eliminar movimiento en Drive:', err);
+  } finally {
+    window.contSyncCount = Math.max(0, (window.contSyncCount || 0) - 1);
   }
 }
 
