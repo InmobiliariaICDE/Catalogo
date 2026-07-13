@@ -2554,7 +2554,7 @@ textarea.gemini-card-input {
         <input class="form-input" id="contMovMonto" type="number" placeholder="0" min="0" step="1000"/>
       </div>
       <div class="form-group">
-        <label class="form-label">Fecha</label>
+        <label class="form-label" id="contMovFechaLabel">Fecha Inicio</label>
         <input class="form-input" id="contMovFecha" type="date"/>
       </div>
     </div>
@@ -2569,8 +2569,8 @@ textarea.gemini-card-input {
         </select>
       </div>
       <div class="form-group" id="contMovMesesActivoDiv">
-        <label class="form-label">Número de meses activos</label>
-        <input class="form-input" id="contMovMesesActivo" type="number" value="1" min="1" max="60" placeholder="1"/>
+        <label class="form-label">Fecha Fin (Opcional)</label>
+        <input class="form-input" id="contMovFechaFin" type="date"/>
       </div>
     </div>
     <div class="form-group" style="margin-bottom:4px;">
@@ -9009,7 +9009,7 @@ function renderAdministracion() {
             <option value="propietario" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'propietario' ? 'selected' : ''}>Propietario</option>
             <option value="disponibles" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'disponibles' ? 'selected' : ''}>Disponibles</option>
             <option value="ocupados" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'ocupados' ? 'selected' : ''}>Ocupados</option>
-            <option value="fecha_inicio" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'fecha_inicio' ? 'selected' : ''}>Inicio de contrato</option>
+            <option value="fecha_inicio" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'fecha_inicio' ? 'selected' : ''}>Día de pago</option>
           </select>
         </div>
 
@@ -15612,7 +15612,7 @@ function contAbrirModal(tipoDefault){
   document.getElementById('contMovMonto').value='';
   document.getElementById('contMovFecha').value=new Date().toISOString().split('T')[0];
   document.getElementById('contMovMes').value=String(new Date().getMonth()+1);
-  document.getElementById('contMovMesesActivo').value='1';
+  document.getElementById('contMovFechaFin').value='';
   document.getElementById('contMovMesesActivoDiv').style.display='';
   document.getElementById('contMovNotas').value='';
   document.getElementById('contMovBtnEliminar').style.display='none';
@@ -15630,7 +15630,7 @@ function contEditarMovimiento(id){
   document.getElementById('contMovMonto').value=m.monto;
   document.getElementById('contMovFecha').value=m.fecha||'';
   document.getElementById('contMovMes').value=String(m.mes||1);
-  document.getElementById('contMovMesesActivo').value='1';
+  document.getElementById('contMovFechaFin').value='';
   document.getElementById('contMovMesesActivoDiv').style.display='';
   document.getElementById('contMovNotas').value=m.notas||'';
   document.getElementById('contMovBtnEliminar').style.display='inline-flex';
@@ -15720,7 +15720,19 @@ function contGuardarMovimiento(){
   if(!monto||monto<=0){toast('El monto debe ser mayor a 0','error');return;}
   if(!fecha){toast('Selecciona una fecha','error');return;}
 
-  const mesesActivo = parseInt(document.getElementById('contMovMesesActivo').value) || 1;
+  const fechaFinVal = document.getElementById('contMovFechaFin').value;
+  let mesesActivo = 1;
+  if (fechaFinVal) {
+    const start = new Date(fecha + 'T00:00:00');
+    const end = new Date(fechaFinVal + 'T00:00:00');
+    if (end < start) {
+      toast('La fecha fin no puede ser anterior a la fecha inicio', 'error');
+      return;
+    }
+    const yearsDiff = end.getFullYear() - start.getFullYear();
+    const monthsDiff = end.getMonth() - start.getMonth();
+    mesesActivo = (yearsDiff * 12) + monthsDiff + 1;
+  }
 
   const movementsToAdd = [];
   const startTimestamp = Date.now();
