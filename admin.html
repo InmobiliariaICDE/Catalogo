@@ -2558,14 +2558,20 @@ textarea.gemini-card-input {
         <input class="form-input" id="contMovFecha" type="date"/>
       </div>
     </div>
-    <div class="form-group" style="margin-bottom:12px;">
-      <label class="form-label">Mes contable</label>
-      <select class="form-input" id="contMovMes">
-        <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
-        <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
-        <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
-        <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
-      </select>
+    <div class="cont-form-row" style="margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label">Mes contable</label>
+        <select class="form-input" id="contMovMes">
+          <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+          <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+          <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+          <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+      </div>
+      <div class="form-group" id="contMovMesesActivoDiv">
+        <label class="form-label">Número de meses activos</label>
+        <input class="form-input" id="contMovMesesActivo" type="number" value="1" min="1" max="60" placeholder="1"/>
+      </div>
     </div>
     <div class="form-group" style="margin-bottom:4px;">
       <label class="form-label">Notas (opcional)</label>
@@ -15475,6 +15481,8 @@ function contAbrirModal(tipoDefault){
   document.getElementById('contMovMonto').value='';
   document.getElementById('contMovFecha').value=new Date().toISOString().split('T')[0];
   document.getElementById('contMovMes').value=String(new Date().getMonth()+1);
+  document.getElementById('contMovMesesActivo').value='1';
+  document.getElementById('contMovMesesActivoDiv').style.display='';
   document.getElementById('contMovNotas').value='';
   document.getElementById('contMovBtnEliminar').style.display='none';
   contToggleTipo();
@@ -15491,6 +15499,8 @@ function contEditarMovimiento(id){
   document.getElementById('contMovMonto').value=m.monto;
   document.getElementById('contMovFecha').value=m.fecha||'';
   document.getElementById('contMovMes').value=String(m.mes||1);
+  document.getElementById('contMovMesesActivo').value='1';
+  document.getElementById('contMovMesesActivoDiv').style.display='none';
   document.getElementById('contMovNotas').value=m.notas||'';
   document.getElementById('contMovBtnEliminar').style.display='inline-flex';
   contToggleTipo();
@@ -15572,18 +15582,56 @@ function contGuardarMovimiento(){
   const notas=document.getElementById('contMovNotas').value.trim();
   if(!monto||monto<=0){toast('El monto debe ser mayor a 0','error');return;}
   if(!fecha){toast('Selecciona una fecha','error');return;}
-  const obj={id:id,tipo:tipo,categoria:cat,descripcion:desc,monto:monto,fecha:fecha,mes:mes,ano:new Date(fecha).getFullYear(),notas:notas,creadoEn:new Date().toISOString(),isPending:!!CONT_SCRIPT_URL};
 
-  const idx=contMovimientos.findIndex(function(m){return m.id===id;});
-  if(idx>=0)contMovimientos[idx]=obj;else contMovimientos.push(obj);
+  const isNew = !document.getElementById('contMovId').value;
+  const mesesActivo = isNew ? (parseInt(document.getElementById('contMovMesesActivo').value) || 1) : 1;
+
+  const movementsToAdd = [];
+  const startTimestamp = Date.now();
+
+  for (let i = 0; i < mesesActivo; i++) {
+    let currentId = i === 0 ? id : ('C' + (startTimestamp + i));
+    let tempFecha = new Date(fecha + 'T00:00:00');
+    tempFecha.setMonth(tempFecha.getMonth() + i);
+    let nextFechaStr = tempFecha.toISOString().split('T')[0];
+    let nextMes = ((mes - 1 + i) % 12) + 1;
+    let nextAno = tempFecha.getFullYear();
+
+    const obj = {
+      id: currentId,
+      tipo: tipo,
+      categoria: cat,
+      descripcion: desc,
+      monto: monto,
+      fecha: nextFechaStr,
+      mes: nextMes,
+      ano: nextAno,
+      notas: notas,
+      creadoEn: new Date().toISOString(),
+      isPending: !!CONT_SCRIPT_URL
+    };
+    movementsToAdd.push(obj);
+  }
+
+  movementsToAdd.forEach(function(obj) {
+    const idx=contMovimientos.findIndex(function(m){return m.id===obj.id;});
+    if(idx>=0) contMovimientos[idx]=obj; else contMovimientos.push(obj);
+  });
   
   contSave();
   closeModal('modalContabilidad');
   renderContabilidad();
-  toast('Movimiento guardado \u2713','success');
+  
+  if (mesesActivo > 1) {
+    toast(mesesActivo + ' movimientos guardados \u2713', 'success');
+  } else {
+    toast('Movimiento guardado \u2713', 'success');
+  }
   
   if (CONT_SCRIPT_URL) {
-    contSincronizarMovimientoDrive(obj).then(() => {
+    Promise.all(movementsToAdd.map(function(obj) {
+      return contSincronizarMovimientoDrive(obj);
+    })).then(function() {
       renderContabilidad();
     });
   }
