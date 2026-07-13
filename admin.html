@@ -2610,6 +2610,22 @@ textarea.gemini-card-input {
   </div>
 </div>
 
+<!-- MODAL CONTABILIDAD — DETALLE DE MOVIMIENTOS POR MES -->
+<div class="modal-overlay" id="modalContDetalleMes" onclick="if(event.target===this) closeModal('modalContDetalleMes')">
+  <div class="modal-box" style="max-width:700px; max-height:85vh; display:flex; flex-direction:column; padding: 20px;">
+    <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
+      <div class="modal-title" id="contDetalleMesTitle" style="margin-bottom:0;">📋 Movimientos del Mes</div>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('modalContDetalleMes')" style="padding:4px 10px; min-height:0; background:none; border:none; color:#888; font-size:16px;">✕</button>
+    </div>
+    <div style="overflow-y:auto; flex:1;" id="contDetalleMesBody">
+      <!-- Se llenará dinámicamente -->
+    </div>
+    <div class="modal-footer" style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px; display:flex; justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeModal('modalContDetalleMes')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- GEMINI SPEECH BUBBLE -->
 <div class="gemini-speech-bubble" id="geminiSpeechBubble"></div>
 
@@ -15417,10 +15433,59 @@ function contRenderResumen(el){
 }
 
 function contSeleccionarMesYVerMovimientos(mes){
-  contMesFiltro = parseInt(mes) || 0;
-  const sel = document.getElementById('contMesSel');
-  if (sel) sel.value = String(mes);
-  contSwitchTab('movimientos');
+  const mesInt = parseInt(mes) || 1;
+  const year = contAnoFiltro;
+  
+  // Set modal title
+  document.getElementById('contDetalleMesTitle').textContent = '📋 Movimientos de ' + CONT_MESES_FULL[mesInt - 1] + ' ' + year;
+  
+  // Filter movements
+  const listaAno = contGetParaAno(year);
+  const listaMes = listaAno.filter(function(m) {
+    return parseInt(m.mes) === mesInt;
+  }).sort(function(a, b) {
+    return new Date(b.fecha || 0) - new Date(a.fecha || 0);
+  });
+  
+  const body = document.getElementById('contDetalleMesBody');
+  if (!body) return;
+  
+  if (listaMes.length === 0) {
+    body.innerHTML = '<div class="cont-empty" style="padding:40px; text-align:center; color:var(--muted);">Sin movimientos registrados en este mes.</div>';
+  } else {
+    body.innerHTML = 
+      '<table style="width:100%; border-collapse:collapse; font-size:13px;">' +
+      '<thead>' +
+        '<tr style="background:rgba(212,168,75,0.04); border-bottom:1px solid rgba(212,168,75,0.15);">' +
+          '<th style="padding:10px 12px; text-align:left; color:var(--gold); font-size:11px; text-transform:uppercase;">Fecha</th>' +
+          '<th style="padding:10px 12px; text-align:left; color:var(--gold); font-size:11px; text-transform:uppercase;">Categoría</th>' +
+          '<th style="padding:10px 12px; text-align:left; color:var(--gold); font-size:11px; text-transform:uppercase;">Descripción</th>' +
+          '<th style="padding:10px 12px; text-align:right; color:var(--gold); font-size:11px; text-transform:uppercase;">Monto</th>' +
+          '<th style="padding:10px 12px; text-align:center; color:var(--gold); font-size:11px; text-transform:uppercase;">Acc.</th>' +
+        '</tr>' +
+      '</thead>' +
+      '<tbody>' +
+        listaMes.map(function(m) {
+          const catIcon = CONT_CAT_ICONS[m.categoria] || '•';
+          const montoColor = m.tipo === 'ingreso' ? '#22c55e' : '#ef4444';
+          const montoSign = m.tipo === 'ingreso' ? '+' : '-';
+          const editBtn = m.isAuto ? '<span style="color:#555; font-size:11px;">Auto</span>' : 
+            '<button onclick="closeModal(\'modalContDetalleMes\'); contEditarMovimiento(\'' + m.id + '\')" style="background:none; border:1px solid rgba(255,255,255,0.1); border-radius:7px; color:#888; padding:3px 6px; cursor:pointer; font-size:11px;" onmouseover="this.style.borderColor=\'var(--gold)\'; this.style.color=\'var(--gold)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.1)\'; this.style.color=\'#888\'">✏️</button>';
+          
+          return '<tr style="border-bottom:1px solid rgba(255,255,255,0.03);" onmouseover="this.style.background=\'rgba(255,255,255,0.025)\'" onmouseout="this.style.background=\'\'">' +
+            '<td style="padding:8px 12px; color:#888; white-space:nowrap;">' + (m.fecha || '—') + '</td>' +
+            '<td style="padding:8px 12px; color:#ccc;">' + catIcon + ' ' + m.categoria + '</td>' +
+            '<td style="padding:8px 12px; color:#fff; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + (m.descripcion || '') + '">' + (m.descripcion || '—') + '</td>' +
+            '<td style="padding:8px 12px; text-align:right; color:' + montoColor + '; font-weight:700;">' + montoSign + contFmt(parseFloat(m.monto || 0)) + '</td>' +
+            '<td style="padding:8px 12px; text-align:center;">' + editBtn + '</td>' +
+          '</tr>';
+        }).join('') +
+      '</tbody>' +
+      '</table>';
+  }
+  
+  // Show the modal
+  document.getElementById('modalContDetalleMes').classList.add('open');
 }
 
 function contRenderFlujo(el){
