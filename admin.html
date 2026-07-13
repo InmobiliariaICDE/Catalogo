@@ -15423,7 +15423,11 @@ function contRenderResumen(el){
   const catEgr={};lista.filter(m=>m.tipo==='egreso').forEach(m=>{catEgr[m.categoria]=(catEgr[m.categoria]||0)+parseFloat(m.monto||0);});
   const sI=Object.entries(catIng).sort((a,b)=>b[1]-a[1]);
   const sE=Object.entries(catEgr).sort((a,b)=>b[1]-a[1]);
-  const txList=[...lista].sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0)).slice(0,15);
+  const txList=[...lista].sort((a,b)=>{
+    const catComp = (a.categoria || '').localeCompare(b.categoria || '');
+    if (catComp !== 0) return catComp;
+    return new Date(b.fecha||0)-new Date(a.fecha||0);
+  }).slice(0,15);
   el.innerHTML=
   '<div class="cont-layout">'+
     '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDCB9 Ingresos por Servicio</div><span style="font-size:12px;color:var(--gold);font-weight:700;">'+contFmt(ingresos)+'</span></div>'+
@@ -15584,7 +15588,11 @@ function contRenderInversiones(el){
 }
 
 function contRenderMovimientos(el){
-  const lista=contGetFiltrado().sort(function(a,b){return new Date(b.fecha||0)-new Date(a.fecha||0);});
+  const lista=contGetFiltrado().sort(function(a,b){
+    const catComp = (a.categoria || '').localeCompare(b.categoria || '');
+    if (catComp !== 0) return catComp;
+    return new Date(b.fecha||0)-new Date(a.fecha||0);
+  });
   el.innerHTML=
   '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDCCB Todos los Movimientos</div>'+
   '<div style="display:flex;gap:10px;"><button class="cont-btn-add" onclick="contAbrirModal(\'ingreso\')">\u2795 Ingreso</button><button class="cont-btn-add" onclick="contAbrirModal(\'egreso\')" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444;">\u2795 Egreso</button></div></div>'+
