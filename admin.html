@@ -15256,23 +15256,36 @@ function contGetParaAno(year) {
   });
 
   if (typeof adminData !== 'undefined' && adminData && adminData.properties) {
-    for (let mIdx = 1; mIdx <= 12; mIdx++) {
-      const comEsperada = contObtenerComisionAdministracionEsperada(year, mIdx);
-      if (comEsperada > 0) {
-        lista.push({
-          id: 'AUTO-ADMIN-COMISION-' + year + '-' + mIdx,
-          tipo: 'ingreso',
-          categoria: 'Gestión/Administración',
-          descripcion: 'Comisión Administración Esperada (Automático - ' + CONT_MESES_FULL[mIdx - 1] + ')',
-          monto: comEsperada,
-          fecha: year + '-' + String(mIdx).padStart(2, '0') + '-01',
-          mes: mIdx,
-          ano: year,
-          notas: 'Generado automáticamente a partir de los inmuebles administrados.',
-          isAuto: true
-        });
-      }
-    }
+    const monthsNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+    adminData.properties.forEach(p => {
+      const rent = parseFloat(p.monthly_rent) || 0;
+      const comVal = rent * 0.10;
+      if (comVal <= 0) return;
+      
+      const paymentsYear = p.payments[year] || [];
+      paymentsYear.forEach(m => {
+        const mIdx = monthsNames.indexOf(m.month.toUpperCase());
+        if (mIdx !== -1) {
+          const st = m.status;
+          if (st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY' || st === 'AL_DIA' || st === 'FUTURE') {
+            const propName = p.name || 'Propiedad';
+            const mIdx1Based = mIdx + 1;
+            lista.push({
+              id: 'AUTO-ADMIN-COMISION-' + (p.id || propName.replace(/\s+/g, '-')) + '-' + year + '-' + mIdx1Based,
+              tipo: 'ingreso',
+              categoria: 'Gestión/Administración',
+              descripcion: 'Comisión Administración Esperada - ' + propName,
+              monto: comVal,
+              fecha: year + '-' + String(mIdx1Based).padStart(2, '0') + '-01',
+              mes: mIdx1Based,
+              ano: year,
+              notas: 'Generado automáticamente para el inmueble: ' + propName,
+              isAuto: true
+            });
+          }
+        }
+      });
+    });
   }
   return lista;
 }
@@ -15281,11 +15294,6 @@ function contGetFiltrado(){
   let lista = contGetParaAno(contAnoFiltro);
   if (contMesFiltro > 0) {
     lista = lista.filter(m => parseInt(m.mes) === contMesFiltro);
-    lista.forEach(m => {
-      if (m.isAuto && m.id.startsWith('AUTO-ADMIN-COMISION-')) {
-        m.descripcion = 'Comisión Administración Esperada (Automático)';
-      }
-    });
   }
   return lista;
 }
@@ -15548,7 +15556,110 @@ function contRenderFlujo(el){
   setTimeout(function(){
     try {
       const ctx=document.getElementById('chartFlujo');
-      if(ctx){contCharts['chartFlujo']=new Chart(ctx,{type:'line',data:{labels:CONT_MESES,datasets:[{label:'Ingresos',data:md.map(function(m){return m.ingreso;}),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.05)',borderWidth:2,pointRadius:3.5,tension:0.35},{label:'Egresos',data:md.map(function(m){return m.egreso;}),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.05)',borderWidth:2,pointRadius:3.5,tension:0.35},{label:'Utilidad',data:md.map(function(m){return m.utilidad;}),borderColor:'#d4a84b',backgroundColor:'rgba(212,168,75,0.08)',borderWidth:2.5,pointRadius:4,tension:0.35,fill:true}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+ctx.dataset.label+': '+contFmt(ctx.raw);}}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:11},callback:function(v){return contFmt(v);}},beginAtZero:true}}}});}
+      if(ctx){
+        const ctx2d = ctx.getContext('2d');
+        const gradIng = ctx2d.createLinearGradient(0, 0, 0, 300);
+        gradIng.addColorStop(0, 'rgba(34,197,94,0.8)');
+        gradIng.addColorStop(0.6, 'rgba(34,197,94,0.3)');
+        gradIng.addColorStop(1, 'rgba(34,197,94,0.05)');
+
+        const gradEgr = ctx2d.createLinearGradient(0, 0, 0, 300);
+        gradEgr.addColorStop(0, 'rgba(239,68,68,0.75)');
+        gradEgr.addColorStop(0.6, 'rgba(239,68,68,0.25)');
+        gradEgr.addColorStop(1, 'rgba(239,68,68,0.05)');
+
+        const gradUt = ctx2d.createLinearGradient(0, 0, 0, 300);
+        gradUt.addColorStop(0, 'rgba(212,168,75,0.15)');
+        gradUt.addColorStop(1, 'rgba(212,168,75,0)');
+
+        contCharts['chartFlujo']=new Chart(ctx,{
+          type:'bar',
+          data:{
+            labels:CONT_MESES,
+            datasets:[
+              {
+                label:'Ingresos',
+                data:md.map(function(m){return m.ingreso;}),
+                backgroundColor:gradIng,
+                borderColor:'#22c55e',
+                borderWidth:1.5,
+                borderRadius:6,
+                borderSkipped:false,
+                maxBarThickness:18
+              },
+              {
+                label:'Egresos',
+                data:md.map(function(m){return m.egreso;}),
+                backgroundColor:gradEgr,
+                borderColor:'#ef4444',
+                borderWidth:1.5,
+                borderRadius:6,
+                borderSkipped:false,
+                maxBarThickness:18
+              },
+              {
+                label:'Utilidad',
+                data:md.map(function(m){return m.utilidad;}),
+                type:'line',
+                borderColor:'#d4a84b',
+                backgroundColor:gradUt,
+                borderWidth:2.5,
+                pointRadius:4.5,
+                pointBackgroundColor:'#d4a84b',
+                pointBorderColor:'#18181b',
+                pointBorderWidth:2,
+                tension:0.38,
+                fill:true
+              }
+            ]
+          },
+          options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            interaction:{mode:'index',intersect:false},
+            plugins:{
+              legend:{display:false},
+              tooltip:{
+                backgroundColor:'#121212',
+                titleColor:'#fff',
+                bodyColor:'#ccc',
+                borderColor:'rgba(255,255,255,0.08)',
+                borderWidth:1,
+                padding:10,
+                callbacks:{
+                  label:function(ctx){return' '+ctx.dataset.label+': '+contFmt(ctx.raw);}
+                }
+              }
+            },
+            scales:{
+              x:{
+                grid:{
+                  color:'rgba(255,255,255,0.035)',
+                  borderDash:[4, 4],
+                  drawTicks:false
+                },
+                ticks:{
+                  color:'#888',
+                  font:{size:11, family:'Outfit, sans-serif'}
+                }
+              },
+              y:{
+                grid:{
+                  color:'rgba(255,255,255,0.035)',
+                  borderDash:[4, 4],
+                  drawTicks:false
+                },
+                ticks:{
+                  color:'#888',
+                  font:{size:11, family:'Outfit, sans-serif'},
+                  callback:function(v){return contFmt(v);}
+                },
+                beginAtZero:true
+              }
+            }
+          }
+        });
+      }
     } catch (e) {
       console.warn("No se pudo cargar el gráfico de flujo:", e);
     }
