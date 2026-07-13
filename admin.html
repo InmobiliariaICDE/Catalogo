@@ -9201,7 +9201,7 @@ function renderAdministracionContent() {
       </div>
 
       <!-- 2. COMISIÓN TOTAL ACUMULADA Y OBJETIVO -->
-      <div class="admin-kpi-card" style="--card-accent: var(--gold); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px;">
+      <div class="admin-kpi-card" style="--card-accent: var(--gold); display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 10px 12px;">
         <div style="display: flex; flex-direction: column; justify-content: center; flex: 1; min-width: 120px;">
           <div class="admin-kpi-val" style="display: flex; align-items: baseline; gap: 3px; font-size: 19px; line-height: 1.1; margin-bottom: 2px;">
             <span style="color: #22c55e;">${safeFormatP(totalComision)}</span>
@@ -15500,7 +15500,7 @@ function contEditarMovimiento(id){
   document.getElementById('contMovFecha').value=m.fecha||'';
   document.getElementById('contMovMes').value=String(m.mes||1);
   document.getElementById('contMovMesesActivo').value='1';
-  document.getElementById('contMovMesesActivoDiv').style.display='none';
+  document.getElementById('contMovMesesActivoDiv').style.display='';
   document.getElementById('contMovNotas').value=m.notas||'';
   document.getElementById('contMovBtnEliminar').style.display='inline-flex';
   contToggleTipo();
@@ -15583,8 +15583,7 @@ function contGuardarMovimiento(){
   if(!monto||monto<=0){toast('El monto debe ser mayor a 0','error');return;}
   if(!fecha){toast('Selecciona una fecha','error');return;}
 
-  const isNew = !document.getElementById('contMovId').value;
-  const mesesActivo = isNew ? (parseInt(document.getElementById('contMovMesesActivo').value) || 1) : 1;
+  const mesesActivo = parseInt(document.getElementById('contMovMesesActivo').value) || 1;
 
   const movementsToAdd = [];
   const startTimestamp = Date.now();
