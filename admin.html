@@ -15185,10 +15185,8 @@ function contObtenerComisionAdministracionEsperada(year, month) {
 
 function contGetParaAno(year) {
   let lista = contMovimientos.filter(m => {
-    const fecha = m.fecha ? new Date(m.fecha) : null;
-    if (fecha && fecha.getFullYear() !== year) return false;
-    if (!fecha && m.ano && parseInt(m.ano) !== year) return false;
-    return true;
+    const mAno = m.ano ? parseInt(m.ano) : (m.fecha ? parseInt(m.fecha.split('-')[0]) : null);
+    return mAno === year;
   });
 
   if (typeof adminData !== 'undefined' && adminData && adminData.properties) {
@@ -15330,7 +15328,10 @@ function contRenderMetas(){
   const lista=contGetFiltrado();
   const ingresos=contSumTipo(lista,'ingreso');
   const egresos=contSumTipo(lista,'egreso');
-  const listaAnio=contMovimientos.filter(m=>{const f=m.fecha?new Date(m.fecha):null;if(f&&f.getFullYear()!==contAnoFiltro)return false;if(!f&&m.ano&&parseInt(m.ano)!==contAnoFiltro)return false;return true;});
+  const listaAnio=contMovimientos.filter(m=>{
+    const mAno = m.ano ? parseInt(m.ano) : (m.fecha ? parseInt(m.fecha.split('-')[0]) : null);
+    return mAno === contAnoFiltro;
+  });
   const ingAnio=contSumTipo(listaAnio,'ingreso');
   const pM=contMetas.ingMes>0?Math.min(100,(ingresos/contMetas.ingMes)*100):0;
   const pA=contMetas.ingAnual>0?Math.min(100,(ingAnio/contMetas.ingAnual)*100):0;
