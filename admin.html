@@ -15416,6 +15416,13 @@ function contRenderResumen(el){
   },80);
 }
 
+function contSeleccionarMesYVerMovimientos(mes){
+  contMesFiltro = parseInt(mes) || 0;
+  const sel = document.getElementById('contMesSel');
+  if (sel) sel.value = String(mes);
+  contSwitchTab('movimientos');
+}
+
 function contRenderFlujo(el){
   const listaAno=contGetParaAno(contAnoFiltro);
   const md=CONT_MESES.map(function(label,idx){const mn=idx+1;const ml=listaAno.filter(function(m){return parseInt(m.mes)===mn;});return{label:label,ingreso:contSumTipo(ml,'ingreso'),egreso:contSumTipo(ml,'egreso'),utilidad:contSumTipo(ml,'ingreso')-contSumTipo(ml,'egreso')};});
@@ -15427,7 +15434,7 @@ function contRenderFlujo(el){
   '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDCCB Detalle Mensual</div><span style="font-size:12px;color:'+(tu>=0?'#22c55e':'#ef4444')+';font-weight:700;">Utilidad A\u00F1o: '+contFmt(tu)+'</span></div>'+
   '<div class="cont-panel-body" style="padding:0;"><table style="width:100%;border-collapse:collapse;font-size:13px;">'+
   '<thead><tr style="background:rgba(212,168,75,0.04);border-bottom:1px solid rgba(212,168,75,0.15);"><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Mes</th><th style="padding:12px 16px;text-align:right;color:var(--gold);font-size:11px;text-transform:uppercase;">Ingresos</th><th style="padding:12px 16px;text-align:right;color:var(--gold);font-size:11px;text-transform:uppercase;">Egresos</th><th style="padding:12px 16px;text-align:right;color:var(--gold);font-size:11px;text-transform:uppercase;">Utilidad</th><th style="padding:12px 16px;text-align:right;color:var(--gold);font-size:11px;text-transform:uppercase;">Margen</th></tr></thead>'+
-  '<tbody>'+md.map(function(m,i){return'<tr style="border-bottom:1px solid rgba(255,255,255,0.03);" onmouseover="this.style.background=\'rgba(255,255,255,0.02)\'" onmouseout="this.style.background=\'\'"><td style="padding:10px 16px;color:#fff;opacity:'+(m.ingreso||m.egreso?1:0.4)+';">'+CONT_MESES_FULL[i]+'</td><td style="padding:10px 16px;text-align:right;color:#22c55e;font-weight:600;">'+(m.ingreso?contFmt(m.ingreso):'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:#ef4444;font-weight:600;">'+(m.egreso?contFmt(m.egreso):'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:'+(m.utilidad>=0?'#22c55e':'#ef4444')+';font-weight:700;">'+(m.ingreso||m.egreso?contFmt(m.utilidad):'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:#888;">'+(m.ingreso>0?((m.utilidad/m.ingreso)*100).toFixed(0)+'%':'\u2014')+'</td></tr>';}).join('')+
+  '<tbody>'+md.map(function(m,i){return'<tr style="border-bottom:1px solid rgba(255,255,255,0.03); cursor:pointer;" onclick="contSeleccionarMesYVerMovimientos('+(i+1)+')" onmouseover="this.style.background=\'rgba(255,255,255,0.04)\'" onmouseout="this.style.background=\'\'"><td style="padding:10px 16px;color:#fff;opacity:'+(m.ingreso||m.egreso?1:0.4)+';">'+CONT_MESES_FULL[i]+'</td><td style="padding:10px 16px;text-align:right;color:#22c55e;font-weight:600;">'+(m.ingreso?contFmt(m.ingreso):'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:#ef4444;font-weight:600;">'+(m.egreso?contFmt(m.egreso):'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:'+(m.utilidad>=0?'#22c55e':'#ef4444')+';font-weight:700;">'+(m.ingreso||m.egreso?contFmt(m.utilidad):'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:#888;">'+(m.ingreso>0?((m.utilidad/m.ingreso)*100).toFixed(0)+'%':'\u2014')+'</td></tr>';}).join('')+
   '<tr style="background:rgba(212,168,75,0.05);border-top:2px solid rgba(212,168,75,0.2);"><td style="padding:12px 16px;font-weight:800;color:var(--gold);">TOTAL</td><td style="padding:12px 16px;text-align:right;color:#22c55e;font-weight:800;">'+contFmt(ti)+'</td><td style="padding:12px 16px;text-align:right;color:#ef4444;font-weight:800;">'+contFmt(te)+'</td><td style="padding:12px 16px;text-align:right;color:'+(tu>=0?'#22c55e':'#ef4444')+';font-weight:800;">'+contFmt(tu)+'</td><td style="padding:12px 16px;text-align:right;color:var(--gold);font-weight:800;">'+(ti>0?((tu/ti)*100).toFixed(0)+'%':'\u2014')+'</td></tr>'+
   '</tbody></table></div></div>';
   setTimeout(function(){
