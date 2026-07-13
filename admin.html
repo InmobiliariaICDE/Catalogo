@@ -15103,12 +15103,12 @@ async function contCargarDatos() {
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.movimientos)) {
-        // Combinación inteligente: preservar transacciones locales no automáticas que no existan en la nube
-        const cloudIds = new Set(data.movimientos.map(m => m.id));
-        const pendingUpload = contMovimientos.filter(m => !m.isAuto && m.id && !cloudIds.has(m.id));
+        // Combinación inteligente: preservar transacciones locales no automáticas marcadas como isPending
+        const pendingUpload = contMovimientos.filter(m => !m.isAuto && m.isPending);
         
         contMovimientos = [...data.movimientos, ...pendingUpload];
         localStorage.setItem('icde_contabilidad', JSON.stringify(contMovimientos));
+
       }
       if (data && data.metas) {
         // Sólo actualizamos metas si tienen datos válidos y no están en 0
@@ -15523,10 +15523,16 @@ async function contSincronizarMovimientoDrive(obj) {
       body: JSON.stringify({ action: 'saveMovimiento', movimiento: JSON.stringify(obj) })
     });
     console.log('Movimiento sincronizado en Drive exitosamente.');
+    const idx = contMovimientos.findIndex(m => m.id === obj.id);
+    if (idx >= 0) {
+      delete contMovimientos[idx].isPending;
+      contSave();
+    }
   } catch (err) {
     console.error('Error al sincronizar movimiento en Drive:', err);
   }
 }
+
 
 async function contEliminarMovimientoDrive(id) {
   if (!CONT_SCRIPT_URL) return;
@@ -15569,7 +15575,8 @@ function contGuardarMovimiento(){
   const notas=document.getElementById('contMovNotas').value.trim();
   if(!monto||monto<=0){toast('El monto debe ser mayor a 0','error');return;}
   if(!fecha){toast('Selecciona una fecha','error');return;}
-  const obj={id:id,tipo:tipo,categoria:cat,descripcion:desc,monto:monto,fecha:fecha,mes:mes,ano:new Date(fecha).getFullYear(),notas:notas,creadoEn:new Date().toISOString()};
+  const obj={id:id,tipo:tipo,categoria:cat,descripcion:desc,monto:monto,fecha:fecha,mes:mes,ano:new Date(fecha).getFullYear(),notas:notas,creadoEn:new Date().toISOString(),isPending:!!CONT_SCRIPT_URL};
+
   const idx=contMovimientos.findIndex(function(m){return m.id===id;});
   if(idx>=0)contMovimientos[idx]=obj;else contMovimientos.push(obj);
   
@@ -15657,7 +15664,10 @@ async function contPushTotal() {
     
     if (res.ok || res.type === 'opaque') {
       toast('Contabilidad sincronizada en Drive correctamente ✓', 'success');
+      contMovimientos.forEach(m => { delete m.isPending; });
+      contSave();
     } else {
+
       throw new Error('Error al sincronizar');
     }
   } catch (err) {
