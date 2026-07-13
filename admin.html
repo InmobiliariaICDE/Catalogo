@@ -1477,7 +1477,7 @@ textarea.gemini-card-input {
   }
   .admin-kpis-left {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 8px;
   }
   .admin-kpis-right {
@@ -9223,18 +9223,15 @@ function renderAdministracionContent() {
         </div>
       </div>
 
-      <!-- 3. CANON ESPERADO -->
-      <div class="admin-kpi-card" style="--card-accent: var(--gold);">
-        <div class="admin-kpi-val">${safeFormatP(totalEsperado)}</div>
-        <div class="admin-kpi-lbl">Canon Esperado (${currentAdminMonth})</div>
-        <div class="admin-kpi-sub">Total facturado este mes</div>
-      </div>
-
-      <!-- 4. RECAUDADO EFECTIVO -->
+      <!-- 3. RECAUDADO / CANON ESPERADO -->
       <div class="admin-kpi-card" style="border-color: rgba(34,197,94,0.3); --card-accent: #22c55e;">
-        <div class="admin-kpi-val" style="color: #22c55e;">${safeFormatP(totalRecaudado)}</div>
-        <div class="admin-kpi-lbl">Recaudado Efectivo</div>
-        <div class="admin-kpi-sub">🟢 Cobros liquidados con éxito</div>
+        <div class="admin-kpi-val" style="display: flex; align-items: baseline; gap: 3px; font-size: 19px; line-height: 1.1; margin-bottom: 2px;">
+          <span style="color: #22c55e;">${safeFormatP(totalRecaudado)}</span>
+          <span style="color: #22c55e; font-size: 13px; font-weight: 600; margin: 0 1px;">/</span>
+          <span style="color: #fff; font-size: 19px;">${safeFormatP(totalEsperado)}</span>
+        </div>
+        <div class="admin-kpi-lbl">Recaudado / Canon Esperado (${currentAdminMonth})</div>
+        <div class="admin-kpi-sub">🟢 Cobros liquidados vs. Esperado</div>
       </div>
 
       <!-- 5. CARTERA PENDIENTE -->
