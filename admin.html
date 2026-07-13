@@ -15765,11 +15765,12 @@ function contGuardarMovimiento(){
   }
   
   if (CONT_SCRIPT_URL) {
-    Promise.all(movementsToAdd.map(function(obj) {
-      return contSincronizarMovimientoDrive(obj);
-    })).then(function() {
+    (async function() {
+      for (let i = 0; i < movementsToAdd.length; i++) {
+        await contSincronizarMovimientoDrive(movementsToAdd[i]);
+      }
       renderContabilidad();
-    });
+    })();
   }
 }
 
