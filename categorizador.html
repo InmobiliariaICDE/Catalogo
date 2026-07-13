@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Categorizador y Sincronizador de Contabilidad ICDE</title>
+  <meta name="description" content="Herramienta interactiva de clasificación e importación de transacciones para la contabilidad de ICDE.">
+  
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #0f111a;
+      --surface: #161925;
+      --surface-glass: rgba(22, 25, 37, 0.7);
+      --border: rgba(255, 255, 255, 0.08);
+      --primary: #d4af37;
+      --primary-hover: #bda030;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      --radius: 12px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
+      background-attachment: fixed;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header styling */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px;
+      background: var(--surface-glass);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      font-size: 2rem;
+      background: linear-gradient(135deg, var(--primary), #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Actions Panel */
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      background: var(--surface-glass);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-field {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: #fff;
+      padding: 10px 14px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--primary);
+      color: #0f111a;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-danger {
+      background: var(--error);
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    /* Stats Cards */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--surface-glass);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--primary);
+    }
+
+    .stat-card.success::before { background: var(--success); }
+    .stat-card.error::before { background: var(--error); }
+    .stat-card.info::before { background: var(--info); }
+
+    .stat-lbl {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .stat-val {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    /* Table & List View */
+    .table-container {
+      background: var(--surface-glass);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .table-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .table-scroll {
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    .tx-row {
+      display: grid;
+      grid-template-columns: 80px 120px 1fr 140px 120px 180px 140px;
+      gap: 16px;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+      transition: var(--transition);
+    }
+
+    .tx-row:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .tx-row.duplicate {
+      background: rgba(239, 68, 68, 0.03);
+    }
+
+    .tx-row.success {
+      background: rgba(16, 185, 129, 0.03);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-month { background: rgba(255, 255, 255, 0.08); color: #fff; }
+    .badge-ingreso { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .badge-egreso { background: rgba(239, 68, 68, 0.15); color: var(--error); }
+    .badge-duplicate { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .badge-status-pending { background: rgba(156, 163, 175, 0.15); color: var(--text-muted); }
+    .badge-status-uploading { background: rgba(59, 130, 246, 0.15); color: var(--info); }
+    .badge-status-done { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+
+    .tx-desc {
+      font-size: 0.9rem;
+      word-break: break-word;
+    }
+
+    .tx-monto {
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-align: right;
+    }
+
+    .tx-monto.ingreso { color: var(--success); }
+    .tx-monto.egreso { color: var(--error); }
+
+    /* Category Dropdown styled */
+    .cat-select {
+      background: rgba(22, 25, 37, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: #fff;
+      padding: 6px 10px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      width: 100%;
+      outline: none;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .cat-select:focus {
+      border-color: var(--primary);
+    }
+
+    /* Modal Styling */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 17, 26, 0.8);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 30px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+
+    .modal.active .modal-content {
+      transform: translateY(0);
+    }
+
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--primary);
+    }
+
+    .modal-body {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    /* Progress bar */
+    .progress-wrapper {
+      margin-top: 16px;
+      display: none;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--success));
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .progress-text {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Utilities */
+    .flex-row-center {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    @media (max-width: 1024px) {
+      .tx-row {
+        grid-template-columns: 80px 100px 1fr 120px 120px;
+        gap: 12px;
+      }
+      .tx-row .col-actions, .tx-row .col-status {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="logo-container">
+        <span class="logo-icon">🔑</span>
+        <div>
+          <h1 id="main_title">Sincronizador Contable ICDE</h1>
+          <div class="subtitle">Importación Inteligente y Clasificación de Transacciones (2026)</div>
+        </div>
+      </div>
+      <div class="flex-row-center" style="gap: 12px;">
+        <span id="conn_status" class="badge badge-status-done">Cargando Conexión...</span>
+      </div>
+    </header>
+
+    <!-- Stats summary -->
+    <div class="stats-container">
+      <div class="stat-card info">
+        <div class="stat-lbl">Transacciones Totales</div>
+        <div class="stat-val" id="stat_total">0</div>
+      </div>
+      <div class="stat-card success">
+        <div class="stat-lbl">Ingresos Extractados</div>
+        <div class="stat-val" id="stat_ingresos">0</div>
+      </div>
+      <div class="stat-card error">
+        <div class="stat-lbl">Egresos Extractados</div>
+        <div class="stat-val" id="stat_egresos">0</div>
+      </div>
+      <div class="stat-card warning">
+        <div class="stat-lbl">Pendientes de Subida</div>
+        <div class="stat-val" id="stat_pendientes">0</div>
+      </div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="controls">
+      <div class="control-group">
+        <span class="control-label">Filtrar por Mes</span>
+        <select id="filter_month" class="input-field" onchange="applyFilters()">
+          <option value="ALL">Todos los meses</option>
+          <option value="FEBRERO-2026">Febrero 2026</option>
+          <option value="MARZO.2026">Marzo 2026</option>
+          <option value="ABRIL-2026">Abril 2026</option>
+          <option value="MAYO - 2026">Mayo 2026</option>
+          <option value="JUNIO-2026">Junio 2026</option>
+          <option value="JULIO-2026">Julio 2026</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <span class="control-label">Buscar en Descripción</span>
+        <input type="text" id="search_desc" class="input-field" placeholder="Buscar palabras clave..." oninput="applyFilters()">
+      </div>
+      <div class="control-group">
+        <span class="control-label">Estado Sincronización</span>
+        <select id="filter_status" class="input-field" onchange="applyFilters()">
+          <option value="ALL">Todos</option>
+          <option value="PENDING">Pendientes</option>
+          <option value="DONE">Subidos</option>
+        </select>
+      </div>
+      <div class="control-group" style="justify-content: flex-end;">
+        <button id="btn_upload_all" class="btn" onclick="startBulkUpload()">
+          ☁️ Subir Filtrados a Drive
+        </button>
+      </div>
+    </div>
+
+    <!-- Progress bar for upload -->
+    <div class="progress-wrapper" id="progress_wrapper">
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="progress_bar_fill"></div>
+      </div>
+      <div class="progress-text">
+        <span id="progress_status">Subiendo transacciones...</span>
+        <span id="progress_percent">0%</span>
+      </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="table-container">
+      <div class="table-header">
+        <div class="table-title">Registros del Excel</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted);" id="visible_count">Mostrando 0 transacciones</div>
+      </div>
+      
+      <!-- Table rows header -->
+      <div class="tx-row" style="background: rgba(255,255,255,0.04); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; color: var(--primary);">
+        <div>Fecha</div>
+        <div>Mes</div>
+        <div>Descripción</div>
+        <div style="text-align: right;">Monto</div>
+        <div>Tipo</div>
+        <div>Categoría</div>
+        <div class="col-status">Estado</div>
+      </div>
+
+      <div class="table-scroll" id="tx_list">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Duplicados -->
+  <div class="modal" id="modal_dup">
+    <div class="modal-content">
+      <div class="modal-title">¿Subir Transacción Duplicada?</div>
+      <div class="modal-body" id="modal_dup_text">
+        Esta transacción ya parece existir en tu hoja de Google Sheets.
+      </div>
+      <div class="flex-row-center" style="gap: 12px; justify-content: flex-end;">
+        <button class="btn btn-secondary" onclick="resolveDuplicate(false)">Omitir Duplicado</button>
+        <button class="btn btn-danger" onclick="resolveDuplicate(true)">Subir de Todos Modos</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import the data -->
+  <script src="categorizador_data.js"></script>
+
+  <script>
+    // Configuration
+    const CONT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbznGQYcowGcuVOqGXhfZmeKRWHBoJmoUzoOOry-Uzbkv_qXvO1duZYxvPiNjdJB1IPyyg/exec';
+
+    const CATEGORIES = [
+      "Venta de Inmueble", "Arriendo", "Avalúos", "Remodelación", "Reparación", "Arquitectura",
+      "Gestión/Administración", "Consultoría", "Otro Servicio", "Nómina/Personal", "Arriendo Oficina",
+      "Marketing", "Servicios Públicos", "Impuestos", "Software/Tecnología", "Inversión",
+      "Aseo/Mantenimiento", "Cafetería", "Deudas", "Transporte", "Otro Gasto"
+    ];
+
+    // Keywords to autoclassify categories
+    const CLASSIFICATION_RULES = [
+      { cat: "Gestión/Administración", keywords: ["administracion", "comision 10", "comisión 10", "comision", "honorarios", "gestión", "gestion"] },
+      { cat: "Arriendo Oficina", keywords: ["arrendamiento oficina", "arriendo oficina", "canon oficina", "oficina"] },
+      { cat: "Servicios Públicos", keywords: ["alcanos", "gas", "electrificadora", "energia", "acueducto", "agua", "internet", "claro", "celular", "movistar", "tigo", "telefon", "servicios publicos"] },
+      { cat: "Nómina/Personal", keywords: ["nomina", "sueldo", "salario", "prestaciones", "seguridad social", "arl", "pension", "eps", "caja", "sergio", "valentina", "patricia"] },
+      { cat: "Impuestos", keywords: ["retencion", "dian", "impuesto", "ica", "predial", "retencion en la fuente"] },
+      { cat: "Aseo/Mantenimiento", keywords: ["aseo", "limpieza", "mantenimiento", "fumigacion"] },
+      { cat: "Cafetería", keywords: ["cafeteria", "cafe", "azucar", "tinto", "panela"] },
+      { cat: "Software/Tecnología", keywords: ["dominio", "hosting", "software", "tecnologia", "pagina", "licencia", "web"] },
+      { cat: "Marketing", keywords: ["publicidad", "marketing", "folletos", "volantes", "anuncio"] },
+      { cat: "Reparación", keywords: ["reparacion", "reparar", "arreglo", "daño", "plomeria", "pintura"] },
+      { cat: "Remodelación", keywords: ["remodelacion", "remodelar", "obra", "reconstruccion"] },
+      { cat: "Avalúos", keywords: ["avalúo", "avaluo", "peritaje"] },
+      { cat: "Arriendo", keywords: ["arriendo", "arrendamiento", "canon"] },
+      { cat: "Venta de Inmueble", keywords: ["venta", "comision venta", "promesa compraventa"] },
+      { cat: "Arquitectura", keywords: ["planos", "diseño", "arquitectura", "arquitecto"] },
+      { cat: "Deudas", keywords: ["prestamo", "préstamo", "deuda", "cxp"] },
+      { cat: "Transporte", keywords: ["gasolina", "transporte", "pasaje", "taxi", "uber", "peaje", "viaje"] }
+    ];
+
+    // Local State
+    let transactions = [];
+    let currentUploadQueue = [];
+    let currentUploadIndex = 0;
+    let duplicateResolverPromise = null;
+
+    // Helper: auto-categorize description
+    function autoCategorize(desc, tipo) {
+      const descLower = desc.toLowerCase();
+      
+      // Filter rules depending on Type (ingreso/egreso)
+      // Egresos categories vs Ingresos categories
+      const egresosCats = ['Nómina/Personal', 'Arriendo Oficina', 'Marketing', 'Servicios Públicos', 'Impuestos', 'Software/Tecnología', 'Inversión', 'Aseo/Mantenimiento', 'Cafetería', 'Deudas', 'Transporte', 'Otro Gasto'];
+      const ingresosCats = ['Venta de Inmueble', 'Arriendo', 'Avalúos', 'Remodelación', 'Reparación', 'Arquitectura', 'Gestión/Administración', 'Consultoría', 'Otro Servicio'];
+
+      for (const rule of CLASSIFICATION_RULES) {
+        if (tipo === 'ingreso' && !ingresosCats.includes(rule.cat)) continue;
+        if (tipo === 'egreso' && !egresosCats.includes(rule.cat)) continue;
+        
+        for (const kw of rule.keywords) {
+          if (descLower.includes(kw)) {
+            return rule.cat;
+          }
+        }
+      }
+      return tipo === 'ingreso' ? 'Otro Servicio' : 'Otro Gasto';
+    }
+
+    // Init App
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. Prepare transactions with auto category & local statuses
+      transactions = EXTRACTED_TRANSACTIONS.map((tx, idx) => {
+        return {
+          ...tx,
+          localId: 'L' + idx + '-' + Date.now(),
+          category: autoCategorize(tx.descripcion, tx.tipo),
+          status: 'PENDING', // PENDING, UPLOADING, DONE, SKIPPED
+        };
+      });
+
+      // Update connection badge
+      const connBadge = document.getElementById('conn_status');
+      connBadge.textContent = 'Conectado a Google Drive ☁️';
+      connBadge.className = 'badge badge-status-done';
+
+      updateStats();
+      applyFilters();
+    });
+
+    function updateStats() {
+      document.getElementById('stat_total').textContent = transactions.length;
+      document.getElementById('stat_ingresos').textContent = transactions.filter(t => t.tipo === 'ingreso').length;
+      document.getElementById('stat_egresos').textContent = transactions.filter(t => t.tipo === 'egreso').length;
+      document.getElementById('stat_pendientes').textContent = transactions.filter(t => t.status === 'PENDING').length;
+    }
+
+    // Apply Filters & Render
+    function applyFilters() {
+      const monthFilter = document.getElementById('filter_month').value;
+      const searchVal = document.getElementById('search_desc').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('filter_status').value;
+
+      const filtered = transactions.filter(tx => {
+        // Month filter
+        if (monthFilter !== 'ALL' && tx.sheet !== monthFilter) return false;
+        // Search filter
+        if (searchVal && !tx.descripcion.toLowerCase().includes(searchVal)) return false;
+        // Status filter
+        if (statusFilter !== 'ALL') {
+          if (statusFilter === 'PENDING' && tx.status !== 'PENDING') return false;
+          if (statusFilter === 'DONE' && tx.status !== 'DONE') return false;
+        }
+        return true;
+      });
+
+      document.getElementById('visible_count').textContent = `Mostrando ${filtered.length} transacciones`;
+      renderTransactions(filtered);
+    }
+
+    function renderTransactions(list) {
+      const container = document.getElementById('tx_list');
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);">No se encontraron transacciones con los filtros actuales.</div>';
+        return;
+      }
+
+      list.forEach(tx => {
+        const row = document.createElement('div');
+        row.className = `tx-row ${tx.is_duplicate ? 'duplicate' : ''} ${tx.status === 'DONE' ? 'success' : ''}`;
+        row.id = `row-${tx.localId}`;
+
+        // Format Currency (COP)
+        const formatMonto = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(tx.monto);
+
+        // Options for categories list based on type
+        const categoriesOptions = (tx.tipo === 'ingreso' 
+          ? ['Venta de Inmueble', 'Arriendo', 'Avalúos', 'Remodelación', 'Reparación', 'Arquitectura', 'Gestión/Administración', 'Consultoría', 'Otro Servicio']
+          : ['Nómina/Personal', 'Arriendo Oficina', 'Marketing', 'Servicios Públicos', 'Impuestos', 'Software/Tecnología', 'Inversión', 'Aseo/Mantenimiento', 'Cafetería', 'Deudas', 'Transporte', 'Otro Gasto']
+        ).map(cat => `<option value="${cat}" ${tx.category === cat ? 'selected' : ''}>${cat}</option>`).join('');
+
+        let statusText = 'Pendiente';
+        let statusClass = 'badge-status-pending';
+        if (tx.status === 'UPLOADING') {
+          statusText = 'Subiendo...';
+          statusClass = 'badge-status-uploading';
+        } else if (tx.status === 'DONE') {
+          statusText = 'Sincronizado';
+          statusClass = 'badge-status-done';
+        }
+
+        row.innerHTML = `
+          <div>${tx.fecha}</div>
+          <div><span class="badge badge-month">${tx.sheet.split('-')[0]}</span></div>
+          <div class="tx-desc">
+            ${tx.descripcion}
+            ${tx.is_duplicate ? '<span class="badge badge-duplicate" style="margin-left: 4px;">Duplicado detectado</span>' : ''}
+          </div>
+          <div class="tx-monto ${tx.tipo}">${formatMonto}</div>
+          <div><span class="badge badge-${tx.tipo}">${tx.tipo}</span></div>
+          <div>
+            <select class="cat-select" onchange="updateCategory('${tx.localId}', this.value)">
+              ${categoriesOptions}
+            </select>
+          </div>
+          <div class="col-status">
+            <span class="badge ${statusClass}" id="status-badge-${tx.localId}">${statusText}</span>
+          </div>
+        `;
+
+        container.appendChild(row);
+      });
+    }
+
+    function updateCategory(localId, newCat) {
+      const tx = transactions.find(t => t.localId === localId);
+      if (tx) {
+        tx.category = newCat;
+        console.log(`Updated ${tx.descripcion} category to ${newCat}`);
+      }
+    }
+
+    // Modal handle duplicates
+    function askUserDuplicate(tx) {
+      const modal = document.getElementById('modal_dup');
+      const text = document.getElementById('modal_dup_text');
+      
+      const formatMonto = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(tx.monto);
+      text.innerHTML = `La transacción del <strong>${tx.fecha}</strong> por un monto de <strong>${formatMonto}</strong> con la descripción <em>"${tx.descripcion}"</em> ya parece estar registrada en Drive.<br><br>¿Deseas subirla nuevamente o deseas omitirla?`;
+      
+      modal.classList.add('active');
+
+      return new Promise((resolve) => {
+        duplicateResolverPromise = resolve;
+      });
+    }
+
+    function resolveDuplicate(shouldUpload) {
+      const modal = document.getElementById('modal_dup');
+      modal.classList.remove('active');
+      if (duplicateResolverPromise) {
+        duplicateResolverPromise(shouldUpload);
+        duplicateResolverPromise = null;
+      }
+    }
+
+    // Bulk upload orchestration
+    async function startBulkUpload() {
+      // Find all filtered transactions that are still PENDING
+      const monthFilter = document.getElementById('filter_month').value;
+      const searchVal = document.getElementById('search_desc').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('filter_status').value;
+
+      currentUploadQueue = transactions.filter(tx => {
+        if (tx.status !== 'PENDING') return false;
+        if (monthFilter !== 'ALL' && tx.sheet !== monthFilter) return false;
+        if (searchVal && !tx.descripcion.toLowerCase().includes(searchVal)) return false;
+        return true;
+      });
+
+      if (currentUploadQueue.length === 0) {
+        alert('No hay transacciones pendientes de subida en la vista actual.');
+        return;
+      }
+
+      if (!confirm(`¿Estás seguro de que deseas subir ${currentUploadQueue.length} transacciones a Google Drive?`)) {
+        return;
+      }
+
+      // Display progress bar
+      const pWrapper = document.getElementById('progress_wrapper');
+      pWrapper.style.display = 'block';
+      
+      currentUploadIndex = 0;
+      updateProgressBar();
+
+      // Start processing queue
+      processNextInQueue();
+    }
+
+    async function processNextInQueue() {
+      if (currentUploadIndex >= currentUploadQueue.length) {
+        // Complete
+        document.getElementById('progress_status').textContent = 'Sincronización Completada ✓';
+        updateStats();
+        applyFilters();
+        alert('¡Sincronización finalizada exitosamente!');
+        return;
+      }
+
+      const tx = currentUploadQueue[currentUploadIndex];
+      
+      // Update UI row status to uploading
+      tx.status = 'UPLOADING';
+      const badge = document.getElementById(`status-badge-${tx.localId}`);
+      if (badge) {
+        badge.textContent = 'Subiendo...';
+        badge.className = 'badge badge-status-uploading';
+      }
+
+      // Check duplicate
+      if (tx.is_duplicate) {
+        const shouldUpload = await askUserDuplicate(tx);
+        if (!shouldUpload) {
+          tx.status = 'SKIPPED';
+          if (badge) {
+            badge.textContent = 'Omitido';
+            badge.className = 'badge badge-status-pending';
+          }
+          currentUploadIndex++;
+          updateProgressBar();
+          processNextInQueue();
+          return;
+        }
+      }
+
+      // Format payload for Apps Script
+      // format: { id: "C" + timestamp, tipo, categoria, descripcion, monto, fecha, mes, ano, notas, creadoEn }
+      const payload = {
+        id: 'C' + (Date.now() + currentUploadIndex),
+        tipo: tx.tipo,
+        categoria: tx.category,
+        descripcion: tx.descripcion,
+        monto: tx.monto,
+        fecha: tx.fecha,
+        mes: tx.mes,
+        ano: tx.ano,
+        notas: `Importado desde Excel - Hoja ${tx.sheet}`,
+        creadoEn: new Date().toISOString()
+      };
+
+      try {
+        await fetch(CONT_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'saveMovimiento', movimiento: JSON.stringify(payload) })
+        });
+
+        // Mark as done
+        tx.status = 'DONE';
+        tx.is_duplicate = false; // reset flag
+        if (badge) {
+          badge.textContent = 'Sincronizado';
+          badge.className = 'badge badge-status-done';
+        }
+        const row = document.getElementById(`row-${tx.localId}`);
+        if (row) row.classList.add('success');
+
+      } catch (err) {
+        console.error('Error uploading:', err);
+        tx.status = 'PENDING';
+        if (badge) {
+          badge.textContent = 'Error';
+          badge.className = 'badge badge-status-error';
+        }
+      }
+
+      currentUploadIndex++;
+      updateProgressBar();
+      
+      // Delay slightly to prevent rate limits
+      setTimeout(processNextInQueue, 300);
+    }
+
+    function updateProgressBar() {
+      const total = currentUploadQueue.length;
+      const progress = currentUploadIndex;
+      const pct = total > 0 ? Math.round((progress / total) * 100) : 0;
+
+      document.getElementById('progress_bar_fill').style.width = pct + '%';
+      document.getElementById('progress_percent').textContent = pct + '%';
+      document.getElementById('progress_status').textContent = `Subiendo transacciones: ${progress} de ${total}...`;
+    }
+  </script>
+
+</body>
+</html>
