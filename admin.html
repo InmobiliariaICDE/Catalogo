@@ -15558,19 +15558,16 @@ function contRenderFlujo(el){
       const ctx=document.getElementById('chartFlujo');
       if(ctx){
         const ctx2d = ctx.getContext('2d');
-        const gradIng = ctx2d.createLinearGradient(0, 0, 0, 300);
-        gradIng.addColorStop(0, 'rgba(34,197,94,0.8)');
-        gradIng.addColorStop(0.6, 'rgba(34,197,94,0.3)');
-        gradIng.addColorStop(1, 'rgba(34,197,94,0.05)');
-
+        
+        // Egresos Gradient (Solid bottom part)
         const gradEgr = ctx2d.createLinearGradient(0, 0, 0, 300);
-        gradEgr.addColorStop(0, 'rgba(239,68,68,0.75)');
-        gradEgr.addColorStop(0.6, 'rgba(239,68,68,0.25)');
-        gradEgr.addColorStop(1, 'rgba(239,68,68,0.05)');
+        gradEgr.addColorStop(0, 'rgba(239,68,68,0.85)');
+        gradEgr.addColorStop(1, 'rgba(239,68,68,0.4)');
 
+        // Utilidad Gradient (Light top cap)
         const gradUt = ctx2d.createLinearGradient(0, 0, 0, 300);
-        gradUt.addColorStop(0, 'rgba(212,168,75,0.15)');
-        gradUt.addColorStop(1, 'rgba(212,168,75,0)');
+        gradUt.addColorStop(0, 'rgba(34,197,94,0.15)');
+        gradUt.addColorStop(1, 'rgba(34,197,94,0.05)');
 
         contCharts['chartFlujo']=new Chart(ctx,{
           type:'bar',
@@ -15578,38 +15575,24 @@ function contRenderFlujo(el){
             labels:CONT_MESES,
             datasets:[
               {
-                label:'Ingresos',
-                data:md.map(function(m){return m.ingreso;}),
-                backgroundColor:gradIng,
-                borderColor:'#22c55e',
-                borderWidth:1.5,
-                borderRadius:6,
-                borderSkipped:false,
-                maxBarThickness:18
-              },
-              {
-                label:'Egresos',
+                label:'Egresos (Gastos)',
                 data:md.map(function(m){return m.egreso;}),
                 backgroundColor:gradEgr,
                 borderColor:'#ef4444',
                 borderWidth:1.5,
-                borderRadius:6,
+                borderRadius:{topLeft:0, topRight:0, bottomLeft:6, bottomRight:6},
                 borderSkipped:false,
-                maxBarThickness:18
+                maxBarThickness:24
               },
               {
-                label:'Utilidad',
-                data:md.map(function(m){return m.utilidad;}),
-                type:'line',
-                borderColor:'#d4a84b',
+                label:'Utilidad (Ganancia)',
+                data:md.map(function(m){return Math.max(0, m.utilidad);}),
                 backgroundColor:gradUt,
-                borderWidth:2.5,
-                pointRadius:4.5,
-                pointBackgroundColor:'#d4a84b',
-                pointBorderColor:'#18181b',
-                pointBorderWidth:2,
-                tension:0.38,
-                fill:true
+                borderColor:'#22c55e',
+                borderWidth:1.5,
+                borderRadius:{topLeft:6, topRight:6, bottomLeft:0, bottomRight:0},
+                borderSkipped:false,
+                maxBarThickness:24
               }
             ]
           },
@@ -15627,12 +15610,20 @@ function contRenderFlujo(el){
                 borderWidth:1,
                 padding:10,
                 callbacks:{
-                  label:function(ctx){return' '+ctx.dataset.label+': '+contFmt(ctx.raw);}
+                  label:function(ctx){return' '+ctx.dataset.label+': '+contFmt(ctx.raw);},
+                  footer:function(items){
+                    let total = 0;
+                    items.forEach(function(item){
+                      total += item.raw;
+                    });
+                    return ' Total (Ingresos): ' + contFmt(total);
+                  }
                 }
               }
             },
             scales:{
               x:{
+                stacked:true,
                 grid:{
                   color:'rgba(255,255,255,0.035)',
                   borderDash:[4, 4],
@@ -15644,6 +15635,7 @@ function contRenderFlujo(el){
                 }
               },
               y:{
+                stacked:true,
                 grid:{
                   color:'rgba(255,255,255,0.035)',
                   borderDash:[4, 4],
