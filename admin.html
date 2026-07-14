@@ -15715,6 +15715,22 @@ function contCambiarOrden(val){
   contRenderTabContent();
 }
 
+function contFormatearFechaHora(isoStr) {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hr = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return y + '-' + m + '-' + day + ' ' + hr + ':' + min;
+  } catch (e) {
+    return '';
+  }
+}
+
 function contRenderMovimientos(el){
   const lista=contGetFiltrado();
   if (contSortOrder === 'fecha') {
@@ -15752,7 +15768,19 @@ function contRenderMovimientos(el){
   (lista.length===0?'<div class="cont-empty" style="padding:40px;">Ninguno a\u00FAn.<br><br><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Primero</button></div>':
   '<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
   '<thead><tr style="background:rgba(212,168,75,0.04);border-bottom:1px solid rgba(212,168,75,0.15);"><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Fecha</th><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Categor\u00EDa</th><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Descripci\u00F3n</th><th style="padding:12px 16px;text-align:right;color:var(--gold);font-size:11px;text-transform:uppercase;">Monto</th><th style="padding:12px 16px;text-align:center;color:var(--gold);font-size:11px;text-transform:uppercase;">Tipo</th><th style="padding:12px 16px;text-align:center;color:var(--gold);font-size:11px;text-transform:uppercase;">Acc.</th></tr></thead>'+
-  '<tbody>'+lista.map(function(m){return'<tr style="border-bottom:1px solid rgba(255,255,255,0.03);" onmouseover="this.style.background=\'rgba(255,255,255,0.025)\'" onmouseout="this.style.background=\'\'"><td style="padding:10px 16px;color:#888;white-space:nowrap;">'+(m.fecha||'\u2014')+'</td><td style="padding:10px 16px;color:#ccc;">'+(CONT_CAT_ICONS[m.categoria]||'\u2022')+' '+m.categoria+'</td><td style="padding:10px 16px;color:#fff;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(m.descripcion||'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:'+(m.tipo==='ingreso'?'#22c55e':'#ef4444')+';font-weight:700;">'+(m.tipo==='ingreso'?'+':'-')+contFmt(parseFloat(m.monto||0))+'</td><td style="padding:10px 16px;text-align:center;"><span style="padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;'+(m.tipo==='ingreso'?'background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.25)':'background:rgba(239,68,68,0.10);color:#ef4444;border:1px solid rgba(239,68,68,0.2)')+';">'+(m.tipo==='ingreso'?'\uD83D\uDCB9 Ingreso':'\uD83D\uDD34 Egreso')+'</span></td><td style="padding:10px 16px;text-align:center;">'+(m.isAuto?'<span style="color:#555;font-size:11px;">Auto</span>':'<button onclick="contEditarMovimiento(\''+m.id+'\')" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#888;padding:4px 8px;cursor:pointer;font-size:11px;" onmouseover="this.style.borderColor=\'var(--gold)\';this.style.color=\'var(--gold)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.1)\';this.style.color=\'#888\'">\u270F\uFE0F</button>')+'</td></tr>';}).join('')+'</tbody></table>')+'</div></div>';
+  '<tbody>'+lista.map(function(m){
+    return'<tr style="border-bottom:1px solid rgba(255,255,255,0.03);" onmouseover="this.style.background=\'rgba(255,255,255,0.025)\'" onmouseout="this.style.background=\'\'">'+
+      '<td style="padding:10px 16px;color:#888;white-space:nowrap;line-height:1.2;">'+
+        '<div style="font-weight:600;">'+(m.fecha||'\u2014')+'</div>'+
+        (m.creadoEn ? '<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:2px;">\u23F1\uFE0F '+contFormatearFechaHora(m.creadoEn)+'</div>' : '')+
+      '</td>'+
+      '<td style="padding:10px 16px;color:#ccc;">'+(CONT_CAT_ICONS[m.categoria]||'\u2022')+' '+m.categoria+'</td>'+
+      '<td style="padding:10px 16px;color:#fff;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(m.descripcion||'\u2014')+'</td>'+
+      '<td style="padding:10px 16px;text-align:right;color:'+(m.tipo==='ingreso'?'#22c55e':'#ef4444')+';font-weight:700;">'+(m.tipo==='ingreso'?'+':'-')+contFmt(parseFloat(m.monto||0))+'</td>'+
+      '<td style="padding:10px 16px;text-align:center;"><span style="padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;'+(m.tipo==='ingreso'?'background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.25)':'background:rgba(239,68,68,0.10);color:#ef4444;border:1px solid rgba(239,68,68,0.2)')+';">'+(m.tipo==='ingreso'?'\uD83D\uDCB9 Ingreso':'\uD83D\uDD34 Egreso')+'</span></td>'+
+      '<td style="padding:10px 16px;text-align:center;">'+(m.isAuto?'<span style="color:#555;font-size:11px;">Auto</span>':'<button onclick="contEditarMovimiento(\''+m.id+'\')" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#888;padding:4px 8px;cursor:pointer;font-size:11px;" onmouseover="this.style.borderColor=\'var(--gold)\';this.style.color=\'var(--gold)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.1)\';this.style.color=\'#888\'">\u270F\uFE0F</button>')+'</td>'+
+    '</tr>';
+  }).join('')+'</tbody></table>')+'</div></div>';
 }
 
 function contAbrirModal(tipoDefault){
