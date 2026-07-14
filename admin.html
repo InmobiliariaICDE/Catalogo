@@ -2506,6 +2506,20 @@ textarea.gemini-card-input {
   </div>
 </div>
 
+<!-- MODAL HISTORIAL DE CAMBIOS CONTABILIDAD -->
+<div class="modal-overlay" id="modalContHistorial" onclick="if(event.target===this) closeModal('modalContHistorial')">
+  <div class="modal-box" style="max-width:640px; background:#18181b; border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#fff;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px; margin-bottom:16px;">
+      <div class="modal-title" style="margin:0; font-size:18px; color:var(--gold); display:flex; align-items:center; gap:8px;">⏱️ Historial de Modificaciones</div>
+      <button onclick="closeModal('modalContHistorial')" style="background:none; border:none; color:#888; font-size:20px; cursor:pointer;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">×</button>
+    </div>
+    <div id="contHistorialContent" style="max-height:450px; overflow-y:auto; padding-right:4px;"></div>
+    <div class="modal-footer" style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.08); padding-top:12px; text-align:right;">
+      <button class="btn btn-secondary" onclick="closeModal('modalContHistorial')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL CONTABILIDAD — AGREGAR MOVIMIENTO -->
 <div class="modal-overlay" id="modalContabilidad" onclick="if(event.target===this) closeModal('modalContabilidad')">
   <div class="modal-box" style="max-width:560px;">
@@ -15203,6 +15217,27 @@ let contMesFiltro = 0;
 let contSortOrder = 'fecha';
 let contCharts = {};
 
+let contAuditLog = [];
+try {
+  contAuditLog = JSON.parse(localStorage.getItem('icde_cont_audit') || '[]');
+  if (!Array.isArray(contAuditLog)) contAuditLog = [];
+} catch(e) {
+  contAuditLog = [];
+}
+
+function contRegistrarAuditoria(tipoAccion, antes, despues) {
+  const logEntry = {
+    id: 'AUD-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+    tipoAccion: tipoAccion,
+    fechaAccion: new Date().toISOString(),
+    movimientoId: antes ? antes.id : (despues ? despues.id : ''),
+    antes: antes ? { ...antes, historial: undefined } : null,
+    despues: despues ? { ...despues, historial: undefined } : null
+  };
+  contAuditLog.push(logEntry);
+  localStorage.setItem('icde_cont_audit', JSON.stringify(contAuditLog));
+}
+
 const CONT_MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const CONT_MESES_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const CONT_CAT_ICONS = {
@@ -15731,8 +15766,121 @@ function contFormatearFechaHora(isoStr) {
   }
 }
 
+function contVerHistorial(id) {
+  const logs = contAuditLog.filter(log => log.movimientoId === id);
+  if (logs.length === 0) {
+    toast('No hay historial de cambios para este movimiento', 'info');
+    return;
+  }
+  
+  const contentEl = document.getElementById('contHistorialContent');
+  if (!contentEl) return;
+  
+  // Sort logs newest first
+  logs.sort((a, b) => new Date(b.fechaAccion) - new Date(a.fechaAccion));
+  
+  let html = '';
+  
+  logs.forEach((log, idx) => {
+    const diffs = [];
+    const fields = [
+      { name: 'Fecha', key: 'fecha' },
+      { name: 'Tipo', key: 'tipo' },
+      { name: 'Categoría', key: 'categoria' },
+      { name: 'Descripción', key: 'descripcion' },
+      { name: 'Monto', key: 'monto', fmt: v => contFmt(parseFloat(v || 0)) },
+      { name: 'Mes Contable', key: 'mes', fmt: v => CONT_MESES_FULL[(parseInt(v) || 1) - 1] },
+      { name: 'Notas', key: 'notes' || 'notas' }
+    ];
+    
+    const stateBefore = log.antes || {};
+    const stateAfter = log.despues || {};
+    
+    fields.forEach(f => {
+      const valBefore = stateBefore[f.key] || '';
+      const valAfter = stateAfter[f.key] || '';
+      
+      const beforeStr = f.fmt ? f.fmt(valBefore) : String(valBefore);
+      const afterStr = f.fmt ? f.fmt(valAfter) : String(valAfter);
+      
+      if (beforeStr !== afterStr) {
+        diffs.push({
+          label: f.name,
+          before: beforeStr || '(vacío)',
+          after: afterStr || '(vacío)'
+        });
+      }
+    });
+    
+    let actionBadgeColor = '#d4a84b'; // edit
+    if (log.tipoAccion === 'Creado') actionBadgeColor = '#22c55e';
+    if (log.tipoAccion === 'Eliminado') actionBadgeColor = '#ef4444';
+    
+    html += '<div style="margin-bottom:16px; background:rgba(255,255,255,0.015); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px;">'+
+      '<div style="font-weight:700; color:var(--gold); font-size:12.5px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">'+
+        '<span>\u23F1\uFE0F Acción: <span style="color:'+actionBadgeColor+';">'+log.tipoAccion+'</span> el '+contFormatearFechaHora(log.fechaAccion)+'</span>'+
+        '<span style="font-size:10px; color:var(--muted);">Registro '+(logs.length - idx)+'</span>'+
+      '</div>';
+      
+    if (log.tipoAccion === 'Creado') {
+      html += '<div style="font-size:12px; color:#ccc; line-height:1.4;">'+
+        '<strong>Creado con:</strong><br>'+
+        '💰 Monto: <span style="color:#22c55e; font-weight:700;">'+contFmt(parseFloat(stateAfter.monto || 0))+'</span><br>'+
+        '🏷️ Categoría: '+stateAfter.categoria+'<br>'+
+        '📝 Descripción: '+stateAfter.descripcion+'<br>'+
+        '📅 Fecha: '+stateAfter.fecha+
+      '</div>';
+    } else if (log.tipoAccion === 'Eliminado') {
+      html += '<div style="font-size:12px; color:#ccc; line-height:1.4;">'+
+        '<strong>Eliminado con el estado:</strong><br>'+
+        '💰 Monto: <span style="color:#ef4444; font-weight:700;">'+contFmt(parseFloat(stateBefore.monto || 0))+'</span><br>'+
+        '🏷️ Categoría: '+stateBefore.categoria+'<br>'+
+        '📝 Descripción: '+stateBefore.descripcion+'<br>'+
+        '📅 Fecha: '+stateBefore.fecha+
+      '</div>';
+    } else {
+      if (diffs.length === 0) {
+        html += '<div style="color:var(--muted); font-size:12px;">No se registraron cambios en los campos principales.</div>';
+      } else {
+        html += '<table style="width:100%; font-size:12px; border-collapse:collapse;">'+
+          '<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><th style="text-align:left; color:var(--muted); padding:6px 4px; font-weight:600;">Campo Modificado</th><th style="text-align:left; color:#f87171; padding:6px 4px; font-weight:600;">Antes</th><th style="text-align:left; color:#4ade80; padding:6px 4px; font-weight:600;">Después</th></tr></thead>'+
+          '<tbody>'+
+            diffs.map(d => '<tr style="border-bottom:1px solid rgba(255,255,255,0.02);"><td style="padding:6px 4px; font-weight:600; color:#ccc;">'+d.label+'</td><td style="padding:6px 4px; color:#f87171; text-decoration:line-through;">'+d.before+'</td><td style="padding:6px 4px; color:#4ade80;">'+d.after+'</td></tr>').join('')+
+          '</tbody></table>';
+      }
+    }
+    
+    html += '</div>';
+  });
+  
+  contentEl.innerHTML = html;
+  document.getElementById('modalContHistorial').classList.add('open');
+}
+
 function contRenderMovimientos(el){
   const lista=contGetFiltrado();
+  
+  if (contSortOrder === 'ultimo') {
+    const activeIds = new Set(lista.map(m => m.id));
+    const deletedMovementsMap = {};
+    contAuditLog.forEach(log => {
+      if (log.tipoAccion === 'Eliminado' && !activeIds.has(log.movimientoId)) {
+        if (!deletedMovementsMap[log.movimientoId] || new Date(log.fechaAccion) > new Date(deletedMovementsMap[log.movimientoId].fechaAccion)) {
+          deletedMovementsMap[log.movimientoId] = log;
+        }
+      }
+    });
+    Object.values(deletedMovementsMap).forEach(log => {
+      if (log.antes) {
+        lista.push({
+          ...log.antes,
+          creadoEn: log.fechaAccion,
+          isDeleted: true
+        });
+      }
+    });
+  }
+
   if (contSortOrder === 'fecha') {
     lista.sort(function(a,b){
       return new Date(b.fecha||0)-new Date(a.fecha||0);
@@ -15769,16 +15917,44 @@ function contRenderMovimientos(el){
   '<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
   '<thead><tr style="background:rgba(212,168,75,0.04);border-bottom:1px solid rgba(212,168,75,0.15);"><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Fecha</th><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Categor\u00EDa</th><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Descripci\u00F3n</th><th style="padding:12px 16px;text-align:right;color:var(--gold);font-size:11px;text-transform:uppercase;">Monto</th><th style="padding:12px 16px;text-align:center;color:var(--gold);font-size:11px;text-transform:uppercase;">Tipo</th><th style="padding:12px 16px;text-align:center;color:var(--gold);font-size:11px;text-transform:uppercase;">Acc.</th></tr></thead>'+
   '<tbody>'+lista.map(function(m){
-    return'<tr style="border-bottom:1px solid rgba(255,255,255,0.03);" onmouseover="this.style.background=\'rgba(255,255,255,0.025)\'" onmouseout="this.style.background=\'\'">'+
-      '<td style="padding:10px 16px;color:#888;white-space:nowrap;line-height:1.2;">'+
-        '<div style="font-weight:600;">'+(m.fecha||'\u2014')+'</div>'+
-        (m.creadoEn ? '<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:2px;">\u23F1\uFE0F '+contFormatearFechaHora(m.creadoEn)+'</div>' : '')+
+    const hasHistory = contAuditLog.some(log => log.movimientoId === m.id);
+    const dateDisplay = m.fecha || '—';
+    const descDisplay = m.descripcion || '—';
+    const rowStyle = m.isDeleted ? 'border-bottom:1px solid rgba(255,255,255,0.03); opacity:0.65; background:rgba(239,68,68,0.02);' : 'border-bottom:1px solid rgba(255,255,255,0.03);';
+    const textStyle = m.isDeleted ? 'text-decoration:line-through; color:rgba(255,255,255,0.45);' : '';
+    
+    let timestampHtml = '';
+    if (m.isDeleted) {
+      timestampHtml = '<div style="font-size:9px;color:#ef4444;margin-top:2px;">❌ Eliminado el '+contFormatearFechaHora(m.creadoEn)+'</div>';
+    } else if (m.creadoEn) {
+      timestampHtml = '<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:2px;">\u23F1\uFE0F '+contFormatearFechaHora(m.creadoEn)+'</div>';
+    }
+    
+    if (hasHistory) {
+      timestampHtml += '<div onclick="event.stopPropagation(); contVerHistorial(\''+m.id+'\')" style="font-size:9px;color:var(--gold);margin-top:2.5px;cursor:pointer;text-decoration:underline;display:inline-block;">(Ver antes/después)</div>';
+    }
+
+    let actionBtnHtml = '';
+    if (m.isDeleted) {
+      actionBtnHtml = '<span style="color:#ef4444;font-size:11px;font-weight:700;">Eliminado</span>';
+    } else if (m.isAuto) {
+      actionBtnHtml = '<span style="color:#555;font-size:11px;">Auto</span>';
+    } else {
+      actionBtnHtml = '<button onclick="contEditarMovimiento(\''+m.id+'\')" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#888;padding:4px 8px;cursor:pointer;font-size:11px;" onmouseover="this.style.borderColor=\'var(--gold)\';this.style.color=\'var(--gold)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.1)\';this.style.color=\'#888\'">\u270F\uFE0F</button>';
+    }
+
+    return '<tr style="'+rowStyle+'" onmouseover="this.style.background=\'rgba(255,255,255,0.025)\'" onmouseout="this.style.background=\'\'">'+
+      '<td style="padding:10px 16px;color:#888;white-space:nowrap;line-height:1.2;'+textStyle+'">'+
+        '<div style="font-weight:600;">'+dateDisplay+'</div>'+
+        timestampHtml+
       '</td>'+
-      '<td style="padding:10px 16px;color:#ccc;">'+(CONT_CAT_ICONS[m.categoria]||'\u2022')+' '+m.categoria+'</td>'+
-      '<td style="padding:10px 16px;color:#fff;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(m.descripcion||'\u2014')+'</td>'+
-      '<td style="padding:10px 16px;text-align:right;color:'+(m.tipo==='ingreso'?'#22c55e':'#ef4444')+';font-weight:700;">'+(m.tipo==='ingreso'?'+':'-')+contFmt(parseFloat(m.monto||0))+'</td>'+
-      '<td style="padding:10px 16px;text-align:center;"><span style="padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;'+(m.tipo==='ingreso'?'background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.25)':'background:rgba(239,68,68,0.10);color:#ef4444;border:1px solid rgba(239,68,68,0.2)')+';">'+(m.tipo==='ingreso'?'\uD83D\uDCB9 Ingreso':'\uD83D\uDD34 Egreso')+'</span></td>'+
-      '<td style="padding:10px 16px;text-align:center;">'+(m.isAuto?'<span style="color:#555;font-size:11px;">Auto</span>':'<button onclick="contEditarMovimiento(\''+m.id+'\')" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#888;padding:4px 8px;cursor:pointer;font-size:11px;" onmouseover="this.style.borderColor=\'var(--gold)\';this.style.color=\'var(--gold)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.1)\';this.style.color=\'#888\'">\u270F\uFE0F</button>')+'</td>'+
+      '<td style="padding:10px 16px;color:#ccc;'+textStyle+'">'+(CONT_CAT_ICONS[m.categoria]||'\u2022')+' '+m.categoria+'</td>'+
+      '<td style="padding:10px 16px;color:#fff;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'+textStyle+'">'+descDisplay+'</td>'+
+      '<td style="padding:10px 16px;text-align:right;color:'+(m.isDeleted ? 'rgba(255,255,255,0.45)' : (m.tipo==='ingreso'?'#22c55e':'#ef4444'))+';font-weight:700;'+textStyle+'">'+(m.tipo==='ingreso'?'+':'-')+contFmt(parseFloat(m.monto||0))+'</td>'+
+      '<td style="padding:10px 16px;text-align:center;">'+
+        (m.isDeleted ? '<span style="padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);">❌ Eliminado</span>' :
+        '<span style="padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;'+(m.tipo==='ingreso'?'background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.25)':'background:rgba(239,68,68,0.10);color:#ef4444;border:1px solid rgba(239,68,68,0.2)')+';">'+(m.tipo==='ingreso'?'\uD83D\uDCB9 Ingreso':'\uD83D\uDD34 Egreso')+'</span>')+'</td>'+
+      '<td style="padding:10px 16px;text-align:center;">'+actionBtnHtml+'</td>'+
     '</tr>';
   }).join('')+'</tbody></table>')+'</div></div>';
 }
@@ -15931,7 +16107,14 @@ function contGuardarMovimiento(){
 
   movementsToAdd.forEach(function(obj) {
     const idx=contMovimientos.findIndex(function(m){return m.id===obj.id;});
-    if(idx>=0) contMovimientos[idx]=obj; else contMovimientos.push(obj);
+    if(idx>=0) {
+      const oldMov = contMovimientos[idx];
+      contRegistrarAuditoria('Editado', oldMov, obj);
+      contMovimientos[idx]=obj;
+    } else {
+      contRegistrarAuditoria('Creado', null, obj);
+      contMovimientos.push(obj);
+    }
   });
   
   contSave();
@@ -15957,6 +16140,10 @@ function contGuardarMovimiento(){
 function contEliminarMovimiento(){
   const id=document.getElementById('contMovId').value;if(!id)return;
   if(!confirm('\u00BFEliminar este movimiento?'))return;
+  const oldMov = contMovimientos.find(function(m){return m.id===id;});
+  if (oldMov) {
+    contRegistrarAuditoria('Eliminado', oldMov, null);
+  }
   contMovimientos=contMovimientos.filter(function(m){return m.id!==id;});
   
   contSave();
