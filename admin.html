@@ -15230,7 +15230,7 @@ function contRegistrarAuditoria(tipoAccion, antes, despues) {
     id: 'AUD-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
     tipoAccion: tipoAccion,
     fechaAccion: new Date().toISOString(),
-    movimientoId: antes ? antes.id : (despues ? despues.id : ''),
+    movimientoId: antes ? String(antes.id) : (despues ? String(despues.id) : ''),
     antes: antes ? { ...antes, historial: undefined } : null,
     despues: despues ? { ...despues, historial: undefined } : null
   };
@@ -15767,7 +15767,7 @@ function contFormatearFechaHora(isoStr) {
 }
 
 function contVerHistorial(id) {
-  const logs = contAuditLog.filter(log => log.movimientoId === id);
+  const logs = contAuditLog.filter(log => String(log.movimientoId) === String(id));
   if (logs.length === 0) {
     toast('No hay historial de cambios para este movimiento', 'info');
     return;
@@ -15861,12 +15861,13 @@ function contRenderMovimientos(el){
   const lista=contGetFiltrado();
   
   if (contSortOrder === 'ultimo') {
-    const activeIds = new Set(lista.map(m => m.id));
+    const activeIds = new Set(lista.map(m => String(m.id)));
     const deletedMovementsMap = {};
     contAuditLog.forEach(log => {
-      if (log.tipoAccion === 'Eliminado' && !activeIds.has(log.movimientoId)) {
-        if (!deletedMovementsMap[log.movimientoId] || new Date(log.fechaAccion) > new Date(deletedMovementsMap[log.movimientoId].fechaAccion)) {
-          deletedMovementsMap[log.movimientoId] = log;
+      const logIdStr = String(log.movimientoId);
+      if (log.tipoAccion === 'Eliminado' && !activeIds.has(logIdStr)) {
+        if (!deletedMovementsMap[logIdStr] || new Date(log.fechaAccion) > new Date(deletedMovementsMap[logIdStr].fechaAccion)) {
+          deletedMovementsMap[logIdStr] = log;
         }
       }
     });
@@ -15917,7 +15918,7 @@ function contRenderMovimientos(el){
   '<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
   '<thead><tr style="background:rgba(212,168,75,0.04);border-bottom:1px solid rgba(212,168,75,0.15);"><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Fecha</th><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Categor\u00EDa</th><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Descripci\u00F3n</th><th style="padding:12px 16px;text-align:right;color:var(--gold);font-size:11px;text-transform:uppercase;">Monto</th><th style="padding:12px 16px;text-align:center;color:var(--gold);font-size:11px;text-transform:uppercase;">Tipo</th><th style="padding:12px 16px;text-align:center;color:var(--gold);font-size:11px;text-transform:uppercase;">Acc.</th></tr></thead>'+
   '<tbody>'+lista.map(function(m){
-    const hasHistory = contAuditLog.some(log => log.movimientoId === m.id);
+    const hasHistory = contAuditLog.some(log => String(log.movimientoId) === String(m.id));
     const dateDisplay = m.fecha || '—';
     const descDisplay = m.descripcion || '—';
     const rowStyle = m.isDeleted ? 'border-bottom:1px solid rgba(255,255,255,0.03); opacity:0.65; background:rgba(239,68,68,0.02);' : 'border-bottom:1px solid rgba(255,255,255,0.03);';
