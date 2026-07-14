@@ -2521,7 +2521,7 @@ textarea.gemini-card-input {
 </div>
 
 <!-- MODAL CONTABILIDAD — AGREGAR MOVIMIENTO -->
-<div class="modal-overlay" id="modalContabilidad" onclick="if(event.target===this) closeModal('modalContabilidad')">
+<div class="modal-overlay" id="modalContabilidad" style="z-index: 12000;" onclick="if(event.target===this) closeModal('modalContabilidad')">
   <div class="modal-box" style="max-width:560px;">
     <div class="modal-title" id="contModalTitle">➕ Agregar Movimiento</div>
     <input type="hidden" id="contMovId"/>
@@ -2633,7 +2633,7 @@ textarea.gemini-card-input {
     <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; gap:12px; flex-wrap:wrap;">
       <div class="modal-title" id="contDetalleMesTitle" style="margin-bottom:0;">📋 Movimientos del Mes</div>
       <div style="display:flex; gap:10px; align-items:center; margin-left:auto; margin-right:12px; flex-wrap:wrap;">
-        <button onclick="closeModal('modalContDetalleMes'); contAbrirModal(null, contDetalleMesActivo, contAnoFiltro)" style="background:var(--gold); border:none; color:#121212; padding:0 12px; height:28px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:all 0.2s;" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter=''">➕ Agregar Movimiento</button>
+        <button onclick="contAbrirModal(null, contDetalleMesActivo, contAnoFiltro)" style="background:var(--gold); border:none; color:#121212; padding:0 12px; height:28px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:all 0.2s;" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter=''">➕ Agregar Movimiento</button>
         <select class="form-input" id="contDetalleMesSort" style="width:auto; height:28px; padding:0 8px; background:#18181b; border:1px solid rgba(255,255,255,0.08); color:#fff; font-size:11px; border-radius:6px; cursor:pointer;" onchange="contCambiarOrdenDetalleMes(this.value)">
           <option value="fecha">Ordenar por: 📅 Fecha</option>
           <option value="categoria">Ordenar por: 🏷️ Categoría</option>
@@ -15595,7 +15595,7 @@ function contSeleccionarMesYVerMovimientos(mes){
           const montoColor = m.tipo === 'ingreso' ? '#22c55e' : '#ef4444';
           const montoSign = m.tipo === 'ingreso' ? '+' : '-';
           const editBtn = m.isAuto ? '<span style="color:#555; font-size:11px;">Auto</span>' : 
-            '<button onclick="closeModal(\'modalContDetalleMes\'); contEditarMovimiento(\'' + m.id + '\')" style="background:none; border:1px solid rgba(255,255,255,0.1); border-radius:7px; color:#888; padding:3px 6px; cursor:pointer; font-size:11px;" onmouseover="this.style.borderColor=\'var(--gold)\'; this.style.color=\'var(--gold)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.1)\'; this.style.color=\'#888\'">✏️</button>';
+            '<button onclick="contEditarMovimiento(\'' + m.id + '\')" style="background:none; border:1px solid rgba(255,255,255,0.1); border-radius:7px; color:#888; padding:3px 6px; cursor:pointer; font-size:11px;" onmouseover="this.style.borderColor=\'var(--gold)\'; this.style.color=\'var(--gold)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.1)\'; this.style.color=\'#888\'">✏️</button>';
           
           return '<tr style="border-bottom:1px solid rgba(255,255,255,0.03);" onmouseover="this.style.background=\'rgba(255,255,255,0.025)\'" onmouseout="this.style.background=\'\'">' +
             '<td style="padding:8px 12px; color:#888; white-space:nowrap;">' + (m.fecha || '—') + '</td>' +
@@ -16206,6 +16206,10 @@ function contGuardarMovimiento(){
   closeModal('modalContabilidad');
   renderContabilidad();
   
+  if (document.getElementById('modalContDetalleMes').classList.contains('open') && typeof contDetalleMesActivo !== 'undefined' && contDetalleMesActivo !== null) {
+    contSeleccionarMesYVerMovimientos(contDetalleMesActivo);
+  }
+  
   if (mesesActivo > 1) {
     toast(mesesActivo + ' movimientos guardados \u2713', 'success');
   } else {
@@ -16218,6 +16222,9 @@ function contGuardarMovimiento(){
         await contSincronizarMovimientoDrive(movementsToAdd[i]);
       }
       renderContabilidad();
+      if (document.getElementById('modalContDetalleMes').classList.contains('open') && typeof contDetalleMesActivo !== 'undefined' && contDetalleMesActivo !== null) {
+        contSeleccionarMesYVerMovimientos(contDetalleMesActivo);
+      }
     })();
   }
 }
@@ -16236,9 +16243,16 @@ function contEliminarMovimiento(){
   renderContabilidad();
   toast('Movimiento eliminado','success');
   
+  if (document.getElementById('modalContDetalleMes').classList.contains('open') && typeof contDetalleMesActivo !== 'undefined' && contDetalleMesActivo !== null) {
+    contSeleccionarMesYVerMovimientos(contDetalleMesActivo);
+  }
+  
   if (CONT_SCRIPT_URL) {
     contEliminarMovimientoDrive(id).then(() => {
       renderContabilidad();
+      if (document.getElementById('modalContDetalleMes').classList.contains('open') && typeof contDetalleMesActivo !== 'undefined' && contDetalleMesActivo !== null) {
+        contSeleccionarMesYVerMovimientos(contDetalleMesActivo);
+      }
     });
   }
 }
