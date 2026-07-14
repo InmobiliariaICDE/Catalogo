@@ -15200,6 +15200,7 @@ async function contCargarDatos() {
 let contActiveTab = 'resumen';
 let contAnoFiltro = new Date().getFullYear();
 let contMesFiltro = 0;
+let contSortOrder = 'fecha';
 let contCharts = {};
 
 const CONT_MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -15709,15 +15710,44 @@ function contRenderInversiones(el){
   '<div class="cont-pareto-grid">'+opts.map(function(inv){return'<div class="cont-inv-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div class="cont-inv-title">'+inv.titulo+'</div>'+(inv.rec?'<span style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;white-space:nowrap;">\u2713 REC.</span>':'')+'</div><div class="cont-inv-desc">'+inv.desc+'</div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px;font-size:12px;"><strong style="color:var(--muted);">Acci\u00F3n:</strong> <span style="color:#ccc;">'+inv.accion+'</span></div><div class="cont-inv-meta"><div class="cont-inv-badge '+inv.riesgo+'">Riesgo '+inv.riesgo+'</div><div class="cont-inv-badge media">\u23F1 '+inv.horizonte+'</div></div><div style="display:flex;justify-content:space-between;align-items:center;"><div class="cont-inv-roi">~'+inv.roi+'% <span>ROI estimado</span></div>'+(montoPropuesto>0?'<div style="font-size:11px;color:var(--muted);">Retorno: <strong style="color:var(--gold);">'+contFmt(montoPropuesto*(inv.roi/100))+'</strong></div>':'')+'</div></div>';}).join('')+'</div>';
 }
 
+function contCambiarOrden(val){
+  contSortOrder = val;
+  contRenderTabContent();
+}
+
 function contRenderMovimientos(el){
-  const lista=contGetFiltrado().sort(function(a,b){
-    const catComp = (a.categoria || '').localeCompare(b.categoria || '');
-    if (catComp !== 0) return catComp;
-    return new Date(b.fecha||0)-new Date(a.fecha||0);
-  });
+  const lista=contGetFiltrado();
+  if (contSortOrder === 'fecha') {
+    lista.sort(function(a,b){
+      return new Date(b.fecha||0)-new Date(a.fecha||0);
+    });
+  } else if (contSortOrder === 'categoria') {
+    lista.sort(function(a,b){
+      return (a.categoria || '').localeCompare(b.categoria || '');
+    });
+  } else if (contSortOrder === 'mes') {
+    lista.sort(function(a,b){
+      return (parseInt(a.mes) || 0) - (parseInt(b.mes) || 0);
+    });
+  } else if (contSortOrder === 'ultimo') {
+    lista.sort(function(a,b){
+      const timeA = a.creadoEn ? new Date(a.creadoEn) : new Date(a.fecha || 0);
+      const timeB = b.creadoEn ? new Date(b.creadoEn) : new Date(b.fecha || 0);
+      return timeB - timeA;
+    });
+  }
   el.innerHTML=
   '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDCCB Todos los Movimientos</div>'+
-  '<div style="display:flex;gap:10px;"><button class="cont-btn-add" onclick="contAbrirModal(\'ingreso\')">\u2795 Ingreso</button><button class="cont-btn-add" onclick="contAbrirModal(\'egreso\')" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444;">\u2795 Egreso</button></div></div>'+
+  '<div style="display:flex;gap:10px;align-items:center;">'+
+    '<span style="font-size:12px;color:var(--muted);white-space:nowrap;">Ordenar por:</span>'+
+    '<select class="form-input" style="width:auto;height:32px;padding:0 8px;background:#18181b;border:1px solid rgba(255,255,255,0.08);color:#fff;font-size:12px;border-radius:8px;cursor:pointer;" onchange="contCambiarOrden(this.value)">'+
+      '<option value="fecha"'+(contSortOrder==='fecha'?' selected':'')+'>\uD83D\uDCC5 Fecha</option>'+
+      '<option value="categoria"'+(contSortOrder==='categoria'?' selected':'')+'>\uD83C\uDFF7\uFE0F Categor\u00EDa</option>'+
+      '<option value="mes"'+(contSortOrder==='mes'?' selected':'')+'>\uD83D\uDDD3\uFE0F Mes</option>'+
+      '<option value="ultimo"'+(contSortOrder==='ultimo'?' selected':'')+'>\u23F1\uFE0F \u00DAltimo movimiento</option>'+
+    '</select>'+
+    '<button class="cont-btn-add" onclick="contAbrirModal(\'ingreso\')">\u2795 Ingreso</button><button class="cont-btn-add" onclick="contAbrirModal(\'egreso\')" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444;">\u2795 Egreso</button>'+
+  '</div></div>'+
   '<div class="cont-panel-body" style="padding:0;">'+
   (lista.length===0?'<div class="cont-empty" style="padding:40px;">Ninguno a\u00FAn.<br><br><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Primero</button></div>':
   '<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
