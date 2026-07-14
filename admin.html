@@ -2632,7 +2632,8 @@ textarea.gemini-card-input {
   <div class="modal-box" style="max-width:850px; width: 90%; max-height:85vh; display:flex; flex-direction:column; padding: 20px;">
     <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; gap:12px; flex-wrap:wrap;">
       <div class="modal-title" id="contDetalleMesTitle" style="margin-bottom:0;">📋 Movimientos del Mes</div>
-      <div style="display:flex; gap:8px; align-items:center; margin-left:auto; margin-right:12px;">
+      <div style="display:flex; gap:10px; align-items:center; margin-left:auto; margin-right:12px; flex-wrap:wrap;">
+        <button onclick="closeModal('modalContDetalleMes'); contAbrirModal(null, contDetalleMesActivo, contAnoFiltro)" style="background:var(--gold); border:none; color:#121212; padding:0 12px; height:28px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:all 0.2s;" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter=''">➕ Agregar Movimiento</button>
         <span style="font-size:11px; color:var(--muted); white-space:nowrap;">Ordenar por:</span>
         <select class="form-input" id="contDetalleMesSort" style="width:auto; height:28px; padding:0 8px; background:#18181b; border:1px solid rgba(255,255,255,0.08); color:#fff; font-size:11px; border-radius:6px; cursor:pointer;" onchange="contCambiarOrdenDetalleMes(this.value)">
           <option value="fecha">📅 Fecha</option>
@@ -15220,7 +15221,7 @@ async function contCargarDatos() {
   }
 }
 
-let contActiveTab = 'resumen';
+let contActiveTab = 'flujo';
 let contAnoFiltro = new Date().getFullYear();
 let contMesFiltro = 0;
 let contSortOrder = 'fecha';
@@ -16032,15 +16033,27 @@ function contRenderMovimientos(el){
   }).join('')+'</tbody></table>')+'</div></div>';
 }
 
-function contAbrirModal(tipoDefault){
+function contAbrirModal(tipoDefault, mesDefault, anoDefault){
   document.getElementById('contModalTitle').textContent='\u2795 Agregar Movimiento';
   document.getElementById('contMovId').value='';
   document.getElementById('contMovTipo').value=tipoDefault||'ingreso';
   document.getElementById('contMovCat').value=(tipoDefault==='egreso'?'N\u00F3mina/Personal':'Venta de Inmueble');
   document.getElementById('contMovDesc').value='';
   document.getElementById('contMovMonto').value='';
-  document.getElementById('contMovFecha').value=new Date().toISOString().split('T')[0];
-  document.getElementById('contMovMes').value=String(new Date().getMonth()+1);
+  
+  const targetYear = anoDefault || contAnoFiltro || new Date().getFullYear();
+  const targetMonth = mesDefault || contDetalleMesActivo || (new Date().getMonth() + 1);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const targetMonthStr = String(targetMonth).padStart(2, '0');
+  
+  const today = new Date();
+  if (today.getFullYear() === parseInt(targetYear) && (today.getMonth() + 1) === parseInt(targetMonth)) {
+    document.getElementById('contMovFecha').value = todayStr;
+  } else {
+    document.getElementById('contMovFecha').value = `${targetYear}-${targetMonthStr}-01`;
+  }
+  
+  document.getElementById('contMovMes').value = String(targetMonth);
   document.getElementById('contMovMesesActivo').value='1';
   document.getElementById('contMovMesesActivoDiv').style.display='';
   document.getElementById('contMovNotas').value='';
