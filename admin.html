@@ -15648,6 +15648,18 @@ function contRenderFlujo(el){
             labels:CONT_MESES,
             datasets:[
               {
+                label:'Ingresos (Total)',
+                data:md.map(function(m){return m.ingreso;}),
+                type:'line',
+                borderColor:'#3b82f6',
+                backgroundColor:'transparent',
+                pointRadius:0,
+                pointHoverRadius:0,
+                pointHitRadius:0,
+                showLine:false,
+                fill:false
+              },
+              {
                 label:'Egresos (Gastos)',
                 data:md.map(function(m){return m.egreso;}),
                 backgroundColor:gradEgr,
@@ -15683,14 +15695,7 @@ function contRenderFlujo(el){
                 borderWidth:1,
                 padding:10,
                 callbacks:{
-                  label:function(ctx){return' '+ctx.dataset.label+': '+contFmt(ctx.raw);},
-                  footer:function(items){
-                    let total = 0;
-                    items.forEach(function(item){
-                      total += item.raw;
-                    });
-                    return ' Total (Ingresos): ' + contFmt(total);
-                  }
+                  label:function(ctx){return' '+ctx.dataset.label+': '+contFmt(ctx.raw);}
                 }
               }
             },
