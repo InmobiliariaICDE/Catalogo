@@ -15852,6 +15852,7 @@ function contVerHistorial(id) {
     let actionBadgeColor = '#d4a84b'; // edit
     if (log.tipoAccion === 'Creado') actionBadgeColor = '#22c55e';
     if (log.tipoAccion === 'Eliminado') actionBadgeColor = '#ef4444';
+    if (log.tipoAccion === 'Restablecido') actionBadgeColor = '#10b981';
     
     html += '<div style="margin-bottom:16px; background:rgba(255,255,255,0.015); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px;">'+
       '<div style="font-weight:700; color:var(--gold); font-size:12.5px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">'+
@@ -15874,6 +15875,14 @@ function contVerHistorial(id) {
         '🏷️ Categoría: '+stateBefore.categoria+'<br>'+
         '📝 Descripción: '+stateBefore.descripcion+'<br>'+
         '📅 Fecha: '+stateBefore.fecha+
+      '</div>';
+    } else if (log.tipoAccion === 'Restablecido') {
+      html += '<div style="font-size:12px; color:#ccc; line-height:1.4;">'+
+        '<strong>Restablecido a su estado activo:</strong><br>'+
+        '💰 Monto: <span style="color:#10b981; font-weight:700;">'+contFmt(parseFloat(stateAfter.monto || 0))+'</span><br>'+
+        '🏷️ Categoría: '+stateAfter.categoria+'<br>'+
+        '📝 Descripción: '+stateAfter.descripcion+'<br>'+
+        '📅 Fecha: '+stateAfter.fecha+
       '</div>';
     } else {
       if (diffs.length === 0) {
@@ -15976,7 +15985,11 @@ function contRenderMovimientos(el){
     } else {
       const displayTime = latestLog ? latestLog.fechaAccion : m.creadoEn;
       if (displayTime) {
-        timestampHtml = '<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:2px;">\u23F1\uFE0F '+contFormatearFechaHora(displayTime)+'</div>';
+        if (latestLog && latestLog.tipoAccion === 'Restablecido') {
+          timestampHtml = '<div style="font-size:9px;color:#10b981;margin-top:2px;">♻️ Restablecido el '+contFormatearFechaHora(displayTime)+'</div>';
+        } else {
+          timestampHtml = '<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:2px;">\u23F1\uFE0F '+contFormatearFechaHora(displayTime)+'</div>';
+        }
       }
     }
     
