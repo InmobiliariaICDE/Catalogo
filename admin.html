@@ -15659,52 +15659,55 @@ function contRenderFlujo(el){
       if(ctx){
         const ctx2d = ctx.getContext('2d');
         
-        // Egresos Gradient (Light bottom part)
-        const gradEgr = ctx2d.createLinearGradient(0, 0, 0, 300);
-        gradEgr.addColorStop(0, 'rgba(239,68,68,0.15)');
-        gradEgr.addColorStop(1, 'rgba(239,68,68,0.05)');
+        const gradIng = ctx2d.createLinearGradient(0, 0, 0, 300);
+        gradIng.addColorStop(0, 'rgba(255, 255, 255, 0.06)');
+        gradIng.addColorStop(1, 'rgba(255, 255, 255, 0.01)');
 
-        // Utilidad Gradient (Light top cap)
+        const gradEgr = ctx2d.createLinearGradient(0, 0, 0, 300);
+        gradEgr.addColorStop(0, 'rgba(239, 68, 68, 0.05)');
+        gradEgr.addColorStop(1, 'rgba(239, 68, 68, 0)');
+
         const gradUt = ctx2d.createLinearGradient(0, 0, 0, 300);
-        gradUt.addColorStop(0, 'rgba(34,197,94,0.15)');
-        gradUt.addColorStop(1, 'rgba(34,197,94,0.05)');
+        gradUt.addColorStop(0, 'rgba(59, 130, 246, 0.16)');
+        gradUt.addColorStop(1, 'rgba(59, 130, 246, 0.01)');
 
         contCharts['chartFlujo']=new Chart(ctx,{
-          type:'bar',
+          type:'line',
           data:{
             labels:CONT_MESES,
             datasets:[
               {
                 label:'Ingresos (Total)',
                 data:md.map(function(m){return m.ingreso;}),
-                type:'line',
-                borderColor:'#3b82f6',
-                backgroundColor:'transparent',
-                pointRadius:0,
-                pointHoverRadius:0,
-                pointHitRadius:0,
-                showLine:false,
-                fill:false
+                borderColor:'rgba(255, 255, 255, 0.55)',
+                backgroundColor:gradIng,
+                borderWidth:2,
+                pointRadius:2.5,
+                pointHoverRadius:5,
+                tension:0.38,
+                fill:true
               },
               {
                 label:'Egresos (Gastos)',
                 data:md.map(function(m){return m.egreso;}),
-                backgroundColor:gradEgr,
                 borderColor:'#ef4444',
-                borderWidth:1.5,
-                borderRadius:{topLeft:0, topRight:0, bottomLeft:6, bottomRight:6},
-                borderSkipped:false,
-                maxBarThickness:24
+                backgroundColor:gradEgr,
+                borderWidth:1.8,
+                pointRadius:2.5,
+                pointHoverRadius:5,
+                tension:0.38,
+                fill:true
               },
               {
                 label:'Utilidad (Ganancia)',
-                data:md.map(function(m){return Math.max(0, m.utilidad);}),
+                data:md.map(function(m){return m.utilidad;}),
+                borderColor:'#3b82f6',
                 backgroundColor:gradUt,
-                borderColor:'#22c55e',
-                borderWidth:1.5,
-                borderRadius:{topLeft:6, topRight:6, bottomLeft:0, bottomRight:0},
-                borderSkipped:false,
-                maxBarThickness:24
+                borderWidth:2.5,
+                pointRadius:3,
+                pointHoverRadius:5.5,
+                tension:0.38,
+                fill:true
               }
             ]
           },
@@ -15728,7 +15731,7 @@ function contRenderFlujo(el){
             },
             scales:{
               x:{
-                stacked:true,
+                stacked:false,
                 grid:{
                   color:'rgba(255,255,255,0.035)',
                   borderDash:[4, 4],
@@ -15740,7 +15743,7 @@ function contRenderFlujo(el){
                 }
               },
               y:{
-                stacked:true,
+                stacked:false,
                 grid:{
                   color:'rgba(255,255,255,0.035)',
                   borderDash:[4, 4],
