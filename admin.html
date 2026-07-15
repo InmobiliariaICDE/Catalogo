@@ -9754,14 +9754,34 @@ function sendAdminReminder(tenantName, prop, amount, month, year, dueDay, direct
   if (!phone) return;
   
   const cleanPhone = phone.replace(/[^\d]/g, '');
-  const msg = `Hola ${tenantName || 'Inquilino'}, te escribimos de ICDE Inmobiliaria para recordarte el pago del canon de arrendamiento de la propiedad *${prop}* por valor de *${safeFormatP(amount)}* correspondiente a *${month}/${year}*. Recuerda que el día límite de pago es el ${dueDay}. ¡Muchas gracias!`;
+  
+  const ahora = new Date();
+  const monthsMap = {
+    "ENERO": 0, "FEBRERO": 1, "MARZO": 2, "ABRIL": 3, "MAYO": 4, "JUNIO": 5,
+    "JULIO": 6, "AGOSTO": 7, "SEPTIEMBRE": 8, "OCTUBRE": 9, "NOVIEMBRE": 10, "DICIEMBRE": 11
+  };
+  const targetMonthNum = monthsMap[String(month).toUpperCase()] || ahora.getMonth();
+  const targetYearNum = parseInt(year, 10) || ahora.getFullYear();
+  const dueDayVal = Math.round(dueDay) || 5;
+
+  const dueTargetDate = new Date(targetYearNum, targetMonthNum, dueDayVal, 0, 0, 0, 0);
+  const todayZero = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 0, 0, 0, 0);
+
+  let msg = '';
+  if (todayZero.getTime() < dueTargetDate.getTime()) {
+    // Un día antes (o antes) del día de cobro
+    msg = `¡Buenos días, ${tenantName || 'Inquilino'}! ☀️\n\nLe contacta el asistente IA de ICDE Inmobiliaria, espero se encuentre muy bien.\n\nPara recordarle que mañana es el día acordado para el pago del arrendamiento de ${prop}.\n\nSabemos que la vida cotidiana es agitada y a veces se nos pueden pasar los detalles, por eso estamos aquí para apoyarle. 😊\n\nValoramos su compromiso y puntualidad. Si tiene alguna pregunta o novedad, no dude en comunicarse con nosotros, con gusto le atendemos. ¡Gracias por ser parte de la familia ICDE!\n\nAtentamente, 🏠 ICDE Inmobiliaria`;
+  } else {
+    // Cuando inicie el día de cobro (o después)
+    msg = `Hola ${tenantName || 'Inquilino'} te escribimos de ICDE Inmobiliaria para recordarte el pago del arrendamiento de ${prop}. ¡Muchas gracias!`;
+  }
   
   if (waBridgeConnected) {
     toast('Enviando recordatorio automático...', 'info');
-    fetch('http://localhost:3000/send-reminder', {
+    fetch('http://localhost:3000/send-message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ number: cleanPhone, name: tenantName || 'Inquilino', property: prop, amount: amount, dueDate: dueDay })
+      body: JSON.stringify({ number: cleanPhone, message: msg })
     }).then(res => {
       if (res.ok) {
         toast('Recordatorio WhatsApp enviado ✓', 'success');
