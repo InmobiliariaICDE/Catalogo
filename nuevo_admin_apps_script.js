@@ -46,6 +46,7 @@ function doPost(e) {
     if (params.action === 'importAdminData')   return importAdminDataFromJSON(params.data);
     if (params.action === 'saveAdminPayment')  return saveAdminPaymentToSheet(params);
     if (params.action === 'saveAdminProperty') return saveAdminPropertyToSheet(params);
+    if (params.action === 'deleteAdminProperty') return deleteAdminPropertyFromSheet(params);
     return createJsonResponse({ error: 'Acción no válida en POST' });
   } catch (err) {
     return createJsonResponse({ error: err.toString() });
@@ -532,4 +533,44 @@ function _getMonthStatus(val, year, monthIdx, startDateStr, monthlyRent, dueDay)
   }
 
   return { status: 'PENDING', value: val };
+}
+
+// ELIMINAR INMUEBLE DE LA HOJA
+function deleteAdminPropertyFromSheet(params) {
+  const sheet = getAdminSheet();
+  if (!sheet) return createJsonResponse({ success: false, error: 'No se encontró la hoja de administración en el Sheet' });
+
+  const values = sheet.getDataRange().getValues();
+  let rowIdx = -1;
+
+  for (let i = 0; i < values.length; i++) {
+    const sheetId = String(values[i][0]).trim();
+    const targetId = String(params.propertyId).trim();
+    if (sheetId === targetId || (parseFloat(sheetId) === parseFloat(targetId) && !isNaN(parseFloat(sheetId)))) {
+      rowIdx = i + 1;
+      break;
+    }
+  }
+
+  if (rowIdx === -1 && params.name) {
+    const cleanName = String(params.name).trim().toLowerCase();
+    const nameCol0Idx = 8; // Col I (Inmueble / Incrementos)
+    for (let i = 0; i < values.length; i++) {
+      const cellName = String(values[i][nameCol0Idx] || '').trim().toLowerCase();
+      if (cellName && (cellName.indexOf(cleanName) !== -1 || cleanName.indexOf(cellName) !== -1)) {
+        rowIdx = i + 1;
+        break;
+      }
+    }
+  }
+
+  if (rowIdx === -1) {
+    return createJsonResponse({ 
+      success: false, 
+      error: 'Inmueble no encontrado en el Sheet para eliminar. ID: ' + params.propertyId 
+    });
+  }
+
+  sheet.deleteRow(rowIdx);
+  return createJsonResponse({ success: true, rowDeleted: rowIdx });
 }

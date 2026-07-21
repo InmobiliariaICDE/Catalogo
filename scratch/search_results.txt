@@ -1,0 +1,171 @@
+Found 170 potential lines.
+195: .btn-danger{background:rgba(239,68,68,.1);color:#ef4444;}
+196: .btn-danger:hover{background:rgba(239,68,68,.2);color:#ff5f5f;transform:translate(-1px,-1px);box-shadow: 0 2px 8px rgba(0,0,0,0.2);}
+2416:       <button class="btn btn-danger" id="btnEliminarVisita" style="display:none;" onclick="eliminarVisita()">🗑 Eliminar</button>
+2539:           <option value="Venta de Inmueble">🏠 Venta de Inmueble</option>
+2598:       <button class="btn btn-danger btn-sm" id="contMovBtnEliminar" style="display:none;" onclick="contEliminarMovimiento()">🗑 Eliminar</button>
+2737: let deletedLeads = [];
+2738: localStorage.removeItem('icde_deleted_leads');
+2739: localStorage.removeItem('icde_deleted_phones');
+2744: async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
+2753:     let deletedPhones = [];
+2760:       if (l.id && deletedLeads.includes(String(l.id).trim())) {
+2769:       if (telLimpio && deletedPhones.includes(telLimpio)) {
+2866:       if (forceCloudDelete && idsParaBorrarDeNube.length > 0 && typeof CRM_SCRIPT_URL !== 'undefined' && CRM_SCRIPT_URL) {
+2870:             fetch(CRM_SCRIPT_URL + '?action=deleteLead&id=' + encodeURIComponent(id) + '&t=' + Date.now());
+2939:     buscar:'', filtros:{tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[]},
+2950:   { key:'tipoInmueble', campo:'Tipo de inmueble', lbl:'Tipo de inmueble',
+3038:     if(f.tipoInmueble?.length && !f.tipoInmueble.some(v => norm(v) === norm(d['Tipo de inmueble']))) return false;
+3210:   setFSt(pfx, initVals || {tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[], mapActive: false});
+3341:   delete stBase[c.key];
+3564:     if(st.tipoInmueble?.length) p.set('tipo', st.tipoInmueble.join(','));
+3713:     const deletedCount = dataDedup.deletedCount || 0;
+3722:     toast(`✓ Deduplicados: ${deletedCount} borrados. Reparados: ${repaired} Full_JSON actualizados.`, 'success');
+4368:       else if (nk === 'antiguedad del inmueble' || nk === 'antiguedad' || nk === 'antiguedad inmueble' || nk === 'antigedad del inmueble' || nk === 'antigedad' || nk === 'antigedad inmueble') k = 'Antigüedad del Inmueble';
+4408:         else if (nk.includes('antiguedad') || nk.includes('antigedad')) k = 'Antigüedad del Inmueble';
+5268:                 <button class="btn btn-sm btn-danger" onclick="eliminarLead('${l.id}')" title="Eliminar lead">🗑</button>
+5508:     <button class="btn btn-danger btn-sm" style="width:100%; font-weight:700; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onclick="eliminarLead('${lead.id}')">🗑 Eliminar Cliente Permanentemente</button>
+5638:           <button class="btn btn-sm btn-danger" style="padding:6px; min-width:32px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#ef4444;" onclick="event.stopPropagation(); eliminarPropEnviada('${lead.id}','${cod}')" title="Eliminar de enviadas">
+5719: function eliminarPropEnviada(leadId, cod){
+5720:   if(!confirm(`¿Eliminar la propiedad ${cod} de la lista de enviadas?`)) return;
+5724:   // Eliminar de propsEnviadas
+5748: async function eliminarLead(id){ 
+5749:   console.log('[eliminarLead] Solicitando eliminación para ID:', id);
+5750:   if(!confirm('¿Estás seguro de eliminar este cliente? Esta acción también lo eliminará de la nube y no se puede deshacer.')) return; 
+5753:     console.log('[eliminarLead] Borrando citas genéricas del contenedor global...');
+5763:   console.log('[eliminarLead] Lead a borrar encontrado localmente:', leadABorrar);
+5780:       console.log('[eliminarLead] Marcando para eliminación en la nube celular:', celularABorrar);
+5784:   console.log('[eliminarLead] Marcando para eliminación en la nube IDs:', idsABorrar);
+5786:   // Eliminar localmente primero (por ID y por teléfono celular para barrer duplicados locales)
+5803:         let url = CRM_SCRIPT_URL + '?action=deleteLead';
+5808:         console.log('[eliminarLead] Ejecutando fetch de eliminación en la nube:', url);
+5810:         console.log('[eliminarLead] Fetch de eliminación en la nube completado (no-cors).');
+5813:         console.error('[eliminarLead] Error eliminando de la nube:', e);
+6159:     const btnEliminar = document.getElementById('btnEliminarVisita');
+6160:     if (btnEliminar) btnEliminar.style.display = v ? 'block' : 'none';
+6515: async function syncDeleteCita(id){
+6521:       body:JSON.stringify({action:'deleteCita',id:id})
+6526: function eliminarVisita(){
+6529:   if(!confirm('¿Estás seguro de eliminar esta cita?')) return;
+6531:   // 1. Eliminar de la agenda global
+6535:   // 2. Eliminar del lead (si existe)
+6553:   else syncDeleteCita(id);
+6590:             <span style="font-size:13px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.08em;">Top Inmuebles más Visitados</span>
+6592:           <div id="citasTopInmuebles" style="display:flex; flex-direction:column; gap:10px;">
+6644:                 <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25); position: sticky; top: 0; z-index: 100; background: linear-gradient(rgba(212, 168, 75, 0.04), rgba(212, 168, 75, 0.04)), var(--bg2);">Inmueble</th>
+6682:   const container = document.getElementById('citasTopInmuebles');
+6872:     <div style="font-size:12px; color:var(--gold); margin-top:4px; font-weight:600;">📍 Inmueble: ${cita.codigo}</div>
+7514:           const msgVisual = `🔔 <strong>Cobro de Arriendo:</strong> Mañana vence el plazo para cobrar el arriendo de <strong>${propName}</strong> ${inquilinoText} por valor de <strong>${rentVal}</strong>.
+8280: - "CONSULTAR_SALDO": Si pregunta por balances financieros, ingresos, cobros de administración o datos del edificio Silvia. Parámetros:
+8384:         <span class="gemini-card-lbl">Inmueble:</span>
+8654:   let totalRecaudoSilvia = 0;
+8655:   let totalAbonoSilvia = 0;
+8659:       totalRecaudoSilvia += parseFloat(t.recaudo) || 0;
+8660:       totalAbonoSilvia += parseFloat(t.abono) || 0;
+8663:   const balanceSilvia = totalRecaudoSilvia - totalAbonoSilvia;
+8671:       <div class="gemini-card-row"><span class="gemini-card-lbl">Edif. Silvia Recaudo:</span><span class="gemini-card-val">${safeFormatP(totalAbonoSilvia)}</span></div>
+8672:       <div class="gemini-card-row"><span class="gemini-card-lbl">Edif. Silvia Pendiente:</span><span class="gemini-card-val">${safeFormatP(balanceSilvia)}</span></div>
+8977:       <div class="section-header"><div class="section-title">💼 Administración de Inmuebles</div></div>
+9007:       <div class="section-title" style="margin-bottom:0;">💼 Administración de Inmuebles</div>
+9074:           <button class="btn btn-gold btn-sm" style="height: 38px; border-radius: 10px; margin-left: 5px; flex-shrink: 0; padding: 0 16px; font-weight: 700;" onclick="abrirCrearInmuebleAdmin()">➕ Crear Nueva Propiedad</button>
+9200:   // Metricas Edificio Silvia
+9206:     const isSilvia = p.owner && String(p.owner).toLowerCase().trim() === 'silvia';
+9212:         if (isSilvia) silviaPendiente += rent;
+9222:         if (isSilvia) {
+9227:         if (isSilvia) {
+9234:         if (isSilvia) {
+9241:         if (isSilvia) silviaActivos++;
+9265:           <div class="admin-kpi-lbl" style="font-size: 11px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Inmuebles Administrados</div>
+9360:         <div class="admin-kpi-lbl" style="font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #f59e0b; margin-bottom: 2px;">Edificio Silvia</div>
+9364:             <span>Inmuebles Administrados:</span>
+9508: function renderResumenCobros(propertiesList) {
+9521:             <th style="text-align:center;">Días de Cobro</th>
+9573:                             onclick="abrirEditarInmueble('${p.id}')" 
+9574:                             title="Editar Inmueble">
+9611:               <tr class="${isSelected ? 'active-admin-row' : ''}" data-prop-name="${String(p.name).trim()}" onclick="abrirEditarInmueble('${p.id}', 'cobro')">
+9678: function renderEdificioSilvia(searchVal) {
+9686:     return `<div class="panel-section" style="text-align:center; padding:40px; color:var(--muted);">No hay transacciones registradas para el Edificio Silvia en el año ${currentAdminYear} con los filtros ingresados.</div>`;
+9691:       🏢 Informes de Recaudos y Abonos Contables - Hojas de Administración de Copropiedad Edificio Silvia
+9740:       toast('Inmueble no encontrado', 'error');
+9881:     link.setAttribute('download', `ICDE_Cobros_Calendario_${currentAdminYear}.ics`);
+9913:         icsContent += `SUMMARY:Cobro Arriendo - ${p.name} (${p.tenant_name || ''})\n`;
+9914:         icsContent += `DESCRIPTION:Cobro de canon de arrendamiento de la propiedad ${p.name} por valor de ${safeFormatP(rent)}. Inquilino: ${p.tenant_name || ''}. Pagar antes del dia ${maxDueDay}.\n`;
+9934:   const title = `Cobro Arriendo - ${propName} (${tenantName || ''})`;
+9935:   const details = `Cobro de canon de arrendamiento de la propiedad ${propName} por valor de ${safeFormatP(rent)}. Inquilino: ${tenantName || ''}. Plazo maximo de pago: dia ${maxDueDay}.`;
+9960:   // Silvia transactions for this year
+9966:     { id: 'cobro',    icon: '💳', label: 'Cobro' },
+9967:     { id: 'inmueble', icon: '🏠', label: 'Inmueble' },
+9968:     { id: 'silvia',   icon: '🏢', label: 'Silvia' }
+9978:   const tabCobro = `
+9983:           <div class="u-field-label">Inmueble</div>
+10063:             <label class="u-inp-label">Día de Cobro</label>
+10110:         <button class="btn btn-gold btn-sm" id="btnSaveUnifiedCobro"
+10112:                 onclick="saveUnifiedAdminCobro('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${monthName}', '${year}')">
+10137:   const tabInmueble = `
+10140:         <label class="u-inp-label">Nombre del Inmueble</label>
+10173:           <label class="u-inp-label">Día de Cobro</label>
+10211:   const tabSilvia = `
+10214:         <div style="font-size:13px; font-weight:700; color:var(--gold);">🏢 Edificio Silvia — Año ${year}</div>
+10248:         ${silviaTxs.length > 30 ? `<div style="text-align:center; color:var(--muted); font-size:11px; padding:8px 0;">... y ${silviaTxs.length - 30} movimientos más. Ver pestaña 🏢 Edificio Silvia para el detalle completo.</div>` : ''}
+10251:         No hay transacciones del Edificio Silvia para el año ${year}.
+10266:     <div id="uTab-cobro"    class="u-tab-content ${currentActiveTab==='cobro'    ? 'active' : ''}">${tabCobro}</div>
+10267:     <div id="uTab-inmueble" class="u-tab-content ${currentActiveTab==='inmueble' ? 'active' : ''}">${tabInmueble}</div>
+10268:     <div id="uTab-silvia"   class="u-tab-content ${currentActiveTab==='silvia'   ? 'active' : ''}">${tabSilvia}</div>
+10302: function abrirCrearInmuebleAdmin() {
+10314:         🏢 Crear Nuevo Inmueble (Administración)
+10321:         <label class="u-inp-label">Nombre del Inmueble *</label>
+10371:           <label class="u-inp-label">Día de Cobro</label>
+10453:         toast('¡Inmueble creado en la nube con éxito!', 'success');
+10500: function abrirEditarInmueble(propId, openTab) {
+10583: async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
+10584:   const saveBtn = document.getElementById('btnSaveUnifiedCobro');
+10921:         toast('Inmueble actualizado en la nube con éxito!', 'success');
+11932:   document.getElementById('edPropAntiguedad').value = p ? (p['Antigüedad del Inmueble'] || '') : '';
+11992:     'Antigüedad del Inmueble': document.getElementById('edPropAntiguedad').value.trim(),
+12396:       <div class="form-group"><label class="form-label">Tipo de Inmueble</label>
+12631:   document.getElementById('mpType').textContent = p['Tipo de inmueble'] || 'Inmueble';
+12668:     ['Antigüedad', p['Antigüedad del Inmueble']],
+12899:         <span>🏠</span> Gestión de Inmuebles
+12938:         <div style="font-size: 16px; font-weight: 700; color: var(--gold);">📝 Registrar Nuevo Inmueble</div>
+13128:         <div class="form-group"><label class="form-label">Antigüedad del Inmueble</label><input class="form-input" id="gp_antiguedad" type="text" placeholder="Ej: 5 años, Nuevo, Remodelado"/></div>
+13167:         <button class="btn btn-danger" onclick="resetNuevaPropForm()">❌ Cancelar / Limpiar</button>
+13421:   setVal('gp_antiguedad', p['Antigüedad del Inmueble'] || p['Antigüedad'] || p['antiguedad'] || p['Antiguedad del Inmueble'] || '');
+13932:     'Antigüedad del Inmueble': data.antiguedad || '',
+14142:     'Antigüedad del Inmueble': gpData.antiguedad,
+14292:         <label class="form-label">Pegar URL del Inmueble</label>
+14625:       🔍 Verificar Inmueble Extraído
+14762:       <div class="form-group"><label class="form-label">Antigüedad del Inmueble</label><input class="form-input ${emptyClass(data.antiguedad)}" id="gp_antiguedad" type="text" value="${emptyCheck(data.antiguedad)}" placeholder="Ej: 5 años, Nuevo, Remodelado"/></div>
+14898:                     <button class="btn btn-danger btn-sm" onclick="deleteAlly('${a.id}')" style="padding:4px 8px; font-size:11px;">🗑️</button>
+15084: function deleteAlly(id) {
+15085:   if (!confirm('¿Estás seguro de que deseas eliminar este aliado?')) return;
+15294:   'Venta de Inmueble':'\uD83C\uDFE0','Arriendo':'\uD83D\uDD11','Aval\u00FAos':'\uD83D\uDCCB',
+15308: function contDestroyChart(id){if(contCharts[id]){try{contCharts[id].destroy();}catch(e){}delete contCharts[id];}}
+15813:     {titulo:'\uD83C\uDFE0 Ampliar Cartera Ventas',desc:'Captaci\u00F3n de inmuebles exclusivos. Alta rentabilidad por comisiones.',roi:28,riesgo:'media',horizonte:'3-6 meses',accion:'Contratar agente de captaci\u00F3n. Publicidad en portales especializados.',rec:!!(catMap['Venta de Inmueble']&&catMap['Venta de Inmueble'].total>0)},
+15956:     const deletedMovementsMap = {};
+15960:         if (!deletedMovementsMap[logIdStr] || new Date(log.fechaAccion) > new Date(deletedMovementsMap[logIdStr].fechaAccion)) {
+15961:           deletedMovementsMap[logIdStr] = log;
+15965:     Object.values(deletedMovementsMap).forEach(log => {
+15970:           isDeleted: true
+16024:     const rowStyle = m.isDeleted ? 'border-bottom:1px solid rgba(255,255,255,0.03); opacity:0.65; background:rgba(239,68,68,0.02);' : 'border-bottom:1px solid rgba(255,255,255,0.03);';
+16025:     const textStyle = m.isDeleted ? 'text-decoration:line-through; color:rgba(255,255,255,0.45);' : '';
+16028:     if (m.isDeleted) {
+16046:     if (m.isDeleted) {
+16064:       '<td style="padding:10px 16px;text-align:right;color:'+(m.isDeleted ? 'rgba(255,255,255,0.45)' : (m.tipo==='ingreso'?'#22c55e':'#ef4444'))+';font-weight:700;'+textStyle+'">'+(m.tipo==='ingreso'?'+':'-')+contFmt(parseFloat(m.monto||0))+'</td>'+
+16066:         (m.isDeleted ? '<span style="padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);">❌ Eliminado</span>' :
+16078:   document.getElementById('contMovCat').value=(tipoDefault==='egreso'?'N\u00F3mina/Personal':'Venta de Inmueble');
+16098:   document.getElementById('contMovBtnEliminar').style.display='none';
+16116:   document.getElementById('contMovBtnEliminar').style.display='inline-flex';
+16125:   const ingresosCats=['Venta de Inmueble','Arriendo','Aval\u00FAos','Remodelaci\u00F3n','Reparaci\u00F3n','Arquitectura','Gesti\u00F3n/Administraci\u00F3n','Consultor\u00EDa','Otro Servicio'];
+16147:       delete contMovimientos[idx].isPending;
+16158: async function contEliminarMovimientoDrive(id) {
+16166:       body: JSON.stringify({ action: 'deleteMovimiento', id: id })
+16170:     console.error('Error al eliminar movimiento en Drive:', err);
+16271: function contEliminarMovimiento(){
+16273:   if(!confirm('\u00BFEliminar este movimiento?'))return;
+16290:     contEliminarMovimientoDrive(id).then(() => {
+16306:   const deleteLog = logs[0];
+16307:   if (!deleteLog || !deleteLog.antes) {
+16315:     ...deleteLog.antes,
+16319:   delete restoredMov.isDeleted;
+16391:       contMovimientos.forEach(m => { delete m.isPending; });
+16437:             <li style="margin-bottom: 4px;">💼 **Consultar saldos/cobros** (ej: *"Cuánto se cobró este mes?"* o *"Ver estado de Silvia"*)</li>

@@ -10191,6 +10191,13 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
               onclick="saveAdminPropertyDetails('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
         💾 Guardar Cambios en la Nube
       </button>
+      <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; margin-top: 12px;">
+        <button class="btn btn-danger btn-sm" id="btnDeleteAdminProperty"
+                style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.08);"
+                onclick="deleteAdminProperty('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
+          🗑️ Eliminar Inmueble Permanentemente
+        </button>
+      </div>
     </div>`;
 
   // ── TAB 3: EDIFICIO SILVIA ────────────────────────────────────────────────
@@ -10928,6 +10935,56 @@ async function saveAdminPropertyDetails(propId, propNameOld) {
     console.error(err);
     toast('Error al guardar: ' + err.message + '. Guardado en caché local.', 'warning');
     applyToMemory();
+    closeUnifiedModal();
+    renderAdministracion();
+  }
+}
+
+async function deleteAdminProperty(propId, propName) {
+  if (!confirm(`¿Estás seguro de que deseas eliminar el inmueble "${propName}" permanentemente de la administración?\nEsta acción lo borrará de la nube y no se puede deshacer.`)) {
+    return;
+  }
+
+  const deleteBtn = document.getElementById('btnDeleteAdminProperty');
+  if (deleteBtn) {
+    deleteBtn.disabled = true;
+    deleteBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Eliminando...';
+  }
+
+  const payload = {
+    action: 'deleteAdminProperty',
+    propertyId: propId,
+    name: propName
+  };
+
+  const applyDeletionToMemory = () => {
+    adminData.properties = adminData.properties.filter(x => x.id !== propId);
+    localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+  };
+
+  try {
+    const response = await fetch(ADMIN_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    if (response.ok) {
+      const resData = await response.json();
+      if (resData.success) {
+        toast('¡Inmueble eliminado de la nube con éxito!', 'success');
+        applyDeletionToMemory();
+        closeUnifiedModal();
+        renderAdministracion();
+      } else {
+        throw new Error(resData.error || 'Error del servidor');
+      }
+    } else {
+      throw new Error('Error de red');
+    }
+  } catch (err) {
+    console.error(err);
+    toast('Error al eliminar de la nube: ' + err.message + '. Se eliminó localmente.', 'warning');
+    applyDeletionToMemory();
     closeUnifiedModal();
     renderAdministracion();
   }

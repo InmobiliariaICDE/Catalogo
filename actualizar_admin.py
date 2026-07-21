@@ -409,9 +409,28 @@ def pull_from_cloud():
                         updated_cells_count += 1
                         print(f"Fila {row_idx}, Columna {col_idx} ({year_str} - Mes Index {month_idx}): Cambió '{current_val}' -> '{final_write_val}'")
                         
+        # Borrar filas de Excel que ya no existen en la nube
+        cloud_ids = {str(prop.get("id")).strip() for prop in properties if prop.get("id")}
+        rows_to_delete = []
+        for r in range(6, ws.max_row + 1):
+            cell_id = ws.cell(row=r, column=1).value
+            if cell_id is not None:
+                cell_id_str = str(cell_id).strip()
+                if cell_id_str and cell_id_str not in cloud_ids:
+                    prop_name_cell = ws.cell(row=r, column=9).value
+                    if prop_name_cell:
+                        rows_to_delete.append(r)
+                        
+        if rows_to_delete:
+            for r in sorted(rows_to_delete, reverse=True):
+                deleted_name = ws.cell(row=r, column=9).value
+                print(f"Borrando fila local {r} de Excel ({deleted_name}) porque fue eliminada de la nube.")
+                ws.delete_rows(r)
+            updated_cells_count += len(rows_to_delete)
+            
         if updated_cells_count > 0:
             wb.save(file_path)
-            print(f"Éxito: Se actualizó el Excel local con {updated_cells_count} cambios de pagos.")
+            print(f"Éxito: Se actualizó el Excel local con {updated_cells_count} cambios de pagos/eliminaciones.")
         else:
             print("El Excel local ya está sincronizado con la nube. No se requirieron cambios.")
         return True
