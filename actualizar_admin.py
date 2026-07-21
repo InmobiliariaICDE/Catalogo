@@ -164,61 +164,60 @@ def parse_properties(file):
                     "status": status
                 })
         
-        # Overall status is usually Occupied, unless latest current month status is VACANT
+        # Chronological months sequence for propagation and healing
+        from datetime import datetime
+        _today = datetime.now()
+        _curr_year = _today.year
+        _curr_month_idx = _today.month - 1
+
+        months_order = []
+        for year_str in sorted(payments_history.keys(), key=int):
+            for m_idx, m in enumerate(payments_history[year_str]):
+                months_order.append({
+                    "year": int(year_str),
+                    "month_idx": m_idx,
+                    "cell": m
+                })
+
+        is_vacant_wave = False
         overall_status = "Ocupado"
         if "DESOCUPAD" in raw_name.upper():
+            is_vacant_wave = True
             overall_status = "Desocupado"
-        else:
-            # Check current month payment status
-            from datetime import datetime
-            _today = datetime.now()
-            _curr_year_str = str(_today.year)
-            _curr_month_idx = _today.month - 1
-            if _curr_year_str in payments_history and len(payments_history[_curr_year_str]) > _curr_month_idx:
-                _curr_pay = payments_history[_curr_year_str][_curr_month_idx]
-                if _curr_pay["status"] == "VACANT":
-                    overall_status = "Desocupado"
 
-        if overall_status == "Desocupado":
-            for year_str in payments_history:
-                for m in payments_history[year_str]:
-                    if m["status"] in ("PENDING", "AL_DIA", "FUTURE") and m["value"] in ("-", ""):
-                        m["status"] = "VACANT"
-                        m["value"] = "DESOCUPADO"
-                        
-        if overall_status == "Ocupado":
-            today = datetime.now()
-            current_year = today.year
-            current_month_idx = today.month - 1
-            for year_str in payments_history:
-                for m_idx, m in enumerate(payments_history[year_str]):
-                    y = int(year_str)
-                    is_current = (y == current_year and m_idx == current_month_idx)
-                    is_future = (y > current_year or (y == current_year and m_idx > current_month_idx))
-                    
-                    if m["status"] == "VACANT" and (is_current or is_future):
-                        if is_current:
-                            today_day = today.day
-                            limit_day = due_day if (due_day and due_day > 0) else 1
-                            if today_day < limit_day:
-                                m["status"] = "AL_DIA"
-                            else:
-                                m["status"] = "PENDING"
+        for item in months_order:
+            m = item["cell"]
+            val_upper = str(m["value"]).strip().upper()
+            if m["status"] in ("DELIVERY", "VACANT") or "DESOCUPAD" in val_upper:
+                is_vacant_wave = True
+            elif m["status"] in ("PAID", "NEW_CONTRACT"):
+                is_vacant_wave = False
+
+            if is_vacant_wave:
+                if m["status"] in ("PENDING", "AL_DIA", "FUTURE", "UNSTARTED"):
+                    m["status"] = "VACANT"
+                    m["value"] = "DESOCUPADO"
+            else:
+                # Heal empty cells of occupied properties
+                if m["status"] in ("UNSTARTED", "FUTURE", "PENDING", "AL_DIA"):
+                    y = item["year"]
+                    m_idx = item["month_idx"]
+                    is_current = (y == _curr_year and m_idx == _curr_month_idx)
+                    is_future = (y > _curr_year or (y == _curr_year and m_idx > _curr_month_idx))
+
+                    if is_current:
+                        today_day = _today.day
+                        limit_day = due_day if (due_day and due_day > 0) else 1
+                        if today_day < limit_day:
+                            m["status"] = "AL_DIA"
                         else:
-                            m["status"] = "FUTURE"
-        # Propagar desocupado después de una entrega
-        is_vacant_after_delivery = False
-        sorted_years = sorted(payments_history.keys(), key=int)
-        for year_str in sorted_years:
-            for m in payments_history[year_str]:
-                if m["status"] == "DELIVERY":
-                    is_vacant_after_delivery = True
-                elif m["status"] in ("PAID", "NEW_CONTRACT"):
-                    is_vacant_after_delivery = False
-                elif is_vacant_after_delivery:
-                    if m["status"] in ("PENDING", "AL_DIA", "FUTURE", "UNSTARTED"):
-                        m["status"] = "VACANT"
-                        m["value"] = "DESOCUPADO"
+                            m["status"] = "PENDING"
+                    elif is_future:
+                        m["status"] = "FUTURE"
+            
+            # Determine overall_status based on current month status after propagation
+            if item["year"] == _curr_year and item["month_idx"] == _curr_month_idx:
+                overall_status = "Desocupado" if m["status"] == "VACANT" else "Ocupado"
 
         properties.append({
             "id": row_id,

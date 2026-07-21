@@ -142,67 +142,70 @@ function getAdminData() {
       });
     });
 
-    let overallStatus = rawName.toUpperCase().includes('DESOCUPAD') ? 'Desocupado' : 'Ocupado';
-    const _todayStatus = new Date();
-    const _currYearStatus = String(_todayStatus.getFullYear());
-    const _currMonthStatus = _todayStatus.getMonth();
-    if (paymentsHistory[_currYearStatus] && paymentsHistory[_currYearStatus][_currMonthStatus] && paymentsHistory[_currYearStatus][_currMonthStatus].status === 'VACANT') {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonthIdx = today.getMonth();
+
+    // Chronological months sequence for propagation and healing
+    const sortedYears = Object.keys(paymentsHistory).map(Number).sort((a, b) => a - b);
+    const chronologicalMonths = [];
+    sortedYears.forEach(year => {
+      paymentsHistory[year].forEach((m, mIdx) => {
+        chronologicalMonths.push({
+          year,
+          monthIdx: mIdx,
+          cell: m
+        });
+      });
+    });
+
+    let isVacantWave = false;
+    let overallStatus = 'Ocupado';
+    if (rawName.toUpperCase().includes('DESOCUPAD')) {
+      isVacantWave = true;
       overallStatus = 'Desocupado';
     }
 
-    if (overallStatus === 'Desocupado') {
-      Object.keys(paymentsHistory).forEach(year => {
-        paymentsHistory[year].forEach(m => {
-          if ((m.status === 'PENDING' || m.status === 'AL_DIA' || m.status === 'FUTURE') && (m.value === '-' || m.value === '')) {
-            m.status = 'VACANT';
-            m.value = 'DESOCUPADO';
-          }
-        });
-      });
-    }
+    chronologicalMonths.forEach(item => {
+      const m = item.cell;
+      const valUpper = String(m.value).trim().toUpperCase();
+      if (m.status === 'DELIVERY' || m.status === 'VACANT' || valUpper.includes('DESOCUPAD')) {
+        isVacantWave = true;
+      } else if (m.status === 'PAID' || m.status === 'NEW_CONTRACT') {
+        isVacantWave = false;
+      }
 
-    if (overallStatus === 'Ocupado') {
-      const today = new Date();
-      const currentYear = today.getFullYear();
-      const currentMonthIdx = today.getMonth();
-      Object.keys(paymentsHistory).forEach(year => {
-        paymentsHistory[year].forEach((m, mIdx) => {
-          const y = parseInt(year, 10);
+      if (isVacantWave) {
+        if (m.status === 'PENDING' || m.status === 'AL_DIA' || m.status === 'FUTURE' || m.status === 'UNSTARTED') {
+          m.status = 'VACANT';
+          m.value = 'DESOCUPADO';
+        }
+      } else {
+        // Heal empty cells of occupied properties
+        if (m.status === 'UNSTARTED' || m.status === 'FUTURE' || m.status === 'PENDING' || m.status === 'AL_DIA') {
+          const y = item.year;
+          const mIdx = item.monthIdx;
           const isCurrent = (y === currentYear && mIdx === currentMonthIdx);
           const isFuture = (y > currentYear || (y === currentYear && mIdx > currentMonthIdx));
-          
-          if (m.status === 'VACANT' && (isCurrent || isFuture)) {
-            if (isCurrent) {
-              const todayDay = today.getDate();
-              const limitDay = (dueDay && dueDay > 0) ? dueDay : 1;
-              if (todayDay < limitDay) {
-                m.status = 'AL_DIA';
-              } else {
-                m.status = 'PENDING';
-              }
+
+          if (isCurrent) {
+            const todayDay = today.getDate();
+            const limitDay = (dueDay && dueDay > 0) ? dueDay : 1;
+            if (todayDay < limitDay) {
+              m.status = 'AL_DIA';
             } else {
-              m.status = 'FUTURE';
+              m.status = 'PENDING';
             }
-          }
-        });
-      });
-    }
-    // Propagar desocupado después de una entrega
-    let isVacantAfterDelivery = false;
-    const sortedYears = Object.keys(paymentsHistory).map(Number).sort((a, b) => a - b);
-    sortedYears.forEach(year => {
-      paymentsHistory[year].forEach(m => {
-        if (m.status === 'DELIVERY') {
-          isVacantAfterDelivery = true;
-        } else if (m.status === 'PAID' || m.status === 'NEW_CONTRACT') {
-          isVacantAfterDelivery = false;
-        } else if (isVacantAfterDelivery) {
-          if (m.status === 'PENDING' || m.status === 'AL_DIA' || m.status === 'FUTURE' || m.status === 'UNSTARTED') {
-            m.status = 'VACANT';
-            m.value = 'DESOCUPADO';
+          } else if (isFuture) {
+            m.status = 'FUTURE';
           }
         }
-      });
+      }
+      
+      // Determine overallStatus based on current month status after propagation
+      if (item.year === currentYear && item.monthIdx === currentMonthIdx) {
+        overallStatus = (m.status === 'VACANT') ? 'Desocupado' : 'Ocupado';
+      }
     });
 
     properties.push({
@@ -328,6 +331,69 @@ function saveAdminPaymentToSheet(params) {
   }
 
   sheet.getRange(rowIdx, colIdx).setValue(params.value);
+
+  // PROPAGATION & CLEARING LOGIC FOR VACANCY STATUS
+  try {
+    const monthsNames = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+    const yearsList = [2023, 2024, 2025, 2026, 2027];
+    const sortedPaymentCols = [];
+    const lastCol = sheet.getLastColumn();
+    const headers = sheet.getRange(5, 1, 1, lastCol).getValues()[0];
+
+    yearsList.forEach(y => {
+      monthsNames.forEach((mName, mIdx) => {
+        for (let c = 0; c < headers.length; c++) {
+          const h = String(headers[c]).trim().toUpperCase();
+          if (h.includes(mName) && h.includes(String(y))) {
+            sortedPaymentCols.push({ colIdx: c + 1, year: y, monthIdx: mIdx });
+            break;
+          }
+        }
+      });
+    });
+
+    const targetIndex = sortedPaymentCols.findIndex(item => item.colIdx === colIdx);
+    if (targetIndex !== -1) {
+      const valStr = String(params.value).trim().toUpperCase();
+      const numVal = parseFloat(params.value);
+      const isPaidOrNew = (!isNaN(numVal) && numVal > 0) || valStr.includes('NUEVO') || valStr.includes('CONTRATO') || valStr === 'PAGADO' || valStr === 'AL DIA' || valStr === 'AL_DIA';
+      const isVacant = valStr.includes('DESOCUPAD') || valStr.includes('ENTREGA');
+
+      if (isVacant) {
+        // Propagate DESOCUPADO to subsequent cells until we hit a payment or active status
+        for (let k = targetIndex + 1; k < sortedPaymentCols.length; k++) {
+          const nextCol = sortedPaymentCols[k].colIdx;
+          const nextValRaw = sheet.getRange(rowIdx, nextCol).getValue();
+          const nextValStr = String(nextValRaw).trim().toUpperCase();
+          const nextNum = parseFloat(nextValRaw);
+          
+          const isNextPaidOrActive = (!isNaN(nextNum) && nextNum > 0) || nextValStr.includes('NUEVO') || nextValStr.includes('CONTRATO') || nextValStr.includes('PREAVISO') || nextValStr.includes('RENOVA');
+          
+          if (!isNextPaidOrActive) {
+            sheet.getRange(rowIdx, nextCol).setValue('DESOCUPADO');
+          } else {
+            break;
+          }
+        }
+      } else if (isPaidOrNew) {
+        // Clear stale DESOCUPADO from subsequent cells until we hit a payment or active status
+        for (let k = targetIndex + 1; k < sortedPaymentCols.length; k++) {
+          const nextCol = sortedPaymentCols[k].colIdx;
+          const nextValRaw = sheet.getRange(rowIdx, nextCol).getValue();
+          const nextValStr = String(nextValRaw).trim().toUpperCase();
+          
+          if (nextValStr.includes('DESOCUPAD') || nextValStr === '' || nextValStr === '-') {
+            sheet.getRange(rowIdx, nextCol).setValue('-');
+          } else {
+            break;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    Logger.log("Error in propagation: " + err.toString());
+  }
+
   return createJsonResponse({ success: true, row: rowIdx, column: colIdx });
 }
 

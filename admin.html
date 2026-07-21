@@ -8784,57 +8784,68 @@ function ensureUniqueIds(data) {
 
       // Self-healing rules for overall status and future months
       if (p.payments) {
-        // 1. Determine overall status dynamically:
-        // By default 'Ocupado', unless the current month cell is VACANT.
-        let dynamicOverallStatus = 'Ocupado';
-        if (p.name && String(p.name).toUpperCase().includes('DESOCUPAD')) {
-          dynamicOverallStatus = 'Desocupado';
-        } else {
-          // Check current month status
-          const currentPayments = p.payments[currentYearStr];
-          if (currentPayments && currentPayments[currentMonthIdx]) {
-            if (currentPayments[currentMonthIdx].status === 'VACANT') {
-              dynamicOverallStatus = 'Desocupado';
-            }
-          }
-        }
-        p.status = dynamicOverallStatus;
-
-        // 2. Propagate status based on overall status:
-        if (dynamicOverallStatus === 'Desocupado') {
-          // If desocupado, future/pending months with empty values become VACANT
-          Object.keys(p.payments).forEach(year => {
-            p.payments[year].forEach(m => {
-              if ((m.status === 'PENDING' || m.status === 'AL_DIA' || m.status === 'FUTURE') && (m.value === '-' || m.value === '')) {
-                m.status = 'VACANT';
-                m.value = 'DESOCUPADO';
-              }
+        // Chronological months sequence
+        const sortedYears = Object.keys(p.payments).map(Number).sort((a, b) => a - b);
+        const chronologicalMonths = [];
+        sortedYears.forEach(year => {
+          p.payments[year].forEach((m, mIdx) => {
+            chronologicalMonths.push({
+              year,
+              monthIdx: mIdx,
+              cell: m
             });
           });
-        } else {
-          // If ocupado, any future VACANT cells become FUTURE
-          Object.keys(p.payments).forEach(year => {
-            p.payments[year].forEach((m, mIdx) => {
-              const y = parseInt(year, 10);
+        });
+
+        let isVacantWave = false;
+        let dynamicOverallStatus = 'Ocupado';
+        if (p.name && String(p.name).toUpperCase().includes('DESOCUPAD')) {
+          isVacantWave = true;
+          dynamicOverallStatus = 'Desocupado';
+        }
+
+        chronologicalMonths.forEach(item => {
+          const m = item.cell;
+          const valUpper = String(m.value).trim().toUpperCase();
+          if (m.status === 'DELIVERY' || m.status === 'VACANT' || valUpper.includes('DESOCUPAD')) {
+            isVacantWave = true;
+          } else if (m.status === 'PAID' || m.status === 'NEW_CONTRACT') {
+            isVacantWave = false;
+          }
+
+          if (isVacantWave) {
+            if (m.status === 'PENDING' || m.status === 'AL_DIA' || m.status === 'FUTURE' || m.status === 'UNSTARTED') {
+              m.status = 'VACANT';
+              m.value = 'DESOCUPADO';
+            }
+          } else {
+            // Heal empty cells of occupied properties
+            if (m.status === 'UNSTARTED' || m.status === 'FUTURE' || m.status === 'PENDING' || m.status === 'AL_DIA') {
+              const y = item.year;
+              const mIdx = item.monthIdx;
               const isCurrent = (y === currentYear && mIdx === currentMonthIdx);
               const isFuture = (y > currentYear || (y === currentYear && mIdx > currentMonthIdx));
 
-              if (m.status === 'VACANT' && (isCurrent || isFuture)) {
-                if (isCurrent) {
-                  const todayDay = today.getDate();
-                  const limitDay = (p.due_day && p.due_day > 0) ? p.due_day : 1;
-                  if (todayDay < limitDay) {
-                    m.status = 'AL_DIA';
-                  } else {
-                    m.status = 'PENDING';
-                  }
+              if (isCurrent) {
+                const todayDay = today.getDate();
+                const limitDay = (p.due_day && p.due_day > 0) ? p.due_day : 1;
+                if (todayDay < limitDay) {
+                  m.status = 'AL_DIA';
                 } else {
-                  m.status = 'FUTURE';
+                  m.status = 'PENDING';
                 }
+              } else if (isFuture) {
+                m.status = 'FUTURE';
               }
-            });
-          });
-        }
+            }
+          }
+
+          // Determine overallStatus based on current month status after propagation
+          if (item.year === currentYear && item.monthIdx === currentMonthIdx) {
+            dynamicOverallStatus = (m.status === 'VACANT') ? 'Desocupado' : 'Ocupado';
+          }
+        });
+        p.status = dynamicOverallStatus;
       }
     });
   }
