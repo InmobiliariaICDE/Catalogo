@@ -9131,8 +9131,13 @@ function getMonthlyComisionesData(year) {
           collected[mIdx] += val || rent;
         } else if (st === 'PENDING') {
           expected[mIdx] += rent;
-        } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY' || st === 'AL_DIA' || st === 'FUTURE') {
+        } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'AL_DIA' || st === 'FUTURE') {
           expected[mIdx] += rent;
+          if (val > 0) {
+            collected[mIdx] += val;
+          }
+        } else if (st === 'DELIVERY') {
+          // En Entrega no se cobra canon ese mes (no suma a expected)
           if (val > 0) {
             collected[mIdx] += val;
           }
@@ -9249,12 +9254,20 @@ function renderAdministracionContent() {
         if (isSilvia) {
           silviaEsperado += rent; silviaOcupados++; silviaActivos++;
         }
-      } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY' || st === 'AL_DIA') {
+      } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'AL_DIA') {
         totalEsperado += rent;
         if (val > 0) { totalRecaudado += val; }
         ocupados++; totalActivos++;
         if (isSilvia) {
           silviaEsperado += rent;
+          if (val > 0) { silviaRecaudado += val; }
+          silviaOcupados++; silviaActivos++;
+        }
+      } else if (st === 'DELIVERY') {
+        // En Entrega no se cobra canon ese mes (no suma a canon esperado)
+        if (val > 0) { totalRecaudado += val; }
+        ocupados++; totalActivos++;
+        if (isSilvia) {
           if (val > 0) { silviaRecaudado += val; }
           silviaOcupados++; silviaActivos++;
         }
@@ -15403,7 +15416,7 @@ function contObtenerComisionAdministracionEsperada(year, month) {
       if (mIdx !== -1) {
         if (month === 0 || mIdx === (month - 1)) {
           const st = m.status;
-          if (st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY' || st === 'AL_DIA' || st === 'FUTURE') {
+          if (st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'AL_DIA' || st === 'FUTURE') {
             totalEsperado += rent * 0.10;
           }
         }
@@ -15432,7 +15445,7 @@ function contGetParaAno(year) {
         const mIdx = monthsNames.indexOf(m.month.toUpperCase());
         if (mIdx !== -1) {
           const st = m.status;
-          if (st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY' || st === 'AL_DIA' || st === 'FUTURE') {
+          if (st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'AL_DIA' || st === 'FUTURE') {
             const propName = p.name || 'Propiedad';
             const mIdx1Based = mIdx + 1;
             lista.push({
