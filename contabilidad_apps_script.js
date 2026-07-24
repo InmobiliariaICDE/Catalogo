@@ -154,10 +154,15 @@ function getContabilidad() {
   };
   
   const movimientos = [];
+  const seenIds = new Set();
   for (let i = 1; i < valuesMovs.length; i++) {
     const row = valuesMovs[i];
     const idVal = colIndices.id !== -1 ? row[colIndices.id] : "";
     if (idVal === null || idVal === undefined || String(idVal).trim() === "") continue;
+    
+    const cleanId = String(idVal).trim();
+    if (seenIds.has(cleanId)) continue;
+    seenIds.add(cleanId);
     
     movimientos.push({
       id: String(idVal).trim(),

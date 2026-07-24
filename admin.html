@@ -15300,10 +15300,29 @@ function cerrarBottomCard() {
 /* ═══════════════════════════════════════════════════════════════
    MÓDULO CONTABILIDAD — ICDE Inmobiliaria
 ═══════════════════════════════════════════════════════════════ */
+function contDeduplicarMovimientos(arr) {
+  if (!Array.isArray(arr)) return [];
+  const map = new Map();
+  arr.forEach(m => {
+    if (!m || !m.id) return;
+    const cleanId = String(m.id).trim();
+    if (!map.has(cleanId)) {
+      map.set(cleanId, m);
+    } else {
+      const existing = map.get(cleanId);
+      if (existing.isPending && !m.isPending) {
+        map.set(cleanId, m);
+      }
+    }
+  });
+  return Array.from(map.values());
+}
+
 let contMovimientos = [];
 try {
   contMovimientos = JSON.parse(localStorage.getItem('icde_contabilidad') || '[]');
   if (!Array.isArray(contMovimientos)) contMovimientos = [];
+  contMovimientos = contDeduplicarMovimientos(contMovimientos);
 } catch (e) {
   console.error("Error al inicializar contMovimientos:", e);
   contMovimientos = [];
@@ -15330,12 +15349,12 @@ async function contCargarDatos() {
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.movimientos)) {
-        // Combinación inteligente: preservar transacciones locales no automáticas marcadas como isPending
-        const pendingUpload = contMovimientos.filter(m => !m.isAuto && m.isPending);
+        // Combinación inteligente sin duplicados por ID
+        const driveIds = new Set(data.movimientos.map(m => String(m.id).trim()));
+        const pendingUpload = contMovimientos.filter(m => !m.isAuto && m.isPending && !driveIds.has(String(m.id).trim()));
         
-        contMovimientos = [...data.movimientos, ...pendingUpload];
+        contMovimientos = contDeduplicarMovimientos([...data.movimientos, ...pendingUpload]);
         localStorage.setItem('icde_contabilidad', JSON.stringify(contMovimientos));
-
       }
       if (data && data.metas) {
         // Sólo actualizamos metas si tienen datos válidos y no están en 0
@@ -15395,7 +15414,10 @@ function contFmt(n){
   if(!n&&n!==0)return'$0';
   return (n<0?'-':'')+'$'+Math.abs(n).toLocaleString('es-CO');
 }
-function contSave(){localStorage.setItem('icde_contabilidad',JSON.stringify(contMovimientos));}
+function contSave(){
+  contMovimientos = contDeduplicarMovimientos(contMovimientos);
+  localStorage.setItem('icde_contabilidad', JSON.stringify(contMovimientos));
+}
 function contSaveMetas(){localStorage.setItem('icde_cont_metas',JSON.stringify(contMetas));}
 function contDestroyChart(id){if(contCharts[id]){try{contCharts[id].destroy();}catch(e){}delete contCharts[id];}}
 function contSumTipo(lista,tipo){return lista.filter(m=>m.tipo===tipo).reduce((a,m)=>a+(parseFloat(m.monto)||0),0);}
@@ -16428,6 +16450,44 @@ function contAbrirMetas(){
   document.getElementById('metaIngAnual').value=contMetas.ingAnual||'';
   document.getElementById('metaGastoMes').value=contMetas.gastoMes||'';
   document.getElementById('modalContMeta').classList.add('open');
+}
+
+
+function contLimpiarDuplicados() {
+  const initialCount = contMovimientos.length;
+  
+  // 1. Deduplicar por ID
+  let cleaned = contDeduplicarMovimientos(contMovimientos);
+
+  // 2. Deduplicar registros idénticos por firma (fecha + tipo + categoria + descripcion + monto)
+  const seenSignatures = new Set();
+  const finalMovs = [];
+
+  cleaned.forEach(m => {
+    if (m.isAuto) {
+      finalMovs.push(m);
+      return;
+    }
+    const signature = `${m.fecha || ''}_${m.tipo || ''}_${(m.categoria || '').trim().toLowerCase()}_${(m.descripcion || '').trim().toLowerCase()}_${parseFloat(m.monto) || 0}`;
+    if (!seenSignatures.has(signature)) {
+      seenSignatures.add(signature);
+      finalMovs.push(m);
+    }
+  });
+
+  const removedCount = initialCount - finalMovs.length;
+  contMovimientos = finalMovs;
+  contSave();
+  renderContabilidad();
+
+  if (removedCount > 0) {
+    toast(`Se depuraron ${removedCount} movimientos duplicados ✓`, 'success');
+    if (CONT_SCRIPT_URL) {
+      contPushTotal();
+    }
+  } else {
+    toast('No se encontraron movimientos duplicados ✓', 'info');
+  }
 }
 
 function contGuardarMetas(){
