@@ -7494,6 +7494,19 @@ function verificarRecordatoriosDeArriendo() {
       if (tomorrowDay === dueDay) {
         const key = `${p.id}-${tomorrowYear}-${tomorrowMonth}`;
         if (!window._arriendoReminded.cobros.has(key)) {
+          // Verificar si ya pagó este mes
+          const monthNamesList = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+          const tomorrowMonthName = monthNamesList[tomorrowMonth];
+          const yearStr = String(tomorrowYear);
+
+          const paymentsYear = (p.payments && p.payments[yearStr]) ? p.payments[yearStr] : [];
+          const payInfo = paymentsYear.find(m => m.month === tomorrowMonthName);
+
+          // Si el estado es PAID, no enviar recordatorio
+          if (payInfo && payInfo.status === 'PAID') {
+            return;
+          }
+
           window._arriendoReminded.cobros.add(key);
 
           const propName = p.name ? p.name.trim() : 'la propiedad';
