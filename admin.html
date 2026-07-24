@@ -15614,11 +15614,11 @@ function contRenderResumen(el){
   const egresos=contSumTipo(lista,'egreso');
   const catIng={};lista.filter(m=>m.tipo==='ingreso').forEach(m=>{catIng[m.categoria]=(catIng[m.categoria]||0)+parseFloat(m.monto||0);});
   const catEgr={};lista.filter(m=>m.tipo==='egreso').forEach(m=>{catEgr[m.categoria]=(catEgr[m.categoria]||0)+parseFloat(m.monto||0);});
-  const sI=Object.entries(catIng).sort((a,b)=>b[1]-a[1]);
-  const sE=Object.entries(catEgr).sort((a,b)=>b[1]-a[1]);
+  const sI=Object.entries(catIng).sort((a,b)=>parseFloat(b[1]||0)-parseFloat(a[1]||0));
+  const sE=Object.entries(catEgr).sort((a,b)=>parseFloat(b[1]||0)-parseFloat(a[1]||0));
+  const ciC=['#22c55e','#16a34a','#4ade80','#86efac','#d4a84b','#f97316','#3b82f6','#a855f7'];
+  const ceC=['#ef4444','#dc2626','#f87171','#fca5a5','#f97316','#a855f7','#eab308','#888'];
   const txList=[...lista].sort((a,b)=>{
-    const catComp = (a.categoria || '').localeCompare(b.categoria || '');
-    if (catComp !== 0) return catComp;
     return new Date(b.fecha||0)-new Date(a.fecha||0);
   }).slice(0,15);
   el.innerHTML=
@@ -15626,12 +15626,12 @@ function contRenderResumen(el){
     '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDCB9 Ingresos por Servicio</div><span style="font-size:12px;color:var(--gold);font-weight:700;">'+contFmt(ingresos)+'</span></div>'+
     '<div class="cont-panel-body">'+(ingresos===0?'<div class="cont-empty">Sin ingresos.<br><button class="cont-btn-add" onclick="contAbrirModal(\'ingreso\')" style="margin-top:12px;">\u2795 Agregar</button></div>':
       '<div class="cont-chart-wrap"><canvas id="chartIngCat"></canvas></div><div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">'+
-      sI.map(function(e){return'<div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:#ccc;">'+(CONT_CAT_ICONS[e[0]]||'\u2022')+' '+e[0]+'</span><span style="color:var(--gold);font-weight:700;">'+contFmt(e[1])+'</span></div>';}).join('')+
+      sI.map(function(e,i){return'<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;"><span style="color:#ccc;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+ciC[i%ciC.length]+';"></span>'+(CONT_CAT_ICONS[e[0]]||'\u2022')+' '+e[0]+'</span><span style="color:var(--gold);font-weight:700;">'+contFmt(e[1])+'</span></div>';}).join('')+
       '</div>')+'</div></div>'+
     '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDD34 Egresos por Categor\u00EDa</div><span style="font-size:12px;color:#ef4444;font-weight:700;">'+contFmt(egresos)+'</span></div>'+
     '<div class="cont-panel-body">'+(egresos===0?'<div class="cont-empty">Sin egresos.<br><button class="cont-btn-add" onclick="contAbrirModal(\'egreso\')" style="margin-top:12px;">\u2795 Agregar</button></div>':
       '<div class="cont-chart-wrap"><canvas id="chartEgrCat"></canvas></div><div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">'+
-      sE.map(function(e){return'<div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:#ccc;">'+(CONT_CAT_ICONS[e[0]]||'\u2022')+' '+e[0]+'</span><span style="color:#ef4444;font-weight:700;">'+contFmt(e[1])+'</span></div>';}).join('')+
+      sE.map(function(e,i){return'<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;"><span style="color:#ccc;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+ceC[i%ceC.length]+';"></span>'+(CONT_CAT_ICONS[e[0]]||'\u2022')+' '+e[0]+'</span><span style="color:#ef4444;font-weight:700;">'+contFmt(e[1])+'</span></div>';}).join('')+
       '</div>')+'</div></div>'+
   '</div>'+
   '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDCCB \u00DAltimos Movimientos</div><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Nuevo</button></div>'+
@@ -15639,9 +15639,7 @@ function contRenderResumen(el){
     '<div class="cont-tx-list">'+txList.map(function(m){return'<div class="cont-tx-item" '+(m.isAuto?'':'onclick="contEditarMovimiento(\''+m.id+'\')" style="cursor:pointer;"')+'><div class="cont-tx-icon '+m.tipo+'">'+(CONT_CAT_ICONS[m.categoria]||'\uD83D\uDCB0')+'</div><div class="cont-tx-info"><div class="cont-tx-desc">'+(m.descripcion||m.categoria)+'</div><div class="cont-tx-cat">'+m.categoria+' \u00B7 '+(m.fecha||'\u2014')+'</div></div><div style="text-align:right;"><div class="cont-tx-amount '+m.tipo+'">'+(m.tipo==='ingreso'?'+':'-')+contFmt(parseFloat(m.monto||0))+'</div><div class="cont-tx-date">'+CONT_MESES_FULL[(parseInt(m.mes)||1)-1]+'</div></div></div>';}).join('')+'</div>')+'</div></div>';
   setTimeout(function(){
     try {
-      const ciC=['#22c55e','#16a34a','#4ade80','#86efac','#d4a84b','#f97316','#3b82f6','#a855f7'];
       if(ingresos>0&&sI.length){const ctx=document.getElementById('chartIngCat');if(ctx){contCharts['chartIngCat']=new Chart(ctx,{type:'doughnut',data:{labels:sI.map(function(e){return e[0];}),datasets:[{data:sI.map(function(e){return e[1];}),backgroundColor:ciC,borderWidth:2,borderColor:'#18181b'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+contFmt(ctx.raw);}}}},cutout:'62%'}});}}
-      const ceC=['#ef4444','#dc2626','#f87171','#fca5a5','#f97316','#a855f7','#eab308','#888'];
       if(egresos>0&&sE.length){const ctx=document.getElementById('chartEgrCat');if(ctx){contCharts['chartEgrCat']=new Chart(ctx,{type:'doughnut',data:{labels:sE.map(function(e){return e[0];}),datasets:[{data:sE.map(function(e){return e[1];}),backgroundColor:ceC,borderWidth:2,borderColor:'#18181b'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+contFmt(ctx.raw);}}}},cutout:'62%'}});}}
     } catch (e) {
       console.warn("No se pudieron cargar los gráficos de resumen:", e);
