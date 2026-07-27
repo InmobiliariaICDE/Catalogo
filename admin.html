@@ -15533,7 +15533,6 @@ async function renderContabilidad(){
     </div>
   </div>
   <div class="cont-hero" id="contHero"></div>
-  <div class="cont-meta-anual" id="contMetaAnual"></div>
   <div class="cont-tabs">
     <button class="cont-tab-btn${contActiveTab==='flujo'?' active':''}" onclick="contSwitchTab('flujo')">\uD83D\uDCC8 Flujo Mensual</button>
     <button class="cont-tab-btn${contActiveTab==='pareto'?' active':''}" onclick="contSwitchTab('pareto')">\u2696\uFE0F An\u00E1lisis Pareto</button>
@@ -15542,7 +15541,7 @@ async function renderContabilidad(){
   </div>
   <div id="contTabContent"></div>`;
   
-  // Render inicial de héroe y metas rápido (con caché/local)
+  // Render inicial de héroe rápido (con caché/local)
   contRenderHero(); contRenderMetas(); contRenderTabContent();
   
   // Carga asíncrona en segundo plano desde Drive
@@ -15598,25 +15597,7 @@ function contRenderHero(){
 }
 
 function contRenderMetas(){
-  const lista=contGetFiltrado();
-  const ingresos=contSumTipo(lista,'ingreso');
-  const egresos=contSumTipo(lista,'egreso');
-  const listaAnio=contMovimientos.filter(m=>{
-    const mAno = m.ano ? parseInt(m.ano) : (m.fecha ? parseInt(m.fecha.split('-')[0]) : null);
-    return mAno === contAnoFiltro;
-  });
-  const ingAnio=contSumTipo(listaAnio,'ingreso');
-  const pM=contMetas.ingMes>0?Math.min(100,(ingresos/contMetas.ingMes)*100):0;
-  const pA=contMetas.ingAnual>0?Math.min(100,(ingAnio/contMetas.ingAnual)*100):0;
-  const pG=contMetas.gastoMes>0?Math.min(100,(egresos/contMetas.gastoMes)*100):0;
-  const cM=pM>=100?'#22c55e':pM>=60?'#d4a84b':'#ef4444';
-  const cA=pA>=100?'#22c55e':pA>=60?'#d4a84b':'#ef4444';
-  const cG=pG<=80?'#22c55e':pG<=100?'#d4a84b':'#ef4444';
-  const el=document.getElementById('contMetaAnual');if(!el)return;
-  el.innerHTML=
-    '<div class="cont-meta-item"><div class="cont-meta-lbl">\uD83D\uDCB9 Ingresos vs Meta Mes</div><div class="cont-meta-val" style="color:'+cM+'">'+Math.round(pM)+'% <span style="font-size:11px;color:var(--muted);font-weight:400;">'+contFmt(ingresos)+' / '+contFmt(contMetas.ingMes)+'</span></div><div class="cont-meta-prog"><div class="cont-meta-prog-fill" style="width:'+pM+'%;background:'+cM+';"></div></div></div>'+
-    '<div class="cont-meta-item"><div class="cont-meta-lbl">\uD83D\uDCC5 Ingresos vs Meta Anual</div><div class="cont-meta-val" style="color:'+cA+'">'+Math.round(pA)+'% <span style="font-size:11px;color:var(--muted);font-weight:400;">'+contFmt(ingAnio)+' / '+contFmt(contMetas.ingAnual)+'</span></div><div class="cont-meta-prog"><div class="cont-meta-prog-fill" style="width:'+pA+'%;background:'+cA+';"></div></div></div>'+
-    '<div class="cont-meta-item"><div class="cont-meta-lbl">\uD83D\uDD34 Egresos vs Presupuesto</div><div class="cont-meta-val" style="color:'+cG+'">'+Math.round(pG)+'% <span style="font-size:11px;color:var(--muted);font-weight:400;">'+contFmt(egresos)+' / '+contFmt(contMetas.gastoMes)+'</span></div><div class="cont-meta-prog"><div class="cont-meta-prog-fill" style="width:'+pG+'%;background:'+cG+';"></div></div></div>';
+  return;
 }
 
 function contRenderTabContent(){
