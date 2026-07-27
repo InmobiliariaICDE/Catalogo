@@ -15815,26 +15815,6 @@ function contRenderFlujo(el){
       if(egresos>0&&sE.length){const ctx=document.getElementById('chartEgrCat');if(ctx){contCharts['chartEgrCat']=new Chart(ctx,{type:'doughnut',data:{labels:sE.map(function(e){return e[0];}),datasets:[{data:sE.map(function(e){return e[1];}),backgroundColor:ceC,borderWidth:2,borderColor:'#18181b'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+contFmt(ctx.raw);}}}},cutout:'62%'}});}}
       const ctx=document.getElementById('chartFlujo');
       if(ctx){
-        const ctx2d = ctx.getContext('2d');
-        
-        // Gradiente verde — Ingresos (barra mayor/menor)
-        const gradIngMayor = ctx2d.createLinearGradient(0, 0, 0, 310);
-        gradIngMayor.addColorStop(0, '#16a34a');
-        gradIngMayor.addColorStop(1, '#052e16');
-
-        const gradIngMenor = ctx2d.createLinearGradient(0, 0, 0, 310);
-        gradIngMenor.addColorStop(0, '#4ade80');
-        gradIngMenor.addColorStop(1, '#15803d');
-
-        // Gradiente rojo — Egresos (barra mayor/menor)
-        const gradEgrMayor = ctx2d.createLinearGradient(0, 0, 0, 310);
-        gradEgrMayor.addColorStop(0, '#dc2626');
-        gradEgrMayor.addColorStop(1, '#450a0a');
-
-        const gradEgrMenor = ctx2d.createLinearGradient(0, 0, 0, 310);
-        gradEgrMenor.addColorStop(0, '#f87171');
-        gradEgrMenor.addColorStop(1, '#b91c1c');
-
         contCharts['chartFlujo']=new Chart(ctx,{
           type:'bar',
           data:{
@@ -15843,23 +15823,23 @@ function contRenderFlujo(el){
               {
                 label:'Barra Mayor',
                 data:md.map(function(m){return Math.max(m.ingreso, m.egreso);}),
-                backgroundColor:md.map(function(m){return m.ingreso >= m.egreso ? gradIngMayor : gradEgrMayor;}),
-                borderColor:md.map(function(m){return m.ingreso >= m.egreso ? '#22c55e' : '#ef4444';}),
-                borderWidth:1,
-                borderRadius:8,
+                backgroundColor:md.map(function(m){return m.ingreso >= m.egreso ? '#22c55e' : '#ef4444';}),
+                borderColor:md.map(function(m){return m.ingreso >= m.egreso ? '#16a34a' : '#dc2626';}),
+                borderWidth:1.5,
+                borderRadius:6,
                 borderSkipped:false,
-                barThickness:22,
+                barThickness:34,
                 order:2
               },
               {
                 label:'Barra Menor',
                 data:md.map(function(m){return Math.min(m.ingreso, m.egreso);}),
-                backgroundColor:md.map(function(m){return m.ingreso >= m.egreso ? gradEgrMenor : gradIngMenor;}),
-                borderColor:md.map(function(m){return m.ingreso >= m.egreso ? '#fca5a5' : '#86efac';}),
+                backgroundColor:md.map(function(m){return m.ingreso >= m.egreso ? '#ef4444' : '#22c55e';}),
+                borderColor:md.map(function(m){return m.ingreso >= m.egreso ? '#dc2626' : '#16a34a';}),
                 borderWidth:1.5,
-                borderRadius:8,
+                borderRadius:6,
                 borderSkipped:false,
-                barThickness:22,
+                barThickness:34,
                 order:1
               }
             ]
