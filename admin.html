@@ -2237,7 +2237,7 @@ textarea.gemini-card-input {
 .cont-panel-title { font-size: 13px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 8px; }
 .cont-panel-body { padding: 16px 20px; }
 
-.cont-tx-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 4px; }
+.cont-tx-list { display: flex; flex-direction: column; gap: 8px; max-height: 480px; overflow-y: auto; padding-right: 4px; }
 .cont-tx-list::-webkit-scrollbar { width: 3px; }
 .cont-tx-list::-webkit-scrollbar-thumb { background: rgba(212,168,75,0.3); border-radius: 2px; }
 .cont-tx-item { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 10px 14px; transition: all 0.2s; cursor: default; }
@@ -15642,7 +15642,8 @@ function contRenderResumen(el){
   const ceC=['#ef4444','#dc2626','#f87171','#fca5a5','#f97316','#a855f7','#eab308','#888'];
   const txList=[...lista].sort((a,b)=>{
     return new Date(b.fecha||0)-new Date(a.fecha||0);
-  }).slice(0,15);
+  });
+  const panelMovsTitle = (typeof contMesFiltro !== 'undefined' && contMesFiltro > 0) ? ('\uD83D\uDCCB Movimientos de ' + CONT_MESES_FULL[contMesFiltro - 1]) : '\uD83D\uDCCB \u00DAltimos Movimientos';
   el.innerHTML=
   '<div class="cont-layout">'+
     '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDCB9 Ingresos por Servicio</div><span style="font-size:12px;color:var(--gold);font-weight:700;">'+contFmt(ingresos)+'</span></div>'+
@@ -15656,7 +15657,7 @@ function contRenderResumen(el){
       sE.map(function(e,i){return'<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;"><span style="color:#ccc;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+ceC[i%ceC.length]+';"></span>'+(CONT_CAT_ICONS[e[0]]||'\u2022')+' '+e[0]+'</span><span style="color:#ef4444;font-weight:700;">'+contFmt(e[1])+'</span></div>';}).join('')+
       '</div>')+'</div></div>'+
   '</div>'+
-  '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDCCB \u00DAltimos Movimientos</div><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Nuevo</button></div>'+
+  '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">'+panelMovsTitle+'</div><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Nuevo</button></div>'+
   '<div class="cont-panel-body">'+(lista.length===0?'<div class="cont-empty">Ninguno a\u00FAn.<br><br><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Primero</button></div>':
     '<div class="cont-tx-list">'+txList.map(function(m){return'<div class="cont-tx-item" '+(m.isAuto?'':'onclick="contEditarMovimiento(\''+m.id+'\')" style="cursor:pointer;"')+'><div class="cont-tx-icon '+m.tipo+'">'+(CONT_CAT_ICONS[m.categoria]||'\uD83D\uDCB0')+'</div><div class="cont-tx-info"><div class="cont-tx-desc">'+(m.descripcion||m.categoria)+'</div><div class="cont-tx-cat">'+m.categoria+' \u00B7 '+(m.fecha||'\u2014')+'</div></div><div style="text-align:right;"><div class="cont-tx-amount '+m.tipo+'">'+(m.tipo==='ingreso'?'+':'-')+contFmt(parseFloat(m.monto||0))+'</div><div class="cont-tx-date">'+CONT_MESES_FULL[(parseInt(m.mes)||1)-1]+'</div></div></div>';}).join('')+'</div>')+'</div></div>';
   setTimeout(function(){
