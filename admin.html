@@ -15833,36 +15833,26 @@ function contRenderFlujo(el){
             labels:CONT_MESES,
             datasets:[
               {
-                label:'Ingresos (Total)',
-                data:md.map(function(m){return m.ingreso;}),
-                type:'line',
-                borderColor:'#3b82f6',
-                backgroundColor:'transparent',
-                pointRadius:0,
-                pointHoverRadius:0,
-                pointHitRadius:0,
-                showLine:false,
-                fill:false
+                label:'Barra Mayor',
+                data:md.map(function(m){return Math.max(m.ingreso, m.egreso);}),
+                backgroundColor:md.map(function(m){return m.ingreso >= m.egreso ? gradUt : gradEgr;}),
+                borderColor:md.map(function(m){return m.ingreso >= m.egreso ? '#22c55e' : '#ef4444';}),
+                borderWidth:1.5,
+                borderRadius:6,
+                borderSkipped:false,
+                maxBarThickness:24,
+                grouped:false
               },
               {
-                label:'Egresos (Gastos)',
-                data:md.map(function(m){return m.egreso;}),
-                backgroundColor:gradEgr,
-                borderColor:'#ef4444',
+                label:'Barra Menor',
+                data:md.map(function(m){return Math.min(m.ingreso, m.egreso);}),
+                backgroundColor:md.map(function(m){return m.ingreso >= m.egreso ? gradEgr : gradUt;}),
+                borderColor:md.map(function(m){return m.ingreso >= m.egreso ? '#ef4444' : '#22c55e';}),
                 borderWidth:1.5,
-                borderRadius:{topLeft:0, topRight:0, bottomLeft:6, bottomRight:6},
+                borderRadius:6,
                 borderSkipped:false,
-                maxBarThickness:24
-              },
-              {
-                label:'Utilidad (Ganancia)',
-                data:md.map(function(m){return Math.max(0, m.utilidad);}),
-                backgroundColor:gradUt,
-                borderColor:'#22c55e',
-                borderWidth:1.5,
-                borderRadius:{topLeft:6, topRight:6, bottomLeft:0, bottomRight:0},
-                borderSkipped:false,
-                maxBarThickness:24
+                maxBarThickness:24,
+                grouped:false
               }
             ]
           },
@@ -15880,13 +15870,22 @@ function contRenderFlujo(el){
                 borderWidth:1,
                 padding:10,
                 callbacks:{
-                  label:function(ctx){return' '+ctx.dataset.label+': '+contFmt(ctx.raw);}
+                  title:function(items){return items[0]?items[0].label:'';},
+                  label:function(ctx){
+                    if(ctx.datasetIndex!==0) return null;
+                    const m=md[ctx.dataIndex];
+                    return [
+                      ' 🔵 Ingresos (Total): '+contFmt(m.ingreso),
+                      ' 🔴 Egresos (Gastos): '+contFmt(m.egreso),
+                      ' 🟢 Utilidad (Ganancia): '+contFmt(m.utilidad)
+                    ];
+                  }
                 }
               }
             },
             scales:{
               x:{
-                stacked:true,
+                stacked:false,
                 grid:{
                   color:'rgba(255,255,255,0.035)',
                   borderDash:[4, 4],
@@ -15898,7 +15897,7 @@ function contRenderFlujo(el){
                 }
               },
               y:{
-                stacked:true,
+                stacked:false,
                 grid:{
                   color:'rgba(255,255,255,0.035)',
                   borderDash:[4, 4],
