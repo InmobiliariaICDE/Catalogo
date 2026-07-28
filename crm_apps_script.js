@@ -47,6 +47,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const params = JSON.parse(e.postData.contents);
+    if (params.action === 'submitAdminForm')  return submitAdminForm(params);
     if (params.action === 'saveLead')         return saveLeadToSheet(JSON.parse(params.lead));
     if (params.action === 'deleteLead')       return deleteLeadFromSheet(params.id);
     if (params.action === 'saveCita')         return saveCitaToSheet(JSON.parse(params.cita));
@@ -1222,4 +1223,75 @@ function _getMonthStatus(val, year, monthIdx, startDateStr, monthlyRent, dueDay)
   }
 
   return { status: 'PENDING', value: valStr };
+}
+
+// ─────────────────────────────────────────────────────────────
+// ENVIAR FORMULARIO DE ADMINISTRACIÓN WEB A SHEET Y CORREO
+// ─────────────────────────────────────────────────────────────
+function submitAdminForm(params) {
+  const ss = getSpreadsheet();
+  let sheet = ss.getSheetByName('Solicitudes_Admin');
+  
+  const headers = [
+    'Fecha', 'Nombre', 'WhatsApp', 'Tipo Inmueble', 'Barrio', 
+    'Canon Estimado', 'Estado Inmueble', 'Necesidad', 'Comentarios'
+  ];
+  
+  if (!sheet) {
+    sheet = ss.insertSheet('Solicitudes_Admin');
+    sheet.appendRow(headers);
+    sheet.setFrozenRows(1);
+  }
+  
+  const fecha = new Date();
+  const rowData = [
+    fecha,
+    params.nombre || '',
+    params.whatsapp || '',
+    params.tipo || '',
+    params.barrio || '',
+    params.canon || '',
+    params.estado || '',
+    params.necesidad || '',
+    params.comentarios || ''
+  ];
+  
+  sheet.appendRow(rowData);
+  
+  // Enviar correo electrónico
+  try {
+    const emailDestino = 'icdesaladenegocios@gmail.com';
+    const asunto = '🏠 Nueva Solicitud de Administración - ' + (params.nombre || 'Web');
+    const cuerpoHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #d4a84b; padding: 20px; border-radius: 8px;">
+        <h2 style="color: #d4a84b; border-bottom: 2px solid #d4a84b; padding-bottom: 10px;">Nueva Solicitud de Administración</h2>
+        <p>Se ha recibido una nueva solicitud desde el sitio web:</p>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+          <tr style="background-color: #f9f9f9;"><td style="padding: 8px; font-weight: bold; width: 40%;">Nombre:</td><td style="padding: 8px;">${params.nombre || ''}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">WhatsApp:</td><td style="padding: 8px;">${params.whatsapp || ''}</td></tr>
+          <tr style="background-color: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Tipo de Inmueble:</td><td style="padding: 8px;">${params.tipo || ''}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Barrio o Zona:</td><td style="padding: 8px;">${params.barrio || ''}</td></tr>
+          <tr style="background-color: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Canon Estimado:</td><td style="padding: 8px;">$${params.canon || ''}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Estado del Inmueble:</td><td style="padding: 8px;">${params.estado || ''}</td></tr>
+          <tr style="background-color: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Necesidad Principal:</td><td style="padding: 8px;">${params.necesidad || ''}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold; vertical-align: top;">Comentarios:</td><td style="padding: 8px;">${params.comentarios || ''}</td></tr>
+        </table>
+        <div style="margin-top: 20px; text-align: center;">
+          <a href="https://wa.me/${String(params.whatsapp || '').replace(/\D/g, '')}" style="background-color: #25D366; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+            💬 Chatear por WhatsApp
+          </a>
+        </div>
+      </div>
+    `;
+    
+    MailApp.sendEmail({
+      to: emailDestino,
+      subject: asunto,
+      htmlBody: cuerpoHtml
+    });
+  } catch (err) {
+    Logger.log('Error al enviar correo: ' + err.toString());
+  }
+  
+  return createJsonResponse({ success: true });
 }

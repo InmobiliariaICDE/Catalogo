@@ -1372,7 +1372,7 @@ nav:not(.menu) { all: unset; display: none !important; }
               </div>
             </div>
             <div class="field"><label>Estado actual del inmueble</label>
-              <select>
+              <select id="f-estado">
                 <option value="">Selecciona...</option>
                 <option>Desocupado, listo para arrendar</option>
                 <option>Actualmente arrendado</option>
@@ -1381,7 +1381,7 @@ nav:not(.menu) { all: unset; display: none !important; }
               </select>
             </div>
             <div class="field"><label>¿Qué necesitas principalmente?</label>
-              <select>
+              <select id="f-necesidad">
                 <option value="">Selecciona...</option>
                 <option>Administración completa</option>
                 <option>Solo conseguir arrendatario</option>
@@ -1390,7 +1390,7 @@ nav:not(.menu) { all: unset; display: none !important; }
               </select>
             </div>
             <div class="field"><label>Comentarios adicionales</label>
-              <textarea placeholder="Cuéntanos más sobre tu propiedad o situación..."></textarea>
+              <textarea id="f-comentarios" placeholder="Cuéntanos más sobre tu propiedad o situación..."></textarea>
             </div>
             <button class="btn btn-gold" onclick="enviarAdm()" style="width:100%">Solicitar administración de mi propiedad →</button>
           </div>
@@ -1417,11 +1417,49 @@ function enviarAdm(){
   var tipo=document.getElementById('f-tipo') ? document.getElementById('f-tipo').value : '';
   var barrio=document.getElementById('f-barrio') ? document.getElementById('f-barrio').value.trim() : '';
   var canon=document.getElementById('f-canon') ? document.getElementById('f-canon').value.trim() : '';
+  var estado=document.getElementById('f-estado') ? document.getElementById('f-estado').value : '';
+  var necesidad=document.getElementById('f-necesidad') ? document.getElementById('f-necesidad').value : '';
+  var comentarios=document.getElementById('f-comentarios') ? document.getElementById('f-comentarios').value.trim() : '';
+  
   if(!n||!t){alert('Por favor ingresa tu nombre y WhatsApp.');return;}
-  var msg='Hola, quiero información sobre administración de mi propiedad.%0ANombre: '+encodeURIComponent(n)+'%0AWhatsApp: '+encodeURIComponent(t)+(tipo?'%0ATipo: '+encodeURIComponent(tipo):'')+(barrio?'%0ABarrio: '+encodeURIComponent(barrio):'')+(canon?'%0ACanon estimado: $'+encodeURIComponent(canon):'');
+  
+  // Guardar copia en el CRM de Google Sheets y enviar correo de respaldo
+  var payload = {
+    action: 'submitAdminForm',
+    nombre: n,
+    whatsapp: t,
+    tipo: tipo,
+    barrio: barrio,
+    canon: canon,
+    estado: estado,
+    necesidad: necesidad,
+    comentarios: comentarios
+  };
+  
+  fetch('https://script.google.com/macros/s/AKfycbz1FNSXco-emauypAbJXIhn2om9RH1fhgro9EzdKjLm2HKPBFE1Y4tvZ4sqvFaeeOJyhw/exec', {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  }).catch(function(err) {
+    console.error('Error al respaldar lead en Google Sheets:', err);
+  });
+
+  var msg='Hola, quiero información sobre administración de mi propiedad.%0A' +
+          'Nombre: '+encodeURIComponent(n)+'%0A' +
+          'WhatsApp: '+encodeURIComponent(t)+
+          (tipo?'%0ATipo: '+encodeURIComponent(tipo):'')+
+          (barrio?'%0ABarrio: '+encodeURIComponent(barrio):'')+
+          (canon?'%0ACanon estimado: $'+encodeURIComponent(canon):'')+
+          (estado?'%0AEstado: '+encodeURIComponent(estado):'')+
+          (necesidad?'%0ANecesidad: '+encodeURIComponent(necesidad):'')+
+          (comentarios?'%0AComentarios: '+encodeURIComponent(comentarios):'');
+          
   window.open('https://wa.me/573208762117?text='+msg,'_blank');
   var form=document.getElementById('adm-form');
-  var ok=document.getElementById('adm-ok');
+  var ok=document.getElementById('adm-success');
   if(form) form.style.display='none';
   if(ok) ok.style.display='block';
 }
