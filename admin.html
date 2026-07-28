@@ -8,11 +8,11 @@
 <meta http-equiv="Expires" content="0"/>
 <title>Panel de Control | ICDE Inmobiliaria</title>
     <!-- Favicon e Iconos para Google y Dispositivos -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2" />
+    <link rel="manifest" href="/site.webmanifest?v=2" />
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -15628,6 +15628,8 @@ function contRenderResumen(el){
   const txList = [...lista];
   if (contSortOrder === 'fecha') {
     txList.sort((a,b) => new Date(b.fecha||0) - new Date(a.fecha||0));
+  } else if (contSortOrder === 'tipo') {
+    txList.sort((a,b) => (a.tipo||'').localeCompare(b.tipo||''));
   } else if (contSortOrder === 'categoria') {
     txList.sort((a,b) => (a.categoria||'').localeCompare(b.categoria||''));
   } else if (contSortOrder === 'precio') {
@@ -15650,7 +15652,7 @@ function contRenderResumen(el){
       sE.map(function(e,i){return'<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;"><span style="color:#ccc;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+ceC[i%ceC.length]+';"></span>'+(CONT_CAT_ICONS[e[0]]||'\u2022')+' '+e[0]+'</span><span style="color:#ef4444;font-weight:700;">'+contFmt(e[1])+'</span></div>';}).join('')+
       '</div>')+'</div></div>'+
   '</div>'+
-  '<div class="cont-panel"><div class="cont-panel-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;"><div class="cont-panel-title">'+panelMovsTitle+'</div>'+'<div style="display:flex;gap:8px;align-items:center;"><span style="font-size:12px;color:var(--muted);white-space:nowrap;">Ordenar por:</span><select class="form-input" style="width:auto;height:32px;padding:0 8px;background:#18181b;border:1px solid rgba(255,255,255,0.08);color:#fff;font-size:12px;border-radius:8px;cursor:pointer;color-scheme:dark;" onchange="contCambiarOrden(this.value)"><option value="fecha"'+(contSortOrder==='fecha'?' selected':'')+'>\uD83D\uDCC5 Fecha</option><option value="categoria"'+(contSortOrder==='categoria'?' selected':'')+'>\uD83C\uDFF7\uFE0F Categor\u00EDa</option><option value="precio"'+(contSortOrder==='precio'?' selected':'')+'>\uD83D\uDCB0 Precio</option></select><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Nuevo</button></div></div>'+
+  '<div class="cont-panel"><div class="cont-panel-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;"><div class="cont-panel-title">'+panelMovsTitle+'</div>'+'<div style="display:flex;gap:8px;align-items:center;"><span style="font-size:12px;color:var(--muted);white-space:nowrap;">Ordenar por:</span><select class="form-input" style="width:auto;height:32px;padding:0 8px;background:#18181b;border:1px solid rgba(255,255,255,0.08);color:#fff;font-size:12px;border-radius:8px;cursor:pointer;color-scheme:dark;" onchange="contCambiarOrden(this.value)"><option value="fecha"'+(contSortOrder==='fecha'?' selected':'')+'>\uD83D\uDCC5 Fecha</option><option value="tipo"'+(contSortOrder==='tipo'?' selected':'')+'>\uD83D\uDD04 Tipo</option><option value="categoria"'+(contSortOrder==='categoria'?' selected':'')+'>\uD83C\uDFF7\uFE0F Categor\u00EDa</option><option value="precio"'+(contSortOrder==='precio'?' selected':'')+'>\uD83D\uDCB0 Precio</option></select><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Nuevo</button></div></div>'+
   '<div class="cont-panel-body">'+(lista.length===0?'<div class="cont-empty">Ninguno a\u00FAn.<br><br><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Primero</button></div>':
     '<div class="cont-tx-list">'+txList.map(function(m){return'<div class="cont-tx-item" '+(m.isAuto?'':'onclick="contEditarMovimiento(\''+m.id+'\')" style="cursor:pointer;"')+'><div class="cont-tx-icon '+m.tipo+'">'+(CONT_CAT_ICONS[m.categoria]||'\uD83D\uDCB0')+'</div><div class="cont-tx-info"><div class="cont-tx-desc">'+(m.descripcion||m.categoria)+'</div><div class="cont-tx-cat">'+m.categoria+' \u00B7 '+(m.fecha||'\u2014')+'</div></div><div style="text-align:right;"><div class="cont-tx-amount '+m.tipo+'">'+(m.tipo==='ingreso'?'+':'-')+contFmt(parseFloat(m.monto||0))+'</div><div class="cont-tx-date">'+CONT_MESES_FULL[(parseInt(m.mes)||1)-1]+'</div></div></div>';}).join('')+'</div>')+'</div></div>';
   setTimeout(function(){
@@ -15706,6 +15708,10 @@ function contSeleccionarMesYVerMovimientos(mes){
   if (contDetalleMesSortOrder === 'fecha') {
     listaMes.sort(function(a, b) {
       return new Date(b.fecha || 0) - new Date(a.fecha || 0);
+    });
+  } else if (contDetalleMesSortOrder === 'tipo') {
+    listaMes.sort(function(a, b) {
+      return (a.tipo || '').localeCompare(b.tipo || '');
     });
   } else if (contDetalleMesSortOrder === 'categoria') {
     listaMes.sort(function(a, b) {
@@ -16104,6 +16110,10 @@ function contRenderMovimientos(el){
     lista.sort(function(a,b){
       return new Date(b.fecha||0)-new Date(a.fecha||0);
     });
+  } else if (contSortOrder === 'tipo') {
+    lista.sort(function(a,b){
+      return (a.tipo || '').localeCompare(b.tipo || '');
+    });
   } else if (contSortOrder === 'categoria') {
     lista.sort(function(a,b){
       return (a.categoria || '').localeCompare(b.categoria || '');
@@ -16131,6 +16141,7 @@ function contRenderMovimientos(el){
     '<span style="font-size:12px;color:var(--muted);white-space:nowrap;">Ordenar por:</span>'+
     '<select class="form-input" style="width:auto;height:32px;padding:0 8px;background:#18181b;border:1px solid rgba(255,255,255,0.08);color:#fff;font-size:12px;border-radius:8px;cursor:pointer;" onchange="contCambiarOrden(this.value)">'+
       '<option value="fecha"'+(contSortOrder==='fecha'?' selected':'')+'>\uD83D\uDCC5 Fecha</option>'+
+      '<option value="tipo"'+(contSortOrder==='tipo'?' selected':'')+'>\uD83D\uDD04 Tipo</option>'+
       '<option value="categoria"'+(contSortOrder==='categoria'?' selected':'')+'>\uD83C\uDFF7\uFE0F Categor\u00EDa</option>'+
       '<option value="mes"'+(contSortOrder==='mes'?' selected':'')+'>\uD83D\uDDD3\uFE0F Mes</option>'+
       '<option value="ultimo"'+(contSortOrder==='ultimo'?' selected':'')+'>\u23F1\uFE0F \u00DAltimo movimiento</option>'+
