@@ -8814,9 +8814,19 @@ function ensureUniqueIds(data) {
           });
         });
 
+        let hasAnyPaymentOrActiveContract = false;
+        chronologicalMonths.forEach(item => {
+          const m = item.cell;
+          const valUpper = String(m.value).trim().toUpperCase();
+          const numVal = parseFloat(m.value);
+          if ((!isNaN(numVal) && numVal > 0) || m.status === 'PAID' || m.status === 'NEW_CONTRACT' || valUpper.includes('CONTRATO') || valUpper.includes('NUEVO')) {
+            hasAnyPaymentOrActiveContract = true;
+          }
+        });
+
         let isVacantWave = false;
         let dynamicOverallStatus = 'Ocupado';
-        if (p.name && String(p.name).toUpperCase().includes('DESOCUPAD')) {
+        if ((p.name && String(p.name).toUpperCase().includes('DESOCUPAD')) || !p.tenant_name || String(p.tenant_name).trim() === '' || !hasAnyPaymentOrActiveContract) {
           isVacantWave = true;
           dynamicOverallStatus = 'Desocupado';
         }

@@ -159,9 +159,19 @@ function getAdminData() {
       });
     });
 
+    let hasAnyPaymentOrActiveContract = false;
+    chronologicalMonths.forEach(item => {
+      const m = item.cell;
+      const valUpper = String(m.value).trim().toUpperCase();
+      const numVal = parseFloat(m.value);
+      if ((!isNaN(numVal) && numVal > 0) || m.status === 'PAID' || m.status === 'NEW_CONTRACT' || valUpper.includes('CONTRATO') || valUpper.includes('NUEVO')) {
+        hasAnyPaymentOrActiveContract = true;
+      }
+    });
+
     let isVacantWave = false;
     let overallStatus = 'Ocupado';
-    if (rawName.toUpperCase().includes('DESOCUPAD')) {
+    if (rawName.toUpperCase().includes('DESOCUPAD') || !tenantName || String(tenantName).trim() === '' || !hasAnyPaymentOrActiveContract) {
       isVacantWave = true;
       overallStatus = 'Desocupado';
     }
@@ -466,7 +476,7 @@ function saveAdminPropertyToSheet(params) {
     for (let c = 17; c < totalCols; c++) {
       const headerVal = String(values[4][c] || '').trim();
       if (headerVal && headerVal !== 'None' && headerVal !== '') {
-        newRowValues[c] = '-';
+        newRowValues[c] = 'DESOCUPADO';
       } else {
         newRowValues[c] = '';
       }

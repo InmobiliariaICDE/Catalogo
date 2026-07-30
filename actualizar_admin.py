@@ -179,9 +179,20 @@ def parse_properties(file):
                     "cell": m
                 })
 
+        has_any_payment_or_contract = False
+        for item in months_order:
+            m = item["cell"]
+            val_upper = str(m["value"]).strip().upper()
+            try:
+                num_val = float(m["value"])
+            except (ValueError, TypeError):
+                num_val = 0
+            if num_val > 0 or m["status"] in ("PAID", "NEW_CONTRACT") or "CONTRATO" in val_upper or "NUEVO" in val_upper:
+                has_any_payment_or_contract = True
+
         is_vacant_wave = False
         overall_status = "Ocupado"
-        if "DESOCUPAD" in raw_name.upper():
+        if "DESOCUPAD" in raw_name.upper() or not tenant_name or not str(tenant_name).strip() or not has_any_payment_or_contract:
             is_vacant_wave = True
             overall_status = "Desocupado"
 
