@@ -15630,9 +15630,19 @@ function contRenderResumen(el){
   if (contSortOrder === 'fecha') {
     txList.sort((a,b) => new Date(b.fecha||0) - new Date(a.fecha||0));
   } else if (contSortOrder === 'tipo') {
-    txList.sort((a,b) => (a.tipo||'').localeCompare(b.tipo||''));
+    txList.sort((a,b) => {
+      const tComp = (a.tipo||'').localeCompare(b.tipo||'');
+      if (tComp !== 0) return tComp;
+      const cComp = (a.categoria||'').localeCompare(b.categoria||'');
+      if (cComp !== 0) return cComp;
+      return new Date(b.fecha||0) - new Date(a.fecha||0);
+    });
   } else if (contSortOrder === 'categoria') {
-    txList.sort((a,b) => (a.categoria||'').localeCompare(b.categoria||''));
+    txList.sort((a,b) => {
+      const cComp = (a.categoria||'').localeCompare(b.categoria||'');
+      if (cComp !== 0) return cComp;
+      return new Date(b.fecha||0) - new Date(a.fecha||0);
+    });
   } else if (contSortOrder === 'precio') {
     txList.sort((a,b) => (parseFloat(b.monto||0)) - (parseFloat(a.monto||0)));
   } else {
@@ -15712,11 +15722,17 @@ function contSeleccionarMesYVerMovimientos(mes){
     });
   } else if (contDetalleMesSortOrder === 'tipo') {
     listaMes.sort(function(a, b) {
-      return (a.tipo || '').localeCompare(b.tipo || '');
+      const tComp = (a.tipo || '').localeCompare(b.tipo || '');
+      if (tComp !== 0) return tComp;
+      const cComp = (a.categoria || '').localeCompare(b.categoria || '');
+      if (cComp !== 0) return cComp;
+      return new Date(b.fecha || 0) - new Date(a.fecha || 0);
     });
   } else if (contDetalleMesSortOrder === 'categoria') {
     listaMes.sort(function(a, b) {
-      return (a.categoria || '').localeCompare(b.categoria || '');
+      const cComp = (a.categoria || '').localeCompare(b.categoria || '');
+      if (cComp !== 0) return cComp;
+      return new Date(b.fecha || 0) - new Date(a.fecha || 0);
     });
   } else if (contDetalleMesSortOrder === 'precio') {
     listaMes.sort(function(a, b) {
@@ -16113,11 +16129,17 @@ function contRenderMovimientos(el){
     });
   } else if (contSortOrder === 'tipo') {
     lista.sort(function(a,b){
-      return (a.tipo || '').localeCompare(b.tipo || '');
+      const tComp = (a.tipo || '').localeCompare(b.tipo || '');
+      if (tComp !== 0) return tComp;
+      const cComp = (a.categoria || '').localeCompare(b.categoria || '');
+      if (cComp !== 0) return cComp;
+      return new Date(b.fecha || 0) - new Date(a.fecha || 0);
     });
   } else if (contSortOrder === 'categoria') {
     lista.sort(function(a,b){
-      return (a.categoria || '').localeCompare(b.categoria || '');
+      const cComp = (a.categoria || '').localeCompare(b.categoria || '');
+      if (cComp !== 0) return cComp;
+      return new Date(b.fecha || 0) - new Date(a.fecha || 0);
     });
   } else if (contSortOrder === 'mes') {
     lista.sort(function(a,b){
