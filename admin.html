@@ -15551,7 +15551,6 @@ async function renderContabilidad(){
   <div class="cont-hero" id="contHero"></div>
   <div class="cont-tabs">
     <button class="cont-tab-btn${contActiveTab==='flujo'?' active':''}" onclick="contSwitchTab('flujo')">\uD83D\uDCC8 Flujo Mensual</button>
-    <button class="cont-tab-btn${contActiveTab==='pareto'?' active':''}" onclick="contSwitchTab('pareto')">\u2696\uFE0F An\u00E1lisis Pareto</button>
     <button class="cont-tab-btn${contActiveTab==='inversiones'?' active':''}" onclick="contSwitchTab('inversiones')">\uD83D\uDC8E Inversiones</button>
     <button class="cont-tab-btn${contActiveTab==='movimientos'?' active':''}" onclick="contSwitchTab('movimientos')">\uD83D\uDCCB Movimientos</button>
   </div>
@@ -15588,9 +15587,13 @@ function contCambiarAno(d){contAnoFiltro+=d;const el=document.getElementById('co
 function contCambiarMes(v){contMesFiltro=parseInt(v)||0;contRenderHero();contRenderMetas();contRenderTabContent();}
 
 function contSwitchTab(tab){
+  if (tab === 'pareto') {
+    tab = 'inversiones';
+    contMostrarParetoGraficas = true;
+  }
   contActiveTab=tab;
   document.querySelectorAll('.cont-tab-btn').forEach((btn,i)=>{
-    const tabs=['flujo','pareto','inversiones','movimientos'];
+    const tabs=['flujo','inversiones','movimientos'];
     btn.classList.toggle('active',tabs[i]===tab);
   });
   contRenderTabContent();
@@ -15963,11 +15966,23 @@ function contRenderPareto(el){
   },80);
 }
 
+let contMostrarParetoGraficas = false;
+function contToggleParetoGraficas(){
+  contMostrarParetoGraficas = !contMostrarParetoGraficas;
+  contRenderTabContent();
+}
+
 function contRenderInversiones(el){
   const lista=contGetFiltrado();
   const totalIng=contSumTipo(lista,'ingreso');
+  const ingresos=lista.filter(function(m){return m.tipo==='ingreso';});
   const utilidad=totalIng-contSumTipo(lista,'egreso');
-  const catMap={};lista.filter(function(m){return m.tipo==='ingreso';}).forEach(function(m){if(!catMap[m.categoria])catMap[m.categoria]={total:0};catMap[m.categoria].total+=parseFloat(m.monto||0);});
+  const catMap={};ingresos.forEach(function(m){if(!catMap[m.categoria])catMap[m.categoria]={total:0,count:0};catMap[m.categoria].total+=parseFloat(m.monto||0);catMap[m.categoria].count++;});
+  const sortedCats=Object.entries(catMap).sort(function(a,b){return b[1].total-a[1].total;});
+  let acum=0;
+  const pd=sortedCats.map(function(entry){const cat=entry[0];const data=entry[1];acum+=data.total;const pct=totalIng>0?(data.total/totalIng*100):0;const pctAcum=totalIng>0?(acum/totalIng*100):0;return{cat:cat,total:data.total,count:data.count,pct:pct,pctAcum:pctAcum,is80:pctAcum<=80.1};});
+  const n80=Math.max(1,(pd.findIndex(function(p){return p.pctAcum>=80;}))+1);
+
   const montoPropuesto=utilidad>0?utilidad*0.3:0;
   const opts=[
     {titulo:'\uD83C\uDFE0 Ampliar Cartera Ventas',desc:'Captaci\u00F3n de inmuebles exclusivos. Alta rentabilidad por comisiones.',roi:28,riesgo:'media',horizonte:'3-6 meses',accion:'Contratar agente de captaci\u00F3n. Publicidad en portales especializados.',rec:!!(catMap['Venta de Inmueble']&&catMap['Venta de Inmueble'].total>0)},
@@ -15978,13 +15993,41 @@ function contRenderInversiones(el){
     {titulo:'\uD83D\uDCE3 Marketing Digital',desc:'SEO, redes sociales y pauta. Mayor captaci\u00F3n con menos esfuerzo.',roi:40,riesgo:'baja',horizonte:'2-4 meses',accion:'Google Ads + Meta Ads + SEO local. Retorno 4x del invertido.',rec:true},
     {titulo:'\uD83D\uDCBB Tecnolog\u00EDa e IA',desc:'Automatizaci\u00F3n y herramientas que multiplican tu eficiencia.',roi:50,riesgo:'baja',horizonte:'1-2 meses',accion:'Panel ICDE avanzado, automatizaciones e inteligencia artificial.',rec:true}
   ].sort(function(a,b){return(b.rec?1:0)-(a.rec?1:0)||b.roi-a.roi;});
+
+  const paretoHtml = 
+    '<div id="contParetoChartsWrapper" style="display:'+(contMostrarParetoGraficas?'block':'none')+'; margin-bottom:20px;">'+
+      '<div class="cont-panel">'+
+        '<div class="cont-panel-header"><div class="cont-panel-title">\u2696\uFE0F An\u00E1lisis Pareto</div><span style="font-size:12px;color:var(--muted);">'+n80+' '+(n80===1?'categor\u00EDa genera':'categor\u00EDas generan')+' el 80%</span></div>'+
+        '<div class="cont-panel-body">'+
+        (totalIng===0?'<div class="cont-empty">Sin ingresos para analizar.</div>':
+          '<div style="background:rgba(212,168,75,0.08);border:1px solid rgba(212,168,75,0.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;">\uD83C\uDFAF <strong style="color:var(--gold);">Regla 80/20:</strong> <span style="color:#ccc;">Las <strong style="color:#fff;">'+n80+'</strong> categor\u00EDas m\u00E1s rentables generan el <strong style="color:#22c55e;">80%</strong> de tus ingresos.</span></div>'+
+          '<div class="cont-chart-wrap" style="height:280px;"><canvas id="chartPareto"></canvas></div>'+
+          '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:16px;"><thead><tr style="border-bottom:1px solid rgba(255,255,255,0.06);"><th style="padding:8px 10px;text-align:left;color:var(--gold);font-size:10px;text-transform:uppercase;">Categor\u00EDa</th><th style="padding:8px 10px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">Ingresos</th><th style="padding:8px 10px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">%</th><th style="padding:8px 10px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">% Acum.</th><th style="padding:8px 10px;text-align:center;color:var(--gold);font-size:10px;text-transform:uppercase;">Impacto</th></tr></thead>'+
+          '<tbody>'+pd.map(function(p){return'<tr style="border-bottom:1px solid rgba(255,255,255,0.03);background:'+(p.is80?'rgba(34,197,94,0.04)':'')+'"><td style="padding:8px 10px;color:#fff;font-weight:'+(p.is80?700:400)+';">'+(CONT_CAT_ICONS[p.cat]||'\u2022')+' '+p.cat+'</td><td style="padding:8px 10px;text-align:right;color:#22c55e;font-weight:600;">'+contFmt(p.total)+'</td><td style="padding:8px 10px;text-align:right;color:#ccc;">'+p.pct.toFixed(1)+'%</td><td style="padding:8px 10px;text-align:right;color:'+(p.pctAcum<=80?'#22c55e':'#888')+';">'+p.pctAcum.toFixed(1)+'%</td><td style="padding:8px 10px;text-align:center;">'+(p.is80?'<span style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">\u2B50 VITAL</span>':'<span style="color:#555;font-size:10px;">Complementario</span>')+'</td></tr>';}).join('')+'</tbody></table>')+'</div>'+
+      '</div>'+
+    '</div>';
+
   el.innerHTML=
-  '<div style="background:linear-gradient(135deg,rgba(212,168,75,0.08),rgba(34,197,94,0.04));border:1px solid rgba(212,168,75,0.2);border-radius:14px;padding:18px 22px;margin-bottom:20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;">'+
-  '<div style="font-size:28px;">\uD83E\uDD16</div>'+
-  '<div style="flex:1;"><div style="font-weight:700;color:var(--gold);font-size:15px;margin-bottom:4px;">Recomendaciones An\u00E1lisis Pareto</div>'+
-  '<div style="color:#ccc;font-size:13px;line-height:1.5;">Ingresos <strong style="color:#22c55e;">'+contFmt(totalIng)+'</strong> \u00B7 Utilidad <strong style="color:'+(utilidad>=0?'#22c55e':'#ef4444')+'">'+contFmt(utilidad)+'</strong>'+(utilidad>0?' \u00B7 Reinvertir hasta <strong style="color:var(--gold);">'+contFmt(montoPropuesto)+'</strong> (30%)':' \u00B7 Optimiza gastos antes de invertir.')+'</div></div>'+
+  '<div style="background:linear-gradient(135deg,rgba(212,168,75,0.08),rgba(34,197,94,0.04));border:1px solid rgba(212,168,75,0.2);border-radius:14px;padding:18px 22px;margin-bottom:20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:space-between;">'+
+    '<div style="display:flex;gap:16px;align-items:center;flex:1;">'+
+      '<div style="font-size:28px;">\uD83E\uDD16</div>'+
+      '<div><div style="font-weight:700;color:var(--gold);font-size:15px;margin-bottom:4px;">Recomendaciones An\u00E1lisis Pareto</div>'+
+      '<div style="color:#ccc;font-size:13px;line-height:1.5;">Ingresos <strong style="color:#22c55e;">'+contFmt(totalIng)+'</strong> \u00B7 Utilidad <strong style="color:'+(utilidad>=0?'#22c55e':'#ef4444')+'">'+contFmt(utilidad)+'</strong>'+(utilidad>0?' \u00B7 Reinvertir hasta <strong style="color:var(--gold);">'+contFmt(montoPropuesto)+'</strong> (30%)':' \u00B7 Optimiza gastos antes de invertir.')+'</div></div>'+
+    '</div>'+
+    '<button onclick="contToggleParetoGraficas()" style="background:linear-gradient(180deg, #d9ac3b 0%, #9e751d 100%); border:1px solid #785614; color:#0f0f0f; font-size:12px; font-weight:700; font-family:system-ui, -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; letter-spacing:0.2px; padding:6px 16px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 6px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.45); transition:all 0.15s ease;" onmouseover="this.style.transform=\'scale(1.03)\'" onmouseout="this.style.transform=\'scale(1)\'">📊 Gráficas</button>'+
   '</div>'+
+  paretoHtml+
   '<div class="cont-pareto-grid">'+opts.map(function(inv){return'<div class="cont-inv-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div class="cont-inv-title">'+inv.titulo+'</div>'+(inv.rec?'<span style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;white-space:nowrap;">\u2713 REC.</span>':'')+'</div><div class="cont-inv-desc">'+inv.desc+'</div><div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px;font-size:12px;"><strong style="color:var(--muted);">Acci\u00F3n:</strong> <span style="color:#ccc;">'+inv.accion+'</span></div><div class="cont-inv-meta"><div class="cont-inv-badge '+inv.riesgo+'">Riesgo '+inv.riesgo+'</div><div class="cont-inv-badge media">\u23F1 '+inv.horizonte+'</div></div><div style="display:flex;justify-content:space-between;align-items:center;"><div class="cont-inv-roi">~'+inv.roi+'% <span>ROI estimado</span></div>'+(montoPropuesto>0?'<div style="font-size:11px;color:var(--muted);">Retorno: <strong style="color:var(--gold);">'+contFmt(montoPropuesto*(inv.roi/100))+'</strong></div>':'')+'</div></div>';}).join('')+'</div>';
+
+  if (contMostrarParetoGraficas) {
+    setTimeout(function(){
+      try {
+        if(totalIng>0&&pd.length){const ctx=document.getElementById('chartPareto');if(ctx){const cols=pd.map(function(p){return p.is80?'rgba(34,197,94,0.75)':'rgba(100,100,100,0.45)';});contCharts['chartPareto']=new Chart(ctx,{type:'bar',data:{labels:pd.map(function(p){return p.cat;}),datasets:[{label:'Ingresos',data:pd.map(function(p){return p.total;}),backgroundColor:cols,borderWidth:1.5,borderRadius:5,order:2},{label:'% Acumulado',data:pd.map(function(p){return p.pctAcum;}),type:'line',borderColor:'#d4a84b',backgroundColor:'rgba(212,168,75,0.08)',borderWidth:2,pointRadius:4,tension:0.3,yAxisID:'y1',order:1}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.datasetIndex===0?' '+contFmt(ctx.raw):' '+ctx.raw.toFixed(1)+'%';}}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:10},maxRotation:30}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:10},callback:function(v){return contFmt(v);}},beginAtZero:true},y1:{position:'right',min:0,max:100,grid:{display:false},ticks:{color:'#d4a84b',font:{size:10},callback:function(v){return v+'%';}}}}}});}}
+      } catch (e) {
+        console.warn("No se pudo cargar el gráfico de Pareto:", e);
+      }
+    },80);
+  }
 }
 
 function contCambiarOrden(val){
