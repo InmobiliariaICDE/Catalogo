@@ -16302,54 +16302,75 @@ function contRenderInversiones(el){
     </div>
   </div>
   ${paretoHtml}
-  <div class="cont-pareto-grid">${allInversiones.map(inv => {
-    const paretoEval = contCalcularConvenienciaPareto(inv, catMap, pd, totalIng);
-    const precioNum = parseFloat(inv.precio) || 0;
-    
-    let viabilidadHtml = '';
-    if (precioNum > 0) {
-      if (montoPropuesto > 0) {
-        if (precioNum <= montoPropuesto) {
-          viabilidadHtml = '<span style="font-size:10px; color:#22c55e; background:rgba(34,197,94,0.1); padding:2px 8px; border-radius:12px; border:1px solid rgba(34,197,94,0.25); font-weight:600;">✅ Cubierto con reinversión del mes</span>';
-        } else {
-          const mesesNec = (precioNum / montoPropuesto).toFixed(1);
-          viabilidadHtml = `<span style="font-size:10px; color:#f97316; background:rgba(249,115,22,0.1); padding:2px 8px; border-radius:12px; border:1px solid rgba(249,115,22,0.25); font-weight:600;">⏳ Requiere ~${mesesNec} meses de utilidad</span>`;
-        }
-      } else {
-        viabilidadHtml = '<span style="font-size:10px; color:#888; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:12px;">Costo proyectado</span>';
-      }
-    }
+  <div class="cont-panel" style="overflow-x:auto; padding:0; background:#141416; border:1px solid rgba(255,255,255,0.08); border-radius:14px; margin-top:12px;">
+    <table style="width:100%; border-collapse:collapse; font-size:12.5px; text-align:left;">
+      <thead>
+        <tr style="background:rgba(212,168,75,0.06); border-bottom:1px solid rgba(212,168,75,0.2);">
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em;">Opción de Inversión</th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em;">Categoría</th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em; text-align:right;">Precio / Costo</th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em;">Acción / Descripción</th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em; text-align:center;">Riesgo</th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em; text-align:center;">Tiempo</th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em; text-align:right;">ROI Est.</th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em; text-align:center;">Evaluación Pareto</th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em; text-align:center;">Acc.</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${allInversiones.map(inv => {
+          const paretoEval = contCalcularConvenienciaPareto(inv, catMap, pd, totalIng);
+          const precioNum = parseFloat(inv.precio) || 0;
+          
+          let viabilidadHtml = '';
+          if (precioNum > 0) {
+            if (montoPropuesto > 0) {
+              if (precioNum <= montoPropuesto) {
+                viabilidadHtml = '<div style="font-size:9.5px; color:#22c55e; margin-top:2px;">✓ Cubierto mes</div>';
+              } else {
+                const mesesNec = (precioNum / montoPropuesto).toFixed(1);
+                viabilidadHtml = `<div style="font-size:9.5px; color:#f97316; margin-top:2px;">⏳ ~${mesesNec} meses</div>`;
+              }
+            }
+          }
 
-    return `
-    <div class="cont-inv-card" style="position:relative; display:flex; flex-direction:column; justify-content:space-between;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
-        <div class="cont-inv-title" style="font-size:14px; font-weight:700; color:#fff;">${inv.titulo}</div>
-        <div style="display:flex; gap:4px; align-items:center;">
-          <span style="background:${paretoEval.bg}; color:${paretoEval.color}; border:1px solid ${paretoEval.border}; padding:3px 9px; border-radius:20px; font-size:9px; font-weight:700; white-space:nowrap;">${paretoEval.label}</span>
-          ${inv.precio !== undefined ? `<button onclick="contAbrirModalInversion('${inv.id}')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:var(--gold); cursor:pointer; font-size:11px; width:24px; height:24px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; transition:all 0.2s;" title="Editar o eliminar inversión" onmouseover="this.style.background='rgba(212,168,75,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">✏️</button>` : ''}
-        </div>
-      </div>
+          const roiColor = (inv.roi || 0) >= 40 ? '#22c55e' : ((inv.roi || 0) >= 25 ? 'var(--gold)' : '#ccc');
+          const editBtn = `<button onclick="contAbrirModalInversion('${inv.id}')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:var(--gold); cursor:pointer; font-size:11px; padding:3px 7px; border-radius:6px; transition:all 0.2s;" title="Editar o eliminar inversión" onmouseover="this.style.background='rgba(212,168,75,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">✏️</button>`;
 
-      ${precioNum > 0 ? `
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; padding:6px 10px; background:rgba(0,0,0,0.25); border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
-          <div><span style="font-size:10px; color:var(--muted); text-transform:uppercase;">Precio / Costo:</span> <strong style="font-size:15px; color:var(--gold); margin-left:4px;">$${contFmt(precioNum)}</strong></div>
-          ${viabilidadHtml}
-        </div>` : ''}
-
-      <div class="cont-inv-desc" style="font-size:12px; color:#aaa; margin-bottom:10px; line-height:1.4;">${inv.accion || inv.desc || ''}</div>
-      
-      <div class="cont-inv-meta" style="margin-bottom:10px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-        <div class="cont-inv-badge ${inv.riesgo || 'baja'}">Riesgo ${inv.riesgo || 'baja'}</div>
-        <div class="cont-inv-badge media">⏱ ${inv.horizonte || '1-2 meses'}</div>
-        <div style="font-size:11px; color:#888; margin-left:auto;">Categoría: <strong style="color:#ccc;">${inv.categoria || 'General'}</strong></div>
-      </div>
-
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05);">
-        <div class="cont-inv-roi">~${inv.roi || 30}% <span style="font-size:10px; color:#888;">ROI estimado</span></div>
-        ${montoPropuesto > 0 ? `<div style="font-size:11px;color:var(--muted);">Retorno est: <strong style="color:#22c55e;">$${contFmt((precioNum || montoPropuesto) * ((inv.roi || 30) / 100))}</strong></div>` : ''}
-      </div>
-    </div>`;
-  }).join('')}</div>`;
+          return `
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.035);" onmouseover="this.style.background='rgba(255,255,255,0.025)'" onmouseout="this.style.background=''">
+            <td style="padding:10px 14px; color:#fff; font-weight:600; white-space:nowrap;">
+              ${inv.titulo}
+            </td>
+            <td style="padding:10px 14px; color:#ccc; white-space:nowrap; font-size:12px;">
+              ${inv.categoria || 'General'}
+            </td>
+            <td style="padding:10px 14px; text-align:right; white-space:nowrap;">
+              ${precioNum > 0 ? `<strong style="color:var(--gold); font-size:13px;">$${contFmt(precioNum)}</strong>${viabilidadHtml}` : '<span style="color:#666;">—</span>'}
+            </td>
+            <td style="padding:10px 14px; color:#aaa; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${(inv.accion || inv.desc || '').replace(/"/g, '&quot;')}">
+              ${inv.accion || inv.desc || '—'}
+            </td>
+            <td style="padding:10px 14px; text-align:center; white-space:nowrap;">
+              <span class="cont-inv-badge ${inv.riesgo || 'baja'}">Riesgo ${inv.riesgo || 'baja'}</span>
+            </td>
+            <td style="padding:10px 14px; text-align:center; color:#ccc; white-space:nowrap; font-size:12px;">
+              ⏱ ${inv.horizonte || '1 mes'}
+            </td>
+            <td style="padding:10px 14px; text-align:right; white-space:nowrap;">
+              <strong style="color:${roiColor}; font-size:13px;">~${inv.roi || 30}%</strong>
+            </td>
+            <td style="padding:10px 14px; text-align:center; white-space:nowrap;">
+              <span style="background:${paretoEval.bg}; color:${paretoEval.color}; border:1px solid ${paretoEval.border}; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700;">${paretoEval.label}</span>
+            </td>
+            <td style="padding:10px 14px; text-align:center; white-space:nowrap;">
+              ${editBtn}
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`;
 
   if (contMostrarParetoGraficas) {
     setTimeout(function(){
