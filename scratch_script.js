@@ -1,29 +1,4 @@
-<!DOCTYPE html>
-<html lang="es-CO">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/>
-<meta http-equiv="Expires" content="0"/>
-<title>Panel de Control | ICDE Inmobiliaria</title>
-    <!-- Favicon e Iconos para Google y Dispositivos -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2" />
-    <link rel="manifest" href="/site.webmanifest?v=2" />
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/supercluster@7.1.2/dist/supercluster.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script async defer src="https://apis.google.com/js/api.js"></script>
-<script async defer src="https://accounts.google.com/gsi/client"></script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&libraries=places&loading=async"></script>
-<script>
+
 // Suprime el diálogo "Esta página no puede cargar Google Maps correctamente"
 (function() {
   const hide = () => {
@@ -4639,19 +4614,7 @@ function showTab(tab){
     else if(tab==='citas') renderCitas();
     else if(tab==='administracion') renderAdministracion();
     else if(tab==='gestion') renderGestion();
-    else if(tab==='contabilidad') {
-      if (typeof renderContabilidad === 'function') {
-        renderContabilidad();
-      } else if (typeof window.renderContabilidad === 'function') {
-        window.renderContabilidad();
-      } else {
-        setTimeout(function() {
-          if (typeof renderContabilidad === 'function') renderContabilidad();
-          else if (typeof window.renderContabilidad === 'function') window.renderContabilidad();
-          else console.error("renderContabilidad no disponible aún");
-        }, 80);
-      }
-    }
+    else if(tab==='contabilidad') renderContabilidad();
   } catch (err) {
     console.error("Error al abrir pestaña " + tab + ":", err);
     if (typeof toast === 'function') {
@@ -16575,7 +16538,7 @@ function contRenderMovimientos(el){
     }
     
     return '<tr style="'+rowStyle+'"><td style="padding:12px 16px;"><div style="'+textStyle+'">'+dateDisplay+'</div>'+timestampHtml+'</td><td style="padding:12px 16px;"><div style="'+textStyle+'">'+(m.categoria||'Sin cat.')+'</div></td><td style="padding:12px 16px;"><div style="'+textStyle+'">'+descDisplay+'</div></td><td style="padding:12px 16px;text-align:right;"><div style="'+textStyle+'font-weight:600;color:'+(m.tipo==='egreso'?'#ef4444':'#22c55e')+'">'+(m.tipo==='egreso'?'-':'')+contFmt(m.monto)+'</div></td><td style="padding:12px 16px;text-align:center;"><div style="'+textStyle+'">'+(m.tipo==='ingreso'?'\u2B06\uFE0F Ing.':'\u2B07\uFE0F Egr.')+'</div></td><td style="padding:12px 16px;text-align:center;">'+actionBtnHtml+'</td></tr>';
-  }).join('')+'</tbody></table>')+'</div></div>';
+  }).join('')+'</tbody></table>';
 }
 function contCambiarOrden(val){
   contSortOrder = val;
@@ -17071,52 +17034,3 @@ async function contPushTotal() {
 }
 
 /* FIN MÓDULO CONTABILIDAD */
-</script>
-
-  <!-- GEMINI SIDEBAR -->
-  <div class="gemini-sidebar" id="geminiSidebar">
-    <div class="gemini-sidebar-header">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <div class="gemini-avatar-container" style="position: relative; width: 48px; height: 48px; flex-shrink: 0;">
-          <img id="geminiAvatar" src="Saludo.png" style="width: 100%; height: 100%; object-fit: contain; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
-          <span style="position: absolute; bottom: 1px; right: 1px; width: 9px; height: 9px; background: #22c55e; border: 1.5px solid #121212; border-radius: 50%;"></span>
-        </div>
-        <div>
-          <h4 style="margin:0; font-size:13px; font-weight:700; color:#fff; font-family:'Outfit', sans-serif; line-height:1.2;">Asistente Gemini AI</h4>
-          <span style="font-size:10px; color:#aaa; display:flex; align-items:center; gap:4px; line-height:1;"><span style="width:5px; height:5px; background:#22c55e; border-radius:50%; display:inline-block;"></span>Online (2.0 Flash)</span>
-        </div>
-      </div>
-      <button class="btn-close-gemini" onclick="toggleGeminiSidebar()" title="Cerrar panel">&times;</button>
-    </div>
-    
-    <div class="gemini-chat-history" id="geminiChatHistory">
-      <div style="display: flex; gap: 8px; align-self: flex-start; max-width: 85%; animation: slideUpIn 0.25s forwards;">
-        <img src="Saludo.png" style="width: 48px; height: 48px; object-fit: contain; flex-shrink: 0; margin-top: 0px;">
-        <div class="gemini-bubble assistant" style="max-width: calc(100% - 56px); margin: 0; animation: none;">
-          ¡Hola! Soy tu asistente de Gemini AI para **ICDE Inmobiliaria**. 🚀<br><br>
-          ¿En qué te puedo ayudar hoy? Puedes escribirme o usar el micrófono para:
-          <ul style="margin:8px 0 0 16px; padding:0; font-size:12px; line-height:1.45; color:rgba(255,255,255,0.85);">
-            <li style="margin-bottom: 4px;">🔍 **Buscar propiedades** (ej: *"Busca el apartamento 102"* o *"Buscar en El Ingenio"*)</li>
-            <li style="margin-bottom: 4px;">👥 **Filtrar leads** (ej: *"Busca al cliente Juan"*)</li>
-            <li style="margin-bottom: 4px;">📅 **Agendar citas/visitas** (ej: *"Agenda visita para el 205 el lunes a las 4pm con Carlos"*)</li>
-            <li style="margin-bottom: 4px;">✍️ **Generar descripciones** (ej: *"Genera descripción del inmueble 102"*)</li>
-            <li style="margin-bottom: 4px;">💼 **Consultar saldos/cobros** (ej: *"Cuánto se cobró este mes?"* o *"Ver estado de Silvia"*)</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-    
-    <div class="gemini-sidebar-footer">
-      <button class="gemini-mic-btn" id="geminiMicBtn" onclick="toggleGeminiMic()" title="Hablar con Gemini">
-        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px;"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
-      </button>
-      <input type="text" class="gemini-text-input" id="geminiTextInput" placeholder="Escribe un comando...">
-      <button class="gemini-send-btn" id="geminiSendBtn" onclick="sendGeminiTextMessage()" title="Enviar mensaje">
-        <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px; height:16px; margin-left: 2px;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-      </button>
-    </div>
-  </div>
-
-
-</body>
-</html>
