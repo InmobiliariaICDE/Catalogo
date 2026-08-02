@@ -16236,8 +16236,38 @@ function contEliminarInversion(invIdToDelete) {
 }
 
 let contInversionesSortOrder = 'pareto';
+let contSelectedInversiones = new Set();
+
 function contCambiarOrdenInversiones(val) {
   contInversionesSortOrder = val;
+  contRenderTabContent();
+}
+
+function contToggleSeleccionInversion(invId) {
+  if (contSelectedInversiones.has(invId)) {
+    contSelectedInversiones.delete(invId);
+  } else {
+    contSelectedInversiones.add(invId);
+  }
+  contRenderTabContent();
+}
+
+function contToggleSeleccionarTodasInversiones(checked, allIdsJsonStr) {
+  try {
+    const ids = JSON.parse(allIdsJsonStr);
+    if (checked) {
+      ids.forEach(id => contSelectedInversiones.add(id));
+    } else {
+      contSelectedInversiones.clear();
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  contRenderTabContent();
+}
+
+function contLimpiarSeleccionInversiones() {
+  contSelectedInversiones.clear();
   contRenderTabContent();
 }
 
@@ -16309,6 +16339,49 @@ function contRenderInversiones(el){
     catCosts[c] += (parseFloat(x.precio) || 0);
   });
 
+  // Cálculo de inversiones seleccionadas para la sumatoria simulada
+  const selectedList = allInversiones.filter(x => contSelectedInversiones.has(x.id));
+  const sumSelected = selectedList.reduce((acc, x) => acc + (parseFloat(x.precio) || 0), 0);
+  const countSelected = selectedList.length;
+
+  let seleccionResumenHtml = '';
+  if (countSelected > 0) {
+    let coberHtml = '';
+    if (sumSelected === 0) {
+      coberHtml = '<span style="color:#aaa; font-size:11.5px;">(Las inversiones seleccionadas no tienen costo asignado)</span>';
+    } else if (montoPropuesto > 0) {
+      if (sumSelected <= montoPropuesto) {
+        coberHtml = '<span style="background:rgba(34,197,94,0.18); color:#22c55e; border:1px solid rgba(34,197,94,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">✓ Cubierto con tu 30% de utilidad del mes</span>';
+      } else {
+        const diff = sumSelected - montoPropuesto;
+        const mesesEst = (sumSelected / montoPropuesto).toFixed(1);
+        coberHtml = `<span style="background:rgba(249,115,22,0.18); color:#f97316; border:1px solid rgba(249,115,22,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">⏳ Excede tu 30% por $${contFmt(diff)} (~${mesesEst} meses de utilidad)</span>`;
+      }
+    } else if (utilidad > 0) {
+      if (sumSelected <= utilidad) {
+        coberHtml = '<span style="background:rgba(34,197,94,0.18); color:#22c55e; border:1px solid rgba(34,197,94,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">✓ Cubierto con la utilidad total del mes</span>';
+      } else {
+        const diff = sumSelected - utilidad;
+        coberHtml = `<span style="background:rgba(239,68,68,0.18); color:#ef4444; border:1px solid rgba(239,68,68,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">⚠ Excede utilidad total en $${contFmt(diff)}</span>`;
+      }
+    } else {
+      coberHtml = '<span style="background:rgba(239,68,68,0.18); color:#ef4444; border:1px solid rgba(239,68,68,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">⚠ Requiere generar utilidad</span>';
+    }
+
+    seleccionResumenHtml = `
+      <div style="background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.3); border-radius:10px; padding:8px 16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:12px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.05); width:100%;">
+        <span style="color:#fff; font-size:13px; font-weight:600;">☑️ Seleccionadas: <strong style="color:var(--gold); font-size:14px;">${countSelected}</strong></span>
+        <span style="color:#22c55e; font-size:15px; font-weight:800;">Suma Total: $${contFmt(sumSelected)}</span>
+        ${coberHtml}
+        <button onclick="contLimpiarSeleccionInversiones()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--gold); cursor:pointer; font-size:11px; padding:3px 10px; border-radius:8px; font-weight:600; margin-left:auto; transition:all 0.2s;" onmouseover="this.style.background='rgba(212,168,75,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">🧹 Limpiar Selección</button>
+      </div>`;
+  } else {
+    seleccionResumenHtml = `
+      <div style="background:rgba(255,255,255,0.02); border:1px dashed rgba(212,168,75,0.35); border-radius:10px; padding:8px 16px; display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12px; color:var(--muted); width:100%;">
+        <span>☑️ <strong>Simulador de Selección:</strong> Selecciona casillas en la lista para sumar posibles inversiones y verificar si tu presupuesto alcanza.</span>
+      </div>`;
+  }
+
   const paretoHtml = `
     <div id="contParetoChartsWrapper" style="display:${contMostrarParetoGraficas ? 'block' : 'none'}; margin-bottom:20px;">
       <div class="cont-panel">
@@ -16328,35 +16401,43 @@ function contRenderInversiones(el){
     return `<span style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:3px 10px; border-radius:12px; font-size:11px; color:#ddd;"><strong style="color:var(--gold);">${c}:</strong> $${contFmt(total)}</span>`;
   }).join(' ');
 
+  const allIdsJsonEscaped = JSON.stringify(allInversiones.map(x => x.id)).replace(/"/g, '&quot;');
+
   el.innerHTML = `
-  <div style="background:linear-gradient(135deg,rgba(212,168,75,0.08),rgba(34,197,94,0.04));border:1px solid rgba(212,168,75,0.2);border-radius:14px;padding:18px 22px;margin-bottom:20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:space-between;">
-    <div style="display:flex;gap:16px;align-items:center;flex:1;">
-      <div style="font-size:28px;">🤖</div>
-      <div><div style="font-weight:700;color:var(--gold);font-size:15px;margin-bottom:4px;">Recomendaciones Análisis Pareto & Plan de Inversiones</div>
-      <div style="color:#ccc;font-size:13px;line-height:1.5;">Ingresos <strong style="color:#22c55e;">${contFmt(totalIng)}</strong> · Utilidad <strong style="color:${utilidad >= 0 ? '#22c55e' : '#ef4444'}">${contFmt(utilidad)}</strong>${utilidad > 0 ? ` · Reinvertir hasta <strong style="color:var(--gold);">${contFmt(montoPropuesto)}</strong> (30%)` : ' · Optimiza gastos antes de invertir.'} · Total Inversiones Planificadas: <strong style="color:var(--gold); font-weight:700;">$${contFmt(totalCostoInversiones)}</strong></div>
-      ${catPillsHtml ? `<div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">${catPillsHtml}</div>` : ''}
+  <div style="background:linear-gradient(135deg,rgba(212,168,75,0.08),rgba(34,197,94,0.04));border:1px solid rgba(212,168,75,0.2);border-radius:14px;padding:18px 22px;margin-bottom:20px;">
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:space-between;">
+      <div style="display:flex;gap:16px;align-items:center;flex:1;">
+        <div style="font-size:28px;">🤖</div>
+        <div><div style="font-weight:700;color:var(--gold);font-size:15px;margin-bottom:4px;">Recomendaciones Análisis Pareto & Plan de Inversiones</div>
+        <div style="color:#ccc;font-size:13px;line-height:1.5;">Ingresos <strong style="color:#22c55e;">${contFmt(totalIng)}</strong> · Utilidad <strong style="color:${utilidad >= 0 ? '#22c55e' : '#ef4444'}">${contFmt(utilidad)}</strong>${utilidad > 0 ? ` · Reinvertir hasta <strong style="color:var(--gold);">${contFmt(montoPropuesto)}</strong> (30%)` : ' · Optimiza gastos antes de invertir.'} · Total Inversiones Planificadas: <strong style="color:var(--gold); font-weight:700;">$${contFmt(totalCostoInversiones)}</strong></div>
+        ${catPillsHtml ? `<div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">${catPillsHtml}</div>` : ''}
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <div style="display:flex; gap:6px; align-items:center;">
+          <span style="font-size:12px; color:var(--muted); white-space:nowrap;">Ordenar por:</span>
+          <select class="form-input" style="width:auto; height:32px; padding:0 8px; background:#18181b; border:1px solid rgba(255,255,255,0.08); color:#fff; font-size:12px; border-radius:8px; cursor:pointer; color-scheme:dark;" onchange="contCambiarOrdenInversiones(this.value)">
+            <option value="pareto"${contInversionesSortOrder==='pareto'?' selected':''}>⭐ Rec. Pareto (80/20)</option>
+            <option value="precio"${contInversionesSortOrder==='precio'?' selected':''}>💰 Precio / Costo</option>
+            <option value="roi"${contInversionesSortOrder==='roi'?' selected':''}>📈 ROI Estimado</option>
+            <option value="categoria"${contInversionesSortOrder==='categoria'?' selected':''}>🏷️ Categoría</option>
+            <option value="nombre"${contInversionesSortOrder==='nombre'?' selected':''}>🔤 Nombre</option>
+          </select>
+        </div>
+        <button onclick="contAbrirModalInversion(null)" style="background:var(--gold); border:none; color:#121212; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 6px rgba(0,0,0,0.4); transition:all 0.15s ease;" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter=''">➕ Agregar Inversión</button>
+        <button onclick="contToggleParetoGraficas()" style="background:linear-gradient(180deg, #d9ac3b 0%, #9e751d 100%); border:1px solid #785614; color:#0f0f0f; font-size:12px; font-weight:700; letter-spacing:0.2px; padding:6px 16px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 6px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.45); transition:all 0.15s ease;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">📊 Gráficas</button>
       </div>
     </div>
-    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <div style="display:flex; gap:6px; align-items:center;">
-        <span style="font-size:12px; color:var(--muted); white-space:nowrap;">Ordenar por:</span>
-        <select class="form-input" style="width:auto; height:32px; padding:0 8px; background:#18181b; border:1px solid rgba(255,255,255,0.08); color:#fff; font-size:12px; border-radius:8px; cursor:pointer; color-scheme:dark;" onchange="contCambiarOrdenInversiones(this.value)">
-          <option value="pareto"${contInversionesSortOrder==='pareto'?' selected':''}>⭐ Rec. Pareto (80/20)</option>
-          <option value="precio"${contInversionesSortOrder==='precio'?' selected':''}>💰 Precio / Costo</option>
-          <option value="roi"${contInversionesSortOrder==='roi'?' selected':''}>📈 ROI Estimado</option>
-          <option value="categoria"${contInversionesSortOrder==='categoria'?' selected':''}>🏷️ Categoría</option>
-          <option value="nombre"${contInversionesSortOrder==='nombre'?' selected':''}>🔤 Nombre</option>
-        </select>
-      </div>
-      <button onclick="contAbrirModalInversion(null)" style="background:var(--gold); border:none; color:#121212; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 6px rgba(0,0,0,0.4); transition:all 0.15s ease;" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter=''">➕ Agregar Inversión</button>
-      <button onclick="contToggleParetoGraficas()" style="background:linear-gradient(180deg, #d9ac3b 0%, #9e751d 100%); border:1px solid #785614; color:#0f0f0f; font-size:12px; font-weight:700; letter-spacing:0.2px; padding:6px 16px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 6px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.45); transition:all 0.15s ease;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">📊 Gráficas</button>
-    </div>
+    ${seleccionResumenHtml}
   </div>
   ${paretoHtml}
   <div class="cont-panel" style="overflow-x:auto; padding:0; background:#141416; border:1px solid rgba(255,255,255,0.08); border-radius:14px; margin-top:12px;">
     <table style="width:100%; border-collapse:collapse; font-size:12.5px; text-align:left;">
       <thead>
         <tr style="background:rgba(212,168,75,0.06); border-bottom:1px solid rgba(212,168,75,0.2);">
+          <th style="padding:11px 10px; text-align:center; width:38px;">
+            <input type="checkbox" onchange="contToggleSeleccionarTodasInversiones(this.checked, '${allIdsJsonEscaped}')" title="Seleccionar todas las inversiones" ${allInversiones.length > 0 && allInversiones.every(x => contSelectedInversiones.has(x.id)) ? 'checked' : ''} style="cursor:pointer; transform:scale(1.15); accent-color:var(--gold);" />
+          </th>
           <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em;">Opción de Inversión</th>
           <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em;">Categoría</th>
           <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em; text-align:right;">Precio / Costo</th>
@@ -16370,6 +16451,7 @@ function contRenderInversiones(el){
       </thead>
       <tbody>
         ${allInversiones.map(inv => {
+          const isSelected = contSelectedInversiones.has(inv.id);
           const paretoEval = contCalcularConvenienciaPareto(inv, catMap, pd, totalIng);
           const precioNum = parseFloat(inv.precio) || 0;
           
@@ -16388,9 +16470,16 @@ function contRenderInversiones(el){
           const roiColor = (inv.roi || 0) >= 40 ? '#22c55e' : ((inv.roi || 0) >= 25 ? 'var(--gold)' : '#ccc');
           const editBtn = `<button onclick="contAbrirModalInversion('${inv.id}')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:var(--gold); cursor:pointer; font-size:11px; padding:3px 7px; border-radius:6px; transition:all 0.2s;" title="Editar o eliminar inversión" onmouseover="this.style.background='rgba(212,168,75,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">✏️</button>`;
 
+          const rowBgStyle = isSelected 
+            ? 'background:rgba(212,168,75,0.09); border-bottom:1px solid rgba(212,168,75,0.25);' 
+            : 'border-bottom:1px solid rgba(255,255,255,0.035);';
+
           return `
-          <tr style="border-bottom:1px solid rgba(255,255,255,0.035);" onmouseover="this.style.background='rgba(255,255,255,0.025)'" onmouseout="this.style.background=''">
-            <td style="padding:10px 14px; color:#fff; font-weight:600; white-space:nowrap;">
+          <tr style="${rowBgStyle}" onmouseover="this.style.background='${isSelected ? 'rgba(212,168,75,0.15)' : 'rgba(255,255,255,0.025)'}'" onmouseout="this.style.background='${isSelected ? 'rgba(212,168,75,0.09)' : ''}'">
+            <td style="padding:10px 10px; text-align:center;">
+              <input type="checkbox" onchange="contToggleSeleccionInversion('${inv.id}')" ${isSelected ? 'checked' : ''} style="cursor:pointer; transform:scale(1.15); accent-color:var(--gold);" />
+            </td>
+            <td style="padding:10px 14px; color:#fff; font-weight:${isSelected ? 700 : 600}; white-space:nowrap;">
               ${inv.titulo}
             </td>
             <td style="padding:10px 14px; color:#ccc; white-space:nowrap; font-size:12px;">
