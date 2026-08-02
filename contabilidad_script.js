@@ -2830,14 +2830,14 @@ function contGetParaAno(year) {
         const mIdx = monthsNames.indexOf(m.month.toUpperCase());
         if (mIdx !== -1) {
           const st = m.status;
-          if (st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'AL_DIA' || st === 'FUTURE') {
+          if (st === 'PAID' || st === 'AL_DIA') {
             const propName = p.name || 'Propiedad';
             const mIdx1Based = mIdx + 1;
             lista.push({
               id: 'AUTO-ADMIN-COMISION-' + (p.id || propName.replace(/\s+/g, '-')) + '-' + year + '-' + mIdx1Based,
               tipo: 'ingreso',
               categoria: 'Gestión/Administración',
-              descripcion: 'Comisión Administración Esperada - ' + propName,
+              descripcion: 'Comisión Administración - ' + propName,
               monto: comVal,
               fecha: year + '-' + String(mIdx1Based).padStart(2, '0') + '-01',
               mes: mIdx1Based,
