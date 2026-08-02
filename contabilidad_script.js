@@ -2830,7 +2830,7 @@ function contGetParaAno(year) {
         const mIdx = monthsNames.indexOf(m.month.toUpperCase());
         if (mIdx !== -1) {
           const st = m.status;
-          if (st === 'PAID' || st === 'AL_DIA') {
+          if (st === 'PAID') {
             const propName = p.name || 'Propiedad';
             const mIdx1Based = mIdx + 1;
             lista.push({
