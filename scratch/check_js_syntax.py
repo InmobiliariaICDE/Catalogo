@@ -1,37 +1,21 @@
-import re
+import re, subprocess, os, sys
 
-with open('admin.html', encoding='utf-8') as f:
-    lines = f.readlines()
+with open('admin.html', 'r', encoding='utf-8') as f:
+    html = f.read()
 
-script_lines = lines[14527:16984]
+# Extract inline script contents
+scripts = re.findall(r'<script(?![^>]*src=)[^>]*>(.*?)</script>', html, re.DOTALL)
+print(f"Found {len(scripts)} inline script blocks.")
 
-for idx, l in enumerate(script_lines, 14528):
-    s = l.strip()
-    if s.startswith('//') or s.startswith('/*'):
-        continue
+for i, code in enumerate(scripts):
+    filename = f'scratch/test_script_{i}.js'
+    with open(filename, 'w', encoding='utf-8') as sf:
+        sf.write(code)
     
-    in_sq = False
-    in_dq = False
-    in_bt = False
-    escaped = False
-    for char in l:
-        if escaped:
-            escaped = False
-            continue
-        if char == '\\':
-            escaped = True
-            continue
-        if char == "'" and not in_dq and not in_bt:
-            in_sq = not in_sq
-        elif char == '"' and not in_sq and not in_bt:
-            in_dq = not in_dq
-        elif char == '`' and not in_sq and not in_dq:
-            in_bt = not in_bt
-    if in_sq:
-        print(f"Unclosed single quote at line {idx}: {s[:100]}")
-    if in_dq:
-        print(f"Unclosed double quote at line {idx}: {s[:100]}")
-    if in_bt:
-        print(f"Unclosed backtick at line {idx}: {s[:100]}")
-
-print("Done quote check!")
+    # Run node --check
+    res = subprocess.run(['node', '--check', filename], capture_output=True, text=True)
+    if res.returncode != 0:
+        print(f"❌ SYNTAX ERROR IN SCRIPT BLOCK {i}:")
+        print(res.stderr[:1000])
+    else:
+        print(f"✅ Script block {i} OK")

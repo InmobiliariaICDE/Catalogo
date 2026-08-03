@@ -14538,8 +14538,8 @@ async function swExtraerLinkIA() {
     let html = data.contents || "";
     
     // Clean raw html tags and script tags
-    const cleanText = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-                          .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    const cleanText = html.replace(new RegExp('<script\\b[^<]*(?:(?!</' + 'script>)<[^<]*)*</' + 'script>', 'gi'), '')
+                          .replace(new RegExp('<style\\b[^<]*(?:(?!</' + 'style>)<[^<]*)*</' + 'style>', 'gi'), '')
                           .replace(/<[^>]+>/g, ' ')
                           .replace(/\s+/g, ' ')
                           .substring(0, 16000);
