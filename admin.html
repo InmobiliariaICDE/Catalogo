@@ -16359,6 +16359,21 @@ function contRenderInversiones(el){
   const sumSelected = selectedList.reduce((acc, x) => acc + (parseFloat(x.precio) || 0), 0);
   const countSelected = selectedList.length;
 
+  const selectedCatCosts = {};
+  selectedList.forEach(x => {
+    const c = x.categoria || 'Otro';
+    if (!selectedCatCosts[c]) selectedCatCosts[c] = 0;
+    selectedCatCosts[c] += (parseFloat(x.precio) || 0);
+  });
+
+  const selectedCatEntries = Object.entries(selectedCatCosts)
+    .map(([cat, total]) => ({
+      cat: cat,
+      total: total,
+      pct: sumSelected > 0 ? ((total / sumSelected) * 100) : 0
+    }))
+    .sort((a, b) => b.total - a.total);
+
   let seleccionResumenHtml = '';
   if (countSelected > 0) {
     let coberHtml = '';
@@ -16370,14 +16385,14 @@ function contRenderInversiones(el){
       } else {
         const diff = sumSelected - montoPropuesto;
         const mesesEst = (sumSelected / montoPropuesto).toFixed(1);
-        coberHtml = `<span style="background:rgba(249,115,22,0.18); color:#f97316; border:1px solid rgba(249,115,22,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">⏳ Excede tu 30% por $${contFmt(diff)} (~${mesesEst} meses de utilidad)</span>`;
+        coberHtml = `<span style="background:rgba(249,115,22,0.18); color:#f97316; border:1px solid rgba(249,115,22,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">⏳ Excede tu 30% por ${contFmt(diff)} (~${mesesEst} meses de utilidad)</span>`;
       }
     } else if (utilidad > 0) {
       if (sumSelected <= utilidad) {
         coberHtml = '<span style="background:rgba(34,197,94,0.18); color:#22c55e; border:1px solid rgba(34,197,94,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">✓ Cubierto con la utilidad total del mes</span>';
       } else {
         const diff = sumSelected - utilidad;
-        coberHtml = `<span style="background:rgba(239,68,68,0.18); color:#ef4444; border:1px solid rgba(239,68,68,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">⚠ Excede utilidad total en $${contFmt(diff)}</span>`;
+        coberHtml = `<span style="background:rgba(239,68,68,0.18); color:#ef4444; border:1px solid rgba(239,68,68,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">⚠ Excede utilidad total en ${contFmt(diff)}</span>`;
       }
     } else {
       coberHtml = '<span style="background:rgba(239,68,68,0.18); color:#ef4444; border:1px solid rgba(239,68,68,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">⚠ Requiere generar utilidad</span>';
@@ -16530,6 +16545,48 @@ function contRenderInversiones(el){
         console.warn("No se pudo cargar el gráfico de Pareto:", e);
       }
     },80);
+  }
+
+  if (countSelected > 0 && sumSelected > 0 && selectedCatEntries.length > 0) {
+    setTimeout(function() {
+      try {
+        const ctxSel = document.getElementById('chartSelectedInvCat');
+        if (ctxSel) {
+          contDestroyChart('chartSelectedInvCat');
+          contCharts['chartSelectedInvCat'] = new Chart(ctxSel, {
+            type: 'doughnut',
+            data: {
+              labels: selectedCatEntries.map(function(e){ return e.cat; }),
+              datasets: [{
+                data: selectedCatEntries.map(function(e){ return e.total; }),
+                backgroundColor: selectedCatEntries.map(function(_, i){ return invCatColors[i % invCatColors.length]; }),
+                borderColor: '#18181b',
+                borderWidth: 2
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              cutout: '68%',
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const val = context.raw || 0;
+                      const pct = sumSelected > 0 ? ((val / sumSelected) * 100).toFixed(1) : 0;
+                      return ' ' + contFmt(val) + ' (' + pct + '%)';
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("No se pudo cargar el gráfico de dona de selección:", e);
+      }
+    }, 50);
   }
 }
 
