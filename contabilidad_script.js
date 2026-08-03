@@ -3532,80 +3532,8 @@ function contRenderInversiones(el){
     catCosts[c] += (parseFloat(x.precio) || 0);
   });
 
-  const invCatIcons = {
-    'Tecnología e IA': '💻',
-    'Marketing Digital': '📢',
-    'Oficina / Mantenimiento': '🏢',
-    'Transporte / Logística': '🚗',
-    'Ventas / Captación': '🏠',
-    'Otro': '⭐'
-  };
-  const invCatColors = ['#3b82f6', '#a855f7', '#22c55e', '#f97316', '#d4a84b', '#ec4899', '#06b6d4', '#84cc16'];
-  const invCatEntries = Object.entries(catCosts)
-    .map(function(e) {
-      const cat = e[0];
-      const total = e[1];
-      return {
-        cat: cat,
-        total: total,
-        pct: totalCostoInversiones > 0 ? ((total / totalCostoInversiones) * 100) : 0
-      };
-    })
-    .sort(function(a, b) { return b.total - a.total; });
-
   const paretoHtml = 
     '<div id="contParetoChartsWrapper" style="display:'+(contMostrarParetoGraficas?'block':'none')+'; margin-bottom:20px;">'+
-      '<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:16px;">'+
-        
-        '<!-- PANEL DOUGHNUT: DISTRIBUCIÓN DE INVERSIONES POR CATEGORÍA -->'+
-        '<div class="cont-panel" style="margin-bottom:0;">'+
-          '<div class="cont-panel-header" style="display:flex; justify-content:space-between; align-items:center;">'+
-            '<div class="cont-panel-title">🍩 Presupuesto por Categoría</div>'+
-            '<span style="font-size:12px; color:var(--gold); font-weight:700;">Total: $'+contFmt(totalCostoInversiones)+'</span>'+
-          '</div>'+
-          '<div class="cont-panel-body">'+
-          (totalCostoInversiones === 0 ? '<div class="cont-empty">Sin inversiones planificadas.</div>' :
-            '<div style="background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); border-radius:10px; padding:10px 14px; margin-bottom:14px; font-size:12px; color:#ccc;">'+
-              '💡 <strong style="color:#60a5fa;">Presupuesto Asignado:</strong> Monto y porcentaje destinado a Tecnología, Marketing, Oficina, Transporte, etc.'+
-            '</div>'+
-            '<div class="cont-chart-wrap" style="height:230px;"><canvas id="chartInvCat"></canvas></div>'+
-            '<div style="margin-top:14px; display:flex; flex-direction:column; gap:6px; max-height:180px; overflow-y:auto; padding-right:4px;">'+
-              invCatEntries.map(function(e, i) {
-                const icon = invCatIcons[e.cat] || (CONT_CAT_ICONS[e.cat] || '•');
-                const color = invCatColors[i % invCatColors.length];
-                return '<div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; padding:5px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid rgba(255,255,255,0.04);">'+
-                  '<span style="color:#eee; display:flex; align-items:center; gap:8px;">'+
-                    '<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:'+color+'; box-shadow:0 0 6px '+color+'88;"></span>'+
-                    icon+' '+e.cat+
-                  '</span>'+
-                  '<span style="display:flex; align-items:center; gap:12px;">'+
-                    '<strong style="color:var(--gold);">$'+contFmt(e.total)+'</strong>'+
-                    '<span style="color:#aaa; font-size:11px; min-width:42px; text-align:right;">'+e.pct.toFixed(1)+'%</span>'+
-                  '</span>'+
-                '</div>';
-              }).join('')+
-            '</div>')+
-          '</div>'+
-        '</div>'+
-
-        '<!-- PANEL PARETO: ANÁLISIS DE INGRESOS (REGLA 80/20) -->'+
-        '<div class="cont-panel" style="margin-bottom:0;">'+
-          '<div class="cont-panel-header" style="display:flex; justify-content:space-between; align-items:center;">'+
-            '<div class="cont-panel-title">⚖️ Análisis Pareto (Fuentes de Ingreso)</div>'+
-            '<span style="font-size:12px; color:var(--muted);">'+n80+' '+(n80===1?'categoría genera':'categorías generan')+' el 80%</span>'+
-          '</div>'+
-          '<div class="cont-panel-body">'+
-          (totalIng===0?'<div class="cont-empty">Sin ingresos para analizar.</div>':
-            '<div style="background:rgba(212,168,75,0.08);border:1px solid rgba(212,168,75,0.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;">🎯 <strong style="color:var(--gold);">Regla 80/20:</strong> <span style="color:#ccc;">Las <strong style="color:#fff;">'+n80+'</strong> categorías más rentables generan el <strong style="color:#22c55e;">80%</strong> de tus ingresos.</span></div>'+
-            '<div class="cont-chart-wrap" style="height:230px;"><canvas id="chartPareto"></canvas></div>'+
-            '<div style="margin-top:14px; max-height:180px; overflow-y:auto; padding-right:4px;">'+
-              '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid rgba(255,255,255,0.06);"><th style="padding:6px 8px;text-align:left;color:var(--gold);font-size:10px;text-transform:uppercase;">Categoría</th><th style="padding:6px 8px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">Ingresos</th><th style="padding:6px 8px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">%</th><th style="padding:6px 8px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">% Acum.</th><th style="padding:6px 8px;text-align:center;color:var(--gold);font-size:10px;text-transform:uppercase;">Impacto</th></tr></thead>'+
-              '<tbody>'+pd.map(function(p){return'<tr style="border-bottom:1px solid rgba(255,255,255,0.03);background:'+(p.is80?'rgba(34,197,94,0.04)':'')+'"><td style="padding:6px 8px;color:#fff;font-weight:'+(p.is80?700:400)+';">'+(CONT_CAT_ICONS[p.cat]||'•')+' '+p.cat+'</td><td style="padding:6px 8px;text-align:right;color:#22c55e;font-weight:600;">$'+contFmt(p.total)+'</td><td style="padding:6px 8px;text-align:right;color:#ccc;">'+p.pct.toFixed(1)+'%</td><td style="padding:6px 8px;text-align:right;color:'+(p.pctAcum<=80?'#22c55e':'#888')+';">'+p.pctAcum.toFixed(1)+'%</td><td style="padding:6px 8px;text-align:center;">'+(p.is80?'<span style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">⭐ VITAL</span>':'<span style="color:#555;font-size:10px;">Complementario</span>')+'</td></tr>';}).join('')+'</tbody></table>'+
-            '</div>')+
-          '</div>'+
-        '</div>'+
-
-      '</div>'+
     '</div>';
 
   const catPillsHtml = Object.entries(catCosts).map(function(e) {
