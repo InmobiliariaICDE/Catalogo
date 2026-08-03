@@ -1,21 +1,33 @@
-import re, subprocess, os, sys
+import re, subprocess, os
 
-with open('admin.html', 'r', encoding='utf-8') as f:
+with open('admin.html', 'r', encoding='utf-8', errors='ignore') as f:
     html = f.read()
 
-# Extract inline script contents
-scripts = re.findall(r'<script(?![^>]*src=)[^>]*>(.*?)</script>', html, re.DOTALL)
-print(f"Found {len(scripts)} inline script blocks.")
+# Extract script content from admin.html
+scripts = re.findall(r'<script[^>]*>(.*?)</script>', html, re.DOTALL)
+print(f"Found {len(scripts)} script tags in admin.html")
 
-for i, code in enumerate(scripts):
-    filename = f'scratch/test_script_{i}.js'
-    with open(filename, 'w', encoding='utf-8') as sf:
-        sf.write(code)
-    
-    # Run node --check
-    res = subprocess.run(['node', '--check', filename], capture_output=True, text=True)
-    if res.returncode != 0:
-        print(f"❌ SYNTAX ERROR IN SCRIPT BLOCK {i}:")
-        print(res.stderr[:1000])
-    else:
-        print(f"✅ Script block {i} OK")
+full_script = "\n".join(scripts)
+with open('scratch/temp_admin_script.js', 'w', encoding='utf-8') as f:
+    f.write(full_script)
+
+print("Testing node syntax check on extracted script...")
+res = subprocess.run(['node', '--check', 'scratch/temp_admin_script.js'], capture_output=True, text=True)
+if res.returncode == 0:
+    print("✓ Syntax check PASSED for admin.html scripts!")
+else:
+    print("❌ Syntax error in admin.html scripts:")
+    print(res.stderr)
+
+with open('contabilidad_script.js', 'r', encoding='utf-8', errors='ignore') as f:
+    c_script = f.read()
+
+with open('scratch/temp_cont_script.js', 'w', encoding='utf-8') as f:
+    f.write(c_script)
+
+res2 = subprocess.run(['node', '--check', 'scratch/temp_cont_script.js'], capture_output=True, text=True)
+if res2.returncode == 0:
+    print("✓ Syntax check PASSED for contabilidad_script.js!")
+else:
+    print("❌ Syntax error in contabilidad_script.js:")
+    print(res2.stderr)

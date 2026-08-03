@@ -2794,7 +2794,7 @@ function contObtenerComisionAdministracionEsperada(year, month) {
   
   adminData.properties.forEach(p => {
     const rent = parseFloat(p.monthly_rent) || 0;
-    const paymentsYear = p.payments[year] || [];
+    const paymentsYear = (p.payments && p.payments[year]) ? p.payments[year] : [];
     
     paymentsYear.forEach(m => {
       const mIdx = monthsNames.indexOf(m.month.toUpperCase());
@@ -2825,7 +2825,7 @@ function contGetParaAno(year) {
       const comVal = rent * 0.10;
       if (comVal <= 0) return;
       
-      const paymentsYear = p.payments[year] || [];
+      const paymentsYear = (p.payments && p.payments[year]) ? p.payments[year] : [];
       paymentsYear.forEach(m => {
         const mIdx = monthsNames.indexOf(m.month.toUpperCase());
         if (mIdx !== -1) {
