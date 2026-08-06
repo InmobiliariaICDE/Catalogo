@@ -789,40 +789,59 @@ function getAdminData() {
       });
     });
 
-    let hasAnyPaymentOrActiveContract = false;
-    chronologicalMonths.forEach(item => {
+    const paidIndices = [];
+    const deliveryIndices = [];
+
+    chronologicalMonths.forEach((item, idx) => {
       const m = item.cell;
       const valUpper = String(m.value).trim().toUpperCase();
       const numVal = parseFloat(m.value);
-      if ((!isNaN(numVal) && numVal > 0) || m.status === 'PAID' || m.status === 'NEW_CONTRACT' || valUpper.includes('CONTRATO') || valUpper.includes('NUEVO')) {
-        hasAnyPaymentOrActiveContract = true;
+      const isPaidCell = (!isNaN(numVal) && numVal > 0) || m.status === 'PAID' || m.status === 'NEW_CONTRACT' || valUpper.includes('CONTRATO') || valUpper.includes('NUEVO');
+      const isDeliveryCell = m.status === 'DELIVERY' || valUpper.includes('ENTREGA');
+
+      if (isPaidCell) {
+        paidIndices.push(idx);
+      } else if (isDeliveryCell) {
+        deliveryIndices.push(idx);
       }
     });
 
-    let isVacantWave = false;
-    let overallStatus = 'Ocupado';
-    if (rawName.toUpperCase().includes('DESOCUPAD') || !tenantName || String(tenantName).trim() === '' || !hasAnyPaymentOrActiveContract) {
-      isVacantWave = true;
-      overallStatus = 'Desocupado';
-    }
+    const hasAnyPayment = paidIndices.length > 0;
+    const maxPaidIdx = hasAnyPayment ? Math.max(...paidIndices) : -1;
+    const defaultVacant = rawName.toUpperCase().includes('DESOCUPAD') || (!hasAnyPayment && (!tenantName || String(tenantName).trim() === ''));
 
-    chronologicalMonths.forEach(item => {
+    let overallStatus = defaultVacant ? 'Desocupado' : 'Ocupado';
+
+    chronologicalMonths.forEach((item, idx) => {
       const m = item.cell;
       const valUpper = String(m.value).trim().toUpperCase();
-      if (m.status === 'DELIVERY' || m.status === 'VACANT' || valUpper.includes('DESOCUPAD')) {
-        isVacantWave = true;
-      } else if (m.status === 'PAID' || m.status === 'NEW_CONTRACT') {
-        isVacantWave = false;
-      }
+      const numVal = parseFloat(m.value);
+      const isPaidCell = (!isNaN(numVal) && numVal > 0) || m.status === 'PAID' || m.status === 'NEW_CONTRACT' || valUpper.includes('CONTRATO') || valUpper.includes('NUEVO');
+      const isDeliveryCell = m.status === 'DELIVERY' || valUpper.includes('ENTREGA');
+      const isVacantCell = (m.status === 'VACANT' || valUpper.includes('DESOCUPAD')) && !isPaidCell;
 
-      if (isVacantWave) {
-        if (m.status === 'PENDING' || m.status === 'AL_DIA' || m.status === 'FUTURE' || m.status === 'UNSTARTED') {
+      const lastDelivery = deliveryIndices.filter(i => i <= idx).reduce((max, i) => Math.max(max, i), -1);
+      const lastPaid = paidIndices.filter(i => i <= idx).reduce((max, i) => Math.max(max, i), -1);
+
+      if (isPaidCell) {
+        // Keep PAID
+      } else if (isDeliveryCell) {
+        m.status = 'DELIVERY';
+      } else if (lastDelivery > lastPaid) {
+        m.status = 'VACANT';
+        m.value = 'DESOCUPADO';
+      } else if (idx < maxPaidIdx) {
+        if (isVacantCell || defaultVacant) {
           m.status = 'VACANT';
           m.value = 'DESOCUPADO';
+        } else {
+          m.status = 'PENDING';
         }
       } else {
-        // Heal empty cells of occupied properties
-        if (m.status === 'UNSTARTED' || m.status === 'FUTURE' || m.status === 'PENDING' || m.status === 'AL_DIA') {
+        if (defaultVacant) {
+          m.status = 'VACANT';
+          m.value = 'DESOCUPADO';
+        } else {
           const y = item.year;
           const mIdx = item.monthIdx;
           const isCurrent = (y === currentYear && mIdx === currentMonthIdx);
@@ -830,7 +849,7 @@ function getAdminData() {
 
           if (isCurrent) {
             const todayDay = today.getDate();
-            const limitDay = (dueDay && dueDay > 0) ? dueDay : 1;
+            const limitDay = (dueDay && dueDay > 0) ? dueDay : 5;
             if (todayDay < limitDay) {
               m.status = 'AL_DIA';
             } else {
@@ -838,11 +857,12 @@ function getAdminData() {
             }
           } else if (isFuture) {
             m.status = 'FUTURE';
+          } else {
+            m.status = 'PENDING';
           }
         }
       }
-      
-      // Determine overallStatus based on current month status after propagation
+
       if (item.year === currentYear && item.monthIdx === currentMonthIdx) {
         overallStatus = (m.status === 'VACANT') ? 'Desocupado' : 'Ocupado';
       }
