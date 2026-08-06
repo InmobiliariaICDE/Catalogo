@@ -8918,7 +8918,28 @@ function ensureUniqueIds(data) {
 
         const hasAnyPayment = paidIndices.length > 0;
         const maxPaidIdx = hasAnyPayment ? Math.max(...paidIndices) : -1;
-        const defaultVacant = (p.name && String(p.name).toUpperCase().includes('DESOCUPAD')) || (!hasAnyPayment && (!p.tenant_name || String(p.tenant_name).trim() === ''));
+
+        let startDt = null;
+        if (p.start_date) {
+          const sStr = String(p.start_date).trim();
+          if (sStr.includes('-')) {
+            const parts = sStr.split('-');
+            if (parts.length === 3) {
+              if (parts[0].length === 4) startDt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+              else startDt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, 1);
+            }
+          } else if (sStr.includes('/')) {
+            const parts = sStr.split('/');
+            if (parts.length === 3) {
+              if (parts[2].length === 4) startDt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, 1);
+              else startDt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+            }
+          }
+        }
+        let durationMonths = parseInt(p.duration, 10) || 12;
+
+        const hasTenant = p.tenant_name && String(p.tenant_name).trim() !== '';
+        const defaultVacant = (p.name && String(p.name).toUpperCase().includes('DESOCUPAD')) || (!hasAnyPayment && !hasTenant && !startDt);
 
         let dynamicOverallStatus = defaultVacant ? 'Desocupado' : 'Ocupado';
 
@@ -8933,6 +8954,17 @@ function ensureUniqueIds(data) {
           const lastDelivery = deliveryIndices.filter(i => i <= idx).reduce((max, i) => Math.max(max, i), -1);
           const lastPaid = paidIndices.filter(i => i <= idx).reduce((max, i) => Math.max(max, i), -1);
 
+          let isCoveredByContract = false;
+          if (startDt) {
+            const mDate = new Date(item.year, item.monthIdx, 1);
+            const endDate = new Date(startDt.getFullYear(), startDt.getMonth() + durationMonths, 1);
+            if (mDate >= startDt && mDate < endDate) {
+              isCoveredByContract = true;
+            }
+          }
+
+          const isAfterPayment = (maxPaidIdx !== -1 && idx >= maxPaidIdx);
+
           if (isPaidCell) {
             // Keep PAID
           } else if (isDeliveryCell) {
@@ -8940,12 +8972,35 @@ function ensureUniqueIds(data) {
           } else if (lastDelivery > lastPaid) {
             m.status = 'VACANT';
             m.value = 'DESOCUPADO';
+          } else if (isCoveredByContract || isAfterPayment) {
+            const y = item.year;
+            const mIdx = item.monthIdx;
+            const isCurrent = (y === currentYear && mIdx === currentMonthIdx);
+            const isFuture = (y > currentYear || (y === currentYear && mIdx > currentMonthIdx));
+
+            if (isCurrent) {
+              const todayDay = today.getDate();
+              const limitDay = (p.due_day && p.due_day > 0) ? p.due_day : 5;
+              if (todayDay < limitDay) {
+                m.status = 'AL_DIA';
+              } else {
+                m.status = 'PENDING';
+              }
+              m.value = '-';
+            } else if (isFuture) {
+              m.status = 'FUTURE';
+              m.value = '-';
+            } else {
+              m.status = 'PENDING';
+              m.value = '-';
+            }
           } else if (idx < maxPaidIdx) {
             if (isVacantCell || defaultVacant) {
               m.status = 'VACANT';
               m.value = 'DESOCUPADO';
             } else {
               m.status = 'PENDING';
+              m.value = '-';
             }
           } else {
             if (defaultVacant) {
@@ -8965,10 +9020,13 @@ function ensureUniqueIds(data) {
                 } else {
                   m.status = 'PENDING';
                 }
+                m.value = '-';
               } else if (isFuture) {
                 m.status = 'FUTURE';
+                m.value = '-';
               } else {
                 m.status = 'PENDING';
+                m.value = '-';
               }
             }
           }
@@ -10873,6 +10931,7 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
 
   applyPropToMemory();
   applyPayToMemory();
+  ensureUniqueIds(adminData);
   localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
 
   if (propOk && payOk) {
@@ -10946,6 +11005,7 @@ async function saveAdminPaymentStatus(propId, propName, monthName, year) {
           let mPay = p.payments[year].find(m => m.month === monthName);
           if (mPay) { mPay.status = status; mPay.value = finalValue; }
           else p.payments[year].push({ month: monthName, value: finalValue, status: status });
+          ensureUniqueIds(adminData);
           localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
         }
         closeUnifiedModal();
@@ -11013,6 +11073,7 @@ async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, st
           let mPay = p.payments[year].find(m => m.month === monthName);
           if (mPay) { mPay.status = status; mPay.value = finalValue; }
           else p.payments[year].push({ month: monthName, value: finalValue, status: status });
+          ensureUniqueIds(adminData);
           localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
         }
         renderAdministracion();

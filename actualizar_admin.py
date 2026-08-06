@@ -5,7 +5,7 @@ import re
 import sys
 import requests
 import openpyxl
-from datetime import datetime
+from datetime import datetime, date
 
 def clean_prop_name(raw_name):
     if not raw_name or pd.isna(raw_name):
@@ -165,7 +165,7 @@ def parse_properties(file):
                 })
         
         # Chronological months sequence for propagation and healing
-        from datetime import datetime
+        from datetime import datetime, date
         _today = datetime.now()
         _curr_year = _today.year
         _curr_month_idx = _today.month - 1
@@ -195,7 +195,23 @@ def parse_properties(file):
 
         has_any_payment = len(paid_indices) > 0
         max_paid_idx = max(paid_indices) if has_any_payment else -1
-        default_vacant = ("DESOCUPAD" in raw_name.upper()) or (not has_any_payment and (not tenant_name or not str(tenant_name).strip()))
+
+        start_dt = None
+        if start_date:
+            start_date_str = str(start_date)
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d-%b-%y"):
+                try:
+                    start_dt = datetime.strptime(start_date_str.strip(), fmt).date()
+                    break
+                except Exception:
+                    pass
+
+        try:
+            duration_m = int(float(duration)) if (duration and str(duration).strip() != '') else 12
+        except Exception:
+            duration_m = 12
+        has_tenant = bool(tenant_name and str(tenant_name).strip())
+        default_vacant = ("DESOCUPAD" in raw_name.upper()) or (not has_any_payment and not has_tenant and not start_dt)
         overall_status = "Desocupado" if default_vacant else "Ocupado"
 
         for idx, item in enumerate(months_order):
@@ -213,6 +229,18 @@ def parse_properties(file):
             last_delivery = max([i for i in delivery_indices if i <= idx], default=-1)
             last_paid = max([i for i in paid_indices if i <= idx], default=-1)
 
+            m_date = date(item["year"], item["month_idx"] + 1, 1)
+            is_covered_by_contract = False
+            if start_dt:
+                c_start_m = date(start_dt.year, start_dt.month, 1)
+                end_y = start_dt.year + (start_dt.month + duration_m - 1) // 12
+                end_m = (start_dt.month + duration_m - 1) % 12 + 1
+                c_end_m = date(end_y, end_m, 1)
+                if c_start_m <= m_date < c_end_m:
+                    is_covered_by_contract = True
+
+            is_after_payment = (max_paid_idx != -1 and idx >= max_paid_idx)
+
             if is_paid:
                 pass
             elif is_delivery:
@@ -220,12 +248,33 @@ def parse_properties(file):
             elif last_delivery > last_paid:
                 m["status"] = "VACANT"
                 m["value"] = "DESOCUPADO"
+            elif is_covered_by_contract or is_after_payment:
+                y = item["year"]
+                m_idx = item["month_idx"]
+                is_current = (y == _curr_year and m_idx == _curr_month_idx)
+                is_future = (y > _curr_year or (y == _curr_year and m_idx > _curr_month_idx))
+
+                if is_current:
+                    today_day = _today.day
+                    limit_day = due_day if (due_day and due_day > 0) else 5
+                    if today_day < limit_day:
+                        m["status"] = "AL_DIA"
+                    else:
+                        m["status"] = "PENDING"
+                    m["value"] = "-"
+                elif is_future:
+                    m["status"] = "FUTURE"
+                    m["value"] = "-"
+                else:
+                    m["status"] = "PENDING"
+                    m["value"] = "-"
             elif idx < max_paid_idx:
                 if is_vacant_cell or default_vacant:
                     m["status"] = "VACANT"
                     m["value"] = "DESOCUPADO"
                 else:
                     m["status"] = "PENDING"
+                    m["value"] = "-"
             else:
                 if default_vacant:
                     m["status"] = "VACANT"
@@ -243,10 +292,13 @@ def parse_properties(file):
                             m["status"] = "AL_DIA"
                         else:
                             m["status"] = "PENDING"
+                        m["value"] = "-"
                     elif is_future:
                         m["status"] = "FUTURE"
+                        m["value"] = "-"
                     else:
                         m["status"] = "PENDING"
+                        m["value"] = "-"
             
             if item["year"] == _curr_year and item["month_idx"] == _curr_month_idx:
                 overall_status = "Desocupado" if m["status"] == "VACANT" else "Ocupado"
