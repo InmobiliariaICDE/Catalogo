@@ -9771,10 +9771,7 @@ function renderMatrizPagos(propertiesList) {
                 </td>
                 ${monthsFull.map(mFull => {
                   let pay = paymentsYear.find(m => m.month === mFull) || { status: 'UNSTARTED', value: 0 };
-                  // Si la propiedad está desocupada y el status quedó PENDING, mostrar VACANT
-                  if (pay.status === 'PENDING' && p.status === 'Desocupado') {
-                    pay = { ...pay, status: 'VACANT' };
-                  }
+
                   // Si AL_DIA pero hay pagos PENDIENTES en meses PASADOS del año actual, mostrar como Futuro
                   if (pay.status === 'AL_DIA') {
                     const _viewY = parseInt(currentAdminYear, 10);
@@ -10770,7 +10767,8 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
       const p = adminData.properties.find(x => x.id === propId);
       finalValue = monthly_rent || (p ? p.monthly_rent : 0);
     } else { finalValue = parsedVal; }
-  } else if (status === 'VACANT' || status === 'FUTURE') { finalValue = 'DESOCUPADO'; }
+  } else if (status === 'VACANT') { finalValue = 'DESOCUPADO'; }
+  else if (status === 'FUTURE' || status === 'AL_DIA') { finalValue = '-'; }
   else if (status === 'PREAVISO')      { finalValue = 'PREAVISO'; }
   else if (status === 'NEW_CONTRACT')  { finalValue = 'CONTRATO NUEVO'; }
   else if (status === 'NO_RENEW')      { finalValue = 'NO RENOVARA'; }
@@ -10911,7 +10909,8 @@ async function saveAdminPaymentStatus(propId, propName, monthName, year) {
       const p = adminData.properties.find(x => x.id === propId);
       finalValue = p ? p.monthly_rent : 0;
     } else { finalValue = parsedVal; }
-  } else if (status === 'VACANT' || status === 'FUTURE') { finalValue = 'DESOCUPADO'; }
+  } else if (status === 'VACANT') { finalValue = 'DESOCUPADO'; }
+  else if (status === 'FUTURE' || status === 'AL_DIA') { finalValue = '-'; }
   else if (status === 'PREAVISO')      { finalValue = 'PREAVISO'; }
   else if (status === 'NEW_CONTRACT')  { finalValue = 'CONTRATO NUEVO'; }
   else if (status === 'NO_RENEW')      { finalValue = 'NO RENOVARA'; }
@@ -10976,7 +10975,8 @@ async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, st
   if (status === 'PAID') {
     const p = adminData.properties.find(x => x.id === propId);
     finalValue = p ? p.monthly_rent : 0;
-  } else if (status === 'VACANT' || status === 'FUTURE') { finalValue = 'DESOCUPADO'; }
+  } else if (status === 'VACANT') { finalValue = 'DESOCUPADO'; }
+  else if (status === 'FUTURE' || status === 'AL_DIA') { finalValue = '-'; }
   else if (status === 'PREAVISO')      { finalValue = 'PREAVISO'; }
   else if (status === 'NEW_CONTRACT')  { finalValue = 'CONTRATO NUEVO'; }
   else if (status === 'NO_RENEW')      { finalValue = 'NO RENOVARA'; }
