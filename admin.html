@@ -8939,6 +8939,21 @@ function ensureUniqueIds(data) {
 
         let dynamicOverallStatus = (isVacantByName || (!hasAnyPayment && !hasTenant && !startDt)) ? 'Desocupado' : 'Ocupado';
 
+        let rolledEndDt = null;
+        if (startDt && (hasTenant || startDt || hasAnyPayment) && !isVacantByName) {
+          rolledEndDt = new Date(startDt.getFullYear(), startDt.getMonth() + durationMonths, 1);
+          const lastDelivery = deliveryIndices.reduce((max, i) => Math.max(max, i), -1);
+          const lastPaid = paidIndices.reduce((max, i) => Math.max(max, i), -1);
+          const hasDelivered = (lastDelivery > lastPaid);
+
+          if (!hasDelivered) {
+            const targetDate = new Date(currentYear, currentMonthIdx, 1);
+            while (rolledEndDt <= targetDate) {
+              rolledEndDt = new Date(rolledEndDt.getFullYear(), rolledEndDt.getMonth() + durationMonths, 1);
+            }
+          }
+        }
+
         chronologicalMonths.forEach((item, idx) => {
           const m = item.cell;
           const y = item.year;
@@ -8957,9 +8972,10 @@ function ensureUniqueIds(data) {
           let isAfterEnd = false;
           if (startDt) {
             const cStart = new Date(startDt.getFullYear(), startDt.getMonth(), 1);
-            const cEnd = new Date(startDt.getFullYear(), startDt.getMonth() + durationMonths, 1);
             if (mDate < cStart) isBeforeStart = true;
-            if (mDate >= cEnd) isAfterEnd = true;
+          }
+          if (rolledEndDt) {
+            if (mDate >= rolledEndDt) isAfterEnd = true;
           }
 
           const isCurrent = (y === currentYear && mIdx === currentMonthIdx);
@@ -8969,7 +8985,7 @@ function ensureUniqueIds(data) {
             // Keep PAID / NEW_CONTRACT
           } else if (isDeliveryCell) {
             m.status = 'DELIVERY';
-          } else if (isBeforeStart || isAfterEnd || isVacantByName || (!hasTenant && !startDt && !hasAnyPayment)) {
+          } else if (lastDelivery > lastPaid || isBeforeStart || isAfterEnd || isVacantByName || (!hasTenant && !startDt && !hasAnyPayment)) {
             m.status = 'VACANT';
             m.value = 'DESOCUPADO';
           } else if (isFuture) {

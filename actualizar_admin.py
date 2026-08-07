@@ -210,6 +210,25 @@ def parse_properties(file):
 
         has_tenant = bool(tenant_name and str(tenant_name).strip())
         is_vacant_by_name = "DESOCUPAD" in raw_name.upper()
+        is_occupied_prop = not is_vacant_by_name and (has_tenant or bool(start_dt) or has_any_payment)
+
+        rolled_end_dt = None
+        if start_dt and is_occupied_prop:
+            cur_end_y = start_dt.year + (start_dt.month + duration_m - 1) // 12
+            cur_end_m = (start_dt.month + duration_m - 1) % 12 + 1
+            rolled_end_dt = date(cur_end_y, cur_end_m, 1)
+
+            last_delivery = max(delivery_indices, default=-1)
+            last_paid = max(paid_indices, default=-1)
+            has_delivered = (last_delivery > last_paid)
+
+            if not has_delivered:
+                target_date = date(_curr_year, _curr_month_idx + 1, 1)
+                while rolled_end_dt <= target_date:
+                    r_y = rolled_end_dt.year + (rolled_end_dt.month + duration_m - 1) // 12
+                    r_m = (rolled_end_dt.month + duration_m - 1) % 12 + 1
+                    rolled_end_dt = date(r_y, r_m, 1)
+
         default_vacant = is_vacant_by_name or (not has_any_payment and not has_tenant and not start_dt)
         overall_status = "Desocupado" if default_vacant else "Ocupado"
 
@@ -232,12 +251,10 @@ def parse_properties(file):
             is_after_end = False
             if start_dt:
                 c_start_m = date(start_dt.year, start_dt.month, 1)
-                end_y = start_dt.year + (start_dt.month + duration_m - 1) // 12
-                end_m = (start_dt.month + duration_m - 1) % 12 + 1
-                c_end_m = date(end_y, end_m, 1)
                 if m_date < c_start_m:
                     is_before_start = True
-                if m_date >= c_end_m:
+            if rolled_end_dt:
+                if m_date >= rolled_end_dt:
                     is_after_end = True
 
             is_current = (y == _curr_year and m_idx == _curr_month_idx)
@@ -247,7 +264,7 @@ def parse_properties(file):
                 pass
             elif is_delivery:
                 m["status"] = "DELIVERY"
-            elif is_vacant_cell or last_delivery > last_paid or is_before_start or is_after_end or is_vacant_by_name or (not has_tenant and not start_dt and not has_any_payment):
+            elif last_delivery > last_paid or is_before_start or is_after_end or is_vacant_by_name or (not has_tenant and not start_dt and not has_any_payment):
                 m["status"] = "VACANT"
                 m["value"] = "DESOCUPADO"
             elif is_future:
