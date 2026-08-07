@@ -8969,25 +8969,35 @@ function ensureUniqueIds(data) {
             // Keep PAID / NEW_CONTRACT
           } else if (isDeliveryCell) {
             m.status = 'DELIVERY';
-          } else if (isVacantCell || lastDelivery > lastPaid || isBeforeStart || isAfterEnd || isVacantByName || (!hasTenant && !startDt && !hasAnyPayment)) {
+          } else if (isBeforeStart || isAfterEnd || isVacantByName || (!hasTenant && !startDt && !hasAnyPayment)) {
             m.status = 'VACANT';
             m.value = 'DESOCUPADO';
           } else if (isFuture) {
             m.status = 'FUTURE';
             m.value = '-';
           } else if (isCurrent) {
-            const todayDay = today.getDate();
-            const limitDay = (p.due_day && p.due_day > 0) ? p.due_day : 5;
-            if (todayDay < limitDay) {
-              m.status = 'AL_DIA';
+            if (m.status === 'VACANT' && !hasTenant && !startDt && !hasAnyPayment) {
+              m.status = 'VACANT';
+              m.value = 'DESOCUPADO';
             } else {
-              m.status = 'PENDING';
+              const todayDay = today.getDate();
+              const limitDay = (p.due_day && p.due_day > 0) ? p.due_day : 5;
+              if (todayDay < limitDay) {
+                m.status = 'AL_DIA';
+              } else {
+                m.status = 'PENDING';
+              }
+              m.value = '-';
             }
-            m.value = '-';
           } else {
             // Past month during active contract
-            m.status = 'PENDING';
-            m.value = '-';
+            if (isVacantCell && !hasTenant && !startDt) {
+              m.status = 'VACANT';
+              m.value = 'DESOCUPADO';
+            } else {
+              m.status = 'PENDING';
+              m.value = '-';
+            }
           }
 
           if (isCurrent) {
@@ -9245,8 +9255,11 @@ function renderAdministracion() {
         <!-- FILTROS DE ESTADO (CENTRO) -->
         <div id="adminFiltersContainer" style="display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap;">
           <button class="chip-filtro ${currentAdminFilter==='todos'?'sel':''}" data-filter="todos" onclick="setAdminFilter('todos')">Todos</button>
-          <button class="chip-filtro ${currentAdminFilter==='ocupados'?'sel':''}" data-filter="ocupados" onclick="setAdminFilter('ocupados')">🟢 Ocupados</button>
-          <button class="chip-filtro ${currentAdminFilter==='disponibles'?'sel':''}" data-filter="disponibles" onclick="setAdminFilter('disponibles')">🟡 Disponibles</button>
+          <button class="chip-filtro ${currentAdminFilter==='pendientes'?'sel':''}" data-filter="pendientes" onclick="setAdminFilter('pendientes')">🔴 Pendientes</button>
+          <button class="chip-filtro ${currentAdminFilter==='aldia'?'sel':''}" data-filter="aldia" onclick="setAdminFilter('aldia')">☀️ Al día</button>
+          <button class="chip-filtro ${currentAdminFilter==='pagados'?'sel':''}" data-filter="pagados" onclick="setAdminFilter('pagados')">🟢 Pagados</button>
+          <button class="chip-filtro ${currentAdminFilter==='ocupados'?'sel':''}" data-filter="ocupados" onclick="setAdminFilter('ocupados')">Ocupados</button>
+          <button class="chip-filtro ${currentAdminFilter==='disponibles'?'sel':''}" data-filter="disponibles" onclick="setAdminFilter('disponibles')">⚪ Desocupados</button>
         </div>
 
         <!-- ORDENACIÓN (DERECHA-CENTRO) -->
@@ -9257,6 +9270,8 @@ function renderAdministracion() {
           </div>
           <select id="adminSortSelect" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 13px; color-scheme: dark;" onchange="setAdminSort(this.value)">
             <option value="nombre" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'nombre' ? 'selected' : ''}>Nombre</option>
+            <option value="pendientes" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'pendientes' ? 'selected' : ''}>🔴 Pendiente de Pago</option>
+            <option value="aldia" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'aldia' ? 'selected' : ''}>☀️ Al Día</option>
             <option value="precio" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'precio' ? 'selected' : ''}>Precio</option>
             <option value="propietario" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'propietario' ? 'selected' : ''}>Propietario</option>
             <option value="disponibles" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'disponibles' ? 'selected' : ''}>Disponibles</option>
@@ -9361,10 +9376,21 @@ function renderAdministracionContent() {
                           (p.increase_notes && p.increase_notes.toLowerCase().includes(searchVal));
     if (!matchesSearch) return false;
 
+    const getMonthStatus = (prop) => {
+      const paymentsYear = prop.payments[currentAdminYear] || [];
+      const payMonth = paymentsYear.find(m => m.month === currentAdminMonth);
+      return payMonth ? payMonth.status : 'VACANT';
+    };
+
+    const statusMonth = getMonthStatus(p);
     const occupied = isOccupied(p);
+
     if (currentAdminFilter === 'ocupados') return occupied;
     if (currentAdminFilter === 'disponibles') return !occupied;
-    return true; // 'todos'
+    if (currentAdminFilter === 'pendientes') return statusMonth === 'PENDING';
+    if (currentAdminFilter === 'aldia') return statusMonth === 'AL_DIA';
+    if (currentAdminFilter === 'pagados') return statusMonth === 'PAID' || statusMonth === 'NEW_CONTRACT';
+    return true;
   });
 
   filteredProperties.sort((a, b) => {
@@ -9390,6 +9416,28 @@ function renderAdministracionContent() {
     }
     if (currentAdminSort === 'propietario') {
       return (a.owner || '').localeCompare(b.owner || '');
+    }
+    if (currentAdminSort === 'pendientes') {
+      const getMonthStatus = (prop) => {
+        const paymentsYear = prop.payments[currentAdminYear] || [];
+        const payMonth = paymentsYear.find(m => m.month === currentAdminMonth);
+        return payMonth ? payMonth.status : 'VACANT';
+      };
+      const aPend = getMonthStatus(a) === 'PENDING' ? 1 : 0;
+      const bPend = getMonthStatus(b) === 'PENDING' ? 1 : 0;
+      if (aPend !== bPend) return bPend - aPend;
+      return a.name.localeCompare(b.name);
+    }
+    if (currentAdminSort === 'aldia') {
+      const getMonthStatus = (prop) => {
+        const paymentsYear = prop.payments[currentAdminYear] || [];
+        const payMonth = paymentsYear.find(m => m.month === currentAdminMonth);
+        return payMonth ? payMonth.status : 'VACANT';
+      };
+      const aDia = getMonthStatus(a) === 'AL_DIA' ? 1 : 0;
+      const bDia = getMonthStatus(b) === 'AL_DIA' ? 1 : 0;
+      if (aDia !== bDia) return bDia - aDia;
+      return a.name.localeCompare(b.name);
     }
     if (currentAdminSort === 'disponibles') {
       const aOcc = isOccupied(a) ? 1 : 0;
