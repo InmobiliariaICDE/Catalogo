@@ -198,10 +198,10 @@ def parse_properties(file):
 
         start_dt = None
         if start_date:
-            start_date_str = str(start_date).strip().split('T')[0].split(' ')[0]
-            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d-%b-%y", "%Y/%m/%d"):
+            start_date_str = str(start_date)
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d-%b-%y"):
                 try:
-                    start_dt = datetime.strptime(start_date_str, fmt).date()
+                    start_dt = datetime.strptime(start_date_str.strip(), fmt).date()
                     break
                 except Exception:
                     pass
@@ -248,7 +248,7 @@ def parse_properties(file):
             elif last_delivery > last_paid:
                 m["status"] = "VACANT"
                 m["value"] = "DESOCUPADO"
-            elif is_covered_by_contract or (has_tenant and idx >= (max_paid_idx if max_paid_idx != -1 else 0)) or is_after_payment:
+            elif is_covered_by_contract or is_after_payment:
                 y = item["year"]
                 m_idx = item["month_idx"]
                 is_current = (y == _curr_year and m_idx == _curr_month_idx)
