@@ -1077,6 +1077,34 @@ function cargarInfoBarrioJSONP(barrioName) {
             let filteredListDesk = inmuebles.slice();
             let currentPageDesk = 1;
             const pageSizeDesk = 12;
+            let currentSortDesk = 'none';
+            let currentSortMob = 'none';
+
+            function aplicarOrdenamientoDesk(lista) {
+                if (!lista || !lista.length) return lista;
+                if (currentSortDesk === 'mayorPrecio') {
+                    lista.sort((a, b) => (Number(b.Precio)||0) - (Number(a.Precio)||0));
+                } else if (currentSortDesk === 'menorPrecio') {
+                    lista.sort((a, b) => (Number(a.Precio)||0) - (Number(b.Precio)||0));
+                } else if (currentSortDesk === 'mejorRentabilidad') {
+                    const conv = v => { const m = typeof v==='string'?v.match(/(\d+)/):null; return m?parseInt(m[1]):Infinity; };
+                    lista.sort((a, b) => conv(a.RetornoInversion) - conv(b.RetornoInversion));
+                }
+                return lista;
+            }
+
+            function aplicarOrdenamientoMob(lista) {
+                if (!lista || !lista.length) return lista;
+                if (currentSortMob === 'mayorPrecio') {
+                    lista.sort((a, b) => (Number(b.Precio)||0) - (Number(a.Precio)||0));
+                } else if (currentSortMob === 'menorPrecio') {
+                    lista.sort((a, b) => (Number(a.Precio)||0) - (Number(b.Precio)||0));
+                } else if (currentSortMob === 'mejorRentabilidad') {
+                    const conv = v => { const m = typeof v==='string'?v.match(/(\d+)/):null; return m?parseInt(m[1]):Infinity; };
+                    lista.sort((a, b) => conv(a.RetornoInversion) - conv(b.RetornoInversion));
+                }
+                return lista;
+            }
 
             function renderMobilePage(shouldScroll = false) {
                 const grid = panelElem.querySelector('#grid-inmuebles-mobile');
@@ -1385,6 +1413,7 @@ function cargarInfoBarrioJSONP(barrioName) {
                     // === INICIO: Asociar listener al select de “Ordenar por” === 🟢
                     // Asociar listener al “Ordenar por”
                     // Sort dropdown mobile
+                        let currentSortMob = 'none';
                         const sortToggleMob = panelElem ? panelElem.querySelector('#sortToggleMob') : document.getElementById('sortToggleMob');
                         const sortDropdownMob = panelElem ? panelElem.querySelector('#sortDropdownMob') : document.getElementById('sortDropdownMob');
                         if (sortToggleMob && sortDropdownMob) {
@@ -1400,15 +1429,8 @@ function cargarInfoBarrioJSONP(barrioName) {
                                     sortToggleMob.childNodes[0].textContent = li.textContent + ' ';
                                     sortToggleMob.classList.remove('open');
                                     sortDropdownMob.classList.remove('open');
-                                    const val = li.dataset.val;
-                                    if (val === 'mayorPrecio') {
-                                        filteredList.sort((a, b) => (b.Precio||0) - (a.Precio||0));
-                                    } else if (val === 'menorPrecio') {
-                                        filteredList.sort((a, b) => (a.Precio||0) - (b.Precio||0));
-                                    } else if (val === 'mejorRentabilidad') {
-                                        const conv = v => { const m = typeof v==='string'?v.match(/(\d+)/):null; return m?parseInt(m[1]):Infinity; };
-                                        filteredList.sort((a, b) => conv(a.RetornoInversion) - conv(b.RetornoInversion));
-                                    }
+                                    currentSortMob = li.dataset.val;
+                                    aplicarOrdenamientoMob(filteredList);
                                     currentPage = 1;
                                     renderMobilePage();
                                     });
@@ -1440,16 +1462,6 @@ function cargarInfoBarrioJSONP(barrioName) {
                         const pageSize = 12;
                         
                         // 🟢 INICIO: Aplicar ordenamiento según selector
-                        const criterioOrden = document.getElementById('ordenarSelect')?.value || 'ninguno';
-                        if (criterioOrden === 'mayorPrecio') {
-                            filteredList.sort((a, b) => b.Precio - a.Precio);
-                        } else if (criterioOrden === 'menorPrecio') {
-                            filteredList.sort((a, b) => a.Precio - b.Precio);
-                        } else if (criterioOrden === 'mejorRentabilidad') {
-                            const convertirAnios = val => {
-                                const m = typeof val === 'string' ? val.match(/(\d+)/) : null;
-                                return m ? parseInt(m[1]) : Infinity;
-                            };
                             filteredList.sort((a, b) => convertirAnios(a.RetornoInversion) - convertirAnios(b.RetornoInversion));
                         }
                         // 🟢 FIN: Ordenamiento
@@ -1577,15 +1589,8 @@ function cargarInfoBarrioJSONP(barrioName) {
                                     sortToggleDesk.childNodes[0].textContent = label + ' ';
                                     sortToggleDesk.classList.remove('open');
                                     sortDropdownDesk.classList.remove('open');
-                                    const val = li.dataset.val;
-                                    if (val === 'mayorPrecio') {
-                                        filteredListDesk.sort((a, b) => (b.Precio||0) - (a.Precio||0));
-                                    } else if (val === 'menorPrecio') {
-                                        filteredListDesk.sort((a, b) => (a.Precio||0) - (b.Precio||0));
-                                    } else if (val === 'mejorRentabilidad') {
-                                        const conv = v => { const m = typeof v==='string'?v.match(/(\d+)/):null; return m?parseInt(m[1]):Infinity; };
-                                        filteredListDesk.sort((a, b) => conv(a.RetornoInversion) - conv(b.RetornoInversion));
-                                    }
+                                    currentSortDesk = li.dataset.val;
+                                    aplicarOrdenamientoDesk(filteredListDesk);
                                     currentPageDesk = 1;
                                     renderDesktopPage(false);
                                 });
@@ -1620,6 +1625,7 @@ function cargarInfoBarrioJSONP(barrioName) {
                             } else {
                                 filteredListDesk = inmuebles.filter(item => (item.TipoDeInmueble || '').trim() === tipoSel.trim());
                             }
+                            aplicarOrdenamientoDesk(filteredListDesk);
                             currentPageDesk = 1;
                             renderDesktopPage(true); // true: sí hace scroll al cambiar filtro
                         });
