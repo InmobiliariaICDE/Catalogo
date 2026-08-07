@@ -263,6 +263,13 @@ h3{font-weight:500}
 .carrusel-min.activa{opacity:1}.carrusel-min:hover{opacity:.75}
 .carrusel-expand{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.55);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;transition:background .2s;padding:0}
 .carrusel-expand:hover{background:rgba(0,0,0,.85)}.carrusel-expand svg{width:14px;height:14px}
+/* ══ CARD CARRUSEL ═════════════════════════════ */
+.card-carrusel-wrapper{position:relative;background:#141414;border-radius:6px 6px 0 0;overflow:hidden;user-select:none}
+.card-carrusel-wrapper .carrusel-principal{height:175px;border-radius:6px 6px 0 0;background:#0d0d0d}
+.card-carrusel-wrapper .carrusel-miniaturas{padding:3px;background:#181818;gap:3px;grid-template-columns:repeat(4,1fr)}
+.card-carrusel-wrapper .carrusel-min{height:46px;border-radius:4px;border:1px solid transparent;opacity:.5;transition:all .2s ease}
+.card-carrusel-wrapper .carrusel-min.activa{border-color:#d4a84b;opacity:1;box-shadow:0 0 6px rgba(212,168,75,.4)}
+.card-carrusel-wrapper .carrusel-min:hover{opacity:.9}
 /* ══ LIGHTBOX ═══════════════════════════════════ */
 #lbOverlay{display:none;position:fixed;inset:0;background:#000;z-index:99999;flex-direction:column;align-items:center;justify-content:flex-start}
 #lbOverlay.activo{display:flex}
@@ -864,13 +871,12 @@ function cargarInfoBarrioJSONP(barrioName) {
             return formatted + ' m²';
         }
 
-        function generarCardInmuebleMinimal(item) {
+        function generarCardInmuebleMinimal(item, index) {
             console.log('DEBUG generarCardInmuebleMinimal, item:', item);
-            // Extraemos propiedades clave
             const codigo = item.Codigo || '';
-            const publicar = String(item['Publicar'] || '').trim().toUpperCase(); // "SI" o distinto
+            const publicar = String(item['Publicar'] || '').trim().toUpperCase();
+            const cardId = 'card-mob-' + codigo + '-' + (index || 0);
 
-            // Abrimos el div contenedor con data-attributes
             let html = `<div class="card-inmueble-minimal"
                        data-codigo="${codigo}"
                        data-publicar="${publicar}"
@@ -879,14 +885,8 @@ function cargarInfoBarrioJSONP(barrioName) {
                          display:flex; flex-direction:column; background:#262525; color:#ccc;
                        ">`;
 
-            // Imagen si existe
-            if (item.Image) {
-                html += `<div class="card-img-minimal" style="height:120px; overflow:hidden;">
-                        <img src="${item.Image}" alt="${item.Nombre || 'Inmueble'}" style="width:100%; height:100%; object-fit:cover;" />
-                     </div>`;
-            }
+            html += generarCardCarruselHTML(item, cardId, 140);
 
-            // Info básica
             html += `<div class="card-info-minimal" style="padding:8px; display:flex; flex-direction:column; justify-content: space-between;">`;
             if (item.Nombre) {
                 html += `<p class="card-nombre-minimal" style="margin:0; font-size:16px; font-weight:500; color:#fff;">
@@ -899,7 +899,6 @@ function cargarInfoBarrioJSONP(barrioName) {
                      </p>`;
             }
 
-            // Botón Ver más para mostrar etiquetas extra
             html += `<button class="btn-ver-mas" style="
                         margin-top:8px; align-self:flex-start;
                         padding:4px 8px; font-size:12px;
@@ -907,10 +906,8 @@ function cargarInfoBarrioJSONP(barrioName) {
                     Ver más
                  </button>`;
 
-            // Contenedor oculto con etiquetas extra (¡¡solo display:none!!)
             html += `<div class="card-etiquetas-extra" style="display:none; margin-top:8px; font-size:12px; color:#ccc;">`;
 
-            // Ahora generamos todas las etiquetas como <span class="etiqueta">
             if (item.Habitaciones != null) html += `<span class="etiqueta"><img src="https://i.imgur.com/ykKdGwE.png" class="icono-etiqueta" alt="Habitaciones"/>Hab ${item.Habitaciones}</span>`;
             if (item.Baños != null) html += `<span class="etiqueta"><img src="https://i.imgur.com/h9NqA32.png" class="icono-etiqueta" alt="Baños"/>Baños ${item.Baños}</span>`;
             if (item.Garaje != null) html += `<span class="etiqueta"><img src="https://i.imgur.com/4Yixa77.png" class="icono-etiqueta" alt="Garaje"/>Garaje ${item.Garaje}</span>`;
@@ -918,9 +915,9 @@ function cargarInfoBarrioJSONP(barrioName) {
             if (item.Pisos != null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rz72lGC.png" class="icono-etiqueta" alt="Área"/>Pisos ${item.Pisos}</span>`;
             if (item["Área lote"] != null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rz72lGC.png" class="icono-etiqueta" alt="Área"/>Lote ${item["Área lote"]} m²</span>`;
 
-            html += `</div>`;                     // cierra card-etiquetas-extra
-            html += `</div>`;                     // cierra card-info-minimal
-            html += `</div>`;                     // cierra card-inmueble-minimal
+            html += `</div>`;
+            html += `</div>`;
+            html += `</div>`;
             return html;
         }
 
@@ -952,8 +949,8 @@ function cargarInfoBarrioJSONP(barrioName) {
 
                 // Render tarjetas
                 grid.innerHTML = '';
-                pageItems.forEach(item => {
-                    grid.innerHTML += generarCardInmuebleMinimal(item);
+                pageItems.forEach((item, idx) => {
+                    grid.innerHTML += generarCardInmuebleMinimal(item, idx);
                 });
                 // Enganchar “Ver más”
                 attachVerMasListenersMinimal();
@@ -1020,8 +1017,8 @@ function cargarInfoBarrioJSONP(barrioName) {
 
                 // 2) Render de tarjetas en el grid
                 grid.innerHTML = '';
-                pageItems.forEach(item => {
-                    grid.innerHTML += generarCardInmuebleHTML(item);
+                pageItems.forEach((item, idx) => {
+                    grid.innerHTML += generarCardInmuebleHTML(item, idx);
                 });
                 attachCardClickListeners(pageItems);
                 // 3) Solo hacer scroll al inicio del grid cuando shouldScroll===true
@@ -1551,6 +1548,112 @@ function cargarInfoBarrioJSONP(barrioName) {
             }
         }
 
+        function obtenerFotosInmueble(item) {
+            const fotos = [];
+            const rawImgs = item.Imagenes || item['Imagenes'] || item['imagenes'] || '';
+            if (rawImgs) {
+                rawImgs.replace(/\r/g, '').replace(/\n/g, '')
+                    .split('|')
+                    .map(function(u){ return u.trim(); })
+                    .filter(function(u){ return u.length > 5; })
+                    .forEach(function(u){ fotos.push(u); });
+            }
+            if (!fotos.length && item.Image) {
+                fotos.push(item.Image);
+            }
+            if (!fotos.length) {
+                fotos.push('https://i.imgur.com/Pc9M3I8.png');
+            }
+            return fotos;
+        }
+
+        function generarCardCarruselHTML(item, cardId, heightPx) {
+            const fotos = obtenerFotosInmueble(item);
+            window.cardCarousels = window.cardCarousels || {};
+            window.cardCarousels[cardId] = { fotos: fotos, idx: 0 };
+            const h = heightPx || 175;
+
+            let html = `<div class="carrusel-wrapper card-carrusel-wrapper" data-card-id="${cardId}">`;
+            html += `<div class="carrusel-principal" style="height:${h}px;">`;
+
+            fotos.forEach((url, i) => {
+                html += `<div class="carrusel-slide ${i === 0 ? 'activa' : ''}">
+                            <img src="${url}" alt="${item.Nombre || 'Inmueble'}" loading="${i === 0 ? 'eager' : 'lazy'}" draggable="false" />
+                         </div>`;
+            });
+
+            if (fotos.length > 1) {
+                html += `<span class="carrusel-counter">1 / ${fotos.length}</span>`;
+                html += `<button type="button" class="carrusel-btn carrusel-prev" onclick="cardCarPrev(event, '${cardId}')">&#8249;</button>`;
+                html += `<button type="button" class="carrusel-btn carrusel-next" onclick="cardCarNext(event, '${cardId}')">&#8250;</button>`;
+            }
+
+            html += `<button type="button" class="carrusel-expand" onclick="cardCarExpand(event, '${cardId}')" title="Ver galería">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                     </button>`;
+            html += `</div>`;
+
+            if (fotos.length > 1) {
+                html += `<div class="carrusel-miniaturas">`;
+                fotos.slice(0, 4).forEach((url, i) => {
+                    html += `<img src="${url}" class="carrusel-min ${i === 0 ? 'activa' : ''}" onclick="cardCarGoTo(event, '${cardId}', ${i})" loading="lazy" alt="Miniatura ${i+1}" />`;
+                });
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            return html;
+        }
+
+        function cardCarGoTo(evt, cardId, idx) {
+            if (evt) { evt.preventDefault(); evt.stopPropagation(); }
+            const data = (window.cardCarousels || {})[cardId];
+            if (!data || !data.fotos || !data.fotos.length) return;
+            const n = data.fotos.length;
+            data.idx = ((idx % n) + n) % n;
+
+            const cardWrap = document.querySelector(`[data-card-id="${cardId}"]`);
+            if (!cardWrap) return;
+
+            const slides = cardWrap.querySelectorAll('.carrusel-slide');
+            slides.forEach((s, i) => s.classList.toggle('activa', i === data.idx));
+
+            const counter = cardWrap.querySelector('.carrusel-counter');
+            if (counter) counter.textContent = (data.idx + 1) + ' / ' + n;
+
+            const minDiv = cardWrap.querySelector('.carrusel-miniaturas');
+            if (minDiv && n > 1) {
+                let start = Math.max(0, data.idx - 1);
+                if (start + 4 > n) start = Math.max(0, n - 4);
+                let minHtml = '';
+                for (let i = start; i < start + 4 && i < n; i++) {
+                    const activaClass = i === data.idx ? ' activa' : '';
+                    minHtml += `<img src="${data.fotos[i]}" class="carrusel-min${activaClass}" onclick="cardCarGoTo(event, '${cardId}', ${i})" loading="lazy" alt="Miniatura ${i+1}"/>`;
+                }
+                minDiv.innerHTML = minHtml;
+            }
+        }
+
+        function cardCarPrev(evt, cardId) {
+            if (evt) { evt.preventDefault(); evt.stopPropagation(); }
+            const data = (window.cardCarousels || {})[cardId];
+            if (data) cardCarGoTo(evt, cardId, data.idx - 1);
+        }
+
+        function cardCarNext(evt, cardId) {
+            if (evt) { evt.preventDefault(); evt.stopPropagation(); }
+            const data = (window.cardCarousels || {})[cardId];
+            if (data) cardCarGoTo(evt, cardId, data.idx + 1);
+        }
+
+        function cardCarExpand(evt, cardId) {
+            if (evt) { evt.preventDefault(); evt.stopPropagation(); }
+            const data = (window.cardCarousels || {})[cardId];
+            if (data && data.fotos && data.fotos.length) {
+                lbAbrir(data.fotos, data.idx);
+            }
+        }
+
         function filtrarInmueblesPorTipo(tipoSel, inmuebles) {
             const contenedor = document.getElementById('grid-inmuebles');
             contenedor.innerHTML = '';
@@ -1559,40 +1662,36 @@ function cargarInfoBarrioJSONP(barrioName) {
                 contenedor.innerHTML = '<p>No hay inmuebles de este tipo en el barrio.</p>';
                 return;
             }
-            filtrados.forEach(item => {
-                contenedor.innerHTML += generarCardInmuebleHTML(item);
+            filtrados.forEach((item, idx) => {
+                contenedor.innerHTML += generarCardInmuebleHTML(item, idx);
             });
         }
 
-        function generarCardInmuebleHTML(item) {
-            // Extraemos propiedades clave
+        function generarCardInmuebleHTML(item, index) {
             const codigo = item.Codigo || '';
-            const publicar = String(item['Publicar'] || '').trim().toUpperCase(); // valor esperado "SI" o distinto
-            // Abrimos el div contenedor con atributos data- para uso interno
+            const publicar = String(item['Publicar'] || '').trim().toUpperCase();
+            const cardId = 'card-desk-' + codigo + '-' + (index || 0);
+
             let html = `<div class="card-inmueble"
                            data-codigo="${codigo}"
                            data-publicar="${publicar}">`;
-            // Imagen si existe
-            if (item.Image) {
-                html += `<div class="card-img"><img src="${item.Image}" alt="${item.Nombre || 'Inmueble'}" /></div>`;
-            }
-            // Info textual
+
+            html += generarCardCarruselHTML(item, cardId, 175);
+
             html += `<div class="card-info">
                         <h4 class="card-nombre">${item.Nombre || ''}</h4>
                         <p class="card-codigo">Código: ${codigo}</p>
                         <p class="card-precio">${formatPrice(item.Precio)}</p>
                         <div class="card-etiquetas">`;
-            // Etiquetas resumidas (ajusta a tus campos)
             if (item.Habitaciones !== undefined && item.Habitaciones !== null) html += `<span class="etiqueta"><img src="https://i.imgur.com/ykKdGwE.png" class="icono-etiqueta" alt="Habitaciones"/>Hab ${item.Habitaciones}</span>`;
             if (item.Baños !== undefined && item.Baños !== null) html += `<span class="etiqueta"><img src="https://i.imgur.com/h9NqA32.png" class="icono-etiqueta" alt="Baños"/>Baños ${item.Baños}</span>`;
             if (item.Garaje !== undefined && item.Garaje !== null) html += `<span class="etiqueta"><img src="https://i.imgur.com/4Yixa77.png" class="icono-etiqueta" alt="Garaje"/>Garaje ${item.Garaje}</span>`;
             if (item.Cocina !== undefined && item.Cocina !== null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rH6cXMa.png" class="icono-etiqueta" alt="Cocina"/>Cocina ${item.Cocina}</span>`;
             if (item.Pisos !== undefined && item.Pisos !== null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rz72lGC.png" class="icono-etiqueta" alt="Área"/>Pisos ${item.Pisos}</span>`;
             if (item["Área lote"] !== undefined && item["Área lote"] !== null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rz72lGC.png" class="icono-etiqueta" alt="Área"/>Lote ${item["Área lote"]} m²</span>`;
-            // ... añade más etiquetas si quieres ...
             html += `   </div>
-                     </div>`; // cierra card-info
-            html += `</div>`; // cierra card-inmueble
+                     </div>`;
+            html += `</div>`;
             return html;
         }
 
@@ -1788,11 +1887,12 @@ function cargarInfoBarrioJSONP(barrioName) {
                 const codigo = card.dataset.codigo;
                 const publicar = (card.dataset.publicar || '').trim().toUpperCase();
 
-                // Primero removemos listeners previos si fuera necesario:
                 card.onclick = null;
 
-                card.addEventListener('click', () => {
-                    // Buscar objeto en array inmuebles por Código
+                card.addEventListener('click', (e) => {
+                    if (e.target.closest('.carrusel-btn') || e.target.closest('.carrusel-expand') || e.target.closest('.carrusel-miniaturas')) {
+                        return;
+                    }
                     const item = inmuebles.find(it => String(it.Codigo) === String(codigo));
                     if (!item) return;
 
@@ -1824,7 +1924,6 @@ function cargarInfoBarrioJSONP(barrioName) {
         function attachVerMasListenersMinimal() {
             document.querySelectorAll('.card-inmueble-minimal .btn-ver-mas')
                 .forEach(btn => {
-                    // Limpio cualquier listener previo
                     btn.removeEventListener('click', toggleVerMas);
                     btn.addEventListener('click', toggleVerMas);
                 });
@@ -1835,7 +1934,10 @@ function cargarInfoBarrioJSONP(barrioName) {
                 const codigo = card.dataset.codigo;
                 const publicar = (card.dataset.publicar || '').trim().toUpperCase();
 
-                card.onclick = () => {
+                card.onclick = (e) => {
+                    if (e && (e.target.closest('.carrusel-btn') || e.target.closest('.carrusel-expand') || e.target.closest('.carrusel-miniaturas'))) {
+                        return;
+                    }
                     const item = inmuebles.find(it => String(it.Codigo) === String(codigo));
                     if (!item) return;
 
