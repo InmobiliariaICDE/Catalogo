@@ -10836,16 +10836,19 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
   const increase_notes = elIncreaseNotes ? elIncreaseNotes.value.trim() : '';
   const damage_notes = elDamageNotes ? elDamageNotes.value.trim() : '';
 
-  const statusSelect = document.getElementById('editPayStatus');
-  const valueInput   = document.getElementById('editPayValue');
+  const topSelect = document.getElementById('topPayStatusSelect');
+  const bottomSelect = document.getElementById('editPayStatus');
+  const statusSelect = topSelect || bottomSelect;
   const status = statusSelect ? statusSelect.value : 'PENDING';
+  
+  const valueInput = document.getElementById('editPayValue');
   let rawValue = valueInput ? valueInput.value.trim() : '';
 
   let finalValue = '';
   if (status === 'PAID') {
     const parsedVal = parseFloat(rawValue);
     if (isNaN(parsedVal) || parsedVal <= 0) {
-      const p = adminData.properties.find(x => String(x.id) === String(propId));
+      const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim() || (x.excel_row && String(x.excel_row) === String(propId)));
       finalValue = monthly_rent || (p ? p.monthly_rent : 0);
     } else { finalValue = parsedVal; }
   } else if (status === 'VACANT') { finalValue = 'DESOCUPADO'; }
@@ -10861,7 +10864,7 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
   saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
 
   const applyPropToMemory = () => {
-    const p = adminData.properties.find(x => String(x.id) === String(propId));
+    const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim() || (x.excel_row && String(x.excel_row) === String(propId)));
     if (p) {
       Object.assign(p, {
         tenant_name, tenant_phone, monthly_rent,
@@ -10875,7 +10878,7 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
   };
 
   const applyPayToMemory = () => {
-    const p = adminData.properties.find(x => String(x.id) === String(propId));
+    const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim() || (x.excel_row && String(x.excel_row) === String(propId)));
     if (p) {
       if (!p.payments[year]) p.payments[year] = [];
       let mPay = p.payments[year].find(m => m.month === monthName);
@@ -10886,7 +10889,6 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
     }
   };
 
-  // Immediate local memory update
   applyPropToMemory();
   applyPayToMemory();
 
@@ -10916,16 +10918,15 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
     year: year, monthIndex: monthIdx, value: finalValue
   };
 
-  const promises = [
-    fetch(ADMIN_SCRIPT_URL, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payloadProp)
-    }).catch(e => null),
-    fetch(ADMIN_SCRIPT_URL, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payloadPay)
-    }).catch(e => null)
-  ];
+  fetch(ADMIN_SCRIPT_URL, {
+    method: 'POST', headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payloadProp)
+  }).catch(e => null);
+
+  fetch(ADMIN_SCRIPT_URL, {
+    method: 'POST', headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payloadPay)
+  }).catch(e => null);
 
   toast('¡Cambios guardados con éxito!', 'success');
   closeUnifiedModal();
@@ -11013,7 +11014,7 @@ async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, st
 
   let finalValue = '';
   if (status === 'PAID') {
-    const p = adminData.properties.find(x => x.id === propId);
+    const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim());
     finalValue = p ? p.monthly_rent : 0;
   } else if (status === 'VACANT') { finalValue = 'DESOCUPADO'; }
   else if (status === 'FUTURE' || status === 'AL_DIA') { finalValue = '-'; }
@@ -11024,55 +11025,36 @@ async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, st
   else if (status === 'PENDING')       { finalValue = 'Pendiente'; }
   else { finalValue = '-'; }
 
+  const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim() || (x.excel_row && String(x.excel_row) === String(propId)));
+  if (p) {
+    if (!p.payments[year]) p.payments[year] = [];
+    let mPay = p.payments[year].find(m => m.month === monthName);
+    if (mPay) { mPay.status = status; mPay.value = finalValue; }
+    else p.payments[year].push({ month: monthName, value: finalValue, status: status });
+    ensureUniqueIds(adminData);
+    localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+  }
+  renderAdministracion();
+
   const payload = {
     action: 'saveAdminPayment',
     propertyId: propId, propertyName: propName,
     year: year, monthIndex: monthIdx, value: finalValue
   };
 
-  const cellId = `cell-${propId}-${monthName}-${year}`;
-  const cellEl = document.getElementById(cellId);
-  let oldContent = '';
-  if (cellEl) {
-    oldContent = cellEl.innerHTML;
-    cellEl.innerHTML = '<span class="spinner" style="width:12px; height:12px; border-width:2px; display:inline-block; vertical-align:middle;"></span>';
-  }
-
-  try {
-    const response = await fetch(ADMIN_SCRIPT_URL, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    });
+  fetch(ADMIN_SCRIPT_URL, {
+    method: 'POST', headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  }).then(async response => {
     if (response.ok) {
       const resData = await response.json();
       if (resData.success) {
         toast('Pago actualizado en la nube con éxito!', 'success');
-        const p = adminData.properties.find(x => x.id === propId);
-        if (p) {
-          if (!p.payments[year]) p.payments[year] = [];
-          let mPay = p.payments[year].find(m => m.month === monthName);
-          if (mPay) { mPay.status = status; mPay.value = finalValue; }
-          else p.payments[year].push({ month: monthName, value: finalValue, status: status });
-          ensureUniqueIds(adminData);
-          localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
-        }
-        renderAdministracion();
-      } else { throw new Error(resData.error || 'Error desconocido del servidor'); }
-    } else { throw new Error('Error de conexión HTTP'); }
-  } catch (err) {
-    console.error('Error al guardar pago rápido:', err);
-    toast('Error al guardar en la nube: ' + err.message + '. Se guardó en caché local.', 'warning');
-    const p = adminData.properties.find(x => x.id === propId);
-    if (p) {
-      if (!p.payments[year]) p.payments[year] = [];
-      let mPay = p.payments[year].find(m => m.month === monthName);
-      if (mPay) { mPay.status = status; mPay.value = finalValue; }
-      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
-      renderAdministracion();
-    } else if (cellEl) {
-      cellEl.innerHTML = oldContent;
+      }
     }
-  }
+  }).catch(err => {
+    console.warn('Sync en segundo plano:', err);
+  });
 }
 
 async function saveAdminPropertyDetails(propId, propNameOld) {
