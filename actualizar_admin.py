@@ -184,10 +184,7 @@ def parse_properties(file):
         for idx, item in enumerate(months_order):
             m = item["cell"]
             val_upper = str(m["value"]).strip().upper()
-            try:
-                num_val = float(m["value"])
-            except (ValueError, TypeError):
-                num_val = 0
+            num_val = parse_number(m["value"])
             if num_val > 0 or m["status"] in ("PAID", "NEW_CONTRACT") or "CONTRATO" in val_upper or "NUEVO" in val_upper:
                 paid_indices.append(idx)
             elif m["status"] == "DELIVERY" or "ENTREGA" in val_upper:
@@ -210,20 +207,18 @@ def parse_properties(file):
             duration_m = int(float(duration)) if (duration and str(duration).strip() != '') else 12
         except Exception:
             duration_m = 12
+
         has_tenant = bool(tenant_name and str(tenant_name).strip())
-        default_vacant = ("DESOCUPAD" in raw_name.upper()) or (not has_any_payment and not has_tenant and not start_dt)
+        is_vacant_by_name = "DESOCUPAD" in raw_name.upper()
+        default_vacant = is_vacant_by_name or (not has_any_payment and not has_tenant and not start_dt)
         overall_status = "Desocupado" if default_vacant else "Ocupado"
 
         for idx, item in enumerate(months_order):
             m = item["cell"]
             y = item["year"]
             m_idx = item["month_idx"]
-
             val_upper = str(m["value"]).strip().upper()
-            try:
-                num_val = float(m["value"])
-            except (ValueError, TypeError):
-                num_val = 0
+            num_val = parse_number(m["value"])
 
             is_paid = (num_val > 0) or m["status"] in ("PAID", "NEW_CONTRACT") or "CONTRATO" in val_upper or "NUEVO" in val_upper
             is_delivery = m["status"] == "DELIVERY" or "ENTREGA" in val_upper
@@ -232,6 +227,19 @@ def parse_properties(file):
             last_delivery = max([i for i in delivery_indices if i <= idx], default=-1)
             last_paid = max([i for i in paid_indices if i <= idx], default=-1)
 
+            m_date = date(y, m_idx + 1, 1)
+            is_before_start = False
+            is_after_end = False
+            if start_dt:
+                c_start_m = date(start_dt.year, start_dt.month, 1)
+                end_y = start_dt.year + (start_dt.month + duration_m - 1) // 12
+                end_m = (start_dt.month + duration_m - 1) % 12 + 1
+                c_end_m = date(end_y, end_m, 1)
+                if m_date < c_start_m:
+                    is_before_start = True
+                if m_date >= c_end_m:
+                    is_after_end = True
+
             is_current = (y == _curr_year and m_idx == _curr_month_idx)
             is_future = (y > _curr_year or (y == _curr_year and m_idx > _curr_month_idx))
 
@@ -239,30 +247,29 @@ def parse_properties(file):
                 pass
             elif is_delivery:
                 m["status"] = "DELIVERY"
+            elif last_delivery > last_paid or is_before_start or is_after_end or is_vacant_by_name or (not has_tenant and not start_dt and not has_any_payment):
+                m["status"] = "VACANT"
+                m["value"] = "DESOCUPADO"
             elif is_future:
                 m["status"] = "FUTURE"
                 m["value"] = "-"
             elif is_current:
-                if last_delivery > last_paid or (default_vacant and not has_tenant):
-                    m["status"] = "VACANT"
-                    m["value"] = "DESOCUPADO"
+                today_day = _today.day
+                limit_day = due_day if (due_day and due_day > 0) else 5
+                if today_day < limit_day:
+                    m["status"] = "AL_DIA"
                 else:
-                    today_day = _today.day
-                    limit_day = due_day if (due_day and due_day > 0) else 5
-                    if today_day < limit_day:
-                        m["status"] = "AL_DIA"
-                    else:
-                        m["status"] = "PENDING"
-                    m["value"] = "-"
+                    m["status"] = "PENDING"
+                m["value"] = "-"
             else:
-                # Past month
-                if last_delivery > last_paid or default_vacant or is_vacant_cell:
+                if is_vacant_cell:
                     m["status"] = "VACANT"
                     m["value"] = "DESOCUPADO"
                 else:
                     m["status"] = "PENDING"
+                    m["value"] = "-"
             
-            if is_current:
+            if item["year"] == _curr_year and item["month_idx"] == _curr_month_idx:
                 overall_status = "Desocupado" if m["status"] == "VACANT" else "Ocupado"
 
         properties.append({
