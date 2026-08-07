@@ -184,6 +184,8 @@ function getAdminData() {
 
     chronologicalMonths.forEach((item, idx) => {
       const m = item.cell;
+      const y = item.year;
+      const mIdx = item.monthIdx;
       const valUpper = String(m.value).trim().toUpperCase();
       const numVal = parseFloat(m.value);
       const isPaidCell = (!isNaN(numVal) && numVal > 0) || m.status === 'PAID' || m.status === 'NEW_CONTRACT' || valUpper.includes('CONTRATO') || valUpper.includes('NUEVO');
@@ -193,47 +195,41 @@ function getAdminData() {
       const lastDelivery = deliveryIndices.filter(i => i <= idx).reduce((max, i) => Math.max(max, i), -1);
       const lastPaid = paidIndices.filter(i => i <= idx).reduce((max, i) => Math.max(max, i), -1);
 
+      const isCurrent = (y === currentYear && mIdx === currentMonthIdx);
+      const isFuture = (y > currentYear || (y === currentYear && mIdx > currentMonthIdx));
+
       if (isPaidCell) {
-        // Keep PAID
+        // Keep PAID / NEW_CONTRACT
       } else if (isDeliveryCell) {
         m.status = 'DELIVERY';
-      } else if (lastDelivery > lastPaid) {
-        m.status = 'VACANT';
-        m.value = 'DESOCUPADO';
-      } else if (idx < maxPaidIdx) {
-        if (isVacantCell || defaultVacant) {
+      } else if (isFuture) {
+        m.status = 'FUTURE';
+        m.value = '-';
+      } else if (isCurrent) {
+        if (lastDelivery > lastPaid || (defaultVacant && (!tenantName || String(tenantName).trim() === ''))) {
+          m.status = 'VACANT';
+          m.value = 'DESOCUPADO';
+        } else {
+          const todayDay = today.getDate();
+          const limitDay = (dueDay && dueDay > 0) ? dueDay : 5;
+          if (todayDay < limitDay) {
+            m.status = 'AL_DIA';
+          } else {
+            m.status = 'PENDING';
+          }
+          m.value = '-';
+        }
+      } else {
+        // Past month
+        if (lastDelivery > lastPaid || defaultVacant || isVacantCell) {
           m.status = 'VACANT';
           m.value = 'DESOCUPADO';
         } else {
           m.status = 'PENDING';
         }
-      } else {
-        if (defaultVacant) {
-          m.status = 'VACANT';
-          m.value = 'DESOCUPADO';
-        } else {
-          const y = item.year;
-          const mIdx = item.monthIdx;
-          const isCurrent = (y === currentYear && mIdx === currentMonthIdx);
-          const isFuture = (y > currentYear || (y === currentYear && mIdx > currentMonthIdx));
-
-          if (isCurrent) {
-            const todayDay = today.getDate();
-            const limitDay = (dueDay && dueDay > 0) ? dueDay : 5;
-            if (todayDay < limitDay) {
-              m.status = 'AL_DIA';
-            } else {
-              m.status = 'PENDING';
-            }
-          } else if (isFuture) {
-            m.status = 'FUTURE';
-          } else {
-            m.status = 'PENDING';
-          }
-        }
       }
 
-      if (item.year === currentYear && item.monthIdx === currentMonthIdx) {
+      if (isCurrent) {
         overallStatus = (m.status === 'VACANT') ? 'Desocupado' : 'Ocupado';
       }
     });
