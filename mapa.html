@@ -1506,7 +1506,11 @@ function cargarInfoBarrioJSONP(barrioName) {
                             btn.classList.add('active');
                             // Filtrar lista
                             const tipoSel = btn.getAttribute('data-tipo');
-                            filteredListDesk = inmuebles.filter(item => item.TipoDeInmueble === tipoSel);
+                            if (tipoSel === 'all') {
+                                filteredListDesk = inmuebles.slice();
+                            } else {
+                                filteredListDesk = inmuebles.filter(item => (item.TipoDeInmueble || '').trim() === tipoSel.trim());
+                            }
                             currentPageDesk = 1;
                             renderDesktopPage(true); // true: sí hace scroll al cambiar filtro
                         });
