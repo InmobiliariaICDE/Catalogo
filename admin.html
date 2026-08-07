@@ -8969,7 +8969,7 @@ function ensureUniqueIds(data) {
             // Keep PAID / NEW_CONTRACT
           } else if (isDeliveryCell) {
             m.status = 'DELIVERY';
-          } else if (lastDelivery > lastPaid || isBeforeStart || isAfterEnd || isVacantByName || (!hasTenant && !startDt && !hasAnyPayment)) {
+          } else if (isVacantCell || lastDelivery > lastPaid || isBeforeStart || isAfterEnd || isVacantByName || (!hasTenant && !startDt && !hasAnyPayment)) {
             m.status = 'VACANT';
             m.value = 'DESOCUPADO';
           } else if (isFuture) {
@@ -8986,13 +8986,8 @@ function ensureUniqueIds(data) {
             m.value = '-';
           } else {
             // Past month during active contract
-            if (isVacantCell) {
-              m.status = 'VACANT';
-              m.value = 'DESOCUPADO';
-            } else {
-              m.status = 'PENDING';
-              m.value = '-';
-            }
+            m.status = 'PENDING';
+            m.value = '-';
           }
 
           if (isCurrent) {

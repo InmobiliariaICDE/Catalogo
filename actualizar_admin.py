@@ -247,7 +247,7 @@ def parse_properties(file):
                 pass
             elif is_delivery:
                 m["status"] = "DELIVERY"
-            elif last_delivery > last_paid or is_before_start or is_after_end or is_vacant_by_name or (not has_tenant and not start_dt and not has_any_payment):
+            elif is_vacant_cell or last_delivery > last_paid or is_before_start or is_after_end or is_vacant_by_name or (not has_tenant and not start_dt and not has_any_payment):
                 m["status"] = "VACANT"
                 m["value"] = "DESOCUPADO"
             elif is_future:
@@ -262,12 +262,8 @@ def parse_properties(file):
                     m["status"] = "PENDING"
                 m["value"] = "-"
             else:
-                if is_vacant_cell:
-                    m["status"] = "VACANT"
-                    m["value"] = "DESOCUPADO"
-                else:
-                    m["status"] = "PENDING"
-                    m["value"] = "-"
+                m["status"] = "PENDING"
+                m["value"] = "-"
             
             if item["year"] == _curr_year and item["month_idx"] == _curr_month_idx:
                 overall_status = "Desocupado" if m["status"] == "VACANT" else "Ocupado"
