@@ -8872,6 +8872,45 @@ const safeFormatP = (v) => {
   return '$' + Math.round(v).toLocaleString('es-CO');
 };
 
+function parseContractStartDate(val) {
+  if (!val) return null;
+  if (val instanceof Date) return new Date(val.getFullYear(), val.getMonth(), 1);
+  const sStr = String(val).trim().split('T')[0].split(' ')[0];
+  let year = 0, month = 0;
+  if (sStr.includes('-')) {
+    const parts = sStr.split('-');
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10) - 1;
+      } else {
+        year = parseInt(parts[2], 10);
+        if (year < 100) year += 2000;
+        month = parseInt(parts[1], 10) - 1;
+      }
+    }
+  } else if (sStr.includes('/')) {
+    const parts = sStr.split('/');
+    if (parts.length === 3) {
+      if (parts[2].length === 4 || parseInt(parts[2], 10) > 1000) {
+        year = parseInt(parts[2], 10);
+        month = parseInt(parts[1], 10) - 1;
+      } else if (parts[0].length === 4 || parseInt(parts[0], 10) > 1000) {
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10) - 1;
+      } else {
+        year = parseInt(parts[2], 10);
+        if (year < 100) year += 2000;
+        month = parseInt(parts[1], 10) - 1;
+      }
+    }
+  }
+  if (year >= 2000 && month >= 0 && month <= 11) {
+    return new Date(year, month, 1);
+  }
+  return null;
+}
+
 function ensureUniqueIds(data) {
   if (data && data.properties) {
     const today = new Date();
@@ -8919,23 +8958,7 @@ function ensureUniqueIds(data) {
         const hasAnyPayment = paidIndices.length > 0;
         const maxPaidIdx = hasAnyPayment ? Math.max(...paidIndices) : -1;
 
-        let startDt = null;
-        if (p.start_date) {
-          const sStr = String(p.start_date).trim();
-          if (sStr.includes('-')) {
-            const parts = sStr.split('-');
-            if (parts.length === 3) {
-              if (parts[0].length === 4) startDt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
-              else startDt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, 1);
-            }
-          } else if (sStr.includes('/')) {
-            const parts = sStr.split('/');
-            if (parts.length === 3) {
-              if (parts[2].length === 4) startDt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, 1);
-              else startDt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
-            }
-          }
-        }
+        let startDt = parseContractStartDate(p.start_date);
         let durationMonths = parseInt(p.duration, 10) || 12;
 
         const hasTenant = p.tenant_name && String(p.tenant_name).trim() !== '';
@@ -8972,7 +8995,7 @@ function ensureUniqueIds(data) {
           } else if (lastDelivery > lastPaid) {
             m.status = 'VACANT';
             m.value = 'DESOCUPADO';
-          } else if (isCoveredByContract || isAfterPayment) {
+          } else if (isCoveredByContract || (hasTenant && idx >= (maxPaidIdx !== -1 ? maxPaidIdx : 0)) || isAfterPayment) {
             const y = item.year;
             const mIdx = item.monthIdx;
             const isCurrent = (y === currentYear && mIdx === currentMonthIdx);

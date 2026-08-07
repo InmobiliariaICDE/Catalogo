@@ -178,7 +178,9 @@ function getAdminData() {
 
     const hasAnyPayment = paidIndices.length > 0;
     const maxPaidIdx = hasAnyPayment ? Math.max(...paidIndices) : -1;
-    const defaultVacant = rawName.toUpperCase().includes('DESOCUPAD') || (!hasAnyPayment && (!tenantName || String(tenantName).trim() === ''));
+    let startDt = parseContractStartDate(startDate);
+    let durationMonths = parseInt(duration, 10) || 12;
+    const defaultVacant = rawName.toUpperCase().includes('DESOCUPAD') || (!hasAnyPayment && (!tenantName || String(tenantName).trim() === '') && !startDt);
 
     let overallStatus = defaultVacant ? 'Desocupado' : 'Ocupado';
 
@@ -193,6 +195,17 @@ function getAdminData() {
       const lastDelivery = deliveryIndices.filter(i => i <= idx).reduce((max, i) => Math.max(max, i), -1);
       const lastPaid = paidIndices.filter(i => i <= idx).reduce((max, i) => Math.max(max, i), -1);
 
+      let isCoveredByContract = false;
+      if (startDt) {
+        const mDate = new Date(item.year, item.monthIdx, 1);
+        const endDate = new Date(startDt.getFullYear(), startDt.getMonth() + durationMonths, 1);
+        if (mDate >= startDt && mDate < endDate) {
+          isCoveredByContract = true;
+        }
+      }
+
+      const isAfterPayment = (maxPaidIdx !== -1 && idx >= maxPaidIdx);
+
       if (isPaidCell) {
         // Keep PAID
       } else if (isDeliveryCell) {
@@ -200,6 +213,28 @@ function getAdminData() {
       } else if (lastDelivery > lastPaid) {
         m.status = 'VACANT';
         m.value = 'DESOCUPADO';
+      } else if (isCoveredByContract || (tenantName && idx >= (maxPaidIdx !== -1 ? maxPaidIdx : 0)) || isAfterPayment) {
+        const y = item.year;
+        const mIdx = item.monthIdx;
+        const isCurrent = (y === currentYear && mIdx === currentMonthIdx);
+        const isFuture = (y > currentYear || (y === currentYear && mIdx > currentMonthIdx));
+
+        if (isCurrent) {
+          const todayDay = today.getDate();
+          const limitDay = (dueDay && dueDay > 0) ? dueDay : 5;
+          if (todayDay < limitDay) {
+            m.status = 'AL_DIA';
+          } else {
+            m.status = 'PENDING';
+          }
+          m.value = '-';
+        } else if (isFuture) {
+          m.status = 'FUTURE';
+          m.value = '-';
+        } else {
+          m.status = 'PENDING';
+          m.value = '-';
+        }
       } else if (idx < maxPaidIdx) {
         if (isVacantCell || defaultVacant) {
           m.status = 'VACANT';
@@ -565,6 +600,45 @@ function saveAdminPropertyToSheet(params) {
 function createJsonResponse(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function parseContractStartDate(val) {
+  if (!val) return null;
+  if (val instanceof Date) return new Date(val.getFullYear(), val.getMonth(), 1);
+  const sStr = String(val).trim().split('T')[0].split(' ')[0];
+  let year = 0, month = 0;
+  if (sStr.includes('-')) {
+    const parts = sStr.split('-');
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10) - 1;
+      } else {
+        year = parseInt(parts[2], 10);
+        if (year < 100) year += 2000;
+        month = parseInt(parts[1], 10) - 1;
+      }
+    }
+  } else if (sStr.includes('/')) {
+    const parts = sStr.split('/');
+    if (parts.length === 3) {
+      if (parts[2].length === 4 || parseInt(parts[2], 10) > 1000) {
+        year = parseInt(parts[2], 10);
+        month = parseInt(parts[1], 10) - 1;
+      } else if (parts[0].length === 4 || parseInt(parts[0], 10) > 1000) {
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10) - 1;
+      } else {
+        year = parseInt(parts[2], 10);
+        if (year < 100) year += 2000;
+        month = parseInt(parts[1], 10) - 1;
+      }
+    }
+  }
+  if (year >= 2000 && month >= 0 && month <= 11) {
+    return new Date(year, month, 1);
+  }
+  return null;
 }
 
 function _formatDate(val) {
