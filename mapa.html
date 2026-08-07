@@ -1571,21 +1571,27 @@ function cargarInfoBarrioJSONP(barrioName) {
         }
 
         function obtenerFotosInmueble(item) {
+            const publicar = String(item['Publicar'] || '').trim().toUpperCase();
+            const HIGH_RES_LOGO = 'imagenes/logo_premium.png';
+
             const fotos = [];
             const rawImgs = item.Imagenes || item['Imagenes'] || item['imagenes'] || '';
             if (rawImgs) {
                 rawImgs.replace(/\r/g, '').replace(/\n/g, '')
                     .split('|')
                     .map(function(u){ return u.trim(); })
-                    .filter(function(u){ return u.length > 5; })
+                    .filter(function(u){ return u.length > 5 && !u.includes('AP1GczOda4rqkyNccBsE3o1UxlO'); })
                     .forEach(function(u){ fotos.push(u); });
             }
-            if (!fotos.length && item.Image) {
+
+            if (!fotos.length && item.Image && !item.Image.includes('AP1GczOda4rqkyNccBsE3o1UxlO')) {
                 fotos.push(item.Image);
             }
-            if (!fotos.length) {
-                fotos.push('https://i.imgur.com/Pc9M3I8.png');
+
+            if (publicar !== 'SI' || !fotos.length) {
+                return [HIGH_RES_LOGO];
             }
+
             return fotos;
         }
 
@@ -1599,8 +1605,10 @@ function cargarInfoBarrioJSONP(barrioName) {
             html += `<div class="carrusel-principal" style="height:${h}px;">`;
 
             fotos.forEach((url, i) => {
+                const isLogo = url.includes('logo_premium');
+                const imgStyle = isLogo ? 'object-fit:contain; background:#000; padding:16px;' : '';
                 html += `<div class="carrusel-slide ${i === 0 ? 'activa' : ''}">
-                            <img src="${url}" alt="${item.Nombre || 'Inmueble'}" loading="${i === 0 ? 'eager' : 'lazy'}" draggable="false" />
+                            <img src="${url}" alt="${item.Nombre || 'Inmueble'}" style="${imgStyle}" loading="${i === 0 ? 'eager' : 'lazy'}" draggable="false" />
                          </div>`;
             });
 
