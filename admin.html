@@ -9263,10 +9263,8 @@ function renderAdministracion() {
         <div id="adminFiltersContainer" style="display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap;">
           <button class="chip-filtro ${currentAdminFilter==='todos'?'sel':''}" data-filter="todos" onclick="setAdminFilter('todos')">Todos</button>
           <button class="chip-filtro ${currentAdminFilter==='pendientes'?'sel':''}" data-filter="pendientes" onclick="setAdminFilter('pendientes')">🔴 Pendientes</button>
-          <button class="chip-filtro ${currentAdminFilter==='aldia'?'sel':''}" data-filter="aldia" onclick="setAdminFilter('aldia')">☀️ Al día</button>
-          <button class="chip-filtro ${currentAdminFilter==='pagados'?'sel':''}" data-filter="pagados" onclick="setAdminFilter('pagados')">🟢 Pagados</button>
-          <button class="chip-filtro ${currentAdminFilter==='ocupados'?'sel':''}" data-filter="ocupados" onclick="setAdminFilter('ocupados')">Ocupados</button>
           <button class="chip-filtro ${currentAdminFilter==='disponibles'?'sel':''}" data-filter="disponibles" onclick="setAdminFilter('disponibles')">⚪ Desocupados</button>
+          <button class="chip-filtro ${currentAdminFilter==='silvia'?'sel':''}" data-filter="silvia" onclick="setAdminFilter('silvia')">🏢 Silvia</button>
         </div>
 
         <!-- ORDENACIÓN (DERECHA-CENTRO) -->
@@ -9397,6 +9395,12 @@ function renderAdministracionContent() {
     if (currentAdminFilter === 'pendientes') return statusMonth === 'PENDING';
     if (currentAdminFilter === 'aldia') return statusMonth === 'AL_DIA';
     if (currentAdminFilter === 'pagados') return statusMonth === 'PAID' || statusMonth === 'NEW_CONTRACT';
+    if (currentAdminFilter === 'silvia') {
+      const ownerMatch = p.owner && String(p.owner).toLowerCase().includes('silvia');
+      const nameMatch = p.name && String(p.name).toLowerCase().includes('silvia');
+      const conjuntoMatch = (p['Conjunto'] || p['Conjunto / Edificio'] || p['edificio'] || p['conjunto']) && String(p['Conjunto'] || p['Conjunto / Edificio'] || p['edificio'] || p['conjunto']).toLowerCase().includes('silvia');
+      return ownerMatch || nameMatch || conjuntoMatch;
+    }
     return true;
   });
 
