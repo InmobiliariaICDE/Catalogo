@@ -338,7 +338,7 @@ function saveAdminPaymentToSheet(params) {
   }
   
   if (rowIdx === -1 && params.propertyName) {
-    const cleanName = String(params.propertyName).trim().toLowerCase();
+    const cleanName = String(params.propertyName || '').split('-')[0].replace(/1\.\s*\|/g, '').trim().toLowerCase();
     const nameCol0Idx = 8; // Col I (Inmueble / Incrementos)
     for (let i = 0; i < values.length; i++) {
       const cellName = String(values[i][nameCol0Idx] || '').trim().toLowerCase();
@@ -513,7 +513,7 @@ function saveAdminPropertyToSheet(params) {
   }
   
   if (rowIdx === -1 && params.propertyNameOld) {
-    const cleanName = String(params.propertyNameOld).trim().toLowerCase();
+    const cleanName = String(params.propertyNameOld || '').split('-')[0].replace(/1\.\s*\|/g, '').trim().toLowerCase();
     const nameCol0Idx = nameCol - 1;
     for (let i = 0; i < values.length; i++) {
       const cellName = String(values[i][nameCol0Idx] || '').trim().toLowerCase();

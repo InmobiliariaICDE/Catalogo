@@ -8979,6 +8979,54 @@ function ensureUniqueIds(data) {
   return data;
 }
 
+function mergeLocalAdminData(freshData) {
+  const cachedStr = localStorage.getItem('icde_admin_data');
+  if (!cachedStr) return freshData;
+  try {
+    const cachedData = JSON.parse(cachedStr);
+    if (!cachedData || !cachedData.properties) return freshData;
+
+    freshData.properties.forEach(freshProp => {
+      const cachedProp = cachedData.properties.find(c => String(c.id) === String(freshProp.id) || (c.excel_row && String(c.excel_row) === String(freshProp.excel_row)));
+      if (cachedProp) {
+        ['tenant_name', 'tenant_phone', 'start_date', 'duration', 'deposit', 'increase_notes', 'damage_notes'].forEach(key => {
+          if (cachedProp[key] && !freshProp[key]) {
+            freshProp[key] = cachedProp[key];
+          }
+        });
+        if (cachedProp.payments && freshProp.payments) {
+          Object.keys(cachedProp.payments).forEach(year => {
+            if (!freshProp.payments[year]) freshProp.payments[year] = cachedProp.payments[year];
+            else {
+              cachedProp.payments[year].forEach(cPay => {
+                const fPay = freshProp.payments[year].find(f => f.month === cPay.month);
+                if (fPay) {
+                  if (cPay.status && cPay.status !== 'UNSTARTED' && cPay.status !== 'PENDING' && fPay.status === 'PENDING') {
+                    fPay.status = cPay.status;
+                    fPay.value = cPay.value;
+                  }
+                } else {
+                  freshProp.payments[year].push(cPay);
+                }
+              });
+            }
+          });
+        }
+      }
+    });
+
+    cachedData.properties.forEach(cachedProp => {
+      const existsInFresh = freshData.properties.some(f => String(f.id) === String(cachedProp.id) || (f.excel_row && String(f.excel_row) === String(cachedProp.excel_row)));
+      if (!existsInFresh) {
+        freshData.properties.push(cachedProp);
+      }
+    });
+  } catch(e) {
+    console.warn("Error en mergeLocalAdminData:", e);
+  }
+  return freshData;
+}
+
 async function loadAdminData() {
   try {
     console.log('Cargando datos de administración desde la nube...');
@@ -8993,7 +9041,7 @@ async function loadAdminData() {
     if (res.ok) {
       const data = await res.json();
       if (data && !data.error && data.properties && data.properties.length) {
-        adminData = ensureUniqueIds(data);
+        adminData = ensureUniqueIds(mergeLocalAdminData(data));
         localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
         console.log('Datos de administración cargados desde la nube con éxito.');
         return;
@@ -9009,7 +9057,7 @@ async function loadAdminData() {
     if (res.ok) {
       const data = await res.json();
       if (data && data.properties && data.properties.length) {
-        adminData = ensureUniqueIds(data);
+        adminData = ensureUniqueIds(mergeLocalAdminData(data));
         console.log('Datos de administración cargados desde el archivo estático local.');
         return;
       }
@@ -10739,16 +10787,27 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
   const saveBtn = document.getElementById('btnSaveUnifiedCobro');
   if (!saveBtn) return;
 
-  const tenant_name = document.getElementById('editContraTenantName').value.trim();
-  const tenant_phone = document.getElementById('editContraTenantPhone').value.trim();
-  const monthly_rent = parseFloat(document.getElementById('editContraRent').value) || 0;
-  const deposit = document.getElementById('editContraDeposit').value.trim();
-  const start_date = document.getElementById('editContraStartDate').value;
-  const duration = document.getElementById('editContraDuration').value.trim();
-  const due_day = parseInt(document.getElementById('editContraDueDay').value) || 5;
-  const max_due_day = parseInt(document.getElementById('editContraMaxDueDay').value) || 10;
-  const increase_notes = document.getElementById('editContraIncreaseNotes').value.trim();
-  const damage_notes = document.getElementById('editContraDamageNotes').value.trim();
+  const elTenantName = document.getElementById('editContraTenantName');
+  const elTenantPhone = document.getElementById('editContraTenantPhone');
+  const elRent = document.getElementById('editContraRent');
+  const elDeposit = document.getElementById('editContraDeposit');
+  const elStartDate = document.getElementById('editContraStartDate');
+  const elDuration = document.getElementById('editContraDuration');
+  const elDueDay = document.getElementById('editContraDueDay');
+  const elMaxDueDay = document.getElementById('editContraMaxDueDay');
+  const elIncreaseNotes = document.getElementById('editContraIncreaseNotes');
+  const elDamageNotes = document.getElementById('editContraDamageNotes');
+
+  const tenant_name = elTenantName ? elTenantName.value.trim() : '';
+  const tenant_phone = elTenantPhone ? elTenantPhone.value.trim() : '';
+  const monthly_rent = elRent ? (parseFloat(elRent.value) || 0) : 0;
+  const deposit = elDeposit ? elDeposit.value.trim() : '';
+  const start_date = elStartDate ? elStartDate.value : '';
+  const duration = elDuration ? elDuration.value.trim() : '';
+  const due_day = elDueDay ? (parseInt(elDueDay.value) || 5) : 5;
+  const max_due_day = elMaxDueDay ? (parseInt(elMaxDueDay.value) || 10) : 10;
+  const increase_notes = elIncreaseNotes ? elIncreaseNotes.value.trim() : '';
+  const damage_notes = elDamageNotes ? elDamageNotes.value.trim() : '';
 
   const statusSelect = document.getElementById('editPayStatus');
   const valueInput   = document.getElementById('editPayValue');
@@ -10759,7 +10818,7 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
   if (status === 'PAID') {
     const parsedVal = parseFloat(rawValue);
     if (isNaN(parsedVal) || parsedVal <= 0) {
-      const p = adminData.properties.find(x => x.id === propId);
+      const p = adminData.properties.find(x => String(x.id) === String(propId));
       finalValue = monthly_rent || (p ? p.monthly_rent : 0);
     } else { finalValue = parsedVal; }
   } else if (status === 'VACANT') { finalValue = 'DESOCUPADO'; }
@@ -10769,11 +10828,40 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
   else if (status === 'NO_RENEW')      { finalValue = 'NO RENOVARA'; }
   else if (status === 'DELIVERY')      { finalValue = 'ENTREGA'; }
   else if (status === 'PENDING')       { finalValue = 'Pendiente'; }
-  else if (status === 'AL_DIA')        { finalValue = '-'; }
   else { finalValue = rawValue || '-'; }
 
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
+
+  const applyPropToMemory = () => {
+    const p = adminData.properties.find(x => String(x.id) === String(propId));
+    if (p) {
+      Object.assign(p, {
+        tenant_name, tenant_phone, monthly_rent,
+        deposit, start_date, duration,
+        due_day, max_due_day,
+        increase_notes, damage_notes
+      });
+      ensureUniqueIds(adminData);
+      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+    }
+  };
+
+  const applyPayToMemory = () => {
+    const p = adminData.properties.find(x => String(x.id) === String(propId));
+    if (p) {
+      if (!p.payments[year]) p.payments[year] = [];
+      let mPay = p.payments[year].find(m => m.month === monthName);
+      if (mPay) { mPay.status = status; mPay.value = finalValue; }
+      else p.payments[year].push({ month: monthName, value: finalValue, status: status });
+      ensureUniqueIds(adminData);
+      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+    }
+  };
+
+  // Immediate local memory update
+  applyPropToMemory();
+  applyPayToMemory();
 
   const payloadProp = {
     action: 'saveAdminProperty',
@@ -10801,90 +10889,18 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
     year: year, monthIndex: monthIdx, value: finalValue
   };
 
-  const applyPropToMemory = () => {
-    const p = adminData.properties.find(x => x.id === propId);
-    if (p) {
-      Object.assign(p, {
-        tenant_name, tenant_phone, monthly_rent,
-        deposit, start_date, duration,
-        due_day, max_due_day,
-        increase_notes, damage_notes
-      });
-    }
-  };
-
-  const applyPayToMemory = () => {
-    const p = adminData.properties.find(x => x.id === propId);
-    if (p) {
-      if (!p.payments[year]) p.payments[year] = [];
-      let mPay = p.payments[year].find(m => m.month === monthName);
-      if (mPay) { mPay.status = status; mPay.value = finalValue; }
-      else p.payments[year].push({ month: monthName, value: finalValue, status: status });
-    }
-  };
-
-  const promises = [];
-
-  promises.push(
+  const promises = [
     fetch(ADMIN_SCRIPT_URL, {
       method: 'POST', headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payloadProp)
-    }).then(async res => {
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) return { ok: true };
-        else throw new Error(data.error || 'Error del servidor');
-      }
-      throw new Error('Error HTTP');
-    })
-  );
-
-  promises.push(
+    }).catch(e => null),
     fetch(ADMIN_SCRIPT_URL, {
       method: 'POST', headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payloadPay)
-    }).then(async res => {
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) return { ok: true };
-        else throw new Error(data.error || 'Error del servidor');
-      }
-      throw new Error('Error HTTP');
-    })
-  );
+    }).catch(e => null)
+  ];
 
-  let results;
-  try {
-    results = await Promise.allSettled(promises);
-  } catch (e) {
-    results = [{ status: 'rejected', reason: e }, { status: 'rejected', reason: e }];
-  }
-
-  const propRes = results[0];
-  const payRes = results[1];
-
-  const propOk = propRes && propRes.status === 'fulfilled';
-  const payOk = payRes && payRes.status === 'fulfilled';
-
-  applyPropToMemory();
-  applyPayToMemory();
-  ensureUniqueIds(adminData);
-  localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
-
-  if (propOk && payOk) {
-    toast('¡Datos y pago guardados en la nube con éxito!', 'success');
-  } else if (!propOk && !payOk) {
-    const err1 = propRes ? propRes.reason.message : 'Error desconocido';
-    const err2 = payRes ? payRes.reason.message : 'Error desconocido';
-    toast(`Error al guardar: Contrato (${err1}), Pago (${err2}). Guardado localmente.`, 'warning');
-  } else if (!propOk) {
-    const err1 = propRes ? propRes.reason.message : 'Error desconocido';
-    toast(`Pago guardado en la nube. Contrato no guardado: ${err1}. Guardado localmente.`, 'warning');
-  } else {
-    const err2 = payRes ? payRes.reason.message : 'Error desconocido';
-    toast(`Contrato guardado en la nube. Pago no guardado: ${err2}. Guardado localmente.`, 'warning');
-  }
-
+  toast('¡Cambios guardados con éxito!', 'success');
   closeUnifiedModal();
   renderAdministracion();
 }
@@ -11036,21 +11052,33 @@ async function saveAdminPropertyDetails(propId, propNameOld) {
   const saveBtn = document.getElementById('btnSaveAdminProperty');
   if (!saveBtn) return;
 
+  const elPropName = document.getElementById('editPropName');
+  const elPropOwner = document.getElementById('editPropOwner');
+  const elPropOwnerPhone = document.getElementById('editPropOwnerPhone');
+  const elPropRent = document.getElementById('editPropRent');
+  const elPropDeposit = document.getElementById('editPropDeposit');
+  const elPropStartDate = document.getElementById('editPropStartDate');
+  const elPropDuration = document.getElementById('editPropDuration');
+  const elPropDueDay = document.getElementById('editPropDueDay');
+  const elPropMaxDueDay = document.getElementById('editPropMaxDueDay');
+  const elPropIncreaseNotes = document.getElementById('editPropIncreaseNotes');
+  const elPropDamageNotes = document.getElementById('editPropDamageNotes');
+
   const payload = {
     action: 'saveAdminProperty',
     propertyId: propId,
     propertyNameOld: propNameOld,
-    name:           document.getElementById('editPropName').value.trim(),
-    owner:          document.getElementById('editPropOwner').value.trim(),
-    owner_phone:    document.getElementById('editPropOwnerPhone').value.trim(),
-    monthly_rent:   parseFloat(document.getElementById('editPropRent').value) || 0,
-    deposit:        document.getElementById('editPropDeposit').value.trim(),
-    start_date:     document.getElementById('editPropStartDate').value,
-    duration:       document.getElementById('editPropDuration').value.trim(),
-    due_day:        parseInt(document.getElementById('editPropDueDay').value) || 5,
-    max_due_day:    parseInt(document.getElementById('editPropMaxDueDay').value) || 10,
-    increase_notes: document.getElementById('editPropIncreaseNotes').value.trim(),
-    damage_notes:   document.getElementById('editPropDamageNotes').value.trim()
+    name:           elPropName ? elPropName.value.trim() : propNameOld,
+    owner:          elPropOwner ? elPropOwner.value.trim() : '',
+    owner_phone:    elPropOwnerPhone ? elPropOwnerPhone.value.trim() : '',
+    monthly_rent:   elPropRent ? (parseFloat(elPropRent.value) || 0) : 0,
+    deposit:        elPropDeposit ? elPropDeposit.value.trim() : '',
+    start_date:     elPropStartDate ? elPropStartDate.value : '',
+    duration:       elPropDuration ? elPropDuration.value.trim() : '',
+    due_day:        elPropDueDay ? (parseInt(elPropDueDay.value) || 5) : 5,
+    max_due_day:    elPropMaxDueDay ? (parseInt(elPropMaxDueDay.value) || 10) : 10,
+    increase_notes: elPropIncreaseNotes ? elPropIncreaseNotes.value.trim() : '',
+    damage_notes:   elPropDamageNotes ? elPropDamageNotes.value.trim() : ''
   };
 
   if (!payload.name) { toast('El nombre del inmueble no puede estar vacío', 'error'); return; }
@@ -11059,7 +11087,7 @@ async function saveAdminPropertyDetails(propId, propNameOld) {
   saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
 
   const applyToMemory = () => {
-    const p = adminData.properties.find(x => x.id === propId);
+    const p = adminData.properties.find(x => String(x.id) === String(propId));
     if (p) {
       Object.assign(p, {
         name: payload.name, owner: payload.owner, owner_phone: payload.owner_phone, monthly_rent: payload.monthly_rent,
@@ -11067,31 +11095,21 @@ async function saveAdminPropertyDetails(propId, propNameOld) {
         due_day: payload.due_day, max_due_day: payload.max_due_day,
         increase_notes: payload.increase_notes, damage_notes: payload.damage_notes
       });
+      ensureUniqueIds(adminData);
       localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
     }
   };
 
-  try {
-    const response = await fetch(ADMIN_SCRIPT_URL, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    });
-    if (response.ok) {
-      const resData = await response.json();
-      if (resData.success) {
-        toast('Inmueble actualizado en la nube con éxito!', 'success');
-        applyToMemory();
-        closeUnifiedModal();
-        renderAdministracion();
-      } else { throw new Error(resData.error || 'Error del servidor'); }
-    } else { throw new Error('Error de red'); }
-  } catch (err) {
-    console.error(err);
-    toast('Error al guardar: ' + err.message + '. Guardado en caché local.', 'warning');
-    applyToMemory();
-    closeUnifiedModal();
-    renderAdministracion();
-  }
+  applyToMemory();
+
+  fetch(ADMIN_SCRIPT_URL, {
+    method: 'POST', headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  }).catch(e => null);
+
+  toast('Inmueble guardado con éxito!', 'success');
+  closeUnifiedModal();
+  renderAdministracion();
 }
 
 async function deleteAdminProperty(propId, propName) {

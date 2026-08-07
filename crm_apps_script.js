@@ -928,7 +928,7 @@ function saveAdminPaymentToSheet(params) {
     if (String(values[i][0]).trim() === String(params.propertyId).trim()) { rowIdx = i + 1; break; }
   }
   if (rowIdx === -1 && params.propertyName) {
-    const cleanName = String(params.propertyName).trim().toLowerCase();
+    const cleanName = String(params.propertyName || '').split('-')[0].replace(/1\.\s*\|/g, '').trim().toLowerCase();
     
     // Find Name Column index dynamically to perform safe approximate lookup
     let nameCol0Idx = 6; // default 0-indexed column 7
@@ -1147,7 +1147,7 @@ function saveAdminPropertyToSheet(params) {
     if (String(values[i][0]).trim() === String(params.propertyId).trim()) { rowIdx = i + 1; break; }
   }
   if (rowIdx === -1 && params.propertyNameOld) {
-    const cleanName = String(params.propertyNameOld).trim().toLowerCase();
+    const cleanName = String(params.propertyNameOld || '').split('-')[0].replace(/1\.\s*\|/g, '').trim().toLowerCase();
     const nameCol0Idx = nameCol - 1;
     for (let i = 0; i < values.length; i++) {
       const cellName = String(values[i][nameCol0Idx] || '').trim().toLowerCase();
