@@ -8937,10 +8937,12 @@ function ensureUniqueIds(data) {
         const hasTenant = p.tenant_name && String(p.tenant_name).trim() !== '';
         const isVacantByName = p.name && String(p.name).toUpperCase().includes('DESOCUPAD');
 
-        let dynamicOverallStatus = (isVacantByName || (!hasAnyPayment && !hasTenant && !startDt)) ? 'Desocupado' : 'Ocupado';
+        const isOccupiedProp = !isVacantByName && (hasTenant || Boolean(startDt));
+
+        let dynamicOverallStatus = isOccupiedProp ? 'Ocupado' : 'Desocupado';
 
         let rolledEndDt = null;
-        if (startDt && (hasTenant || startDt || hasAnyPayment) && !isVacantByName) {
+        if (startDt && isOccupiedProp) {
           rolledEndDt = new Date(startDt.getFullYear(), startDt.getMonth() + durationMonths, 1);
           const lastDelivery = deliveryIndices.reduce((max, i) => Math.max(max, i), -1);
           const lastPaid = paidIndices.reduce((max, i) => Math.max(max, i), -1);
@@ -8962,7 +8964,6 @@ function ensureUniqueIds(data) {
           const numVal = parseFloat(String(m.value).replace(/[^0-9.]/g, ''));
           const isPaidCell = (!isNaN(numVal) && numVal > 0) || m.status === 'PAID' || m.status === 'NEW_CONTRACT' || valUpper.includes('CONTRATO') || valUpper.includes('NUEVO');
           const isDeliveryCell = m.status === 'DELIVERY' || valUpper.includes('ENTREGA');
-          const isVacantCell = (m.status === 'VACANT' || valUpper.includes('DESOCUPAD')) && !isPaidCell;
 
           const lastDelivery = deliveryIndices.filter(i => i <= idx).reduce((max, i) => Math.max(max, i), -1);
           const lastPaid = paidIndices.filter(i => i <= idx).reduce((max, i) => Math.max(max, i), -1);
@@ -8985,35 +8986,25 @@ function ensureUniqueIds(data) {
             // Keep PAID / NEW_CONTRACT
           } else if (isDeliveryCell) {
             m.status = 'DELIVERY';
-          } else if (lastDelivery > lastPaid || isBeforeStart || isAfterEnd || isVacantByName || (!hasTenant && !startDt && !hasAnyPayment)) {
+          } else if (!isOccupiedProp || lastDelivery > lastPaid || isBeforeStart || isAfterEnd) {
             m.status = 'VACANT';
             m.value = 'DESOCUPADO';
           } else if (isFuture) {
             m.status = 'FUTURE';
             m.value = '-';
           } else if (isCurrent) {
-            if (m.status === 'VACANT' && !hasTenant && !startDt && !hasAnyPayment) {
-              m.status = 'VACANT';
-              m.value = 'DESOCUPADO';
-            } else {
-              const todayDay = today.getDate();
-              const limitDay = (p.due_day && p.due_day > 0) ? p.due_day : 5;
-              if (todayDay < limitDay) {
-                m.status = 'AL_DIA';
-              } else {
-                m.status = 'PENDING';
-              }
-              m.value = '-';
-            }
-          } else {
-            // Past month during active contract
-            if (isVacantCell && !hasTenant && !startDt) {
-              m.status = 'VACANT';
-              m.value = 'DESOCUPADO';
+            const todayDay = today.getDate();
+            const limitDay = (p.due_day && p.due_day > 0) ? p.due_day : 5;
+            if (todayDay < limitDay) {
+              m.status = 'AL_DIA';
             } else {
               m.status = 'PENDING';
-              m.value = '-';
             }
+            m.value = '-';
+          } else {
+            // Past month during active contract
+            m.status = 'PENDING';
+            m.value = '-';
           }
 
           if (isCurrent) {

@@ -210,7 +210,7 @@ def parse_properties(file):
 
         has_tenant = bool(tenant_name and str(tenant_name).strip())
         is_vacant_by_name = "DESOCUPAD" in raw_name.upper()
-        is_occupied_prop = not is_vacant_by_name and (has_tenant or bool(start_dt) or has_any_payment)
+        is_occupied_prop = not is_vacant_by_name and (has_tenant or bool(start_dt))
 
         rolled_end_dt = None
         if start_dt and is_occupied_prop:
@@ -229,8 +229,7 @@ def parse_properties(file):
                     r_m = (rolled_end_dt.month + duration_m - 1) % 12 + 1
                     rolled_end_dt = date(r_y, r_m, 1)
 
-        default_vacant = is_vacant_by_name or (not has_any_payment and not has_tenant and not start_dt)
-        overall_status = "Desocupado" if default_vacant else "Ocupado"
+        overall_status = "Ocupado" if is_occupied_prop else "Desocupado"
 
         for idx, item in enumerate(months_order):
             m = item["cell"]
@@ -241,7 +240,6 @@ def parse_properties(file):
 
             is_paid = (num_val > 0) or m["status"] in ("PAID", "NEW_CONTRACT") or "CONTRATO" in val_upper or "NUEVO" in val_upper
             is_delivery = m["status"] == "DELIVERY" or "ENTREGA" in val_upper
-            is_vacant_cell = (m["status"] == "VACANT" or "DESOCUPAD" in val_upper) and not is_paid
 
             last_delivery = max([i for i in delivery_indices if i <= idx], default=-1)
             last_paid = max([i for i in paid_indices if i <= idx], default=-1)
@@ -264,7 +262,7 @@ def parse_properties(file):
                 pass
             elif is_delivery:
                 m["status"] = "DELIVERY"
-            elif last_delivery > last_paid or is_before_start or is_after_end or is_vacant_by_name or (not has_tenant and not start_dt and not has_any_payment):
+            elif not is_occupied_prop or last_delivery > last_paid or is_before_start or is_after_end:
                 m["status"] = "VACANT"
                 m["value"] = "DESOCUPADO"
             elif is_future:
