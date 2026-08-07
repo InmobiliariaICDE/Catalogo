@@ -878,6 +878,16 @@ function cargarInfoBarrioJSONP(barrioName) {
             return (n < 0 ? '-' : '') + '$' + formatted;
         }
 
+        function formatNombreTitle(str) {
+            if (!str) return '';
+            const s = String(str).trim();
+            if (s === s.toUpperCase() && s.length > 3) {
+                const lower = s.toLowerCase();
+                return lower.charAt(0).toUpperCase() + lower.slice(1);
+            }
+            return s;
+        }
+
         function formatInteger(num) {
             if (num == null || isNaN(num)) return '';
             return String(Math.round(Number(num)));
@@ -911,7 +921,7 @@ function cargarInfoBarrioJSONP(barrioName) {
             html += `<div class="card-info-minimal" style="padding:8px; display:flex; flex-direction:column; justify-content: space-between;">`;
             if (item.Nombre) {
                 html += `<p class="card-nombre-minimal" style="margin:0; font-size:16px; font-weight:500; color:#fff;">
-                        ${item.Nombre}
+                        ${formatNombreTitle(item.Nombre)}
                      </p>`;
             }
             if (item.Precio != null) {
@@ -1708,7 +1718,7 @@ function cargarInfoBarrioJSONP(barrioName) {
             html += generarCardCarruselHTML(item, cardId, 175);
 
             html += `<div class="card-info">
-                        <h4 class="card-nombre">${item.Nombre || ''}</h4>
+                        <h4 class="card-nombre">${formatNombreTitle(item.Nombre)}</h4>
                         <p class="card-codigo">Código: ${codigo}</p>
                         <p class="card-precio">${formatPrice(item.Precio)}</p>
                         <div class="card-etiquetas">`;
@@ -1849,7 +1859,7 @@ function cargarInfoBarrioJSONP(barrioName) {
                   </div>
                   
                   <div class="modal-bloque-info">
-                    <h2 id="modalTitle">${item.Nombre || ''}</h2>
+                    <h2 id="modalTitle">${formatNombreTitle(item.Nombre)}</h2>
                     <p class="modal-tipo-sub">${item["Tipo de inmueble"] || item.TipoDeInmueble || ''}</p>
                     <p class="modal-codigo-sub">Código: ${codigo}</p>
                     <p class="modal-precio-destacado">${formatPrice(item.Precio)}</p>
