@@ -766,6 +766,17 @@ function cargarInfoBarrioJSONP(barrioName) {
             return 'Rentabilidad ' + str;
         }
 
+        function obtenerAreaLote(item) {
+            if (!item) return null;
+            const keys = ['Área lote', 'Area lote', 'Área Lote', 'Area Lote', 'Área (lote)', 'Area (lote)', 'Área lote (m²)', 'Area lote (m²)', 'Área terreno', 'Area terreno', 'AreaTerreno', 'ÁreaTerreno', 'Lote'];
+            for (const k of keys) {
+                if (item[k] != null && String(item[k]).trim() !== '' && String(item[k]).trim() !== '0') {
+                    return String(item[k]).trim();
+                }
+            }
+            return null;
+        }
+
         function generarCardInmuebleMinimal(item, index) {
             console.log('DEBUG generarCardInmuebleMinimal, item:', item);
             const codigo = item.Codigo || '';
@@ -808,7 +819,8 @@ function cargarInfoBarrioJSONP(barrioName) {
             if (item.Garaje != null) html += `<span class="etiqueta"><img src="https://i.imgur.com/4Yixa77.png" class="icono-etiqueta" alt="Garaje"/>Garaje ${item.Garaje}</span>`;
             if (item.Cocina != null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rH6cXMa.png" class="icono-etiqueta" alt="Cocina"/>Cocina ${item.Cocina}</span>`;
             if (item.Pisos != null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rz72lGC.png" class="icono-etiqueta" alt="Área"/>Pisos ${item.Pisos}</span>`;
-            if (item["Área lote"] != null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rz72lGC.png" class="icono-etiqueta" alt="Área"/>Lote ${item["Área lote"]} m²</span>`;
+            const areaLoteMob = obtenerAreaLote(item);
+            if (areaLoteMob) html += `<span class="etiqueta"><img src="https://i.imgur.com/rz72lGC.png" class="icono-etiqueta" alt="Área"/>Lote ${areaLoteMob} m²</span>`;
             const rentTextoMob = obtenerRentabilidadTexto(item);
             if (rentTextoMob) html += `<span class="etiqueta">${rentTextoMob}</span>`;
 
@@ -1586,7 +1598,8 @@ function cargarInfoBarrioJSONP(barrioName) {
             if (item.Garaje !== undefined && item.Garaje !== null) html += `<span class="etiqueta"><img src="https://i.imgur.com/4Yixa77.png" class="icono-etiqueta" alt="Garaje"/>Garaje ${item.Garaje}</span>`;
             if (item.Cocina !== undefined && item.Cocina !== null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rH6cXMa.png" class="icono-etiqueta" alt="Cocina"/>Cocina ${item.Cocina}</span>`;
             if (item.Pisos !== undefined && item.Pisos !== null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rz72lGC.png" class="icono-etiqueta" alt="Área"/>Pisos ${item.Pisos}</span>`;
-            if (item["Área lote"] !== undefined && item["Área lote"] !== null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rz72lGC.png" class="icono-etiqueta" alt="Área"/>Lote ${item["Área lote"]} m²</span>`;
+            const areaLoteDesk = obtenerAreaLote(item);
+            if (areaLoteDesk) html += `<span class="etiqueta"><img src="https://i.imgur.com/rz72lGC.png" class="icono-etiqueta" alt="Área"/>Lote ${areaLoteDesk} m²</span>`;
             const rentTexto = obtenerRentabilidadTexto(item);
             if (rentTexto) html += `<span class="etiqueta">${rentTexto}</span>`;
             html += `   </div>
@@ -1701,8 +1714,9 @@ function cargarInfoBarrioJSONP(barrioName) {
             if (item.Garaje != null) pillsHtml += `<span class="modal-pill"><img src="https://i.imgur.com/4Yixa77.png" class="modal-pill-icon" alt="Garaje"/> Garaje ${item.Garaje}</span>`;
             if (item.Cocina != null) pillsHtml += `<span class="modal-pill"><img src="https://i.imgur.com/rH6cXMa.png" class="modal-pill-icon" alt="Cocina"/> Cocina ${item.Cocina}</span>`;
             if (item.Pisos != null) pillsHtml += `<span class="modal-pill"><img src="https://i.imgur.com/rz72lGC.png" class="modal-pill-icon" alt="Pisos"/> Pisos ${item.Pisos}</span>`;
-            if (item["Área lote"] != null) pillsHtml += `<span class="modal-pill"><img src="https://i.imgur.com/rz72lGC.png" class="modal-pill-icon" alt="Lote"/> Lote ${item["Área lote"]} m²</span>`;
-            if (item["Área Construida"] != null && item["Área lote"] == null) pillsHtml += `<span class="modal-pill"><img src="https://i.imgur.com/rz72lGC.png" class="modal-pill-icon" alt="Área"/> Área ${item["Área Construida"]} m²</span>`;
+            const areaLoteModal = obtenerAreaLote(item);
+            if (areaLoteModal) pillsHtml += `<span class="modal-pill"><img src="https://i.imgur.com/rz72lGC.png" class="modal-pill-icon" alt="Lote"/> Lote ${areaLoteModal} m²</span>`;
+            else if (item["Área Construida"] != null || item["Área construida"] != null) pillsHtml += `<span class="modal-pill"><img src="https://i.imgur.com/rz72lGC.png" class="modal-pill-icon" alt="Área"/> Área ${item["Área Construida"] || item["Área construida"]} m²</span>`;
             const rentTextoModal = obtenerRentabilidadTexto(item);
             if (rentTextoModal) pillsHtml += `<span class="modal-pill"><img src="https://i.imgur.com/rz72lGC.png" class="modal-pill-icon" alt="Rentabilidad"/> ${rentTextoModal}</span>`;
 
