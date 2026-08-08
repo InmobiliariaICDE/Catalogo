@@ -750,11 +750,20 @@ function cargarInfoBarrioJSONP(barrioName) {
 
         function formatArea(num) {
             if (num == null || isNaN(num)) return '';
-            // Convertir a número y formatear con 2 decimales (usando separador decimal según locale)
             const n = Number(num);
-            // Podemos usar locale 'en-US' para punto decimal: ej. 200.50
             const formatted = n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             return formatted + ' m²';
+        }
+
+        function obtenerRentabilidadTexto(item) {
+            const raw = item.Rentabilidad || item.RetornoInversion || item['Retorno de la Inversión'] || '';
+            if (!raw) return '';
+            const str = String(raw).trim();
+            if (!str || str.toLowerCase() === 'no aplica' || str === '0') return '';
+            if (str.toLowerCase().startsWith('rentabilidad')) {
+                return str;
+            }
+            return 'Rentabilidad ' + str;
         }
 
         function generarCardInmuebleMinimal(item, index) {
@@ -800,6 +809,10 @@ function cargarInfoBarrioJSONP(barrioName) {
             if (item.Cocina != null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rH6cXMa.png" class="icono-etiqueta" alt="Cocina"/>Cocina ${item.Cocina}</span>`;
             if (item.Pisos != null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rz72lGC.png" class="icono-etiqueta" alt="Área"/>Pisos ${item.Pisos}</span>`;
             if (item["Área lote"] != null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rz72lGC.png" class="icono-etiqueta" alt="Área"/>Lote ${item["Área lote"]} m²</span>`;
+            const rentTextoMob = obtenerRentabilidadTexto(item);
+            if (rentTextoMob) {
+                html += `<div style="width:100%; margin-top:6px;"><span class="etiqueta" style="font-weight:700; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:4px; padding:3px 8px; font-size:11.5px; display:inline-block;">${rentTextoMob}</span></div>`;
+            }
 
             html += `</div>`;
             html += `</div>`;
@@ -1576,6 +1589,10 @@ function cargarInfoBarrioJSONP(barrioName) {
             if (item.Cocina !== undefined && item.Cocina !== null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rH6cXMa.png" class="icono-etiqueta" alt="Cocina"/>Cocina ${item.Cocina}</span>`;
             if (item.Pisos !== undefined && item.Pisos !== null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rz72lGC.png" class="icono-etiqueta" alt="Área"/>Pisos ${item.Pisos}</span>`;
             if (item["Área lote"] !== undefined && item["Área lote"] !== null) html += `<span class="etiqueta"><img src="https://i.imgur.com/rz72lGC.png" class="icono-etiqueta" alt="Área"/>Lote ${item["Área lote"]} m²</span>`;
+            const rentTexto = obtenerRentabilidadTexto(item);
+            if (rentTexto) {
+                html += `<div style="width:100%; margin-top:6px;"><span class="etiqueta" style="font-weight:700; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:4px; padding:3px 8px; font-size:11.5px; display:inline-block;">${rentTexto}</span></div>`;
+            }
             html += `   </div>
                      </div>`;
             html += `</div>`;
