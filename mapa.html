@@ -768,7 +768,7 @@ function cargarInfoBarrioJSONP(barrioName) {
 
         function obtenerAreaLote(item) {
             if (!item) return null;
-            const keys = ['Área lote', 'Area lote', 'Área Lote', 'Area Lote', 'Área (lote)', 'Area (lote)', 'Área lote (m²)', 'Area lote (m²)', 'Área terreno', 'Area terreno', 'AreaTerreno', 'ÁreaTerreno', 'Lote'];
+            const keys = ['AreaLote', 'ÁreaLote', 'Área lote', 'Area lote', 'Área Lote', 'Area Lote', 'Área (lote)', 'Area (lote)', 'Área lote (m²)', 'Area lote (m²)', 'Área terreno', 'Area terreno', 'AreaTerreno', 'ÁreaTerreno', 'Lote'];
             for (const k of keys) {
                 if (item[k] != null && String(item[k]).trim() !== '' && String(item[k]).trim() !== '0') {
                     return String(item[k]).trim();
@@ -1715,8 +1715,9 @@ function cargarInfoBarrioJSONP(barrioName) {
             if (item.Cocina != null) pillsHtml += `<span class="modal-pill"><img src="https://i.imgur.com/rH6cXMa.png" class="modal-pill-icon" alt="Cocina"/> Cocina ${item.Cocina}</span>`;
             if (item.Pisos != null) pillsHtml += `<span class="modal-pill"><img src="https://i.imgur.com/rz72lGC.png" class="modal-pill-icon" alt="Pisos"/> Pisos ${item.Pisos}</span>`;
             const areaLoteModal = obtenerAreaLote(item);
-            if (areaLoteModal) pillsHtml += `<span class="modal-pill"><img src="https://i.imgur.com/rz72lGC.png" class="modal-pill-icon" alt="Lote"/> Lote ${areaLoteModal} m²</span>`;
-            else if (item["Área Construida"] != null || item["Área construida"] != null) pillsHtml += `<span class="modal-pill"><img src="https://i.imgur.com/rz72lGC.png" class="modal-pill-icon" alt="Área"/> Área ${item["Área Construida"] || item["Área construida"]} m²</span>`;
+            if (areaLoteModal) {
+                pillsHtml += `<span class="modal-pill"><img src="https://i.imgur.com/rz72lGC.png" class="modal-pill-icon" alt="Lote"/> Lote ${areaLoteModal} m²</span>`;
+            }
             const rentTextoModal = obtenerRentabilidadTexto(item);
             if (rentTextoModal) pillsHtml += `<span class="modal-pill"><img src="https://i.imgur.com/rz72lGC.png" class="modal-pill-icon" alt="Rentabilidad"/> ${rentTextoModal}</span>`;
 
