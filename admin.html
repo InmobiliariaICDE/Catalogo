@@ -9460,19 +9460,26 @@ function renderAdministracionContent() {
   
   // Metricas Edificio Silvia
   let silviaEsperado = 0, silviaRecaudado = 0, silviaPendiente = 0, silviaOcupados = 0, silviaActivos = 0;
+  let inquilinosMoraCount = 0;
 
   adminData.properties.forEach(p => {
     const paymentsYear = p.payments[currentAdminYear] || [];
     const rent = parseFloat(p.monthly_rent) || 0;
     const isSilvia = p.owner && String(p.owner).toLowerCase().trim() === 'silvia';
 
+    let tieneMora = false;
     // Sumar todos los cobros pendientes del año actual
     paymentsYear.forEach(m => {
       if (m.status === 'PENDING') {
         totalPendiente += rent;
         if (isSilvia) silviaPendiente += rent;
+        tieneMora = true;
       }
     });
+
+    if (tieneMora) {
+      inquilinosMoraCount++;
+    }
 
     const paymentMonth = paymentsYear.find(m => m.month === currentAdminMonth);
     if (paymentMonth) {
@@ -9566,7 +9573,7 @@ function renderAdministracionContent() {
         <span class="ch-icon">${totalPendiente > 0 ? '🚨' : '✅'}</span>
         <div class="ch-lbl">Cartera Pendiente</div>
         <div class="ch-val" style="color: ${totalPendiente > 0 ? '#ef4444' : '#fff'}; font-size: 19px;">${safeFormatP(totalPendiente)}</div>
-        <div class="ch-sub" style="color: ${totalPendiente > 0 ? '#ef4444' : '#22c55e'};">${totalPendiente > 0 ? '🔴 Inquilinos con mora activa' : '✓ Arrendatarios al día'}</div>
+        <div class="ch-sub" style="color: ${totalPendiente > 0 ? '#ef4444' : '#22c55e'};">${totalPendiente > 0 ? `🔴 ${inquilinosMoraCount} ${inquilinosMoraCount === 1 ? 'inquilino con mora activa' : 'inquilinos en mora activa'}` : '✓ Arrendatarios al día'}</div>
       </div>
 
       <!-- 5. EDIFICIO SILVIA -->
