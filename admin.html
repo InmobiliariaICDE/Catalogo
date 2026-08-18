@@ -3775,7 +3775,7 @@ async function forzarPushTotal() {
       try {
         await fetch(CRM_SCRIPT_URL, {
           method: 'POST',
-          mode: 'no-cors',
+          
           body: JSON.stringify({ action: 'saveLead', lead: JSON.stringify(lead) })
         });
         ok++;
@@ -5897,7 +5897,7 @@ async function eliminarLead(id){
         url += '&t=' + Date.now();
         
         console.log('[eliminarLead] Ejecutando fetch de eliminación en la nube:', url);
-        await fetch(url, { mode: 'no-cors' });
+        await fetch(url, { });
         console.log('[eliminarLead] Fetch de eliminación en la nube completado (no-cors).');
         toast('Eliminado de la nube ✓', 'success');
       } catch(e) {
@@ -6560,7 +6560,7 @@ async function syncSheets(lead){
   try { 
     await fetch(CRM_SCRIPT_URL,{
       method:'POST',
-      mode: 'no-cors',
+      
       body:JSON.stringify({action:'saveLead',lead:JSON.stringify(lead)})
     }); 
   } catch(e){} 
@@ -6571,7 +6571,7 @@ async function syncCita(cita){
   try {
     await fetch(CRM_SCRIPT_URL,{
       method:'POST',
-      mode: 'no-cors',
+      
       body:JSON.stringify({action:'saveCita',cita:JSON.stringify(cita)})
     });
   } catch(e){}
@@ -6597,7 +6597,7 @@ async function syncProperty(prop) {
   try {
     await fetch(CRM_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
+      
       body: JSON.stringify({ action: 'saveProperty', property: JSON.stringify(prop) })
     });
   } catch (e) {
@@ -6611,7 +6611,7 @@ async function syncCoords(codigo, lat, lng) {
   try {
     await fetch(baseUrl, {
       method: 'POST',
-      mode: 'no-cors',
+      
       body: JSON.stringify({ action: 'saveCoords', codigo: codigo, lat: lat, lng: lng })
     });
     console.log('✅ Coordenadas enviadas al catálogo:', codigo, lat, lng);
@@ -6625,7 +6625,6 @@ async function syncCita(cita){
   try {
     await fetch(CRM_SCRIPT_URL,{
       method:'POST',
-      mode: 'no-cors',
       body: JSON.stringify({ action:'saveCita', cita: JSON.stringify(cita) })
     });
   } catch(e){}
@@ -6636,7 +6635,6 @@ async function syncDeleteCita(id){
   try {
     await fetch(CRM_SCRIPT_URL,{
       method:'POST',
-      mode: 'no-cors',
       body:JSON.stringify({action:'deleteCita',id:id})
     });
   } catch(e){}
@@ -7240,7 +7238,7 @@ async function sincronizarTodasLasCitasAlExcel(btn) {
     try {
       await fetch(CRM_SCRIPT_URL, {
         method: 'POST',
-        mode: 'no-cors',
+        
         body: JSON.stringify({ action: 'saveCita', cita: JSON.stringify(c) })
       });
       ok++;
@@ -17019,7 +17017,7 @@ async function contSincronizarMovimientoDrive(obj) {
   try {
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
+      
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'saveMovimiento', movimiento: JSON.stringify(obj) })
     });
@@ -17043,7 +17041,7 @@ async function contEliminarMovimientoDrive(id) {
   try {
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
+      
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'deleteMovimiento', id: id })
     });
@@ -17060,7 +17058,7 @@ async function contSincronizarMetasDrive(metasObj) {
   try {
     await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
+      
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'saveMetas', metas: JSON.stringify(metasObj) })
     });
@@ -17301,7 +17299,7 @@ async function contPushTotal() {
     
     const res = await fetch(CONT_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
+      
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     });
