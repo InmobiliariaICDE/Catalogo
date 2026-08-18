@@ -2505,8 +2505,11 @@ textarea.gemini-card-input {
           🩺 Probar conexión de Citas (Apps Script)
         </button>
       </div>
-
-      <div id="diagResultado" style="margin-top:12px; font-size:11px; color:#888; background:rgba(255,255,255,0.03); border-radius:8px; padding:10px; display:none;"></div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-secondary" style="width:100%; background:rgba(34,197,94,0.08); border-color:rgba(34,197,94,0.3); color:#4ade80;" onclick="sincronizarTodasLasCitasAlExcel(this)">
+          📊 Sincronizar todas las citas al Excel (CRM_Citas)
+        </button>
+      </div>
     </div>
 
     <div class="modal-footer">
@@ -6440,11 +6443,11 @@ function guardarVisita(){
     closeModal('visitaModal'); 
     toast('Visita registrada ✓','success'); 
     
-    // Refrescar agenda inmediatamente sin esperar el autoSync
     rebuildCitas();
     if(currentTab==='citas') renderCitas();
     
-    if(lead) syncSheets(lead);
+    if(lead) syncSheets(lead);   // guarda el lead completo en CRM_Leads
+    syncCita(v);                  // también escribe en la hoja CRM_Citas del Excel
     
     if(currentLeadId && lead && currentLeadId===lead.id) renderSidePanel(lead);
   } catch (err) {
@@ -6657,6 +6660,17 @@ async function syncCoords(codigo, lat, lng) {
   } catch (e) {
     console.warn('⚠ syncCoords falló (no-cors ignora errores):', e.message);
   }
+}
+
+async function syncCita(cita){
+  if(!CRM_SCRIPT_URL || !cita) return;
+  try {
+    await fetch(CRM_SCRIPT_URL,{
+      method:'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({ action:'saveCita', cita: JSON.stringify(cita) })
+    });
+  } catch(e){}
 }
 
 async function syncDeleteCita(id){
@@ -7256,6 +7270,30 @@ function guardarSettings(){
   localStorage.setItem('icde_settings', JSON.stringify(settings));
   closeModal('settingsModal');
   toast('Configuración guardada ✓');
+}
+
+async function sincronizarTodasLasCitasAlExcel(btn) {
+  if (!CRM_SCRIPT_URL) { toast('No hay URL configurada', 'error'); return; }
+  if (!confirm(`¿Sincronizar ${citas.length} citas al Excel (CRM_Citas)?\nEsto puede tardar unos segundos.`)) return;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando...'; }
+
+  let ok = 0, err = 0;
+  for (const c of citas) {
+    try {
+      await fetch(CRM_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ action: 'saveCita', cita: JSON.stringify(c) })
+      });
+      ok++;
+    } catch(e) { err++; }
+    // Pequeña pausa para no saturar el Apps Script
+    await new Promise(r => setTimeout(r, 150));
+  }
+
+  toast(`✅ ${ok} citas sincronizadas al Excel${err ? ' (⚠️ ' + err + ' fallaron)' : ''}`, 'success');
+  if (btn) { btn.disabled = false; btn.textContent = '📊 Sincronizar todas las citas al Excel (CRM_Citas)'; }
+  closeModal('settingsModal');
 }
 
 async function diagnosticarCitas(btn) {
