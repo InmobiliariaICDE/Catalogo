@@ -516,20 +516,22 @@ function getCitas() {
     let obj = {};
     headers.forEach((h, i) => { 
       let val = row[i];
+      const hNorm = String(h || '').trim().toLowerCase(); // Normalizar cabecera
+
       if (val instanceof Date) {
-        if (h === 'fecha') {
-          // Extraer YYYY-MM-DD ignorando la zona horaria (usando métodos locales)
+        if (hNorm === 'fecha') {
+          // Extraer YYYY-MM-DD
           const m = val.getMonth() + 1;
           const d = val.getDate();
           val = `${val.getFullYear()}-${m < 10 ? '0'+m : m}-${d < 10 ? '0'+d : d}`;
-        } else if (h === 'hora') {
+        } else if (hNorm === 'hora') {
           // Extraer HH:MM
           const hh = val.getHours();
           const mm = val.getMinutes();
           val = `${hh < 10 ? '0'+hh : hh}:${mm < 10 ? '0'+mm : mm}`;
         }
       }
-      obj[h] = val; 
+      obj[hNorm] = val; // Guardar siempre en minúscula para evitar problemas en frontend
     });
     return obj;
   });

@@ -4194,8 +4194,8 @@ async function autoSyncLeads() {
 
     leads = newList;
 
-    if (cambio || true) { // Renderizar siempre si autoSync obtiene nuevas citas (simplificación)
-      // ya no llamamos rebuildCitas(), porque citas[] ya se descargó exacto del Excel
+    if (cambio || true) { 
+      rebuildCitas(); // Restaurado: fusiona CRM_Citas y CRM_Leads para evitar pantalla vacía
       const activeEl = document.activeElement;
       const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
       if (!isTyping) {
@@ -4239,9 +4239,8 @@ async function cargarLeads(){
     }
 
     if(Array.isArray(data)){
-      // 100% Drive. Sin filtros locales.
       leads = normalizarIdsLeads(data).map(l => ({ ...l, fromCloud: true }));
-      // rebuildCitas(); ya no es necesario, 'citas' viene directo del excel
+      rebuildCitas(); // Restaurado para garantizar que nunca quede vacía
       if(currentTab === 'leads') renderLeadsBody(leads);
       if(currentTab === 'citas') renderCitas();
     }
@@ -4330,8 +4329,51 @@ function normalizarIdsLeads(data) {
 
 
 function rebuildCitas() {
-  // OBSOLETO: Ahora las citas se descargan directamente desde la hoja CRM_Citas (Excel)
-  // Dejamos la función vacía para evitar errores si algo la llama
+  const allVisitas = [];
+  const seenIds  = new Set(); 
+  const seenKeys = new Set(); 
+
+  // 1. Conservar TODAS las citas que vinieron directo del Excel (CRM_Citas)
+  citas.forEach(c => {
+    const vid = String(c.id || '').trim();
+    if (vid) {
+      if (seenIds.has(vid)) return;
+      seenIds.add(vid);
+    } else {
+      const k = visitaKey(c);
+      if (seenKeys.has(k)) return;
+      seenKeys.add(k);
+    }
+    allVisitas.push(c);
+  });
+
+  // 2. Fusionar como respaldo cualquier visita que esté guardada en los leads y no haya llegado al Excel
+  leads.forEach(l => {
+    if (!Array.isArray(l.visitas) || !l.visitas.length) return;
+
+    l.visitas.forEach(v => {
+      const vid = String(v.id || '').trim();
+      
+      // Intentar agregar (solo si no existe ya)
+      if (vid) {
+        if (seenIds.has(vid)) return;
+        seenIds.add(vid);
+      } else {
+        const k = visitaKey({ ...v, celular: v.celular || l.celular });
+        if (seenKeys.has(k)) return;
+        seenKeys.add(k);
+      }
+
+      allVisitas.push({
+        ...v,
+        cliente: v.cliente || l.nombre,
+        celular: v.celular || l.celular,
+        id: vid || `${l.id}_${v.codigo}_${v.fecha}`
+      });
+    });
+  });
+
+  citas = allVisitas;
 }
 
 function normalizarPropiedades(data) {
