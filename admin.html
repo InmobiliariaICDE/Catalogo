@@ -4310,41 +4310,54 @@ function normalizarIdsLeads(data) {
 
 function rebuildCitas() {
   const allVisitas = [];
-  const seenKeys = new Set(); // clave = codigo_celular (deduplicación real)
-  
+  const seenIds  = new Set(); // citas que YA tienen id propio
+  const seenKeys = new Set(); // fallback para citas sin id (codigo+celular+fecha)
+
   leads.forEach(l => {
     if (!Array.isArray(l.visitas) || !l.visitas.length) return;
 
-    // 1. Deduplicar visitas dentro del mismo lead por codigo+celular
+    // 1. Deduplicar visitas DENTRO del mismo lead
+    //    Primero por id, luego por codigo+celular+fecha
     const vMap = new Map();
     l.visitas.forEach(v => {
-      const k = visitaKey({ ...v, celular: v.celular || l.celular });
-      const ex = vMap.get(k);
+      const vid = String(v.id || '').trim();
+      const k   = vid ? ('id_' + vid) : visitaKey({ ...v, celular: v.celular || l.celular });
+      const ex  = vMap.get(k);
       if (!ex || (ESTADO_ORDEN[v.estado] || 0) >= (ESTADO_ORDEN[ex.estado] || 0)) vMap.set(k, v);
     });
-    l.visitas = Array.from(vMap.values()); // guardar visitas limpias en el lead
+    l.visitas = Array.from(vMap.values());
 
-    // 2. Agregar a la agenda global, evitando duplicados globales
+    // 2. Agregar a la agenda global evitando duplicados globales
     l.visitas.forEach(v => {
-      const k = visitaKey({ ...v, celular: v.celular || l.celular });
-      if (!seenKeys.has(k)) {
+      const vid = String(v.id || '').trim();
+
+      if (vid) {
+        // Con ID: solo deduplicar si ya existe ESE mismo id
+        if (seenIds.has(vid)) return;
+        seenIds.add(vid);
+      } else {
+        // Sin ID: deduplicar por codigo+celular+fecha
+        const k = visitaKey({ ...v, celular: v.celular || l.celular });
+        if (seenKeys.has(k)) return;
         seenKeys.add(k);
-        allVisitas.push({
-          ...v,
-          cliente: v.cliente || l.nombre,
-          celular: v.celular || l.celular,
-          id: v.id || `${l.id}_${v.codigo}_${v.fecha}`
-        });
       }
+
+      allVisitas.push({
+        ...v,
+        cliente: v.cliente || l.nombre,
+        celular: v.celular || l.celular,
+        id: vid || `${l.id}_${v.codigo}_${v.fecha}`
+      });
     });
   });
-  
-  // Citas genéricas que no estén ya incluidas
+
+  // Citas genéricas locales que no estén ya incluidas
   const genericCitas = citas.filter(c => {
-    const k = visitaKey(c);
-    return !seenKeys.has(k);
+    const vid = String(c.id || '').trim();
+    if (vid) return !seenIds.has(vid);
+    return !seenKeys.has(visitaKey(c));
   });
-  
+
   if (genericCitas.length > 0) {
      let globalLead = leads.find(l => l.id === 'LEAD-AGENDA-GLOBAL');
      if (!globalLead) {
@@ -4374,19 +4387,23 @@ function rebuildCitas() {
      if (!Array.isArray(globalLead.visitas)) {
          globalLead.visitas = [];
      }
-     
+
      let modified = false;
      genericCitas.forEach(gc => {
-         const k = visitaKey(gc);
-         const existing = globalLead.visitas.find(v => visitaKey(v) === k);
-         if (!existing) {
+         const gvid = String(gc.id || '').trim();
+         const gk   = gvid ? ('id_' + gvid) : visitaKey(gc);
+         const alreadyInGlobal = globalLead.visitas.some(v => {
+           const vid2 = String(v.id || '').trim();
+           return vid2 ? vid2 === gvid : visitaKey(v) === gk;
+         });
+         if (!alreadyInGlobal) {
              globalLead.visitas.push(gc);
-             seenKeys.add(k);
+             if (gvid) seenIds.add(gvid); else seenKeys.add(gk);
              allVisitas.push(gc);
              modified = true;
          }
      });
-     
+
      if (modified) {
          setTimeout(() => {
              syncSheets(globalLead);
@@ -4394,7 +4411,7 @@ function rebuildCitas() {
          }, 1000);
      }
   }
-  
+
   citas = allVisitas;
 }
 
