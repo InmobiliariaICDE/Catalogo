@@ -4078,7 +4078,8 @@ function cleanupLocalData() {
 const ESTADO_ORDEN = { cancelada: 5, oferta: 4, realizada: 3, agendada: 2, solicito_visita: 1 };
 
 function visitaKey(v) {
-  return String(v.codigo || '').trim() + '_' + String(v.celular || '').replace(/[^\d]/g, '');
+  // Incluir fecha para que visitas al mismo inmueble en días distintos no se colapsen
+  return String(v.codigo || '').trim() + '_' + String(v.celular || '').replace(/[^\d]/g, '') + '_' + String(v.fecha || '');
 }
 
 function mergeVisitas(localArr, cloudArr) {
