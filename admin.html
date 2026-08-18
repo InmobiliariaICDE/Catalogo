@@ -4519,6 +4519,20 @@ function normalizarPropiedades(data) {
     }
     nuevo['Código'] = String(nuevo['Código'] || "").trim();
     
+    // Si 'Imagenes' está vacío o no tiene URLs completas pero existen fotos en array 'fotos' o en el álbum live (link_drive/link_album)
+    if (!nuevo['Imagenes'] || String(nuevo['Imagenes']).trim() === '') {
+      if (Array.isArray(obj['fotos']) && obj['fotos'].length > 0) {
+        nuevo['Imagenes'] = obj['fotos'].join('|');
+      } else if (obj['link_drive'] || obj['Google Fotos'] || obj['link_album']) {
+        if (!nuevo['Google Fotos']) {
+          nuevo['Google Fotos'] = obj['link_drive'] || obj['link_album'] || obj['Google Fotos'];
+        }
+      }
+    }
+    if (!nuevo['Google Fotos'] && (obj['link_drive'] || obj['link_album'])) {
+      nuevo['Google Fotos'] = obj['link_drive'] || obj['link_album'];
+    }
+
     // Limpieza de precios
     if (nuevo['Precio']) {
       const p = String(nuevo['Precio']).replace(/[^\d]/g, "");
