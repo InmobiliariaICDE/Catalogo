@@ -2500,6 +2500,11 @@ textarea.gemini-card-input {
           🛠 Reparar datos faltantes en Drive (Full_JSON)
         </button>
       </div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-secondary" style="width:100%; background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.3); color:#f87171;" onclick="diagnosticarCitas(this)">
+          🩺 Probar conexión de Citas (Apps Script)
+        </button>
+      </div>
 
       <div id="diagResultado" style="margin-top:12px; font-size:11px; color:#888; background:rgba(255,255,255,0.03); border-radius:8px; padding:10px; display:none;"></div>
     </div>
@@ -6424,8 +6429,6 @@ function guardarVisita(){
     if(lead) syncSheets(lead);
     
     if(currentLeadId && lead && currentLeadId===lead.id) renderSidePanel(lead);
-    // Recargar desde servidor en 4s para confirmar que Drive procesó el cambio
-    setTimeout(() => cargarLeads(), 4000);
   } catch (err) {
     console.error("Error en guardarVisita:", err);
     toast("Error al guardar la visita", "error");
@@ -6573,8 +6576,8 @@ function toast(msg,type='success'){
 
 async function syncSheets(lead){ 
   if(!CRM_SCRIPT_URL) return;
-  // Bloquear autoSync por 12 segundos para que Drive procese antes de que autoSync descargue datos viejos
-  pendingWriteUntil = Date.now() + 12000;
+  // Bloquear autoSync por 30 segundos — Apps Script puede tardar hasta 20-25s en procesar
+  pendingWriteUntil = Date.now() + 30000;
   try { 
     await fetch(CRM_SCRIPT_URL,{
       method:'POST',
@@ -6677,12 +6680,12 @@ function eliminarVisita(){
   // 3. Sincronizar
   if(leadTarget) syncSheets(leadTarget);
   else syncDeleteCita(id);
+  // Bloquear autoSync también cuando no hay lead (syncDeleteCita)
+  if (!leadTarget) pendingWriteUntil = Date.now() + 30000;
 
   // 4. Refrescar UI
   if(currentTab === 'citas') renderCitas();
   if(currentLeadId && leadTarget && String(currentLeadId) === String(leadTarget.id)) renderSidePanel(leadTarget);
-  // Recargar desde servidor en 3s para confirmar que Drive eliminó la cita
-  setTimeout(() => cargarLeads(), 3000);
 }
 
 /* ═══════════════════════════════════════════════
@@ -7235,6 +7238,88 @@ function guardarSettings(){
   localStorage.setItem('icde_settings', JSON.stringify(settings));
   closeModal('settingsModal');
   toast('Configuración guardada ✓');
+}
+
+async function diagnosticarCitas(btn) {
+  const diag = document.getElementById('diagResultado');
+  if (!diag) return;
+  diag.style.display = 'block';
+  diag.innerHTML = '<span style="color:#888">🔄 Probando conexión al Apps Script...</span>';
+  if (btn) btn.disabled = true;
+
+  const resultado = [];
+
+  // 1. Verificar URL
+  if (!CRM_SCRIPT_URL) {
+    diag.innerHTML = '<span style="color:#ef4444">❌ CRM_SCRIPT_URL está vacía. No hay URL configurada.</span>';
+    if (btn) btn.disabled = false;
+    return;
+  }
+  resultado.push('✅ URL configurada: ' + CRM_SCRIPT_URL.substring(0, 60) + '...');
+
+  // 2. Probar GET (getCitas)
+  try {
+    const r = await fetch(CRM_SCRIPT_URL + '?action=getCitas&t=' + Date.now());
+    if (r.ok) {
+      const data = await r.json();
+      resultado.push('✅ GET getCitas OK — ' + (Array.isArray(data) ? data.length + ' citas en hoja CRM_Citas' : 'respuesta: ' + JSON.stringify(data).substring(0, 60)));
+    } else {
+      resultado.push('❌ GET getCitas falló — HTTP ' + r.status);
+    }
+  } catch(e) {
+    resultado.push('❌ GET getCitas ERROR — ' + e.message);
+  }
+
+  // 3. Probar GET (getLeads) para ver si los leads tienen visitas
+  try {
+    const r2 = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
+    if (r2.ok) {
+      const leads2 = await r2.json();
+      if (Array.isArray(leads2)) {
+        const conVisitas = leads2.filter(l => l.visitas && l.visitas.length > 0).length;
+        const totalVisitas = leads2.reduce((acc, l) => acc + (l.visitas || []).length, 0);
+        resultado.push('✅ GET getLeads OK — ' + leads2.length + ' leads, ' + conVisitas + ' con citas, ' + totalVisitas + ' citas total en Drive');
+        if (totalVisitas === 0) {
+          resultado.push('⚠️ ATENCIÓN: Los leads en Drive NO tienen citas guardadas (visitas vacías).');
+          resultado.push('   Esto confirma que los saves al Apps Script NO están llegando.');
+        }
+      } else {
+        resultado.push('⚠️ getLeads devolvió formato inesperado: ' + JSON.stringify(leads2).substring(0, 80));
+      }
+    } else {
+      resultado.push('❌ GET getLeads falló — HTTP ' + r2.status);
+    }
+  } catch(e) {
+    resultado.push('❌ GET getLeads ERROR — ' + e.message);
+  }
+
+  // 4. Probar POST (saveCita test)
+  try {
+    const testCita = { id: 'TEST-' + Date.now(), codigo: 'TEST', fecha: '2099-01-01', hora: '10:00', estado: 'agendada', cliente: 'DIAGNOSTICO', celular: '0000000000', notas: 'Prueba de conexion - borrar' };
+    const r3 = await fetch(CRM_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'saveCita', cita: JSON.stringify(testCita) })
+    });
+    resultado.push('✅ POST saveCita enviado (sin no-cors, con respuesta)');
+    try {
+      const resp = await r3.text();
+      resultado.push('   Respuesta: ' + resp.substring(0, 100));
+    } catch(e2) {}
+  } catch(e) {
+    // Intentar con no-cors como fallback
+    resultado.push('⚠️ POST con respuesta bloqueado por CORS (normal). Apps Script responde a no-cors.');
+  }
+
+  // 5. Estado local
+  resultado.push('--- Estado local ---');
+  resultado.push('📋 Leads en memoria: ' + leads.length);
+  resultado.push('📅 Citas en memoria: ' + citas.length);
+  const totalVisitasLocales = leads.reduce((acc, l) => acc + (l.visitas || []).length, 0);
+  resultado.push('🏠 Visitas en leads locales: ' + totalVisitasLocales);
+
+  diag.innerHTML = resultado.map(r => '<div style="margin:3px 0; font-family:monospace;">' + r + '</div>').join('');
+  if (btn) btn.disabled = false;
 }
 
 function diagnosticarDatosLocales() {
