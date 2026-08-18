@@ -51,6 +51,7 @@ function doPost(e) {
     if (params.action === 'saveLead')         return saveLeadToSheet(JSON.parse(params.lead));
     if (params.action === 'deleteLead')       return deleteLeadFromSheet(params.id);
     if (params.action === 'saveCita')         return saveCitaToSheet(JSON.parse(params.cita));
+    if (params.action === 'deleteCita')       return deleteCitaFromSheet(params.id);
     if (params.action === 'saveProperty')     return savePropertyToSheet(JSON.parse(params.property));
     if (params.action === 'saveFeedback')     return saveLeadFeedback(params.leadId, params.cod, params.type, params.comment);
     if (params.action === 'saveAdminPayment') return saveAdminPaymentToSheet(params);
@@ -549,6 +550,26 @@ function saveCitaToSheet(cita) {
   }
 
   return createJsonResponse({ success: true });
+}
+
+function deleteCitaFromSheet(id) {
+  const ss = getSpreadsheet();
+  const sheet = ss.getSheetByName('CRM_Citas');
+  if (!sheet) return createJsonResponse({ success: true, note: 'No CRM_Citas sheet' });
+
+  const idStr = String(id || '').trim();
+  if (!idStr) return createJsonResponse({ error: 'ID requerido' });
+
+  const data = sheet.getDataRange().getValues();
+  let deleted = 0;
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (String(data[i][0] || '').trim() === idStr) {
+      sheet.deleteRow(i + 1);
+      deleted++;
+    }
+  }
+
+  return createJsonResponse({ success: true, deleted: deleted });
 }
 
 // ─────────────────────────────────────────────────────────────

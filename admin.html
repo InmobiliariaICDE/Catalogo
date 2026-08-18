@@ -6359,10 +6359,21 @@ function guardarVisita(){
        }
     }
 
-    let existingId = null;
-    const vInLead = lead?.visitas?.find(x => x.codigo === cod);
-    const vInCitas = citas.find(x => x.codigo === cod && x.celular === celular);
-    existingId = vInLead?.id || vInCitas?.id;
+    // Buscar visita existente: primero por ID del formulario (lo más confiable), luego por codigo+celular
+    const formVisitaId = document.getElementById('visitaId')?.value?.trim() || null;
+    let existingId = formVisitaId || null;
+
+    // Buscar en lead.visitas por ID exacto primero
+    const vInLead = formVisitaId
+      ? lead?.visitas?.find(x => String(x.id) === formVisitaId)
+      : lead?.visitas?.find(x => x.codigo === cod && String(x.celular || '').replace(/\D/g,'') === String(celular || '').replace(/\D/g,''));
+
+    // Buscar en citas globales por ID o por codigo+celular
+    const vInCitas = formVisitaId
+      ? citas.find(x => String(x.id) === formVisitaId)
+      : citas.find(x => x.codigo === cod && String(x.celular || '').replace(/\D/g,'') === String(celular || '').replace(/\D/g,''));
+
+    if (!existingId) existingId = vInLead?.id || vInCitas?.id || null;
 
     const v={
       id: existingId || Date.now().toString(),
@@ -6381,13 +6392,16 @@ function guardarVisita(){
     
     if(lead){
       if(!lead.visitas) lead.visitas=[];
-      const idx = lead.visitas.findIndex(x => x.id === v.id || (x.codigo === cod && !x.id));
+      // Buscar por ID exacto primero, luego por codigo sin ID (registros legados sin id)
+      let idx = lead.visitas.findIndex(x => String(x.id) === String(v.id));
+      if(idx < 0) idx = lead.visitas.findIndex(x => x.codigo === cod && !x.id);
       if(idx >= 0) lead.visitas[idx] = v;
       else lead.visitas.push(v);
     }
     
-    // Actualizar en agenda global
-    const cIdx = citas.findIndex(x => x.id === v.id || (x.codigo === cod && x.celular === v.celular && !x.id));
+    // Actualizar en agenda global — siempre buscar por ID exacto primero
+    let cIdx = citas.findIndex(x => String(x.id) === String(v.id));
+    if(cIdx < 0) cIdx = citas.findIndex(x => x.codigo === cod && String(x.celular || '') === String(v.celular || '') && !x.id);
     if(cIdx >= 0) citas[cIdx] = v;
     else citas.push(v);
     
@@ -6403,10 +6417,15 @@ function guardarVisita(){
     closeModal('visitaModal'); 
     toast('Visita registrada ✓','success'); 
     
+    // Refrescar agenda inmediatamente sin esperar el autoSync
+    rebuildCitas();
+    if(currentTab==='citas') renderCitas();
+    
     if(lead) syncSheets(lead);
     
     if(currentLeadId && lead && currentLeadId===lead.id) renderSidePanel(lead);
-    if(currentTab==='citas') renderCitas();
+    // Recargar desde servidor en 4s para confirmar que Drive procesó el cambio
+    setTimeout(() => cargarLeads(), 4000);
   } catch (err) {
     console.error("Error en guardarVisita:", err);
     toast("Error al guardar la visita", "error");
@@ -6662,6 +6681,8 @@ function eliminarVisita(){
   // 4. Refrescar UI
   if(currentTab === 'citas') renderCitas();
   if(currentLeadId && leadTarget && String(currentLeadId) === String(leadTarget.id)) renderSidePanel(leadTarget);
+  // Recargar desde servidor en 3s para confirmar que Drive eliminó la cita
+  setTimeout(() => cargarLeads(), 3000);
 }
 
 /* ═══════════════════════════════════════════════
