@@ -4116,9 +4116,18 @@ async function autoSyncLeads() {
   if (dot) { dot.style.background = '#d4a84b'; dot.style.boxShadow = '0 0 6px #d4a84b'; }
   if (txt) txt.textContent = 'Sincronizando...';
   try {
-    const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
-    const data = await res.json();
+    const [resLeads, resCitas] = await Promise.all([
+      fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now()),
+      fetch(CRM_SCRIPT_URL + '?action=getCitas&t=' + Date.now())
+    ]);
+    const data = await resLeads.json();
+    const dataCitas = await resCitas.json();
     if (!Array.isArray(data)) throw new Error('Respuesta inválida');
+
+    // Cargar citas directamente desde el Excel (fuente de verdad)
+    if (Array.isArray(dataCitas)) {
+      citas = dataCitas;
+    }
 
     // Fuente de verdad 100% Drive. Sin filtros locales.
     const cloudLeads = normalizarIdsLeads(data).map(l => ({ ...l, fromCloud: true }));
@@ -4185,8 +4194,8 @@ async function autoSyncLeads() {
 
     leads = newList;
 
-    if (cambio) {
-      rebuildCitas();
+    if (cambio || true) { // Renderizar siempre si autoSync obtiene nuevas citas (simplificación)
+      // ya no llamamos rebuildCitas(), porque citas[] ya se descargó exacto del Excel
       const activeEl = document.activeElement;
       const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
       if (!isTyping) {
@@ -4218,12 +4227,21 @@ async function autoSyncLeads() {
 async function cargarLeads(){
   if(!CRM_SCRIPT_URL) return;
   try {
-    const res = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
-    const data = await res.json();
+    const [resLeads, resCitas] = await Promise.all([
+      fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now()),
+      fetch(CRM_SCRIPT_URL + '?action=getCitas&t=' + Date.now())
+    ]);
+    const data = await resLeads.json();
+    const dataCitas = await resCitas.json();
+    
+    if (Array.isArray(dataCitas)) {
+      citas = dataCitas;
+    }
+
     if(Array.isArray(data)){
       // 100% Drive. Sin filtros locales.
       leads = normalizarIdsLeads(data).map(l => ({ ...l, fromCloud: true }));
-      rebuildCitas();
+      // rebuildCitas(); ya no es necesario, 'citas' viene directo del excel
       if(currentTab === 'leads') renderLeadsBody(leads);
       if(currentTab === 'citas') renderCitas();
     }
@@ -4312,110 +4330,8 @@ function normalizarIdsLeads(data) {
 
 
 function rebuildCitas() {
-  const allVisitas = [];
-  const seenIds  = new Set(); // citas que YA tienen id propio
-  const seenKeys = new Set(); // fallback para citas sin id (codigo+celular+fecha)
-
-  leads.forEach(l => {
-    if (!Array.isArray(l.visitas) || !l.visitas.length) return;
-
-    // 1. Deduplicar visitas DENTRO del mismo lead
-    //    Primero por id, luego por codigo+celular+fecha
-    const vMap = new Map();
-    l.visitas.forEach(v => {
-      const vid = String(v.id || '').trim();
-      const k   = vid ? ('id_' + vid) : visitaKey({ ...v, celular: v.celular || l.celular });
-      const ex  = vMap.get(k);
-      if (!ex || (ESTADO_ORDEN[v.estado] || 0) >= (ESTADO_ORDEN[ex.estado] || 0)) vMap.set(k, v);
-    });
-    l.visitas = Array.from(vMap.values());
-
-    // 2. Agregar a la agenda global evitando duplicados globales
-    l.visitas.forEach(v => {
-      const vid = String(v.id || '').trim();
-
-      if (vid) {
-        // Con ID: solo deduplicar si ya existe ESE mismo id
-        if (seenIds.has(vid)) return;
-        seenIds.add(vid);
-      } else {
-        // Sin ID: deduplicar por codigo+celular+fecha
-        const k = visitaKey({ ...v, celular: v.celular || l.celular });
-        if (seenKeys.has(k)) return;
-        seenKeys.add(k);
-      }
-
-      allVisitas.push({
-        ...v,
-        cliente: v.cliente || l.nombre,
-        celular: v.celular || l.celular,
-        id: vid || `${l.id}_${v.codigo}_${v.fecha}`
-      });
-    });
-  });
-
-  // Citas genéricas locales que no estén ya incluidas
-  const genericCitas = citas.filter(c => {
-    const vid = String(c.id || '').trim();
-    if (vid) return !seenIds.has(vid);
-    return !seenKeys.has(visitaKey(c));
-  });
-
-  if (genericCitas.length > 0) {
-     let globalLead = leads.find(l => l.id === 'LEAD-AGENDA-GLOBAL');
-     if (!globalLead) {
-         globalLead = {
-           id: 'LEAD-AGENDA-GLOBAL',
-           tipo: 'cliente',
-           nombre: 'Agenda Global (Citas Genéricas)',
-           celular: '0000000000',
-           notas: 'Contenedor para sincronizar citas antiguas o sin datos en la nube.',
-           metodoPago: [],
-           estado: 'visita',
-           etiqueta: 'activo',
-           filtros: {},
-           frecuencia: 'manual',
-           maxPorEnvio: 4,
-           nombreInmobiliaria: '',
-           nombreAgente: '',
-           propsFiltradas: [],
-           propsEnviadas: [],
-           proximosEnvios: [],
-           historialEnvios: [],
-           visitas: [],
-           creadoEn: new Date().toISOString()
-         };
-         leads.push(globalLead);
-     }
-     if (!Array.isArray(globalLead.visitas)) {
-         globalLead.visitas = [];
-     }
-
-     let modified = false;
-     genericCitas.forEach(gc => {
-         const gvid = String(gc.id || '').trim();
-         const gk   = gvid ? ('id_' + gvid) : visitaKey(gc);
-         const alreadyInGlobal = globalLead.visitas.some(v => {
-           const vid2 = String(v.id || '').trim();
-           return vid2 ? vid2 === gvid : visitaKey(v) === gk;
-         });
-         if (!alreadyInGlobal) {
-             globalLead.visitas.push(gc);
-             if (gvid) seenIds.add(gvid); else seenKeys.add(gk);
-             allVisitas.push(gc);
-             modified = true;
-         }
-     });
-
-     if (modified) {
-         setTimeout(() => {
-             syncSheets(globalLead);
-             saveLeads();
-         }, 1000);
-     }
-  }
-
-  citas = allVisitas;
+  // OBSOLETO: Ahora las citas se descargan directamente desde la hoja CRM_Citas (Excel)
+  // Dejamos la función vacía para evitar errores si algo la llama
 }
 
 function normalizarPropiedades(data) {
@@ -6710,10 +6626,10 @@ function eliminarVisita(){
   toast('Cita eliminada ✓', 'success');
 
   // 3. Sincronizar
-  if(leadTarget) syncSheets(leadTarget);
-  else syncDeleteCita(id);
-  // Bloquear autoSync también cuando no hay lead (syncDeleteCita)
-  if (!leadTarget) pendingWriteUntil = Date.now() + 30000;
+  if(leadTarget) syncSheets(leadTarget); // Mantiene limpio el JSON del lead
+  syncDeleteCita(id); // SIEMPRE borra de CRM_Citas (Excel) para que desaparezca de la agenda
+  
+  pendingWriteUntil = Date.now() + 30000;
 
   // 4. Refrescar UI
   if(currentTab === 'citas') renderCitas();

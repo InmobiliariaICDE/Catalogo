@@ -514,7 +514,23 @@ function getCitas() {
   const headers = data[0];
   const citas = data.slice(1).map(row => {
     let obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
+    headers.forEach((h, i) => { 
+      let val = row[i];
+      if (val instanceof Date) {
+        if (h === 'fecha') {
+          // Extraer YYYY-MM-DD ignorando la zona horaria (usando métodos locales)
+          const m = val.getMonth() + 1;
+          const d = val.getDate();
+          val = `${val.getFullYear()}-${m < 10 ? '0'+m : m}-${d < 10 ? '0'+d : d}`;
+        } else if (h === 'hora') {
+          // Extraer HH:MM
+          const hh = val.getHours();
+          const mm = val.getMinutes();
+          val = `${hh < 10 ? '0'+hh : hh}:${mm < 10 ? '0'+mm : mm}`;
+        }
+      }
+      obj[h] = val; 
+    });
     return obj;
   });
 
