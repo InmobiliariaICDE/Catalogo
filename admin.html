@@ -6296,7 +6296,20 @@ function guardarVisita(){
     const cod=document.getElementById('visitaCodigo').value.trim(); if(!cod){ toast('Ingresa el código','error'); return; }
     const cliente = document.getElementById('visitaCliente').value.trim();
     const celular = document.getElementById('visitaCelular').value.trim();
+    const fecha = document.getElementById('visitaFecha').value;
+    const hora = document.getElementById('visitaHora').value;
     
+    // Verificación de choque de horarios
+    if (fecha && hora) {
+      const formVisitaId = document.getElementById('visitaId')?.value?.trim() || null;
+      const collision = citas.find(c => c.fecha === fecha && c.hora === hora && (!formVisitaId || String(c.id) !== String(formVisitaId)));
+      if (collision) {
+        if (!confirm(`¡Atención! Ya tienes otra cita programada para el ${fecha} a las ${hora} (Cód: ${collision.codigo || '?'}). ¿Deseas guardar esta cita de todos modos?`)) {
+          return;
+        }
+      }
+    }
+
     let lead = (visitaLeadId && typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l=>String(l.id)===String(visitaLeadId)) : null;
     if(!lead && celular) {
       const cleanInput = String(celular).replace(/\D/g, '');
