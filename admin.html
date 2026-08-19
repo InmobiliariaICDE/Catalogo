@@ -8650,6 +8650,12 @@ function initGeminiIdleActions() {
 
 let recognition;
 let isGeminiListening = false;
+let geminiConversationHistory = []; // Almacena memoria conversacional persistente del chat
+
+function clearGeminiMemory() {
+  geminiConversationHistory = [];
+  toast('Memoria de la conversación limpiada 🧠', 'info');
+}
 
 function toggleGemini() {
   toggleGeminiMic();
@@ -8857,6 +8863,14 @@ async function callAIEngine(prompt, systemInstruction = '', base64Image = null) 
   let messages = [];
   if (systemInstruction) {
     messages.push({ role: 'system', content: systemInstruction });
+  }
+
+  // Incluir el historial reciente de conversación para mantener la continuidad (últimas 10 interacciones)
+  if (typeof geminiConversationHistory !== 'undefined' && geminiConversationHistory.length > 0) {
+    const recentHistory = geminiConversationHistory.slice(-10);
+    recentHistory.forEach(msg => {
+      messages.push({ role: msg.role, content: msg.content });
+    });
   }
   
   if (base64Image) {
@@ -9070,7 +9084,9 @@ No devuelvas NADA que no sea el JSON. No rodees tu JSON con bloques markdown com
 REGLAS DE ORO DE COHERENCIA (CLASIFICACIÓN ESTRICTA):
 ⚠️ REGLA 1: "BUSCAR_PROPIEDADES" vs "AGENDAR_CITA_PREVIEW"
    - Si el usuario dice "Necesito ver el inmueble 038", "Busca el apartamento 102", "Quiero mirar la propiedad 056" o similares, esto es de consulta de información. DEBES clasificarlo siempre como "BUSCAR_PROPIEDADES" y extraer el código en "query".
-   - NUNCA clasifiques la visualización o búsqueda de un inmueble como una cita ("AGENDAR_CITA_PREVIEW") a menos que el usuario diga explícitamente que quiere PROGRAMAR, AGENDAR, RESERVAR o REGISTRAR una visita con fecha, hora o un cliente específico (ej: "agenda visita para el lunes a las 4pm" o "programa cita con Carlos").
+⚠️ REGLA DE CONTINUIDAD CONVERSACIONAL:
+   - Mantente al tanto del historial del chat previo. Si el usuario hace una referencia relativa como "y de la casa 102?", "agenda la cita para ese cliente", "envíale el mensaje", "qué precio tiene esa?", debes deducir a cuál inmueble, cliente o dato se refiere utilizando las interacciones previas de la conversación.
+
 ⚠️ REGLA 3: "REGISTRAR_MOVIMIENTO_PREVIEW"
    - Si el usuario dice "registrar gasto de X", "anotar pago", "guardar ingreso" o similar, SIEMPRE utiliza "REGISTRAR_MOVIMIENTO_PREVIEW" generando la tarjeta interactiva. Rellena los datos que tengas (ej: concepto "pintura", tipo "egreso") y deja los campos faltantes vacíos o con valores sugeridos para que el usuario los ajuste y confirme en la tarjeta interactiva.
 
@@ -9147,6 +9163,12 @@ REGLAS DE ORO DE COHERENCIA (CLASIFICACIÓN ESTRICTA):
       }
     }
     
+    // Guardar en la memoria conversacional persistente
+    if (typeof geminiConversationHistory !== 'undefined') {
+      geminiConversationHistory.push({ role: 'user', content: text });
+      geminiConversationHistory.push({ role: 'assistant', content: JSON.stringify(resultObj) });
+    }
+
     // 1. Output conversational text with custom emotion
     addGeminiMessage('assistant', resultObj.reply, '', emotion);
 
