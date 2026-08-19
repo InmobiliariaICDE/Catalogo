@@ -3034,8 +3034,8 @@ html, body {
         <input class="form-input" id="setWaApi" placeholder="https://api.tuservidor.com" value="${settings.waApi || ''}"/>
         <div style="font-size:11px;color:#888;margin-top:4px;">Deja vacío para usar WhatsApp Web (wa.me)</div>
       </div>
-      <div class="form-group full"><label class="form-label">API Key de IA (Groq, Gemini o Grok)</label>
-        <input class="form-input" id="setGeminiKey" type="password" placeholder="gsk_... / AIza... / xai-..." value="${settings.geminiKey || ''}"/>
+      <div class="form-group full"><label class="form-label">API Key de Groq</label>
+        <input class="form-input" id="setGeminiKey" type="password" placeholder="gsk_..." value="${settings.geminiKey || ''}"/>
       </div>
       <div class="form-group full"><label class="form-label">ElevenLabs API Key (Voz Tony Robbins)</label>
         <input class="form-input" id="setElevenlabsKey" type="password" placeholder="sk_..." value="${settings.elevenlabsKey || ''}"/>
@@ -8844,162 +8844,64 @@ function hideGeminiTypingIndicator() {
 
 async function callAIEngine(prompt, systemInstruction = '', base64Image = null) {
   if (!settings.geminiKey) {
-    throw new Error('Por favor configura tu clave API de Groq, Gemini o Grok en Configuración ⚙️');
+    throw new Error('Por favor configura tu API Key de Groq en Configuración ⚙️');
   }
   
   const key = settings.geminiKey.trim();
-  const isGroq = key.startsWith('gsk_');
-  const isGrok = key.startsWith('xai-');
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${key}`
+  };
   
-  if (isGroq) {
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${key}`
-    };
-    
-    let messages = [];
-    if (systemInstruction) {
-      messages.push({ role: 'system', content: systemInstruction });
-    }
-    
-    if (base64Image) {
-      messages.push({
-        role: 'user',
-        content: [
-          { type: 'text', text: prompt },
-          {
-            type: 'image_url',
-            image_url: {
-              url: `data:image/png;base64,${base64Image}`
-            }
-          }
-        ]
-      });
-    } else {
-      messages.push({ role: 'user', content: prompt });
-    }
-    
-    const model = base64Image ? 'llama-3.2-11b-vision-preview' : 'llama-3.3-70b-versatile';
-    
-    const requestBody = {
-      model: model,
-      messages: messages,
-      stream: false
-    };
-
-    if (!base64Image && systemInstruction.includes('JSON')) {
-      requestBody.response_format = { type: 'json_object' };
-    }
-    
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(requestBody)
-    });
-    
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      console.error('Groq error response detail:', errData);
-      const errMsg = errData.error?.message || errData.error || errData.message || (typeof errData === 'string' ? errData : JSON.stringify(errData));
-      throw new Error(`Groq API Error: ${errMsg} (Status: ${res.status})`);
-    }
-    
-    const data = await res.json();
-    return data.choices[0].message.content;
-    
-  } else if (isGrok) {
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${key}`
-    };
-    
-    let messages = [];
-    if (systemInstruction) {
-      messages.push({ role: 'system', content: systemInstruction });
-    }
-    
-    if (base64Image) {
-      messages.push({
-        role: 'user',
-        content: [
-          { type: 'text', text: prompt },
-          {
-            type: 'image_url',
-            image_url: {
-              url: `data:image/png;base64,${base64Image}`
-            }
-          }
-        ]
-      });
-    } else {
-      messages.push({ role: 'user', content: prompt });
-    }
-    
-    const model = base64Image ? 'grok-2-vision-1212' : 'grok-2-1212';
-    
-    const requestBody = {
-      model: model,
-      messages: messages,
-      stream: false
-    };
-
-    if (!base64Image && systemInstruction.includes('JSON')) {
-      requestBody.response_format = { type: 'json_object' };
-    }
-    
-    const res = await fetch('https://api.x.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(requestBody)
-    });
-    
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      console.error('Grok error response detail:', errData);
-      const errMsg = errData.error?.message || errData.error || errData.message || (typeof errData === 'string' ? errData : JSON.stringify(errData));
-      throw new Error(`Grok API Error: ${errMsg} (Status: ${res.status})`);
-    }
-    
-    const data = await res.json();
-    return data.choices[0].message.content;
-    
-  } else {
-    let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${key}`;
-    
-    let body = {};
-    if (base64Image) {
-      body = {
-        contents: [{
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType: 'image/png', data: base64Image } }
-          ]
-        }]
-      };
-    } else {
-      body = {
-        contents: [{ parts: [{ text: prompt }] }]
-      };
-      if (systemInstruction) {
-        body.systemInstruction = { parts: [{ text: systemInstruction }] };
-      }
-    }
-    
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      const errMsg = errData.error?.message || 'Error desconocido de Gemini';
-      throw new Error(`Gemini API Error: ${errMsg} (Status: ${res.status})`);
-    }
-    
-    const data = await res.json();
-    return data.candidates[0].content.parts[0].text;
+  let messages = [];
+  if (systemInstruction) {
+    messages.push({ role: 'system', content: systemInstruction });
   }
+  
+  if (base64Image) {
+    messages.push({
+      role: 'user',
+      content: [
+        { type: 'text', text: prompt },
+        {
+          type: 'image_url',
+          image_url: {
+            url: `data:image/png;base64,${base64Image}`
+          }
+        }
+      ]
+    });
+  } else {
+    messages.push({ role: 'user', content: prompt });
+  }
+  
+  const model = base64Image ? 'llama-3.2-11b-vision-preview' : 'llama-3.3-70b-versatile';
+  
+  const requestBody = {
+    model: model,
+    messages: messages,
+    stream: false
+  };
+
+  if (!base64Image && systemInstruction.includes('JSON')) {
+    requestBody.response_format = { type: 'json_object' };
+  }
+  
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify(requestBody)
+  });
+  
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    console.error('Groq error response detail:', errData);
+    const errMsg = errData.error?.message || errData.error || errData.message || (typeof errData === 'string' ? errData : JSON.stringify(errData));
+    throw new Error(`Groq API Error: ${errMsg} (Status: ${res.status})`);
+  }
+  
+  const data = await res.json();
+  return data.choices[0].message.content;
 }
 
 function toggleGeminiMic() {
