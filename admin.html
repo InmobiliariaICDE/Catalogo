@@ -9079,8 +9079,10 @@ REGLAS DE ORO DE COHERENCIA (CLASIFICACIÓN ESTRICTA):
     * "query": texto de búsqueda en contabilidad
 - "ABRIR_NUEVO_MOVIMIENTO": Si pide abrir la ventana/modal para registrar un movimiento contable (ej: "abre formulario de nuevo gasto", "nuevo ingreso"). Parámetros:
     * "tipo": "ingreso" o "egreso" (opcional)
-- "VER_CITAS": Si el usuario pide mostrar, ver, consultar o listar sus citas/visitas agendadas (ej: "muéstrame mis citas", "qué citas tengo hoy", "ver la agenda de citas"). Parámetros:
-    * "query": cualquier filtro de fecha o nombre si aplica (opcional)
+- "VER_CITAS": Si el usuario pide mostrar, ver, consultar o listar sus citas/visitas agendadas (ej: "muéstrame mis citas", "qué citas tengo hoy", "ver la agenda de citas de esta semana"). Parámetros:
+    * "filterType": "hoy", "semana", "mes", o "todas"
+    * "fecha": fecha específica en YYYY-MM-DD si pidió un día concreto (Hoy es ${todayStr})
+    * "query": nombre de cliente si busca a alguien en particular (opcional)
 - "ABRIR_PROPIEDAD_MODAL": Si el usuario pide explícitamente ver los detalles o la ficha de una casa/apartamento específica (ej: "dame información de la casa 102", "abre la ficha del inmueble 038", "muestra el apartamento 301"). Parámetros:
     * "codigo": el código exacto de la propiedad (ej: "102", "038")
 - "AGENDAR_CITA_PREVIEW": Si el usuario expresa el deseo explícito de agendar, registrar, programar o reservar una cita/visita física de un cliente. Parámetros:
@@ -9191,13 +9193,32 @@ function executeGeminiAction(action) {
 
     case 'VER_CITAS':
       showTab('citas');
-      const citaQuery = action.query || '';
-      if (citaQuery && typeof buscarCitas === 'function') {
-        const inputCita = document.getElementById('searchCitasInput');
-        if (inputCita) inputCita.value = citaQuery;
-        buscarCitas(citaQuery);
-      }
-      toast('Mostrando agenda de citas 📅', 'info');
+      setTimeout(() => {
+        const filterType = action.filterType || (action.fecha ? 'fecha' : '');
+        const targetFecha = action.fecha || (filterType === 'hoy' ? new Date().toISOString().split('T')[0] : '');
+
+        if (targetFecha) {
+          if (typeof citasActiveFilterType !== 'undefined') citasActiveFilterType = 'fecha';
+          if (typeof citasActiveFilterValue !== 'undefined') citasActiveFilterValue = targetFecha;
+          const elSelFecha = document.getElementById('citasSelFecha');
+          if (elSelFecha) elSelFecha.textContent = 'Filtrado por: ' + targetFecha;
+          if (typeof aplicarFiltroYBusquedaCitas === 'function') aplicarFiltroYBusquedaCitas();
+          toast(`Citas del ${targetFecha} 📅`, 'info');
+        } else if (filterType === 'semana' || filterType === 'mes' || filterType === 'todas') {
+          if (typeof filterCitas === 'function') filterCitas(filterType);
+          toast(`Citas: ${filterType} 📅`, 'info');
+        } else {
+          const citaQuery = action.query || '';
+          if (citaQuery && typeof buscarCitas === 'function') {
+            const inputCita = document.getElementById('searchCitasInput');
+            if (inputCita) inputCita.value = citaQuery;
+            buscarCitas(citaQuery);
+          } else if (typeof renderCitas === 'function') {
+            renderCitas();
+          }
+          toast('Mostrando agenda de citas 📅', 'info');
+        }
+      }, 150);
       break;
 
     case 'ABRIR_PROPIEDAD_MODAL':
