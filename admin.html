@@ -9052,10 +9052,24 @@ REGLAS DE ORO DE COHERENCIA (CLASIFICACIÓN ESTRICTA):
 ⚠️ REGLA 1: "BUSCAR_PROPIEDADES" vs "AGENDAR_CITA_PREVIEW"
    - Si el usuario dice "Necesito ver el inmueble 038", "Busca el apartamento 102", "Quiero mirar la propiedad 056" o similares, esto es de consulta de información. DEBES clasificarlo siempre como "BUSCAR_PROPIEDADES" y extraer el código en "query".
    - NUNCA clasifiques la visualización o búsqueda de un inmueble como una cita ("AGENDAR_CITA_PREVIEW") a menos que el usuario diga explícitamente que quiere PROGRAMAR, AGENDAR, RESERVAR o REGISTRAR una visita con fecha, hora o un cliente específico (ej: "agenda visita para el lunes a las 4pm" o "programa cita con Carlos").
-⚠️ REGLA 2: "GENERAR_DESCRIPCION" vs "BUSCAR_PROPIEDADES"
-   - Usa "GENERAR_DESCRIPCION" únicamente si el usuario pide redactar, escribir, crear o generar el texto comercial de venta de un inmueble. Si solo quiere ver o buscar los datos de un inmueble, es "BUSCAR_PROPIEDADES".
+⚠️ REGLA 3: "REGISTRAR_MOVIMIENTO_PREVIEW"
+   - Si el usuario dice "registrar gasto de X", "anotar pago", "guardar ingreso" o similar, SIEMPRE utiliza "REGISTRAR_MOVIMIENTO_PREVIEW" generando la tarjeta interactiva. Rellena los datos que tengas (ej: concepto "pintura", tipo "egreso") y deja los campos faltantes vacíos o con valores sugeridos para que el usuario los ajuste y confirme en la tarjeta interactiva.
 
 Tipos de acciones soportadas ("type"):
+- "REGISTRAR_MOVIMIENTO_PREVIEW": Si el usuario pide registrar, anotar o guardar un ingreso o egreso contable (ej: "registra un ingreso de 500.000 de arriendo", "registrar gasto de pintura", "anota un egreso de 120.000 por mantenimiento"). Parámetros:
+    * "tipo": "ingreso" o "egreso" (por defecto "egreso" si dice gasto/pago)
+    * "monto": valor numérico si lo menciona, o 0 si no lo dio
+    * "concepto" o "descripcion": detalle del movimiento (ej: "Pintura")
+    * "categoria": categoría sugerida (ej: "Mantenimiento", "Arriendos", "Administración", "Otros")
+    * "fecha": en formato YYYY-MM-DD (Hoy es ${todayStr})
+- "FILTRAR_CONTABILIDAD": Si el usuario pide ver los números, movimientos o filtrar la contabilidad (ej: "muéstrame la contabilidad", "ver ingresos de arriendo", "busca egresos de mantenimiento"). Parámetros:
+    * "query": texto de búsqueda en contabilidad
+- "ABRIR_NUEVO_MOVIMIENTO": Si pide abrir la ventana/modal para registrar un movimiento contable (ej: "abre formulario de nuevo gasto", "nuevo ingreso"). Parámetros:
+    * "tipo": "ingreso" o "egreso" (opcional)
+- "VER_CITAS": Si el usuario pide mostrar, ver, consultar o listar sus citas/visitas agendadas (ej: "muéstrame mis citas", "qué citas tengo hoy", "ver la agenda de citas"). Parámetros:
+    * "query": cualquier filtro de fecha o nombre si aplica (opcional)
+- "ABRIR_PROPIEDAD_MODAL": Si el usuario pide explícitamente ver los detalles o la ficha de una casa/apartamento específica (ej: "dame información de la casa 102", "abre la ficha del inmueble 038", "muestra el apartamento 301"). Parámetros:
+    * "codigo": el código exacto de la propiedad (ej: "102", "038")
 - "AGENDAR_CITA_PREVIEW": Si el usuario expresa el deseo explícito de agendar, registrar, programar o reservar una cita/visita física de un cliente. Parámetros:
     * "codigo" (el código del inmueble, p. ej. "102")
     * "fecha" (en formato YYYY-MM-DD. Hoy es ${todayStr}. Si el usuario dice un día relativo como "el lunes", calcula la fecha correspondiente a partir de hoy)
@@ -9063,9 +9077,15 @@ Tipos de acciones soportadas ("type"):
     * "cliente" (nombre de la persona)
     * "celular" (teléfono/celular de contacto)
     * "notes" o "notas" (cualquier detalle u observación de la cita)
-- "BUSCAR_PROPIEDADES": Si quiere buscar inmuebles en el catálogo (ej: "busca apartamentos en el norte", "inmueble 102", "necesito ver el inmueble 038"). Parámetros:
-    * "query": el texto de búsqueda (ej: "102", "038" o "El Ingenio")
-- "BUSCAR_LEADS": Si quiere buscar o filtrar leads en el sistema (ej: "busca al cliente Juan" o "lead Carlos"). Parámetros:
+- "BUSCAR_PROPIEDADES": Si quiere buscar o filtrar inmuebles en el catálogo (ej: "busca apartamentos en el norte", "casas de 3 habitaciones", "inmuebles en Ipanema", "casas con garaje", "apartamentos de 200 a 400 millones"). Parámetros:
+    * "query": texto general de búsqueda (ej: "norte", "Ipanema")
+    * "tipoInmueble": array de strings si especificó tipo (ej: ["Apartamento"], ["Casa"])
+    * "zona": array de strings si especificó zona (ej: ["Norte"], ["Sur"], ["Oriente"])
+    * "habitaciones": array de strings/números si especificó habitaciones (ej: ["3"])
+    * "garaje": array de strings/números si especificó garaje (ej: ["1"])
+    * "minPrice": número si especificó precio mínimo
+    * "maxPrice": número si especificó precio máximo
+- "BUSCAR_LEADS": Si quiere buscar o filtrar leads/clientes en el sistema (ej: "busca al cliente Juan", "dame información del lead Carlos"). Parámetros:
     * "query": nombre o teléfono a buscar
 - "GENERAR_DESCRIPCION": Si quiere redactar, escribir o generar la descripción comercial y vendedora de un inmueble. Parámetros:
     * "codigo": el código del inmueble (p. ej. "102")
@@ -9088,7 +9108,7 @@ Tipos de acciones soportadas ("type"):
     let emotion = 'feliz';
     if (resultObj.action) {
       const type = resultObj.action.type;
-      if (type === 'AGENDAR_CITA_PREVIEW' || type === 'BUSCAR_PROPIEDADES' || type === 'BUSCAR_LEADS') {
+      if (type === 'AGENDAR_CITA_PREVIEW' || type === 'BUSCAR_PROPIEDADES' || type === 'BUSCAR_LEADS' || type === 'VER_CITAS' || type === 'ABRIR_PROPIEDAD_MODAL' || type === 'REGISTRAR_MOVIMIENTO_PREVIEW' || type === 'FILTRAR_CONTABILIDAD') {
         emotion = 'preguntando';
       }
     }
@@ -9103,31 +9123,100 @@ Tipos de acciones soportadas ("type"):
   } catch (err) {
     hideGeminiTypingIndicator();
     console.error('Error in processWithGemini:', err);
-    addGeminiMessage('assistant', `❌ Ocurrió un error al procesar tu solicitud con Gemini:<br><br><span style="color:#ef4444; font-family:monospace; font-size:11px; background:rgba(239,68,68,0.08); padding:8px; border-radius:6px; display:block; border:1px solid rgba(239,68,68,0.2); line-height:1.4;">${err.message}</span><br>Por favor verifica tu API Key en la configuración ⚙️.`, '', 'saludo');
+    addGeminiMessage('assistant', `❌ Ocurrió un error al procesar tu solicitud:<br><br><span style="color:#ef4444; font-family:monospace; font-size:11px; background:rgba(239,68,68,0.08); padding:8px; border-radius:6px; display:block; border:1px solid rgba(239,68,68,0.2); line-height:1.4;">${err.message}</span><br>Por favor verifica tu API Key en la configuración ⚙️.`, '', 'saludo');
   }
 }
 
 function executeGeminiAction(action) {
   switch (action.type) {
+    case 'REGISTRAR_MOVIMIENTO_PREVIEW':
+      renderMovimientoContableCard(action);
+      break;
+
+    case 'FILTRAR_CONTABILIDAD':
+      showTab('contabilidad');
+      const qCont = action.query || '';
+      setTimeout(() => {
+        const inputCont = document.getElementById('inputBuscarMovimientos');
+        if (inputCont) {
+          inputCont.value = qCont;
+          if (typeof contFiltrarMovimientos === 'function') contFiltrarMovimientos(qCont);
+        }
+      }, 150);
+      toast(`Filtrando contabilidad por: "${qCont}" 📊`, 'info');
+      break;
+
+    case 'ABRIR_NUEVO_MOVIMIENTO':
+      showTab('contabilidad');
+      if (typeof contAbrirModal === 'function') {
+        contAbrirModal(action.tipo || 'ingreso');
+      }
+      toast('Formulario de movimiento contable abierto 💵', 'info');
+      break;
+
+    case 'VER_CITAS':
+      showTab('citas');
+      const citaQuery = action.query || '';
+      if (citaQuery && typeof buscarCitas === 'function') {
+        const inputCita = document.getElementById('searchCitasInput');
+        if (inputCita) inputCita.value = citaQuery;
+        buscarCitas(citaQuery);
+      }
+      toast('Mostrando agenda de citas 📅', 'info');
+      break;
+
+    case 'ABRIR_PROPIEDAD_MODAL':
+      const codProp = action.codigo || action.query || '';
+      if (codProp && typeof abrirModalProp === 'function') {
+        abrirModalProp(codProp);
+        toast(`Abriendo información del inmueble "${codProp}" 🏠`, 'success');
+      } else {
+        showTab('nuevo');
+        toast(`Buscando propiedad "${codProp}"`, 'info');
+      }
+      break;
+
     case 'AGENDAR_CITA_PREVIEW':
       renderCitaPreviewCard(action);
       break;
+
     case 'BUSCAR_PROPIEDADES':
       showTab('nuevo');
       const searchQuery = action.query || action.codigo || '';
-      // Retraso de 150ms para garantizar el renderizado del DOM de filtros
+      
       setTimeout(() => {
+        // 1. Si hay filtros estructurados, aplicarlos al estado nativo de filtros 'nl'
+        if (typeof getFSt === 'function') {
+          const st = getFSt('nl');
+          if (st) {
+            if (action.tipoInmueble && Array.isArray(action.tipoInmueble)) st.tipoInmueble = action.tipoInmueble;
+            if (action.zona && Array.isArray(action.zona)) st.zona = action.zona;
+            if (action.habitaciones && Array.isArray(action.habitaciones)) st.habitaciones = action.habitaciones.map(String);
+            if (action.garaje && Array.isArray(action.garaje)) st.garaje = action.garaje.map(String);
+            if (action.minPrice) st.minPrice = Number(action.minPrice);
+            if (action.maxPrice) st.maxPrice = Number(action.maxPrice);
+
+            // Re-renderizar indicadores de filtro
+            if (typeof FCAMPOS !== 'undefined' && typeof fnRenderHead === 'function') {
+              FCAMPOS.forEach(c => fnRenderHead('nl', c.key));
+            }
+          }
+        }
+
+        // 2. Colocar texto en caja de búsqueda y sincronizar todo
         const inputNl = document.getElementById('fnBus_nl');
         if (inputNl) {
           inputNl.value = searchQuery;
-          // Disparar el evento nativo 'input' para ejecutar instantáneamente el oninput="fnBuscar('nl', this.value)" nativo del panel!
           inputNl.dispatchEvent(new Event('input', { bubbles: true }));
-          toast(`Filtrado catálogo por: "${searchQuery}" ✓`, 'success');
-        } else {
-          toast(`Buscar propiedades: "${searchQuery}"`, 'info');
+        } else if (typeof fnSincronizar === 'function') {
+          fnSincronizar('nl');
+          if (typeof fnActualizarConteo === 'function') fnActualizarConteo('nl');
         }
+
+        toast(`Filtros aplicados al catálogo ✓`, 'success');
       }, 150);
       break;
+
     case 'BUSCAR_LEADS':
       showTab('leads');
       const leadQuery = action.query || action.cliente || action.celular || '';
@@ -9138,18 +9227,124 @@ function executeGeminiAction(action) {
         toast(`Filtrado leads por: "${leadQuery}" ✓`, 'success');
       }
       break;
+
     case 'GENERAR_DESCRIPCION':
       renderDescripcionGeneradaCard(action.codigo);
       break;
+
     case 'CONSULTAR_SALDO':
       renderFinanzasCard(action.consulta);
       break;
+
     default:
       console.warn('Unknown action type:', action.type);
   }
 }
 
-function renderCitaPreviewCard(action) {
+function renderMovimientoContableCard(action) {
+  const tipo = action.tipo || 'egreso';
+  const monto = action.monto || '';
+  const concepto = action.concepto || action.descripcion || '';
+  const categoria = action.categoria || 'Mantenimiento';
+  const fecha = action.fecha || new Date().toISOString().split('T')[0];
+  const id = 'card_mov_' + Math.floor(Math.random() * 100000);
+
+  const montoNum = (monto && monto !== 0) ? monto : '';
+  const isIngreso = tipo.toLowerCase() === 'ingreso';
+  const headerIcon = isIngreso ? '💰 Ingreso' : '💸 Egreso';
+  const headerColor = isIngreso ? '#22c55e' : '#ef4444';
+
+  const html = `
+    <div class="gemini-card" id="geminiMovCard-${id}">
+      <div class="gemini-card-title" style="color:${headerColor};">${headerIcon} Contable</div>
+      
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Tipo:</span>
+        <select class="gemini-card-input" id="editMovTipo-${id}" style="color:${headerColor}; font-weight:700;">
+          <option value="ingreso" ${isIngreso ? 'selected' : ''}>💚 Ingreso</option>
+          <option value="egreso" ${!isIngreso ? 'selected' : ''}>❤️ Egreso</option>
+        </select>
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Monto ($):</span>
+        <input type="number" class="gemini-card-input" id="editMovMonto-${id}" value="${montoNum}" placeholder="Por favor ingresa el valor $" style="font-weight:700; ${!montoNum ? 'border:1px solid #ef4444; background:rgba(239,68,68,0.1);' : ''}">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Concepto:</span>
+        <input type="text" class="gemini-card-input" id="editMovConcepto-${id}" value="${concepto}" placeholder="Descripción del movimiento" style="${!concepto ? 'border:1px solid #ef4444;' : ''}">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Categoría:</span>
+        <input type="text" class="gemini-card-input" id="editMovCat-${id}" value="${categoria}" placeholder="Mantenimiento, Arriendos, etc.">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Fecha:</span>
+        <input type="date" class="gemini-card-input" id="editMovFecha-${id}" value="${fecha}">
+      </div>
+
+      <div class="gemini-card-footer" style="margin-top: 8px; display: flex; gap: 8px;">
+        <button class="btn btn-primary btn-sm" style="flex: 1; font-size: 11px; padding: 6px; background:${headerColor}; border:none;" onclick="confirmarMovimientoContableGemini('${id}')">Confirmar Movimiento</button>
+        <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 6px;" onclick="cancelarCitaGemini(this)">Cancelar</button>
+      </div>
+    </div>
+  `;
+  addGeminiMessage('system-card', '', html);
+
+  setTimeout(() => {
+    const inputM = document.getElementById(`editMovMonto-${id}`);
+    if (inputM && !montoNum) inputM.focus();
+  }, 300);
+}
+
+function confirmarMovimientoContableGemini(id) {
+  const tipo = document.getElementById(`editMovTipo-${id}`).value;
+  const montoVal = parseFloat(document.getElementById(`editMovMonto-${id}`).value) || 0;
+  const concepto = document.getElementById(`editMovConcepto-${id}`).value.trim();
+  const categoria = document.getElementById(`editMovCat-${id}`).value.trim() || 'General';
+  const fecha = document.getElementById(`editMovFecha-${id}`).value;
+
+  if (!montoVal || montoVal <= 0) {
+    toast('Ingresa un monto válido', 'error');
+    return;
+  }
+  if (!concepto) {
+    toast('Ingresa un concepto o descripción', 'error');
+    return;
+  }
+
+  const newMov = {
+    id: 'MOV-' + Date.now(),
+    fecha: fecha,
+    tipo: tipo,
+    concepto: concepto,
+    categoria: categoria,
+    precio: montoVal,
+    creadoEn: new Date().toISOString()
+  };
+
+  if (typeof contMovimientos !== 'undefined' && Array.isArray(contMovimientos)) {
+    contMovimientos.push(newMov);
+    localStorage.setItem('icde_contabilidad', JSON.stringify(contMovimientos));
+    if (typeof contRenderAll === 'function') contRenderAll();
+  }
+
+  const card = document.getElementById(`geminiMovCard-${id}`);
+  if (card) {
+    card.style.border = '1px solid #22c55e';
+    card.style.background = 'linear-gradient(145deg, rgba(34, 197, 94, 0.05), rgba(10, 10, 10, 0.95))';
+    card.querySelector('.gemini-card-footer').innerHTML = `<span style="color:#22c55e; font-weight:700; display:flex; align-items:center; gap:4px; font-size:11px;">✓ Movimiento registrado de $${montoVal.toLocaleString()}</span>`;
+    card.querySelectorAll('.gemini-card-input').forEach(input => {
+      input.disabled = true;
+      input.style.opacity = '0.7';
+    });
+  }
+
+  toast('Movimiento contable registrado con éxito ✓', 'success');
+}
   const cod = action.codigo || '';
   const fecha = action.fecha || '';
   const hora = action.hora || '';
