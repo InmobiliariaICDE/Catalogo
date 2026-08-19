@@ -8962,7 +8962,25 @@ function toggleGeminiMic() {
       isGeminiListening = true;
       micBtn.classList.add('listening');
       if (gBtn) gBtn.classList.add('listening');
-      showGeminiSpeechBubble("🎙️ <strong>Te estoy escuchando...</strong> Habla libremente y vuelve a hacerme click cuando termines.", 6000);
+      
+      const sugerenciasHtml = `
+        🎙️ <strong>¿En qué te puedo ayudar hoy?</strong><br>
+        <span style="font-size:10px; opacity:0.8;">Toca una opción o habla por voz:</span>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:6px; max-height:160px; overflow-y:auto; padding-right:2px;">
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Muestra las citas de hoy')">📅 Citas de hoy</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Busca casas en el norte')">🏡 Buscar inmuebles</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Agrega al cliente Juan Perez cel 3101234567')">👤 Crear nuevo lead</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Genera mensaje de WhatsApp para enviar el catálogo')">📱 Mensaje WhatsApp</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Registrar gasto de pintura')">💸 Registrar gasto</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Resumen ejecutivo de KPIs')">📊 Ver KPIs / Métricas</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Agenda cita para la casa 102 el lunes 4pm')">📝 Agendar cita</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Muéstrame la contabilidad de este mes')">💰 Ver Contabilidad</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Genera la descripción comercial del inmueble 038')">✍️ Redactar descripción</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Limpia los filtros')">🧹 Resetear filtros</button>
+        </div>
+      `;
+      
+      showGeminiSpeechBubble(sugerenciasHtml, 12000);
       finalTranscript = '';
       setGeminiEmotion('saludo');
     };
