@@ -8876,16 +8876,22 @@ async function callAIEngine(prompt, systemInstruction = '', base64Image = null) 
       messages.push({ role: 'user', content: prompt });
     }
     
-    const model = base64Image ? 'grok-2-vision-latest' : 'grok-2-latest';
+    const model = base64Image ? 'grok-2-vision-1212' : 'grok-2-1212';
+    
+    const requestBody = {
+      model: model,
+      messages: messages,
+      stream: false
+    };
+
+    if (!base64Image && systemInstruction.includes('JSON')) {
+      requestBody.response_format = { type: 'json_object' };
+    }
     
     const res = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify({
-        model: model,
-        messages: messages,
-        stream: false
-      })
+      body: JSON.stringify(requestBody)
     });
     
     if (!res.ok) {
