@@ -3034,8 +3034,8 @@ html, body {
         <input class="form-input" id="setWaApi" placeholder="https://api.tuservidor.com" value="${settings.waApi || ''}"/>
         <div style="font-size:11px;color:#888;margin-top:4px;">Deja vacío para usar WhatsApp Web (wa.me)</div>
       </div>
-      <div class="form-group full"><label class="form-label">API Key de Gemini o Grok (xAI)</label>
-        <input class="form-input" id="setGeminiKey" type="password" placeholder="AIza... o xai-..." value="${settings.geminiKey || ''}"/>
+      <div class="form-group full"><label class="form-label">API Key de IA (Groq, Gemini o Grok)</label>
+        <input class="form-input" id="setGeminiKey" type="password" placeholder="gsk_... / AIza... / xai-..." value="${settings.geminiKey || ''}"/>
       </div>
       <div class="form-group full"><label class="form-label">ElevenLabs API Key (Voz Tony Robbins)</label>
         <input class="form-input" id="setElevenlabsKey" type="password" placeholder="sk_..." value="${settings.elevenlabsKey || ''}"/>
@@ -8844,14 +8844,73 @@ function hideGeminiTypingIndicator() {
 
 async function callAIEngine(prompt, systemInstruction = '', base64Image = null) {
   if (!settings.geminiKey) {
-    throw new Error('Por favor configura la clave API de Gemini o Grok en Configuración ⚙️');
+    throw new Error('Por favor configura tu clave API de Groq, Gemini o Grok en Configuración ⚙️');
   }
-  const isGrok = settings.geminiKey.startsWith('xai-');
   
-  if (isGrok) {
+  const key = settings.geminiKey.trim();
+  const isGroq = key.startsWith('gsk_');
+  const isGrok = key.startsWith('xai-');
+  
+  if (isGroq) {
     const headers = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${settings.geminiKey}`
+      'Authorization': `Bearer ${key}`
+    };
+    
+    let messages = [];
+    if (systemInstruction) {
+      messages.push({ role: 'system', content: systemInstruction });
+    }
+    
+    if (base64Image) {
+      messages.push({
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          {
+            type: 'image_url',
+            image_url: {
+              url: `data:image/png;base64,${base64Image}`
+            }
+          }
+        ]
+      });
+    } else {
+      messages.push({ role: 'user', content: prompt });
+    }
+    
+    const model = base64Image ? 'llama-3.2-11b-vision-preview' : 'llama-3.3-70b-versatile';
+    
+    const requestBody = {
+      model: model,
+      messages: messages,
+      stream: false
+    };
+
+    if (!base64Image && systemInstruction.includes('JSON')) {
+      requestBody.response_format = { type: 'json_object' };
+    }
+    
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(requestBody)
+    });
+    
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      console.error('Groq error response detail:', errData);
+      const errMsg = errData.error?.message || errData.error || errData.message || (typeof errData === 'string' ? errData : JSON.stringify(errData));
+      throw new Error(`Groq API Error: ${errMsg} (Status: ${res.status})`);
+    }
+    
+    const data = await res.json();
+    return data.choices[0].message.content;
+    
+  } else if (isGrok) {
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${key}`
     };
     
     let messages = [];
@@ -8896,7 +8955,8 @@ async function callAIEngine(prompt, systemInstruction = '', base64Image = null) 
     
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      const errMsg = errData.error?.message || 'Error desconocido de Grok';
+      console.error('Grok error response detail:', errData);
+      const errMsg = errData.error?.message || errData.error || errData.message || (typeof errData === 'string' ? errData : JSON.stringify(errData));
       throw new Error(`Grok API Error: ${errMsg} (Status: ${res.status})`);
     }
     
@@ -8904,7 +8964,7 @@ async function callAIEngine(prompt, systemInstruction = '', base64Image = null) 
     return data.choices[0].message.content;
     
   } else {
-    let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${settings.geminiKey}`;
+    let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${key}`;
     
     let body = {};
     if (base64Image) {
