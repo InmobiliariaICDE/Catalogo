@@ -9055,7 +9055,20 @@ REGLAS DE ORO DE COHERENCIA (CLASIFICACIÓN ESTRICTA):
 ⚠️ REGLA 3: "REGISTRAR_MOVIMIENTO_PREVIEW"
    - Si el usuario dice "registrar gasto de X", "anotar pago", "guardar ingreso" o similar, SIEMPRE utiliza "REGISTRAR_MOVIMIENTO_PREVIEW" generando la tarjeta interactiva. Rellena los datos que tengas (ej: concepto "pintura", tipo "egreso") y deja los campos faltantes vacíos o con valores sugeridos para que el usuario los ajuste y confirme en la tarjeta interactiva.
 
-Tipos de acciones soportadas ("type"):
+- "REGISTRAR_LEAD_PREVIEW": Si el usuario quiere crear, guardar o registrar un nuevo cliente/lead (ej: "agrega al cliente María Pérez cel 3101234567 interesada en casas norte", "nuevo lead Carlos cel 3009876543"). Parámetros:
+    * "nombre": nombre del cliente
+    * "celular": teléfono / celular
+    * "notas": observaciones o requerimientos del cliente
+    * "etiqueta": "activo", "tibio" o "inactivo" (por defecto "activo")
+- "GENERAR_MENSAJE_WPP": Si el usuario pide redactar o crear un mensaje de WhatsApp para enviar a un cliente con un enlace personalizado del catálogo o de una búsqueda filtrada (ej: "genérame un mensaje para WhatsApp de casas en el oriente", "crea mensaje para cliente con el apartamento 102"). Parámetros:
+    * "cliente": nombre del cliente si lo menciona
+    * "celular": número de WhatsApp si lo menciona
+    * "codigo": código del inmueble si es específico
+    * "zona": zona del filtro si aplica (ej: "Oriente", "Norte")
+    * "tipoInmueble": tipo si aplica (ej: "Casa", "Apartamento")
+    * "query": texto o criterio de búsqueda del catálogo
+- "CONSULTAR_KPIS": Si el usuario pregunta por estadísticas, resumen del negocio, métricas o KPIs generales (ej: "dame un resumen del negocio", "cómo van los números", "KPIs de la inmobiliaria", "resumen ejecutivo"). Parámetros: {}
+- "LIMPIAR_FILTROS": Si el usuario pide resetear, borrar o limpiar los filtros de búsqueda (ej: "limpia los filtros", "resetear filtros", "mostrar todas las propiedades de nuevo"). Parámetros: {}
 - "REGISTRAR_MOVIMIENTO_PREVIEW": Si el usuario pide registrar, anotar o guardar un ingreso o egreso contable (ej: "registra un ingreso de 500.000 de arriendo", "registrar gasto de pintura", "anota un egreso de 120.000 por mantenimiento"). Parámetros:
     * "tipo": "ingreso" o "egreso" (por defecto "egreso" si dice gasto/pago)
     * "monto": valor numérico si lo menciona, o 0 si no lo dio
@@ -9090,7 +9103,7 @@ Tipos de acciones soportadas ("type"):
 - "GENERAR_DESCRIPCION": Si quiere redactar, escribir o generar la descripción comercial y vendedora de un inmueble. Parámetros:
     * "codigo": el código del inmueble (p. ej. "102")
 - "CONSULTAR_SALDO": Si pregunta por balances financieros, ingresos, cobros de administración o datos del edificio Silvia. Parámetros:
-    * "consulta": un string identificando qué quiere consultar (p. ej. "mensual", "silvia", "KPI")
+    * "consulta": un string identificando qué me consulta
 - "CHAT_ONLY": Para conversaciones generales, saludos o consultas de ayuda que no requieren comandos técnicos. Parámetros: {}
 `;
 
@@ -9129,6 +9142,28 @@ Tipos de acciones soportadas ("type"):
 
 function executeGeminiAction(action) {
   switch (action.type) {
+    case 'REGISTRAR_LEAD_PREVIEW':
+      renderLeadPreviewCard(action);
+      break;
+
+    case 'GENERAR_MENSAJE_WPP':
+      renderWppLinkCard(action);
+      break;
+
+    case 'CONSULTAR_KPIS':
+      renderKPIsCard();
+      break;
+
+    case 'LIMPIAR_FILTROS':
+      if (typeof fnLimpiar === 'function') {
+        fnLimpiar('nl');
+        toast('Filtros del catálogo reseteados 🧹', 'success');
+      } else {
+        const inputNl = document.getElementById('fnBus_nl');
+        if (inputNl) { inputNl.value = ''; inputNl.dispatchEvent(new Event('input', { bubbles: true })); }
+        toast('Filtros reseteados 🧹', 'success');
+      }
+      break;
     case 'REGISTRAR_MOVIMIENTO_PREVIEW':
       renderMovimientoContableCard(action);
       break;
@@ -9543,6 +9578,202 @@ async function confirmarCitaGemini(codigo, fecha, hora, cliente, celular, notas)
     console.error("Error agendando cita por Gemini:", err);
     toast('Error al guardar la cita', 'error');
   }
+}
+
+/* 👤 1. Tarjeta Registro Express de Lead */
+function renderLeadPreviewCard(action) {
+  const nombre = action.nombre || '';
+  const celular = action.celular || '';
+  const notas = action.notas || '';
+  const etiqueta = action.etiqueta || 'activo';
+  const id = 'card_lead_' + Math.floor(Math.random() * 100000);
+
+  const html = `
+    <div class="gemini-card" id="geminiLeadCard-${id}">
+      <div class="gemini-card-title">👤 Crear Nuevo Lead / Cliente</div>
+      
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Nombre:</span>
+        <input type="text" class="gemini-card-input" id="editLeadNombre-${id}" value="${nombre}" placeholder="Nombre del cliente" style="font-weight:700;">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Celular:</span>
+        <input type="text" class="gemini-card-input" id="editLeadCelular-${id}" value="${celular}" placeholder="Ej: 3101234567">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Etiqueta:</span>
+        <select class="gemini-card-input" id="editLeadEtiqueta-${id}">
+          <option value="activo" ${etiqueta==='activo'?'selected':''}>🔥 Activo</option>
+          <option value="tibio" ${etiqueta==='tibio'?'selected':''}>☀️ Tibio</option>
+          <option value="inactivo" ${etiqueta==='inactivo'?'selected':''}>❄️ Inactivo</option>
+        </select>
+      </div>
+
+      <div class="gemini-card-row" style="flex-direction: column; gap: 4px; align-items: flex-start; margin-top: 4px;">
+        <span class="gemini-card-lbl">Interés / Observaciones:</span>
+        <textarea class="gemini-card-input" id="editLeadNotas-${id}" style="width: 100%; height: 45px; resize: none; margin-top: 2px; padding: 6px 10px; border-radius: 8px; text-align: left;" placeholder="Interesado en casa zona norte...">${notas}</textarea>
+      </div>
+
+      <div class="gemini-card-footer" style="margin-top: 8px; display: flex; gap: 8px;">
+        <button class="btn btn-primary btn-sm" style="flex: 1; font-size: 11px; padding: 6px; background:var(--gold); color:#121212; font-weight:700; border:none;" onclick="confirmarLeadGemini('${id}')">Guardar Lead</button>
+        <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 6px;" onclick="cancelarCitaGemini(this)">Cancelar</button>
+      </div>
+    </div>
+  `;
+  addGeminiMessage('system-card', '', html);
+}
+
+function confirmarLeadGemini(id) {
+  const nombre = document.getElementById(`editLeadNombre-${id}`).value.trim();
+  const celular = document.getElementById(`editLeadCelular-${id}`).value.trim();
+  const etiqueta = document.getElementById(`editLeadEtiqueta-${id}`).value;
+  const notas = document.getElementById(`editLeadNotas-${id}`).value.trim();
+
+  if (!nombre) { toast('Ingresa el nombre del cliente', 'error'); return; }
+
+  const newLead = {
+    id: 'LEAD-' + Date.now(),
+    tipo: 'cliente',
+    nombre: nombre,
+    celular: celular || '',
+    notas: notas,
+    metodoPago: [],
+    estado: 'visita',
+    etiqueta: etiqueta,
+    filtros: {},
+    frecuencia: 'manual',
+    maxPorEnvio: 4,
+    nombreInmobiliaria: '',
+    nombreAgente: '',
+    propsFiltradas: [],
+    propsEnviadas: [],
+    proximosEnvios: [],
+    historialEnvios: [],
+    visitas: [],
+    creadoEn: new Date().toISOString()
+  };
+
+  leads.push(newLead);
+  saveLeads();
+  syncSheets(newLead);
+  if (currentTab === 'leads') renderLeads();
+
+  const card = document.getElementById(`geminiLeadCard-${id}`);
+  if (card) {
+    card.style.border = '1px solid #22c55e';
+    card.style.background = 'linear-gradient(145deg, rgba(34, 197, 94, 0.05), rgba(10, 10, 10, 0.95))';
+    card.querySelector('.gemini-card-footer').innerHTML = `<span style="color:#22c55e; font-weight:700; display:flex; align-items:center; gap:4px; font-size:11px;">✓ Lead "${nombre}" guardado con éxito</span>`;
+  }
+  toast(`Lead "${nombre}" registrado ✓`, 'success');
+}
+
+/* 📱 2. Tarjeta Generadora de Mensaje WhatsApp + Link Único */
+function renderWppLinkCard(action) {
+  const cliente = action.cliente || '';
+  const celular = action.celular || '';
+  const codigo = action.codigo || '';
+  const id = 'wpp_' + Math.floor(Math.random() * 100000);
+
+  let linkPersonalizado = 'https://icdeinmobiliaria.com/';
+  let descripcionFiltros = 'Catálogo de Inmuebles';
+
+  if (codigo) {
+    linkPersonalizado = getSearchLinkFromFilters(null, [codigo], null);
+    descripcionFiltros = `Propiedad código ${codigo}`;
+  } else {
+    // Generar link con filtros actuales del panel o recibidos
+    const st = typeof getFSt === 'function' ? JSON.parse(JSON.stringify(getFSt('nl'))) : {};
+    if (action.zona) st.zona = Array.isArray(action.zona) ? action.zona : [action.zona];
+    if (action.tipoInmueble) st.tipoInmueble = Array.isArray(action.tipoInmueble) ? action.tipoInmueble : [action.tipoInmueble];
+    if (action.query) st.buscar = action.query;
+    linkPersonalizado = getSearchLinkFromFilters(st, null, null);
+
+    const partes = [];
+    if (action.tipoInmueble) partes.push(action.tipoInmueble);
+    if (action.zona) partes.push(`Zona ${action.zona}`);
+    if (action.query) partes.push(`"${action.query}"`);
+    if (partes.length) descripcionFiltros = partes.join(' - ');
+  }
+
+  const saludoCliente = cliente ? `Hola ${cliente}, ` : 'Hola, ';
+  const msgTexto = `${saludoCliente}te comparto este enlace exclusivo con la selección de propiedades de **ICDE Inmobiliaria** (${descripcionFiltros}):\n\n👉 ${linkPersonalizado}\n\nQuedo atento a tus comentarios para agendar una visita physical sin compromiso. ¡Un saludo!`;
+
+  const cleanNum = celular.replace(/\D/g, '');
+  const wppUrl = cleanNum ? `https://wa.me/57${cleanNum}?text=${encodeURIComponent(msgTexto)}` : `https://wa.me/?text=${encodeURIComponent(msgTexto)}`;
+
+  const html = `
+    <div class="gemini-card" id="wppCard-${id}">
+      <div class="gemini-card-title" style="color:#25D366;">📱 Enlace Personalizado WhatsApp</div>
+      
+      <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">Link generado (${descripcionFiltros}):</div>
+      <div style="background:rgba(255,255,255,0.05); padding:6px 8px; border-radius:6px; font-size:11px; font-family:monospace; color:var(--gold); word-break:break-all; border:1px solid var(--glass-border); margin-bottom:8px;">
+        ${linkPersonalizado}
+      </div>
+
+      <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">Mensaje para WhatsApp:</div>
+      <textarea id="txtWppMsg-${id}" style="width:100%; height:85px; font-size:11px; background:#18181c; color:#fff; border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px; resize:none; outline:none; font-family:sans-serif; margin-bottom:8px;">${msgTexto}</textarea>
+
+      <div class="gemini-card-footer" style="display:flex; gap:6px;">
+        <a href="${wppUrl}" target="_blank" class="btn btn-primary btn-sm" style="flex:1.2; text-decoration:none; background:#25D366; color:#fff; font-weight:700; border:none; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+          💬 Abrir WhatsApp
+        </a>
+        <button class="btn btn-secondary btn-sm" style="flex:1; font-size:11px;" onclick="navigator.clipboard.writeText(document.getElementById('txtWppMsg-${id}').value); toast('Mensaje copiado ✓', 'success');">
+          📋 Copiar Texto
+        </button>
+      </div>
+    </div>
+  `;
+  addGeminiMessage('system-card', '', html);
+}
+
+/* 📊 3. Tarjeta Resumen de Métricas KPIs */
+function renderKPIsCard() {
+  const totalProps = typeof allProps !== 'undefined' ? allProps.length : 0;
+  const totalLeads = typeof leads !== 'undefined' ? leads.length : 0;
+  const totalCitas = typeof citas !== 'undefined' ? citas.length : 0;
+  
+  let ingMes = 0;
+  let egrMes = 0;
+  if (typeof contMovimientos !== 'undefined' && Array.isArray(contMovimientos)) {
+    const yyyymm = new Date().toISOString().substring(0, 7);
+    contMovimientos.forEach(m => {
+      if (m.fecha && m.fecha.startsWith(yyyymm)) {
+        if (m.tipo === 'ingreso') ingMes += (Number(m.precio) || 0);
+        if (m.tipo === 'egreso') egrMes += (Number(m.precio) || 0);
+      }
+    });
+  }
+
+  const html = `
+    <div class="gemini-card" style="border:1px solid var(--gold); background:linear-gradient(145deg, rgba(212,168,75,0.08), rgba(18,18,18,0.95));">
+      <div class="gemini-card-title" style="color:var(--gold); font-size:13px; font-weight:800;">📊 Resumen Ejecutivo del Negocio (KPIs)</div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:8px; border-radius:8px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#fff;">${totalProps}</div>
+          <div style="font-size:10px; color:var(--muted); text-transform:uppercase;">Inmuebles Activos</div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:8px; border-radius:8px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:var(--gold);">${totalLeads}</div>
+          <div style="font-size:10px; color:var(--muted); text-transform:uppercase;">Leads Registrados</div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:8px; border-radius:8px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#3b82f6;">${totalCitas}</div>
+          <div style="font-size:10px; color:var(--muted); text-transform:uppercase;">Visitas Agendadas</div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:8px; border-radius:8px; text-align:center;">
+          <div style="font-size:14px; font-weight:800; color:#22c55e;">$${ingMes.toLocaleString()}</div>
+          <div style="font-size:10px; color:var(--muted); text-transform:uppercase;">Ingresos Mes</div>
+        </div>
+      </div>
+    </div>
+  `;
+  addGeminiMessage('system-card', '', html);
 }
 
 async function renderDescripcionGeneradaCard(codigo) {
