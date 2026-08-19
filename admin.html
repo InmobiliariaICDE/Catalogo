@@ -8875,33 +8875,44 @@ async function callAIEngine(prompt, systemInstruction = '', base64Image = null) 
     messages.push({ role: 'user', content: prompt });
   }
   
-  const model = base64Image ? 'llama-3.2-11b-vision-preview' : 'llama3-70b-8192';
-  
-  const requestBody = {
-    model: model,
-    messages: messages,
-    stream: false
-  };
+  const candidateModels = base64Image 
+    ? ['llama-3.2-11b-vision-preview', 'llama-3.2-90b-vision-preview']
+    : ['llama-3.3-70b-specdec', 'mixtral-8x7b-32768', 'qwen-2.5-32b', 'deepseek-r1-distill-llama-70b'];
 
-  if (!base64Image && systemInstruction.includes('JSON')) {
-    requestBody.response_format = { type: 'json_object' };
+  let lastErrorMsg = '';
+
+  for (const model of candidateModels) {
+    const requestBody = {
+      model: model,
+      messages: messages,
+      stream: false
+    };
+
+    if (!base64Image && systemInstruction.includes('JSON')) {
+      requestBody.response_format = { type: 'json_object' };
+    }
+
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(requestBody)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        return data.choices[0].message.content;
+      }
+
+      const errData = await res.json().catch(() => ({}));
+      lastErrorMsg = errData.error?.message || errData.error || errData.message || (typeof errData === 'string' ? errData : JSON.stringify(errData));
+      console.warn(`Groq model ${model} failed (${res.status}): ${lastErrorMsg}. Trying next model...`);
+    } catch (e) {
+      lastErrorMsg = e.message;
+    }
   }
-  
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: headers,
-    body: JSON.stringify(requestBody)
-  });
-  
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    console.error('Groq error response detail:', errData);
-    const errMsg = errData.error?.message || errData.error || errData.message || (typeof errData === 'string' ? errData : JSON.stringify(errData));
-    throw new Error(`Groq API Error: ${errMsg} (Status: ${res.status})`);
-  }
-  
-  const data = await res.json();
-  return data.choices[0].message.content;
+
+  throw new Error(`Groq API Error: ${lastErrorMsg}`);
 }
 
 function toggleGeminiMic() {
