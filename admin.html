@@ -9380,6 +9380,8 @@ function confirmarMovimientoContableGemini(id) {
 
   toast('Movimiento contable registrado con éxito ✓', 'success');
 }
+
+function renderCitaPreviewCard(action) {
   const cod = action.codigo || '';
   const fecha = action.fecha || '';
   const hora = action.hora || '';
@@ -16366,7 +16368,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const panoramaDiv = document.getElementById('streetViewPanorama');
     });
   }
-  initGeminiIdleActions();
+  if (typeof initGeminiIdleActions === 'function') {
+    initGeminiIdleActions();
+  }
 });
 
 function showSearchResultPinOnly(lat, lng) {
