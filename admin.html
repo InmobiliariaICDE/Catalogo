@@ -9137,7 +9137,7 @@ REGLAS DE ORO DE COHERENCIA (CLASIFICACIÓN ESTRICTA):
     * "piscina": array de strings si especificó piscina (ej: ["Sí"])
     * "cocina": array de strings si especificó tipo de cocina (ej: ["Integral"])
     * "habitaciones": array de strings/números (ej: ["3"])
-    * "garaje": array de strings/números (ej: ["1"])
+    * "garaje": array de strings. IMPORTANTE: Si el usuario dice "con garaje" (de forma general, sin dar una cantidad exacta), DEBES poner "garaje": ["con_garaje"] para que se seleccionen automáticamente todas las opciones de garaje (1, 2, 3, etc.). Si especifica una cantidad exacta (ej: "2 garajes"), pon ["2"].
     * "pisos": array de strings/números (ej: ["2"])
     * "minPrice": número si especificó precio mínimo
     * "maxPrice": número si especificó precio máximo
@@ -9304,6 +9304,13 @@ function executeGeminiAction(action) {
                     const match = disponibles.find(d => norm(d) === normV || (normV.includes('edificio') && norm(d).includes('edificio')));
                     return match || v;
                   });
+                }
+                // Si el usuario pide "con garaje" de forma general, marcar todos los números de garaje disponibles (>0)
+                if (k === 'garaje' && typeof getUniqueVals === 'function') {
+                  if (vals.includes('con_garaje') || vals.some(v => v.toLowerCase().includes('garaje') && !/\d/.test(v))) {
+                    const dispGarajes = getUniqueVals('Garaje');
+                    vals = dispGarajes.filter(g => g !== '0' && g !== 'Sin garaje' && g !== 'No');
+                  }
                 }
                 st[k] = vals;
               }
