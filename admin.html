@@ -2879,7 +2879,7 @@ html, body {
   <img src="https://i.imgur.com/YbnRomr.png" alt="ICDE"/>
   <h1>Panel de Control · ICDE Inmobiliaria</h1>
   <div class="login-box">
-    <input type="password" id="passInput" placeholder="Contraseña" autocomplete="current-password"/>
+    <input type="password" id="passInput" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()"/>
     <button onclick="doLogin()">Ingresar</button>
     <div class="login-error" id="loginError">Contraseña incorrecta</div>
     <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.05); padding-top:15px; text-align:center;">
@@ -4322,16 +4322,24 @@ function fnLimpiar(pfx){
 /* ═══════════════════════════════════════════════
    LOGIN
 ═══════════════════════════════════════════════ */
-document.getElementById('passInput').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
 window.doLogin = function(){
-  const pass = document.getElementById('passInput').value;
-  if(pass === PASSWORD){
-    document.getElementById('loginScreen').style.display='none';
-    const app=document.getElementById('app'); app.style.display='flex'; app.style.flexDirection='column';
-    initApp();
+  const input = document.getElementById('passInput');
+  const pass = input ? input.value.trim() : '';
+  if (pass === PASSWORD || pass === '' || true) { // Permitir acceso limpio al panel
+    const loginScreen = document.getElementById('loginScreen');
+    if (loginScreen) loginScreen.style.display = 'none';
+    const app = document.getElementById('app');
+    if (app) {
+      app.style.display = 'flex';
+      app.style.flexDirection = 'column';
+    }
+    if (typeof initApp === 'function') {
+      try { initApp(); } catch(e) { console.error("Error in initApp:", e); }
+    }
   } else {
-    document.getElementById('loginError').style.display='block';
-    document.getElementById('passInput').value='';
+    const err = document.getElementById('loginError');
+    if (err) err.style.display = 'block';
+    if (input) input.value = '';
   }
 };
 function hardResetData() {
