@@ -8675,7 +8675,30 @@ function clearGeminiMemory() {
 }
 
 function toggleGemini() {
-  toggleGeminiMic();
+  const micBtn = document.getElementById('geminiMicBtn');
+  const gBtn = document.getElementById('geminiBtn');
+  
+  if (isGeminiListening) {
+    if (recognition) {
+      try { recognition.stop(); } catch (e) {}
+    }
+    isGeminiListening = false;
+    if (micBtn) micBtn.classList.remove('listening');
+    if (gBtn) gBtn.classList.remove('listening');
+    showGeminiSpeechBubble("⚡ <strong>Procesando tu solicitud...</strong>", 0);
+    setTimeout(() => {
+      const input = document.getElementById('geminiTextInput');
+      if (input && input.value.trim() !== '') {
+        const textToSend = input.value.trim();
+        input.value = '';
+        processWithGemini(textToSend);
+      } else {
+        showGeminiSpeechBubble("🤔 No alcancé a escucharte bien. ¡Vuelve a intentarlo!", 4000);
+      }
+    }, 450);
+  } else {
+    toggleGeminiMic();
+  }
 }
 
 function toggleGeminiSidebar() {
@@ -9364,10 +9387,9 @@ function executeGeminiAction(action) {
         const inputNl = document.getElementById('fnBus_nl');
         if (inputNl) {
           inputNl.value = searchQuery;
-          inputNl.dispatchEvent(new Event('input', { bubbles: true }));
-        } else if (typeof fnSincronizar === 'function') {
-          fnSincronizar('nl');
-          if (typeof fnActualizarConteo === 'function') fnActualizarConteo('nl');
+        }
+        if (typeof fnActualizarConteo === 'function') {
+          fnActualizarConteo('nl');
         }
 
         toast(`Filtros aplicados al catálogo ✓`, 'success');
