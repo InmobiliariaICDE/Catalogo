@@ -9295,7 +9295,16 @@ function executeGeminiAction(action) {
             const filterKeys = ['tipoInmueble', 'zona', 'conjunto', 'barrio', 'ubicacion', 'piscina', 'cocina', 'habitaciones', 'garaje', 'pisos'];
             filterKeys.forEach(k => {
               if (action[k]) {
-                const vals = Array.isArray(action[k]) ? action[k].map(String) : [String(action[k])];
+                let vals = Array.isArray(action[k]) ? action[k].map(String) : [String(action[k])];
+                // Normalizar sinónimos de tipoInmueble (ej: "Edificio" -> "Edificio rentable")
+                if (k === 'tipoInmueble' && typeof getUniqueVals === 'function') {
+                  const disponibles = getUniqueVals('Tipo de inmueble');
+                  vals = vals.map(v => {
+                    const normV = norm(v);
+                    const match = disponibles.find(d => norm(d) === normV || (normV.includes('edificio') && norm(d).includes('edificio')));
+                    return match || v;
+                  });
+                }
                 st[k] = vals;
               }
             });
