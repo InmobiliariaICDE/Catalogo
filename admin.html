@@ -16703,15 +16703,21 @@ function contGetParaAno(year) {
     const monthsNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
     adminData.properties.forEach(p => {
       const rent = parseFloat(p.monthly_rent) || 0;
-      const comVal = rent * 0.10;
-      if (comVal <= 0) return;
-      
       const paymentsYear = (p.payments && p.payments[year]) ? p.payments[year] : [];
       paymentsYear.forEach(m => {
         const mIdx = monthsNames.indexOf(m.month.toUpperCase());
         if (mIdx !== -1) {
           const st = m.status;
+          const val = parseFloat(m.value) || 0;
+          let recaudado = 0;
           if (st === 'PAID') {
+            recaudado = val > 0 ? val : rent;
+          } else if (['PREAVISO', 'NEW_CONTRACT', 'NO_RENEW', 'AL_DIA', 'DELIVERY'].includes(st)) {
+            if (val > 0) recaudado = val;
+          }
+
+          const comVal = recaudado * 0.10;
+          if (comVal > 0) {
             const propName = p.name || 'Propiedad';
             const mIdx1Based = mIdx + 1;
             lista.push({
