@@ -9037,10 +9037,6 @@ function toggleGeminiMic() {
       showGeminiSpeechBubble(sugerenciasHtml, 12000);
       finalTranscript = '';
       setGeminiEmotion('saludo');
-    };
-
-    let silenceTimer = null;
-
     recognition.onresult = (e) => {
       let interimTranscript = '';
       for (let i = e.resultIndex; i < e.results.length; ++i) {
@@ -9055,23 +9051,14 @@ function toggleGeminiMic() {
       if (input) {
         input.value = text;
       }
-      // Show transcribed text in speech bubble in real-time
-      showGeminiSpeechBubble(`🎙️ <em>"${text}"</em>`, 0);
-
-      // Reiniciar temporizador de silencio (espera 2.5 segundos de silencio antes de procesar)
-      if (silenceTimer) clearTimeout(silenceTimer);
-      silenceTimer = setTimeout(() => {
-        if (isGeminiListening && input && input.value.trim() !== '') {
-          if (recognition) recognition.stop();
-        }
-      }, 2500);
+      // Mostrar texto transcrito en vivo en el bocadillo de diálogo
+      showGeminiSpeechBubble(`🎙️ <em>"${text}"</em><br><br><span style="font-size:10.5px; opacity:0.85; color:var(--gold);">👇 Toca al muñequito cuando termines de hablar para buscar</span>`, 0);
     };
 
     recognition.onerror = (err) => {
       console.error('Speech recognition error:', err);
-      if (silenceTimer) clearTimeout(silenceTimer);
       if (err.error === 'no-speech' && isGeminiListening) {
-        // En móviles, si no detecta voz momentáneamente, no cortar bruscamente
+        // Ignorar pausas prolongadas para que no se cierre la grabación
         return;
       }
       toast('Micrófono inactivo o sin señal', 'warning');
@@ -9082,12 +9069,10 @@ function toggleGeminiMic() {
     };
 
     recognition.onend = () => {
-      if (silenceTimer) clearTimeout(silenceTimer);
       const input = document.getElementById('geminiTextInput');
-      const textValue = input ? input.value.trim() : '';
-
-      // Si se detuvo por pausa natural pero el usuario aún no ha terminado o no hay texto suficiente, reiniciar si sigue activo
-      if (isGeminiListening && !textValue) {
+      
+      // Si el navegador intenta cerrar la grabación por inactividad pero el usuario NO ha presionado el botón para enviar, REINICIAR continuamente
+      if (isGeminiListening) {
         try {
           recognition.start();
           return;
@@ -9096,17 +9081,6 @@ function toggleGeminiMic() {
 
       micBtn.classList.remove('listening');
       if (gBtn) gBtn.classList.remove('listening');
-      
-      if (isGeminiListening) {
-        isGeminiListening = false;
-        showGeminiSpeechBubble("⚡ <strong>Procesando tu solicitud...</strong>", 0);
-        if (input && textValue !== '') {
-          input.value = '';
-          processWithGemini(textValue);
-        } else {
-          showGeminiSpeechBubble("🤔 No alcancé a escucharte bien. ¡Vuelve a intentarlo!", 4000);
-        }
-      }
     };
 
     recognition.start();
