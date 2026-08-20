@@ -3727,7 +3727,7 @@ function filtrarProps(f, returnAllIfEmpty = true, incluirVirtuales = false){
       const txt = norm(bus);
       const cleanTxt = norm(bus.replace(/^0+/, '')); // e.g., "038" -> "38"
       const codStr = String(d['Código'] || d['Cdigo'] || '');
-      const combinado = norm((d['Nombre']||'') + ' ' + codStr + ' ' + (d['Zona']||'') + ' ' + (d['Barrio']||'') + ' ' + (d['Descripción']||'') + ' ' + (d['Puntos Clave']||''));
+      const combinado = norm((d['Nombre']||'') + ' ' + codStr + ' ' + (d['Tipo de inmueble']||'') + ' ' + (d['Zona']||'') + ' ' + (d['Barrio']||'') + ' ' + (d['Conjunto']||'') + ' ' + (d['Ubicación']||'') + ' ' + (d['Descripción']||'') + ' ' + (d['Puntos Clave']||''));
       const matchesRaw = combinado.includes(txt) || codStr.toLowerCase().includes(txt.toLowerCase());
       const matchesClean = combinado.includes(cleanTxt) || codStr.toLowerCase().includes(cleanTxt.toLowerCase());
       if(!matchesRaw && !matchesClean) return false;
@@ -9128,10 +9128,10 @@ REGLAS DE ORO DE COHERENCIA (CLASIFICACIÓN ESTRICTA):
     * "celular" (teléfono/celular de contacto)
     * "notes" o "notas" (cualquier detalle u observación de la cita)
 - "BUSCAR_PROPIEDADES": Si quiere buscar o filtrar inmuebles en el catálogo (ej: "busca casas en conjunto", "apartamentos en conjunto cerrado", "casas de 3 habitaciones en el norte con piscina", "inmuebles en Ipanema"). Parámetros:
-    * "query": texto o término libre de búsqueda si no encaja en una propiedad estructurada (DEBES dejarlo vacío si los filtros específicos capturan la intención, o poner términos como "conjunto", "cerrado", nombre de barrio, etc.)
+    * "query": texto o término libre de búsqueda. IMPORTANTE: Si el usuario dice "en conjunto", "conjunto cerrado" o busca un nombre de conjunto sin especificar un valor exacto del filtro, DEBES colocar "conjunto" o el término en "query" (ej: "conjunto") y DEJAR el parámetro "conjunto" VACÍO. Solo usa el parámetro "conjunto" si se trata del nombre propio de un conjunto (ej: ["Residencial Sevilla"]).
     * "tipoInmueble": array de strings con el tipo (ej: ["Casa"], ["Apartamento"], ["Lote"])
     * "zona": array de strings (ej: ["Norte"], ["Sur"], ["Oriente"], ["Occidente"], ["Centro"])
-    * "conjunto": array de strings si especificó conjunto o conjunto cerrado (ej: ["Sí"], ["Conjunto Cerrado"], o nombres de conjuntos específicos)
+    * "conjunto": array de strings únicamente si especificó el NOMBRE exacto del conjunto (ej: ["San Juan"]). De lo contrario déjalo vacío.
     * "barrio": array de strings si especificó barrio o sector (ej: ["Ipanema"], ["Sevilla"])
     * "ubicacion": array de strings si especificó ubicación (ej: ["Urbana"], ["Campestre"])
     * "piscina": array de strings si especificó piscina (ej: ["Sí"])
