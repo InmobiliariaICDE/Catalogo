@@ -9016,6 +9016,8 @@ function toggleGeminiMic() {
       setGeminiEmotion('saludo');
     };
 
+    let silenceTimer = null;
+
     recognition.onresult = (e) => {
       let interimTranscript = '';
       for (let i = e.resultIndex; i < e.results.length; ++i) {
@@ -9032,10 +9034,23 @@ function toggleGeminiMic() {
       }
       // Show transcribed text in speech bubble in real-time
       showGeminiSpeechBubble(`🎙️ <em>"${text}"</em>`, 0);
+
+      // Reiniciar temporizador de silencio (espera 2.5 segundos de silencio antes de procesar)
+      if (silenceTimer) clearTimeout(silenceTimer);
+      silenceTimer = setTimeout(() => {
+        if (isGeminiListening && input && input.value.trim() !== '') {
+          if (recognition) recognition.stop();
+        }
+      }, 2500);
     };
 
     recognition.onerror = (err) => {
       console.error('Speech recognition error:', err);
+      if (silenceTimer) clearTimeout(silenceTimer);
+      if (err.error === 'no-speech' && isGeminiListening) {
+        // En móviles, si no detecta voz momentáneamente, no cortar bruscamente
+        return;
+      }
       toast('Micrófono inactivo o sin señal', 'warning');
       micBtn.classList.remove('listening');
       if (gBtn) gBtn.classList.remove('listening');
@@ -9044,18 +9059,27 @@ function toggleGeminiMic() {
     };
 
     recognition.onend = () => {
+      if (silenceTimer) clearTimeout(silenceTimer);
+      const input = document.getElementById('geminiTextInput');
+      const textValue = input ? input.value.trim() : '';
+
+      // Si se detuvo por pausa natural pero el usuario aún no ha terminado o no hay texto suficiente, reiniciar si sigue activo
+      if (isGeminiListening && !textValue) {
+        try {
+          recognition.start();
+          return;
+        } catch (e) {}
+      }
+
       micBtn.classList.remove('listening');
       if (gBtn) gBtn.classList.remove('listening');
       
-      // If ended automatically while still listening, let's process!
       if (isGeminiListening) {
         isGeminiListening = false;
         showGeminiSpeechBubble("⚡ <strong>Procesando tu solicitud...</strong>", 0);
-        const input = document.getElementById('geminiTextInput');
-        if (input && input.value.trim() !== '') {
-          const textToSend = input.value.trim();
+        if (input && textValue !== '') {
           input.value = '';
-          processWithGemini(textToSend);
+          processWithGemini(textValue);
         } else {
           showGeminiSpeechBubble("🤔 No alcancé a escucharte bien. ¡Vuelve a intentarlo!", 4000);
         }
