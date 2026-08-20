@@ -3721,12 +3721,29 @@ function filtrarProps(f, returnAllIfEmpty = true, incluirVirtuales = false){
       if(f.maxPrice !== null && p > f.maxPrice) return false;
     }
 
-    // 3. Búsqueda de Texto (Soporta códigos numéricos con ceros a la izquierda)
+    // 3. Búsqueda de Texto (Prioriza coincidencia exacta de código si se busca un código numérico)
     const bus = f.buscar || f.buscarVal;
     if(bus){
+      const rawTrim = bus.trim();
+      const codStr = String(d['Código'] || d['Cdigo'] || '').trim();
+      const codClean = codStr.replace(/^0+/, '');
+      const rawClean = rawTrim.replace(/^0+/, '');
+
+      // Si el término introducido es un número o código (ej: "038", "38")
+      if (/^\d+$/.test(rawTrim)) {
+        if (codStr.toLowerCase() === rawTrim.toLowerCase() || (rawClean && codClean === rawClean)) {
+          return true;
+        }
+        // Si existe un código exactamente idéntico en el catálogo, descartar coincidencias parciales (evita mostrar 1384 o 6386 si se busca 038)
+        const existeCodigoExacto = baseProps.some(item => {
+          const c = String(item['Código'] || item['Cdigo'] || '').trim();
+          return c.toLowerCase() === rawTrim.toLowerCase() || (rawClean && c.replace(/^0+/, '') === rawClean);
+        });
+        if (existeCodigoExacto) return false;
+      }
+
       const txt = norm(bus);
       const cleanTxt = norm(bus.replace(/^0+/, '')); // e.g., "038" -> "38"
-      const codStr = String(d['Código'] || d['Cdigo'] || '');
       const combinado = norm((d['Nombre']||'') + ' ' + codStr + ' ' + (d['Tipo de inmueble']||'') + ' ' + (d['Zona']||'') + ' ' + (d['Barrio']||'') + ' ' + (d['Conjunto']||'') + ' ' + (d['Ubicación']||'') + ' ' + (d['Descripción']||'') + ' ' + (d['Puntos Clave']||''));
       const matchesRaw = combinado.includes(txt) || codStr.toLowerCase().includes(txt.toLowerCase());
       const matchesClean = combinado.includes(cleanTxt) || codStr.toLowerCase().includes(cleanTxt.toLowerCase());
@@ -9118,16 +9135,9 @@ REGLAS DE ORO DE COHERENCIA (CLASIFICACIÓN ESTRICTA):
     * "filterType": "hoy", "semana", "mes", o "todas"
     * "fecha": fecha específica en YYYY-MM-DD si pidió un día concreto (Hoy es ${todayStr})
     * "query": nombre de cliente si busca a alguien en particular (opcional)
-- "ABRIR_PROPIEDAD_MODAL": Si el usuario pide explícitamente ver los detalles o la ficha de una casa/apartamento específica (ej: "dame información de la casa 102", "abre la ficha del inmueble 038", "muestra el apartamento 301"). Parámetros:
-    * "codigo": el código exacto de la propiedad (ej: "102", "038")
-- "AGENDAR_CITA_PREVIEW": Si el usuario expresa el deseo explícito de agendar, registrar, programar o reservar una cita/visita física de un cliente. Parámetros:
-    * "codigo" (el código del inmueble, p. ej. "102")
-    * "fecha" (en formato YYYY-MM-DD. Hoy es ${todayStr}. Si el usuario dice un día relativo como "el lunes", calcula la fecha correspondiente a partir de hoy)
-    * "hora" (en formato HH:mm, ej. "16:00")
-    * "cliente" (nombre de la persona)
-    * "celular" (teléfono/celular de contacto)
-    * "notes" o "notas" (cualquier detalle u observación de la cita)
-- "BUSCAR_PROPIEDADES": Si quiere buscar o filtrar inmuebles en el catálogo (ej: "busca edificios", "casas en conjunto", "apartamentos en conjunto", "edificios rentables", "casas de 3 habitaciones"). Parámetros:
+- "ABRIR_PROPIEDAD_MODAL": Si el usuario menciona un código de inmueble o pide ver los detalles/información de una propiedad (ej: "038", "102", "busca la 038", "dame información de la casa 102", "abre la ficha del inmueble 038", "muestra el apartamento 301"). Parámetros:
+    * "codigo": el código exacto de la propiedad (ej: "038", "102")
+- "BUSCAR_PROPIEDADES": Si quiere buscar o filtrar inmuebles por características (ej: "busca edificios", "casas en conjunto", "apartamentos en conjunto", "edificios rentables", "casas de 3 habitaciones"). IMPORTANTE: Si el usuario especificó un código de propiedad exacto (ej: "038"), USA ABRIR_PROPIEDAD_MODAL en lugar de BUSCAR_PROPIEDADES. Parámetros:
     * "query": término libre de búsqueda si especifica un código o texto general (ej: "038", "Ipanema"). Si la intención queda cubierta por tipoInmueble, zona o cualquier filtro específico, DEJA "query" VACÍO.
     * "tipoInmueble": array de strings. IMPORTANTE: Revisa los valores EXACTOS del catálogo: "Edificio rentable", "Edificio", "Casa en conjunto", "Apartamento en conjunto", "Casa campestre en conjunto", "Casa", "Apartamento", "Casa campestre", "Casa lote", "Casa rentable", "Finca", "Local", "Lote", "Lote campestre en conjunto", etc. Si el usuario pide "edificios" o "edificio rentable", DEBES poner "tipoInmueble": ["Edificio rentable"]. Si pide "casas en conjunto", pon ["Casa en conjunto"].
     * "zona": array de strings (ej: ["Norte"], ["Sur"], ["Oriente"], ["Occidente"], ["Centro"])
