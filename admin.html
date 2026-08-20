@@ -9127,12 +9127,18 @@ REGLAS DE ORO DE COHERENCIA (CLASIFICACIÓN ESTRICTA):
     * "cliente" (nombre de la persona)
     * "celular" (teléfono/celular de contacto)
     * "notes" o "notas" (cualquier detalle u observación de la cita)
-- "BUSCAR_PROPIEDADES": Si quiere buscar o filtrar inmuebles en el catálogo (ej: "busca apartamentos en el norte", "casas de 3 habitaciones", "inmuebles en Ipanema", "casas con garaje", "apartamentos de 200 a 400 millones"). Parámetros:
-    * "query": texto general de búsqueda (ej: "norte", "Ipanema")
-    * "tipoInmueble": array de strings si especificó tipo (ej: ["Apartamento"], ["Casa"])
-    * "zona": array de strings si especificó zona (ej: ["Norte"], ["Sur"], ["Oriente"])
-    * "habitaciones": array de strings/números si especificó habitaciones (ej: ["3"])
-    * "garaje": array de strings/números si especificó garaje (ej: ["1"])
+- "BUSCAR_PROPIEDADES": Si quiere buscar o filtrar inmuebles en el catálogo (ej: "busca casas en conjunto", "apartamentos en conjunto cerrado", "casas de 3 habitaciones en el norte con piscina", "inmuebles en Ipanema"). Parámetros:
+    * "query": texto o término libre de búsqueda si no encaja en una propiedad estructurada (DEBES dejarlo vacío si los filtros específicos capturan la intención, o poner términos como "conjunto", "cerrado", nombre de barrio, etc.)
+    * "tipoInmueble": array de strings con el tipo (ej: ["Casa"], ["Apartamento"], ["Lote"])
+    * "zona": array de strings (ej: ["Norte"], ["Sur"], ["Oriente"], ["Occidente"], ["Centro"])
+    * "conjunto": array de strings si especificó conjunto o conjunto cerrado (ej: ["Sí"], ["Conjunto Cerrado"], o nombres de conjuntos específicos)
+    * "barrio": array de strings si especificó barrio o sector (ej: ["Ipanema"], ["Sevilla"])
+    * "ubicacion": array de strings si especificó ubicación (ej: ["Urbana"], ["Campestre"])
+    * "piscina": array de strings si especificó piscina (ej: ["Sí"])
+    * "cocina": array de strings si especificó tipo de cocina (ej: ["Integral"])
+    * "habitaciones": array de strings/números (ej: ["3"])
+    * "garaje": array de strings/números (ej: ["1"])
+    * "pisos": array de strings/números (ej: ["2"])
     * "minPrice": número si especificó precio mínimo
     * "maxPrice": número si especificó precio máximo
 - "BUSCAR_LEADS": Si quiere buscar o filtrar leads/clientes en el sistema (ej: "busca al cliente Juan", "dame información del lead Carlos"). Parámetros:
@@ -9286,10 +9292,13 @@ function executeGeminiAction(action) {
         if (typeof getFSt === 'function') {
           const st = getFSt('nl');
           if (st) {
-            if (action.tipoInmueble && Array.isArray(action.tipoInmueble)) st.tipoInmueble = action.tipoInmueble;
-            if (action.zona && Array.isArray(action.zona)) st.zona = action.zona;
-            if (action.habitaciones && Array.isArray(action.habitaciones)) st.habitaciones = action.habitaciones.map(String);
-            if (action.garaje && Array.isArray(action.garaje)) st.garaje = action.garaje.map(String);
+            const filterKeys = ['tipoInmueble', 'zona', 'conjunto', 'barrio', 'ubicacion', 'piscina', 'cocina', 'habitaciones', 'garaje', 'pisos'];
+            filterKeys.forEach(k => {
+              if (action[k]) {
+                const vals = Array.isArray(action[k]) ? action[k].map(String) : [String(action[k])];
+                st[k] = vals;
+              }
+            });
             if (action.minPrice) st.minPrice = Number(action.minPrice);
             if (action.maxPrice) st.maxPrice = Number(action.maxPrice);
 
