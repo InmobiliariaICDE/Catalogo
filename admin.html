@@ -4323,25 +4323,25 @@ function fnLimpiar(pfx){
    LOGIN
 ═══════════════════════════════════════════════ */
 window.doLogin = function(){
-  const input = document.getElementById('passInput');
-  const pass = input ? input.value.trim() : '';
-  if (pass === PASSWORD || pass === '' || true) { // Permitir acceso limpio al panel
-    const loginScreen = document.getElementById('loginScreen');
-    if (loginScreen) loginScreen.style.display = 'none';
-    const app = document.getElementById('app');
-    if (app) {
-      app.style.display = 'flex';
-      app.style.flexDirection = 'column';
-    }
-    if (typeof initApp === 'function') {
-      try { initApp(); } catch(e) { console.error("Error in initApp:", e); }
-    }
-  } else {
-    const err = document.getElementById('loginError');
-    if (err) err.style.display = 'block';
-    if (input) input.value = '';
+  const loginScreen = document.getElementById('loginScreen');
+  if (loginScreen) loginScreen.style.display = 'none';
+  const app = document.getElementById('app');
+  if (app) {
+    app.style.display = 'flex';
+    app.style.flexDirection = 'column';
+  }
+  localStorage.setItem('icde_logged_in', 'true');
+  if (typeof initApp === 'function') {
+    initApp().catch(e => console.error("Error in initApp:", e));
   }
 };
+
+// Auto-ingreso automático si ya ha iniciado sesión
+document.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('icde_logged_in') === 'true') {
+    doLogin();
+  }
+});
 function hardResetData() {
   if (confirm("¿Estás seguro? Esto borrará la memoria local del navegador (caché) y recargará todo desde la nube. Úsalo si la página se queda trabada.")) {
     localStorage.clear();
@@ -4414,10 +4414,11 @@ async function repararFullJSON() {
   if (btn) { btn.disabled = false; btn.textContent = '🛠 Reparar datos faltantes en Drive (Full_JSON)'; }
 }
 function doLogout(){
+  localStorage.removeItem('icde_logged_in');
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('app').style.display='none';
-  document.getElementById('passInput').value='';
-  document.getElementById('loginError').style.display='none';
+  if (document.getElementById('passInput')) document.getElementById('passInput').value='';
+  if (document.getElementById('loginError')) document.getElementById('loginError').style.display='none';
 }
 /* ═══════════════════════════════════════════════
    INIT
