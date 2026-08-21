@@ -1,0 +1,1003 @@
+<html><head><script>
+/* ═══════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════ */
+const PASSWORD = 'icde2024';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxki98uXR_fXbFCPynfzvQN5ibiwQY23zKpLkLKTL7A26GlipdC20oQTKOrUwAMeIJ2gw/exec?action=getData';
+// CRM URL apunta al mismo script nuevo que maneja getData, getLeads, getCitas, etc.
+const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvZg9LqnWm1n1iXe3eFgj-PtUbKTumrIJdA8BnJXpH9H4e8OXJcC7-fpmhbQJA5TvX/exec';
+const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAUUSYRhDX6Eik4KA-B6luk74YjCNRanwv13CmmZg4La8NzVuNyBC0T5GH6f4-ke-Xig/exec';
+let CONT_SCRIPT_URL = (JSON.parse(localStorage.getItem('icde_settings') || '{}')).contScriptUrl || '';
+if (CONT_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbyeB0qDF-22AjG5wArRz5x89K6wOdGwTSBqcGqNlphDzARXFAhQ2x6GwoJ_7nfR_5qNEQ/exec" || !CONT_SCRIPT_URL) {
+  CONT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbznGQYcowGcuVOqGXhfZmeKRWHBoJmoUzoOOry-Uzbkv_qXvO1duZYxvPiNjdJB1IPyyg/exec';
+}
+
+
+
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+let deletedLeads = [];
+localStorage.removeItem('icde_deleted_leads');
+localStorage.removeItem('icde_deleted_phones');
+localStorage.removeItem('icde_leads');
+let allProps = [];
+let leads = []; // Fuente de verdad: solo la nube. Se carga en cargarLeads() al inicio.
+let pendingWriteUntil = 0; // Timestamp hasta el que el autoSync no debe sobreescribir datos locales
+async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
+  try {
+    let leadsUnicos = [];
+    let telefonosVistos = new Map();
+    let idsParaBorrarDeNube = [];
+    let huboCambio = false;
+
+    // Ordenar leads: más recientes o con más info primero
+    // Obtener teléfonos eliminados para bloquearlos
+    let deletedPhones = [];
+
+    // Filtrar leads que correspondan a teléfonos eliminados o IDs eliminados
+    leads = leads.filter(l => {
+      if (l.id === 'LEAD-AGENDA-GLOBAL') return true;
+      
+      // Filtrar por ID eliminado
+      if (l.id && deletedLeads.includes(String(l.id).trim())) {
+        huboCambio = true;
+        if (!String(l.id).startsWith('U-')) {
+          idsParaBorrarDeNube.push(l.id);
+        }
+        return false;
+      }
+
+      let telLimpio = String(l.celular || '').replace(/\D/g, '');
+      if (telLimpio && deletedPhones.includes(telLimpio)) {
+        huboCambio = true;
+        if (l.id && !String(l.id).startsWith('U-')) {
+          idsParaBorrarDeNube.push(l.id);
+        }
+        return false;
+      }
+      return true;
+    });
+
+    // Ordenar leads: preferir los que NO empiezan con U- (prioridad ID de la nube C-)
+    // y luego los más recientes
+    leads.sort((a, b) => {
+      const isA_U = String(a.id || '').startsWith('U-');
+      const isB_U = String(b.id || '').startsWith('U-');
+      if (isA_U !== isB_U) {
+        return isA_U ? 1 : -1;
+      }
+      let tA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
+      let tB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
+      return tB - tA;
+    });
+
+    leads.forEach(l => {
+      if (l.id === 'LEAD-AGENDA-GLOBAL') {
+        leadsUnicos.push(l);
+        return;
+      }
+      let telLimpio = String(l.celular || '').replace(/\D/g, '');
+      if (telLimpio === '') {
+        leadsUnicos.push(l);
+        return;
+      }
+
+      if (!telefonosVistos.has(telLimpio)) {
+        telefonosVistos.set(telLimpio, l);
+        leadsUnicos.push(l);
+      } else {
+        // Es un duplicado! Fusionar con el principal
+        let principal = telefonosVistos.get(telLimpio);
+        huboCambio = true;
+
+        // Fusionar visitas
+        if (l.visitas && l.visitas.length) {
+          if (typeof mergeVisitas === 'function') {
+            principal.visitas = mergeVisitas(principal.visitas, l.visitas);
+          } else {
+            const combined = [...(principal.visitas || []), ...(l.visitas || [])];
+            const seen = new Set();
+            principal.visitas = combined.filter(v => {
+              const k = (v.codigo || '') + '-' + (v.fecha || '');
+              if (seen.has(k)) return false;
+              seen.add(k);
+              return true;
+            });
+          }
+        }
+
+        // Fusionar historial de envíos
+        const combinedHist = [...(principal.historialEnvios || []), ...(l.historialEnvios || [])];
+        const seenHist = new Set();
+        principal.historialEnvios = combinedHist.filter(h => {
+          const key = (h.fecha || '') + (h.codigo || '');
+          if (seenHist.has(key)) return false;
+          seenHist.add(key);
+          return true;
+        });
+
+        // Fusionar propiedades enviadas
+        principal.propsEnviadas = Array.from(new Set([...(principal.propsEnviadas || []), ...(l.propsEnviadas || [])]));
+
+        // Fusionar notas si el principal no tiene
+        if (!principal.notes && l.notes) {
+          principal.notas = l.notes;
+        } else if (!principal.notas && l.notas) {
+          principal.notas = l.notas;
+        }
+
+        // Añadir ID duplicado a la lista para borrar de la nube
+        if (l.id && !String(l.id).startsWith('U-')) {
+          idsParaBorrarDeNube.push(l.id);
+        }
+      }
+    });
+
+    if (huboCambio || leads.length !== leadsUnicos.length) {
+      leads = leadsUnicos;
+      
+      if (typeof rebuildCitas === 'function') rebuildCitas();
+      
+      // Renderizar la pestaña actual si corresponde
+      if (typeof currentTab !== 'undefined') {
+        if (currentTab === 'leads' && typeof renderLeadsBody === 'function') renderLeadsBody(leads);
+        if (currentTab === 'citas' && typeof renderCitas === 'function') renderCitas();
+      }
+
+      // Borrar de la nube de forma silenciosa
+      if (forceCloudDelete && idsParaBorrarDeNube.length > 0 && typeof CRM_SCRIPT_URL !== 'undefined' && CRM_SCRIPT_URL) {
+        console.log("Borrando duplicados de la nube:", idsParaBorrarDeNube);
+        for (let id of idsParaBorrarDeNube) {
+          try {
+            fetch(CRM_SCRIPT_URL + '?action=deleteLead&id=' + encodeURIComponent(id) + '&t=' + Date.now());
+          } catch (e) {
+            console.error("Error al borrar duplicado de la nube:", id, e);
+          }
+        }
+      }
+      return true;
+    }
+  } catch(e) {
+    console.error("Error en limpieza profunda de duplicados:", e);
+  }
+  return false;
+}
+
+try {
+  limpiarYFusionarDuplicados(true);
+} catch(e) { console.error("Error deduplicando inicial:", e); }
+let citas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
+if (!Array.isArray(citas)) citas = []; // Ensure it's always an array
+let settings = JSON.parse(localStorage.getItem('icde_settings') || '{}');
+if (!settings.geminiKey) {
+  settings.geminiKey = "xai-Q8AGm6yQ4IMYjHGX7Wen3dxavFgmUSjJIDjwW23jVKebh2tzOAbqFecBEMlVSLeKVgdNEzKTNxL67rGe";
+}
+if (!settings.elevenlabsKey) {
+  settings.elevenlabsKey = "";
+}
+if (settings.contScriptUrl === "https://script.google.com/macros/s/AKfycbyeB0qDF-22AjG5wArRz5x89K6wOdGwTSBqcGqNlphDzARXFAhQ2x6GwoJ_7nfR_5qNEQ/exec" || !settings.contScriptUrl) {
+  settings.contScriptUrl = "https://script.google.com/macros/s/AKfycbznGQYcowGcuVOqGXhfZmeKRWHBoJmoUzoOOry-Uzbkv_qXvO1duZYxvPiNjdJB1IPyyg/exec";
+  localStorage.setItem('icde_settings', JSON.stringify(settings));
+}
+
+
+let currentTab = 'nuevo';
+let selectedProps = [];
+let currentLeadId = null;
+let visitaLeadId = null;
+let envioLeadId = null;
+let envioLote = [];
+let tempFiltros = {};
+let leadViewMode = localStorage.getItem('icde_lead_view') || 'table';
+let searchTermLeads = '';
+let currentLeadFilter = 'todos';
+let nlPage = 0;
+const PAGE_SIZE = 20;
+let criterioOrden = ''; // Default sort (no filter)
+let nlShowData = false; // Por defecto recogido para optimizar espacio
+let MAX_CATALOG_PRICE = 5000000000; // Valor por defecto
+let kmzProps = [];
+let kmzCategories = [];
+let activeKmzCategories = [];
+let mapViewportFilterActive = false; 
+
+
+/* ═══════════════════════════════════════════════
+   HELPERS & UTILS
+═══════════════════════════════════════════════ */
+
+let citasViewMode = localStorage.getItem('icde_citas_view') || 'lista';
+let calDate = new Date();
+let searchTermCitas = '';
+let citasActiveFilterType = 'todas';
+let citasActiveFilterValue = '';
+
+// Helper de normalización global para evitar duplicados por acentos, mayúsculas, espacios, puntos o caracteres especiales
+const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, "").replace(/\s+/g, " ").trim();
+
+function freshLead(){
+  return {
+    tipo:'cliente', nombre:'', celular:'', notas:'', metodoPago:[], estado:'enviando', etiqueta:'activo',
+    buscar:'', filtros:{tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[]},
+    frecuencia:'semanal', maxPorEnvio:4, nombreInmobiliaria:'', nombreAgente:'',
+    propsFiltradas:[], propsEnviadas:[], proximosEnvios:[], historialEnvios:[], visitas:[]
+  };
+}
+let nuevoLead = freshLead();
+
+/* ═══════════════════════════════════════════════
+   SISTEMA DE FILTROS — IDÉNTICO AL INDEX.HTML
+═══════════════════════════════════════════════ */
+const FCAMPOS = [
+  { key:'tipoInmueble', campo:'Tipo de inmueble', lbl:'Tipo de inmueble',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>' },
+  { key:'rangoPrecio', campo:'Rango de precio', lbl:'Precio', slider: true,
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' },
+  { key:'zona', campo:'Zona', lbl:'Zona',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>' },
+  { key:'habitaciones', campo:'Habitaciones', lbl:'Habitaciones', num:true,
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h18M3 12V7a1 1 0 011-1h4a1 1 0 011 1v5M3 12v5h18v-5"/><path d="M13 6h4a1 1 0 011 1v5"/></svg>' },
+  { key:'garaje', campo:'Garaje', lbl:'Garaje', num:true,
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' },
+  { key:'pisos', campo:'Pisos', lbl:'Pisos', num:true,
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="18" rx="1"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/><line x1="8" y1="3" x2="8" y2="21"/></svg>' },
+  { key:'ubicacion', campo:'Ubicación', lbl:'Ubicación',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>' },
+  { key:'piscina', campo:'Piscina', lbl:'Piscina',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 6c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1c.6-.5 1.2-1 2.5-1s1.9.5 2.5 1c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1"/><path d="M2 12c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1c.6-.5 1.2-1 2.5-1s1.9.5 2.5 1c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1"/><path d="M2 18c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1c.6-.5 1.2-1 2.5-1s1.9.5 2.5 1c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1"/></svg>' },
+  { key:'cocina', campo:'Cocina', lbl:'Cocina',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 13.8V4a2 2 0 012-2h4a2 2 0 012 2v9.8a3 3 0 11-8 0z"/><path d="M9 22v-4M15 22v-4"/><path d="M18 5v10a2 2 0 01-2 2h-1"/></svg>' },
+
+  { key:'barrio', campo:'Barrio', lbl:'Barrio',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21v-4a4 4 0 118 0v4M13 21v-7a4 4 0 118 0v7M2 21h20"/></svg>' },
+  { key:'conjunto', campo:'Conjunto', lbl:'Conjunto',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V9l9-7 9 7v12M9 21v-6h6v6"/></svg>' }
+];
+
+
+
+// Estado por prefijo
+const _fst = {};
+function getFSt(pfx){ return _fst[pfx] || (_fst[pfx] = {}); }
+function setFSt(pfx, obj){ _fst[pfx] = JSON.parse(JSON.stringify(obj)); }
+
+function getUniqueVals(campo){
+  const consolidated = new Map();
+  // Filtramos isKmzOnly para que el menú de filtros solo muestre datos reales del catálogo Excel
+  allProps.filter(d => !d.isKmzOnly).forEach(d => {
+    const raw = String(d[campo] || "").trim();
+    if (!raw) return;
+    const n = norm(raw);
+    if (!consolidated.has(n)) {
+      consolidated.set(n, raw); 
+    }
+  });
+  return Array.from(consolidated.values()).sort((a,b) => a.localeCompare(b));
+}
+function getUniqueNums(campo){
+  const nums = allProps.filter(d => !d.isKmzOnly).map(d => {
+    const v = String(d[campo] || "").trim();
+    return v === "" ? NaN : Number(v);
+  }).filter(v => !isNaN(v));
+  return [...new Set(nums)].sort((a,b) => a - b).map(String);
+}
+function filtrarProps(f, returnAllIfEmpty = true, incluirVirtuales = false){
+  const parseP = txt => parseFloat(String(txt || "").replace(/[^\d]/g, "")) || 0;
+  
+  if(!f) return allProps.filter(d => !d.isKmzOnly);
+
+  // Filtrado base por estado de mapa y flag de incluir virtuales
+  let base = allProps;
+  if (!incluirVirtuales) {
+    // Si no se solicitan virtuales, solo mostramos las propiedades reales del catálogo Excel
+    base = allProps.filter(d => !d.isKmzOnly);
+  } else {
+    // Si se solicitan virtuales, los incluimos SOLO si el mapa está abierto y pertenecen a categorías activas
+    if (f.mapActive) {
+      const activeCatNorms = activeKmzCategories.map(c => norm(c));
+      base = allProps.filter(d => {
+        if (!d.isKmzOnly) return true; // Siempre incluir catálogo principal
+        if (!activeKmzCategories.length) return false; // Si no hay categorías activas, excluir todo KMZ-only
+        const cat = String(d['_kmzCategory'] || '').trim();
+        if (!cat) return false; // KMZ-only sin categoría: excluir
+        return activeCatNorms.includes(norm(cat));
+      });
+    } else {
+      base = allProps.filter(d => !d.isKmzOnly);
+    }
+  }
+
+  // Si el filtro está "vacío" (no hay nada seleccionado en ningún lado)
+  // Para kmzCategory, lo consideramos "vacío" (sin filtrar) solo si contiene todas las categorías disponibles
+  const hasCategoryFilter = f.kmzCategory && Array.isArray(f.kmzCategory) && f.kmzCategory.length < kmzCategories.length;
+  const isDestacadas = (criterioOrden === 'destacadas');
+  const isEmpty = !f.buscar && !f.minPrice && !f.maxPrice && !Object.values(f).some(v => Array.isArray(v) && v.length > 0 && v !== f.kmzCategory) && !hasCategoryFilter && !isDestacadas;
+  
+  if(isEmpty) return ordenarLista([...base]);
+
+  const filtered = base.filter(d=>{
+    // 1. Categorías (Multi-select)
+    if(f.tipoInmueble?.length && !f.tipoInmueble.some(v => norm(v) === norm(d['Tipo de inmueble']))) return false;
+    if(f.zona?.length         && !f.zona.some(v => norm(v) === norm(d['Zona'])))                     return false;
+    if(f.habitaciones?.length && !f.habitaciones.includes(String(d['Habitaciones'] || "").trim()))     return false;
+    if(f.garaje?.length       && !f.garaje.includes(String(d['Garaje'] || "").trim()))             return false;
+    if(f.pisos?.length        && !f.pisos.includes(String(d['Pisos'] || "").trim()))               return false;
+    if(f.ubicacion?.length    && !f.ubicacion.includes(String(d['Ubicación'] || "").trim()))       return false;
+    if(f.piscina?.length      && !f.piscina.includes(String(d['Piscina'] || "").trim()))           return false;
+    if(f.cocina?.length       && !f.cocina.includes(String(d['Cocina'] || "").trim()))             return false;
+    if(f.barrio?.length       && !f.barrio.some(v => norm(v) === norm(d['Barrio'])))               return false;
+    if(f.conjunto?.length     && !f.conjunto.some(v => norm(v) === norm(d['Conjunto'])))           return false;
+    if(d.isKmzOnly && f.kmzCategory && Array.isArray(f.kmzCategory)){
+      const propCat = String(d['_kmzCategory'] || "").trim();
+      if(propCat){
+        // Usamos una comparación normalizada para evitar problemas con espacios o emojis
+        const activeNorm = f.kmzCategory.map(c => norm(c));
+        if(!activeNorm.includes(norm(propCat))) return false;
+      }
+    }
+
+
+    
+    // 2. Rango de Precio (Numérico)
+    if(f.minPrice !== null || f.maxPrice !== null){
+      const p = parseP(d['Precio']);
+      if(f.minPrice !== null && p < f.minPrice) return false;
+      if(f.maxPrice !== null && p > f.maxPrice) return false;
+    }
+
+    // 3. Búsqueda de Texto (Prioriza coincidencia exacta de código si se busca un código numérico)
+    const bus = f.buscar || f.buscarVal;
+    if(bus){
+      const rawTrim = bus.trim();
+      const codStr = String(d['Código'] || d['Cdigo'] || '').trim();
+      const codClean = codStr.replace(/^0+/, '');
+      const rawClean = rawTrim.replace(/^0+/, '');
+
+      // Si el término introducido es un número o código (ej: "038", "38")
+      if (/^\d+$/.test(rawTrim)) {
+        if (codStr.toLowerCase() === rawTrim.toLowerCase() || (rawClean && codClean === rawClean)) {
+          return true;
+        }
+        // Si existe un código exactamente idéntico en el catálogo, descartar coincidencias parciales (evita mostrar 1384 o 6386 si se busca 038)
+        const existeCodigoExacto = base.some(item => {
+          const c = String(item['Código'] || item['Cdigo'] || '').trim();
+          return c.toLowerCase() === rawTrim.toLowerCase() || (rawClean && c.replace(/^0+/, '') === rawClean);
+        });
+        if (existeCodigoExacto) return false;
+      }
+
+      const txt = norm(bus);
+      const cleanTxt = norm(bus.replace(/^0+/, '')); // e.g., "038" -> "38"
+      const combinado = norm((d['Nombre']||'') + ' ' + codStr + ' ' + (d['Tipo de inmueble']||'') + ' ' + (d['Zona']||'') + ' ' + (d['Barrio']||'') + ' ' + (d['Conjunto']||'') + ' ' + (d['Ubicación']||'') + ' ' + (d['Descripción']||'') + ' ' + (d['Puntos Clave']||''));
+      const matchesRaw = combinado.includes(txt) || codStr.toLowerCase().includes(txt.toLowerCase());
+      const matchesClean = combinado.includes(cleanTxt) || codStr.toLowerCase().includes(cleanTxt.toLowerCase());
+      if(!matchesRaw && !matchesClean) return false;
+    }
+    // 4. Filtro especial Destacadas (Global)
+    if(criterioOrden === 'destacadas' && !["Directo", "Verbal"].includes(String(d["Contrato"] || ""))) return false;
+    
+    return true;
+  });
+  return ordenarLista(filtered);
+}
+
+function parseP(txt){ return parseFloat(String(txt || "").replace(/[^\d]/g, "")) || 0; }
+
+function ordenarLista(lista) {
+  if (!criterioOrden) return lista;
+  
+  if (criterioOrden === "destacadas") {
+    // Ponemos primero las que tienen contrato "Directo" o "Verbal", SIN filtrar el resto
+    return [...lista].sort((a, b) => {
+      const isA = ["Directo", "Verbal"].includes(a["Contrato"]);
+      const isB = ["Directo", "Verbal"].includes(b["Contrato"]);
+      if (isA && !isB) return -1;
+      if (!isA && isB) return 1;
+      // Si ambos son iguales, ordenamos por precio descendente
+      return parseP(b["Precio"]) - parseP(a["Precio"]);
+    });
+  }
+
+  return lista.sort((a, b) => {
+    if (criterioOrden === "menorPrecio" || criterioOrden === "mayorPrecio") {
+      const pa = parseP(a["Precio"]);
+      const pb = parseP(b["Precio"]);
+      return (criterioOrden === "menorPrecio" ? pa - pb : pb - pa);
+    }
+    if (criterioOrden === "rentabilidad") {
+      const parseRet = txt => {
+        const num = parseFloat((txt || "").toString().replace(/[^\d.]/g, ""));
+        return isNaN(num) ? Infinity : num;
+      };
+      const ra = parseRet(a["Retorno de la Inversión"]);
+      const rb = parseRet(b["Retorno de la Inversión"]);
+      return ra - rb;
+    }
+    if (criterioOrden === "noUbicadas") {
+      const isUbi = p => {
+        const lat = parseFloat(String(p['Latitud'] || p['Lat'] || '').replace(',','.'));
+        const lng = parseFloat(String(p['Longitud'] || p['Lng'] || '').replace(',','.'));
+        return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+      };
+      const uA = isUbi(a);
+      const uB = isUbi(b);
+      if(!uA && uB) return -1;
+      if(uA && !uB) return 1;
+      return 0;
+    }
+    return 0;
+  });
+}
+
+function getSortLabel(crit){
+  const labels = { 'destacadas': 'Destacadas', 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad', 'noUbicadas': 'Faltan por mapa' };
+  return labels[crit] || 'Ordenar por';
+}
+
+// Gestión de menús y clics globales (Única vez)
+document.addEventListener('click', e => {
+  // Cerrar Sort Menus
+  if(!e.target.closest('.ordenar-por')) {
+    document.querySelectorAll('.sort-options').forEach(o => o.classList.add('hidden'));
+    document.querySelectorAll('.sort-toggle').forEach(t => t.classList.remove('st-open'));
+  }
+
+  // Cerrar Filtros
+  if(!e.target.closest('.filtro-nuevo')){
+    document.querySelectorAll('.filtro-nuevo.fn-open').forEach(f=>f.classList.remove('fn-open'));
+  }
+});
+
+function toggleSortMenu(e){
+  e.stopPropagation();
+  const wrap = e.currentTarget.closest('.ordenar-por');
+  const list = wrap.querySelector('.sort-options');
+  const toggle = wrap.querySelector('.sort-toggle');
+  if(!list || !toggle) return;
+  const isHidden = list.classList.contains('hidden');
+  
+  // Cerrar filtros si hubiera
+  document.querySelectorAll('.filtro-nuevo.fn-open').forEach(f=>f.classList.remove('fn-open'));
+  // Cerrar otros menús de orden
+  document.querySelectorAll('.sort-options').forEach(o => o.classList.add('hidden'));
+  
+  if(isHidden){
+    list.classList.remove('hidden');
+    toggle.classList.add('st-open');
+  } else {
+    list.classList.add('hidden');
+    toggle.classList.remove('st-open');
+  }
+}
+
+function setSort(crit){
+  criterioOrden = crit;
+  localStorage.setItem('icde_sort', crit);
+  
+  // Actualizar TODOS los dropdowns de orden
+  document.querySelectorAll('.ordenar-por').forEach(wrap => {
+    const list = wrap.querySelector('.sort-options');
+    const toggle = wrap.querySelector('.sort-toggle');
+    if(list) {
+      list.querySelectorAll('li').forEach(li => {
+        if(li.getAttribute('onclick')?.includes(`'${crit}'`)) li.classList.add('st-selected');
+        else li.classList.remove('st-selected');
+      });
+    }
+    if(toggle) {
+      toggle.classList.remove('st-open');
+      toggle.innerHTML = `${getSortLabel(crit)} <span class="st-arrow"></span>`;
+    }
+  });
+  
+  nlPage = 0; 
+  renderPropsGrid();
+  fnActualizarConteo('nl');
+  actualizarPinesMapa('nl'); // Sincronizar mapa
+  const efGrid = document.getElementById('editFiltrosGrid');
+  if(efGrid) {
+    const efSt = getFSt('ef');
+    renderEditFiltrosGrid(filtrarProps(efSt));
+  }
+}
+
+// Escapa comillas simples para usar dentro de onclick
+function eq(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+/* Construye la barra de filtros completa dentro de #containerId */
+function buildFiltrosBar(containerId, pfx, initVals){
+  setFSt(pfx, initVals || {tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[], mapActive: false});
+  const wrap = document.getElementById(containerId);
+  if(!wrap) return;
+
+  wrap.innerHTML = `
+    <div class="pc-filtros-wrapper">
+      <div class="filtros-grid-nueva" id="fnGrid_${pfx}">
+        ${FCAMPOS.map(c=>`
+          <div class="filtro-nuevo" id="fn_${pfx}_${c.key}" onclick="fnToggleFilter(this, event)">
+            <div class="filtro-nuevo-head" id="fnH_${pfx}_${c.key}">
+              ${c.ico}
+              <span class="fn-lbl" id="fnL_${pfx}_${c.key}">${c.lbl}</span>
+              <span class="fn-arrow"></span>
+            </div>
+            <div class="filtro-nuevo-dropdown" id="fnD_${pfx}_${c.key}" onclick="event.stopPropagation()"></div>
+          </div>`).join('')}
+      </div>
+      <div class="pc-buscar-row">
+        <span class="bn-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" id="fnBus_${pfx}" placeholder="Buscar por nombre, código, barrio..." oninput="fnBuscar('${pfx}',this.value)"/>
+        <button class="btn-generar-pc" id="btnGen_${pfx}" onclick="fnGenerarLink('${pfx}', this)">Generar link</button>
+        <button class="btn-limpiar-pc" onclick="fnLimpiar('${pfx}')">Limpiar filtros</button>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 4px;">
+        <div class="pc-count-bar" style="padding:0; margin:0;">Propiedades encontradas: <strong id="fnCnt_${pfx}">—</strong></div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 11px; color: var(--muted); font-weight: 500;">🗺 MAPA</span>
+          <label class="switch">
+            <input type="checkbox" id="btnToggleMapa_${pfx}" onclick="toggleMapa('${pfx}')">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+      <div id="mapaContenedor_${pfx}" style="position: relative;">
+        <div id="mapaLeaflet_${pfx}" style="width:100%; height:100%; border-radius:12px; z-index:1;"></div>
+        
+        <!-- Controles flotantes sobre el mapa -->
+        <div class="map-floating-controls" style="position: absolute; top: 10px; right: 10px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none;">
+          <div class="map-control-card" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 10px; pointer-events: auto; box-shadow: var(--shadow); min-width: 150px;">
+            <div style="font-size: 10px; font-weight: 700; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+              Vista del Mapa 
+              <label class="switch" style="transform: scale(0.8);">
+                <input type="checkbox" onchange="mapViewportFilterActive = this.checked; updateMapBoundsFilter('${pfx}')">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div style="font-size: 10px; font-weight: 700; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleCategoriasMap('${pfx}')">
+              <span>📂 Categorías</span>
+              <span id="kmzCatArrow_${pfx}" style="transition: transform 0.3s; transform: rotate(-90deg);">▼</span>
+            </div>
+            <div id="kmzCategoryToggle_${pfx}" style="display: none; flex-direction: column; gap: 4px; max-height: 150px; overflow-y: auto; padding-right: 4px; transition: all 0.3s ease;">
+              <!-- Se puebla dinámicamente con las categorías del KMZ -->
+              <div style="font-size: 11px; color: #888; text-align: center; padding: 10px;">Cargando categorías...</div>
+            </div>
+          </div>
+          <div class="map-control-card" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 8px; pointer-events: auto; box-shadow: var(--shadow); display: flex; gap: 8px; align-items: center; justify-content: center;">
+            <button class="btn-map-control btn-map-add-mode" id="btnAddProp_${pfx}" onclick="toggleMapAddMode('${pfx}')" title="Agregar propiedad en el mapa">➕</button>
+            <button class="btn-map-control" onclick="actualizarPinesMapa('${pfx}', true)" title="Recentrar mapa">🎯</button>
+            <button class="btn-map-control" onclick="refreshData()" title="Actualizar datos">🔄</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  // Poblar dropdowns
+  FCAMPOS.forEach(c => fnPoblar(pfx, c));
+
+  // Cabeceras con los valores iniciales
+  FCAMPOS.forEach(c => fnRenderHead(pfx, c.key));
+
+  fnActualizarConteo(pfx);
+  renderKmzCategories(pfx);
+}
+
+function fnToggleFilter(el, e){
+  if(e.target.closest('.fn-tag-x')) return;
+  const was = el.classList.contains('fn-open');
+  // Cerrar otros filtros
+  document.querySelectorAll('.filtro-nuevo.fn-open').forEach(f=>{
+    if(f !== el) f.classList.remove('fn-open');
+  });
+  // Cerrar Sort Menu
+  const sortList = document.getElementById('sortOptions');
+  if(sortList) sortList.classList.add('hidden');
+
+  if(was) el.classList.remove('fn-open');
+  else el.classList.add('fn-open');
+}
+
+/* Poblar un dropdown con las opciones de un campo */
+function fnPoblar(pfx, c){
+  const drop = document.getElementById(`fnD_${pfx}_${c.key}`);
+  if(!drop) return;
+  const st = getFSt(pfx);
+
+  if(c.slider){
+    const minVal = st.minPrice || 0;
+    const maxVal = st.maxPrice || MAX_CATALOG_PRICE;
+    const curMin = Math.round(minVal/1e6);
+    const curMax = Math.round(maxVal/1e6);
+    const topM = Math.round(MAX_CATALOG_PRICE/1e6);
+    
+    // Funciones de mapeo bilineal
+    const valToPos = v => (v <= 1000) ? (v/1000)*70 : 70 + ((v-1000)/(topM-1000))*30;
+
+    drop.style.minWidth = '280px';
+    drop.innerHTML = `
+      <div class="price-slider-wrap">
+        <div class="price-inputs">
+          <div class="form-group"><label class="form-label">Min (MM)</label><input type="number" id="inpMin_${pfx}" value="${curMin}" oninput="fnSetPrice('${pfx}','min',this.value,true)" onclick="event.stopPropagation()"/></div>
+          <div class="form-group"><label class="form-label">Max (MM)</label><input type="number" id="inpMax_${pfx}" value="${curMax}" oninput="fnSetPrice('${pfx}','max',this.value,true)" onclick="event.stopPropagation()"/></div>
+        </div>
+        <div class="price-slider-container">
+          <div class="price-slider-track"></div>
+          <div class="price-slider-fill" id="sldFill_${pfx}"></div>
+          <input type="range" min="0" max="100" step="0.1" value="${valToPos(curMin)}" id="sldMin_${pfx}" oninput="fnSetPrice('${pfx}','min',this.value)"/>
+          <input type="range" min="0" max="100" step="0.1" value="${valToPos(curMax)}" id="sldMax_${pfx}" oninput="fnSetPrice('${pfx}','max',this.value)"/>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:14px;text-align:center;">Valores en Millones de Pesos (MM)<br/>Escala optimizada para rangos bajos</div>
+      </div>`;
+    setTimeout(()=>fnUpdateSliderTrack(pfx), 0);
+    return;
+  }
+
+  let vals = c.num ? getUniqueNums(c.campo) : getUniqueVals(c.campo);
+  if(c.key === 'ubicacion') vals.sort((a,b) => String(b).localeCompare(String(a)));
+  
+  // Para conteos dinámicos: filtramos ignorando el campo actual
+  const stBase = JSON.parse(JSON.stringify(st));
+  delete stBase[c.key];
+  const subset = filtrarProps(stBase, true);
+
+  drop.innerHTML = vals.map(v => {
+    const nv = norm(v);
+    const cnt = subset.filter(d=>norm(d[c.campo])===nv).length;
+    const sel = (st[c.key]||[]).some(x => norm(x) === nv);
+    return `<div class="fn-option${sel?' fn-sel':''}${cnt===0 && !sel?' fn-zero':''}" data-v="${eq(v)}"
+      onclick="fnToggle('${pfx}','${c.key}','${eq(v)}',this);event.stopPropagation()">
+      <span class="fn-chk"></span>${v}<span class="fn-count">(${cnt})</span>
+    </div>`;
+  }).join('');
+}
+
+function fnSetPrice(pfx, type, val, isDirect){
+  const st = getFSt(pfx);
+  const topM = Math.round(MAX_CATALOG_PRICE/1e6);
+  const posToVal = p => (p <= 70) ? (p/70)*1000 : 1000 + ((p-70)/30)*(topM-1000);
+  const valToPos = v => (v <= 1000) ? (v/1000)*70 : 70 + ((v-1000)/(topM-1000))*30;
+
+  let v = parseFloat(val) || 0;
+  if(!isDirect) v = Math.round(posToVal(v));
+  
+  if(type === 'min'){
+    const maxVal = Math.round((st.maxPrice || MAX_CATALOG_PRICE)/1e6);
+    if(v > maxVal) v = maxVal;
+    st.minPrice = v * 1e6;
+    const sld = document.getElementById(`sldMin_${pfx}`); if(sld) sld.value = valToPos(v);
+    const inp = document.getElementById(`inpMin_${pfx}`); if(inp) inp.value = v;
+  } else {
+    const minVal = Math.round((st.minPrice || 0)/1e6);
+    if(v < minVal) v = minVal;
+    st.maxPrice = v * 1e6;
+    const sld = document.getElementById(`sldMax_${pfx}`); if(sld) sld.value = valToPos(v);
+    const inp = document.getElementById(`inpMax_${pfx}`); if(inp) inp.value = v;
+  }
+  
+  fnUpdateSliderTrack(pfx);
+  fnRenderHead(pfx, 'rangoPrecio');
+  fnActualizarConteo(pfx);
+}
+
+function fnUpdateSliderTrack(pfx){
+  const sldMin = document.getElementById(`sldMin_${pfx}`);
+  const sldMax = document.getElementById(`sldMax_${pfx}`);
+  const fill = document.getElementById(`sldFill_${pfx}`);
+  if(!sldMin || !sldMax || !fill) return;
+  
+  const v1 = parseFloat(sldMin.value);
+  const v2 = parseFloat(sldMax.value);
+  const left = Math.min(v1, v2);
+  const width = Math.max(v1, v2) - left;
+  
+  fill.style.left = left + '%';
+  fill.style.width = width + '%';
+  fill.style.right = 'auto';
+}
+
+/* Toggle de una opción */
+function fnToggle(pfx, key, val, el){
+  const st = getFSt(pfx);
+  const nv = norm(val);
+  if(!st[key]) st[key] = [];
+  const idx = st[key].findIndex(x => norm(x) === nv);
+  if(idx >= 0){
+    st[key].splice(idx, 1);
+    if(el) el.classList.remove('fn-sel');
+  } else {
+    st[key].push(val);
+    if(el) el.classList.add('fn-sel');
+  }
+  fnRenderHead(pfx, key);
+  fnActualizarConteo(pfx);
+  fnSincronizar(pfx);
+}
+
+/* Quitar tag */
+function fnQuitarTag(pfx, key, val, e){
+  e.stopPropagation();
+  const st = getFSt(pfx);
+  const nv = norm(val);
+  st[key] = (st[key] || []).filter(v => norm(v) !== nv);
+  document.querySelectorAll(`#fnD_${pfx}_${key} [data-v]`).forEach(o => {
+    if(norm(o.getAttribute('data-v')) === nv) o.classList.remove('fn-sel');
+  });
+  fnRenderHead(pfx, key);
+  fnActualizarConteo(pfx);
+  fnSincronizar(pfx);
+}
+
+/* Renderizar cabecera (con tags o label) */
+function fnRenderHead(pfx, key){
+  const st = getFSt(pfx);
+  const vals = st[key]||[];
+  const c = FCAMPOS.find(f=>f.key===key);
+  const head = document.getElementById(`fnH_${pfx}_${key}`);
+  const lbl  = document.getElementById(`fnL_${pfx}_${key}`);
+  if(!head||!lbl) return;
+  let tagsEl = head.querySelector('.fn-tags');
+  if(vals.length===0){
+    tagsEl?.remove();
+    lbl.style.display=''; lbl.textContent=c.lbl;
+  } else {
+    lbl.style.display='none';
+    if(!tagsEl){ tagsEl=document.createElement('span'); tagsEl.className='fn-tags'; head.insertBefore(tagsEl,head.querySelector('.fn-arrow')); }
+    if(key === 'rangoPrecio'){
+      const min = st.minPrice ? Math.round(st.minPrice/1e6)+'M' : '0';
+      const max = st.maxPrice ? Math.round(st.maxPrice/1e6)+'M' : '5000M';
+      tagsEl.innerHTML = `<span class="fn-tag">${min} - ${max}<span class="fn-tag-x" onclick="fnResetPrice('${pfx}',event)">✕</span></span>`;
+    } else {
+      tagsEl.innerHTML = vals.slice(0,3).map(v=>`<span class="fn-tag">${v}<span class="fn-tag-x" onclick="fnQuitarTag('${pfx}','${key}','${eq(v)}',event)">✕</span></span>`).join('')
+        +(vals.length>3?`<span class="fn-tag">+${vals.length-3}</span>`:'');
+    }
+  }
+}
+
+function fnResetPrice(pfx, e){
+  e.stopPropagation();
+  const st = getFSt(pfx);
+  st.minPrice = null; st.maxPrice = null;
+  fnPoblar(pfx, FCAMPOS.find(c=>c.key==='rangoPrecio'));
+  fnRenderHead(pfx, 'rangoPrecio');
+  fnActualizarConteo(pfx);
+}
+
+function fnActualizarConteo(pfx){
+  const st = getFSt(pfx);
+  const busVal = (document.getElementById(`fnBus_${pfx}`)?.value || '').trim();
+  st.buscar = busVal;
+
+  // Sincronizar con el estado global correspondiente
+  if(pfx==='nl'){
+    nuevoLead.filtros = JSON.parse(JSON.stringify(st));
+    nuevoLead.buscar = busVal;
+  } else if(pfx==='ef'){
+    Object.assign(tempFiltros, JSON.parse(JSON.stringify(st)));
+    tempFiltros.buscar = busVal;
+  }
+
+  let f = filtrarProps(st, true);
+  if(pfx==='nl'){
+    if(criterioOrden==='destacadas') f = f.filter(a => ["Directo", "Verbal"].includes(a["Contrato"]));
+    else if(criterioOrden==='noUbicadas') f = f.filter(p => {
+      const lat = parseFloat(String(p['Latitud'] || p['Lat'] || '').replace(',','.'));
+      const lng = parseFloat(String(p['Longitud'] || p['Lng'] || '').replace(',','.'));
+      return isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0;
+    });
+  }
+  const el = document.getElementById(`fnCnt_${pfx}`);
+  if(el) el.textContent = f.length;
+
+  // El botón Generar link siempre visible
+  const btnGen = document.getElementById(`btnGen_${pfx}`);
+  if(btnGen) btnGen.style.display = 'flex';
+
+  // Actualizar todos los dropdowns para reflejar conteos dinámicos
+  FCAMPOS.forEach(c => {
+    if(!c.slider) fnPoblar(pfx, c);
+  });
+
+  if(pfx==='nl') {
+    nlPage = 0; // Reset pagination on filter change
+    renderPropsGrid();
+    actualizarPinesMapa(pfx); // Sincronizar pines en el mapa
+  } else if(pfx==='ef') {
+    renderEditFiltrosGrid(f);
+    actualizarPinesMapa(pfx); // Sincronizar pines en el mapa
+  }
+}
+
+function renderEditFiltrosGrid(lista){
+  const el = document.getElementById('editFiltrosGrid'); if(!el) return;
+  if(!lista.length){ el.innerHTML = '<div class="empty">No hay propiedades con estos filtros</div>'; return; }
+  const sliced = lista.slice(0, 30);
+  let html = '<div class="props-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">';
+  for(let d of sliced){
+    const cod = String(d['Código']||'');
+    const sel = selectedProps.includes(cod);
+    const img = (d['Imagenes']||'').split('|')[0].trim() || d['Image'] || 'https://i.imgur.com/Pc9M3I8.png';
+    const isDestacada = ["Directo", "Verbal"].includes(d["Contrato"]);
+    html += `
+      <div class="prop-card ${sel?'selected':''} ${isDestacada?'recomendado':''}" style="min-height:auto;" onclick="abrirModalProp('${eq(cod)}')">
+        ${isDestacada ? '<div class="ribbon"><span>¡Destacada!</span></div>' : ''}
+        <div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp('${eq(cod)}', this.parentElement)">${sel?'✓':'+'}</div>
+        <img src="${img}" style="height:110px; width:100%; object-fit:cover; border-radius:8px;"/>
+        <div class="prop-card-body" style="padding:4px 0 8px 0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <div style="font-weight:bold; color:#8c8c8c; font-size:14px;">Código: ${cod}</div>
+            ${d['Inmobiliaria'] ? `<div class="prop-card-inmobiliaria" title="${eq(d['Inmobiliaria'])}">${d['Inmobiliaria']}</div>` : ''}
+          </div>
+          <div style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; font-weight:600;">${d['Nombre']||''}</div>
+          <div style="font-weight:700; font-size:11px; margin-bottom:6px; color:#22c55e;">${formatP(d['Precio'])}</div>
+          
+          <div class="prop-card-features" style="display:flex; flex-direction:column; gap:4px;">
+            <div style="display:flex; flex-wrap:wrap; gap:8px; font-size:11px; color:#ccc;">
+              ${d['Habitaciones'] ? `<span><span style="opacity:0.7;">🛏</span> ${d['Habitaciones']}</span>` : ''}
+              ${d['Baños'] ? `<span><span style="opacity:0.7;">🛁</span> ${d['Baños']}</span>` : ''}
+              ${d['Garaje'] ? `<span><span style="opacity:0.7;">🚗</span> ${d['Garaje']}</span>` : ''}
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; font-size:11px; color:#ccc;">
+              ${d['Cocina'] ? `<span><span style="opacity:0.7;">🍳</span> ${d['Cocina']}</span>` : ''}
+              ${d['Pisos'] ? `<span>Pisos ${d['Pisos']}</span>` : ''}
+              ${d['Área'] ? `<span><span style="opacity:0.7;">📐</span> Lote ${d['Área']} m²</span>` : ''}
+            </div>
+            ${String(d['Rentabilidad']||'').trim() ? `<div style="font-size:11px; font-weight:700; color:var(--gold); margin-top:2px;">${d['Rentabilidad']}</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }
+  html += '</div>';
+  if(lista.length > 30) html += `<div style="text-align:center; padding:10px; font-size:12px; color:var(--gold); font-weight:600;">... y otras ${lista.length-30} propiedades más</div>`;
+  el.innerHTML = html;
+}
+
+function getSearchLinkFromFilters(st, ids, leadId){
+  if(!st && (!ids || !ids.length)) return 'https://icdeinmobiliaria.com/';
+  const url = new URL('https://icdeinmobiliaria.com/');
+  const p = url.searchParams;
+  
+  if(ids && ids.length) {
+    p.set('ids', ids.join(','));
+  } else {
+    if(st.buscar) p.set('q', st.buscar.trim());
+    if(st.tipoInmueble?.length) p.set('tipo', st.tipoInmueble.join(','));
+    if(st.minPrice) p.set('min', st.minPrice);
+    if(st.maxPrice) p.set('max', st.maxPrice);
+    if(st.zona?.length)         p.set('zona', st.zona.join(','));
+    if(st.habitaciones?.length) p.set('hab', st.habitaciones.join(','));
+    if(st.garaje?.length)       p.set('garaje', st.garaje.join(','));
+    if(st.pisos?.length)        p.set('pisos', st.pisos.join(','));
+    if(st.ubicacion?.length)    p.set('ubicacion', st.ubicacion.join(','));
+    if(st.piscina?.length)      p.set('piscina', st.piscina.join(','));
+    if(st.cocina?.length)       p.set('cocina', st.cocina.join(','));
+    if(st.barrio?.length)       p.set('barrio', st.barrio.join(','));
+    if(st.conjunto?.length)     p.set('conjunto', st.conjunto.join(','));
+  }
+  if(leadId) {
+    p.set('lid', leadId);
+  }
+  return url.toString();
+}
+
+function fnGenerarLink(pfx, btn){
+  const st = getFSt(pfx);
+  const busVal = (document.getElementById(`fnBus_${pfx}`)?.value || '').trim();
+  st.buscar = busVal;
+  
+  // Si es Nuevo Lead o Editar Filtros, incluimos seleccionados
+  const ids = ((pfx === 'nl' || pfx === 'ef') && typeof selectedProps !== 'undefined' && selectedProps.length > 0) ? selectedProps : null;
+  
+  // Si tenemos un lead activo o en proceso de envío, incluimos su ID
+  const leadId = (typeof currentLeadId !== 'undefined' && currentLeadId) ? currentLeadId : null;
+  
+  const link = getSearchLinkFromFilters(st, ids, leadId);
+  navigator.clipboard.writeText(link).then(() => {
+    const original = btn.innerHTML;
+    btn.textContent = '¡Copiado!';
+    setTimeout(() => { btn.innerHTML = original; }, 2000);
+  });
+}
+
+
+/* Sincronizar estado filtros hacia el objeto correspondiente */
+function fnSincronizar(pfx){
+  const st = getFSt(pfx);
+  const busVal = (document.getElementById(`fnBus_${pfx}`)?.value || '').trim();
+  st.buscar = busVal;
+
+  if(pfx==='nl'){
+    nuevoLead.filtros = JSON.parse(JSON.stringify(st));
+    nuevoLead.buscar = busVal;
+  } else if(pfx==='ef'){
+    Object.assign(tempFiltros, JSON.parse(JSON.stringify(st)));
+    tempFiltros.buscar = busVal;
+    const cnt = filtrarProps(tempFiltros).length;
+    const el = document.getElementById('editFiltrosCount');
+    if(el) el.textContent = `${cnt} propiedades encontradas`;
+  }
+}
+
+/* Buscar texto */
+function fnBuscar(pfx, val){
+  fnSincronizar(pfx);
+  fnActualizarConteo(pfx);
+}
+
+/* Limpiar todo */
+function fnLimpiar(pfx){
+  const st = getFSt(pfx);
+  Object.keys(st).forEach(k => {
+    if(Array.isArray(st[k])) st[k] = [];
+    else st[k] = null;
+  });
+  st.buscar = '';
+  
+  FCAMPOS.forEach(c=>{
+    fnRenderHead(pfx,c.key);
+  });
+  
+  const bi = document.getElementById(`fnBus_${pfx}`);
+  if(bi) bi.value='';
+  
+  fnSincronizar(pfx);
+  fnActualizarConteo(pfx);
+}
+
+/* ═══════════════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════════════ */
+window.doLogin = function(){
+  const loginScreen = document.getElementById('loginScreen');
+  if (loginScreen) loginScreen.style.display = 'none';
+  const app = document.getElementById('app');
+  if (app) {
+    app.style.display = 'flex';
+    app.style.flexDirection = 'column';
+  }
+  localStorage.setItem('icde_logged_in', 'true');
+  if (typeof initApp === 'function') {
+    initApp().catch(e => console.error("Error in initApp:", e));
+  }
+};
+
+// Auto-ingreso automático si ya ha iniciado sesión
+document.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('icde_logged_in') === 'true') {
+    doLogin();
+  }
+});
+function hardResetData() {
+  if (confirm("¿Estás seguro? Esto borrará la memoria local del navegador (caché) y recargará todo desde la nube. Úsalo si la página se queda trabada.")) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+/* Sube TODOS los leads del localStorage actual a Google Sheets.
+   Úsalo en el computador que tiene los datos correctos para
+   enviarlos a la nube y que el otro los pueda ver. */
+async function forzarPushTotal() {
+  if (!CRM_SCRIPT_URL) { toast('No hay URL de sincronización configurada', 'error'); return; }
+  if (!leads.length)    { toast('No hay leads en este computador', 'error'); return; }
+
+  const btn = document.getElementById('btnForzarPush');
+  if (btn) { btn.disabled = true; btn.textContent = 'Subiendo...'; }
+
+  let ok = 0, err = 0;
+  // Enviar de a 3 en paralelo para no saturar el servidor
+  const chunks = [];
+  for (let i = 0; i < leads.length; i += 3) chunks.push(leads.slice(i, i + 3));
+
+  for (const chunk of chunks) {
+    await Promise.all(chunk.map(async lead => {
+      try {
+        await fetch(CRM_SCRIPT_URL, {
+          method: 'POST',
+          
+          body: JSON.stringify({ action: 'saveLead', lead: JSON.stringify(lead) })
+        });
+        ok++;
+      } catch (e) { err++; }
+
+</script></head><body></body></html>

@@ -1,0 +1,14880 @@
+// --- SCRIPT 0 ---
+
+// Suprime el diálogo "Esta página no puede cargar Google Maps correctamente"
+(function() {
+  const hide = () => {
+    document.querySelectorAll('div[style*="z-index"]').forEach(el => {
+      if (el.innerText && el.innerText.includes('Esta página no puede cargar Google Maps')) {
+        el.style.display = 'none';
+      }
+    });
+  };
+  new MutationObserver(hide).observe(document.documentElement, { childList: true, subtree: true });
+})();
+
+// --- SCRIPT 1 ---
+
+/* ═══════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════ */
+const PASSWORD = 'icde2024';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxki98uXR_fXbFCPynfzvQN5ibiwQY23zKpLkLKTL7A26GlipdC20oQTKOrUwAMeIJ2gw/exec?action=getData';
+// CRM URL apunta al mismo script nuevo que maneja getData, getLeads, getCitas, etc.
+const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvZg9LqnWm1n1iXe3eFgj-PtUbKTumrIJdA8BnJXpH9H4e8OXJcC7-fpmhbQJA5TvX/exec';
+const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAUUSYRhDX6Eik4KA-B6luk74YjCNRanwv13CmmZg4La8NzVuNyBC0T5GH6f4-ke-Xig/exec';
+let CONT_SCRIPT_URL = (JSON.parse(localStorage.getItem('icde_settings') || '{}')).contScriptUrl || '';
+if (CONT_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbyeB0qDF-22AjG5wArRz5x89K6wOdGwTSBqcGqNlphDzARXFAhQ2x6GwoJ_7nfR_5qNEQ/exec" || !CONT_SCRIPT_URL) {
+  CONT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbznGQYcowGcuVOqGXhfZmeKRWHBoJmoUzoOOry-Uzbkv_qXvO1duZYxvPiNjdJB1IPyyg/exec';
+}
+
+
+
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+let deletedLeads = [];
+localStorage.removeItem('icde_deleted_leads');
+localStorage.removeItem('icde_deleted_phones');
+localStorage.removeItem('icde_leads');
+let allProps = [];
+let leads = []; // Fuente de verdad: solo la nube. Se carga en cargarLeads() al inicio.
+let pendingWriteUntil = 0; // Timestamp hasta el que el autoSync no debe sobreescribir datos locales
+async function limpiarYFusionarDuplicados(forceCloudDelete = true) {
+  try {
+    let leadsUnicos = [];
+    let telefonosVistos = new Map();
+    let idsParaBorrarDeNube = [];
+    let huboCambio = false;
+
+    // Ordenar leads: más recientes o con más info primero
+    // Obtener teléfonos eliminados para bloquearlos
+    let deletedPhones = [];
+
+    // Filtrar leads que correspondan a teléfonos eliminados o IDs eliminados
+    leads = leads.filter(l => {
+      if (l.id === 'LEAD-AGENDA-GLOBAL') return true;
+      
+      // Filtrar por ID eliminado
+      if (l.id && deletedLeads.includes(String(l.id).trim())) {
+        huboCambio = true;
+        if (!String(l.id).startsWith('U-')) {
+          idsParaBorrarDeNube.push(l.id);
+        }
+        return false;
+      }
+
+      let telLimpio = String(l.celular || '').replace(/\D/g, '');
+      if (telLimpio && deletedPhones.includes(telLimpio)) {
+        huboCambio = true;
+        if (l.id && !String(l.id).startsWith('U-')) {
+          idsParaBorrarDeNube.push(l.id);
+        }
+        return false;
+      }
+      return true;
+    });
+
+    // Ordenar leads: preferir los que NO empiezan con U- (prioridad ID de la nube C-)
+    // y luego los más recientes
+    leads.sort((a, b) => {
+      const isA_U = String(a.id || '').startsWith('U-');
+      const isB_U = String(b.id || '').startsWith('U-');
+      if (isA_U !== isB_U) {
+        return isA_U ? 1 : -1;
+      }
+      let tA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
+      let tB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
+      return tB - tA;
+    });
+
+    leads.forEach(l => {
+      if (l.id === 'LEAD-AGENDA-GLOBAL') {
+        leadsUnicos.push(l);
+        return;
+      }
+      let telLimpio = String(l.celular || '').replace(/\D/g, '');
+      if (telLimpio === '') {
+        leadsUnicos.push(l);
+        return;
+      }
+
+      if (!telefonosVistos.has(telLimpio)) {
+        telefonosVistos.set(telLimpio, l);
+        leadsUnicos.push(l);
+      } else {
+        // Es un duplicado! Fusionar con el principal
+        let principal = telefonosVistos.get(telLimpio);
+        huboCambio = true;
+
+        // Fusionar visitas
+        if (l.visitas && l.visitas.length) {
+          if (typeof mergeVisitas === 'function') {
+            principal.visitas = mergeVisitas(principal.visitas, l.visitas);
+          } else {
+            const combined = [...(principal.visitas || []), ...(l.visitas || [])];
+            const seen = new Set();
+            principal.visitas = combined.filter(v => {
+              const k = (v.codigo || '') + '-' + (v.fecha || '');
+              if (seen.has(k)) return false;
+              seen.add(k);
+              return true;
+            });
+          }
+        }
+
+        // Fusionar historial de envíos
+        const combinedHist = [...(principal.historialEnvios || []), ...(l.historialEnvios || [])];
+        const seenHist = new Set();
+        principal.historialEnvios = combinedHist.filter(h => {
+          const key = (h.fecha || '') + (h.codigo || '');
+          if (seenHist.has(key)) return false;
+          seenHist.add(key);
+          return true;
+        });
+
+        // Fusionar propiedades enviadas
+        principal.propsEnviadas = Array.from(new Set([...(principal.propsEnviadas || []), ...(l.propsEnviadas || [])]));
+
+        // Fusionar notas si el principal no tiene
+        if (!principal.notes && l.notes) {
+          principal.notas = l.notes;
+        } else if (!principal.notas && l.notas) {
+          principal.notas = l.notas;
+        }
+
+        // Añadir ID duplicado a la lista para borrar de la nube
+        if (l.id && !String(l.id).startsWith('U-')) {
+          idsParaBorrarDeNube.push(l.id);
+        }
+      }
+    });
+
+    if (huboCambio || leads.length !== leadsUnicos.length) {
+      leads = leadsUnicos;
+      
+      if (typeof rebuildCitas === 'function') rebuildCitas();
+      
+      // Renderizar la pestaña actual si corresponde
+      if (typeof currentTab !== 'undefined') {
+        if (currentTab === 'leads' && typeof renderLeadsBody === 'function') renderLeadsBody(leads);
+        if (currentTab === 'citas' && typeof renderCitas === 'function') renderCitas();
+      }
+
+      // Borrar de la nube de forma silenciosa
+      if (forceCloudDelete && idsParaBorrarDeNube.length > 0 && typeof CRM_SCRIPT_URL !== 'undefined' && CRM_SCRIPT_URL) {
+        console.log("Borrando duplicados de la nube:", idsParaBorrarDeNube);
+        for (let id of idsParaBorrarDeNube) {
+          try {
+            fetch(CRM_SCRIPT_URL + '?action=deleteLead&id=' + encodeURIComponent(id) + '&t=' + Date.now());
+          } catch (e) {
+            console.error("Error al borrar duplicado de la nube:", id, e);
+          }
+        }
+      }
+      return true;
+    }
+  } catch(e) {
+    console.error("Error en limpieza profunda de duplicados:", e);
+  }
+  return false;
+}
+
+try {
+  limpiarYFusionarDuplicados(true);
+} catch(e) { console.error("Error deduplicando inicial:", e); }
+let citas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
+if (!Array.isArray(citas)) citas = []; // Ensure it's always an array
+let settings = JSON.parse(localStorage.getItem('icde_settings') || '{}');
+if (!settings.geminiKey) {
+  settings.geminiKey = "xai-Q8AGm6yQ4IMYjHGX7Wen3dxavFgmUSjJIDjwW23jVKebh2tzOAbqFecBEMlVSLeKVgdNEzKTNxL67rGe";
+}
+if (!settings.elevenlabsKey) {
+  settings.elevenlabsKey = "";
+}
+if (settings.contScriptUrl === "https://script.google.com/macros/s/AKfycbyeB0qDF-22AjG5wArRz5x89K6wOdGwTSBqcGqNlphDzARXFAhQ2x6GwoJ_7nfR_5qNEQ/exec" || !settings.contScriptUrl) {
+  settings.contScriptUrl = "https://script.google.com/macros/s/AKfycbznGQYcowGcuVOqGXhfZmeKRWHBoJmoUzoOOry-Uzbkv_qXvO1duZYxvPiNjdJB1IPyyg/exec";
+  localStorage.setItem('icde_settings', JSON.stringify(settings));
+}
+
+
+let currentTab = 'nuevo';
+let selectedProps = [];
+let currentLeadId = null;
+let visitaLeadId = null;
+let envioLeadId = null;
+let envioLote = [];
+let tempFiltros = {};
+let leadViewMode = localStorage.getItem('icde_lead_view') || 'table';
+let searchTermLeads = '';
+let currentLeadFilter = 'todos';
+let nlPage = 0;
+const PAGE_SIZE = 20;
+let criterioOrden = ''; // Default sort (no filter)
+let nlShowData = false; // Por defecto recogido para optimizar espacio
+let MAX_CATALOG_PRICE = 5000000000; // Valor por defecto
+let kmzProps = [];
+let kmzCategories = [];
+let activeKmzCategories = [];
+let mapViewportFilterActive = false; 
+
+
+/* ═══════════════════════════════════════════════
+   HELPERS & UTILS
+═══════════════════════════════════════════════ */
+
+let citasViewMode = localStorage.getItem('icde_citas_view') || 'lista';
+let calDate = new Date();
+let searchTermCitas = '';
+let citasActiveFilterType = 'todas';
+let citasActiveFilterValue = '';
+
+// Helper de normalización global para evitar duplicados por acentos, mayúsculas, espacios, puntos o caracteres especiales
+const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, "").replace(/\s+/g, " ").trim();
+
+function freshLead(){
+  return {
+    tipo:'cliente', nombre:'', celular:'', notas:'', metodoPago:[], estado:'enviando', etiqueta:'activo',
+    buscar:'', filtros:{tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[]},
+    frecuencia:'semanal', maxPorEnvio:4, nombreInmobiliaria:'', nombreAgente:'',
+    propsFiltradas:[], propsEnviadas:[], proximosEnvios:[], historialEnvios:[], visitas:[]
+  };
+}
+let nuevoLead = freshLead();
+
+/* ═══════════════════════════════════════════════
+   SISTEMA DE FILTROS — IDÉNTICO AL INDEX.HTML
+═══════════════════════════════════════════════ */
+const FCAMPOS = [
+  { key:'tipoInmueble', campo:'Tipo de inmueble', lbl:'Tipo de inmueble',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>' },
+  { key:'rangoPrecio', campo:'Rango de precio', lbl:'Precio', slider: true,
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' },
+  { key:'zona', campo:'Zona', lbl:'Zona',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>' },
+  { key:'habitaciones', campo:'Habitaciones', lbl:'Habitaciones', num:true,
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h18M3 12V7a1 1 0 011-1h4a1 1 0 011 1v5M3 12v5h18v-5"/><path d="M13 6h4a1 1 0 011 1v5"/></svg>' },
+  { key:'garaje', campo:'Garaje', lbl:'Garaje', num:true,
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' },
+  { key:'pisos', campo:'Pisos', lbl:'Pisos', num:true,
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="18" rx="1"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/><line x1="8" y1="3" x2="8" y2="21"/></svg>' },
+  { key:'ubicacion', campo:'Ubicación', lbl:'Ubicación',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>' },
+  { key:'piscina', campo:'Piscina', lbl:'Piscina',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 6c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1c.6-.5 1.2-1 2.5-1s1.9.5 2.5 1c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1"/><path d="M2 12c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1c.6-.5 1.2-1 2.5-1s1.9.5 2.5 1c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1"/><path d="M2 18c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1c.6-.5 1.2-1 2.5-1s1.9.5 2.5 1c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1"/></svg>' },
+  { key:'cocina', campo:'Cocina', lbl:'Cocina',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 13.8V4a2 2 0 012-2h4a2 2 0 012 2v9.8a3 3 0 11-8 0z"/><path d="M9 22v-4M15 22v-4"/><path d="M18 5v10a2 2 0 01-2 2h-1"/></svg>' },
+
+  { key:'barrio', campo:'Barrio', lbl:'Barrio',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21v-4a4 4 0 118 0v4M13 21v-7a4 4 0 118 0v7M2 21h20"/></svg>' },
+  { key:'conjunto', campo:'Conjunto', lbl:'Conjunto',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V9l9-7 9 7v12M9 21v-6h6v6"/></svg>' }
+];
+
+
+
+// Estado por prefijo
+const _fst = {};
+function getFSt(pfx){ return _fst[pfx] || (_fst[pfx] = {}); }
+function setFSt(pfx, obj){ _fst[pfx] = JSON.parse(JSON.stringify(obj)); }
+
+function getUniqueVals(campo){
+  const consolidated = new Map();
+  // Filtramos isKmzOnly para que el menú de filtros solo muestre datos reales del catálogo Excel
+  allProps.filter(d => !d.isKmzOnly).forEach(d => {
+    const raw = String(d[campo] || "").trim();
+    if (!raw) return;
+    const n = norm(raw);
+    if (!consolidated.has(n)) {
+      consolidated.set(n, raw); 
+    }
+  });
+  return Array.from(consolidated.values()).sort((a,b) => a.localeCompare(b));
+}
+function getUniqueNums(campo){
+  const nums = allProps.filter(d => !d.isKmzOnly).map(d => {
+    const v = String(d[campo] || "").trim();
+    return v === "" ? NaN : Number(v);
+  }).filter(v => !isNaN(v));
+  return [...new Set(nums)].sort((a,b) => a - b).map(String);
+}
+function filtrarProps(f, returnAllIfEmpty = true, incluirVirtuales = false){
+  const parseP = txt => parseFloat(String(txt || "").replace(/[^\d]/g, "")) || 0;
+  
+  if(!f) return allProps.filter(d => !d.isKmzOnly);
+
+  // Filtrado base por estado de mapa y flag de incluir virtuales
+  let base = allProps;
+  if (!incluirVirtuales) {
+    // Si no se solicitan virtuales, solo mostramos las propiedades reales del catálogo Excel
+    base = allProps.filter(d => !d.isKmzOnly);
+  } else {
+    // Si se solicitan virtuales, los incluimos SOLO si el mapa está abierto y pertenecen a categorías activas
+    if (f.mapActive) {
+      const activeCatNorms = activeKmzCategories.map(c => norm(c));
+      base = allProps.filter(d => {
+        if (!d.isKmzOnly) return true; // Siempre incluir catálogo principal
+        if (!activeKmzCategories.length) return false; // Si no hay categorías activas, excluir todo KMZ-only
+        const cat = String(d['_kmzCategory'] || '').trim();
+        if (!cat) return false; // KMZ-only sin categoría: excluir
+        return activeCatNorms.includes(norm(cat));
+      });
+    } else {
+      base = allProps.filter(d => !d.isKmzOnly);
+    }
+  }
+
+  // Si el filtro está "vacío" (no hay nada seleccionado en ningún lado)
+  // Para kmzCategory, lo consideramos "vacío" (sin filtrar) solo si contiene todas las categorías disponibles
+  const hasCategoryFilter = f.kmzCategory && Array.isArray(f.kmzCategory) && f.kmzCategory.length < kmzCategories.length;
+  const isDestacadas = (criterioOrden === 'destacadas');
+  const isEmpty = !f.buscar && !f.minPrice && !f.maxPrice && !Object.values(f).some(v => Array.isArray(v) && v.length > 0 && v !== f.kmzCategory) && !hasCategoryFilter && !isDestacadas;
+  
+  if(isEmpty) return ordenarLista([...base]);
+
+  const filtered = base.filter(d=>{
+    // 1. Categorías (Multi-select)
+    if(f.tipoInmueble?.length && !f.tipoInmueble.some(v => norm(v) === norm(d['Tipo de inmueble']))) return false;
+    if(f.zona?.length         && !f.zona.some(v => norm(v) === norm(d['Zona'])))                     return false;
+    if(f.habitaciones?.length && !f.habitaciones.includes(String(d['Habitaciones'] || "").trim()))     return false;
+    if(f.garaje?.length       && !f.garaje.includes(String(d['Garaje'] || "").trim()))             return false;
+    if(f.pisos?.length        && !f.pisos.includes(String(d['Pisos'] || "").trim()))               return false;
+    if(f.ubicacion?.length    && !f.ubicacion.includes(String(d['Ubicación'] || "").trim()))       return false;
+    if(f.piscina?.length      && !f.piscina.includes(String(d['Piscina'] || "").trim()))           return false;
+    if(f.cocina?.length       && !f.cocina.includes(String(d['Cocina'] || "").trim()))             return false;
+    if(f.barrio?.length       && !f.barrio.some(v => norm(v) === norm(d['Barrio'])))               return false;
+    if(f.conjunto?.length     && !f.conjunto.some(v => norm(v) === norm(d['Conjunto'])))           return false;
+    if(d.isKmzOnly && f.kmzCategory && Array.isArray(f.kmzCategory)){
+      const propCat = String(d['_kmzCategory'] || "").trim();
+      if(propCat){
+        // Usamos una comparación normalizada para evitar problemas con espacios o emojis
+        const activeNorm = f.kmzCategory.map(c => norm(c));
+        if(!activeNorm.includes(norm(propCat))) return false;
+      }
+    }
+
+
+    
+    // 2. Rango de Precio (Numérico)
+    if(f.minPrice !== null || f.maxPrice !== null){
+      const p = parseP(d['Precio']);
+      if(f.minPrice !== null && p < f.minPrice) return false;
+      if(f.maxPrice !== null && p > f.maxPrice) return false;
+    }
+
+    // 3. Búsqueda de Texto (Prioriza coincidencia exacta de código si se busca un código numérico)
+    const bus = f.buscar || f.buscarVal;
+    if(bus){
+      const rawTrim = bus.trim();
+      const codStr = String(d['Código'] || d['Cdigo'] || '').trim();
+      const codClean = codStr.replace(/^0+/, '');
+      const rawClean = rawTrim.replace(/^0+/, '');
+
+      // Si el término introducido es un número o código (ej: "038", "38")
+      if (/^\d+$/.test(rawTrim)) {
+        if (codStr.toLowerCase() === rawTrim.toLowerCase() || (rawClean && codClean === rawClean)) {
+          return true;
+        }
+        // Si existe un código exactamente idéntico en el catálogo, descartar coincidencias parciales (evita mostrar 1384 o 6386 si se busca 038)
+        const existeCodigoExacto = base.some(item => {
+          const c = String(item['Código'] || item['Cdigo'] || '').trim();
+          return c.toLowerCase() === rawTrim.toLowerCase() || (rawClean && c.replace(/^0+/, '') === rawClean);
+        });
+        if (existeCodigoExacto) return false;
+      }
+
+      const txt = norm(bus);
+      const cleanTxt = norm(bus.replace(/^0+/, '')); // e.g., "038" -> "38"
+      const combinado = norm((d['Nombre']||'') + ' ' + codStr + ' ' + (d['Tipo de inmueble']||'') + ' ' + (d['Zona']||'') + ' ' + (d['Barrio']||'') + ' ' + (d['Conjunto']||'') + ' ' + (d['Ubicación']||'') + ' ' + (d['Descripción']||'') + ' ' + (d['Puntos Clave']||''));
+      const matchesRaw = combinado.includes(txt) || codStr.toLowerCase().includes(txt.toLowerCase());
+      const matchesClean = combinado.includes(cleanTxt) || codStr.toLowerCase().includes(cleanTxt.toLowerCase());
+      if(!matchesRaw && !matchesClean) return false;
+    }
+    // 4. Filtro especial Destacadas (Global)
+    if(criterioOrden === 'destacadas' && !["Directo", "Verbal"].includes(String(d["Contrato"] || ""))) return false;
+    
+    return true;
+  });
+  return ordenarLista(filtered);
+}
+
+function parseP(txt){ return parseFloat(String(txt || "").replace(/[^\d]/g, "")) || 0; }
+
+function ordenarLista(lista) {
+  if (!criterioOrden) return lista;
+  
+  if (criterioOrden === "destacadas") {
+    // Ponemos primero las que tienen contrato "Directo" o "Verbal", SIN filtrar el resto
+    return [...lista].sort((a, b) => {
+      const isA = ["Directo", "Verbal"].includes(a["Contrato"]);
+      const isB = ["Directo", "Verbal"].includes(b["Contrato"]);
+      if (isA && !isB) return -1;
+      if (!isA && isB) return 1;
+      // Si ambos son iguales, ordenamos por precio descendente
+      return parseP(b["Precio"]) - parseP(a["Precio"]);
+    });
+  }
+
+  return lista.sort((a, b) => {
+    if (criterioOrden === "menorPrecio" || criterioOrden === "mayorPrecio") {
+      const pa = parseP(a["Precio"]);
+      const pb = parseP(b["Precio"]);
+      return (criterioOrden === "menorPrecio" ? pa - pb : pb - pa);
+    }
+    if (criterioOrden === "rentabilidad") {
+      const parseRet = txt => {
+        const num = parseFloat((txt || "").toString().replace(/[^\d.]/g, ""));
+        return isNaN(num) ? Infinity : num;
+      };
+      const ra = parseRet(a["Retorno de la Inversión"]);
+      const rb = parseRet(b["Retorno de la Inversión"]);
+      return ra - rb;
+    }
+    if (criterioOrden === "noUbicadas") {
+      const isUbi = p => {
+        const lat = parseFloat(String(p['Latitud'] || p['Lat'] || '').replace(',','.'));
+        const lng = parseFloat(String(p['Longitud'] || p['Lng'] || '').replace(',','.'));
+        return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+      };
+      const uA = isUbi(a);
+      const uB = isUbi(b);
+      if(!uA && uB) return -1;
+      if(uA && !uB) return 1;
+      return 0;
+    }
+    return 0;
+  });
+}
+
+function getSortLabel(crit){
+  const labels = { 'destacadas': 'Destacadas', 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad', 'noUbicadas': 'Faltan por mapa' };
+  return labels[crit] || 'Ordenar por';
+}
+
+// Gestión de menús y clics globales (Única vez)
+document.addEventListener('click', e => {
+  // Cerrar Sort Menus
+  if(!e.target.closest('.ordenar-por')) {
+    document.querySelectorAll('.sort-options').forEach(o => o.classList.add('hidden'));
+    document.querySelectorAll('.sort-toggle').forEach(t => t.classList.remove('st-open'));
+  }
+
+  // Cerrar Filtros
+  if(!e.target.closest('.filtro-nuevo')){
+    document.querySelectorAll('.filtro-nuevo.fn-open').forEach(f=>f.classList.remove('fn-open'));
+  }
+});
+
+function toggleSortMenu(e){
+  e.stopPropagation();
+  const wrap = e.currentTarget.closest('.ordenar-por');
+  const list = wrap.querySelector('.sort-options');
+  const toggle = wrap.querySelector('.sort-toggle');
+  if(!list || !toggle) return;
+  const isHidden = list.classList.contains('hidden');
+  
+  // Cerrar filtros si hubiera
+  document.querySelectorAll('.filtro-nuevo.fn-open').forEach(f=>f.classList.remove('fn-open'));
+  // Cerrar otros menús de orden
+  document.querySelectorAll('.sort-options').forEach(o => o.classList.add('hidden'));
+  
+  if(isHidden){
+    list.classList.remove('hidden');
+    toggle.classList.add('st-open');
+  } else {
+    list.classList.add('hidden');
+    toggle.classList.remove('st-open');
+  }
+}
+
+function setSort(crit){
+  criterioOrden = crit;
+  localStorage.setItem('icde_sort', crit);
+  
+  // Actualizar TODOS los dropdowns de orden
+  document.querySelectorAll('.ordenar-por').forEach(wrap => {
+    const list = wrap.querySelector('.sort-options');
+    const toggle = wrap.querySelector('.sort-toggle');
+    if(list) {
+      list.querySelectorAll('li').forEach(li => {
+        if(li.getAttribute('onclick')?.includes(`'${crit}'`)) li.classList.add('st-selected');
+        else li.classList.remove('st-selected');
+      });
+    }
+    if(toggle) {
+      toggle.classList.remove('st-open');
+      toggle.innerHTML = `${getSortLabel(crit)} <span class="st-arrow"></span>`;
+    }
+  });
+  
+  nlPage = 0; 
+  renderPropsGrid();
+  fnActualizarConteo('nl');
+  actualizarPinesMapa('nl'); // Sincronizar mapa
+  const efGrid = document.getElementById('editFiltrosGrid');
+  if(efGrid) {
+    const efSt = getFSt('ef');
+    renderEditFiltrosGrid(filtrarProps(efSt));
+  }
+}
+
+// Escapa comillas simples para usar dentro de onclick
+function eq(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+/* Construye la barra de filtros completa dentro de #containerId */
+function buildFiltrosBar(containerId, pfx, initVals){
+  setFSt(pfx, initVals || {tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[], mapActive: false});
+  const wrap = document.getElementById(containerId);
+  if(!wrap) return;
+
+  wrap.innerHTML = `
+    <div class="pc-filtros-wrapper">
+      <div class="filtros-grid-nueva" id="fnGrid_${pfx}">
+        ${FCAMPOS.map(c=>`
+          <div class="filtro-nuevo" id="fn_${pfx}_${c.key}" onclick="fnToggleFilter(this, event)">
+            <div class="filtro-nuevo-head" id="fnH_${pfx}_${c.key}">
+              ${c.ico}
+              <span class="fn-lbl" id="fnL_${pfx}_${c.key}">${c.lbl}</span>
+              <span class="fn-arrow"></span>
+            </div>
+            <div class="filtro-nuevo-dropdown" id="fnD_${pfx}_${c.key}" onclick="event.stopPropagation()"></div>
+          </div>`).join('')}
+      </div>
+      <div class="pc-buscar-row">
+        <span class="bn-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" id="fnBus_${pfx}" placeholder="Buscar por nombre, código, barrio..." oninput="fnBuscar('${pfx}',this.value)"/>
+        <button class="btn-generar-pc" id="btnGen_${pfx}" onclick="fnGenerarLink('${pfx}', this)">Generar link</button>
+        <button class="btn-limpiar-pc" onclick="fnLimpiar('${pfx}')">Limpiar filtros</button>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 4px;">
+        <div class="pc-count-bar" style="padding:0; margin:0;">Propiedades encontradas: <strong id="fnCnt_${pfx}">—</strong></div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 11px; color: var(--muted); font-weight: 500;">🗺 MAPA</span>
+          <label class="switch">
+            <input type="checkbox" id="btnToggleMapa_${pfx}" onclick="toggleMapa('${pfx}')">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+      <div id="mapaContenedor_${pfx}" style="position: relative;">
+        <div id="mapaLeaflet_${pfx}" style="width:100%; height:100%; border-radius:12px; z-index:1;"></div>
+        
+        <!-- Controles flotantes sobre el mapa -->
+        <div class="map-floating-controls" style="position: absolute; top: 10px; right: 10px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none;">
+          <div class="map-control-card" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 10px; pointer-events: auto; box-shadow: var(--shadow); min-width: 150px;">
+            <div style="font-size: 10px; font-weight: 700; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+              Vista del Mapa 
+              <label class="switch" style="transform: scale(0.8);">
+                <input type="checkbox" onchange="mapViewportFilterActive = this.checked; updateMapBoundsFilter('${pfx}')">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div style="font-size: 10px; font-weight: 700; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleCategoriasMap('${pfx}')">
+              <span>📂 Categorías</span>
+              <span id="kmzCatArrow_${pfx}" style="transition: transform 0.3s; transform: rotate(-90deg);">▼</span>
+            </div>
+            <div id="kmzCategoryToggle_${pfx}" style="display: none; flex-direction: column; gap: 4px; max-height: 150px; overflow-y: auto; padding-right: 4px; transition: all 0.3s ease;">
+              <!-- Se puebla dinámicamente con las categorías del KMZ -->
+              <div style="font-size: 11px; color: #888; text-align: center; padding: 10px;">Cargando categorías...</div>
+            </div>
+          </div>
+          <div class="map-control-card" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 8px; pointer-events: auto; box-shadow: var(--shadow); display: flex; gap: 8px; align-items: center; justify-content: center;">
+            <button class="btn-map-control btn-map-add-mode" id="btnAddProp_${pfx}" onclick="toggleMapAddMode('${pfx}')" title="Agregar propiedad en el mapa">➕</button>
+            <button class="btn-map-control" onclick="actualizarPinesMapa('${pfx}', true)" title="Recentrar mapa">🎯</button>
+            <button class="btn-map-control" onclick="refreshData()" title="Actualizar datos">🔄</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  // Poblar dropdowns
+  FCAMPOS.forEach(c => fnPoblar(pfx, c));
+
+  // Cabeceras con los valores iniciales
+  FCAMPOS.forEach(c => fnRenderHead(pfx, c.key));
+
+  fnActualizarConteo(pfx);
+  renderKmzCategories(pfx);
+}
+
+function fnToggleFilter(el, e){
+  if(e.target.closest('.fn-tag-x')) return;
+  const was = el.classList.contains('fn-open');
+  // Cerrar otros filtros
+  document.querySelectorAll('.filtro-nuevo.fn-open').forEach(f=>{
+    if(f !== el) f.classList.remove('fn-open');
+  });
+  // Cerrar Sort Menu
+  const sortList = document.getElementById('sortOptions');
+  if(sortList) sortList.classList.add('hidden');
+
+  if(was) el.classList.remove('fn-open');
+  else el.classList.add('fn-open');
+}
+
+/* Poblar un dropdown con las opciones de un campo */
+function fnPoblar(pfx, c){
+  const drop = document.getElementById(`fnD_${pfx}_${c.key}`);
+  if(!drop) return;
+  const st = getFSt(pfx);
+
+  if(c.slider){
+    const minVal = st.minPrice || 0;
+    const maxVal = st.maxPrice || MAX_CATALOG_PRICE;
+    const curMin = Math.round(minVal/1e6);
+    const curMax = Math.round(maxVal/1e6);
+    const topM = Math.round(MAX_CATALOG_PRICE/1e6);
+    
+    // Funciones de mapeo bilineal
+    const valToPos = v => (v <= 1000) ? (v/1000)*70 : 70 + ((v-1000)/(topM-1000))*30;
+
+    drop.style.minWidth = '280px';
+    drop.innerHTML = `
+      <div class="price-slider-wrap">
+        <div class="price-inputs">
+          <div class="form-group"><label class="form-label">Min (MM)</label><input type="number" id="inpMin_${pfx}" value="${curMin}" oninput="fnSetPrice('${pfx}','min',this.value,true)" onclick="event.stopPropagation()"/></div>
+          <div class="form-group"><label class="form-label">Max (MM)</label><input type="number" id="inpMax_${pfx}" value="${curMax}" oninput="fnSetPrice('${pfx}','max',this.value,true)" onclick="event.stopPropagation()"/></div>
+        </div>
+        <div class="price-slider-container">
+          <div class="price-slider-track"></div>
+          <div class="price-slider-fill" id="sldFill_${pfx}"></div>
+          <input type="range" min="0" max="100" step="0.1" value="${valToPos(curMin)}" id="sldMin_${pfx}" oninput="fnSetPrice('${pfx}','min',this.value)"/>
+          <input type="range" min="0" max="100" step="0.1" value="${valToPos(curMax)}" id="sldMax_${pfx}" oninput="fnSetPrice('${pfx}','max',this.value)"/>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:14px;text-align:center;">Valores en Millones de Pesos (MM)<br/>Escala optimizada para rangos bajos</div>
+      </div>`;
+    setTimeout(()=>fnUpdateSliderTrack(pfx), 0);
+    return;
+  }
+
+  let vals = c.num ? getUniqueNums(c.campo) : getUniqueVals(c.campo);
+  if(c.key === 'ubicacion') vals.sort((a,b) => String(b).localeCompare(String(a)));
+  
+  // Para conteos dinámicos: filtramos ignorando el campo actual
+  const stBase = JSON.parse(JSON.stringify(st));
+  delete stBase[c.key];
+  const subset = filtrarProps(stBase, true);
+
+  drop.innerHTML = vals.map(v => {
+    const nv = norm(v);
+    const cnt = subset.filter(d=>norm(d[c.campo])===nv).length;
+    const sel = (st[c.key]||[]).some(x => norm(x) === nv);
+    return `<div class="fn-option${sel?' fn-sel':''}${cnt===0 && !sel?' fn-zero':''}" data-v="${eq(v)}"
+      onclick="fnToggle('${pfx}','${c.key}','${eq(v)}',this);event.stopPropagation()">
+      <span class="fn-chk"></span>${v}<span class="fn-count">(${cnt})</span>
+    </div>`;
+  }).join('');
+}
+
+function fnSetPrice(pfx, type, val, isDirect){
+  const st = getFSt(pfx);
+  const topM = Math.round(MAX_CATALOG_PRICE/1e6);
+  const posToVal = p => (p <= 70) ? (p/70)*1000 : 1000 + ((p-70)/30)*(topM-1000);
+  const valToPos = v => (v <= 1000) ? (v/1000)*70 : 70 + ((v-1000)/(topM-1000))*30;
+
+  let v = parseFloat(val) || 0;
+  if(!isDirect) v = Math.round(posToVal(v));
+  
+  if(type === 'min'){
+    const maxVal = Math.round((st.maxPrice || MAX_CATALOG_PRICE)/1e6);
+    if(v > maxVal) v = maxVal;
+    st.minPrice = v * 1e6;
+    const sld = document.getElementById(`sldMin_${pfx}`); if(sld) sld.value = valToPos(v);
+    const inp = document.getElementById(`inpMin_${pfx}`); if(inp) inp.value = v;
+  } else {
+    const minVal = Math.round((st.minPrice || 0)/1e6);
+    if(v < minVal) v = minVal;
+    st.maxPrice = v * 1e6;
+    const sld = document.getElementById(`sldMax_${pfx}`); if(sld) sld.value = valToPos(v);
+    const inp = document.getElementById(`inpMax_${pfx}`); if(inp) inp.value = v;
+  }
+  
+  fnUpdateSliderTrack(pfx);
+  fnRenderHead(pfx, 'rangoPrecio');
+  fnActualizarConteo(pfx);
+}
+
+function fnUpdateSliderTrack(pfx){
+  const sldMin = document.getElementById(`sldMin_${pfx}`);
+  const sldMax = document.getElementById(`sldMax_${pfx}`);
+  const fill = document.getElementById(`sldFill_${pfx}`);
+  if(!sldMin || !sldMax || !fill) return;
+  
+  const v1 = parseFloat(sldMin.value);
+  const v2 = parseFloat(sldMax.value);
+  const left = Math.min(v1, v2);
+  const width = Math.max(v1, v2) - left;
+  
+  fill.style.left = left + '%';
+  fill.style.width = width + '%';
+  fill.style.right = 'auto';
+}
+
+/* Toggle de una opción */
+function fnToggle(pfx, key, val, el){
+  const st = getFSt(pfx);
+  const nv = norm(val);
+  if(!st[key]) st[key] = [];
+  const idx = st[key].findIndex(x => norm(x) === nv);
+  if(idx >= 0){
+    st[key].splice(idx, 1);
+    if(el) el.classList.remove('fn-sel');
+  } else {
+    st[key].push(val);
+    if(el) el.classList.add('fn-sel');
+  }
+  fnRenderHead(pfx, key);
+  fnActualizarConteo(pfx);
+  fnSincronizar(pfx);
+}
+
+/* Quitar tag */
+function fnQuitarTag(pfx, key, val, e){
+  e.stopPropagation();
+  const st = getFSt(pfx);
+  const nv = norm(val);
+  st[key] = (st[key] || []).filter(v => norm(v) !== nv);
+  document.querySelectorAll(`#fnD_${pfx}_${key} [data-v]`).forEach(o => {
+    if(norm(o.getAttribute('data-v')) === nv) o.classList.remove('fn-sel');
+  });
+  fnRenderHead(pfx, key);
+  fnActualizarConteo(pfx);
+  fnSincronizar(pfx);
+}
+
+/* Renderizar cabecera (con tags o label) */
+function fnRenderHead(pfx, key){
+  const st = getFSt(pfx);
+  const vals = st[key]||[];
+  const c = FCAMPOS.find(f=>f.key===key);
+  const head = document.getElementById(`fnH_${pfx}_${key}`);
+  const lbl  = document.getElementById(`fnL_${pfx}_${key}`);
+  if(!head||!lbl) return;
+  let tagsEl = head.querySelector('.fn-tags');
+  if(vals.length===0){
+    tagsEl?.remove();
+    lbl.style.display=''; lbl.textContent=c.lbl;
+  } else {
+    lbl.style.display='none';
+    if(!tagsEl){ tagsEl=document.createElement('span'); tagsEl.className='fn-tags'; head.insertBefore(tagsEl,head.querySelector('.fn-arrow')); }
+    if(key === 'rangoPrecio'){
+      const min = st.minPrice ? Math.round(st.minPrice/1e6)+'M' : '0';
+      const max = st.maxPrice ? Math.round(st.maxPrice/1e6)+'M' : '5000M';
+      tagsEl.innerHTML = `<span class="fn-tag">${min} - ${max}<span class="fn-tag-x" onclick="fnResetPrice('${pfx}',event)">✕</span></span>`;
+    } else {
+      tagsEl.innerHTML = vals.slice(0,3).map(v=>`<span class="fn-tag">${v}<span class="fn-tag-x" onclick="fnQuitarTag('${pfx}','${key}','${eq(v)}',event)">✕</span></span>`).join('')
+        +(vals.length>3?`<span class="fn-tag">+${vals.length-3}</span>`:'');
+    }
+  }
+}
+
+function fnResetPrice(pfx, e){
+  e.stopPropagation();
+  const st = getFSt(pfx);
+  st.minPrice = null; st.maxPrice = null;
+  fnPoblar(pfx, FCAMPOS.find(c=>c.key==='rangoPrecio'));
+  fnRenderHead(pfx, 'rangoPrecio');
+  fnActualizarConteo(pfx);
+}
+
+function fnActualizarConteo(pfx){
+  const st = getFSt(pfx);
+  const busVal = (document.getElementById(`fnBus_${pfx}`)?.value || '').trim();
+  st.buscar = busVal;
+
+  // Sincronizar con el estado global correspondiente
+  if(pfx==='nl'){
+    nuevoLead.filtros = JSON.parse(JSON.stringify(st));
+    nuevoLead.buscar = busVal;
+  } else if(pfx==='ef'){
+    Object.assign(tempFiltros, JSON.parse(JSON.stringify(st)));
+    tempFiltros.buscar = busVal;
+  }
+
+  let f = filtrarProps(st, true);
+  if(pfx==='nl'){
+    if(criterioOrden==='destacadas') f = f.filter(a => ["Directo", "Verbal"].includes(a["Contrato"]));
+    else if(criterioOrden==='noUbicadas') f = f.filter(p => {
+      const lat = parseFloat(String(p['Latitud'] || p['Lat'] || '').replace(',','.'));
+      const lng = parseFloat(String(p['Longitud'] || p['Lng'] || '').replace(',','.'));
+      return isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0;
+    });
+  }
+  const el = document.getElementById(`fnCnt_${pfx}`);
+  if(el) el.textContent = f.length;
+
+  // El botón Generar link siempre visible
+  const btnGen = document.getElementById(`btnGen_${pfx}`);
+  if(btnGen) btnGen.style.display = 'flex';
+
+  // Actualizar todos los dropdowns para reflejar conteos dinámicos
+  FCAMPOS.forEach(c => {
+    if(!c.slider) fnPoblar(pfx, c);
+  });
+
+  if(pfx==='nl') {
+    nlPage = 0; // Reset pagination on filter change
+    renderPropsGrid();
+    actualizarPinesMapa(pfx); // Sincronizar pines en el mapa
+  } else if(pfx==='ef') {
+    renderEditFiltrosGrid(f);
+    actualizarPinesMapa(pfx); // Sincronizar pines en el mapa
+  }
+}
+
+function renderEditFiltrosGrid(lista){
+  const el = document.getElementById('editFiltrosGrid'); if(!el) return;
+  if(!lista.length){ el.innerHTML = '<div class="empty">No hay propiedades con estos filtros</div>'; return; }
+  const sliced = lista.slice(0, 30);
+  let html = '<div class="props-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">';
+  for(let d of sliced){
+    const cod = String(d['Código']||'');
+    const sel = selectedProps.includes(cod);
+    const img = (d['Imagenes']||'').split('|')[0].trim() || d['Image'] || 'https://i.imgur.com/Pc9M3I8.png';
+    const isDestacada = ["Directo", "Verbal"].includes(d["Contrato"]);
+    html += `
+      <div class="prop-card ${sel?'selected':''} ${isDestacada?'recomendado':''}" style="min-height:auto;" onclick="abrirModalProp('${eq(cod)}')">
+        ${isDestacada ? '<div class="ribbon"><span>¡Destacada!</span></div>' : ''}
+        <div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp('${eq(cod)}', this.parentElement)">${sel?'✓':'+'}</div>
+        <img src="${img}" style="height:110px; width:100%; object-fit:cover; border-radius:8px;"/>
+        <div class="prop-card-body" style="padding:4px 0 8px 0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <div style="font-weight:bold; color:#8c8c8c; font-size:14px;">Código: ${cod}</div>
+            ${d['Inmobiliaria'] ? `<div class="prop-card-inmobiliaria" title="${eq(d['Inmobiliaria'])}">${d['Inmobiliaria']}</div>` : ''}
+          </div>
+          <div style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; font-weight:600;">${d['Nombre']||''}</div>
+          <div style="font-weight:700; font-size:11px; margin-bottom:6px; color:#22c55e;">${formatP(d['Precio'])}</div>
+          
+          <div class="prop-card-features" style="display:flex; flex-direction:column; gap:4px;">
+            <div style="display:flex; flex-wrap:wrap; gap:8px; font-size:11px; color:#ccc;">
+              ${d['Habitaciones'] ? `<span><span style="opacity:0.7;">🛏</span> ${d['Habitaciones']}</span>` : ''}
+              ${d['Baños'] ? `<span><span style="opacity:0.7;">🛁</span> ${d['Baños']}</span>` : ''}
+              ${d['Garaje'] ? `<span><span style="opacity:0.7;">🚗</span> ${d['Garaje']}</span>` : ''}
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; font-size:11px; color:#ccc;">
+              ${d['Cocina'] ? `<span><span style="opacity:0.7;">🍳</span> ${d['Cocina']}</span>` : ''}
+              ${d['Pisos'] ? `<span>Pisos ${d['Pisos']}</span>` : ''}
+              ${d['Área'] ? `<span><span style="opacity:0.7;">📐</span> Lote ${d['Área']} m²</span>` : ''}
+            </div>
+            ${String(d['Rentabilidad']||'').trim() ? `<div style="font-size:11px; font-weight:700; color:var(--gold); margin-top:2px;">${d['Rentabilidad']}</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }
+  html += '</div>';
+  if(lista.length > 30) html += `<div style="text-align:center; padding:10px; font-size:12px; color:var(--gold); font-weight:600;">... y otras ${lista.length-30} propiedades más</div>`;
+  el.innerHTML = html;
+}
+
+function getSearchLinkFromFilters(st, ids, leadId){
+  if(!st && (!ids || !ids.length)) return 'https://icdeinmobiliaria.com/';
+  const url = new URL('https://icdeinmobiliaria.com/');
+  const p = url.searchParams;
+  
+  if(ids && ids.length) {
+    p.set('ids', ids.join(','));
+  } else {
+    if(st.buscar) p.set('q', st.buscar.trim());
+    if(st.tipoInmueble?.length) p.set('tipo', st.tipoInmueble.join(','));
+    if(st.minPrice) p.set('min', st.minPrice);
+    if(st.maxPrice) p.set('max', st.maxPrice);
+    if(st.zona?.length)         p.set('zona', st.zona.join(','));
+    if(st.habitaciones?.length) p.set('hab', st.habitaciones.join(','));
+    if(st.garaje?.length)       p.set('garaje', st.garaje.join(','));
+    if(st.pisos?.length)        p.set('pisos', st.pisos.join(','));
+    if(st.ubicacion?.length)    p.set('ubicacion', st.ubicacion.join(','));
+    if(st.piscina?.length)      p.set('piscina', st.piscina.join(','));
+    if(st.cocina?.length)       p.set('cocina', st.cocina.join(','));
+    if(st.barrio?.length)       p.set('barrio', st.barrio.join(','));
+    if(st.conjunto?.length)     p.set('conjunto', st.conjunto.join(','));
+  }
+  if(leadId) {
+    p.set('lid', leadId);
+  }
+  return url.toString();
+}
+
+function fnGenerarLink(pfx, btn){
+  const st = getFSt(pfx);
+  const busVal = (document.getElementById(`fnBus_${pfx}`)?.value || '').trim();
+  st.buscar = busVal;
+  
+  // Si es Nuevo Lead o Editar Filtros, incluimos seleccionados
+  const ids = ((pfx === 'nl' || pfx === 'ef') && typeof selectedProps !== 'undefined' && selectedProps.length > 0) ? selectedProps : null;
+  
+  // Si tenemos un lead activo o en proceso de envío, incluimos su ID
+  const leadId = (typeof currentLeadId !== 'undefined' && currentLeadId) ? currentLeadId : null;
+  
+  const link = getSearchLinkFromFilters(st, ids, leadId);
+  navigator.clipboard.writeText(link).then(() => {
+    const original = btn.innerHTML;
+    btn.textContent = '¡Copiado!';
+    setTimeout(() => { btn.innerHTML = original; }, 2000);
+  });
+}
+
+
+/* Sincronizar estado filtros hacia el objeto correspondiente */
+function fnSincronizar(pfx){
+  const st = getFSt(pfx);
+  const busVal = (document.getElementById(`fnBus_${pfx}`)?.value || '').trim();
+  st.buscar = busVal;
+
+  if(pfx==='nl'){
+    nuevoLead.filtros = JSON.parse(JSON.stringify(st));
+    nuevoLead.buscar = busVal;
+  } else if(pfx==='ef'){
+    Object.assign(tempFiltros, JSON.parse(JSON.stringify(st)));
+    tempFiltros.buscar = busVal;
+    const cnt = filtrarProps(tempFiltros).length;
+    const el = document.getElementById('editFiltrosCount');
+    if(el) el.textContent = `${cnt} propiedades encontradas`;
+  }
+}
+
+/* Buscar texto */
+function fnBuscar(pfx, val){
+  fnSincronizar(pfx);
+  fnActualizarConteo(pfx);
+}
+
+/* Limpiar todo */
+function fnLimpiar(pfx){
+  const st = getFSt(pfx);
+  Object.keys(st).forEach(k => {
+    if(Array.isArray(st[k])) st[k] = [];
+    else st[k] = null;
+  });
+  st.buscar = '';
+  
+  FCAMPOS.forEach(c=>{
+    fnRenderHead(pfx,c.key);
+  });
+  
+  const bi = document.getElementById(`fnBus_${pfx}`);
+  if(bi) bi.value='';
+  
+  fnSincronizar(pfx);
+  fnActualizarConteo(pfx);
+}
+
+/* ═══════════════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════════════ */
+window.doLogin = function(){
+  const loginScreen = document.getElementById('loginScreen');
+  if (loginScreen) loginScreen.style.display = 'none';
+  const app = document.getElementById('app');
+  if (app) {
+    app.style.display = 'flex';
+    app.style.flexDirection = 'column';
+  }
+  localStorage.setItem('icde_logged_in', 'true');
+  if (typeof initApp === 'function') {
+    initApp().catch(e => console.error("Error in initApp:", e));
+  }
+};
+
+// Auto-ingreso automático si ya ha iniciado sesión
+document.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('icde_logged_in') === 'true') {
+    doLogin();
+  }
+});
+function hardResetData() {
+  if (confirm("¿Estás seguro? Esto borrará la memoria local del navegador (caché) y recargará todo desde la nube. Úsalo si la página se queda trabada.")) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+/* Sube TODOS los leads del localStorage actual a Google Sheets.
+   Úsalo en el computador que tiene los datos correctos para
+   enviarlos a la nube y que el otro los pueda ver. */
+async function forzarPushTotal() {
+  if (!CRM_SCRIPT_URL) { toast('No hay URL de sincronización configurada', 'error'); return; }
+  if (!leads.length)    { toast('No hay leads en este computador', 'error'); return; }
+
+  const btn = document.getElementById('btnForzarPush');
+  if (btn) { btn.disabled = true; btn.textContent = 'Subiendo...'; }
+
+  let ok = 0, err = 0;
+  // Enviar de a 3 en paralelo para no saturar el servidor
+  const chunks = [];
+  for (let i = 0; i < leads.length; i += 3) chunks.push(leads.slice(i, i + 3));
+
+  for (const chunk of chunks) {
+    await Promise.all(chunk.map(async lead => {
+      try {
+        await fetch(CRM_SCRIPT_URL, {
+          method: 'POST',
+          
+          body: JSON.stringify({ action: 'saveLead', lead: JSON.stringify(lead) })
+        });
+        ok++;
+      } catch (e) { err++; }
+    }));
+    // Pequeña pausa para no bloquear Apps Script
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = '☁️ Subir todo a la nube'; }
+  toast(`Push total: ${ok} leads subidos${err ? `, ${err} con error` : ''} ✓`, ok > 0 ? 'success' : 'error');
+  console.log(`[forzarPushTotal] OK: ${ok}, ERR: ${err}`);
+}
+
+async function repararFullJSON() {
+  if (!CRM_SCRIPT_URL) { toast('No hay URL configurada', 'error'); return; }
+  const btn = document.getElementById('btnRepairJSON');
+  if (btn) { btn.disabled = true; btn.textContent = 'Deduplicando en Drive...'; }
+
+  try {
+    // 1. Ejecutar deduplicación en el servidor
+    const resDedup = await fetch(CRM_SCRIPT_URL + '?action=deduplicateLeads&t=' + Date.now());
+    const dataDedup = await resDedup.json();
+    const deletedCount = dataDedup.deletedCount || 0;
+
+    if (btn) btn.textContent = 'Reparando Full_JSON...';
+
+    // 2. Ejecutar reparación de Full_JSON en el servidor
+    const resRep = await fetch(CRM_SCRIPT_URL + '?action=repairFullJSON&t=' + Date.now());
+    const dataRep = await resRep.json();
+    const repaired = dataRep.repaired || 0;
+
+    toast(`✓ Deduplicados: ${deletedCount} borrados. Reparados: ${repaired} Full_JSON actualizados.`, 'success');
+
+    // 3. Recargar leads del Drive para mostrar datos corregidos
+    await cargarLeads();
+
+  } catch(e) {
+    console.error('[repararFullJSON] Error general:', e);
+    toast('Error al procesar. Asegúrate de desplegar el Apps Script.', 'error');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '🛠 Reparar datos faltantes en Drive (Full_JSON)'; }
+}
+function doLogout(){
+  localStorage.removeItem('icde_logged_in');
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  if (document.getElementById('passInput')) document.getElementById('passInput').value='';
+  if (document.getElementById('loginError')) document.getElementById('loginError').style.display='none';
+}
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   KMZ INTEGRATION
+═══════════════════════════════════════════════ */
+async function cargarKmz() {
+  try {
+    const res = await fetch('propiedades_kmz.json');
+    if (!res.ok) throw new Error('No se pudo cargar propiedades_kmz.json');
+    const data = await res.json();
+    
+    kmzProps = data;
+    
+    // Extraer categorías únicas
+    kmzCategories = [...new Set(kmzProps.map(p => p['Categoría']))].filter(Boolean).sort();
+    
+    // Por defecto, todas activas EXCEPTO "Inventario Barrios" (siempre desactivado al abrir)
+    activeKmzCategories = kmzCategories.filter(cat => !cat.toUpperCase().includes("INVENTARIO BARRIOS"));
+    
+    console.log(`Cargadas ${kmzProps.length} propiedades desde KMZ en ${kmzCategories.length} categorías.`);
+    
+    correlacionarKmzConCatalogo();
+    
+    // Inicializar el filtro de categorías en el estado global de 'nl'
+    // Solo las categorías activas (sin Inventario Barrios)
+    const stNl = getFSt('nl');
+    stNl.kmzCategory = [...activeKmzCategories];
+
+    renderKmzCategories('nl');
+    // Actualizar conteo ya que el filtro cambió
+    fnActualizarConteo('nl');
+  } catch (e) {
+    console.error("Error cargando KMZ JSON:", e);
+  }
+}
+
+function correlacionarKmzConCatalogo() {
+  if (!allProps.length || !kmzProps.length) return;
+
+  // Normalización robusta de código: quita ceros a la izquierda, espacios y guiones
+  const normCod = (cod) => String(cod || '').trim()
+    .replace(/[\s\-_]/g, '')
+    .replace(/^0+([1-9\D])/, '$1')  // quita ceros iniciales antes de caracter significativo
+    .replace(/^0+$/, '0')           // si es todo ceros, conservar "0"
+    .toLowerCase();
+
+  // Construir mapa rápido del catálogo (normalizado → objeto original)
+  const catMap = new Map();
+  allProps.forEach(p => {
+    if (p.isKmzOnly) return;
+    const n = normCod(p['Código']);
+    if (n) catMap.set(n, p);
+  });
+
+  const sinMatch = [];
+
+  kmzProps.forEach(kp => {
+    const kpNorm = normCod(kp['Código']);
+    if (!kpNorm) return;
+
+    const existing = catMap.get(kpNorm);
+
+    if (existing) {
+      // Verificar si ya tiene ubicación válida
+      const latVal = parseFloat(String(existing['Latitud'] || '0').replace(',', '.'));
+      const lngVal = parseFloat(String(existing['Longitud'] || '0').replace(',', '.'));
+      const yaTieneUbicacion = !isNaN(latVal) && latVal !== 0 && !isNaN(lngVal) && lngVal !== 0;
+
+      if (!yaTieneUbicacion) {
+        // Sin ubicación: asignar coordenadas del KMZ (burbuja dorada)
+        existing['Latitud'] = kp['Latitud'];
+        existing['Longitud'] = kp['Longitud'];
+      } else {
+        // Ya tiene ubicación: marcar conflicto (burbuja naranja para revisión manual)
+        existing._tieneConflictoCoordenadas = true;
+      }
+
+      existing._kmzCategory = kp['Categoría'];
+
+      if (!existing['Imagenes'] && kp['Imagenes']) {
+        existing['Imagenes'] = kp['Imagenes'];
+      }
+    } else {
+      sinMatch.push({ raw: kp['Código'], norm: kpNorm });
+      // Crear entrada virtual (burbuja morada)
+      allProps.push({
+        'Código': kp['Código'],
+        'Nombre': kp['Nombre_KMZ'],
+        'Precio': kp['Precio_KMZ'] ? parseKmzPrice(kp['Precio_KMZ']) : 0,
+        'Latitud': kp['Latitud'],
+        'Longitud': kp['Longitud'],
+        'Habitaciones': kp['Habitaciones'],
+        'Baños': kp['Baños'],
+        'Pisos': kp['Pisos'],
+        'Garaje': kp['Garaje'],
+        'Ubicación': kp['Ubicación'],
+        'Área': kp['Área'],
+        'Tipo de inmueble': 'Casa (KMZ)',
+        'Image': 'https://i.imgur.com/YbnRomr.png',
+        'Imagenes': kp['Imagenes'] || 'https://i.imgur.com/YbnRomr.png',
+        'isKmzOnly': true,
+        '_kmzCategory': kp['Categoría'],
+        'Descripción': kp['KMZ_Data']?.['Descripción'] || '',
+        'Renta': kp['KMZ_Data']?.['Renta'] || '',
+        'Retorno de la inversión': kp['KMZ_Data']?.['Retorno de Inversión'] || ''
+      });
+    }
+  });
+
+  // Imprimir en consola los codigos sin match para diagnóstico
+  if (sinMatch.length > 0) {
+    console.warn(`[KMZ] ${sinMatch.length} códigos KMZ sin coincidencia (aparecen en MORADO):`);
+    console.table(sinMatch);
+  } else {
+    console.log('[KMZ] Todos los códigos KMZ coincidieron con el catálogo.');
+  }
+
+  if (currentTab === 'nuevo') {
+    fnActualizarConteo('nl');
+  }
+}
+
+function parseKmzPrice(priceStr) {
+  if (!priceStr) return 0;
+  // Convertir "150mlls" -> 150000000
+  let num = parseFloat(String(priceStr).replace(/mlls/gi, "").replace(",", ".").trim());
+  if (!isNaN(num)) return num * 1000000;
+  return 0;
+}
+
+
+function updateMapBoundsFilter(pfx) {
+  if (!leafletMap || !mapViewportFilterActive) return;
+  
+  const bounds = leafletMap.getBounds();
+  const filtered = filtrarProps(getFSt(pfx), true).filter(p => {
+    let lat = parseFloat(String(p['Latitud'] || p['Lat']).replace(',','.'));
+    let lng = parseFloat(String(p['Longitud'] || p['Lng']).replace(',','.'));
+    if (isNaN(lat) || isNaN(lng) || lat === 0) return false;
+    return bounds.contains([lat, lng]);
+  });
+
+  // Actualizar la grilla de propiedades con las que están en el viewport
+  renderPropsGrid(filtered);
+  
+  // Actualizar conteo visual
+  const cntEl = document.getElementById(`fnCnt_${pfx}`);
+  if (cntEl) cntEl.innerHTML = `${filtered.length} <span style="font-size:10px; opacity:0.7;">(en vista)</span>`;
+}
+
+function renderKmzCategories(pfx) {
+  const container = document.getElementById(`kmzCategoryToggle_${pfx}`);
+  if (!container) return;
+
+  if (kmzCategories.length === 0) {
+    container.innerHTML = '<div style="font-size:11px; color:#888; text-align:center; padding:10px;">Sin categorías KMZ</div>';
+    return;
+  }
+
+  container.innerHTML = kmzCategories.map(cat => {
+    const isChecked = activeKmzCategories.includes(cat);
+    return `
+      <label class="check-item" style="padding: 4px 8px; font-size: 11px; border-radius: 6px; background: rgba(255,255,255,0.03);">
+        <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleKmzCategory('${pfx}', '${eq(cat)}', this.checked)">
+        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${cat}</span>
+      </label>`;
+  }).join('');
+}
+
+function toggleKmzCategory(pfx, cat, checked) {
+  const st = getFSt(pfx);
+  if (!st.kmzCategory) st.kmzCategory = [];
+  if (checked) {
+    if (!activeKmzCategories.includes(cat)) activeKmzCategories.push(cat);
+  } else {
+    activeKmzCategories = activeKmzCategories.filter(c => c !== cat);
+  }
+  st.kmzCategory = [...activeKmzCategories];
+  fnActualizarConteo(pfx);
+  actualizarPinesMapa(pfx);
+}
+
+function toggleCategoriasMap(pfx) {
+  const el = document.getElementById(`kmzCategoryToggle_${pfx}`);
+  const arrow = document.getElementById(`kmzCatArrow_${pfx}`);
+  if (!el || !arrow) return;
+  const isHidden = el.style.display === 'none';
+  el.style.display = isHidden ? 'flex' : 'none';
+  arrow.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+}
+
+async function refreshData() {
+  const btn = document.querySelector('.topbar-right .settings-btn');
+  if(btn) btn.classList.add('listening');
+  await cargarProps();
+  await cargarKmz();
+  await cargarLeads();
+  rebuildCitas();
+  if(currentTab === 'citas')  renderCitas();
+  if(currentTab === 'leads')  renderLeadsBody(leads);
+  if(btn) btn.classList.remove('listening');
+  toast('Datos sincronizados âœ“', 'success');
+}
+
+async function initApp(){
+  showTab('nuevo');
+  leads = []; // Fuente de verdad: solo la nube
+  cleanupLocalData();
+  await cargarProps();
+  await cargarKmz();
+  await cargarLeads();
+  rebuildCitas();
+  renderNuevo();
+  const vC = document.getElementById('visitaCliente');
+  const vCel = document.getElementById('visitaCelular');
+  if (vC && vCel) {
+    vC.addEventListener('input', function() {
+      const val = this.value.trim();
+      if (!val) return;
+      const match = leads.find(l => l.id !== 'LEAD-AGENDA-GLOBAL' && norm(l.nombre) === norm(val));
+      if (match && match.celular) { vCel.value = match.celular; }
+    });
+    vCel.addEventListener('input', function() {
+      const val = this.value.trim().replace(/\D/g, '');
+      if (!val) return;
+      const matchInput = val.length >= 10 ? val.slice(-10) : val;
+      const match = leads.find(l => {
+        if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
+        const lRaw = String(l.celular || '').replace(/\D/g, '');
+        const lMatch = lRaw.length >= 10 ? lRaw.slice(-10) : lRaw;
+        return matchInput && lMatch && lMatch === matchInput;
+      });
+      if (match && match.nombre) { vC.value = match.nombre; }
+    });
+  }
+  setTimeout(checkCitasFeedback, 3000);
+  setInterval(checkCitasFeedback, 1000 * 60 * 5);
+  const ind = document.getElementById('autoSyncIndicator');
+  if (ind) ind.style.display = 'flex';
+  setInterval(autoSyncLeads, 4 * 1000);
+}
+
+function cleanupLocalData() {
+  const unique = new Map();
+  leads.forEach(l => {
+    let id = String(l.id || '').trim();
+    if (!id || id === 'undefined' || id === 'null') { id = 'U-' + Date.now() + Math.floor(Math.random()*1000); l.id = id; }
+    if (!unique.has(id)) unique.set(id, l);
+  });
+  leads = Array.from(unique.values());
+}
+
+const ESTADO_ORDEN = { cancelada: 5, oferta: 4, realizada: 3, agendada: 2, solicito_visita: 1 };
+
+function visitaKey(v) {
+  // Incluir fecha para que visitas al mismo inmueble en días distintos no se colapsen
+  return String(v.codigo || '').trim() + '_' + String(v.celular || '').replace(/[^\d]/g, '') + '_' + String(v.fecha || '');
+}
+
+function mergeVisitas(localArr, cloudArr) {
+  const vMap = new Map();
+  const processMerge = (v, isLocal) => {
+    const k = visitaKey(v);
+    const ex = vMap.get(k);
+    if (!ex) { vMap.set(k, v); return; }
+    if (v.updatedAt && ex.updatedAt) {
+      if (v.updatedAt > ex.updatedAt || (v.updatedAt === ex.updatedAt && isLocal)) vMap.set(k, v);
+    } else if (v.updatedAt && !ex.updatedAt) {
+      vMap.set(k, v);
+    } else if (!v.updatedAt && !ex.updatedAt) {
+      if ((ESTADO_ORDEN[v.estado] || 0) >= (ESTADO_ORDEN[ex.estado] || 0)) vMap.set(k, v);
+    }
+  };
+  (cloudArr || []).forEach(v => processMerge(v, false));
+  (localArr  || []).forEach(v => processMerge(v, true));
+  return Array.from(vMap.values());
+}
+
+async function autoSyncLeads() {
+  if (!CRM_SCRIPT_URL) return;
+  // Si hay una escritura pendiente reciente, no descargar de Drive todavía (evita revertir cambios locales)
+  if (Date.now() < pendingWriteUntil) {
+    console.log('[AutoSync] Pausado — escritura pendiente en Drive, esperando...');
+    return;
+  }
+  const dot = document.getElementById('autoSyncDot');
+  const txt = document.getElementById('autoSyncTxt');
+  if (dot) { dot.style.background = '#d4a84b'; dot.style.boxShadow = '0 0 6px #d4a84b'; }
+  if (txt) txt.textContent = 'Sincronizando...';
+  try {
+    const [resLeads, resCitas] = await Promise.all([
+      fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now()),
+      fetch(CRM_SCRIPT_URL + '?action=getCitas&t=' + Date.now())
+    ]);
+    const data = await resLeads.json();
+    const dataCitas = await resCitas.json();
+    if (!Array.isArray(data)) throw new Error('Respuesta inválida');
+
+    // Cargar citas directamente desde el Excel (fuente de verdad)
+    if (Array.isArray(dataCitas)) {
+      citas = dataCitas;
+    }
+
+    // Fuente de verdad 100% Drive. Sin filtros locales.
+    const cloudLeads = normalizarIdsLeads(data).map(l => ({ ...l, fromCloud: true }));
+
+    // Preservar solo leads recién creados localmente (U-) que aún no llegaron a la nube (nunca estuvieron en la nube)
+    const localTemps = leads.filter(l => {
+      if (l.fromCloud) return false;
+      if (!String(l.id).startsWith('U-')) return false;
+      const phone = String(l.celular || '').replace(/\D/g, '');
+      const yaSincronizado = cloudLeads.some(c =>
+        String(c.id) === String(l.id) || (phone && String(c.celular||'').replace(/\D/g,'') === phone)
+      );
+      return !yaSincronizado;
+    });
+
+    const newList = [...cloudLeads, ...localTemps].map(n => {
+      const prev = leads.find(p => String(p.id) === String(n.id));
+      if (!Array.isArray(n.metodoPago)) n.metodoPago = [];
+      if (prev) {
+        // Preservar metodoPago local si la nube lo tiene vacío
+        if ((!n.metodoPago || n.metodoPago.length === 0) && (prev.metodoPago && prev.metodoPago.length)) {
+          n.metodoPago = prev.metodoPago;
+        }
+        // Segunda defensa: si el registro local fue editado más recientemente que el de la nube,
+        // conservar los campos editables del local (estado, etiqueta, notas, nombre, celular)
+        // Esto protege en caso de que el pendingWriteUntil no fue suficiente (Apps Script lento)
+        const prevFecha = new Date(prev._localEditedAt || 0).getTime();
+        const cloudFecha = new Date(n['Fecha Actualización'] || n.fecha || 0).getTime();
+        if (prev._localEditedAt && prevFecha > cloudFecha) {
+          // El local es más nuevo: conservar campos editables del local
+          n.estado = prev.estado;
+          n.etiqueta = prev.etiqueta;
+          n.notas = prev.notas;
+          n.nombre = prev.nombre;
+          n.celular = prev.celular;
+          n.metodoPago = prev.metodoPago;
+          n._localEditedAt = prev._localEditedAt;
+        }
+      }
+      return n;
+    });
+
+
+    // Detectar cambio real para evitar re-renders innecesarios (o detección de borrados)
+    const cambio = leads.length !== newList.length || newList.some(n => {
+      const prev = leads.find(p => String(p.id) === String(n.id));
+      if (!prev) return true;
+      
+      const prevMetodo = (prev.metodoPago || []).join(',');
+      const nMetodo = (n.metodoPago || []).join(',');
+      if (prevMetodo !== nMetodo) return true;
+
+      const prevMaxPrice = prev.filtros?.maxPrice || 0;
+      const nMaxPrice = n.filtros?.maxPrice || 0;
+
+      return prev.estado !== n.estado || prev.etiqueta !== n.etiqueta ||
+             prev.nombre !== n.nombre || prev.celular !== n.celular ||
+             prev.notas !== n.notas || prev.frecuencia !== n.frecuencia ||
+             prevMaxPrice !== nMaxPrice ||
+             (prev.propsEnviadas||[]).length !== (n.propsEnviadas||[]).length ||
+             (prev.visitas||[]).length !== (n.visitas||[]).length ||
+             (prev.historialEnvios||[]).length !== (n.historialEnvios||[]).length;
+    }) || leads.some(p => !newList.some(n => String(n.id) === String(p.id))); // Detección de leads eliminados
+
+    leads = newList;
+
+    if (cambio || true) { 
+      rebuildCitas(); // Restaurado: fusiona CRM_Citas y CRM_Leads para evitar pantalla vacía
+      const activeEl = document.activeElement;
+      const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+      if (!isTyping) {
+        if (currentTab === 'citas') renderCitas();
+        if (currentTab === 'leads') {
+          let lista = leads;
+          if(currentLeadFilter==='inmobiliaria') lista=leads.filter(l=>l.tipo==='inmobiliaria');
+          else if(currentLeadFilter!=='todos')   lista=leads.filter(l=>l.etiqueta===currentLeadFilter);
+          renderLeadsBody(lista);
+        }
+        if (currentLeadId) {
+          const l = leads.find(x => String(x.id) === String(currentLeadId));
+          if (l) renderSidePanel(l); else closeSidePanel();
+        }
+      }
+    }
+
+    if (dot) { dot.style.background = '#22c55e'; dot.style.boxShadow = '0 0 8px #22c55e'; }
+    if (txt) txt.textContent = 'En vivo';
+    setTimeout(() => { if (dot) dot.style.boxShadow = ''; }, 1500);
+  } catch (e) {
+    console.warn('[AutoSync] Error:', e);
+    if (dot) { dot.style.background = '#ef4444'; }
+    if (txt) txt.textContent = 'Sin conexión';
+    setTimeout(() => { if (dot) dot.style.background = '#888'; if (txt) txt.textContent = 'En vivo'; }, 10000);
+  }
+}
+
+async function cargarLeads(){
+  if(!CRM_SCRIPT_URL) return;
+  try {
+    const [resLeads, resCitas] = await Promise.all([
+      fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now()),
+      fetch(CRM_SCRIPT_URL + '?action=getCitas&t=' + Date.now())
+    ]);
+    const data = await resLeads.json();
+    const dataCitas = await resCitas.json();
+    
+    if (Array.isArray(dataCitas)) {
+      citas = dataCitas;
+    }
+
+    if(Array.isArray(data)){
+      leads = normalizarIdsLeads(data).map(l => ({ ...l, fromCloud: true }));
+      rebuildCitas(); // Restaurado para garantizar que nunca quede vacía
+      if(currentTab === 'leads') renderLeadsBody(leads);
+      if(currentTab === 'citas') renderCitas();
+    }
+  } catch(e){ console.error("Error cargando leads:", e); }
+}
+
+function normalizarIdsLeads(data) {
+  const seen = new Map(); // phone -> lead (deduplicar en memoria)
+  return data.map(l => {
+    let lead = {};
+    const rawJson = l.Full_JSON || l.full_json || l.FullJSON;
+    if (rawJson && typeof rawJson === 'string' && rawJson.trim().startsWith('{')) {
+      try { lead = JSON.parse(rawJson); } catch (e) { console.error("Error al parsear Full_JSON:", e); }
+    } else {
+      lead = { ...l };
+    }
+
+    const cleanStr = val => (val === undefined || val === null) ? '' : String(val).trim();
+    
+    const idVal = cleanStr(l.ID || l.id);
+    if (idVal) lead.id = idVal;
+    
+    const nombreVal = cleanStr(l.Nombre || l.nombre);
+    if (nombreVal) lead.nombre = nombreVal;
+    
+    let celularVal = cleanStr(l.Celular || l.celular);
+    if (celularVal.startsWith('=')) {
+      celularVal = celularVal.substring(1).replace(/['\"]/g, '').trim();
+    }
+    if (celularVal) lead.celular = celularVal;
+    
+    const tipoVal = cleanStr(l.Tipo || l.tipo);
+    if (tipoVal) lead.tipo = tipoVal.toLowerCase();
+    
+    const estadoVal = cleanStr(l.Estado || l.estado);
+    if (estadoVal) lead.estado = estadoVal.toLowerCase();
+    
+    const etiquetaVal = cleanStr(l.Etiqueta || l.etiqueta);
+    if (etiquetaVal) lead.etiqueta = etiquetaVal.toLowerCase();
+    
+    const notasVal = cleanStr(l.Notas || l.notas);
+    if (notasVal) lead.notas = notasVal;
+    
+    const frecVal = cleanStr(l.Frecuencia || l.frecuencia);
+    if (frecVal) lead.frecuencia = frecVal.toLowerCase();
+    
+    const mpVal = l['Método Pago'] || l.metodoPago;
+    if (mpVal) {
+      if (typeof mpVal === 'string') {
+        lead.metodoPago = mpVal.split(',').map(s => s.trim()).filter(s => s);
+      } else if (Array.isArray(mpVal)) {
+        lead.metodoPago = mpVal;
+      }
+    }
+    if (!Array.isArray(lead.metodoPago)) lead.metodoPago = [];
+    
+    const fechaActVal = cleanStr(l['Fecha Actualización'] || l.fechaActualizacion || l.fecha_actualizacion || l.fechaActualizacion);
+    if (fechaActVal) lead['Fecha Actualización'] = fechaActVal;
+
+    const presVal = l.Presupuesto || (l.filtros && l.filtros.maxPrice);
+    if (presVal !== undefined && presVal !== null && presVal !== '') {
+      if (!lead.filtros) lead.filtros = {};
+      const cleanNum = String(presVal).replace(/[^\d]/g, '');
+      lead.filtros.maxPrice = cleanNum ? parseInt(cleanNum, 10) : 0;
+    }
+
+    if(!lead.id || lead.id === 'undefined' || lead.id === 'null') {
+      const s = String(lead.nombre||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'')
+              + String(lead.celular||'').replace(/[^\d]/g,'');
+      let h = 0;
+      for(let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
+      lead.id = 'C-' + Math.abs(h).toString(16);
+    }
+
+    return lead;
+  }).filter(l => {
+    if(!l.id) return false;
+    const phone = String(l.celular||'').replace(/\D/g,'');
+    if(phone && seen.has(phone)) return false; // duplicado por teléfono
+    if(phone) seen.set(phone, true);
+    return true;
+  });
+}
+
+
+
+
+function rebuildCitas() {
+  const allVisitas = [];
+  const seenIds  = new Set(); 
+  const seenKeys = new Set(); 
+
+  // 1. Conservar TODAS las citas que vinieron directo del Excel (CRM_Citas)
+  citas.forEach(c => {
+    const vid = String(c.id || '').trim();
+    if (vid) {
+      if (seenIds.has(vid)) return;
+      seenIds.add(vid);
+    } else {
+      const k = visitaKey(c);
+      if (seenKeys.has(k)) return;
+      seenKeys.add(k);
+    }
+    allVisitas.push(c);
+  });
+
+  // 2. LIMPIEZA DE FANTASMAS
+  let needsSave = false;
+  leads.forEach(l => {
+    if (!Array.isArray(l.visitas) || !l.visitas.length) return;
+
+    const beforeLen = l.visitas.length;
+    l.visitas = l.visitas.filter(v => {
+      const vid = String(v.id || '').trim();
+      if (vid && seenIds.has(vid)) return true;
+      const k = visitaKey(v);
+      if (k && seenKeys.has(k)) return true;
+      return false; // ¡Fantasma eliminado!
+    });
+
+    if (l.visitas.length !== beforeLen) needsSave = true;
+  });
+
+  if (needsSave) {
+    saveLeads();
+  }
+
+  citas = allVisitas;
+}
+
+function normalizarPropiedades(data) {
+  if (!Array.isArray(data)) return [];
+  return data.map((obj, i) => {
+    const nuevo = { _sheetOrder: i + 1 };
+    
+    // Primero extraemos las llaves originales
+    for (let key in obj) {
+      const val = obj[key];
+      const nk = key.toLowerCase().replace(/[\ufffd]/g, '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      let k = null;
+
+      // Reglas de mapeo por prioridad
+      if (nk === 'codigo' || nk === 'cdigo' || nk === 'cod' || nk === 'id') k = 'Código';
+      else if (nk === 'nombre' || nk === 'titulo' || nk === 'propiedad') k = 'Nombre';
+      else if (nk === 'precio' || nk === 'valor' || nk === 'precio venta' || nk === 'precio renta' || nk === 'valor venta') k = 'Precio';
+      else if (nk === 'tipo' || nk === 'tipo de inmueble' || nk === 'clase') k = 'Tipo de inmueble';
+      else if (nk === 'zona' || nk === 'sector') k = 'Zona';
+      else if (nk === 'barrio') k = 'Barrio';
+      else if (nk === 'ciudad') k = 'Ciudad';
+      else if (nk === 'estrato') k = 'Estrato';
+      else if (nk === 'ubicacion') k = 'Ubicación';
+      else if (nk === 'direccion' || nk === 'dirección' || nk === 'direccion-vereda' || nk === 'direccion_vereda' || nk === 'direccin' || nk === 'direccin-vereda' || nk === 'direccin_vereda') k = 'DIRECCIÓN';
+      else if (nk === 'habitaciones' || nk === 'alcobas' || nk === 'cuartos') k = 'Habitaciones';
+      else if (nk === 'banos' || nk === 'sanitarios') k = 'Baños';
+      else if (nk === 'garaje' || nk === 'parqueadero' || nk === 'garajes') k = 'Garaje';
+      else if (nk === 'pisos' || nk === 'niveles') k = 'Pisos';
+      else if (nk === 'piscina') k = 'Piscina';
+      else if (nk === 'cocina') k = 'Cocina';
+      else if (nk === 'conjunto' || nk === 'edificio' || nk === 'unidad') k = 'Conjunto';
+      else if (nk === 'descripcion' || nk === 'detalle') k = 'Descripción';
+      else if (nk === 'puntos clave' || nk === 'caracteristicas' || nk === 'highlights') k = 'Puntos Clave';
+      else if (nk === 'area construida' || nk === 'area construida m2' || nk === 'area total' || nk === 'area' || nk === 'mt2' || nk === 'superficie' || nk === 'rea construida' || nk === 'rea construida m2' || nk === 'rea total' || nk === 'rea') k = 'Área Construida';
+      else if (nk === 'google fotos' || nk === 'google fotos (link)' || nk === 'google fotos (link album)' || nk === 'googlefotos' || nk === 'google fotos (album)' || nk === 'google_fotos' || nk.includes('google fotos') || nk.includes('googlefotos')) k = 'Google Fotos';
+      else if (nk === 'imagenes' || nk === 'fotos' || nk === 'imagen' || nk === 'galeria') k = 'Imagenes';
+      else if (nk === 'contrato') k = 'Contrato';
+      else if (nk === 'publicar') k = 'Publicar';
+      else if (nk === 'destacada' || nk === 'destacado') k = 'Destacada';
+      else if (nk === 'rentabilidad' || nk === 'retorno' || nk.includes('retorno') || nk.includes('rentabilidad')) k = 'Retorno de la inversión';
+      else if (nk === 'administracion' || nk === 'admin' || nk === 'administracin') k = 'Administración';
+      else if (nk === 'latitud' || nk === 'lat') k = 'Latitud';
+      else if (nk === 'longitud' || nk === 'lng' || nk === 'lon') k = 'Longitud';
+      else if (nk === 'inmobiliaria' || nk === 'aliado' || nk === 'fuente' || nk === 'inmob') k = 'Inmobiliaria';
+      else if (nk === 'comuna') k = 'Comuna';
+      else if (nk === 'area lote' || nk === 'area de lote' || nk.includes('area lote') || nk === 'rea lote' || nk === 'rea de lote' || nk.includes('rea lote')) k = 'Área lote';
+      else if (nk === 'closet' || nk === 'closets') k = 'Closet';
+      else if (nk === 'inventario') k = 'Inventario';
+      else if (nk === 'celular 2') k = 'Celular 2';
+      else if (nk === 'celular' || nk === 'celulares' || nk === 'celular propietario' || nk === 'celular 1') k = 'Celular 1';
+      else if (nk === 'nombre del propietario' || nk === 'propietario') k = 'Nombre del Propietario';
+      else if (nk === 'cuanto renta' || nk === 'cuanto renta ($)' || nk === 'renta' || nk === 'rentab' || nk === 'rentab.') k = 'Cuánto Renta ($)';
+      else if (nk === 'ascensor' || nk === 'ascenso') k = 'Ascensor';
+      else if (nk === 'numero de cortinas' || nk === 'cortinas' || nk === 'nmero de cortinas') k = 'Número de Cortinas';
+      else if (nk === 'aire acondicionado' || nk === 'aire') k = 'Aire Acondicionado';
+      else if (nk === 'reja antejardin' || nk === 'reja' || nk === 'reja antejardn') k = 'Reja Antejardín';
+      else if (nk === 'antiguedad del inmueble' || nk === 'antiguedad' || nk === 'antiguedad inmueble' || nk === 'antigedad del inmueble' || nk === 'antigedad' || nk === 'antigedad inmueble') k = 'Antigüedad del Inmueble';
+      else if (nk === 'patio') k = 'Patio';
+      else if (nk === 'dimensiones') k = 'Dimensiones';
+
+      // Fallbacks para términos que contienen la palabra pero no son exactos
+      if (!k) {
+        if (nk.includes('codigo')) k = 'Código';
+        else if (nk.includes('nombre')) k = 'Nombre';
+        else if (nk.includes('tipo')) k = 'Tipo de inmueble';
+        else if (nk.includes('zona')) k = 'Zona';
+        else if (nk.includes('barrio')) k = 'Barrio';
+        else if (nk.includes('ciudad')) k = 'Ciudad';
+        else if (nk.includes('estrato')) k = 'Estrato';
+        else if (nk.includes('ubicaci')) k = 'Ubicación';
+        else if (nk.includes('habitaci')) k = 'Habitaciones';
+        else if (nk.includes('garaje') || nk.includes('parquea')) k = 'Garaje';
+        else if (nk.includes('piscina')) k = 'Piscina';
+        else if (nk.includes('cocina')) k = 'Cocina';
+        else if (nk.includes('conjunto')) k = 'Conjunto';
+        else if (nk.includes('descrip')) k = 'Descripción';
+        else if (nk.includes('puntos') && nk.includes('clave')) k = 'Puntos Clave';
+        else if (nk.includes('area construida') || nk.includes('area total') || nk.includes('rea construida') || nk.includes('rea total')) k = 'Área Construida';
+        else if (nk.includes('area') || nk.includes('rea')) k = 'Área Construida';
+        else if (nk.includes('imagen') || nk.includes('foto')) k = 'Imagenes';
+        else if (nk.includes('precio') && !nk.includes('rango') && !nk.includes('administracion')) k = 'Precio';
+        else if (nk.includes('retorno') || nk.includes('rentabilidad') || nk.includes('inversi')) k = 'Retorno de la inversión';
+        else if (nk.includes('administr')) k = 'Administración';
+        else if (nk.includes('inmobiliaria') || nk.includes('inmob')) k = 'Inmobiliaria';
+        else if (nk.includes('comuna')) k = 'Comuna';
+        else if (nk.includes('area lote') || nk.includes('area de lote') || nk.includes('rea lote') || nk.includes('rea de lote')) k = 'Área lote';
+        else if (nk.includes('closet')) k = 'Closet';
+        else if (nk.includes('inventario')) k = 'Inventario';
+        else if (nk.includes('celular 2')) k = 'Celular 2';
+        else if (nk.includes('celular') || nk.includes('celulares')) k = 'Celular 1';
+        else if (nk.includes('propietario')) k = 'Nombre del Propietario';
+        else if (nk.includes('renta') || nk.includes('rentab')) k = 'Cuánto Renta ($)';
+        else if (nk.includes('ascensor') || nk.includes('ascenso')) k = 'Ascensor';
+        else if (nk.includes('cortina') || nk.includes('mero')) k = 'Número de Cortinas';
+        else if (nk.includes('aire') && nk.includes('acondicionado')) k = 'Aire Acondicionado';
+        else if (nk.includes('reja') || nk.includes('antejardin') || nk.includes('antejardn')) k = 'Reja Antejardín';
+        else if (nk.includes('antiguedad') || nk.includes('antigedad')) k = 'Antigüedad del Inmueble';
+        else if (nk.includes('patio')) k = 'Patio';
+        else if (nk.includes('dimensiones')) k = 'Dimensiones';
+      }
+
+      // Evitamos sobrescribir con valores vacíos si ya tenemos algo
+      if (k) {
+        if (!nuevo[k] || (val && String(val).trim() !== "")) {
+           // Si es Precio, solo sobrescribimos si el nuevo valor parece un precio real (numérico)
+           if (k === 'Precio' && nuevo[k]) {
+             const vNew = parseFloat(String(val).replace(/[^\d]/g, ""));
+             const vOld = parseFloat(String(nuevo[k]).replace(/[^\d]/g, ""));
+             if (!isNaN(vNew) && vNew > 0) nuevo[k] = val;
+           } else {
+             nuevo[k] = val;
+           }
+        }
+      } else {
+        nuevo[key] = val;
+      }
+
+      // Diagnóstico para Google Fotos, imágenes y dimensiones
+      if (nk.includes('foto') || nk.includes('google') || nk.includes('imagen') || nk.includes('dimension')) {
+        console.log(`[Diagnostic Log] Normalización: La llave original "${key}" (normalizada a "${nk}") se mapeó a "${k || key}" con valor:`, val);
+      }
+    }
+
+    // Forzamos que Código sea string y siempre exista
+    if (!nuevo['Código']) {
+      nuevo['Código'] = nuevo['Cdigo'] || nuevo['Id'] || "";
+    }
+    nuevo['Código'] = String(nuevo['Código'] || "").trim();
+    
+    // Si 'Imagenes' está vacío o no tiene URLs completas pero existen fotos en array 'fotos' o en el álbum live (link_drive/link_album)
+    if (!nuevo['Imagenes'] || String(nuevo['Imagenes']).trim() === '') {
+      if (Array.isArray(obj['fotos']) && obj['fotos'].length > 0) {
+        nuevo['Imagenes'] = obj['fotos'].join('|');
+      } else if (obj['link_drive'] || obj['Google Fotos'] || obj['link_album']) {
+        if (!nuevo['Google Fotos']) {
+          nuevo['Google Fotos'] = obj['link_drive'] || obj['link_album'] || obj['Google Fotos'];
+        }
+      }
+    }
+    if (!nuevo['Google Fotos'] && (obj['link_drive'] || obj['link_album'])) {
+      nuevo['Google Fotos'] = obj['link_drive'] || obj['link_album'];
+    }
+
+    // Limpieza de precios
+    if (nuevo['Precio']) {
+      const p = String(nuevo['Precio']).replace(/[^\d]/g, "");
+      if (p) nuevo['Precio'] = p;
+    }
+
+    return nuevo;
+  });
+}
+
+async function cargarProps(){
+  try {
+    document.getElementById('syncStatus').textContent='⟳ Cargando...';
+    const urlBusca = APPS_SCRIPT_URL + "&t=" + Date.now();
+    const res = await fetch(urlBusca);
+    const data = await res.json();
+    
+    // LOG DE DIAGNÓSTICO CRÍTICO PARA EL USUARIO
+    console.log("[Diagnostic Log] --- NUEVO CARGUE DE PROPIEDADES ---");
+    console.log("[Diagnostic Log] Total de propiedades recibidas del API de Sheets:", data.length);
+    if (data && data.length > 0) {
+      console.log("[Diagnostic Log] Llaves (columnas) presentes en el primer elemento de la respuesta del API:", Object.keys(data[0]));
+      
+      // Mostrar info debug de dimensiones para los primeros 5 elementos de data
+      console.log("[Diagnostic Log] Muestra de depuración de Dimensiones en los primeros 5 elementos crudos:");
+      data.slice(0, 5).forEach(p => {
+        console.log(` - Código: "${p['Código'] || p['codigo'] || p['id']}", Dimensiones: "${p['Dimensiones'] || ''}", Debug: "${p['Dimensiones_Debug'] || 'no disponible'}"`);
+      });
+      
+      // Buscar elementos que tengan algún valor en el campo dimensiones en los datos crudos del API
+      const conDimensionesCrudas = data.filter(p => {
+        return String(p['Dimensiones'] || '').trim() !== '';
+      });
+      console.log("[Diagnostic Log] Cantidad de propiedades crudas con valor en columna 'Dimensiones':", conDimensionesCrudas.length);
+      if (conDimensionesCrudas.length > 0) {
+        console.log("[Diagnostic Log] Muestra de 3 propiedades crudas con dimensiones del API:");
+        conDimensionesCrudas.slice(0, 3).forEach(p => {
+          console.log(` - Código: "${p['Código'] || p['codigo'] || p['id']}", Dimensiones: "${p['Dimensiones']}", Debug: "${p['Dimensiones_Debug'] || 'no disponible'}"`);
+        });
+      } else {
+        console.warn("[Diagnostic Log] ¡ALERTA! Ninguna propiedad cruda devuelta por el API tiene valor en la columna 'Dimensiones'.");
+      }
+    }
+    
+    // Validar si los datos de la nube contienen el campo Inventario
+    const hasInventario = Array.isArray(data) && data.length > 0 && data.some(p => p.hasOwnProperty('Inventario') || p.hasOwnProperty('inventario'));
+    
+
+    const rawData = normalizarPropiedades(Array.isArray(data) ? data : []);
+    
+    let remoteProps = rawData.filter(d => {
+        const hasCoords = d['Latitud'] && d['Longitud'] && !isNaN(parseFloat(String(d['Latitud']).replace(',','.'))) && !isNaN(parseFloat(String(d['Longitud']).replace(',','.'))) && parseFloat(String(d['Latitud']).replace(',','.')) !== 0;
+        return String(d['Publicar'] || '').trim().toUpperCase() === 'SI' || hasCoords;
+    });
+
+    // Cargar propiedades personalizadas de localStorage
+    const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
+    
+    // Unir: la propiedad REMOTA es la base con toda su info rica.
+    // customProps solo aporta los campos que explícitamente se editaron
+    // (ej: coordenadas agregadas desde el mapa). No reemplaza completamente.
+    // Usamos un Map solo para los customProps y preservamos todos los remoteProps (incluso si tienen mismo Código)
+    // para que el total coincida exactamente con index.html (533 props).
+    const customMap = new Map();
+    customProps.forEach(custom => customMap.set(custom['Código'], custom));
+
+    allProps = remoteProps.map(p => {
+      const custom = customMap.get(p['Código']);
+      if (custom) {
+        // Merge inteligente: solo sobreescribir campos no vacíos
+        const merged = { ...p };
+        for (const [key, val] of Object.entries(custom)) {
+          if (val !== '' && val !== null && val !== undefined) {
+            merged[key] = val;
+          }
+        }
+        return merged;
+      }
+      return p;
+    });
+
+    // Agregar las propiedades nuevas creadas desde el admin que no están en remoteProps
+    const remoteCodigos = new Set(remoteProps.map(p => p['Código']));
+    customProps.forEach(custom => {
+      if (!remoteCodigos.has(custom['Código'])) {
+        allProps.push(custom);
+      }
+    });
+    
+    console.log("Admin: Remote:", remoteProps.length, "Custom:", customProps.length, "Total:", allProps.length);
+    document.getElementById('syncStatus').textContent=`✓ ${allProps.length} propiedades`;
+    
+    // Actualizar el precio máximo dinámico
+    if(allProps.length > 0){
+      const prices = allProps.map(p => parseP(p['Precio'])).filter(p => p > 0);
+      if(prices.length > 0) MAX_CATALOG_PRICE = Math.max(...prices);
+    }
+    
+  } catch(e){
+    console.error("Error cargando propiedades:", e);
+    document.getElementById('syncStatus').textContent='⚠ Sin conexión'; 
+    allProps=[];
+  }
+  if(currentTab==='nuevo') renderNuevo();
+}
+
+/* ═══════════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════════ */
+function showTab(tab){
+  try {
+    currentTab=tab;
+    const tabNames = ['nuevo','leads','citas','administracion','contabilidad'];
+    document.querySelectorAll('.tab').forEach((t,i)=> {
+      if (tabNames[i]) t.classList.toggle('active',tabNames[i]===tab);
+    });
+    
+    if(tab==='nuevo') renderNuevo(); 
+    else if(tab==='leads') renderLeads();
+    else if(tab==='citas') renderCitas();
+    else if(tab==='administracion') renderAdministracion();
+    else if(tab==='gestion') renderGestion();
+    else if(tab==='contabilidad') {
+      if (typeof renderContabilidad === 'function') {
+        renderContabilidad();
+      } else if (typeof window.renderContabilidad === 'function') {
+        window.renderContabilidad();
+      } else {
+        setTimeout(function() {
+          if (typeof renderContabilidad === 'function') renderContabilidad();
+          else if (typeof window.renderContabilidad === 'function') window.renderContabilidad();
+          else console.error("renderContabilidad no disponible aún");
+        }, 80);
+      }
+    }
+  } catch (err) {
+    console.error("Error al abrir pestaña " + tab + ":", err);
+    if (typeof toast === 'function') {
+      toast("Error al abrir pestaña: " + err.message, "error");
+    } else {
+      alert("Error al abrir pestaña " + tab + ": " + err.message);
+    }
+  }
+}
+function toggleNlData(){
+  nlShowData = !nlShowData;
+  renderNuevo();
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER NUEVO LEAD (UNIFICADO)
+═══════════════════════════════════════════════ */
+function renderNuevo(){
+  const c=document.getElementById('mainContent');
+  c.innerHTML=`
+  <div class="section-header">
+    <div class="section-title">Catálogo</div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn ${nlShowData?'btn-primary':'btn-secondary'}" onclick="toggleNlData()" title="${nlShowData?'Ocultar formulario':'Ver datos del cliente'}">
+        ${nlShowData ? '👤 Ocultar Datos ▲' : '👤 Datos del Cliente ▼'}
+      </button>
+    </div>
+  </div>
+
+  <div class="nuevo-lead-layout ${nlShowData ? '' : 'hide-data'}">
+    <!-- COLUMNA 1: FILTROS E INMUEBLES (30%) -->
+    <div class="nl-col-1">
+      <div class="panel-section">
+        <div class="form-section-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="panel-section-title">Intereses y Filtros</div>
+          <button class="btn-nueva-cita-premium" onclick="showTab('gestion')" style="height:32px; font-size:12px; padding:0 12px; border-radius:8px;">
+            <span>+ Agregar inmuebles</span>
+          </button>
+        </div>
+        <div class="section-content">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Selecciona los filtros para encontrar las propiedades ideales automáticamente.</p>
+          ${allProps.length ? `<div id="nlFiltrosWrap"></div>` : `<div class="loading"><div class="spinner"></div> Cargando catálogo...</div>`}
+        </div>
+
+        <div style="height:20px;"></div>
+        <div class="form-section-header" style="border-top:1px solid rgba(255,255,255,0.05); padding-top:16px; display:flex; justify-content:space-between; align-items:flex-start;">
+          <div class="panel-section-title">Selección de Propiedades</div>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; margin-top:10px;">
+            <span style="font-size:12px;color:var(--gold); opacity:0.8; font-weight:500;" id="selCnt">${selectedProps.length} seleccionadas</span>
+            <div class="ordenar-por" style="margin:0; margin-bottom:12px;">
+              <div class="sort-toggle" onclick="toggleSortMenu(event)" style="height:32px; font-size:11.5px; padding:0 12px; border-radius:10px;">
+                ${getSortLabel(criterioOrden)} <span class="st-arrow"></span>
+              </div>
+              <ul class="sort-options hidden">
+                <li onclick="setSort('destacadas')" class="${criterioOrden==='destacadas'?'st-selected':''}">Destacadas</li>
+                <li onclick="setSort('menorPrecio')" class="${criterioOrden==='menorPrecio'?'st-selected':''}">Menor precio</li>
+                <li onclick="setSort('mayorPrecio')" class="${criterioOrden==='mayorPrecio'?'st-selected':''}">Mayor precio</li>
+                <li onclick="setSort('rentabilidad')" class="${criterioOrden==='rentabilidad'?'st-selected':''}">Mayor rentabilidad</li>
+                <li onclick="setSort('noUbicadas')" class="${criterioOrden==='noUbicadas'?'st-selected':''}">Faltan por mapa</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="section-content">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:24px; margin-top:-32px;">Puedes marcar casas específicas para enviar hoy mismo.</p>
+
+          ${selectedProps.length?`<div class="selected-bar" style="margin-bottom:20px; display:flex; align-items:center; justify-content:space-between;"><div class="selected-chips">${selectedProps.map(c=>`<span class="sel-chip">${c}<button onclick="deselProp('${c}')">×</button></span>`).join('')}</div><button class="btn btn-sm" style="font-size:11px; padding:4px 12px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:8px; cursor:pointer; transition:all 0.2s; white-space:nowrap; margin-left:12px; flex-shrink:0;" onmouseover="this.style.background='rgba(239,68,68,0.3)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'" onclick="borrarSeleccion()">🗑 Borrar</button></div>`:''}
+          <div id="propsGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMNA 2: DATOS Y PLAN (60%) -->
+    <div class="nl-col-2">
+      <div class="panel-section">
+        <!-- BLOQUE 1: DATOS -->
+        <div class="form-section-header">
+          <div class="panel-section-title">Datos del Cliente</div>
+        </div>
+        <div class="section-content">
+          <div style="display:flex;gap:12px;margin-bottom:20px;margin-top:10px;">
+            <button id="btnTC" class="btn ${nuevoLead.tipo==='cliente'?'btn-primary':'btn-secondary'}" onclick="setTipo('cliente')">👤 Cliente</button>
+            <button id="btnTI" class="btn ${nuevoLead.tipo==='inmobiliaria'?'btn-gold':'btn-secondary'}"   onclick="setTipo('inmobiliaria')">🏢 Inmobiliaria</button>
+          </div>
+          <div id="nlDuplicateWarning" style="display:none; margin-bottom:15px; padding:12px 15px; background-color:rgba(249, 115, 22, 0.1); border:1px solid rgba(249, 115, 22, 0.3); border-radius:8px; color:#f97316; font-size:13px; align-items:center; justify-content:space-between;"></div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Nombre Completo *</label><input class="form-input" id="nlN" value="${nuevoLead.nombre}" placeholder="Ej: Maria Perez" oninput="nuevoLead.nombre=this.value; checkDuplicateLead()"/></div>
+            <div class="form-group"><label class="form-label">WhatsApp / Celular *</label><input class="form-input" id="nlC" value="${nuevoLead.celular}" placeholder="3001234567" oninput="nuevoLead.celular=this.value; checkDuplicateLead()"/></div>
+            <div class="form-group full"><label class="form-label">Notas u Observaciones</label><textarea class="form-input" oninput="nuevoLead.notas=this.value" placeholder="¿Qué detalles adicionales tiene este cliente?">${nuevoLead.notas}</textarea></div>
+            <div class="form-group">
+              <label class="form-label">Estado Inicial</label>
+              <select class="form-input" onchange="nuevoLead.estado=this.value">
+                <option value="enviando" ${nuevoLead.estado==='enviando'?'selected':''}>🟠 Enviando propuestas</option>
+                <option value="proceso"  ${nuevoLead.estado==='proceso'?'selected':''}>🔵 Proceso de venta</option>
+                <option value="visita"   ${nuevoLead.estado==='visita'?'selected':''}>🟢 Pendiente visita</option>
+                <option value="banco"    ${nuevoLead.estado==='banco'?'selected':''}>🟣 Referido al banco</option>
+                <option value="inactivo" ${nuevoLead.estado==='inactivo'?'selected':''}>⚫ Inactivo</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Prioridad / Etiqueta</label>
+              <select class="form-input" onchange="nuevoLead.etiqueta=this.value">
+                <option value="activo"   ${nuevoLead.etiqueta==='activo'?'selected':''}>🟢 Activo (Interesado)</option>
+                <option value="tibio"    ${nuevoLead.etiqueta==='tibio'?'selected':''}>🟡 Tibio (Explorando)</option>
+                <option value="inactivo" ${nuevoLead.etiqueta==='inactivo'?'selected':''}>⚫ Inactivo (No responde)</option>
+              </select>
+            </div>
+          </div>
+          <div id="inmobExtra" style="display:${nuevoLead.tipo==='inmobiliaria'?'block':'none'}">
+            <div class="inmob-section">
+              <div class="inmob-title">🏢 Datos de la Inmobiliaria Aliada</div>
+              <div class="form-grid">
+                <div class="form-group"><label class="form-label">Nombre Inmobiliaria</label><input class="form-input" value="${nuevoLead.nombreInmobiliaria}" placeholder="Nombre" oninput="nuevoLead.nombreInmobiliaria=this.value"/></div>
+                <div class="form-group"><label class="form-label">Nombre del Agente</label><input class="form-input" value="${nuevoLead.nombreAgente}" placeholder="Agente" oninput="nuevoLead.nombreAgente=this.value"/></div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:20px;">
+            <div class="form-label" style="margin-bottom:12px;">Método de Pago Preferido</div>
+            <div class="checklist">
+              ${['Efectivo', 'Crédito', 'Caja Honor', 'Permuta'].map(m=>`<label class="check-item ${nuevoLead.metodoPago.includes(m)?'active':''}"><input type="checkbox" ${nuevoLead.metodoPago.includes(m)?'checked':''} onchange="toggleMetodo('${m}',this)"/> ${m}</label>`).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div style="height:32px;"></div>
+        <div class="form-section-header" style="border-top:1px solid rgba(255,255,255,0.05); padding-top:24px;">
+          <div class="panel-section-title">Plan de Envío y Finalización</div>
+        </div>
+        <div class="section-content">
+          <div class="form-grid" style="margin-top:4px;">
+            <div class="form-group">
+              <label class="form-label">Frecuencia de seguimiento</label>
+              <select class="form-input" onchange="nuevoLead.frecuencia=this.value; updateFrec()">
+                <option value="diaria" ${nuevoLead.frecuencia==='diaria'?'selected':''}>Diaria</option>
+                <option value="semanal" ${nuevoLead.frecuencia==='semanal'?'selected':''}>Semanal</option>
+                <option value="quincenal" ${nuevoLead.frecuencia==='quincenal'?'selected':''}>Quincenal</option>
+                <option value="mensual" ${nuevoLead.frecuencia==='mensual'?'selected':''}>Mensual</option>
+                <option value="manual" ${nuevoLead.frecuencia==='manual'?'selected':''}>Manual</option>
+              </select>
+            </div>
+          </div>
+          <div class="freq-info" id="frecInfo" style="margin-top:20px; ${nuevoLead.frecuencia==='manual'?'display:none':''}">${getFrecInfo()}</div>
+
+          <div style="margin-top:32px; display:flex; gap:12px; flex-wrap:wrap; padding-top:24px; border-top:1px solid rgba(255,255,255,0.05);">
+            <button class="btn btn-primary" style="flex:1;" onclick="guardarLead(false, this)">💾 Solo Guardar</button>
+            ${nuevoLead.tipo==='cliente'
+              ? `<button class="btn btn-green" style="flex:1.2; font-weight:700;" onclick="guardarLead(true, this)">💾 Guardar y Enviar WhatsApp ➜</button>`
+              : `<button class="btn btn-gold" style="flex:1.2; font-weight:700;" onclick="guardarLead(true, this)">💾 Guardar y Msg. Agente ➜</button>`}
+            <button class="btn btn-secondary" onclick="resetNuevoLead()">🗑 Limpiar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+
+  // Construir barra de filtros al siguiente tick
+  if(allProps.length) setTimeout(()=> buildFiltrosBar('nlFiltrosWrap','nl',nuevoLead.filtros), 0);
+  renderPropsGrid();
+  setTimeout(()=> checkDuplicateLead(), 0);
+
+  // ── RESTORE MAP: después de reconstruir el DOM, re-adjuntar el mapa si estaba activo ──
+  if(getFSt('nl').mapActive) {
+    setTimeout(() => {
+      const mapCont = document.getElementById('mapaContenedor_nl');
+      const mapToggle = document.getElementById('btnToggleMapa_nl');
+      if(mapCont && mapToggle) {
+        mapToggle.checked = true;
+        mapCont.classList.add('open');
+        leafletMap = null; // El DOM fue destruido; forzar re-init
+        setTimeout(() => initMapa('nl'), 150);
+      }
+    }, 80);
+  }
+}
+
+function getFrecInfo(){
+  const cnt=filtrarProps(nuevoLead.filtros, true).length;
+  const ft={diaria:'día',semanal:'semana',quincenal:'15 días',mensual:'mes'}[nuevoLead.frecuencia]||nuevoLead.frecuencia;
+  if(nuevoLead.frecuencia==='manual') return `Con <strong>${cnt}</strong> propiedades → <strong>Envío manual</strong>.`;
+  return `Con <strong>${cnt}</strong> propiedades → Se enviarán todas las propiedades encontradas cada <strong>${ft}</strong>.`;
+}
+
+function updateFrec(){
+  const fi=document.getElementById('frecInfo');
+  if(fi){ fi.style.display=nuevoLead.frecuencia==='manual'?'none':''; fi.innerHTML=getFrecInfo(); }
+}
+
+function checkDuplicateLead(){
+  const w = document.getElementById('nlDuplicateWarning');
+  if(!w) return;
+  
+  const inputN = document.getElementById('nlN');
+  const inputC = document.getElementById('nlC');
+  
+  const valN = inputN ? inputN.value : '';
+  const valC = inputC ? inputC.value : '';
+  
+  nuevoLead.nombre = valN;
+  nuevoLead.celular = valC;
+  
+  const rawNum = String(valC).trim().replace(/\D/g, '');
+  const num = rawNum.length >= 10 ? rawNum.slice(-10) : rawNum;
+  const nom = norm(valN);
+  
+  if(!num && !nom) { w.style.display='none'; return; }
+
+  const dup = leads.find(l => {
+    if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
+    const lRawNum = String(l.celular||'').trim().replace(/\D/g, '');
+    const lNum = lRawNum.length >= 10 ? lRawNum.slice(-10) : lRawNum;
+    const lNom = norm(l.nombre);
+    
+    const matchCelular = num && lNum && lNum === num;
+    const matchNombre = nom && lNom && lNom === nom;
+    return matchCelular || matchNombre;
+  });
+
+  if(dup){
+    w.style.display='flex';
+    const lRawNum = String(dup.celular||'').trim().replace(/\D/g, '');
+    const lNum = lRawNum.length >= 10 ? lRawNum.slice(-10) : lRawNum;
+    const coincidenciaCelular = num && lNum === num;
+    w.innerHTML = `<div>⚠️ <b>Atención:</b> Ya existe un cliente con este ${coincidenciaCelular ? 'celular' : 'nombre'} (${dup.nombre}).</div> <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="showTab('leads'); abrirLead('${String(dup.id).trim()}', '${String(dup.celular).trim()}')">Ver Cliente</button>`;
+  } else {
+    w.style.display='none';
+  }
+}
+
+function setTipo(tipo){
+  nuevoLead.tipo=tipo;
+  document.getElementById('inmobExtra').style.display=tipo==='inmobiliaria'?'block':'none';
+  document.getElementById('btnTC').className='btn '+(tipo==='cliente'?'btn-primary':'btn-secondary');
+  document.getElementById('btnTI').className='btn '+(tipo==='inmobiliaria'?'btn-gold':'btn-secondary');
+}
+function toggleMetodo(m,el){
+  if(el.checked){ if(!nuevoLead.metodoPago.includes(m)) nuevoLead.metodoPago.push(m); }
+  else nuevoLead.metodoPago=nuevoLead.metodoPago.filter(x=>x!==m);
+  el.closest('.check-item').classList.toggle('active',el.checked);
+}
+function deselProp(cod){ selectedProps=selectedProps.filter(c=>c!==cod); renderNuevo(); }
+function borrarSeleccion(){ if(!selectedProps.length) return; selectedProps=[]; renderNuevo(); toast('Selección borrada','success'); }
+
+/* ═══════════════════════════════════════════════
+   PROPS GRID
+═══════════════════════════════════════════════ */
+function renderPropsGrid(listaForzada){
+  const el=document.getElementById('propsGrid'); if(!el) return;
+  let lista = listaForzada || filtrarProps(nuevoLead.filtros, true);
+  if(!listaForzada){
+    if(criterioOrden==='destacadas') lista = lista.filter(a => ["Directo", "Verbal"].includes(a["Contrato"]));
+    else if(criterioOrden==='noUbicadas') lista = lista.filter(p => {
+      const lat = parseFloat(String(p['Latitud'] || p['Lat'] || '').replace(',','.'));
+      const lng = parseFloat(String(p['Longitud'] || p['Lng'] || '').replace(',','.'));
+      return isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0;
+    });
+  }
+  const total = lista.length;
+
+  if(!total){ el.innerHTML='<div class="empty">No hay propiedades con estos filtros</div>'; return; }
+
+  const start = nlPage * PAGE_SIZE;
+  const sliced = lista.slice(start, start + PAGE_SIZE);
+  const maxPage = Math.ceil(total / PAGE_SIZE) - 1;
+
+  let html = '<div class="props-grid">';
+  for (let i = 0; i < sliced.length; i++) {
+    const d = sliced[i];
+    const cod = String(d['Código'] || "");
+    const sel = selectedProps.includes(cod);
+    const img = (d['Imagenes']||'').split('|')[0].trim() || d['Image'] || 'https://i.imgur.com/Pc9M3I8.png';
+    const isDestacada = ["Directo", "Verbal"].includes(d["Contrato"]);
+    const inmob = d['Inmobiliaria'] || '';
+    
+    html += '<div class="prop-card' + (sel?' selected':'') + (isDestacada?' recomendado':'') + '" onclick="abrirModalProp(\'' + eq(cod) + '\')" onmouseenter="focusProperty(\'' + eq(cod) + '\')">';
+    if(isDestacada) html += '<div class="ribbon"><span>¡Destacada!</span></div>';
+    html += '<div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp(\'' + eq(cod) + '\', this.parentElement)">' + (sel?'✓':'+') + '</div>';
+    html += '<img src="' + img + '" loading="lazy" onerror="this.src=\'https://i.imgur.com/Pc9M3I8.png\'"/>';
+    html += '<div class="prop-card-body" style="padding:6px 10px 10px 10px;">';
+    html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">';
+    html += '<div class="prop-card-code" style="font-weight:bold; color:#8c8c8c; font-size:14px;">Código: ' + cod + '</div>';
+    if(inmob) html += '<div class="prop-card-inmobiliaria" title="' + eq(inmob) + '">' + inmob + '</div>';
+    html += '</div>';
+    html += '<div class="prop-card-name" style="font-size:14px; font-weight:600; color:#fff; margin:2px 0 4px 0;">' + (d['Nombre']||'') + '</div>';
+    html += '<div class="prop-card-price" style="font-size:0.9rem; font-weight:700; color:#22c55e; margin-bottom:4px;">' + formatP(d['Precio']) + '</div>';
+    
+    // Features layout
+    html += '<div class="prop-card-features" style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">';
+    
+    // Row 1: Hab, Baños
+    html += '<div style="display:flex; flex-wrap:wrap; gap:10px; font-size:12px; color:#ccc; align-items:center;">';
+    html += `<span><span style="opacity:0.7; margin-right:3px;">🛏</span> Hab. ${d['Habitaciones']||0}</span>`;
+    html += `<span><span style="opacity:0.7; margin-right:3px;">🛁</span> Baños ${d['Baños']||0}</span>`;
+    html += '</div>';
+
+    // Row 2: Garaje
+    html += '<div style="display:flex; flex-wrap:wrap; gap:10px; font-size:12px; color:#ccc; align-items:center;">';
+    html += `<span><span style="opacity:0.7; margin-right:3px;">🚗</span> Garaje ${d['Garaje']||0}</span>`;
+    html += '</div>';
+
+    // Row 3: Cocina, Pisos, Lote
+    html += '<div style="display:flex; flex-wrap:wrap; gap:10px; font-size:12px; color:#ccc; align-items:center;">';
+    if(d['Cocina']) html += `<span><span style="opacity:0.7; margin-right:3px;">🍳</span> ${d['Cocina']}</span>`;
+    if(d['Pisos']) html += `<span>Pisos ${d['Pisos']}</span>`;
+    if(d['Área']) html += `<span><span style="opacity:0.7; margin-right:3px;">📐</span> ${d['Área']} m²</span>`;
+    html += '</div>';
+
+    if(String(d['Rentabilidad']||'').trim()) {
+      html += `<div style="font-size:12px; font-weight:700; color:var(--gold); margin-top:4px;">${d['Rentabilidad']}</div>`;
+    }
+    
+    html += '</div>'; // Fin features
+    html += '</div>'; // Fin card-body
+    html += '</div>'; // Fin prop-card
+  }
+  html += '</div>';
+
+  if(total > PAGE_SIZE){
+    html += '<div class="pagination" style="display:flex; align-items:center; justify-content:center; gap:16px; margin-top:24px; padding:16px 0; border-top:1px solid rgba(212,168,75,0.1);">';
+    html += '<button class="btn btn-sm ' + (nlPage===0?'btn-secondary':'btn-gold') + '" ' + (nlPage===0?'disabled':'') + ' onclick="changeNlPage(-1)">« Anterior</button>';
+    html += '<span style="font-size:13px; color:var(--muted); font-weight:500;">Página <strong>' + (nlPage+1) + '</strong> de ' + (maxPage+1) + '</span>';
+    html += '<button class="btn btn-sm ' + (nlPage===maxPage?'btn-secondary':'btn-gold') + '" ' + (nlPage===maxPage?'disabled':'') + ' onclick="changeNlPage(1)">Siguiente »</button>';
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function changeNlPage(delta){
+  nlPage += delta;
+  renderPropsGrid();
+  document.getElementById('propsGrid').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+
+function toggleProp(cod,el){
+  const idx=selectedProps.indexOf(cod);
+  if(idx>=0){ 
+    selectedProps.splice(idx,1); 
+    if(el) {
+      el.classList.remove('selected'); 
+      const sel = el.querySelector('.prop-card-selector');
+      if(sel) sel.textContent = '+';
+    }
+  } else { 
+    selectedProps.push(cod);    
+    if(el) {
+      el.classList.add('selected');    
+      const sel = el.querySelector('.prop-card-selector');
+      if(sel) sel.textContent = '\u2713';
+    }
+  }
+
+  // Actualizar contador
+  const c=document.getElementById('selCnt'); 
+  if(c) c.textContent=`${selectedProps.length} seleccionadas`;
+  
+  // Actualizar chips bar en todos los lugares donde haya una grilla activa (tab principal o modal)
+  const grids = ['propsGrid', 'editFiltrosGrid'];
+  grids.forEach(gid => {
+    const grid = document.getElementById(gid);
+    if(!grid) return;
+    let bar = grid.parentElement.querySelector('.selected-bar');
+    if(selectedProps.length > 0){
+      const chipsHtml = selectedProps.map(s=>`<span class="sel-chip">${s}<button onclick="deselProp('${s}')">\u00d7</button></span>`).join('');
+      const borrarBtn = `<button class="btn btn-sm" style="font-size:11px; padding:4px 12px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:8px; cursor:pointer; transition:all 0.2s; white-space:nowrap; margin-left:12px; flex-shrink:0;" onmouseover="this.style.background='rgba(239,68,68,0.3)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'" onclick="borrarSeleccion()">🗑 Borrar</button>`;
+      if(bar){
+        bar.style.display = 'flex';
+        bar.style.alignItems = 'center';
+        bar.style.justifyContent = 'space-between';
+        bar.querySelector('.selected-chips').innerHTML = chipsHtml;
+        const existingBtn = bar.querySelector('button[onclick*="borrarSeleccion"]');
+        if(!existingBtn) bar.insertAdjacentHTML('beforeend', borrarBtn);
+      } else {
+        const newBar = document.createElement('div');
+        newBar.className = 'selected-bar';
+        newBar.style.cssText = 'margin-bottom:20px; display:flex; align-items:center; justify-content:space-between;';
+        newBar.innerHTML = `<div class="selected-chips">${chipsHtml}</div>${borrarBtn}`;
+        grid.parentElement.insertBefore(newBar, grid);
+      }
+    } else {
+      if(bar) bar.remove();
+    }
+  });
+
+  // Mostrar/ocultar bot\u00f3n "Generar link" en todas las barras visibles
+  document.querySelectorAll('.btn-generar-pc').forEach(btn => {
+    // Ya est\u00e1n visibles por CSS, pero esto asegura compatibilidad
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   GUARDAR LEAD
+═══════════════════════════════════════════════ */
+function guardarLead(enviarAhora, btn){
+  const inputN = document.getElementById('nlN');
+  const inputC = document.getElementById('nlC');
+  if (inputN) nuevoLead.nombre = inputN.value.trim();
+  if (inputC) nuevoLead.celular = inputC.value.trim();
+
+  if(!nuevoLead.nombre.trim() && nuevoLead.tipo !== 'inmobiliaria'){ toast('Ingresa el nombre','error'); return; }
+  if(nuevoLead.tipo === 'inmobiliaria' && !nuevoLead.nombreInmobiliaria.trim()){ toast('Ingresa nombre de inmobiliaria','error'); return; }
+  if(!nuevoLead.celular.trim()){ toast('Ingresa el celular','error'); return; }
+  
+  const celularLimpio = String(nuevoLead.celular||'').trim().replace(/\D/g, '');
+  
+
+
+  const existe = leads.find(l => {
+    if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
+    const lRawNum = String(l.celular || '').replace(/\D/g, '');
+    const lNum = lRawNum.length >= 10 ? lRawNum.slice(-10) : lRawNum;
+    const cleanC = celularLimpio.length >= 10 ? celularLimpio.slice(-10) : celularLimpio;
+    
+    const lNom = norm(l.nombre);
+    const nom = norm(nuevoLead.nombre);
+    
+    const matchCelular = cleanC && lNum && lNum === cleanC;
+    const matchNombre = nom && lNom && lNom === nom;
+    return matchCelular || matchNombre;
+  });
+  if (existe) {
+    const lRawNum = String(existe.celular || '').replace(/\D/g, '');
+    const lNum = lRawNum.length >= 10 ? lRawNum.slice(-10) : lRawNum;
+    const cleanC = celularLimpio.length >= 10 ? celularLimpio.slice(-10) : celularLimpio;
+    const coincidenciaCelular = cleanC && lNum === cleanC;
+    
+    toast(`Ya existe un cliente con este ${coincidenciaCelular ? 'celular' : 'nombre'} (${existe.nombre})`, 'error');
+    if(btn) btn.disabled = false;
+    return;
+  }
+  
+  if(btn) btn.disabled = true;
+  const filtradas=filtrarProps(nuevoLead.filtros, true), max=nuevoLead.maxPorEnvio||4;
+  const lead={
+    id:'U-'+Date.now()+Math.floor(Math.random()*1000), 
+    tipo:nuevoLead.tipo, nombre:nuevoLead.nombre.trim(),
+    celular:nuevoLead.celular.trim(), notas:nuevoLead.notas, metodoPago:[...nuevoLead.metodoPago],
+    estado:nuevoLead.estado, etiqueta:nuevoLead.etiqueta,
+    filtros:JSON.parse(JSON.stringify(nuevoLead.filtros)),
+    frecuencia:nuevoLead.frecuencia, maxPorEnvio:max,
+    nombreInmobiliaria:nuevoLead.nombreInmobiliaria, nombreAgente:nuevoLead.nombreAgente,
+    propsFiltradas:filtradas.map(d=>d['Código']),
+    propsEnviadas:[], proximosEnvios:generarProximosCheck(nuevoLead.frecuencia),
+    historialEnvios:[], visitas:[], creadoEn:new Date().toISOString()
+  };
+  leads.push(lead); saveLeads(); toast('Cliente guardado ✓','success');
+  if(enviarAhora){ 
+    const sel = selectedProps.length > 0 ? [...selectedProps] : null;
+    resetNuevoLead();
+    abrirEnvioModal(lead.id, sel);
+  } else {
+    resetNuevoLead();
+  }
+  syncSheets(lead).finally(() => {
+    if(btn) btn.disabled = false;
+  });
+}
+
+function resetNuevoLead(){
+  nuevoLead = freshLead();
+  selectedProps = [];
+  renderNuevo();
+}
+
+function generarProximos(lista, frec, max, historial){
+  if(frec==='manual') return [];
+  const prox = [];
+  const hoy = new Date();
+  const dias = { diaria:1, semanal:7, quincenal:15, mensual:30 }[frec] || 7;
+  let offset = 0;
+  for(let i=0; i<lista.length; i+=max){
+    offset += dias;
+    const f = new Date(hoy); f.setDate(f.getDate() + offset);
+    prox.push({
+      fecha: f.toISOString().split('T')[0],
+      codigos: lista.slice(i, i+max).map(d=>d['Código']),
+      enviado: false
+    });
+  }
+  return prox;
+}
+
+function formatFullPrice(p){
+  if(!p) return '$0';
+  let n = parseFloat(String(p).replace(/[^\d]/g, ""));
+  if(isNaN(n)) return String(p);
+  return '$'+n.toLocaleString('es-CO',{maximumFractionDigits:0});
+}
+function formatShortPrice(p){ 
+  if(!p) return ''; 
+  const n=parseFloat(String(p).replace(/[^\d]/g,'')); 
+  if(isNaN(n)) return p; 
+  if(n>=1e9) return `$${(n/1e9).toFixed(1).replace(/\.0$/,'')}MM`; 
+  if(n>=1e6) return `$${Math.round(n/1e6)}M`; 
+  return `$${n.toLocaleString('es-CO')}`; 
+}
+function formatP(p){ return formatFullPrice(p); }
+
+function estadoLbl(e){
+  const map = { enviando:'Enviando propuestas', proceso:'Proceso de venta', visita:'Visita pendiente', banco:'Referido banco', inactivo:'Inactivo' };
+  return map[e] || e;
+}
+
+/* ═══════════════════════════════════════════════
+   LEADS
+═══════════════════════════════════════════════ */
+
+function renderLeads(){
+  document.getElementById('mainContent').innerHTML=`
+  <div class="section-header">
+    <div class="section-title">👥 Leads (${leads.length})</div>
+  </div>
+
+  <!-- PANEL DE CONTROLES DE LEADS -->
+  <div class="panel-section" style="padding: 14px 0; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); margin-bottom: 16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap: wrap; width: 100%; padding: 0 20px; box-sizing: border-box; row-gap: 12px;">
+      <!-- FILTROS (IZQUIERDA) -->
+      <div style="display:flex; gap:8px; flex-wrap: wrap; align-items: center;">
+        <button class="chip-filtro ${currentLeadFilter==='todos'?'sel':''}" id="fA" onclick="filtTabla('todos',this)">Todos</button>
+        <button class="chip-filtro ${currentLeadFilter==='activo'?'sel':''}" id="fAc" onclick="filtTabla('activo',this)">🟢 Activos</button>
+        <button class="chip-filtro ${currentLeadFilter==='tibio'?'sel':''}" id="fTi" onclick="filtTabla('tibio',this)">🟡 Tibios</button>
+        <button class="chip-filtro ${currentLeadFilter==='inactivo'?'sel':''}" id="fIn" onclick="filtTabla('inactivo',this)">⚫ Inactivos</button>
+        <button class="chip-filtro ${currentLeadFilter==='inmobiliaria'?'sel':''}" id="fIm" onclick="filtTabla('inmobiliaria',this)">🏢 Inmobiliarias</button>
+      </div>
+
+      <!-- BUSCADOR Y ACCIONES (DERECHA) -->
+      <div style="display:flex; align-items:center; gap:8px; flex-grow:1; justify-content: flex-end; flex-wrap: wrap; min-width: 0; row-gap: 8px;">
+        <div class="btn-group" style="background:rgba(255,255,255,0.05); padding:4px; border-radius:10px; display:flex; flex-shrink: 0;">
+          <button class="btn btn-sm ${leadViewMode==='table'?'btn-primary':'btn-secondary'}" style="padding:6px 10px; box-shadow:none; font-size:12px;" onclick="setLeadView('table')">📋 Tabla</button>
+          <button class="btn btn-sm ${leadViewMode==='cards'?'btn-primary':'btn-secondary'}" style="padding:6px 10px; box-shadow:none; font-size:12px;" onclick="setLeadView('cards')">📇 Tarjetas</button>
+        </div>
+
+        <div class="pc-buscar-row-premium" style="max-width: 260px; margin-bottom: 0; flex-shrink: 1; min-width: 130px;">
+          <span class="bn-icon" style="padding:0 8px 0 12px; color: var(--gold); flex-shrink:0;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </span>
+          <input type="text" id="searchLeadsInput" placeholder="Buscar por nombre..." value="${searchTermLeads}" oninput="buscarLeads(this.value)" style="font-size:13px; background: transparent; color: #fff; border: none; outline: none; width: 100%; min-width: 0;"/>
+          ${searchTermLeads ? `<button class="btn-limpiar-pc" style="padding:0 12px; border-radius:0 8px 8px 0; font-size:12px; color: #aaa; background: transparent; cursor: pointer; transition: color 0.2s; border: none; flex-shrink:0;" onclick="buscarLeads(''); document.getElementById('searchLeadsInput').value=''" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">✕</button>` : ''}
+        </div>
+
+        <button class="btn-nueva-cita-premium" onclick="showTab('nuevo')" style="height: 38px; padding: 0 16px; border-radius: 8px; flex-shrink: 0;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Nuevo Lead
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="leadsContainer"></div>`;
+
+  let lista = leads;
+  if(currentLeadFilter==='inmobiliaria') lista=leads.filter(l=>l.tipo==='inmobiliaria');
+  else if(currentLeadFilter!=='todos')   lista=leads.filter(l=>l.etiqueta===currentLeadFilter);
+
+  renderLeadsBody(lista);
+}
+
+function buscarLeads(val){
+  searchTermLeads = val.trim().toLowerCase();
+  
+  const container = document.getElementById('searchLeadsInput')?.parentElement;
+  if (container) {
+    let btnLimpiar = container.querySelector('.btn-limpiar-pc');
+    if (searchTermLeads && !btnLimpiar) {
+      container.insertAdjacentHTML('beforeend', `<button class="btn-limpiar-pc" style="padding:0 10px; border-radius:0 10px 10px 0;" onclick="buscarLeads(''); document.getElementById('searchLeadsInput').value=''">✕</button>`);
+    } else if (!searchTermLeads && btnLimpiar) {
+      btnLimpiar.remove();
+    }
+  }
+
+  let lista = leads;
+  if(currentLeadFilter==='inmobiliaria') lista=leads.filter(l=>l.tipo==='inmobiliaria');
+  else if(currentLeadFilter!=='todos')   lista=leads.filter(l=>l.etiqueta===currentLeadFilter);
+  
+  renderLeadsBody(lista);
+}
+
+function setLeadView(mode){
+  leadViewMode = mode;
+  localStorage.setItem('icde_lead_view', mode);
+  renderLeads();
+}
+function filtTabla(f,btn){
+  currentLeadFilter = f;
+  document.querySelectorAll('[id^=f]').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel');
+  let lista=leads;
+  if(f==='inmobiliaria') lista=leads.filter(l=>l.tipo==='inmobiliaria');
+  else if(f!=='todos')   lista=leads.filter(l=>l.etiqueta===f);
+  renderLeadsBody(lista);
+}
+function renderLeadsBody(lista){
+  const container=document.getElementById('leadsContainer'); if(!container) return;
+  
+  let listaFiltrada = [...lista];
+
+  // Aplicar filtro de búsqueda si existe
+  if(searchTermLeads){
+    listaFiltrada = listaFiltrada.filter(l => {
+      const basicStr = String(l.nombre || '') + ' ' + String(l.celular || '');
+      if(basicStr.toLowerCase().includes(searchTermLeads)) return true;
+      
+      // Buscar también en los inmuebles enviados a este cliente
+      if(l.propsEnviadas && Array.isArray(l.propsEnviadas)){
+        for(let cod of l.propsEnviadas){
+          if(String(cod).toLowerCase().includes(searchTermLeads)) return true;
+          const prop = allProps.find(p => p['Código'] === cod);
+          if(prop && String(prop['Nombre'] || '').toLowerCase().includes(searchTermLeads)) return true;
+        }
+      }
+      return false;
+    });
+  }
+
+  if(!listaFiltrada.length){ container.innerHTML=`<div class="empty">No hay leads que coincidan</div>`; return; }
+  
+  const ordenEtiqueta = { activo: 1, tibio: 2, inactivo: 3 };
+  const ordenEstado = { visita: 1, enviando: 2, proceso: 3, banco: 4, inactivo: 5 };
+  
+  listaFiltrada.sort((a,b) => {
+    // 0. Super Primario: Estado Proceso de venta (proceso) primero indiscutiblemente
+    const isProcA = a.estado === 'proceso' ? 1 : 0;
+    const isProcB = b.estado === 'proceso' ? 1 : 0;
+    if (isProcA !== isProcB) return isProcB - isProcA;
+
+    // 1. Primario: Etiqueta (Activo > Tibio > Inactivo)
+    const oEtA = ordenEtiqueta[a.etiqueta] || 99;
+    const oEtB = ordenEtiqueta[b.etiqueta] || 99;
+    if (oEtA !== oEtB) return oEtA - oEtB;
+    
+    // 2. Secundario: Estado (Pdte. visita > Enviando > ...)
+    const oEsA = ordenEstado[a.estado] || 99;
+    const oEsB = ordenEstado[b.estado] || 99;
+    if (oEsA !== oEsB) return oEsA - oEsB;
+    
+    // 3. Terciario: Presupuesto (Mayor a Menor)
+    const pA = a.filtros?.maxPrice || 0;
+    const pB = b.filtros?.maxPrice || 0;
+    if (pA !== pB) return pB - pA;
+
+    // 4. Cuaternario: Ofertas (Mayor a Menor)
+    const ofA = (a.visitas || []).filter(v => v.oferto === 'si').length;
+    const ofB = (b.visitas || []).filter(v => v.oferto === 'si').length;
+    return ofB - ofA;
+  });
+
+  if(leadViewMode === 'table'){
+    container.innerHTML=`
+    <div class="leads-table-wrap panel-section" style="padding:0; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); margin-top: 0;">
+      <table class="leads-table" style="border: none; border-radius: 0; background: transparent;">
+        <thead>
+          <tr style="background: rgba(212, 168, 75, 0.04);">
+            <th style="padding-left: 20px; color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Cliente</th>
+            <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Tipo</th>
+            <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Estado</th>
+            <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Etiqueta</th>
+            <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Presupuesto</th>
+            <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Enviadas</th>
+            <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Ofertas</th>
+            <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Pendientes</th>
+            <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Próx. Envío</th>
+            <th style="padding-right: 20px; color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="leadsBody">
+          ${listaFiltrada.map(l=>{
+            const currentMatches = filtrarProps(l.filtros);
+            const pend = currentMatches.filter(d => !(l.propsEnviadas || []).includes(d['Código'])).length;
+            const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
+            const isSelected = String(l.id).trim() === String(currentLeadId).trim();
+            return `<tr class="clickable ${isSelected ? 'active-lead-row' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead(\'${String(l.id).trim()}\', \'${String(l.celular).trim()}\')">
+              <td style="padding-left: 20px;"><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">📱 ${l.celular}</div></td>
+              <td>${l.tipo==='inmobiliaria'?'<span class="badge badge-inmobiliaria">🏢</span>':'<span style="opacity:0.5;">👤</span>'}</td>
+              <td onclick="event.stopPropagation()">
+                <select class="estado-badge estado-${l.estado}" style="border:none;outline:none;cursor:pointer;max-width:120px;"
+                  onfocus="Array.from(this.options).forEach(o=>o.text=o.getAttribute('data-emoji')+' '+o.getAttribute('data-short'))"
+                  onblur="Array.from(this.options).forEach(o=>o.text=o.getAttribute('data-short'))"
+                  onchange="updLead('${String(l.id).trim()}','estado',this.value); this.blur();">
+                  <option value="enviando" data-emoji="🟠" data-short="Enviando" ${l.estado==='enviando'?'selected':''}>Enviando</option>
+                  <option value="visita"   data-emoji="🟢" data-short="Pdte. visita" ${l.estado==='visita'?'selected':''}>Pdte. visita</option>
+                  <option value="proceso"  data-emoji="🔵" data-short="Proceso venta" ${l.estado==='proceso'?'selected':''}>Proceso venta</option>
+                  <option value="banco"    data-emoji="🟣" data-short="Banco" ${l.estado==='banco'?'selected':''}>Banco</option>
+                  <option value="inactivo" data-emoji="⚫" data-short="Inactivo" ${l.estado==='inactivo'?'selected':''}>Inactivo</option>
+                </select>
+              </td>
+              <td onclick="event.stopPropagation()">
+                <select class="badge badge-${l.etiqueta}" style="border:none;outline:none;cursor:pointer;"
+                  onfocus="Array.from(this.options).forEach(o=>o.text=o.getAttribute('data-emoji')+' '+o.getAttribute('data-short'))"
+                  onblur="Array.from(this.options).forEach(o=>o.text=o.getAttribute('data-short'))"
+                  onchange="updLead('${String(l.id).trim()}','etiqueta',this.value); this.blur();">
+                  <option value="activo"   data-emoji="🟢" data-short="ACTIVO" ${l.etiqueta==='activo'?'selected':''}>ACTIVO</option>
+                  <option value="tibio"    data-emoji="🟡" data-short="TIBIO" ${l.etiqueta==='tibio'?'selected':''}>TIBIO</option>
+                  <option value="inactivo" data-emoji="⚫" data-short="INACTIVO" ${l.etiqueta==='inactivo'?'selected':''}>INACTIVO</option>
+                </select>
+              </td>
+              <td><div style="font-weight:700; color:var(--gold);">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div><div style="font-size:10px;color:#888;margin-top:2px;">${(l.metodoPago || []).join(', ') || '—'}</div></td>
+              <td style="color:#22c55e;font-weight:700;">${(l.propsEnviadas||[]).length}</td>
+              <td>${(l.visitas||[]).filter(v=>v.oferto==='si').length > 0 ? `<span class="badge badge-oferta">${(l.visitas||[]).filter(v=>v.oferto==='si').length}</span>` : '<span style="opacity:0.2;">0</span>'}</td>
+              <td style="color:${pend>0?'#f97316':'#888'}; font-weight:700;">
+                ${pend > 0 ? `<span class="badge badge-tibio" style="font-size:10px;">${pend} NUEVAS</span>` : '0'}
+              </td>
+              <td style="font-size:12px;color:#888;">${prox?prox.fecha:'—'}</td>
+              <td style="padding-right: 20px;" onclick="event.stopPropagation()"><div style="display:flex;gap:6px;">
+                <button class="btn btn-sm ${pend>0?'btn-green':'btn-secondary'}" onclick="abrirEnvioModal('${l.id}')" title="Enviar propuestas">${pend>0?'📤':'✓'}</button>
+                <button class="btn btn-sm btn-danger" onclick="eliminarLead('${l.id}')" title="Eliminar lead">🗑</button>
+              </div></td>
+            </tr>`;
+
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  } else {
+    container.innerHTML=`<div class="lead-cards-grid">
+      ${listaFiltrada.map(l=>{
+        const currentMatches = filtrarProps(l.filtros);
+        const pend = currentMatches.filter(d => !(l.propsEnviadas || []).includes(d['Código'])).length;
+        const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
+        const isSelected = String(l.id).trim() === String(currentLeadId).trim();
+        return `
+        <div class="lead-card ${isSelected ? 'active-lead-card' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead(\'${String(l.id).trim()}\', \'${String(l.celular).trim()}\')">
+          <div class="lc-header">
+            <div>
+              <div class="lc-name">${l.nombre}</div>
+              <div class="lc-phone">📱 ${l.celular}</div>
+            </div>
+            <span class="badge badge-${l.etiqueta}">${l.etiqueta}</span>
+          </div>
+          <div style="margin-bottom:12px;"><span class="estado-badge estado-${l.estado}">${estadoLbl(l.estado)}</span></div>
+          <div class="lc-stats">
+            <div><div class="lc-stat-val">${(l.propsEnviadas||[]).length}</div><div class="lc-stat-lbl">Enviadas</div></div>
+            <div><div class="lc-stat-val" style="color:var(--gold); font-size:13px;">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div><div class="lc-stat-lbl">Presupuesto</div><div style="font-size:9px;color:#888;margin-top:1px;">${(l.metodoPago||[]).join(', ')||'—'}</div></div>
+            <div><div class="lc-stat-val" style="color:#a855f7;">${(l.visitas||[]).filter(v=>v.oferto==='si').length}</div><div class="lc-stat-lbl">Ofertas</div></div>
+            <div><div class="lc-stat-val" style="color:${pend>0?'#f97316':''}">${pend}</div><div class="lc-stat-lbl">Pendientes</div></div>
+          </div>
+          <div class="lc-footer">
+            <div style="font-size:11px;color:#666;">Próximo: ${prox?prox.fecha:'—'}</div>
+            <button class="btn btn-sm btn-green" style="padding:6px 10px;" onclick="event.stopPropagation(); abrirEnvioModal('${String(l.id).trim()}')">📤 Enviar</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+}
+function estadoLbl(e){ return {proceso:'Proceso de venta',enviando:'Enviando',visita:'Pdte. visita',banco:'Banco',inactivo:'Inactivo'}[e]||e; }
+
+/* ═══════════════════════════════════════════════
+   PANEL LEAD
+═══════════════════════════════════════════════ */
+function abrirLead(id, celular){ 
+  id = String(id || '').trim();
+  
+  // Limpieza visual previa para evitar efecto "un paso atrás"
+  const panel = document.getElementById('sidePanelContent');
+  if(panel) panel.innerHTML = '<div class="loading"><div class="spinner"></div> Cargando datos...</div>';
+  
+  currentLeadId = id; 
+  
+  // BÚSQUEDA POR ID
+  let l = leads.find(x => String(x.id || '').trim() === id);
+  
+  // Si no se encuentra por ID exacto, intentamos por teléfono (último recurso por desincronización)
+  if(!l && celular) {
+     const normPhone = String(celular).replace(/[^\d]/g, "");
+     l = leads.find(x => String(x.celular || '').replace(/[^\d]/g, "") === normPhone);
+     if(l) {
+        console.warn("Lead recuperado por teléfono:", celular);
+        currentLeadId = l.id;
+     }
+  }
+  
+  if(!l) {
+    console.error("Lead no encontrado:", id);
+    toast('Cliente no encontrado en la lista actual', 'error');
+    return;
+  }
+  document.getElementById('leadPanel').classList.add('open'); 
+  renderSidePanel(l); 
+  document.querySelectorAll('.leads-table tbody tr, .lead-card').forEach(row => {
+    const rowId = row.getAttribute('data-lead-id');
+    if (rowId === id) {
+      row.classList.add(row.tagName === 'TR' ? 'active-lead-row' : 'active-lead-card');
+    } else {
+      row.classList.remove('active-lead-row', 'active-lead-card');
+    }
+  });
+}
+function closePanelIfOuter(e){ if(e.target===document.getElementById('leadPanel')) closeSidePanel(); }
+function closeSidePanel(){ 
+  document.getElementById('leadPanel').classList.remove('open'); 
+  if(window.chatInterval) {
+    clearInterval(window.chatInterval);
+    window.chatInterval = null;
+  }
+}
+
+function renderSidePanel(lead){
+  const currentMatches = filtrarProps(lead.filtros);
+  const pend = currentMatches.filter(d => !(lead.propsEnviadas || []).includes(d['Código']));
+  const total = currentMatches.length, env = (lead.propsEnviadas || []).length;
+  const ftxt = Object.entries(lead.filtros||{}).filter(([,v])=>v!==undefined && v!==null && String(v).length).map(([k,v])=>{
+    const val = Array.isArray(v) ? v.join(', ') : v;
+    return `${k}: ${val}`;
+  }).join(' · ')||'Sin filtros';
+  const pct = total > 0 ? Math.round(env / total * 100) : 0;
+  
+  document.getElementById('sidePanelContent').innerHTML=`
+  <div class="panel-header">
+    <div>
+      <div class="panel-name">${lead.nombre}</div>
+      <div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px; opacity:0.8;">Ref: ${lead.id}</div>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+        <span class="badge badge-${lead.etiqueta}">${lead.etiqueta}</span>
+        <span class="estado-badge estado-${lead.estado}">${estadoLbl(lead.estado)}</span>
+        ${lead.tipo==='inmobiliaria'?`<span class="badge badge-inmobiliaria">🏢 ${lead.nombreInmobiliaria||''}</span>`:''}
+      </div>
+    </div>
+    <button class="panel-close" onclick="closeSidePanel()">×</button>
+  </div>
+
+  <div style="display:flex;gap:10px;margin:10px 0 20px 0;">
+    <button class="btn ${pend.length>0?'btn-green':'btn-primary'} btn-sm" style="flex:1;" onclick="abrirEnvioModal('${lead.id}')">
+      ${pend.length>0 ? `📤 Enviar ${pend.length} Novedades` : '📤 Enviar Propuestas'}
+    </button>
+    <a id="panelWhatsAppBtn" href="https://wa.me/57${lead.celular}" target="_blank" class="btn btn-secondary btn-sm" style="flex:0.5; text-decoration:none; color:inherit; display:flex; align-items:center; justify-content:center; gap:6px;">💬 WhatsApp</a>
+  </div>
+
+
+
+  <div class="panel-section collapsible collapsed">
+    <div class="panel-section-title" onclick="toggleSection(this)">👤 Perfil y Contacto</div>
+    <div class="section-content">
+      <div class="form-grid" style="margin-top:16px;">
+        <div class="form-group full">
+          <label class="form-label">Nombre Completo</label>
+          <input class="form-input" style="margin-top:6px; background:rgba(255,255,255,0.03);" 
+            value="${lead.nombre}" onblur="updLead('${lead.id}','nombre',this.value); const pn = document.querySelector('.panel-name'); if(pn) pn.innerText=this.value;" placeholder="Ej: Maria Perez"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📱 Celular / WhatsApp</label>
+          <input class="form-input" style="margin-top:6px; background:rgba(255,255,255,0.03);" 
+            value="${lead.celular}" onblur="updLead('${lead.id}','celular',this.value)" placeholder="Ej: 3001234567"/>
+        </div>
+        ${lead.tipo==='inmobiliaria'?`
+        <div class="form-group">
+          <label class="form-label">🏢 Agente Aliado</label>
+          <div style="margin-top:10px; font-weight:600;">${lead.nombreAgente||'—'}</div>
+        </div>
+        `:''}
+        
+        <div class="form-group full" style="margin-top:10px;">
+          <label class="form-label" style="margin-bottom:10px; display:block;">Método de Pago Preferido</label>
+          <div class="checklist">
+            ${['Efectivo', 'Crédito', 'Caja Honor', 'Permuta'].map(m => {
+              const checked = (lead.metodoPago || []).includes(m);
+              return `<label class="check-item ${checked ? 'active' : ''}"><input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleLeadMetodo('${lead.id}', '${m}', this)"/> ${m}</label>`;
+            }).join('')}
+          </div>
+        </div>
+
+        <div class="form-group full" style="margin-top:10px;">
+          <label class="form-label">Notas del Cliente</label>
+          <textarea class="form-input" style="margin-top:6px; min-height:80px; resize:vertical; background:rgba(255,255,255,0.03);" 
+            onblur="updLead('${lead.id}','notas',this.value)" placeholder="Añadir notas sobre el cliente...">${lead.notas || ''}</textarea>
+        </div>
+      </div>
+      <div class="form-grid" style="margin-top:20px; padding-top:20px; border-top:1px solid var(--glass-border);">
+        <div class="form-group"><label class="form-label">Estado</label>
+          <select class="form-input" onchange="updLead('${lead.id}','estado',this.value)">
+            <option value="enviando" ${lead.estado==='enviando'?'selected':''}>🟠 Enviando propuestas</option>
+            <option value="proceso"  ${lead.estado==='proceso'?'selected':''}>🔵 Proceso de venta</option>
+            <option value="visita"   ${lead.estado==='visita'?'selected':''}>🟢 Pendiente visita</option>
+            <option value="banco"    ${lead.estado==='banco'?'selected':''}>🟣 Referido al banco</option>
+            <option value="inactivo" ${lead.estado==='inactivo'?'selected':''}>⚫ Inactivo</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Prioridad</label>
+          <select class="form-input" onchange="updLead('${lead.id}','etiqueta',this.value)">
+            <option value="activo"   ${lead.etiqueta==='activo'?'selected':''}>🟢 Activo</option>
+            <option value="tibio"    ${lead.etiqueta==='tibio'?'selected':''}>🟡 Tibio</option>
+            <option value="inactivo" ${lead.etiqueta==='inactivo'?'selected':''}>⚫ Inactivo</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-section collapsible collapsed">
+    <div class="panel-section-title" onclick="toggleSection(this)"><span>🎯 Intereses y Filtros</span> <button class="btn btn-gold btn-sm" style="padding:8px 18px; font-size:13px; font-weight:700;" onclick="event.stopPropagation();abrirEditFiltros('${lead.id}')">Editar</button></div>
+    <div class="section-content">
+      <div style="margin-top:16px;">
+        <div style="background:rgba(212,168,75,0.05); padding:15px; border-radius:12px; border:1px solid var(--border);">
+          <div style="font-size:13px; color:var(--text); line-height:1.4;">${ftxt}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="panel-section collapsible collapsed">
+    <div class="panel-section-title" onclick="toggleSection(this)">📋 Seguimiento de Propiedades</div>
+    <div class="section-content">
+      <!-- A. PROGRESO -->
+      <div style="margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span class="prog-label" style="color:var(--gold); font-weight:600;">Progreso de Envío</span>
+          <span class="prog-label">${pct}%</span>
+        </div>
+        <div class="prog-bar-wrap"><div class="prog-bar" style="width:${pct}%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;">
+          <span class="prog-label">${env} enviadas de ${total}</span>
+          <span class="prog-label">Frecuencia: ${lead.frecuencia}</span>
+        </div>
+      </div>
+
+      <!-- B. PROPIEDADES ENVIADAS Y AGENDAMIENTO -->
+      <div style="margin-top:20px; border-top:1px solid var(--glass-border); padding-top:15px;">
+        <div style="font-size:12px; color:var(--gold); font-weight:600; text-transform:uppercase; margin-bottom:10px;">Propiedades e Interés</div>
+        <div id="panelEnviadas">${renderPanelPropsEnviadas(lead)}</div>
+      </div>
+
+      <!-- C. VISITAS Y OFERTAS -->
+      <div style="margin-top:20px; border-top:1px solid var(--glass-border); padding-top:15px;">
+        <div style="font-size:12px; color:var(--gold); font-weight:600; text-transform:uppercase; margin-bottom:10px;">Citas y Visitas</div>
+        <div id="panelVisitas">${renderPanelVisitas(lead)}</div>
+        <button class="btn btn-primary btn-sm" style="width:100%; margin-top:10px;" onclick="event.stopPropagation();abrirVisitaModal('${lead.id}')">+ Agendar Nueva Visita</button>
+      </div>
+
+      <!-- D. HISTORIAL CRONOLÓGICO -->
+      <div style="margin-top:20px; border-top:1px solid var(--glass-border); padding-top:15px;">
+        <div style="font-size:12px; color:#888; font-weight:600; text-transform:uppercase; margin-bottom:10px;">Historial de Envíos</div>
+        <div id="panelTimeline">${renderTimeline(lead)}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-section collapsible collapsed">
+    <div class="panel-section-title" onclick="toggleSection(this)">⏳ Propiedades Pendientes (${pend.length})</div>
+    <div class="section-content">
+      <div id="panelPendientes" style="margin-top:12px;">${renderPanelPendientes(lead, pend)}</div>
+    </div>
+  </div>
+
+  <div style="margin-top:auto; padding-top:20px; border-top:1px solid var(--glass-border);">
+    <button class="btn btn-danger btn-sm" style="width:100%; font-weight:700; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onclick="eliminarLead('${lead.id}')">🗑 Eliminar Cliente Permanentemente</button>
+  </div>`;
+  
+
+}
+
+function renderCoCreacionFeedback(lead) {
+  const feedback = lead.feedback || {};
+  const keys = Object.keys(feedback);
+  if (!keys.length) {
+    return `<div class="empty" style="padding:15px; text-align:center; color:#888; font-size:12px; background:rgba(255,255,255,0.02); border-radius:12px; border:1px dashed rgba(255,255,255,0.1);">El cliente aún no ha dejado reacciones en su portal.</div>`;
+  }
+  
+  let html = `<div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">`;
+  
+  keys.forEach(cod => {
+    const fb = feedback[cod];
+    const p = allProps.find(x => String(x['Código']) === String(cod));
+    const name = p ? p['Nombre'] : `Propiedad ${cod}`;
+    const price = p ? formatP(p['Precio']) : '';
+    const img = p ? ((p['Imagenes'] || '').split('|')[0].trim() || p['Image'] || 'https://i.imgur.com/Pc9M3I8.png') : 'https://i.imgur.com/Pc9M3I8.png';
+    
+    let badge = '';
+    if (fb.interes === 'LIKE') {
+      badge = `<span class="badge" style="background:#10b981; color:#fff; font-size:11px; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">❤️ Me Interesa</span>`;
+    } else if (fb.interes === 'DISLIKE') {
+      badge = `<span class="badge" style="background:#ef4444; color:#fff; font-size:11px; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">👎 Descartada</span>`;
+    } else {
+      badge = `<span class="badge" style="background:#6b7280; color:#fff; font-size:11px; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">💬 Comentado</span>`;
+    }
+    
+    html += `
+      <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:12px; display:flex; gap:12px; align-items:flex-start;">
+        <img src="${img}" style="width:60px; height:50px; object-fit:cover; border-radius:8px; flex-shrink:0;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
+            <span style="font-weight:700; color:#fff; font-size:12px; text-transform:uppercase; letter-spacing:0.02em;">Código ${cod}</span>
+            ${badge}
+          </div>
+          <div style="font-size:12px; font-weight:600; color:#eee; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px;">${name}</div>
+          ${price ? `<div style="font-size:11px; color:var(--gold); font-weight:700; margin-bottom:6px;">${price}</div>` : ''}
+          ${fb.comentario ? `
+            <div style="background:rgba(212,168,75,0.06); border-left:3px solid var(--gold); border-radius:0 6px 6px 0; padding:6px 10px; font-size:11px; font-style:italic; color:#ddd; margin-top:6px; line-height:1.4; word-break:break-word;">
+              "${fb.comentario}"
+            </div>
+          ` : ''}
+          <div style="font-size:10px; color:#666; text-align:right; margin-top:6px;">${fb.fecha || ''}</div>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `</div>`;
+  return html;
+}
+
+function toggleSection(el){
+  const section = el.closest('.collapsible');
+  section.classList.toggle('collapsed');
+}
+
+
+function updLead(id,campo,val){ 
+  const tid = String(id || '').trim();
+  const l=leads.find(x=>String(x.id || '').trim()===tid); 
+  if(!l) return; 
+  l[campo]=val;
+  l._localEditedAt = new Date().toISOString(); // marca de tiempo de edición local
+  saveLeads(); 
+  syncSheets(l);
+  
+  const labels = { nombre: 'Nombre', celular: 'Teléfono', notas: 'Notas', estado: 'Estado', etiqueta: 'Prioridad' };
+  toast(`${labels[campo] || campo} actualizado ✓`,'success'); 
+  
+  if(campo==='nombre') {
+    const pn = document.querySelector('.panel-name');
+    if(pn) pn.innerText = val;
+  } else if(campo==='celular') {
+    const wa = document.getElementById('panelWhatsAppBtn');
+    if(wa) wa.href = `https://wa.me/57${val}`;
+  }
+  
+  if(currentTab==='leads') renderLeadsBody(leads); 
+}
+
+function toggleLeadMetodo(id, m, el) {
+  const tid = String(id || '').trim();
+  const l = leads.find(x => String(x.id || '').trim() === tid);
+  if (!l) return;
+  if (!Array.isArray(l.metodoPago)) l.metodoPago = [];
+  if (el.checked) {
+    if (!l.metodoPago.includes(m)) l.metodoPago.push(m);
+  } else {
+    l.metodoPago = l.metodoPago.filter(x => x !== m);
+  }
+  l._localEditedAt = new Date().toISOString(); // marca de tiempo de edición local
+  el.closest('.check-item').classList.toggle('active', el.checked);
+  saveLeads();
+  syncSheets(l);
+  toast('Método de pago actualizado ✓', 'success');
+  if (currentTab === 'leads') renderLeadsBody(leads);
+}
+
+function renderPanelPropsEnviadas(lead){
+  const env = lead.propsEnviadas || [];
+  if(!env.length) return '<div style="color:#555;font-size:13px;padding:12px 0;">No se han enviado propiedades aún</div>';
+  return env.map(cod => {
+    const p = allProps.find(d => d['Código'] === cod);
+    const v = (lead.visitas || []).find(x => x.codigo === cod);
+    const img = p ? ((p['Imagenes']||'').split('|')[0].trim()||p['Image']||'https://i.imgur.com/Pc9M3I8.png') : 'https://i.imgur.com/Pc9M3I8.png';
+    let badges = `<span class="badge badge-enviada">Enviada</span>`;
+    if(v){
+      if(v.estado==='realizada') badges = `<span class="badge badge-visita">Visitada</span>`;
+      else if(v.estado==='solicito_visita') badges = `<span class="badge badge-solicito">Solicitó Visita</span>`;
+      else badges = `<span class="badge badge-agendada">Agendada</span>`;
+      if(v.oferto==='si') badges += ` <span class="badge badge-oferta">Oferta</span>`;
+    }
+    return `
+      <div class="enviada-item" style="display:flex; gap:12px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:10px; margin-bottom:8px; transition: all 0.2s;">
+        <div style="display:flex; flex:1; align-items:center; gap:12px; cursor:pointer; min-width:0;" onclick="abrirModalProp('${eq(cod)}')">
+          <img src="${img}" style="width:60px; height:60px; object-fit:cover; border-radius:8px;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:700; color:#fff; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cod} ${p ? `· ${p['Nombre']}` : ''}</div>
+            <div style="display:flex; gap:4px; margin-top:4px;">${badges}</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-sm ${v?'btn-secondary':'btn-primary'}" style="padding:6px; min-width:32px;" onclick="event.stopPropagation();abrirVisitaModal('${lead.id}','${cod}')" title="${v ? 'Editar visita' : 'Agendar visita'}">
+            ${v ? '✏️' : '🗓'}
+          </button>
+          <button class="btn btn-sm btn-danger" style="padding:6px; min-width:32px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#ef4444;" onclick="event.stopPropagation(); eliminarPropEnviada('${lead.id}','${cod}')" title="Eliminar de enviadas">
+            🗑
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderPanelPendientes(lead, pend){
+  if(!pend.length) return '<div style="color:#22c55e;font-size:13px;padding:12px 0;">¡Todas enviadas! 🎉</div>';
+  return `
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(100px, 1fr)); gap:10px;">
+      ${pend.map(cod => {
+        const p = allProps.find(d => d['Código'] === cod);
+        const img = p ? ((p['Imagenes']||'').split('|')[0].trim()||p['Image']||'https://i.imgur.com/Pc9M3I8.png') : 'https://i.imgur.com/Pc9M3I8.png';
+        return `
+          <div class="prop-card" style="cursor:pointer; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:8px; overflow:hidden;" onclick="abrirModalProp('${eq(cod)}')">
+            <img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+            <div style="padding:6px; font-size:11px; text-align:center; color:var(--gold); font-weight:700;">${cod}</div>
+            ${p && p['Inmobiliaria'] ? `<div class="prop-card-inmobiliaria" style="bottom:4px; right:4px; font-size:8px;">${p['Inmobiliaria']}</div>` : ''}
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function renderPanelVisitas(lead){
+  if(!(lead.visitas||[]).length) return '<div style="color:#555;font-size:13px;padding:12px 0;">No hay visitas agendadas</div>';
+  const ESTADO_PRIO = {
+    'solicito_visita': 1,
+    'agendada': 2,
+    'realizada': 3,
+    'cancelada': 4
+  };
+  const ordenadas = [...lead.visitas].sort((a,b) => {
+    const prioA = ESTADO_PRIO[a.estado] || 99;
+    const prioB = ESTADO_PRIO[b.estado] || 99;
+    if (prioA !== prioB) return prioA - prioB;
+    const da = a.fecha + (a.hora ? 'T' + a.hora : 'T00:00');
+    const db = b.fecha + (b.hora ? 'T' + b.hora : 'T00:00');
+    return da.localeCompare(db);
+  });
+  return ordenadas.map(v=>`
+    <div class="visita-item" style="background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:12px; margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-weight:700;color:var(--gold);">${v.codigo}</span>
+        <span class="badge badge-${v.estado}">${v.estado}</span>
+      </div>
+      <div style="font-size:12px;color:#aaa;margin-bottom:4px;">📅 ${v.fecha} · 🕒 ${v.hora || '—'}</div>
+      ${v.comentarios?`<div style="font-size:12px;color:#888;font-style:italic;margin-top:6px;border-left:2px solid var(--border);padding-left:8px;">"${v.comentarios}"</div>`:''}
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button class="btn btn-sm btn-secondary" style="padding:4px 10px; font-size:11px;" onclick="event.stopPropagation();abrirVisitaModal('${lead.id}','${v.codigo}')">Editar</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderTimeline(lead){
+  const hEnv = lead.historialEnvios || [];
+  if(!hEnv.length) return '<div style="color:#555;font-size:13px;padding:12px 0;">Sin envíos aún</div>';
+  return hEnv.map((en,i)=>`
+    <div class="envio-item" style="background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:12px; margin-bottom:10px;">
+      <div class="envio-header" style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:13px;font-weight:700;color:var(--gold);">
+          ${en.tipoEnvio === 'link' ? '🔗 Envío de Link' : '📄 Envío Individual'}
+        </span>
+        <span class="envio-fecha" style="font-size:11px;color:#666;">${en.fecha}</span>
+      </div>
+      <div class="envio-props" style="display:flex;gap:4px;flex-wrap:wrap;">
+        ${(en.codigos||[]).map(c=>`<span class="envio-prop-tag" style="background:rgba(212,168,75,0.1); border:1px solid var(--border); border-radius:4px; padding:2px 6px; font-size:11px; color:var(--gold);">${c}</span>`).join('')}
+        ${en.tipoEnvio === 'link' && (en.totalCods > (en.codigos||[]).length) ? `<span style="font-size:10px; color:#666; align-self:center;">+${en.totalCods - (en.codigos||[]).length} más</span>` : ''}
+      </div>
+      <div style="margin-top:8px;">
+        <textarea class="form-input" style="font-size:12px; width:100%; min-height:40px; background:transparent; border:1px dashed rgba(212,168,75,0.2); padding:5px; color:#aaa;" 
+          onblur="updTimelineNota('${lead.id}', ${i}, this.value)" placeholder="Sin notas...">${en.notas || ''}</textarea>
+      </div>
+      <div class="nota-input-wrap" style="margin-top:10px;display:flex;gap:6px;">
+        <input class="form-input" style="font-size:12px;padding:6px 10px;flex:1;" placeholder="Añadir nota..." id="nE_${lead.id}_${i}"/>
+        <button class="btn btn-sm btn-secondary" style="padding:6px 10px;" onclick="addNota('${lead.id}',${i})">+</button>
+      </div>
+    </div>`).join('');
+}
+
+function eliminarPropEnviada(leadId, cod){
+  if(!confirm(`¿Eliminar la propiedad ${cod} de la lista de enviadas?`)) return;
+  const lead = leads.find(l => String(l.id) === String(leadId));
+  if(!lead) return;
+  
+  // Eliminar de propsEnviadas
+  const idx = (lead.propsEnviadas || []).indexOf(cod);
+  if(idx > -1) lead.propsEnviadas.splice(idx, 1);
+  
+  saveLeads();
+  syncSheets(lead);
+  renderSidePanel(lead);
+  if(currentTab==='leads') renderLeads();
+  toast('Propiedad eliminada de la lista ✓','success');
+}
+
+function addNota(lid,idx){ 
+  const inp=document.getElementById(`nE_${lid}_${idx}`); 
+  if(!inp||!inp.value.trim()) return; 
+  const l=leads.find(x=>String(x.id)===String(lid)); 
+  if(!l) return; 
+  l.historialEnvios[idx].notas=(l.historialEnvios[idx].notas?l.historialEnvios[idx].notas+'\n':'')+inp.value.trim(); 
+  saveLeads(); 
+  syncSheets(l);
+  inp.value=''; 
+  toast('Nota añadida ✓','success'); 
+  renderSidePanel(l); 
+}
+
+async function eliminarLead(id){ 
+  console.log('[eliminarLead] Solicitando eliminación para ID:', id);
+  if(!confirm('¿Estás seguro de eliminar este cliente? Esta acción también lo eliminará de la nube y no se puede deshacer.')) return; 
+  
+  if (id === 'LEAD-AGENDA-GLOBAL') {
+    console.log('[eliminarLead] Borrando citas genéricas del contenedor global...');
+    citas = citas.filter(c => {
+      // Mantener solo citas asociadas a otros leads existentes
+      return leads.some(l => l.id !== 'LEAD-AGENDA-GLOBAL' && (l.visitas || []).some(v => v.codigo === c.codigo && (v.celular || l.celular) === c.celular));
+    });
+    localStorage.setItem('icde_citas', JSON.stringify(citas));
+  }
+
+  // Encontrar el lead para obtener su teléfono y buscar posibles duplicados locales con otras IDs
+  const leadABorrar = leads.find(l => String(l.id) === String(id));
+  console.log('[eliminarLead] Lead a borrar encontrado localmente:', leadABorrar);
+  let celularABorrar = '';
+  let idsABorrar = [String(id)];
+  
+  if (leadABorrar) {
+    celularABorrar = String(leadABorrar.celular || '').replace(/\D/g, '');
+    if (celularABorrar) {
+      // Buscar otros leads con el mismo teléfono (duplicados por ID)
+      leads.forEach(l => {
+        if (l.id !== 'LEAD-AGENDA-GLOBAL' && String(l.id) !== String(id)) {
+          const lCel = String(l.celular || '').replace(/\D/g, '');
+          if (lCel === celularABorrar) {
+            idsABorrar.push(String(l.id));
+          }
+        }
+      });
+      
+      console.log('[eliminarLead] Marcando para eliminación en la nube celular:', celularABorrar);
+    }
+  }
+
+  console.log('[eliminarLead] Marcando para eliminación en la nube IDs:', idsABorrar);
+
+  // Eliminar localmente primero (por ID y por teléfono celular para barrer duplicados locales)
+  leads = leads.filter(l => {
+    if (String(l.id) === String(id)) return false;
+    if (celularABorrar && String(l.celular || '').replace(/\D/g, '') === celularABorrar && l.id !== 'LEAD-AGENDA-GLOBAL') return false;
+    return true;
+  });
+  
+  saveLeads(); 
+  if(currentLeadId == id || idsABorrar.includes(String(currentLeadId))) closeSidePanel(); 
+  renderLeads(); 
+  toast('Eliminando de la nube...', 'success'); 
+  
+  // Sincronizar eliminación con Google Sheets vía GET (evita CORS de POST)
+  if(CRM_SCRIPT_URL) {
+    (async () => {
+      try {
+        // Enviar ID y celular en una sola llamada para evitar condiciones de carrera en Google Sheets
+        let url = CRM_SCRIPT_URL + '?action=deleteLead';
+        if (id) url += '&id=' + encodeURIComponent(id);
+        if (celularABorrar) url += '&celular=' + encodeURIComponent(celularABorrar);
+        url += '&t=' + Date.now();
+        
+        console.log('[eliminarLead] Ejecutando fetch de eliminación en la nube:', url);
+        await fetch(url, { });
+        console.log('[eliminarLead] Fetch de eliminación en la nube completado (no-cors).');
+        toast('Eliminado de la nube ✓', 'success');
+      } catch(e) {
+        console.error('[eliminarLead] Error eliminando de la nube:', e);
+        toast('Sin conexión — se reintentará en el próximo sync', 'error');
+      }
+    })();
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   MODAL ENVÍO
+═══════════════════════════════════════════════ */
+function abrirEnvioModal(leadId, presel){
+  try {
+    const tid = String(leadId || '').trim();
+    envioLeadId = tid;
+    const lead = leads.find(l => String(l.id || '').trim() === tid);
+    if (!lead) { console.error("Lead not found:", leadId); return; }
+    
+    // Garantizar que filtros sea un objeto
+    const st = (lead.filtros && typeof lead.filtros === 'object') ? lead.filtros : {};
+    
+    // Detectamos si hay propiedades nuevas
+    const currentMatches = filtrarProps(st).map(d => d['Código']);
+    const enviadas = lead.propsEnviadas || [];
+    const nuevas = currentMatches.filter(c => !enviadas.includes(c));
+    
+    // Lote de propiedades (Individual)
+    const lote = (Array.isArray(presel) && presel.length > 0) ? presel : nuevas;
+    envioLote = lote;
+    const objs = lote.map(c => allProps.find(d => d['Código'] === c)).filter(Boolean);
+    
+    // Destinatario
+    let dest = "Cliente";
+    if (lead.tipo === 'inmobiliaria') {
+      dest = (lead.nombreAgente || lead.nombre || "Agente").trim().split(' ')[0];
+    } else {
+      dest = (lead.nombre || "Cliente").trim().split(' ')[0];
+    }
+
+    // Emojis (Surrogate Pairs)
+    const emoHola = "\uD83D\uDC4B";      // 👋
+    const emoCasa = "\uD83C\uDFE1";      // 🏡
+    const emoLink = "\uD83D\uDC47";      // 👇
+    const emoFin = "\u2705";            // ✅
+    
+    const link = getSearchLinkFromFilters(st, lote, lead.id);
+    const hasSelection = lote.length > 0;
+    const initModo = (Array.isArray(presel) && presel.length > 0) ? 'individual' : 'link';
+
+    let htmlIndividual = "";
+    if (hasSelection) {
+      htmlIndividual = `
+        <div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:10px;">Propiedades seleccionadas (${lote.length}):</div>
+        <div id="envioChecks" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px; max-height:220px; overflow-y:auto; padding-right:5px;">
+          ${lote.map(cod => { 
+            const p = allProps.find(d => d['Código'] === cod); 
+            const img = p ? ((p['Imagenes'] || '').split('|')[0].trim() || p['Image'] || 'https://i.imgur.com/Pc9M3I8.png') : 'https://i.imgur.com/Pc9M3I8.png';
+            return `<label style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;cursor:pointer;">
+              <input type="checkbox" checked value="${cod}" style="accent-color:var(--gold);width:18px;height:18px;flex-shrink:0;"/>
+              <img src="${img}" style="width:50px;height:42px;object-fit:cover;border-radius:8px;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+              <div style="overflow:hidden;">
+                <div style="font-size:13px;font-weight:700;color:#fff;">${cod}</div>
+                <div style="font-size:11px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p ? p['Nombre'] || '' : ''} · <span style="color:var(--gold);">${p ? formatP(p['Precio']) : ''}</span></div>
+              </div>
+            </label>`;
+          }).join('')}
+        </div>
+        <div style="font-size:12px;color:#888;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:15px;">
+           <strong style="color:#fff;display:block;margin-bottom:10px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;opacity:0.6;">Vista previa mensaje:</strong>
+           <div style="line-height:1.5;">
+             ${emoCasa} ¡Hola ${dest}! ${emoHola}<br/><br/>
+             Te comparto estas nuevas opciones que se ajustan a lo que buscas ${emoLink}<br/><br/>
+             ${objs.map(p => `• <strong>${p['Nombre'] || p['Código']}</strong> (${formatP(p['Precio'])})<br/>&nbsp;&nbsp;\u{1F517} <a href="https://icdeinmobiliaria.com/propiedad/${generarSlugPropiedad(p)}.html" target="_blank" style="color:var(--gold);text-decoration:none;">Ver propiedad</a>`).join('<br/><br/>')}
+             <br/><br/>
+             Revísalo y me cuentas que inmueble deseas que visitemos ${emoFin}
+           </div>
+        </div>`;
+    } else {
+      htmlIndividual = `<div class="empty" style="padding:20px;text-align:center;color:#666;">No hay propiedades nuevas para enviar individualmente.</div>`;
+    }
+
+    const content = `
+      <div style="font-size:13px;color:#aaa;margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.05);">Para: <strong style="color:#fff;">${dest}</strong> · ${lead.celular}</div>
+      
+      <div style="display:flex; gap:10px; margin-bottom:20px;">
+        <button id="btnModoLink" class="btn btn-sm ${initModo === 'link' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;" onclick="setEnvioModo('link')">\u{1F517} Enviar Link Catálogo</button>
+        <button id="btnModoInd" class="btn btn-sm ${initModo === 'individual' ? 'btn-primary' : 'btn-secondary'}" style="flex:1;" onclick="setEnvioModo('individual')">\u{1F4CB} Enviar Selección</button>
+      </div>
+
+      <div id="envioModoLink" style="display:${initModo === 'link' ? 'block' : 'none'}">
+         <div style="font-size:12px; color:var(--gold); margin-bottom:12px; font-weight:600; background:rgba(212,168,75,0.1); padding:8px; border-radius:8px;">Se enviará un link dinámico con las ${currentMatches.length} opciones actuales.</div>
+         <div style="font-size:12px;color:#888;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:15px;">
+           <strong style="color:#fff;display:block;margin-bottom:10px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;opacity:0.6;">Vista previa mensaje:</strong>
+           <div style="line-height:1.5;">
+             ${emoCasa} ¡Hola ${dest}! ${emoHola}<br/><br/>
+             Te comparto aquí los inmuebles que se ajustan a tus requerimientos ${emoLink}<br/><br/>
+             <span style="color:var(--gold); word-break:break-all; font-weight:500;">${link}</span><br/><br/>
+             Revísalo y me cuentas que inmueble deseas que visitemos ${emoFin}
+           </div>
+         </div>
+      </div>
+
+      <div id="envioModoIndividual" style="display:${initModo === 'individual' ? 'block' : 'none'}">
+        ${htmlIndividual}
+      </div>
+      <input type="hidden" id="envioModoInput" value="${initModo}"/>
+    `;
+    
+    document.getElementById('envioModalContent').innerHTML = content;
+    document.getElementById('envioModal').classList.add('open');
+  } catch (err) {
+    console.error("Error in abrirEnvioModal:", err);
+    toast("Error al abrir modal de envío", "error");
+  }
+}
+
+function setEnvioModo(modo){
+  document.getElementById('envioModoInput').value = modo;
+  document.getElementById('envioModoLink').style.display = modo==='link'?'block':'none';
+  document.getElementById('envioModoIndividual').style.display = modo==='individual'?'block':'none';
+  // Actualizar botones
+  const btns = document.querySelectorAll('#envioModalContent .btn-sm');
+  btns[0].className = `btn btn-sm ${modo==='link'?'btn-primary':'btn-secondary'}`;
+  btns[1].className = `btn btn-sm ${modo==='individual'?'btn-primary':'btn-secondary'}`;
+}
+
+
+function guardarSinEnviar(){
+  const lead = leads.find(l => String(l.id) === String(envioLeadId));
+  if(!lead) return;
+  
+  if(!lead.propsEnviadas) lead.propsEnviadas = [];
+  let count = 0;
+  envioLote.forEach(cod => {
+    if(!lead.propsEnviadas.includes(cod)){
+      lead.propsEnviadas.push(cod);
+      count++;
+    }
+  });
+  
+  if(count > 0){
+    const msg = `Se marcaron ${count} propiedades como enviadas (sin WhatsApp).`;
+    if(!lead.historialEnvios) lead.historialEnvios = [];
+    lead.historialEnvios.unshift({ fecha: new Date().toISOString().split('T')[0], codigos: envioLote, notas: msg });
+    
+    lead.proximosEnvios = generarProximosCheck(lead.frecuencia);
+    saveLeads();
+    syncSheets(lead);
+    
+    toast("✅ Propiedades marcadas como enviadas","success");
+    closeModal('envioModal');
+    if(currentTab==='leads') renderLeadsBody(leads);
+    renderSidePanel(lead);
+  } else {
+    toast("No había propiedades nuevas para marcar","warning");
+    closeModal('envioModal');
+  }
+}
+
+function confirmarEnvio(btn){
+  if(btn) btn.disabled = true;
+  try {
+    const lead = leads.find(l => String(l.id) === String(envioLeadId));
+    if (!lead) { toast("Cliente no encontrado", "error"); return; }
+    const modo = document.getElementById('envioModoInput').value;
+    
+    // Destinatario seguro
+    let dest = "Cliente";
+    if (lead.tipo === 'inmobiliaria') {
+      dest = (lead.nombreAgente || lead.nombre || "Agente").trim().split(' ')[0];
+    } else {
+      dest = (lead.nombre || "Cliente").trim().split(' ')[0];
+    }
+
+    // Emojis (Surrogate Pairs para máxima estabilidad)
+    const emoHola = "\uD83D\uDC4B";      // 👋
+    const emoCasa = "\uD83C\uDFE1";      // 🏡
+    const emoLink = "\uD83D\uDC47";      // 👇
+    const emoFin = "\u2705";            // ✅
+    const emoEstrella = "\u2728";        // ✨
+    const emoBullet = "\u2022";          // •
+    const emoClip = "\uD83D\uDD17";      // 🔗
+    
+    let msg = "";
+    let cods = [];
+
+    if (modo === 'link') {
+      const st = (lead.filtros && typeof lead.filtros === 'object') ? lead.filtros : {};
+      // Usar los IDs del lote (preselección) si existen, igual que en la vista previa
+      const idsParaLink = (envioLote && envioLote.length > 0) ? envioLote : null;
+      const link = getSearchLinkFromFilters(st, idsParaLink, lead.id);
+      msg = emoCasa + " \u00A1Hola " + dest + "! " + emoHola + "\r\n\r\n" +
+            "Te comparto aqu\u00ED los inmuebles que se ajustan a tus requerimientos " + emoLink + "\r\n\r\n" +
+            link + "\r\n\r\n" +
+            "Rev\u00EDsalo y me cuentas que inmueble deseas que visitemos " + emoFin + emoEstrella;
+      // Si enviamos un link de selecci\u00f3n espec\u00edfica, registramos solo esos IDs
+      cods = idsParaLink ? idsParaLink : filtrarProps(st).map(d => d['Código']);
+    } else {
+      cods = [...document.querySelectorAll('#envioChecks input:checked')].map(c => c.value);
+      if (!cods.length) { toast('Selecciona al menos una', 'error'); return; }
+      const objs = cods.map(c => allProps.find(d => d['Código'] === c)).filter(Boolean);
+      msg = emoCasa + " \u00A1Hola " + dest + "! " + emoHola + "\r\n\r\n" +
+            "Te comparto estas nuevas opciones que se ajustan a lo que buscas " + emoLink + "\r\n\r\n";
+      objs.forEach(p => {
+        msg += emoBullet + " *" + (p['Nombre'] || p['Código']) + "* (" + formatP(p['Precio']) + ")\r\n  " + emoClip + " " + `https://icdeinmobiliaria.com/propiedad/${generarSlugPropiedad(p)}.html` + "\r\n\r\n";
+      });
+      msg += "Rev\u00EDsalo y me cuentas que inmueble deseas que visitemos " + emoFin + emoEstrella;
+    }
+
+    const hoy = new Date().toISOString().split('T')[0];
+    const prevEnviadas = lead.propsEnviadas || [];
+    const nuevasCods = cods.filter(c => !prevEnviadas.includes(c));
+    
+    lead.propsEnviadas = [...new Set([...prevEnviadas, ...cods])];
+    lead.historialEnvios.push({ 
+      fecha: hoy, 
+      codigos: nuevasCods, 
+      totalCods: cods.length,
+      tipoEnvio: modo,
+      notas: modo === 'link' ? 'Envío de link catálogo' : 'Envío selección individual' 
+    });
+    
+    lead.proximosEnvios = generarProximosCheck(lead.frecuencia);
+    
+    saveLeads(); 
+    closeModal('envioModal'); 
+    syncSheets(lead);
+    
+    const num = lead.celular.replace(/\D/g, '');
+    const waBase = num.startsWith('57') ? num : '57' + num;
+    
+    let waWindow = null;
+    if (settings.waApi) {
+      waWindow = window.open('', '_blank');
+      if (waWindow) {
+        waWindow.document.write('<p style="font-family:sans-serif; text-align:center; margin-top:50px; color:#555;">Conectando con WhatsApp...</p>');
+      }
+      fetch(`${settings.waApi}/send-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number: num, message: msg })
+      }).then(r => {
+        if (r.ok) {
+          toast(`Enviado automáticamente ✓`, 'success');
+          if (waWindow) waWindow.close();
+        } else {
+          if (waWindow) {
+            waWindow.location.href = `https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`;
+          } else {
+            window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
+          }
+        }
+      }).catch(() => {
+        if (waWindow) {
+          waWindow.location.href = `https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`;
+        } else {
+          window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
+        }
+      }).finally(() => {
+        if(btn) btn.disabled = false;
+      });
+    } else {
+      window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
+      if(btn) btn.disabled = false;
+    }
+
+    if(currentLeadId === lead.id) renderSidePanel(lead);
+    if(currentTab === 'leads') renderLeadsBody(leads);
+
+  } catch (err) {
+    console.error("Error en confirmarEnvio:", err);
+    toast("Error al procesar el envío", "error");
+  }
+}
+
+function generarProximosCheck(frec){
+  if(frec==='manual') return [];
+  const hoy = new Date();
+  const dias = { diaria:1, semanal:7, quincenal:15, mensual:30 }[frec] || 7;
+  const f = new Date(hoy); f.setDate(f.getDate() + dias);
+  return [{
+    fecha: f.toISOString().split('T')[0],
+    codigos: [], // Vacío porque es un check de novedades
+    enviado: false,
+    esCheck: true
+  }];
+}
+
+
+/* ═══════════════════════════════════════════════
+   MODAL VISITA
+═══════════════════════════════════════════════ */
+function abrirVisitaModal(lid, prefilledCod, citaId){
+  try {
+    visitaLeadId = lid || null;
+    let v = null;
+    const lead = (lid && typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l => String(l.id) === String(lid)) : null;
+    
+    if (citaId && typeof citas !== 'undefined' && Array.isArray(citas)) {
+      v = citas.find(c => String(c.id) === String(citaId));
+    } else if (prefilledCod && lead) {
+      v = (lead.visitas || []).find(x => x.codigo === prefilledCod);
+    }
+
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    };
+
+    setVal('visitaCodigo', v ? v.codigo : (prefilledCod || ''));
+    setVal('visitaCliente', v ? v.cliente : (lead ? lead.nombre : ''));
+    setVal('visitaCelular', v ? v.celular : (lead ? lead.celular : ''));
+    
+    const elFecha = document.getElementById('visitaFecha');
+    if (elFecha) elFecha.value = v ? v.fecha : new Date().toISOString().split('T')[0];
+
+    setVal('visitaHora', v ? v.hora : '');
+    // Populate AM/PM selects from existing hora (HH:MM in 24h)
+    (function() {
+      const horaStr = v ? v.hora : '';
+      const elHH = document.getElementById('visitaHoraHH');
+      const elMM = document.getElementById('visitaHoraMM');
+      const elAP = document.getElementById('visitaHoraAP');
+      if (!elHH || !elMM || !elAP) return;
+      if (!horaStr) {
+        elHH.value = ''; elMM.value = ''; elAP.value = 'AM'; return;
+      }
+      const parts = horaStr.split(':');
+      let h = parseInt(parts[0], 10);
+      const m = parts[1] ? parts[1].padStart(2,'0') : '00';
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      if (h === 0) h = 12;
+      else if (h > 12) h = h - 12;
+      elHH.value = String(h).padStart(2,'0');
+      elMM.value = m;
+      elAP.value = ampm;
+    })();
+    setVal('visitaEstado', v ? v.estado : 'agendada');
+    setVal('visitaOferto', v ? v.oferto : 'no');
+    setVal('visitaOferta', v ? v.oferta : '');
+    setVal('visitaNotas', v ? v.notas : '');
+    
+    const elCalendar = document.getElementById('visitaCalendar');
+    if (elCalendar) elCalendar.checked = false;
+
+    setVal('visitaId', v ? v.id : '');
+
+    const btnEliminar = document.getElementById('btnEliminarVisita');
+    if (btnEliminar) btnEliminar.style.display = v ? 'block' : 'none';
+
+    const modal = document.getElementById('visitaModal');
+    if (modal) {
+      modal.classList.add('open');
+      modal.classList.add('active');
+    }
+  } catch (err) {
+    console.error("Error in abrirVisitaModal:", err);
+  }
+}
+
+function marcarVisitaRealizada(lid, cod){
+  const lead = leads.find(l => String(l.id) === String(lid)); if(!lead) return;
+  const v = (lead.visitas || []).find(x => x.codigo === cod);
+  if(v){
+    v.estado = 'realizada';
+    saveLeads();
+    toast('Visita marcada como realizada ✓','success');
+    renderSidePanel(lead);
+    syncSheets(lead);
+  }
+}
+function sincronizarVisitaHora() {
+  const elHH = document.getElementById('visitaHoraHH');
+  const elMM = document.getElementById('visitaHoraMM');
+  const elAP = document.getElementById('visitaHoraAP');
+  const elHora = document.getElementById('visitaHora');
+  if (!elHH || !elMM || !elAP || !elHora) return;
+
+  const hhStr = elHH.value;
+  const mmStr = elMM.value;
+  const ap = elAP.value;
+  if (!hhStr || !mmStr) { elHora.value = ''; return; }
+
+  let h = parseInt(hhStr, 10);
+  const m = parseInt(mmStr, 10);
+
+  // Convert 12h → 24h
+  if (ap === 'AM') {
+    if (h === 12) h = 0; // 12 AM → 00
+  } else {
+    if (h !== 12) h = h + 12; // 1-11 PM → 13-23
+  }
+
+  elHora.value = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+}
+
+function guardarVisita(){
+  try {
+    const cod=document.getElementById('visitaCodigo').value.trim(); if(!cod){ toast('Ingresa el código','error'); return; }
+    const cliente = document.getElementById('visitaCliente').value.trim();
+    const celular = document.getElementById('visitaCelular').value.trim();
+    const fecha = document.getElementById('visitaFecha').value;
+    const hora = document.getElementById('visitaHora').value;
+    
+    // Verificación de choque de horarios
+    if (fecha && hora) {
+      const formVisitaId = document.getElementById('visitaId')?.value?.trim() || null;
+      const collision = citas.find(c => c.fecha === fecha && c.hora === hora && (!formVisitaId || String(c.id) !== String(formVisitaId)));
+      if (collision) {
+        if (!confirm(`¡Atención! Ya tienes otra cita programada para el ${fecha} a las ${hora} (Cód: ${collision.codigo || '?'}). ¿Deseas guardar esta cita de todos modos?`)) {
+          return;
+        }
+      }
+    }
+
+    let lead = (visitaLeadId && typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l=>String(l.id)===String(visitaLeadId)) : null;
+    if(!lead && celular) {
+      const cleanInput = String(celular).replace(/\D/g, '');
+      const matchInput = cleanInput.length >= 10 ? cleanInput.slice(-10) : cleanInput;
+      lead = leads.find(l => {
+        if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
+        const lRaw = String(l.celular || '').replace(/\D/g, '');
+        const lMatch = lRaw.length >= 10 ? lRaw.slice(-10) : lRaw;
+        return matchInput && lMatch && lMatch === matchInput;
+      });
+    }
+
+    if(!lead) {
+       // Asignar a contenedor global para sincronización
+       lead = leads.find(l => l.id === 'LEAD-AGENDA-GLOBAL');
+       if (!lead) {
+           lead = {
+               id: 'LEAD-AGENDA-GLOBAL',
+               tipo: 'cliente',
+               nombre: 'Agenda Global (Citas Genéricas)',
+               celular: '0000000000',
+               notas: 'Contenedor para sincronizar citas sin lead asociado.',
+               metodoPago: [],
+               estado: 'visita',
+               etiqueta: 'activo',
+               filtros: {},
+               frecuencia: 'manual',
+               maxPorEnvio: 4,
+               nombreInmobiliaria: '',
+               nombreAgente: '',
+               propsFiltradas: [],
+               propsEnviadas: [],
+               proximosEnvios: [],
+               historialEnvios: [],
+               visitas: [],
+               creadoEn: new Date().toISOString()
+           };
+           leads.push(lead);
+       }
+    }
+
+    // Buscar visita existente: primero por ID del formulario (lo más confiable), luego por codigo+celular
+    const formVisitaId = document.getElementById('visitaId')?.value?.trim() || null;
+    let existingId = formVisitaId || null;
+
+    // Buscar en lead.visitas por ID exacto primero
+    const vInLead = formVisitaId
+      ? lead?.visitas?.find(x => String(x.id) === formVisitaId)
+      : lead?.visitas?.find(x => x.codigo === cod && String(x.celular || '').replace(/\D/g,'') === String(celular || '').replace(/\D/g,''));
+
+    // Buscar en citas globales por ID o por codigo+celular
+    const vInCitas = formVisitaId
+      ? citas.find(x => String(x.id) === formVisitaId)
+      : citas.find(x => x.codigo === cod && String(x.celular || '').replace(/\D/g,'') === String(celular || '').replace(/\D/g,''));
+
+    if (!existingId) existingId = vInLead?.id || vInCitas?.id || null;
+
+    const v={
+      id: existingId || Date.now().toString(),
+      codigo:cod,
+      fecha:document.getElementById('visitaFecha').value,
+      hora:document.getElementById('visitaHora').value,
+      estado:document.getElementById('visitaEstado').value,
+      oferto:document.getElementById('visitaOferto').value,
+      oferta:document.getElementById('visitaOferta').value.trim(),
+      notas:document.getElementById('visitaNotas').value.trim(),
+      cliente: cliente,
+      celular: celular,
+      inmobiliaria: lead && lead.tipo==='inmobiliaria' && lead.id !== 'LEAD-AGENDA-GLOBAL' ? lead.nombreInmobiliaria : '',
+      updatedAt: Date.now()
+    };
+    
+    if(lead){
+      if(!lead.visitas) lead.visitas=[];
+      // Buscar por ID exacto primero, luego por codigo sin ID (registros legados sin id)
+      let idx = lead.visitas.findIndex(x => String(x.id) === String(v.id));
+      if(idx < 0) idx = lead.visitas.findIndex(x => x.codigo === cod && !x.id);
+      if(idx >= 0) lead.visitas[idx] = v;
+      else lead.visitas.push(v);
+    }
+    
+    // Actualizar en agenda global — siempre buscar por ID exacto primero
+    let cIdx = citas.findIndex(x => String(x.id) === String(v.id));
+    if(cIdx < 0) cIdx = citas.findIndex(x => x.codigo === cod && String(x.celular || '') === String(v.celular || '') && !x.id);
+    if(cIdx >= 0) citas[cIdx] = v;
+    else citas.push(v);
+    
+    saveLeads();
+    
+    if(document.getElementById('visitaCalendar').checked){ 
+      const fd=v.fecha.replace(/-/g,''); 
+      const time = v.hora ? `T${v.hora.replace(':','') }00` : '';
+      const dateStr = time ? `${fd}${time}/${fd}${time}` : `${fd}/${fd}`;
+      window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Visita '+cod+' - '+(v.cliente||''))}&dates=${dateStr}&details=${encodeURIComponent(v.notas)}`,'_blank'); 
+    }
+    
+    closeModal('visitaModal'); 
+    toast('Visita registrada ✓','success'); 
+    
+    rebuildCitas();
+    if(currentTab==='citas') renderCitas();
+    
+    if(lead) syncSheets(lead);   // guarda el lead completo en CRM_Leads
+    syncCita(v);                  // también escribe en la hoja CRM_Citas del Excel
+    
+    if(currentLeadId && lead && currentLeadId===lead.id) renderSidePanel(lead);
+  } catch (err) {
+    console.error("Error en guardarVisita:", err);
+    toast("Error al guardar la visita", "error");
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   MODAL EDITAR FILTROS
+═══════════════════════════════════════════════ */
+function abrirEditFiltros(leadId){
+  currentLeadId = leadId;
+  const lead=leads.find(l=>String(l.id)===String(leadId)); if(!lead) return;
+  tempFiltros=JSON.parse(JSON.stringify(lead.filtros||{}));
+  document.getElementById('editFiltrosCount').textContent=`${filtrarProps(tempFiltros).length} propiedades encontradas`;
+  document.getElementById('editFiltrosContent').innerHTML=`<div id="efWrap"></div>`;
+  document.getElementById('editFiltrosModal').classList.add('open');
+  setTimeout(()=>{
+    buildFiltrosBar('efWrap','ef',tempFiltros);
+    setSort(criterioOrden); // Sincronizar etiquetas de orden
+  },0);
+}
+function guardarFiltrosEditados(marcarComoEnviadas = false){
+  const lead=leads.find(l=>String(l.id)===String(currentLeadId)); if(!lead) return;
+  const efSt=getFSt('ef'); 
+  Object.keys(efSt).forEach(k => { 
+    if (Array.isArray(efSt[k])) {
+      tempFiltros[k] = [...efSt[k]]; 
+    } else {
+      tempFiltros[k] = efSt[k];
+    }
+  });
+  lead.filtros=JSON.parse(JSON.stringify(tempFiltros));
+  lead.propsFiltradas=filtrarProps(lead.filtros).map(d=>d['Código']);
+  
+  if(marcarComoEnviadas){
+    lead.propsEnviadas = [...new Set([...(lead.propsEnviadas||[]), ...lead.propsFiltradas])];
+    lead.historialEnvios.push({
+      fecha: new Date().toISOString().split('T')[0],
+      codigos: lead.propsFiltradas,
+      totalCods: lead.propsFiltradas.length,
+      tipoEnvio: 'link',
+      notas: 'Envío de catálogo personalizado (Filtros editados)'
+    });
+
+    // Enviar WhatsApp con el catálogo personalizado
+    let dest = "Cliente";
+    if (lead.tipo === 'inmobiliaria') {
+      dest = (lead.nombreAgente || lead.nombre || "Agente").trim().split(' ')[0];
+    } else {
+      dest = (lead.nombre || "Cliente").trim().split(' ')[0];
+    }
+
+    const emoHola = "\uD83D\uDC4B";      // 👋
+    const emoCasa = "\uD83C\uDFE1";      // 🏡
+    const emoLink = "\uD83D\uDC47";      // 👇
+    const emoFin = "\u2705";            // ✅
+    const emoEstrella = "\u2728";        // ✨
+
+    const link = getSearchLinkFromFilters(lead.filtros, null, lead.id);
+    const msg = emoCasa + " \u00A1Hola " + dest + "! " + emoHola + "\r\n\r\n" +
+                "Te comparto aquí los inmuebles que se ajustan a tus requerimientos " + emoLink + "\r\n\r\n" +
+                link + "\r\n\r\n" +
+                "Revísalo y me cuentas qué inmueble deseas que visitemos " + emoFin + emoEstrella;
+
+    const num = lead.celular.replace(/\D/g, '');
+    const waBase = num.startsWith('57') ? num : '57' + num;
+
+    if (settings.waApi) {
+      let waWindow = window.open('', '_blank');
+      if (waWindow) {
+        waWindow.document.write('<p style="font-family:sans-serif; text-align:center; margin-top:50px; color:#555;">Conectando con WhatsApp...</p>');
+      }
+      fetch(`${settings.waApi}/send-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number: num, message: msg })
+      }).then(r => {
+        if (r.ok) {
+          toast(`Enviado automáticamente ✓`, 'success');
+          if (waWindow) waWindow.close();
+        } else {
+          if (waWindow) {
+            waWindow.location.href = `https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`;
+          } else {
+            window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
+          }
+        }
+      }).catch(() => {
+        if (waWindow) {
+          waWindow.location.href = `https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`;
+        } else {
+          window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
+        }
+      });
+    } else {
+      window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
+    }
+  }
+
+  const pend=lead.propsFiltradas.filter(c=>!(lead.propsEnviadas||[]).includes(c));
+  lead.proximosEnvios=generarProximosCheck(lead.frecuencia);
+  saveLeads(); 
+  syncSheets(lead);
+  closeModal('editFiltrosModal'); 
+  toast('Filtros actualizados ✓','success');
+  renderSidePanel(lead);
+}
+
+/* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+function closeModal(id){ 
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.remove('open');
+    el.classList.remove('active');
+  }
+}
+document.addEventListener('keydown',e=>{ 
+  if(e.key==='Escape') {
+    document.querySelectorAll('.modal-overlay.open, .modal-overlay.active').forEach(m=>{
+      m.classList.remove('open');
+      m.classList.remove('active');
+    });
+  }
+});
+
+function saveLeads(){
+  // Los leads viven solo en la nube (Google Sheets).
+  // Aquí solo guardamos las citas localmente (son datos de agenda, no CRM).
+  try {
+    localStorage.setItem('icde_citas', JSON.stringify(citas));
+  } catch (e) {
+    console.error('Error saving citas to localStorage:', e);
+  }
+}
+
+function toast(msg,type='success'){
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
+async function syncSheets(lead){ 
+  if(!CRM_SCRIPT_URL) return;
+  // Bloquear autoSync por 30 segundos — Apps Script puede tardar hasta 20-25s en procesar
+  pendingWriteUntil = Date.now() + 30000;
+  try { 
+    await fetch(CRM_SCRIPT_URL,{
+      method:'POST',
+      
+      body:JSON.stringify({action:'saveLead',lead:JSON.stringify(lead)})
+    }); 
+  } catch(e){} 
+}
+
+async function syncCita(cita){
+  if(!CRM_SCRIPT_URL) return;
+  try {
+    await fetch(CRM_SCRIPT_URL,{
+      method:'POST',
+      
+      body:JSON.stringify({action:'saveCita',cita:JSON.stringify(cita)})
+    });
+  } catch(e){}
+}
+
+async function syncProperty(prop) {
+  // Guardar en localStorage primero (siempre funciona)
+  const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
+  const cIdx = customProps.findIndex(x => x['Código'] === prop['Código']);
+  if (cIdx >= 0) customProps[cIdx] = prop;
+  else customProps.push(prop);
+  localStorage.setItem('icde_custom_props', JSON.stringify(customProps));
+
+  // Guardar coordenadas en el Apps Script del catálogo (hoja maestra)
+  const lat = String(prop['Latitud'] || '').trim();
+  const lng = String(prop['Longitud'] || '').trim();
+  if (lat && lng && prop['Código']) {
+    syncCoords(prop['Código'], lat, lng);
+  }
+
+  // Guardar el resto en CRM si está configurado
+  if (!CRM_SCRIPT_URL) return;
+  try {
+    await fetch(CRM_SCRIPT_URL, {
+      method: 'POST',
+      
+      body: JSON.stringify({ action: 'saveProperty', property: JSON.stringify(prop) })
+    });
+  } catch (e) {
+    console.error("Error syncProperty:", e);
+  }
+}
+
+// Guarda Latitud/Longitud directamente en la hoja del catálogo maestro
+async function syncCoords(codigo, lat, lng) {
+  const baseUrl = APPS_SCRIPT_URL.split('?')[0]; // quitar ?action=getData
+  try {
+    await fetch(baseUrl, {
+      method: 'POST',
+      
+      body: JSON.stringify({ action: 'saveCoords', codigo: codigo, lat: lat, lng: lng })
+    });
+    console.log('✅ Coordenadas enviadas al catálogo:', codigo, lat, lng);
+  } catch (e) {
+    console.warn('⚠ syncCoords falló (no-cors ignora errores):', e.message);
+  }
+}
+
+async function syncCita(cita){
+  if(!CRM_SCRIPT_URL || !cita) return;
+  try {
+    await fetch(CRM_SCRIPT_URL,{
+      method:'POST',
+      body: JSON.stringify({ action:'saveCita', cita: JSON.stringify(cita) })
+    });
+  } catch(e){}
+}
+
+async function syncDeleteCita(id){
+  if(!CRM_SCRIPT_URL) return;
+  try {
+    await fetch(CRM_SCRIPT_URL,{
+      method:'POST',
+      body:JSON.stringify({action:'deleteCita',id:id})
+    });
+  } catch(e){}
+}
+
+function eliminarVisita(){
+  const id = document.getElementById('visitaId').value;
+  if(!id) return;
+  if(!confirm('¿Estás seguro de eliminar esta cita?')) return;
+
+  // 1. Eliminar de la agenda global
+  const cIdx = citas.findIndex(x => String(x.id) === String(id));
+  if(cIdx >= 0) citas.splice(cIdx, 1);
+
+  // 2. Eliminar del lead (si existe)
+  let leadTarget = null;
+  leads.forEach(l => {
+    if(l.visitas){
+      const vIdx = l.visitas.findIndex(x => String(x.id) === String(id));
+      if(vIdx >= 0){
+        l.visitas.splice(vIdx, 1);
+        leadTarget = l;
+      }
+    }
+  });
+
+  saveLeads();
+  closeModal('visitaModal');
+  toast('Cita eliminada ✓', 'success');
+
+  // 3. Sincronizar
+  if(leadTarget) syncSheets(leadTarget); // Mantiene limpio el JSON del lead
+  syncDeleteCita(id); // SIEMPRE borra de CRM_Citas (Excel) para que desaparezca de la agenda
+  
+  pendingWriteUntil = Date.now() + 30000;
+
+  // 4. Refrescar UI
+  if(currentTab === 'citas') renderCitas();
+  if(currentLeadId && leadTarget && String(currentLeadId) === String(leadTarget.id)) renderSidePanel(leadTarget);
+}
+
+/* ═══════════════════════════════════════════════
+   MÓDULO CITAS & PEDIDOS INMOB.
+═══════════════════════════════════════════════ */
+function setCitasView(mode){
+  citasViewMode = mode;
+  localStorage.setItem('icde_citas_view', mode);
+  renderCitas();
+}
+
+function renderCitas(){
+  document.getElementById('mainContent').innerHTML=`
+    <div class="section-header">
+      <div class="section-title">📅 Agenda de Citas</div>
+    </div>
+    
+    <div class="citas-layout-nuevo" style="display:grid; grid-template-columns: 320px 1fr; gap:24px; align-items:start;">
+      <div id="calendarContainerWrap" style="display: flex; flex-direction: column; gap: 20px;">
+        <div id="calendarContainer"></div>
+        <div class="cal-legend" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:11px; color:#aaa; background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:none; box-shadow:inset 3px 3px 6px rgba(0,0,0,0.6),inset -1px -1px 0px rgba(255,255,255,0.05);">
+          <div style="display:flex; align-items:center; gap:8px;"><div style="width:10px; height:10px; border-radius:2px; background:var(--gold);"></div> <span style="color:#fff;">Hoy</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><div style="width:6px; height:6px; border-radius:50%; background:#a855f7;"></div> <span>Solicitó Visita</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><div style="width:6px; height:6px; border-radius:50%; background:var(--gold);"></div> <span>Agendada</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><div style="width:6px; height:6px; border-radius:50%; background:var(--green);"></div> <span>Visitada</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><div style="width:6px; height:6px; border-radius:50%; background:var(--red);"></div> <span>Cancelada</span></div>
+        </div>
+
+        <!-- TOP INMUEBLES MÁS VISITADOS -->
+        <div style="background:var(--bg2); border-radius:20px; padding:20px; box-shadow:3px 3px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3);">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+            <div style="width:3px; height:18px; background:var(--gold); border-radius:2px;"></div>
+            <span style="font-size:13px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.08em;">Top Inmuebles más Visitados</span>
+          </div>
+          <div id="citasTopInmuebles" style="display:flex; flex-direction:column; gap:10px;">
+            <div style="color:var(--muted); font-size:13px; text-align:center; padding:20px 0;">Calculando...</div>
+          </div>
+        </div>
+
+        <!-- VISITAS POR MES -->
+        <div style="background:var(--bg2); border-radius:20px; padding:20px; box-shadow:3px 3px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3);">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+            <div style="width:3px; height:18px; background:var(--gold); border-radius:2px;"></div>
+            <span style="font-size:13px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.08em;">Visitas por Mes</span>
+          </div>
+          <div id="citasVisitasMes" style="display:flex; flex-direction:column; gap:8px;">
+            <div style="color:var(--muted); font-size:13px; text-align:center; padding:20px 0;">Calculando...</div>
+          </div>
+        </div>
+      </div>
+      <div id="listContainer">
+        <!-- PANEL DE CONTROLES -->
+        <div class="panel-section" style="padding: 10px 0; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); margin-bottom: 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap: nowrap; width: 100%; padding: 0 20px; box-sizing: border-box;">
+            <div style="display:flex; gap:8px; flex-shrink: 0; flex-wrap: nowrap;">
+              <button class="chip-filtro ${citasActiveFilterType === 'todas' ? 'sel' : ''}" onclick="filterCitas('todas',this)">Todas</button>
+              <button class="chip-filtro ${citasActiveFilterType === 'mes' ? 'sel' : ''}" onclick="filterCitas('mes',this)">Mes</button>
+              <button class="chip-filtro ${citasActiveFilterType === 'semana' ? 'sel' : ''}" onclick="filterCitas('semana',this)">Semana</button>
+            </div>
+
+            <div id="citasSelFecha" style="font-size:12px; color:var(--gold); font-weight:600; flex-shrink: 0; margin-right: auto;">${citasActiveFilterType === 'fecha' ? 'Filtrado por: ' + citasActiveFilterValue : ''}</div>
+
+            <div style="display:flex; align-items:center; gap:8px; flex-grow:1; justify-content: flex-end; flex-wrap: nowrap; min-width: 0;">
+              <div class="pc-buscar-row-premium" style="max-width: 260px; margin-bottom: 0; flex-shrink: 1; min-width: 130px;">
+                <span class="bn-icon" style="padding:0 8px 0 12px; color: var(--gold); flex-shrink:0;">
+                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </span>
+                <input type="text" id="searchCitasInput" placeholder="Buscar por cliente..." value="${searchTermCitas}" oninput="buscarCitas(this.value)" style="font-size:13px; background: transparent; color: #fff; border: none; outline: none; width: 100%; min-width: 0;"/>
+                ${searchTermCitas ? `<button class="btn-limpiar-pc" style="padding:0 12px; border-radius:0 8px 8px 0; font-size:12px; color: #aaa; background: transparent; cursor: pointer; transition: color 0.2s; border: none; flex-shrink:0;" onclick="buscarCitas(''); document.getElementById('searchCitasInput').value=''" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">✕</button>` : ''}
+              </div>
+
+              <button class="btn-nueva-cita-premium" onclick="abrirVisitaModal()" style="flex-shrink: 0;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Nueva Cita
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TABLA DE CITAS -->
+        <div class="citas-table-wrap panel-section" style="padding: 0; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); margin-top: 0;">
+          <table class="citas-table" style="border: none; border-radius: 0; background: transparent; border-collapse: separate; border-spacing: 0; overflow: visible;">
+            <thead>
+              <tr style="background: rgba(212, 168, 75, 0.04);">
+                <th style="padding-left: 20px; color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25); position: sticky; top: 0; z-index: 100; background: linear-gradient(rgba(212, 168, 75, 0.04), rgba(212, 168, 75, 0.04)), var(--bg2);">Día / Hora</th>
+                <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25); position: sticky; top: 0; z-index: 100; background: linear-gradient(rgba(212, 168, 75, 0.04), rgba(212, 168, 75, 0.04)), var(--bg2);">Cliente</th>
+                <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25); position: sticky; top: 0; z-index: 100; background: linear-gradient(rgba(212, 168, 75, 0.04), rgba(212, 168, 75, 0.04)), var(--bg2);">Inmueble</th>
+                <th style="padding-right: 20px; color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25); position: sticky; top: 0; z-index: 100; background: linear-gradient(rgba(212, 168, 75, 0.04), rgba(212, 168, 75, 0.04)), var(--bg2);">Observaciones</th>
+              </tr>
+            </thead>
+            <tbody id="citasBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      @media(max-width:900px){ .citas-layout-nuevo { grid-template-columns: 1fr !important; } }
+      @media(max-width:700px){ #citasAnalyticsGrid { grid-template-columns: 1fr !important; } }
+      .pc-buscar-row-premium {
+        display: flex;
+        align-items: center;
+        height: 38px;
+        border-radius: 8px;
+        background: rgba(0,0,0,0.2);
+        border: none;
+        box-shadow: inset 3px 3px 6px rgba(0,0,0,0.6),inset -1px -1px 0px rgba(255,255,255,0.05);
+        transition: all 0.2s ease;
+        max-width: 260px;
+        flex-grow: 1;
+      }
+      .pc-buscar-row-premium:focus-within {
+        background: rgba(0,0,0,0.4);
+        box-shadow: inset 3px 3px 6px rgba(0,0,0,0.8),inset -1px -1px 0px rgba(212,168,75,0.3), 0 0 0 2px rgba(212,168,75,0.15);
+      }
+    </style>`;
+
+  renderCalendario();
+  aplicarFiltroYBusquedaCitas();
+  renderTopVisitados();
+  renderVisitasPorMes();
+}
+
+function renderTopVisitados() {
+  const container = document.getElementById('citasTopInmuebles');
+  if (!container) return;
+
+  // Contar visitas por código de inmueble usando el array de citas
+  const counts = {};
+  citas.forEach(c => {
+    if (!c.codigo) return;
+    counts[c.codigo] = (counts[c.codigo] || 0) + 1;
+  });
+
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+  if (!sorted.length) {
+    container.innerHTML = '<div style="color:var(--muted); font-size:13px; text-align:center; padding:20px 0;">Sin visitas registradas</div>';
+    return;
+  }
+
+  const maxVal = sorted[0][1];
+
+  container.innerHTML = sorted.map(([cod, count], i) => {
+    const p = (typeof allProps !== 'undefined' ? allProps : []).find(x => x['Código'] === cod || x['Codigo'] === cod);
+    const nombre = p ? (p['Nombre'] || p['nombre'] || cod) : 'Propiedad Desconocida';
+    const img = p ? ((p['Imagenes'] || p['Image'] || '').split('|')[0].trim() || 'https://i.imgur.com/Pc9M3I8.png') : 'https://i.imgur.com/Pc9M3I8.png';
+    const pct = Math.round((count / maxVal) * 100);
+    const rankColors = ['var(--gold)', '#c0c0c0', '#cd7f32', 'var(--muted)', 'var(--muted)', 'var(--muted)'];
+
+    return `
+      <div style="display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.03); border-radius:12px; padding:10px 14px; box-shadow:2px 2px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.08);">
+        <span style="font-size:12px; font-weight:800; color:${rankColors[i]}; width:16px; text-align:center; flex-shrink:0;">#${i+1}</span>
+        <img src="${img}" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'" style="width:42px; height:42px; border-radius:8px; object-fit:cover; flex-shrink:0;"/>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:12px; font-weight:700; color:var(--gold); line-height:1.2;">${cod}</div>
+          <div style="font-size:12px; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${nombre}</div>
+          <div style="margin-top:5px; height:3px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden;">
+            <div style="height:100%; width:${pct}%; background:linear-gradient(90deg, var(--gold), rgba(212,168,75,0.4)); border-radius:2px; transition:width 0.6s ease;"></div>
+          </div>
+        </div>
+        <div style="font-size:14px; font-weight:800; color:var(--green); flex-shrink:0;">${count} <span style="font-size:10px; font-weight:500; color:var(--muted);">visita${count!==1?'s':''}</span></div>
+      </div>`;
+  }).join('');
+}
+
+function renderVisitasPorMes() {
+  const container = document.getElementById('citasVisitasMes');
+  if (!container) return;
+
+  // Agrupar citas por mes (últimos 8 meses)
+  const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const counts = {};
+  const now = new Date();
+
+  // Inicializar meses del año actual (desde Enero hasta el mes actual)
+  const currentYear = now.getFullYear();
+  for (let m = 0; m <= now.getMonth(); m++) {
+    const key = `${currentYear}-${String(m + 1).padStart(2, '0')}`;
+    counts[key] = { label: monthNames[m], count: 0 };
+  }
+
+  citas.forEach(c => {
+    if (!c.fecha) return;
+    const key = c.fecha.substring(0, 7); // YYYY-MM
+    if (counts[key]) counts[key].count++;
+  });
+
+  const entries = Object.values(counts);
+  const maxVal = Math.max(...entries.map(e => e.count), 1);
+  const totalVisitas = entries.reduce((acc, e) => acc + e.count, 0);
+
+  // Tarjeta de total
+  const totalHtml = `
+    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); border-radius:12px; padding:12px 16px; margin-bottom:4px; box-shadow:inset 2px 2px 4px rgba(0,0,0,0.4);">
+      <div>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em;">Total registrado</div>
+        <div style="font-size:26px; font-weight:800; color:#fff; line-height:1.1; margin-top:2px;">${totalVisitas}</div>
+        <div style="font-size:11px; color:var(--gold); font-weight:600; margin-top:2px;">Histórico acumulado</div>
+      </div>
+      <div style="font-size:28px; opacity:0.15;">📅</div>
+    </div>`;
+
+  // Barras por mes
+  const barsHtml = entries.map(e => {
+    const pct = Math.round((e.count / maxVal) * 100);
+    const isCurrentMonth = e.label.startsWith(monthNames[now.getMonth()]);
+    return `
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="font-size:11px; color:var(--muted); width:36px; flex-shrink:0; text-align:right;">${e.label}</div>
+        <div style="flex:1; height:20px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden; position:relative;">
+          <div style="position:absolute; left:0; top:0; height:100%; width:${pct}%; background:${isCurrentMonth ? 'linear-gradient(90deg, var(--gold), rgba(212,168,75,0.6))' : 'linear-gradient(90deg, rgba(59,130,246,0.7), rgba(59,130,246,0.3))'}; border-radius:4px; transition:width 0.6s ease;"></div>
+          ${e.count > 0 ? `<span style="position:absolute; right:6px; top:50%; transform:translateY(-50%); font-size:10px; font-weight:700; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.8);">${e.count}</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = totalHtml + `<div style="display:flex; flex-direction:column; gap:6px; margin-top:12px;">${barsHtml}</div>`;
+}
+
+function selectCalDate(fecha){
+
+  citasActiveFilterType = 'fecha';
+  citasActiveFilterValue = fecha;
+
+  const elSelFecha = document.getElementById('citasSelFecha');
+  if (elSelFecha) {
+    elSelFecha.textContent = `Filtrado por: ${fecha}`;
+  }
+
+  // Remove 'sel' class from buttons
+  document.querySelectorAll('#listContainer .chip-filtro').forEach(btn => btn.classList.remove('sel'));
+
+  aplicarFiltroYBusquedaCitas();
+  
+  // Highlight selected day
+  document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('today'));
+  // (We don't want to lose today's visual, so maybe a separate class)
+}
+
+function renderCalendario(){
+  const container = document.getElementById('calendarContainer'); if(!container) return;
+  const year = calDate.getFullYear();
+  const month = calDate.getMonth();
+  const monthNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  let html = `
+    <div class="calendar-wrap">
+      <div class="calendar-header">
+        <button class="btn btn-secondary btn-sm" style="padding:4px 8px;" onclick="changeCalMonth(-1)">«</button>
+        <div style="font-size:14px; font-weight:700; color:#fff;">
+          <span style="color:var(--gold);">${monthNames[month]}</span> ${year}
+        </div>
+        <button class="btn btn-secondary btn-sm" style="padding:4px 8px;" onclick="changeCalMonth(1)">»</button>
+      </div>
+      <div class="calendar-grid">
+        <div class="cal-day-head">D</div><div class="cal-day-head">L</div><div class="cal-day-head">M</div>
+        <div class="cal-day-head">M</div><div class="cal-day-head">J</div><div class="cal-day-head">V</div>
+        <div class="cal-day-head">S</div>`;
+        
+  for(let i=0; i<firstDay; i++) html += '<div class="cal-day empty"></div>';
+  
+  const todayObj = new Date();
+  const today = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+  
+  for(let d=1; d<=daysInMonth; d++){
+    const curDate = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayEvents = citas.filter(c => c.fecha === curDate);
+    const isToday = curDate === today;
+    
+    html += `
+      <div class="cal-day ${isToday?'today':''}" onclick="selectCalDate('${curDate}')">
+        <span class="cal-num">${d}</span>
+        <div class="cal-dots">
+          ${dayEvents.slice(0,4).map(c => `<div class="cal-dot ${c.estado}"></div>`).join('')}
+          ${dayEvents.length > 4 ? '<div style="font-size:8px; color:var(--gold);">+</div>' : ''}
+        </div>
+      </div>`;
+  }
+  
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+
+function changeCalMonth(offset){
+  calDate.setMonth(calDate.getMonth() + offset);
+  renderCalendario();
+  if (citasActiveFilterType === 'mes') {
+    aplicarFiltroYBusquedaCitas();
+  }
+}
+
+
+let feedbackOmitidos = JSON.parse(localStorage.getItem('icde_feedback_omitidos') || '[]');
+function checkCitasFeedback(){
+  if(document.querySelector('.modal-overlay.open')) return; // No interrumpir si hay modal abierto
+  const now = new Date();
+  const pendientes = citas.filter(c => {
+    if(c.estado !== 'agendada') return false;
+    if(feedbackOmitidos.includes(String(c.id))) return false;
+    const citaDate = new Date(c.fecha + (c.hora ? 'T' + c.hora : 'T23:59'));
+    const age = now - citaDate;
+    return age > (30 * 60 * 1000) && age < (10 * 24 * 60 * 60 * 1000); // 30m min, 10d max
+  });
+  if(pendientes.length > 0) abrirFeedbackModal(pendientes[0]);
+}
+
+function abrirFeedbackModal(cita){
+  document.getElementById('feedbackCitaId').value = cita.id;
+  document.getElementById('feedbackCitaInfo').innerHTML = `
+    <div style="font-weight:700; color:#fff; font-size:15px;">${cita.cliente}</div>
+    <div style="font-size:12px; color:var(--gold); margin-top:4px; font-weight:600;">📍 Inmueble: ${cita.codigo}</div>
+    <div style="font-size:12px; color:#888; margin-top:2px;">📅 Fecha: ${cita.fecha} a las ${cita.hora || '--:--'}</div>
+  `;
+  document.getElementById('feedbackNotas').value = cita.observaciones || '';
+  document.getElementById('feedbackEstado').value = 'realizada';
+  document.getElementById('feedbackModal').classList.add('open');
+}
+
+function omitirFeedback(){
+  const id = document.getElementById('feedbackCitaId').value;
+  if(!feedbackOmitidos.includes(String(id))) {
+    feedbackOmitidos.push(String(id));
+    localStorage.setItem('icde_feedback_omitidos', JSON.stringify(feedbackOmitidos));
+  }
+  closeModal('feedbackModal');
+  setTimeout(checkCitasFeedback, 1000);
+}
+
+async function guardarFeedback(){
+  const id = document.getElementById('feedbackCitaId').value;
+  const notas = document.getElementById('feedbackNotas').value;
+  const estado = document.getElementById('feedbackEstado').value;
+  const cita = citas.find(c => String(c.id) === String(id));
+  if(cita){
+    cita.observaciones = notas;
+    cita.notas = notas;
+    cita.estado = estado;
+    const lead = leads.find(l => String(l.id) === String(cita.leadId));
+    if(lead && lead.visitas){
+      // Buscar por id primero, luego por codigo+fecha como fallback
+      const v = lead.visitas.find(x => String(x.id) === String(id)) ||
+                lead.visitas.find(x => x.codigo === cita.codigo && x.fecha === cita.fecha);
+      if(v) {
+        v.estado = estado;
+        v.notas = notas;
+        v.observaciones = notas;
+        // Asegurar que el ID esté guardado para futuros matches
+        if(!v.id) v.id = id;
+      }
+    }
+    saveLeads();
+    syncCita(cita);
+    if(lead) {
+      syncSheets(lead);
+    }
+    if(currentTab === 'citas') renderCitas();
+    toast('Feedback guardado ✓');
+  }
+  // Marcar como omitido localmente para que no vuelva a saltar en esta sesion/dispositivo
+  if(!feedbackOmitidos.includes(String(id))) {
+    feedbackOmitidos.push(String(id));
+    localStorage.setItem('icde_feedback_omitidos', JSON.stringify(feedbackOmitidos));
+  }
+  closeModal('feedbackModal');
+  // Solo volver a revisar si hay más citas pendientes (con delay para que el save se propague)
+  setTimeout(checkCitasFeedback, 3000);
+}
+
+function renderCitasBody(lista){
+  const b = document.getElementById('citasBody'); if(!b) return;
+  const diasSem = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  
+  // Clonar y ordenar por prioridad de estado (solicitó, agendada, visitada, cancelada) y luego por fecha/hora
+  const ESTADO_PRIO = {
+    'solicito_visita': 1,
+    'agendada': 2,
+    'realizada': 3,
+    'cancelada': 4
+  };
+  const ordenada = [...lista].sort((a,b) => {
+    const prioA = ESTADO_PRIO[a.estado] || 99;
+    const prioB = ESTADO_PRIO[b.estado] || 99;
+    if (prioA !== prioB) {
+      return prioA - prioB;
+    }
+    const da = a.fecha + (a.hora ? 'T' + a.hora : 'T00:00');
+    const db = b.fecha + (b.hora ? 'T' + b.hora : 'T00:00');
+    return da.localeCompare(db);
+  });
+
+  b.innerHTML = ordenada.map(c => {
+    const d = new Date(c.fecha + 'T12:00:00');
+    const prop = allProps.find(p => String(p['Código']).trim() === String(c.codigo).trim());
+    const inmobProp = prop ? (prop['Inmobiliaria'] || '') : '';
+    let stBadge = '';
+    if(c.estado === 'realizada') stBadge = `<span class="badge badge-visita">Visitada</span>`;
+    else if(c.estado === 'solicito_visita') stBadge = `<span class="badge badge-solicito">Solicitó</span>`;
+    else if(c.estado === 'cancelada') stBadge = `<span class="badge badge-inactivo" style="font-size:9px;">Cancelada</span>`;
+    else stBadge = `<span class="badge badge-agendada">Agendada</span>`;
+
+    const isSelected = String(c.id).trim() === String(currentCitaId).trim();
+    return `<tr class="clickable ${isSelected ? 'active-cita-row' : ''}" data-cita-id="${String(c.id).trim()}" onclick="abrirEditarCita('${c.id}')">
+      <td style="padding-left: 20px;"><div class="citas-time">${c.hora || '--:--'}</div><div class="citas-weekday">${isNaN(d.getDay()) ? '—' : diasSem[d.getDay()]} ${c.fecha}</div></td>
+      <td>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div style="font-weight:600;">${c.cliente || '—'}</div>
+            <div style="font-size:11px;color:#888;">${c.celular || ''}</div>
+          </div>
+          ${stBadge}
+        </div>
+        <div style="font-size:10px;color:var(--gold);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;" title="${c.inmobiliaria||'Directo'}">🏢 ${c.inmobiliaria || 'Directo'}</div>
+      </td>
+      <td>
+        <div style="font-weight:600;color:var(--gold);">${c.codigo}</div>
+        <div style="font-size:10px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px;" title="${inmobProp}">${inmobProp || '—'}</div>
+      </td>
+      <td style="padding-right: 20px; font-size:12px;color:#aaa;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${c.observaciones||c.notas||''}">${c.observaciones || c.notas || ''}</td>
+    </tr>`;
+  }).join('');
+}
+
+function abrirEditarCita(citaId) {
+  citaId = String(citaId || '').trim();
+  currentCitaId = citaId;
+
+  document.querySelectorAll('.citas-table tbody tr').forEach(row => {
+    const rowId = row.getAttribute('data-cita-id');
+    if (rowId === citaId) {
+      row.classList.add('active-cita-row');
+    } else {
+      row.classList.remove('active-cita-row');
+    }
+  });
+
+  const cita = citas.find(c => String(c.id) === String(citaId));
+  if (!cita) return;
+  
+  // Buscar si esta cita pertenece a algún lead
+  let lead = leads.find(l => (l.visitas || []).some(v => v.id === citaId || (v.codigo === cita.codigo && v.fecha === cita.fecha && v.celular === cita.celular)));
+  
+  abrirVisitaModal(lead ? lead.id : null, cita.codigo, citaId);
+}
+
+function filterCitas(tipo, btn){
+  citasActiveFilterType = tipo;
+  citasActiveFilterValue = '';
+
+  if(btn){
+    btn.parentElement.querySelectorAll('.chip-filtro').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+  }
+
+  const elSelFecha = document.getElementById('citasSelFecha');
+  if (elSelFecha) {
+    elSelFecha.textContent = '';
+  }
+
+  aplicarFiltroYBusquedaCitas();
+}
+
+function buscarCitas(val){
+  searchTermCitas = val.trim().toLowerCase();
+
+  const container = document.getElementById('searchCitasInput')?.parentElement;
+  if (container) {
+    let btnLimpiar = container.querySelector('.btn-limpiar-pc');
+    if (searchTermCitas && !btnLimpiar) {
+      container.insertAdjacentHTML('beforeend', `<button class="btn-limpiar-pc" style="padding:0 12px; border-radius:0 8px 8px 0; font-size:12px; color: #aaa; background: transparent; cursor: pointer; transition: color 0.2s; border: none;" onclick="buscarCitas(''); document.getElementById('searchCitasInput').value=''" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">✕</button>`);
+    } else if (!searchTermCitas && btnLimpiar) {
+      btnLimpiar.remove();
+    }
+  }
+  aplicarFiltroYBusquedaCitas();
+}
+
+function aplicarFiltroYBusquedaCitas(){
+  const hoy = new Date();
+  let filtered = citas;
+
+  if (citasActiveFilterType === 'semana') {
+    const start = new Date(hoy.setDate(hoy.getDate() - hoy.getDay()));
+    const end = new Date(hoy.setDate(hoy.getDate() - hoy.getDay() + 6));
+    filtered = citas.filter(c => { const d = new Date(c.fecha); return d >= start && d <= end; });
+  } else if (citasActiveFilterType === 'mes') {
+    const yyyy = calDate.getFullYear();
+    const mm = String(calDate.getMonth() + 1).padStart(2, '0');
+    filtered = citas.filter(c => c.fecha.startsWith(`${yyyy}-${mm}`));
+  } else if (citasActiveFilterType === 'fecha') {
+    filtered = citas.filter(c => c.fecha === citasActiveFilterValue);
+  }
+
+  if (searchTermCitas) {
+    const normalizedTerm = norm(searchTermCitas);
+    filtered = filtered.filter(c => norm(c.cliente).includes(normalizedTerm) || norm(c.celular || '').includes(normalizedTerm));
+  }
+
+  renderCitasBody(filtered);
+}
+
+function renderPedidosInmob(){
+  const peds = leads.filter(l => l.tipo === 'inmobiliaria');
+  document.getElementById('mainContent').innerHTML=`
+    <div class="section-header"><div class="section-title">🏢 Requerimientos de Inmobiliarias</div></div>
+    <div class="leads-table-wrap">
+      <table class="leads-table">
+        <thead><tr><th>Inmobiliaria / Agente</th><th>Celular</th><th>Requerimiento</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>${peds.map(l => `
+          <tr class="clickable" onclick="abrirLead('${String(l.id).trim()}')">
+            <td><div class="leads-row-name">${l.nombreInmobiliaria || l.nombre}</div><div style="font-size:11px;color:#888;">Agente: ${l.nombreAgente || '—'}</div></td>
+            <td>${l.celular}</td>
+            <td><div style="font-size:12px;color:#aaa;max-width:300px;">${l.notas || 'Sin detalles'}</div></td>
+            <td><span class="badge badge-${l.etiqueta}">${l.etiqueta}</span></td>
+            <td><button class="btn btn-sm btn-secondary" onclick="abrirLead('${String(l.id).trim()}')">Ver</button></td>
+          </tr>
+        `).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════
+   SETTINGS & GEMINI
+═══════════════════════════════════════════════ */
+function abrirSettings(){
+  // Poblar los campos con los valores actuales
+  const waInput = document.getElementById('setWaApi');
+  const geminiInput = document.getElementById('setGeminiKey');
+  const elevenlabsInput = document.getElementById('setElevenlabsKey');
+  const contInput = document.getElementById('setContScriptUrl');
+  if (waInput)     waInput.value     = settings.waApi || '';
+  if (geminiInput) geminiInput.value = settings.geminiKey || '';
+  if (elevenlabsInput) elevenlabsInput.value = settings.elevenlabsKey || '';
+  if (contInput)   contInput.value   = settings.contScriptUrl || '';
+  document.getElementById('settingsModal').classList.add('open');
+  // Limpiar diagnóstico previo
+  const diag = document.getElementById('diagResultado');
+  if (diag) diag.style.display = 'none';
+}
+function guardarSettings(){
+  settings.waApi = document.getElementById('setWaApi').value.trim();
+  settings.geminiKey = document.getElementById('setGeminiKey').value.trim();
+  settings.elevenlabsKey = document.getElementById('setElevenlabsKey').value.trim();
+  settings.contScriptUrl = document.getElementById('setContScriptUrl').value.trim();
+  CONT_SCRIPT_URL = settings.contScriptUrl;
+  console.log("Guardando claves - Gemini largo:", settings.geminiKey.length, "ElevenLabs largo:", settings.elevenlabsKey.length);
+  localStorage.setItem('icde_settings', JSON.stringify(settings));
+  closeModal('settingsModal');
+  toast('Configuración guardada ✓');
+}
+
+async function sincronizarTodasLasCitasAlExcel(btn) {
+  if (!CRM_SCRIPT_URL) { toast('No hay URL configurada', 'error'); return; }
+  if (!confirm(`¿Sincronizar ${citas.length} citas al Excel (CRM_Citas)?\nEsto puede tardar unos segundos.`)) return;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando...'; }
+
+  let ok = 0, err = 0;
+  for (const c of citas) {
+    try {
+      await fetch(CRM_SCRIPT_URL, {
+        method: 'POST',
+        
+        body: JSON.stringify({ action: 'saveCita', cita: JSON.stringify(c) })
+      });
+      ok++;
+    } catch(e) { err++; }
+    // Pequeña pausa para no saturar el Apps Script
+    await new Promise(r => setTimeout(r, 150));
+  }
+
+  toast(`✅ ${ok} citas sincronizadas al Excel${err ? ' (⚠️ ' + err + ' fallaron)' : ''}`, 'success');
+  if (btn) { btn.disabled = false; btn.textContent = '📊 Sincronizar todas las citas al Excel (CRM_Citas)'; }
+  closeModal('settingsModal');
+}
+
+async function diagnosticarCitas(btn) {
+  const diag = document.getElementById('diagResultado');
+  if (!diag) return;
+  diag.style.display = 'block';
+  diag.innerHTML = '<span style="color:#888">🔄 Probando conexión al Apps Script...</span>';
+  if (btn) btn.disabled = true;
+
+  const resultado = [];
+
+  // 1. Verificar URL
+  if (!CRM_SCRIPT_URL) {
+    diag.innerHTML = '<span style="color:#ef4444">❌ CRM_SCRIPT_URL está vacía. No hay URL configurada.</span>';
+    if (btn) btn.disabled = false;
+    return;
+  }
+  resultado.push('✅ URL configurada: ' + CRM_SCRIPT_URL.substring(0, 60) + '...');
+
+  // 2. Probar GET (getCitas)
+  try {
+    const r = await fetch(CRM_SCRIPT_URL + '?action=getCitas&t=' + Date.now());
+    if (r.ok) {
+      const data = await r.json();
+      resultado.push('✅ GET getCitas OK — ' + (Array.isArray(data) ? data.length + ' citas en hoja CRM_Citas' : 'respuesta: ' + JSON.stringify(data).substring(0, 60)));
+    } else {
+      resultado.push('❌ GET getCitas falló — HTTP ' + r.status);
+    }
+  } catch(e) {
+    resultado.push('❌ GET getCitas ERROR — ' + e.message);
+  }
+
+  // 3. Probar GET (getLeads) para ver si los leads tienen visitas
+  try {
+    const r2 = await fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now());
+    if (r2.ok) {
+      const leads2 = await r2.json();
+      if (Array.isArray(leads2)) {
+        const conVisitas = leads2.filter(l => l.visitas && l.visitas.length > 0).length;
+        const totalVisitas = leads2.reduce((acc, l) => acc + (l.visitas || []).length, 0);
+        resultado.push('✅ GET getLeads OK — ' + leads2.length + ' leads, ' + conVisitas + ' con citas, ' + totalVisitas + ' citas total en Drive');
+        if (totalVisitas === 0) {
+          resultado.push('⚠️ ATENCIÓN: Los leads en Drive NO tienen citas guardadas (visitas vacías).');
+          resultado.push('   Esto confirma que los saves al Apps Script NO están llegando.');
+        }
+      } else {
+        resultado.push('⚠️ getLeads devolvió formato inesperado: ' + JSON.stringify(leads2).substring(0, 80));
+      }
+    } else {
+      resultado.push('❌ GET getLeads falló — HTTP ' + r2.status);
+    }
+  } catch(e) {
+    resultado.push('❌ GET getLeads ERROR — ' + e.message);
+  }
+
+  // 4. Probar POST (saveCita test)
+  try {
+    const testCita = { id: 'TEST-' + Date.now(), codigo: 'TEST', fecha: '2099-01-01', hora: '10:00', estado: 'agendada', cliente: 'DIAGNOSTICO', celular: '0000000000', notas: 'Prueba de conexion - borrar' };
+    const r3 = await fetch(CRM_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'saveCita', cita: JSON.stringify(testCita) })
+    });
+    resultado.push('✅ POST saveCita enviado (sin no-cors, con respuesta)');
+    try {
+      const resp = await r3.text();
+      resultado.push('   Respuesta: ' + resp.substring(0, 100));
+    } catch(e2) {}
+  } catch(e) {
+    // Intentar con no-cors como fallback
+    resultado.push('⚠️ POST con respuesta bloqueado por CORS (normal). Apps Script responde a no-cors.');
+  }
+
+  // 5. Estado local
+  resultado.push('--- Estado local ---');
+  resultado.push('📋 Leads en memoria: ' + leads.length);
+  resultado.push('📅 Citas en memoria: ' + citas.length);
+  const totalVisitasLocales = leads.reduce((acc, l) => acc + (l.visitas || []).length, 0);
+  resultado.push('🏠 Visitas en leads locales: ' + totalVisitasLocales);
+
+  diag.innerHTML = resultado.map(r => '<div style="margin:3px 0; font-family:monospace;">' + r + '</div>').join('');
+  if (btn) btn.disabled = false;
+}
+
+function diagnosticarDatosLocales() {
+  const diag = document.getElementById('diagResultado');
+  if (!diag) return;
+
+  const totalLeads    = leads.length;
+  const totalCitas    = citas.length;
+  const totalVisitas  = leads.reduce((acc, l) => acc + (l.visitas || []).length, 0);
+  const leadsConCitas = leads.filter(l => (l.visitas || []).length > 0).length;
+  const lsSize        = (JSON.stringify(leads).length / 1024).toFixed(1);
+  const leadsLocales  = leads.filter(l => String(l.id||'').startsWith('U-')).length;
+  const leadsNube     = leads.filter(l => !String(l.id||'').startsWith('U-')).length;
+
+  diag.style.display = 'block';
+  diag.innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:11px;">
+      <div>📋 Leads total: <strong style="color:#fff;">${totalLeads}</strong></div>
+      <div>📅 Citas en agenda: <strong style="color:#fff;">${totalCitas}</strong></div>
+      <div>🏠 Visitas registradas: <strong style="color:#fff;">${totalVisitas}</strong></div>
+      <div>👥 Leads con visitas: <strong style="color:#fff;">${leadsConCitas}</strong></div>
+      <div style="color:#d4a84b">💻 Solo en este equipo: <strong>${leadsLocales}</strong></div>
+      <div style="color:#22c55e">☁️ Sincronizados nube: <strong>${leadsNube}</strong></div>
+      <div style="grid-column:1/-1; color:#888;">💾 Tamaño en memoria: ${lsSize} KB</div>
+    </div>
+    <div style="margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05); font-size:11px; line-height:1.5;">
+      ${leadsLocales > 0
+        ? `<span style="color:#d4a84b">⚠️ <strong>${leadsLocales} leads</strong> solo están en este equipo. Presiona <strong>"Subir todo a la nube"</strong> para compartirlos.</span>`
+        : `<span style="color:#22c55e">✅ Todos los leads están sincronizados con la nube.</span>`
+      }
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════
+   HYBRID GEMINI AI ASSISTANT CORE
+   ═══════════════════════════════════════════════ */
+function showGeminiSpeechBubble(text, duration = 5000) {
+  const bubble = document.getElementById('geminiSpeechBubble');
+  if (!bubble) return;
+  bubble.innerHTML = text;
+  bubble.classList.add('active');
+  
+  if (window.geminiBubbleTimeout) {
+    clearTimeout(window.geminiBubbleTimeout);
+  }
+  
+  if (duration) {
+    window.geminiBubbleTimeout = setTimeout(() => {
+      bubble.classList.remove('active');
+    }, duration);
+  }
+}
+
+function hideGeminiSpeechBubble() {
+  const bubble = document.getElementById('geminiSpeechBubble');
+  if (bubble) bubble.classList.remove('active');
+}
+
+const MOTIVATIONAL_PHRASES = [
+  "¡Hoy conquistamos el mercado! ¡A ganar!",
+  "¡En ICDE el éxito es nuestro único estándar!",
+  "¡El cliente de tus sueños te espera hoy!",
+  "¡Hoy rompemos récords! ¡Vamos con todo!",
+  "¡Tu potencial es ilimitado, ve por el cierre!",
+  "¡Lideramos con pasión! ¡Somos los mejores!",
+  "¡Visualiza tu meta y hazla realidad hoy!",
+  "¡Cada llamada es una oportunidad de oro!",
+  "¡En ICDE lideramos el sector con orgullo!",
+  "¡Mente ganadora hoy! ¡El mercado es nuestro!",
+  "¡El límite es el cielo, cree en ti hoy!",
+  "¡Domina el día con fuerza y determinación!",
+  "¡Los clientes confían en ICDE porque somos los mejores!",
+  "¡El equipo de ICDE está unido y listo para triunfar!",
+  "¡Nuestra reputación e integridad abren todas las puertas!",
+  "¡Cada cliente feliz es nuestra mayor victoria!",
+  "¡Somos un equipo imparable, el gran orgullo de ICDE!",
+  "¡Confianza, profesionalismo y resultados: eso es ICDE!",
+  "¡Trabajando unidos como equipo no tenemos rivales!",
+  "¡Hacemos que las cosas pasen en ICDE!",
+  "¡El mercado confía en nuestro profesionalismo!",
+  "¡La unión del equipo ICDE es nuestra mayor fuerza!",
+  "¡Clientes felices, negocios exitosos. ¡Vamos, equipo!",
+  "¡Somos los líderes indiscutibles de Neiva! Esta ciudad necesita de nuestra visión e integridad para encontrar sus hogares.",
+  "¡Como decía Napoleon Hill: lo que la mente puede concebir y creer, se puede lograr! ¡Vamos a dominar Neiva hoy!",
+  "¡El único límite a tu impacto es tu compromiso y tu acción masiva! ¡Hagamos que Neiva sienta nuestra fuerza hoy!",
+  "¡Las familias de Neiva necesitan de nuestra inmobiliaria para asegurar su futuro. ¡Somos su mejor opción!",
+  "¡La excelencia no es un acto, es un hábito de éxito diario! ¡Neiva confía en nuestro estándar!",
+  "¡El éxito requiere fe en uno mismo y acción masiva, como enseña Tony Robbins. ¡Salgamos a conquistar el día!",
+  "¡El punto de partida de todo logro es el deseo ardiente de triunfar. ¡Napoleon Hill lo demostró y en ICDE lo vivimos!",
+  "¡Cada cliente que confía en nosotros en Neiva merece nuestra mejor versión. ¡Las personas nos necesitan hoy!",
+  "¡Somos el gran orgullo inmobiliario de Neiva! Hoy es el día para marcar la diferencia con pasión y resultados.",
+  "La clave de una buena negociación no es ceder, sino entender los intereses y los costos reales de cada opción antes de decidir.",
+  "Negociar con el diablo no es debilidad, a veces es la alternativa más pragmática para evitar un desastre mayor.",
+  "Analiza las alternativas sistemáticamente: compara los costos de negociar frente a los costos de pelear antes de dejarte llevar por el orgullo.",
+  "Separa las emociones de los intereses estratégicos; el enojo es un mal consejero cuando hay un patrimonio en juego.",
+  "Un líder sabio evalúa el conflicto de manera fría, calculando los riesgos y los beneficios antes de dar cualquier paso.",
+  "El punto de partida de todo logro es el deseo. Mantén esto constantemente en tu mente; un deseo débil trae resultados débiles.",
+  "Cualquier cosa que la mente del hombre pueda concebir y creer, se puede lograr con fe y perseverancia.",
+  "El hombre que hace más de lo que se le paga pronto recibirá más de lo que hace.",
+  "La derrota temporal debe significar una sola cosa: la certeza de que hay algo malo en tu plan.",
+  "Una meta es un sueño con una fecha límite.",
+  "Tu nivel de ingresos rara vez superará tu nivel de desarrollo personal, porque la riqueza es un reflejo de tu valor.",
+  "Para obtener resultados diferentes en tus finanzas, primero debes convertirte en una persona diferente.",
+  "El dinero no da la felicidad, pero la pobreza tampoco; la verdadera libertad financiera te permite elegir cómo vivir tu tiempo.",
+  "No trabajes por el dinero, haz que tu talento y tus sistemas trabajen para crear soluciones que sirvan a los demás.",
+  "La educación tradicional te dará para vivir; la autoeducación y la mentalidad emprendedora te darán una fortuna.",
+  "El único medio de salir ganando en una discusión es evitarla; el respeto y la amabilidad desarman cualquier argumento.",
+  "Muestra un interés genuino por las personas; obtendrás más amigos en dos meses interesándote en los demás que en dos años tratando de que se interesen en ti.",
+  "Recuerda que el nombre de una persona es para ella el sonido más dulce e importante en cualquier idioma.",
+  "Elogia el más pequeño progreso y elogia cada progreso. Sé caluroso en tu aprobación y generoso en tus elogios.",
+  "Para ser interesante, interésate. Escucha con atención y anima a los demás a hablar de sí mismos.",
+  "No te elevas al nivel de tus metas, desciendes al nivel de tus sistemas diarios de comportamiento.",
+  "Un pequeño cambio del uno por ciento cada día se traduce en un cambio gigantesco a lo largo de un año.",
+  "La forma más efectiva de cambiar tus hábitos es concentrarte no en lo que quieres lograr, sino en la persona en la que deseas convertirte.",
+  "Los hábitos son el interés compuesto de la superación personal; los resultados se multiplican con la repetición.",
+  "El secreto para obtener resultados duraderos es nunca dejar de hacer mejoras pequeñas pero constantes.",
+  "El proceso de compra es principalmente emocional, no racional; encuentra el valor simbólico de lo que ofreces.",
+  "El cerebro busca tres cosas: reducir el miedo, ahorrar energía y aumentar el placer.",
+  "Escucha el doble de lo que hablas; la mente te dirá exactamente qué necesita si sabes prestar atención.",
+  "El miedo es el mayor motivador de compra; si logras desactivar el miedo de tu cliente, la venta está asegurada.",
+  "Vender no es empujar un producto; vender es entender la mente humana y servir de puente hacia la solución de sus problemas.",
+  "El próximo Bill Gates no creará un sistema operativo. El próximo Larry Page no creará un motor de búsqueda. Haz algo completamente nuevo.",
+  "El monopolio creativo significa nuevos productos que benefician a todos y ganancias sostenibles para el creador.",
+  "En los negocios, cada momento ocurre solo una vez; si copias a otros, no estás aprendiendo de cero a uno.",
+  "Las mejores empresas se fundan sobre secretos compartidos: verdades importantes con las que muy poca gente está de acuerdo.",
+  "El éxito nunca es un accidente; es el resultado de la planificación deliberada y de la valentía para crear el futuro.",
+  "El conflicto es una oportunidad para el entendimiento mutuo; no temas al conflicto, aprende a navegarlo con empatía táctica.",
+  "En una negociación, la palabra más poderosa no es el sí, sino comprender el significado real que se esconde detrás de un no.",
+  "La escucha activa es tu superpoder; refleja las palabras de tu contraparte para que se sienta escuchada y baje la guardia.",
+  "El secreto de la negociación no es ser el más inteligente, sino tener la paciencia de descubrir lo que la otra parte realmente valora.",
+  "Quien controla el tono de la conversación controla la dirección de la negociación; habla siempre con una voz pausada y segura."
+];
+
+let speechVolume = 1; // 1 = enabled, 0 = disabled
+
+function speakText(text) {
+  if (speechVolume === 0) return;
+
+  // Clean up text
+  const cleanText = text.replace(/<[^>]*>/g, '').replace(/🦁/g, '').replace(/ICDE Motivación:/g, '');
+
+  // 1. Try to use ElevenLabs if API key is configured
+  const ELEVEN_API_KEY = (typeof settings !== 'undefined' && settings.elevenlabsKey) || window.ELEVEN_LABS_KEY || '';
+  const ELEVEN_VOICE_ID = 'YKrm0N1EAM9Bw27j8kuD';
+
+  if (ELEVEN_API_KEY) {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); // Stop any local speech
+    }
+    // Stop previous ElevenLabs audio if playing
+    if (window._currentElevenAudio) {
+      try { window._currentElevenAudio.pause(); } catch(e){}
+    }
+    
+    console.log("Iniciando llamada a ElevenLabs con Voz:", ELEVEN_VOICE_ID);
+    fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN_VOICE_ID}`, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': ELEVEN_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text: cleanText,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: { stability: 0.55, similarity_boost: 0.85, style: 0.35, use_speaker_boost: true }
+      })
+    })
+    .then(async resp => {
+      if (resp.ok) return resp.blob();
+      const errDetail = await resp.text();
+      throw new Error(`Código ${resp.status}: ${errDetail}`);
+    })
+    .then(blob => {
+      console.log("Audio de ElevenLabs recibido con éxito.");
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      window._currentElevenAudio = audio;
+      audio.volume = typeof speechVolume !== 'undefined' ? Math.max(speechVolume / 100, 0.5) : 1.0;
+      audio.play().catch(playErr => {
+        console.error("Error reproduciendo audio:", playErr);
+      });
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        if (window._currentElevenAudio === audio) window._currentElevenAudio = null;
+      };
+    })
+    .catch(e => {
+      console.error('ElevenLabs falló:', e.message);
+      toast('Error en voz ElevenLabs (revisa consola o API key)', 'error');
+      speakTextBrowserFallback(cleanText);
+    });
+  } else {
+    speakTextBrowserFallback(cleanText);
+  }
+}
+
+function speakTextBrowserFallback(cleanText) {
+  if ('speechSynthesis' in window) {
+    // Si las voces no se han cargado todavía en el navegador, esperar 150ms y reintentar
+    // Esto evita que el primer saludo se escuche con voz de mujer por falta de carga inicial
+    let voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) {
+      setTimeout(() => {
+        speakTextBrowserFallback(cleanText);
+      }, 150);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = 'es-MX';
+    
+    const esVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
+    
+    // Nombres típicos de voces masculinas en español
+    const maleNames = ['raul', 'jorge', 'alvaro', 'david', 'mateo', 'pablo', 'julio', 'yago', 'jose', 'humberto', 'male', 'hombre', 'es-co', 'es-mx', 'es-es'];
+    
+    // 1. Intentar buscar voz masculina en español de alta calidad
+    let selectedVoice = esVoices.find(v => {
+      const name = v.name.toLowerCase();
+      return (name.includes('natural') || name.includes('online')) && maleNames.some(m => name.includes(m));
+    });
+    
+    // 2. Intentar buscar cualquier voz masculina en español
+    if (!selectedVoice) {
+      selectedVoice = esVoices.find(v => {
+        const name = v.name.toLowerCase();
+        return maleNames.some(m => name.includes(m)) && !name.includes('sabina') && !name.includes('dalia') && !name.includes('zira') && !name.includes('helena');
+      });
+    }
+    
+    // 3. Fallback: cualquier voz que no sea explícitamente femenina si es posible
+    if (!selectedVoice) {
+      selectedVoice = esVoices.find(v => {
+        const name = v.name.toLowerCase();
+        return !name.includes('sabina') && !name.includes('dalia') && !name.includes('zira') && !name.includes('helena') && !name.includes('female') && !name.includes('mujer');
+      });
+    }
+
+    // 4. Último recurso: primera voz en español que encuentre
+    if (!selectedVoice) {
+      selectedVoice = esVoices[0];
+    }
+    
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      utterance.lang = selectedVoice.lang;
+    }
+    
+    utterance.rate = 0.88; // Cadencia imponente y pausada
+    utterance.pitch = 0.58; // Tono extra bajo y grueso (voz súper gruesa de señor)
+    
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+let lastMotivationalIndex = -1;
+
+function decirMensajeMotivacional() {
+  if (typeof MOTIVATIONAL_PHRASES === 'undefined' || !MOTIVATIONAL_PHRASES.length) return;
+  let index;
+  do {
+    index = Math.floor(Math.random() * MOTIVATIONAL_PHRASES.length);
+  } while (index === lastMotivationalIndex && MOTIVATIONAL_PHRASES.length > 1);
+  
+  lastMotivationalIndex = index;
+  const phrase = MOTIVATIONAL_PHRASES[index];
+  
+  // Show in speech bubble
+  showGeminiSpeechBubble(`🦁 <strong>ICDE Motivación:</strong> ${phrase}`, 8000);
+  
+  // Animate avatar
+  const btnAvatar = document.getElementById('geminiBtnAvatar');
+  const gBtn = document.getElementById('geminiBtn');
+  if (btnAvatar) btnAvatar.src = 'feliz.png';
+  if (gBtn) {
+    gBtn.classList.add('idle-happy-dance');
+    setTimeout(() => {
+      gBtn.classList.remove('idle-happy-dance');
+      if (btnAvatar) btnAvatar.src = 'Saludo.png';
+    }, 3000);
+  }
+  
+  // Speak text
+  speakText(phrase);
+}
+
+function verificarRecordatoriosDeCitas() {
+  if (typeof citas === 'undefined' || !Array.isArray(citas)) return;
+  window._citasReminded = window._citasReminded || new Set();
+
+  const ahora = new Date();
+  
+  // Local ISO Date: YYYY-MM-DD
+  const offset = ahora.getTimezoneOffset();
+  const localToday = new Date(ahora.getTime() - (offset * 60 * 1000)).toISOString().slice(0, 10);
+
+  citas.forEach(c => {
+    if (c.fecha !== localToday || !c.hora) return;
+    if (window._citasReminded.has(c.id)) return;
+
+    const parts = c.hora.split(':');
+    if (parts.length < 2) return;
+    const citaHrs = parseInt(parts[0], 10);
+    const citaMins = parseInt(parts[1], 10);
+
+    const citaDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), citaHrs, citaMins, 0, 0);
+    const diffMs = citaDate.getTime() - ahora.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+
+    // Trigger alert if we are 58 to 62 minutes before the appointment (approx. 1 hour)
+    if (diffMins >= 58 && diffMins <= 62) {
+      window._citasReminded.add(c.id);
+
+      const cliente = c.cliente || c.nombre || "el cliente";
+
+      // Build smart property description from inmueble data
+      let descPropiedad = '';
+      const prop = (typeof allProps !== 'undefined' ? allProps : []).find(p => String(p['Código']) === String(c.codigo));
+      if (prop) {
+        const tipo = (prop['Tipo de inmueble'] || '').toLowerCase();
+        const conjunto = (prop['Conjunto'] || '').trim();
+        const nombreProp = (prop['Nombre'] || '').trim();
+        if (tipo.includes('apartamento')) {
+          const lugar = conjunto || nombreProp || c.codigo;
+          descPropiedad = `del apartamento en ${lugar}`;
+        } else if (conjunto) {
+          descPropiedad = `del conjunto ${conjunto}`;
+        } else if (tipo.includes('casa')) {
+          const lugar = nombreProp || c.codigo;
+          descPropiedad = `de la casa en ${lugar}`;
+        } else if (tipo.includes('lote')) {
+          descPropiedad = `del lote ${nombreProp || c.codigo}`;
+        } else if (nombreProp) {
+          descPropiedad = `de ${nombreProp}`;
+        } else {
+          descPropiedad = `del inmueble ${c.codigo}`;
+        }
+      } else {
+        descPropiedad = c.codigo ? `del inmueble ${c.codigo}` : 'de la propiedad';
+      }
+
+      const textoHablado = `Atencion, la cita ${descPropiedad} es en 1 hora. Recuerda confirmar la cita con el cliente ${cliente}.`;
+      const recordatorioMsg = `<strong>Atencion</strong>, la cita ${descPropiedad} es en <strong>1 hora</strong>. Recuerda confirmar la cita con <strong>${cliente}</strong>.`;
+
+      showGeminiSpeechBubble(recordatorioMsg, 14000);
+      
+      const btnAvatar = document.getElementById('geminiBtnAvatar');
+      const gBtn = document.getElementById('geminiBtn');
+      if (btnAvatar) btnAvatar.src = 'preguntando.png';
+      if (gBtn) {
+        gBtn.classList.add('idle-curious-tilt');
+        setTimeout(() => {
+          gBtn.classList.remove('idle-curious-tilt');
+          if (btnAvatar) btnAvatar.src = 'Saludo.png';
+        }, 3000);
+      }
+
+      speakRecordatorio(textoHablado);
+    }
+  });
+}
+
+function verificarRecordatoriosDeArriendo() {
+  if (typeof adminData === 'undefined' || !adminData.properties) return;
+  window._arriendoReminded = window._arriendoReminded || { cobros: new Set(), incrementos: new Set(), preavisos: new Set() };
+
+  const ahora = new Date();
+  
+  // Calcular mañana
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowYear = tomorrow.getFullYear();
+  const tomorrowMonth = tomorrow.getMonth(); // 0-indexed
+  const tomorrowDay = tomorrow.getDate();
+
+  adminData.properties.forEach(p => {
+    // Solo verificar inmuebles ocupados
+    if (p.status !== 'Ocupado') return;
+    const inquilino = p.tenant_name ? p.tenant_name.trim() : '';
+
+    // 1. Recordatorio de cobro de arriendo
+    if (p.due_day) {
+      const dueDay = Math.round(p.due_day);
+      if (tomorrowDay === dueDay) {
+        const key = `${p.id}-${tomorrowYear}-${tomorrowMonth}`;
+        if (!window._arriendoReminded.cobros.has(key)) {
+          // Verificar si ya pagó este mes
+          const monthNamesList = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+          const tomorrowMonthName = monthNamesList[tomorrowMonth];
+          const yearStr = String(tomorrowYear);
+
+          const paymentsYear = (p.payments && p.payments[yearStr]) ? p.payments[yearStr] : [];
+          const payInfo = paymentsYear.find(m => m.month === tomorrowMonthName);
+
+          // Si el estado es PAID, no enviar recordatorio
+          if (payInfo && payInfo.status === 'PAID') {
+            return;
+          }
+
+          window._arriendoReminded.cobros.add(key);
+
+          const propName = p.name ? p.name.trim() : 'la propiedad';
+          const rentNum = parseFloat(p.monthly_rent) || 0;
+          const rentVal = rentNum > 0 ? safeFormatP(rentNum) : 'el arriendo';
+          
+          const inquilinoText = inquilino ? `al inquilino ${inquilino}` : 'al inquilino';
+          
+          const spokenRent = rentNum > 0 ? `${Math.round(rentNum)} pesos` : 'el arriendo';
+          const msgHablado = `Atencion, mañana se vence el plazo para cobrar el arriendo de la propiedad ${propName} ${inquilinoText} por valor de ${spokenRent}.`;
+          
+          const safeTenantName = (p.tenant_name || '').replace(/'/g, "\\'");
+          const safePropName = (p.name || '').replace(/'/g, "\\'");
+          const phoneVal = p.tenant_phone || '';
+
+          const msgVisual = `🔔 <strong>Cobro de Arriendo:</strong> Mañana vence el plazo para cobrar el arriendo de <strong>${propName}</strong> ${inquilinoText} por valor de <strong>${rentVal}</strong>.
+          <div style="margin-top:8px;">
+            <button class="btn btn-green btn-sm" onclick="sendAdminReminder('${safeTenantName}', '${safePropName}', ${rentNum}, '${tomorrowMonthName}', '${tomorrowYear}', ${dueDay}, '${phoneVal}')" style="display:flex; align-items:center; justify-content:center; padding:6px 10px; font-size:11px; font-weight:700; height:auto; width:100%; gap:4px; border-radius:6px; background:#25d366; color:#fff; border:none; cursor:pointer;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              Enviar WhatsApp
+            </button>
+          </div>`;
+
+          triggerMascotReminder(msgVisual, msgHablado, 30000);
+        }
+      }
+    }
+
+    // 2. Recordatorio de incremento de arriendo (aniversario del contrato)
+    if (p.start_date) {
+      const parts = p.start_date.split('-');
+      if (parts.length === 3) {
+        const startYear = parseInt(parts[0], 10);
+        const startMonth = parseInt(parts[1], 10) - 1; // 0-indexed
+        const startDay = parseInt(parts[2], 10);
+
+        // a) Aniversario exacto (mañana se cumple 1 año o múltiplos)
+        if (tomorrowYear > startYear && tomorrowMonth === startMonth && tomorrowDay === startDay) {
+          const key = `${p.id}-${tomorrowYear}`;
+          if (!window._arriendoReminded.incrementos.has(key)) {
+            window._arriendoReminded.incrementos.add(key);
+
+            const propName = p.name ? p.name.trim() : 'la propiedad';
+            const inquilinoCon = inquilino ? `con el inquilino ${inquilino}` : '';
+            
+            const msgHablado = `Atencion, mañana se cumple el año del contrato de la propiedad ${propName} ${inquilinoCon}. Recuerda subir el valor del arriendo.`;
+            const msgVisual = `📈 <strong>Incremento de Arriendo:</strong> Mañana se cumple el aniversario del contrato de <strong>${propName}</strong> ${inquilinoCon}. Recuerda aplicar el incremento del arriendo.`;
+
+            triggerMascotReminder(msgVisual, msgHablado);
+          }
+        }
+
+        // b) Aviso 3 meses antes del aniversario anual del contrato (preaviso de incremento)
+        // Buscamos el mes objetivo de aumento restando 3 meses (ejemplo: si el contrato inició en Octubre (9), se debe avisar en Julio (6))
+        let targetMonth = startMonth - 3;
+        if (targetMonth < 0) {
+          targetMonth += 12;
+        }
+
+        if (tomorrowMonth === targetMonth && tomorrowDay === startDay) {
+          // El aumento será en el aniversario del contrato de este ciclo/año
+          // Si el mes de mañana es menor que startMonth, el aumento ocurre este año. Si es mayor, ocurre el próximo año.
+          let increaseYear = tomorrowYear;
+          if (tomorrowMonth > startMonth) {
+            increaseYear = tomorrowYear + 1;
+          }
+
+          if (increaseYear > startYear) {
+            const key = `${p.id}-${increaseYear}`;
+            if (!window._arriendoReminded.preavisos.has(key)) {
+              window._arriendoReminded.preavisos.add(key);
+
+              const propName = p.name ? p.name.trim() : 'la propiedad';
+              const rentNum = parseFloat(p.monthly_rent) || 0;
+              
+              // IPC de Colombia para 2025 certificado por el DANE: 5.10%
+              const ipcRate = 0.051; 
+              const rawIncremento = Math.round(rentNum * ipcRate);
+              let nuevoArriendoVal = rentNum + rawIncremento;
+              // Redondear siempre a favor del arrendatario (al menor múltiplo de 10.000)
+              nuevoArriendoVal = Math.floor(nuevoArriendoVal / 10000) * 10000;
+              const incrementoVal = nuevoArriendoVal - rentNum;
+
+              const inquilinoCon = inquilino ? `a ${inquilino}` : 'al inquilino';
+
+              const msgHablado = `Atencion, recuerda avisar ${inquilinoCon} de la propiedad ${propName} que se le subirá el arriendo en tres meses. El incremento por el IPC de 5.10% es de ${incrementoVal} pesos, quedando en ${nuevoArriendoVal} pesos.`;
+              const msgVisual = `📢 <strong>Preaviso de Aumento (IPC 5.10%):</strong> Recuerda avisar <strong>${inquilinoCon}</strong> de la propiedad <strong>${propName}</strong> que se le subirá el arriendo en 3 meses. El incremento será de <strong>${safeFormatP(incrementoVal)}</strong>, quedando en <strong>${safeFormatP(nuevoArriendoVal)}</strong>.`;
+
+              triggerMascotReminder(msgVisual, msgHablado);
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function triggerMascotReminder(msgVisual, msgHablado, duration = 15000) {
+  showGeminiSpeechBubble(msgVisual, duration);
+  
+  const btnAvatar = document.getElementById('geminiBtnAvatar');
+  const gBtn = document.getElementById('geminiBtn');
+  if (btnAvatar) btnAvatar.src = 'preguntando.png';
+  if (gBtn) {
+    gBtn.classList.add('idle-curious-tilt');
+    setTimeout(() => {
+      gBtn.classList.remove('idle-curious-tilt');
+      if (btnAvatar) btnAvatar.src = 'Saludo.png';
+    }, 3000);
+  }
+
+  speakRecordatorio(msgHablado);
+}
+
+// Speaks reminder text using ElevenLabs TTS (consistent deep male voice across all computers).
+// To activate: set window.ELEVEN_LABS_KEY = 'sk_yourkey' in browser console or in a config file.
+// Falls back to speakText if ElevenLabs key is not configured.
+async function speakRecordatorio(texto) {
+  const ELEVEN_API_KEY = (typeof settings !== 'undefined' && settings.elevenlabsKey) || window.ELEVEN_LABS_KEY || '';
+  // ElevenLabs voice ID
+  const ELEVEN_VOICE_ID = 'YKrm0N1EAM9Bw27j8kuD';
+
+  if (ELEVEN_API_KEY) {
+    try {
+      const resp = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN_VOICE_ID}`, {
+        method: 'POST',
+        headers: {
+          'xi-api-key': ELEVEN_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: texto,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: { stability: 0.55, similarity_boost: 0.85, style: 0.35, use_speaker_boost: true }
+        })
+      });
+      if (resp.ok) {
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.volume = typeof speechVolume !== 'undefined' ? Math.max(speechVolume / 100, 0.5) : 1.0;
+        audio.play();
+        audio.onended = () => URL.revokeObjectURL(url);
+        return;
+      }
+    } catch(e) {
+      console.warn('ElevenLabs TTS fallo, usando voz del navegador:', e);
+    }
+  }
+  // Fallback: browser built-in speakText
+  speakText(texto);
+}
+
+function formatoHoraNatural(horaStr) {
+  if (!horaStr) return "";
+  const parts = horaStr.split(':');
+  if (parts.length < 2) return horaStr;
+  let hrs = parseInt(parts[0], 10);
+  const mins = parseInt(parts[1], 10);
+  
+  let periodo = "de la mañana";
+  if (hrs === 12) {
+    periodo = "del mediodía";
+  } else if (hrs > 12 && hrs < 19) {
+    hrs = hrs - 12;
+    periodo = "de la tarde";
+  } else if (hrs >= 19) {
+    hrs = hrs - 12;
+    periodo = "de la noche";
+  } else if (hrs === 0) {
+    hrs = 12;
+  }
+  
+  const minText = mins === 0 ? "" : ` y ${mins}`;
+  return `${hrs}${minText} ${periodo}`;
+}
+
+function saludoEInteraccionInicial() {
+  // Determine greeting based on current hours
+  const hrs = new Date().getHours();
+  let saludoBase = "¡Buenos días!";
+  if (hrs >= 12 && hrs < 18) {
+    saludoBase = "¡Buenas tardes!";
+  } else if (hrs >= 18) {
+    saludoBase = "¡Buenas noches!";
+  }
+
+  const now = new Date();
+  const nowHrs = now.getHours();
+  const nowMins = now.getMinutes();
+  const offset = now.getTimezoneOffset();
+  const localToday = new Date(now.getTime() - (offset * 60 * 1000)).toISOString().slice(0, 10);
+
+  // Count appointments (citas) for today (only future appointments)
+  const todayCitas = (typeof citas !== 'undefined' && Array.isArray(citas)) 
+    ? citas.filter(c => {
+        if (c.fecha !== localToday) return false;
+        if (c.hora) {
+          const parts = c.hora.split(':');
+          if (parts.length >= 2) {
+            const appHrs = parseInt(parts[0], 10);
+            const appMins = parseInt(parts[1], 10);
+            if (appHrs < nowHrs || (appHrs === nowHrs && appMins < nowMins)) {
+              return false;
+            }
+          }
+        }
+        return true;
+      }) 
+    : [];
+    
+  let msg = "";
+  if (todayCitas.length > 0) {
+    // Sort chronologically
+    todayCitas.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
+    const listadoHoras = todayCitas.map((c, idx) => {
+      if (idx > 0 && c.hora === todayCitas[idx - 1].hora) {
+        return "otra a la misma hora";
+      }
+      return `a las ${formatoHoraNatural(c.hora)}`;
+    }).join(', ').replace(/,([^,]*)$/, ' y$1');
+    msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy tienes ${todayCitas.length} ${todayCitas.length === 1 ? 'cita agendada' : 'citas agendadas'}: ${listadoHoras}. ¡Salgamos a ganar!`;
+  } else {
+    if (hrs >= 20) { // De las 8:00 PM en adelante
+      if (hrs === 20) {
+        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy fue un gran día y lo hiciste muy bien hoy, se acerca la hora de descansar.`;
+      } else {
+        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Lo hiciste muy bien hoy, ya es hora de descansar y recargar energías para mañana.`;
+      }
+    } else if (hrs >= 18) { // De las 6:00 PM a las 7:59 PM (Buenas noches antes del descanso formal)
+      msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Ya estamos cerrando la jornada laboral, ¡hoy fue un gran día! Ve preparándote para un merecido descanso.`;
+    } else {
+      msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy no tienes citas en agenda. ¡Un gran día para captar nuevos clientes!`;
+    }
+  }
+
+  // Show in speech bubble
+  showGeminiSpeechBubble(`🦁 <strong>Asistente:</strong> ${msg}`, 9000);
+  
+  // Animate avatar
+  const btnAvatar = document.getElementById('geminiBtnAvatar');
+  const gBtn = document.getElementById('geminiBtn');
+  if (btnAvatar) btnAvatar.src = 'feliz.png';
+  if (gBtn) {
+    gBtn.classList.add('idle-happy-dance');
+    setTimeout(() => {
+      gBtn.classList.remove('idle-happy-dance');
+      if (btnAvatar) btnAvatar.src = 'Saludo.png';
+    }, 3000);
+  }
+  
+  // Speak aloud
+  speakText(msg);
+}
+
+function initGeminiIdleActions() {
+  setInterval(() => {
+    const gBtn = document.getElementById('geminiBtn');
+    const btnAvatar = document.getElementById('geminiBtnAvatar');
+    
+    if (!gBtn || isGeminiListening || gBtn.classList.contains('working') || gBtn.classList.contains('listening')) {
+      return;
+    }
+    
+    const routine = Math.floor(Math.random() * 3) + 1;
+    
+    if (routine === 1) {
+      if (btnAvatar) btnAvatar.src = 'feliz.png';
+      gBtn.classList.add('idle-happy-dance');
+      setTimeout(() => {
+        gBtn.classList.remove('idle-happy-dance');
+        if (!isGeminiListening && !gBtn.classList.contains('working')) {
+          if (btnAvatar) btnAvatar.src = 'Saludo.png';
+        }
+      }, 2000);
+    } else if (routine === 2) {
+      if (btnAvatar) btnAvatar.src = 'preguntando.png';
+      gBtn.classList.add('idle-curious-tilt');
+      setTimeout(() => {
+        gBtn.classList.remove('idle-curious-tilt');
+        if (!isGeminiListening && !gBtn.classList.contains('working')) {
+          if (btnAvatar) btnAvatar.src = 'Saludo.png';
+        }
+      }, 3000);
+    } else if (routine === 3) {
+      gBtn.classList.add('idle-super-float');
+      setTimeout(() => {
+        gBtn.classList.remove('idle-super-float');
+      }, 3500);
+    }
+  }, 14000);
+
+  // Auto motivation interval (every 15 minutes / 900000ms)
+  setInterval(() => {
+    const gBtn = document.getElementById('geminiBtn');
+    if (gBtn && !isGeminiListening && !gBtn.classList.contains('working') && !gBtn.classList.contains('listening')) {
+      decirMensajeMotivacional();
+    }
+  }, 900000);
+
+  // Background check for appointment reminders (every 30 seconds)
+  setInterval(() => {
+    verificarRecordatoriosDeCitas();
+  }, 30000);
+
+  // Background check for rent and increase reminders (every 30 seconds)
+  setInterval(() => {
+    verificarRecordatoriosDeArriendo();
+  }, 30000);
+
+  // Initial check for rent and increase reminders after 5 seconds
+  setTimeout(() => {
+    verificarRecordatoriosDeArriendo();
+  }, 5000);
+
+  // First user interaction welcome
+  let firstInteractionDone = false;
+  document.addEventListener('click', () => {
+    if (!firstInteractionDone) {
+      firstInteractionDone = true;
+      setTimeout(() => {
+        saludoEInteraccionInicial();
+      }, 2500);
+    }
+  });
+
+  // Double click on mascot to trigger phrase
+  setTimeout(() => {
+    const gBtn = document.getElementById('geminiBtn');
+    if (gBtn) {
+      gBtn.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        decirMensajeMotivacional();
+      });
+      gBtn.title = "Doble click para motivarte | Asistente Gemini";
+    }
+  }, 1000);
+}
+
+let recognition;
+let isGeminiListening = false;
+let geminiConversationHistory = []; // Almacena memoria conversacional persistente del chat
+
+function clearGeminiMemory() {
+  geminiConversationHistory = [];
+  toast('Memoria de la conversación limpiada 🧠', 'info');
+}
+
+function toggleGemini() {
+  const micBtn = document.getElementById('geminiMicBtn');
+  const gBtn = document.getElementById('geminiBtn');
+  
+  if (isGeminiListening) {
+    if (recognition) {
+      try { recognition.stop(); } catch (e) {}
+    }
+    isGeminiListening = false;
+    if (micBtn) micBtn.classList.remove('listening');
+    if (gBtn) gBtn.classList.remove('listening');
+    showGeminiSpeechBubble("⚡ <strong>Procesando tu solicitud...</strong>", 0);
+    setTimeout(() => {
+      const input = document.getElementById('geminiTextInput');
+      if (input && input.value.trim() !== '') {
+        const textToSend = input.value.trim();
+        input.value = '';
+        processWithGemini(textToSend);
+      } else {
+        showGeminiSpeechBubble("🤔 No alcancé a escucharte bien. ¡Vuelve a intentarlo!", 4000);
+      }
+    }, 450);
+  } else {
+    toggleGeminiSidebar();
+  }
+}
+
+function toggleGeminiSidebar() {
+  const sidebar = document.getElementById('geminiSidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('open');
+    if (sidebar.classList.contains('open')) {
+      setTimeout(() => {
+        const input = document.getElementById('geminiTextInput');
+        if (input) input.focus();
+      }, 300);
+    }
+  }
+}
+
+// Keyboard Shortcuts for Gemini Assistant
+document.addEventListener('keydown', (e) => {
+  // Alt + I / Alt + C: Toggle Gemini Sidebar (I de Inteligencia, C de Chat)
+  if (e.altKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'c')) {
+    e.preventDefault();
+    toggleGeminiSidebar();
+  }
+  // Alt + M / Alt + V: Toggle Voice Mic Recording
+  if (e.altKey && (e.key.toLowerCase() === 'm' || e.key.toLowerCase() === 'v')) {
+    e.preventDefault();
+    const sidebar = document.getElementById('geminiSidebar');
+    if (sidebar && !sidebar.classList.contains('open')) {
+      toggleGeminiSidebar();
+      setTimeout(() => toggleGeminiMic(), 350);
+    } else {
+      toggleGeminiMic();
+    }
+  }
+  // Enter globally (only if NOT typing inside the main text input)
+  if (e.key === 'Enter' && document.activeElement !== document.getElementById('geminiTextInput')) {
+    const sidebar = document.getElementById('geminiSidebar');
+    if (sidebar && sidebar.classList.contains('open')) {
+      e.preventDefault();
+      toggleGeminiMic();
+    }
+  }
+});
+
+// Dedicated listener bound directly to the input to prevent event bubbles from clashing
+(function initGeminiInputListener() {
+  const geminiInputEl = document.getElementById('geminiTextInput');
+  if (geminiInputEl && !geminiInputEl._hasGeminiListener) {
+    geminiInputEl._hasGeminiListener = true;
+    geminiInputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const textVal = geminiInputEl.value.trim();
+        if (typeof isGeminiListening !== 'undefined' && isGeminiListening) {
+          // Capturar el texto inmediatamente antes de detener el micrófono
+          toggleGeminiMic();
+          // Retraso muy corto para permitir que se asiente la detención y enviar
+          setTimeout(() => {
+            const finalQuery = geminiInputEl.value.trim() || textVal;
+            if (finalQuery) {
+              geminiInputEl.value = finalQuery;
+              sendGeminiTextMessage();
+            }
+          }, 250);
+        } else if (textVal) {
+          sendGeminiTextMessage();
+        } else {
+          toggleGeminiMic();
+        }
+      }
+    });
+  } else if (!geminiInputEl) {
+    setTimeout(initGeminiInputListener, 500);
+  }
+})();
+
+function addGeminiMessage(sender, text, htmlExtra = '', emotion = 'feliz') {
+  const container = document.getElementById('geminiChatHistory');
+  if (!container) return;
+
+  const row = document.createElement('div');
+  row.style.display = 'flex';
+  row.style.width = '100%';
+  row.style.flexDirection = 'column';
+  row.style.gap = '4px';
+
+  if (sender === 'assistant') {
+    let imgSrc = 'feliz.png';
+    if (emotion === 'escribiendo') imgSrc = 'escribiendo.png';
+    else if (emotion === 'preguntando') imgSrc = 'preguntando.png';
+    else if (emotion === 'saludo') imgSrc = 'Saludo.png';
+    else if (emotion === 'feliz') imgSrc = 'feliz.png';
+    
+    row.innerHTML = `
+      <div style="display: flex; gap: 8px; align-self: flex-start; max-width: 85%; animation: slideUpIn 0.25s forwards;">
+        <img src="${imgSrc}" style="width: 48px; height: 48px; object-fit: contain; flex-shrink: 0; margin-top: 0px;">
+        <div class="gemini-bubble assistant" style="max-width: calc(100% - 56px); margin: 0; animation: none;">
+          ${text}
+        </div>
+      </div>
+      ${htmlExtra ? `<div style="padding-left: 56px; width: 100%; box-sizing: border-box;">${htmlExtra}</div>` : ''}
+    `;
+    setGeminiEmotion(emotion);
+    showGeminiSpeechBubble(text, 10000);
+    if (typeof speakText === 'function') speakText(text);
+  } else if (sender === 'user') {
+    row.innerHTML = `
+      <div class="gemini-bubble user" style="align-self: flex-end;">
+        ${text}
+      </div>
+    `;
+  } else if (sender === 'system-card') {
+    row.innerHTML = `<div style="padding-left: 56px; width: 100%; box-sizing: border-box;">${htmlExtra}</div>`;
+  } else {
+    row.innerHTML = `<div class="gemini-bubble assistant" style="align-self: flex-start;">${text}</div>`;
+  }
+
+  container.appendChild(row);
+
+  // Scroll to bottom
+  setTimeout(() => {
+    container.scrollTop = container.scrollHeight;
+  }, 50);
+}
+
+function setGeminiEmotion(emotion) {
+  const avatar = document.getElementById('geminiAvatar');
+  const btnAvatar = document.getElementById('geminiBtnAvatar');
+  const gBtn = document.getElementById('geminiBtn');
+  
+  let src = 'Saludo.png';
+  if (emotion === 'escribiendo') src = 'escribiendo.png';
+  else if (emotion === 'preguntando') src = 'preguntando.png';
+  else if (emotion === 'feliz') src = 'feliz.png';
+  else if (emotion === 'saludo') src = 'Saludo.png';
+  
+  if (avatar) avatar.src = src;
+  if (btnAvatar) btnAvatar.src = src;
+
+  if (gBtn) {
+    if (emotion === 'escribiendo') {
+      gBtn.classList.add('working');
+    } else {
+      gBtn.classList.remove('working');
+    }
+  }
+  
+  // Animation bounce/pop when changing emotion
+  if (avatar) {
+    avatar.style.transform = 'scale(1.2)';
+    setTimeout(() => {
+      avatar.style.transform = 'scale(1)';
+    }, 200);
+  }
+}
+
+function showGeminiTypingIndicator() {
+  const container = document.getElementById('geminiChatHistory');
+  if (!container) return;
+  
+  hideGeminiTypingIndicator();
+  showGeminiSpeechBubble("🧠 <strong>Pensando...</strong>", 0);
+  
+  const row = document.createElement('div');
+  row.id = 'geminiTypingIndicator';
+  row.style.display = 'flex';
+  row.style.width = '100%';
+  row.style.flexDirection = 'column';
+  
+  row.innerHTML = `
+    <div style="display: flex; gap: 8px; align-self: flex-start; max-width: 85%; animation: slideUpIn 0.25s forwards;">
+      <img src="escribiendo.png" style="width: 48px; height: 48px; object-fit: contain; flex-shrink: 0; margin-top: 0px;">
+      <div class="gemini-bubble assistant" style="max-width: calc(100% - 56px); margin: 0; display: flex; align-items: center; gap: 6px; padding: 12px 16px;">
+        <span class="typing-dot" style="width: 6px; height: 6px; background: #fff; border-radius: 50%; display: inline-block; animation: typingBounce 1.4s infinite both;"></span>
+        <span class="typing-dot" style="width: 6px; height: 6px; background: #fff; border-radius: 50%; display: inline-block; animation: typingBounce 1.4s infinite both 0.2s;"></span>
+        <span class="typing-dot" style="width: 6px; height: 6px; background: #fff; border-radius: 50%; display: inline-block; animation: typingBounce 1.4s infinite both 0.4s;"></span>
+      </div>
+    </div>
+  `;
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+  setGeminiEmotion('escribiendo');
+}
+
+function hideGeminiTypingIndicator() {
+  const el = document.getElementById('geminiTypingIndicator');
+  if (el) el.remove();
+}
+
+async function callAIEngine(prompt, systemInstruction = '', base64Image = null) {
+  if (!settings.geminiKey) {
+    throw new Error('Por favor configura tu API Key de Groq en Configuración ⚙️');
+  }
+  
+  const key = settings.geminiKey.trim();
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${key}`
+  };
+  
+  let messages = [];
+  if (systemInstruction) {
+    messages.push({ role: 'system', content: systemInstruction });
+  }
+
+  // Incluir el historial reciente de conversación para mantener la continuidad (últimas 10 interacciones)
+  if (typeof geminiConversationHistory !== 'undefined' && geminiConversationHistory.length > 0) {
+    const recentHistory = geminiConversationHistory.slice(-10);
+    recentHistory.forEach(msg => {
+      messages.push({ role: msg.role, content: msg.content });
+    });
+  }
+  
+  if (base64Image) {
+    messages.push({
+      role: 'user',
+      content: [
+        { type: 'text', text: prompt },
+        {
+          type: 'image_url',
+          image_url: {
+            url: `data:image/png;base64,${base64Image}`
+          }
+        }
+      ]
+    });
+  } else {
+    messages.push({ role: 'user', content: prompt });
+  }
+  
+  const candidateModels = base64Image 
+    ? ['llama-3.2-11b-vision-preview', 'llama-3.2-90b-vision-preview']
+    : ['openai/gpt-oss-120b', 'qwen/qwen3.6-27b', 'openai/gpt-oss-20b', 'llama-3.3-70b-specdec', 'mixtral-8x7b-32768'];
+
+  let lastErrorMsg = '';
+
+  for (const model of candidateModels) {
+    const requestBody = {
+      model: model,
+      messages: messages,
+      stream: false
+    };
+
+    if (!base64Image && systemInstruction.includes('JSON')) {
+      requestBody.response_format = { type: 'json_object' };
+    }
+
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(requestBody)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        return data.choices[0].message.content;
+      }
+
+      const errData = await res.json().catch(() => ({}));
+      lastErrorMsg = errData.error?.message || errData.error || errData.message || (typeof errData === 'string' ? errData : JSON.stringify(errData));
+      console.warn(`Groq model ${model} failed (${res.status}): ${lastErrorMsg}. Trying next model...`);
+    } catch (e) {
+      lastErrorMsg = e.message;
+    }
+  }
+
+  throw new Error(`Groq API Error: ${lastErrorMsg}`);
+}
+
+function toggleGeminiMic() {
+  if (!settings.geminiKey) {
+    toast('Configura tu API Key de Gemini o Grok', 'error');
+    abrirSettings();
+    return;
+  }
+
+  const micBtn = document.getElementById('geminiMicBtn');
+  const gBtn = document.getElementById('geminiBtn');
+  if (!micBtn) return;
+
+  if (isGeminiListening) {
+    if (recognition) recognition.stop();
+    isGeminiListening = false;
+    micBtn.classList.remove('listening');
+    if (gBtn) gBtn.classList.remove('listening');
+    
+    // Automatically trigger processing
+    showGeminiSpeechBubble("⚡ <strong>Procesando tu solicitud...</strong>", 0);
+    setTimeout(() => {
+      const input = document.getElementById('geminiTextInput');
+      if (input && input.value.trim() !== '') {
+        const textToSend = input.value.trim();
+        input.value = '';
+        processWithGemini(textToSend);
+      } else {
+        showGeminiSpeechBubble("🤔 No alcancé a escucharte bien. ¡Vuelve a intentarlo!", 4000);
+      }
+    }, 450);
+  } else {
+    if (!('webkitSpeechRecognition' in window)) {
+      toast('Tu navegador no soporta entrada de voz', 'error');
+      return;
+    }
+    
+    recognition = new webkitSpeechRecognition();
+    recognition.lang = 'es-CO';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    let finalTranscript = '';
+
+    recognition.onstart = () => {
+      isGeminiListening = true;
+      micBtn.classList.add('listening');
+      if (gBtn) gBtn.classList.add('listening');
+      
+      const sugerenciasHtml = `
+        🎙️ <strong>¿En qué te puedo ayudar hoy?</strong><br>
+        <span style="font-size:10px; opacity:0.8;">Toca una opción o habla por voz:</span>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:6px; max-height:160px; overflow-y:auto; padding-right:2px;">
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Muestra las citas de hoy')">📅 Citas de hoy</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Busca casas en el norte')">🏡 Buscar inmuebles</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Agrega al cliente Juan Perez cel 3101234567')">👤 Crear nuevo lead</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Genera mensaje de WhatsApp para enviar el catálogo')">📱 Mensaje WhatsApp</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Registrar gasto de pintura')">💸 Registrar gasto</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Resumen ejecutivo de KPIs')">📊 Ver KPIs / Métricas</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Agenda cita para la casa 102 el lunes 4pm')">📝 Agendar cita</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Muéstrame la contabilidad de este mes')">💰 Ver Contabilidad</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Genera la descripción comercial del inmueble 038')">✍️ Redactar descripción</button>
+          <button style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; text-align:left; cursor:pointer;" onclick="processWithGemini('Limpia los filtros')">🧹 Resetear filtros</button>
+        </div>
+      `;
+      
+      showGeminiSpeechBubble(sugerenciasHtml, 12000);
+      finalTranscript = '';
+      setGeminiEmotion('saludo');
+    recognition.onresult = (e) => {
+      let interimTranscript = '';
+      for (let i = e.resultIndex; i < e.results.length; ++i) {
+        if (e.results[i].isFinal) {
+          finalTranscript += e.results[i][0].transcript;
+        } else {
+          interimTranscript += e.results[i][0].transcript;
+        }
+      }
+      const text = finalTranscript + interimTranscript;
+      const input = document.getElementById('geminiTextInput');
+      if (input) {
+        input.value = text;
+      }
+      // Mostrar texto transcrito en vivo en el bocadillo de diálogo
+      showGeminiSpeechBubble(`🎙️ <em>"${text}"</em><br><br><span style="font-size:10.5px; opacity:0.85; color:var(--gold);">👇 Toca al muñequito cuando termines de hablar para buscar</span>`, 0);
+    };
+
+    recognition.onerror = (err) => {
+      console.error('Speech recognition error:', err);
+      if (err.error === 'no-speech' && isGeminiListening) {
+        // Ignorar pausas prolongadas para que no se cierre la grabación
+        return;
+      }
+      toast('Micrófono inactivo o sin señal', 'warning');
+      micBtn.classList.remove('listening');
+      if (gBtn) gBtn.classList.remove('listening');
+      isGeminiListening = false;
+      showGeminiSpeechBubble("⚠️ <strong>El micrófono no respondió.</strong> Asegúrate de dar permisos de voz.", 5000);
+    };
+
+    recognition.onend = () => {
+      const input = document.getElementById('geminiTextInput');
+      
+      // Si el navegador intenta cerrar la grabación por inactividad pero el usuario NO ha presionado el botón para enviar, REINICIAR continuamente
+      if (isGeminiListening) {
+        try {
+          recognition.start();
+          return;
+        } catch (e) {}
+      }
+
+      micBtn.classList.remove('listening');
+      if (gBtn) gBtn.classList.remove('listening');
+    };
+
+    recognition.start();
+  }
+}
+
+function sendGeminiTextMessage() {
+  const input = document.getElementById('geminiTextInput');
+  if (!input) return;
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  // Add user bubble
+  addGeminiMessage('user', text);
+  input.value = '';
+
+  // Process
+  processWithGemini(text);
+}
+
+async function processWithGemini(text) {
+  if (!settings.geminiKey) {
+    addGeminiMessage('assistant', '⚠️ Por favor, configura tu API Key de Gemini o Grok en los ajustes ⚙️.', '', 'saludo');
+    return;
+  }
+
+  // Visual typing indicator bubble
+  showGeminiTypingIndicator();
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const systemInstruction = `Eres el asistente de Inteligencia Artificial para el panel de administración de "ICDE Inmobiliaria" (Neiva, Colombia).
+Tu objetivo es ayudar al usuario a gestionar de forma rápida e inteligente sus inmuebles, citas/visitas, leads y finanzas.
+Analiza la solicitud del usuario (en español) y responde estrictamente en formato JSON válido.
+No devuelvas NADA que no sea el JSON. No rodees tu JSON con bloques markdown como \`\`\`json. El JSON debe contener exactamente dos propiedades de primer nivel:
+1. "reply": Una frase de respuesta atenta, natural, profesional y amigable en español dirigida al usuario, explicando qué acción identificaste o respondiendo a su consulta.
+2. "action": Un objeto que describe la acción técnica a ejecutar, con el campo "type" y sus parámetros correspondientes.
+
+REGLAS DE ORO DE COHERENCIA (CLASIFICACIÓN ESTRICTA):
+⚠️ REGLA 1: "BUSCAR_PROPIEDADES" vs "AGENDAR_CITA_PREVIEW"
+   - Si el usuario dice "Necesito ver el inmueble 038", "Busca el apartamento 102", "Quiero mirar la propiedad 056" o similares, esto es de consulta de información. DEBES clasificarlo siempre como "BUSCAR_PROPIEDADES" y extraer el código en "query".
+⚠️ REGLA DE CONTINUIDAD CONVERSACIONAL:
+   - Mantente al tanto del historial del chat previo. Si el usuario hace una referencia relativa como "y de la casa 102?", "agenda la cita para ese cliente", "envíale el mensaje", "qué precio tiene esa?", debes deducir a cuál inmueble, cliente o dato se refiere utilizando las interacciones previas de la conversación.
+
+⚠️ REGLA 3: "REGISTRAR_MOVIMIENTO_PREVIEW"
+   - Si el usuario dice "registrar gasto de X", "anotar pago", "guardar ingreso" o similar, SIEMPRE utiliza "REGISTRAR_MOVIMIENTO_PREVIEW" generando la tarjeta interactiva. Rellena los datos que tengas (ej: concepto "pintura", tipo "egreso") y deja los campos faltantes vacíos o con valores sugeridos para que el usuario los ajuste y confirme en la tarjeta interactiva.
+
+- "REGISTRAR_LEAD_PREVIEW": Si el usuario quiere crear, guardar o registrar un nuevo cliente/lead (ej: "agrega al cliente María Pérez cel 3101234567 interesada en casas norte", "nuevo lead Carlos cel 3009876543"). Parámetros:
+    * "nombre": nombre del cliente
+    * "celular": teléfono / celular
+    * "notas": observaciones o requerimientos del cliente
+    * "etiqueta": "activo", "tibio" o "inactivo" (por defecto "activo")
+- "GENERAR_MENSAJE_WPP": Si el usuario pide redactar o crear un mensaje de WhatsApp para enviar a un cliente con un enlace personalizado del catálogo o de una búsqueda filtrada (ej: "genérame un mensaje para WhatsApp de casas en el oriente", "crea mensaje para cliente con el apartamento 102"). Parámetros:
+    * "cliente": nombre del cliente si lo menciona
+    * "celular": número de WhatsApp si lo menciona
+    * "codigo": código del inmueble si es específico
+    * "zona": zona del filtro si aplica (ej: "Oriente", "Norte")
+    * "tipoInmueble": tipo si aplica (ej: "Casa", "Apartamento")
+    * "query": texto o criterio de búsqueda del catálogo
+- "CONSULTAR_KPIS": Si el usuario pregunta por estadísticas, resumen del negocio, métricas o KPIs generales (ej: "dame un resumen del negocio", "cómo van los números", "KPIs de la inmobiliaria", "resumen ejecutivo"). Parámetros: {}
+- "LIMPIAR_FILTROS": Si el usuario pide resetear, borrar o limpiar los filtros de búsqueda (ej: "limpia los filtros", "resetear filtros", "mostrar todas las propiedades de nuevo"). Parámetros: {}
+- "REGISTRAR_MOVIMIENTO_PREVIEW": Si el usuario pide registrar, anotar o guardar un ingreso o egreso contable (ej: "registra un ingreso de 500.000 de arriendo", "registrar gasto de pintura", "anota un egreso de 120.000 por mantenimiento"). Parámetros:
+    * "tipo": "ingreso" o "egreso" (por defecto "egreso" si dice gasto/pago)
+    * "monto": valor numérico si lo menciona, o 0 si no lo dio
+    * "concepto" o "descripcion": detalle del movimiento (ej: "Pintura")
+    * "categoria": categoría sugerida (ej: "Mantenimiento", "Arriendos", "Administración", "Otros")
+    * "fecha": en formato YYYY-MM-DD (Hoy es ${todayStr})
+- "FILTRAR_CONTABILIDAD": Si el usuario pide ver los números, movimientos o filtrar la contabilidad (ej: "muéstrame la contabilidad", "ver ingresos de arriendo", "busca egresos de mantenimiento"). Parámetros:
+    * "query": texto de búsqueda en contabilidad
+- "ABRIR_NUEVO_MOVIMIENTO": Si pide abrir la ventana/modal para registrar un movimiento contable (ej: "abre formulario de nuevo gasto", "nuevo ingreso"). Parámetros:
+    * "tipo": "ingreso" o "egreso" (opcional)
+- "VER_CITAS": Si el usuario pide mostrar, ver, consultar o listar sus citas/visitas agendadas (ej: "muéstrame mis citas", "qué citas tengo hoy", "ver la agenda de citas de esta semana"). Parámetros:
+    * "filterType": "hoy", "semana", "mes", o "todas"
+    * "fecha": fecha específica en YYYY-MM-DD si pidió un día concreto (Hoy es ${todayStr})
+    * "query": nombre de cliente si busca a alguien en particular (opcional)
+- "ABRIR_PROPIEDAD_MODAL": Si el usuario menciona un código de inmueble o pide ver los detalles/información de una propiedad (ej: "038", "102", "busca la 038", "dame información de la casa 102", "abre la ficha del inmueble 038", "muestra el apartamento 301"). Parámetros:
+    * "codigo": el código exacto de la propiedad (ej: "038", "102")
+- "BUSCAR_PROPIEDADES": Si quiere buscar o filtrar inmuebles por características (ej: "busca edificios", "casas en conjunto", "apartamentos en conjunto", "edificios rentables", "casas de 3 habitaciones"). IMPORTANTE: Si el usuario especificó un código de propiedad exacto (ej: "038"), USA ABRIR_PROPIEDAD_MODAL en lugar de BUSCAR_PROPIEDADES. Parámetros:
+    * "query": término libre de búsqueda si especifica un código o texto general (ej: "038", "Ipanema"). Si la intención queda cubierta por tipoInmueble, zona o cualquier filtro específico, DEJA "query" VACÍO.
+    * "tipoInmueble": array de strings. IMPORTANTE: Revisa los valores EXACTOS del catálogo: "Edificio rentable", "Edificio", "Casa en conjunto", "Apartamento en conjunto", "Casa campestre en conjunto", "Casa", "Apartamento", "Casa campestre", "Casa lote", "Casa rentable", "Finca", "Local", "Lote", "Lote campestre en conjunto", etc. Si el usuario pide "edificios" o "edificio rentable", DEBES poner "tipoInmueble": ["Edificio rentable"]. Si pide "casas en conjunto", pon ["Casa en conjunto"].
+    * "zona": array de strings (ej: ["Norte"], ["Sur"], ["Oriente"], ["Occidente"], ["Centro"])
+    * "conjunto": array de strings únicamente si especificó el NOMBRE exacto de un condominio/edificio (ej: ["Residencial Sevilla"]). De lo contrario déjalo vacío.
+    * "barrio": array de strings si especificó barrio o sector (ej: ["Ipanema"], ["Sevilla"])
+    * "ubicacion": array de strings si especificó ubicación (ej: ["Urbana"], ["Campestre"])
+    * "piscina": array de strings si especificó piscina (ej: ["Sí"])
+    * "cocina": array de strings si especificó tipo de cocina (ej: ["Integral"])
+    * "habitaciones": array de strings/números (ej: ["3"])
+    * "garaje": array de strings. REGLA ESTRICTA: Si el usuario dice "con garaje" (o "con parqueadero") SIN especificar un número de garajes, DEBES devolver exactamente "garaje": ["con_garaje"]. NUNCA pongas ["1"] si el usuario no dijo expresamente "1 garaje" o "un garaje". Solo si dice una cantidad exacta (ej: "con 2 garajes", "1 garaje") pondrás ["2"] o ["1"].
+    * "pisos": array de strings/números (ej: ["2"])
+    * "minPrice": número si especificó precio mínimo
+    * "maxPrice": número si especificó precio máximo
+- "BUSCAR_LEADS": Si quiere buscar o filtrar leads/clientes en el sistema (ej: "busca al cliente Juan", "dame información del lead Carlos"). Parámetros:
+    * "query": nombre o teléfono a buscar
+- "GENERAR_DESCRIPCION": Si quiere redactar, escribir o generar la descripción comercial y vendedora de un inmueble. Parámetros:
+    * "codigo": el código del inmueble (p. ej. "102")
+- "CONSULTAR_SALDO": Si pregunta por balances financieros, ingresos, cobros de administración o datos del edificio Silvia. Parámetros:
+    * "consulta": un string identificando qué me consulta
+- "CHAT_ONLY": Para conversaciones generales, saludos o consultas de ayuda que no requieren comandos técnicos. Parámetros: {}
+`;
+
+  try {
+    let resultText = await callAIEngine(text, systemInstruction);
+
+    hideGeminiTypingIndicator();
+    
+    // Clean potential markdown blocks
+    resultText = resultText.replace(/```json|```/gi, '').trim();
+    
+    const resultObj = JSON.parse(resultText);
+    
+    // Determine the emotion based on intent
+    let emotion = 'feliz';
+    if (resultObj.action) {
+      const type = resultObj.action.type;
+      if (type === 'AGENDAR_CITA_PREVIEW' || type === 'BUSCAR_PROPIEDADES' || type === 'BUSCAR_LEADS' || type === 'VER_CITAS' || type === 'ABRIR_PROPIEDAD_MODAL' || type === 'REGISTRAR_MOVIMIENTO_PREVIEW' || type === 'FILTRAR_CONTABILIDAD') {
+        emotion = 'preguntando';
+      }
+    }
+    
+    // Guardar en la memoria conversacional persistente
+    if (typeof geminiConversationHistory !== 'undefined') {
+      geminiConversationHistory.push({ role: 'user', content: text });
+      geminiConversationHistory.push({ role: 'assistant', content: JSON.stringify(resultObj) });
+    }
+
+    // 1. Output conversational text with custom emotion
+    addGeminiMessage('assistant', resultObj.reply, '', emotion);
+
+    // 2. Process actions
+    if (resultObj.action && resultObj.action.type !== 'CHAT_ONLY') {
+      executeGeminiAction(resultObj.action);
+    }
+  } catch (err) {
+    hideGeminiTypingIndicator();
+    console.error('Error in processWithGemini:', err);
+    addGeminiMessage('assistant', `❌ Ocurrió un error al procesar tu solicitud:<br><br><span style="color:#ef4444; font-family:monospace; font-size:11px; background:rgba(239,68,68,0.08); padding:8px; border-radius:6px; display:block; border:1px solid rgba(239,68,68,0.2); line-height:1.4;">${err.message}</span><br>Por favor verifica tu API Key en la configuración ⚙️.`, '', 'saludo');
+  }
+}
+
+function executeGeminiAction(action) {
+  switch (action.type) {
+    case 'REGISTRAR_LEAD_PREVIEW':
+      renderLeadPreviewCard(action);
+      break;
+
+    case 'GENERAR_MENSAJE_WPP':
+      renderWppLinkCard(action);
+      break;
+
+    case 'CONSULTAR_KPIS':
+      renderKPIsCard();
+      break;
+
+    case 'LIMPIAR_FILTROS':
+      if (typeof fnLimpiar === 'function') {
+        fnLimpiar('nl');
+        toast('Filtros del catálogo reseteados 🧹', 'success');
+      } else {
+        const inputNl = document.getElementById('fnBus_nl');
+        if (inputNl) { inputNl.value = ''; inputNl.dispatchEvent(new Event('input', { bubbles: true })); }
+        toast('Filtros reseteados 🧹', 'success');
+      }
+      break;
+    case 'REGISTRAR_MOVIMIENTO_PREVIEW':
+      renderMovimientoContableCard(action);
+      break;
+
+    case 'FILTRAR_CONTABILIDAD':
+      showTab('contabilidad');
+      const qCont = action.query || '';
+      setTimeout(() => {
+        const inputCont = document.getElementById('inputBuscarMovimientos');
+        if (inputCont) {
+          inputCont.value = qCont;
+          if (typeof contFiltrarMovimientos === 'function') contFiltrarMovimientos(qCont);
+        }
+      }, 150);
+      toast(`Filtrando contabilidad por: "${qCont}" 📊`, 'info');
+      break;
+
+    case 'ABRIR_NUEVO_MOVIMIENTO':
+      showTab('contabilidad');
+      if (typeof contAbrirModal === 'function') {
+        contAbrirModal(action.tipo || 'ingreso');
+      }
+      toast('Formulario de movimiento contable abierto 💵', 'info');
+      break;
+
+    case 'VER_CITAS':
+      showTab('citas');
+      setTimeout(() => {
+        const filterType = action.filterType || (action.fecha ? 'fecha' : '');
+        const targetFecha = action.fecha || (filterType === 'hoy' ? new Date().toISOString().split('T')[0] : '');
+
+        if (targetFecha) {
+          if (typeof citasActiveFilterType !== 'undefined') citasActiveFilterType = 'fecha';
+          if (typeof citasActiveFilterValue !== 'undefined') citasActiveFilterValue = targetFecha;
+          const elSelFecha = document.getElementById('citasSelFecha');
+          if (elSelFecha) elSelFecha.textContent = 'Filtrado por: ' + targetFecha;
+          if (typeof aplicarFiltroYBusquedaCitas === 'function') aplicarFiltroYBusquedaCitas();
+          toast(`Citas del ${targetFecha} 📅`, 'info');
+        } else if (filterType === 'semana' || filterType === 'mes' || filterType === 'todas') {
+          if (typeof filterCitas === 'function') filterCitas(filterType);
+          toast(`Citas: ${filterType} 📅`, 'info');
+        } else {
+          const citaQuery = action.query || '';
+          if (citaQuery && typeof buscarCitas === 'function') {
+            const inputCita = document.getElementById('searchCitasInput');
+            if (inputCita) inputCita.value = citaQuery;
+            buscarCitas(citaQuery);
+          } else if (typeof renderCitas === 'function') {
+            renderCitas();
+          }
+          toast('Mostrando agenda de citas 📅', 'info');
+        }
+      }, 150);
+      break;
+
+    case 'ABRIR_PROPIEDAD_MODAL':
+      const codProp = action.codigo || action.query || '';
+      if (codProp && typeof abrirModalProp === 'function') {
+        abrirModalProp(codProp);
+        toast(`Abriendo información del inmueble "${codProp}" 🏠`, 'success');
+      } else {
+        showTab('nuevo');
+        toast(`Buscando propiedad "${codProp}"`, 'info');
+      }
+      break;
+
+    case 'AGENDAR_CITA_PREVIEW':
+      renderCitaPreviewCard(action);
+      break;
+
+    case 'BUSCAR_PROPIEDADES':
+      showTab('nuevo');
+      const searchQuery = action.query || action.codigo || '';
+      
+      setTimeout(() => {
+        // 1. Si hay filtros estructurados, aplicarlos al estado nativo de filtros 'nl'
+        if (typeof getFSt === 'function') {
+          const st = getFSt('nl');
+          if (st) {
+            const filterKeys = ['tipoInmueble', 'zona', 'conjunto', 'barrio', 'ubicacion', 'piscina', 'cocina', 'habitaciones', 'garaje', 'pisos'];
+            filterKeys.forEach(k => {
+              if (action[k]) {
+                let vals = Array.isArray(action[k]) ? action[k].map(String) : [String(action[k])];
+                // Normalizar sinónimos de tipoInmueble (ej: "Edificio" -> "Edificio rentable")
+                if (k === 'tipoInmueble' && typeof getUniqueVals === 'function') {
+                  const disponibles = getUniqueVals('Tipo de inmueble');
+                  vals = vals.map(v => {
+                    const normV = norm(v);
+                    const match = disponibles.find(d => norm(d) === normV || (normV.includes('edificio') && norm(d).includes('edificio')));
+                    return match || v;
+                  });
+                }
+                // Si el usuario pide "con garaje" de forma general, marcar todos los números de garaje disponibles (>0)
+                if (k === 'garaje' && typeof getUniqueVals === 'function') {
+                  const dispGarajes = getUniqueVals('Garaje');
+                  const nonZero = dispGarajes.filter(g => g !== '0' && g !== 'Sin garaje' && g !== 'No');
+                  if (vals.includes('con_garaje') || vals.some(v => v.toLowerCase().includes('garaje') && !/\d/.test(v))) {
+                    vals = nonZero;
+                  }
+                }
+                st[k] = vals;
+              }
+            });
+            if (action.minPrice) st.minPrice = Number(action.minPrice);
+            if (action.maxPrice) st.maxPrice = Number(action.maxPrice);
+
+            // Re-renderizar indicadores de filtro
+            if (typeof FCAMPOS !== 'undefined' && typeof fnRenderHead === 'function') {
+              FCAMPOS.forEach(c => fnRenderHead('nl', c.key));
+            }
+          }
+        }
+
+        // 2. Colocar texto en caja de búsqueda y sincronizar todo
+        const inputNl = document.getElementById('fnBus_nl');
+        if (inputNl) {
+          inputNl.value = searchQuery;
+        }
+        if (typeof fnActualizarConteo === 'function') {
+          fnActualizarConteo('nl');
+        }
+
+        toast(`Filtros aplicados al catálogo ✓`, 'success');
+      }, 150);
+      break;
+
+    case 'BUSCAR_LEADS':
+      showTab('leads');
+      const leadQuery = action.query || action.cliente || action.celular || '';
+      const inputLead = document.getElementById('searchLeadsInput');
+      if (inputLead) {
+        inputLead.value = leadQuery;
+        if (typeof buscarLeads === 'function') buscarLeads(leadQuery);
+        toast(`Filtrado leads por: "${leadQuery}" ✓`, 'success');
+      }
+      break;
+
+    case 'GENERAR_DESCRIPCION':
+      renderDescripcionGeneradaCard(action.codigo);
+      break;
+
+    case 'CONSULTAR_SALDO':
+      renderFinanzasCard(action.consulta);
+      break;
+
+    default:
+      console.warn('Unknown action type:', action.type);
+  }
+}
+
+function renderMovimientoContableCard(action) {
+  const tipo = action.tipo || 'egreso';
+  const monto = action.monto || '';
+  const concepto = action.concepto || action.descripcion || '';
+  const categoria = action.categoria || 'Mantenimiento';
+  const fecha = action.fecha || new Date().toISOString().split('T')[0];
+  const id = 'card_mov_' + Math.floor(Math.random() * 100000);
+
+  const montoNum = (monto && monto !== 0) ? monto : '';
+  const isIngreso = tipo.toLowerCase() === 'ingreso';
+  const headerIcon = isIngreso ? '💰 Ingreso' : '💸 Egreso';
+  const headerColor = isIngreso ? '#22c55e' : '#ef4444';
+
+  const html = `
+    <div class="gemini-card" id="geminiMovCard-${id}">
+      <div class="gemini-card-title" style="color:${headerColor};">${headerIcon} Contable</div>
+      
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Tipo:</span>
+        <select class="gemini-card-input" id="editMovTipo-${id}" style="color:${headerColor}; font-weight:700;">
+          <option value="ingreso" ${isIngreso ? 'selected' : ''}>💚 Ingreso</option>
+          <option value="egreso" ${!isIngreso ? 'selected' : ''}>❤️ Egreso</option>
+        </select>
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Monto ($):</span>
+        <input type="number" class="gemini-card-input" id="editMovMonto-${id}" value="${montoNum}" placeholder="Por favor ingresa el valor $" style="font-weight:700; ${!montoNum ? 'border:1px solid #ef4444; background:rgba(239,68,68,0.1);' : ''}">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Concepto:</span>
+        <input type="text" class="gemini-card-input" id="editMovConcepto-${id}" value="${concepto}" placeholder="Descripción del movimiento" style="${!concepto ? 'border:1px solid #ef4444;' : ''}">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Categoría:</span>
+        <input type="text" class="gemini-card-input" id="editMovCat-${id}" value="${categoria}" placeholder="Mantenimiento, Arriendos, etc.">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Fecha:</span>
+        <input type="date" class="gemini-card-input" id="editMovFecha-${id}" value="${fecha}">
+      </div>
+
+      <div class="gemini-card-footer" style="margin-top: 8px; display: flex; gap: 8px;">
+        <button class="btn btn-primary btn-sm" style="flex: 1; font-size: 11px; padding: 6px; background:${headerColor}; border:none;" onclick="confirmarMovimientoContableGemini('${id}')">Confirmar Movimiento</button>
+        <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 6px;" onclick="cancelarCitaGemini(this)">Cancelar</button>
+      </div>
+    </div>
+  `;
+  addGeminiMessage('system-card', '', html);
+
+  setTimeout(() => {
+    const inputM = document.getElementById(`editMovMonto-${id}`);
+    if (inputM && !montoNum) inputM.focus();
+  }, 300);
+}
+
+function confirmarMovimientoContableGemini(id) {
+  const tipo = document.getElementById(`editMovTipo-${id}`).value;
+  const montoVal = parseFloat(document.getElementById(`editMovMonto-${id}`).value) || 0;
+  const concepto = document.getElementById(`editMovConcepto-${id}`).value.trim();
+  const categoria = document.getElementById(`editMovCat-${id}`).value.trim() || 'General';
+  const fecha = document.getElementById(`editMovFecha-${id}`).value;
+
+  if (!montoVal || montoVal <= 0) {
+    toast('Ingresa un monto válido', 'error');
+    return;
+  }
+  if (!concepto) {
+    toast('Ingresa un concepto o descripción', 'error');
+    return;
+  }
+
+  const newMov = {
+    id: 'MOV-' + Date.now(),
+    fecha: fecha,
+    tipo: tipo,
+    concepto: concepto,
+    categoria: categoria,
+    precio: montoVal,
+    creadoEn: new Date().toISOString()
+  };
+
+  if (typeof contMovimientos !== 'undefined' && Array.isArray(contMovimientos)) {
+    contMovimientos.push(newMov);
+    localStorage.setItem('icde_contabilidad', JSON.stringify(contMovimientos));
+    if (typeof contRenderAll === 'function') contRenderAll();
+  }
+
+  const card = document.getElementById(`geminiMovCard-${id}`);
+  if (card) {
+    card.style.border = '1px solid #22c55e';
+    card.style.background = 'linear-gradient(145deg, rgba(34, 197, 94, 0.05), rgba(10, 10, 10, 0.95))';
+    card.querySelector('.gemini-card-footer').innerHTML = `<span style="color:#22c55e; font-weight:700; display:flex; align-items:center; gap:4px; font-size:11px;">✓ Movimiento registrado de $${montoVal.toLocaleString()}</span>`;
+    card.querySelectorAll('.gemini-card-input').forEach(input => {
+      input.disabled = true;
+      input.style.opacity = '0.7';
+    });
+  }
+
+  toast('Movimiento contable registrado con éxito ✓', 'success');
+}
+
+function renderCitaPreviewCard(action) {
+  const cod = action.codigo || '';
+  const fecha = action.fecha || '';
+  const hora = action.hora || '';
+  const cliente = action.cliente || '';
+  const celular = action.celular || '';
+  const notas = action.notas || '';
+  const id = 'card_' + Math.floor(Math.random() * 100000);
+
+  const html = `
+    <div class="gemini-card" id="geminiCitaCard-${id}">
+      <div class="gemini-card-title">📅 Editar y Confirmar Cita</div>
+      
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Cliente:</span>
+        <input type="text" class="gemini-card-input" id="editCitaCliente-${id}" value="${cliente}" placeholder="Nombre cliente">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Celular:</span>
+        <input type="text" class="gemini-card-input" id="editCitaCelular-${id}" value="${celular}" placeholder="Añadir celular">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Inmueble:</span>
+        <input type="text" class="gemini-card-input" id="editCitaCod-${id}" value="${cod}" placeholder="Código" style="color:var(--gold); font-weight:700;">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Fecha:</span>
+        <input type="date" class="gemini-card-input" id="editCitaFecha-${id}" value="${fecha}">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Hora:</span>
+        <input type="time" class="gemini-card-input" id="editCitaHora-${id}" value="${hora}">
+      </div>
+
+      <div class="gemini-card-row" style="flex-direction: column; gap: 4px; align-items: flex-start; margin-top: 4px;">
+        <span class="gemini-card-lbl">Detalles/Notas:</span>
+        <textarea class="gemini-card-input" id="editCitaNotas-${id}" style="width: 100%; height: 45px; resize: none; margin-top: 2px; padding: 6px 10px; border-radius: 8px; text-align: left;" placeholder="Detalles de la visita...">${notas}</textarea>
+      </div>
+
+      <div class="gemini-card-footer" style="margin-top: 8px; display: flex; gap: 8px;">
+        <button class="btn btn-primary btn-sm" style="flex: 1; font-size: 11px; padding: 6px;" onclick="confirmarCitaEditadaGemini('${id}')">Confirmar Cita</button>
+        <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 6px;" onclick="cancelarCitaGemini(this)">Cancelar</button>
+      </div>
+    </div>
+  `;
+  addGeminiMessage('system-card', '', html);
+}
+
+function confirmarCitaEditadaGemini(id) {
+  const cod = document.getElementById(`editCitaCod-${id}`).value.trim();
+  const cliente = document.getElementById(`editCitaCliente-${id}`).value.trim();
+  const celular = document.getElementById(`editCitaCelular-${id}`).value.trim();
+  const fecha = document.getElementById(`editCitaFecha-${id}`).value;
+  const hora = document.getElementById(`editCitaHora-${id}`).value;
+  const notas = document.getElementById(`editCitaNotas-${id}`).value.trim();
+
+  if (!cod) {
+    toast('Ingresa el código de inmueble', 'error');
+    return;
+  }
+
+  confirmarCitaGemini(cod, fecha, hora, cliente, celular, notas);
+
+  const card = document.getElementById(`geminiCitaCard-${id}`);
+  if (card) {
+    card.style.border = '1px solid #22c55e';
+    card.style.background = 'linear-gradient(145deg, rgba(34, 197, 94, 0.05), rgba(10, 10, 10, 0.95))';
+    card.querySelector('.gemini-card-footer').innerHTML = '<span style="color:#22c55e; font-weight:700; display:flex; align-items:center; gap:4px; font-size:11px;">✓ Cita agendada y sincronizada</span>';
+    
+    card.querySelectorAll('.gemini-card-input').forEach(input => {
+      input.disabled = true;
+      input.style.opacity = '0.7';
+    });
+  }
+}
+
+function cancelarCitaGemini(btn) {
+  const card = btn.closest('.gemini-card');
+  if (card) {
+    card.style.opacity = 0.5;
+    card.querySelector('.gemini-card-footer').innerHTML = '<span style="color:#ff4444; font-weight:700; font-size:11px;">✕ Cita Cancelada</span>';
+    card.querySelectorAll('.gemini-card-input').forEach(input => {
+      input.disabled = true;
+      input.style.opacity = '0.5';
+    });
+  }
+}
+
+async function confirmarCitaGemini(codigo, fecha, hora, cliente, celular, notas) {
+  try {
+    let lead = null;
+    if (celular) {
+      const cleanInput = String(celular).replace(/\D/g, '');
+      const matchInput = cleanInput.length >= 10 ? cleanInput.slice(-10) : cleanInput;
+      lead = leads.find(l => {
+        if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
+        const lRaw = String(l.celular || '').replace(/\D/g, '');
+        const lMatch = lRaw.length >= 10 ? lRaw.slice(-10) : lRaw;
+        return matchInput && lMatch && lMatch === matchInput;
+      });
+    }
+
+    if (!lead) {
+      lead = leads.find(l => l.id === 'LEAD-AGENDA-GLOBAL');
+      if (!lead) {
+        lead = {
+          id: 'LEAD-AGENDA-GLOBAL',
+          tipo: 'cliente',
+          nombre: 'Agenda Global (Citas Genéricas)',
+          celular: '0000000000',
+          notas: 'Contenedor para sincronizar citas sin lead asociado.',
+          metodoPago: [],
+          estado: 'visita',
+          etiqueta: 'activo',
+          filtros: {},
+          frecuencia: 'manual',
+          maxPorEnvio: 4,
+          nombreInmobiliaria: '',
+          nombreAgente: '',
+          propsFiltradas: [],
+          propsEnviadas: [],
+          proximosEnvios: [],
+          historialEnvios: [],
+          visitas: [],
+          creadoEn: new Date().toISOString()
+        };
+        leads.push(lead);
+      }
+    }
+
+    // Robust default fallbacks
+    const finalFecha = fecha || new Date().toISOString().split('T')[0];
+    const finalHora = hora || '08:00';
+    const finalCliente = cliente || 'Genérico';
+    const finalCelular = celular || '';
+    const finalNotas = notas || '';
+
+    // Deduplication check: check if appointment already exists for same property code and phone
+    let existingId = null;
+    const vInLead = lead.visitas ? lead.visitas.find(x => x.codigo === codigo && x.celular === finalCelular) : null;
+    const vInCitas = citas.find(x => x.codigo === codigo && x.celular === finalCelular);
+    existingId = vInLead?.id || vInCitas?.id || Date.now().toString();
+
+    const newCita = {
+      id: existingId,
+      codigo: codigo,
+      fecha: finalFecha,
+      hora: finalHora,
+      estado: 'agendada',
+      oferto: 'no',
+      oferta: '',
+      notas: finalNotas,
+      cliente: finalCliente,
+      celular: finalCelular,
+      inmobiliaria: lead && lead.tipo === 'inmobiliaria' && lead.id !== 'LEAD-AGENDA-GLOBAL' ? lead.nombreInmobiliaria : '',
+      observaciones: finalNotas,
+      leadId: lead.id,
+      updatedAt: Date.now(),
+      creadoEn: new Date().toISOString()
+    };
+
+    if (!lead.visitas) lead.visitas = [];
+    const idx = lead.visitas.findIndex(x => x.id === existingId || (x.codigo === codigo && x.celular === finalCelular));
+    if (idx >= 0) {
+      lead.visitas[idx] = newCita;
+    } else {
+      lead.visitas.push(newCita);
+    }
+
+    const cIdx = citas.findIndex(x => x.id === existingId || (x.codigo === codigo && x.celular === finalCelular));
+    if (cIdx >= 0) {
+      citas[cIdx] = newCita;
+    } else {
+      citas.push(newCita);
+    }
+    
+    saveLeads();
+    syncCita(newCita);
+    syncSheets(lead);
+    
+    if (currentTab === 'citas') renderCitas();
+    toast('Cita agendada con éxito ✓', 'success');
+    
+    // Replace footer card buttons with success status
+    const cards = document.querySelectorAll('.gemini-card');
+    const lastCard = cards[cards.length - 1];
+    if (lastCard) {
+      lastCard.querySelector('.gemini-card-footer').innerHTML = '<span style="color:#22c55e; font-weight:700;">✓ Agendado Correctamente</span>';
+    }
+    
+    addGeminiMessage('assistant', `✅ ¡Listo! La cita ha sido registrada para **${cliente}** en el inmueble **${codigo}** el **${fecha}**.`);
+  } catch (err) {
+    console.error("Error agendando cita por Gemini:", err);
+    toast('Error al guardar la cita', 'error');
+  }
+}
+
+/* 👤 1. Tarjeta Registro Express de Lead */
+function renderLeadPreviewCard(action) {
+  const nombre = action.nombre || '';
+  const celular = action.celular || '';
+  const notas = action.notas || '';
+  const etiqueta = action.etiqueta || 'activo';
+  const id = 'card_lead_' + Math.floor(Math.random() * 100000);
+
+  const html = `
+    <div class="gemini-card" id="geminiLeadCard-${id}">
+      <div class="gemini-card-title">👤 Crear Nuevo Lead / Cliente</div>
+      
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Nombre:</span>
+        <input type="text" class="gemini-card-input" id="editLeadNombre-${id}" value="${nombre}" placeholder="Nombre del cliente" style="font-weight:700;">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Celular:</span>
+        <input type="text" class="gemini-card-input" id="editLeadCelular-${id}" value="${celular}" placeholder="Ej: 3101234567">
+      </div>
+
+      <div class="gemini-card-row" style="align-items: center;">
+        <span class="gemini-card-lbl">Etiqueta:</span>
+        <select class="gemini-card-input" id="editLeadEtiqueta-${id}">
+          <option value="activo" ${etiqueta==='activo'?'selected':''}>🔥 Activo</option>
+          <option value="tibio" ${etiqueta==='tibio'?'selected':''}>☀️ Tibio</option>
+          <option value="inactivo" ${etiqueta==='inactivo'?'selected':''}>❄️ Inactivo</option>
+        </select>
+      </div>
+
+      <div class="gemini-card-row" style="flex-direction: column; gap: 4px; align-items: flex-start; margin-top: 4px;">
+        <span class="gemini-card-lbl">Interés / Observaciones:</span>
+        <textarea class="gemini-card-input" id="editLeadNotas-${id}" style="width: 100%; height: 45px; resize: none; margin-top: 2px; padding: 6px 10px; border-radius: 8px; text-align: left;" placeholder="Interesado en casa zona norte...">${notas}</textarea>
+      </div>
+
+      <div class="gemini-card-footer" style="margin-top: 8px; display: flex; gap: 8px;">
+        <button class="btn btn-primary btn-sm" style="flex: 1; font-size: 11px; padding: 6px; background:var(--gold); color:#121212; font-weight:700; border:none;" onclick="confirmarLeadGemini('${id}')">Guardar Lead</button>
+        <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 6px;" onclick="cancelarCitaGemini(this)">Cancelar</button>
+      </div>
+    </div>
+  `;
+  addGeminiMessage('system-card', '', html);
+}
+
+function confirmarLeadGemini(id) {
+  const nombre = document.getElementById(`editLeadNombre-${id}`).value.trim();
+  const celular = document.getElementById(`editLeadCelular-${id}`).value.trim();
+  const etiqueta = document.getElementById(`editLeadEtiqueta-${id}`).value;
+  const notas = document.getElementById(`editLeadNotas-${id}`).value.trim();
+
+  if (!nombre) { toast('Ingresa el nombre del cliente', 'error'); return; }
+
+  const newLead = {
+    id: 'LEAD-' + Date.now(),
+    tipo: 'cliente',
+    nombre: nombre,
+    celular: celular || '',
+    notas: notas,
+    metodoPago: [],
+    estado: 'visita',
+    etiqueta: etiqueta,
+    filtros: {},
+    frecuencia: 'manual',
+    maxPorEnvio: 4,
+    nombreInmobiliaria: '',
+    nombreAgente: '',
+    propsFiltradas: [],
+    propsEnviadas: [],
+    proximosEnvios: [],
+    historialEnvios: [],
+    visitas: [],
+    creadoEn: new Date().toISOString()
+  };
+
+  leads.push(newLead);
+  saveLeads();
+  syncSheets(newLead);
+  if (currentTab === 'leads') renderLeads();
+
+  const card = document.getElementById(`geminiLeadCard-${id}`);
+  if (card) {
+    card.style.border = '1px solid #22c55e';
+    card.style.background = 'linear-gradient(145deg, rgba(34, 197, 94, 0.05), rgba(10, 10, 10, 0.95))';
+    card.querySelector('.gemini-card-footer').innerHTML = `<span style="color:#22c55e; font-weight:700; display:flex; align-items:center; gap:4px; font-size:11px;">✓ Lead "${nombre}" guardado con éxito</span>`;
+  }
+  toast(`Lead "${nombre}" registrado ✓`, 'success');
+}
+
+/* 📱 2. Tarjeta Generadora de Mensaje WhatsApp + Link Único */
+function renderWppLinkCard(action) {
+  const cliente = action.cliente || '';
+  const celular = action.celular || '';
+  const codigo = action.codigo || '';
+  const id = 'wpp_' + Math.floor(Math.random() * 100000);
+
+  let linkPersonalizado = 'https://icdeinmobiliaria.com/';
+  let descripcionFiltros = 'Catálogo de Inmuebles';
+
+  if (codigo) {
+    linkPersonalizado = getSearchLinkFromFilters(null, [codigo], null);
+    descripcionFiltros = `Propiedad código ${codigo}`;
+  } else {
+    // Generar link con filtros actuales del panel o recibidos
+    const st = typeof getFSt === 'function' ? JSON.parse(JSON.stringify(getFSt('nl'))) : {};
+    if (action.zona) st.zona = Array.isArray(action.zona) ? action.zona : [action.zona];
+    if (action.tipoInmueble) st.tipoInmueble = Array.isArray(action.tipoInmueble) ? action.tipoInmueble : [action.tipoInmueble];
+    if (action.query) st.buscar = action.query;
+    linkPersonalizado = getSearchLinkFromFilters(st, null, null);
+
+    const partes = [];
+    if (action.tipoInmueble) partes.push(action.tipoInmueble);
+    if (action.zona) partes.push(`Zona ${action.zona}`);
+    if (action.query) partes.push(`"${action.query}"`);
+    if (partes.length) descripcionFiltros = partes.join(' - ');
+  }
+
+  const saludoCliente = cliente ? `Hola ${cliente}, ` : 'Hola, ';
+  const msgTexto = `${saludoCliente}te comparto este enlace exclusivo con la selección de propiedades de **ICDE Inmobiliaria** (${descripcionFiltros}):\n\n👉 ${linkPersonalizado}\n\nQuedo atento a tus comentarios para agendar una visita physical sin compromiso. ¡Un saludo!`;
+
+  const cleanNum = celular.replace(/\D/g, '');
+  const wppUrl = cleanNum ? `https://wa.me/57${cleanNum}?text=${encodeURIComponent(msgTexto)}` : `https://wa.me/?text=${encodeURIComponent(msgTexto)}`;
+
+  const html = `
+    <div class="gemini-card" id="wppCard-${id}">
+      <div class="gemini-card-title" style="color:#25D366;">📱 Enlace Personalizado WhatsApp</div>
+      
+      <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">Link generado (${descripcionFiltros}):</div>
+      <div style="background:rgba(255,255,255,0.05); padding:6px 8px; border-radius:6px; font-size:11px; font-family:monospace; color:var(--gold); word-break:break-all; border:1px solid var(--glass-border); margin-bottom:8px;">
+        ${linkPersonalizado}
+      </div>
+
+      <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">Mensaje para WhatsApp:</div>
+      <textarea id="txtWppMsg-${id}" style="width:100%; height:85px; font-size:11px; background:#18181c; color:#fff; border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px; resize:none; outline:none; font-family:sans-serif; margin-bottom:8px;">${msgTexto}</textarea>
+
+      <div class="gemini-card-footer" style="display:flex; gap:6px;">
+        <a href="${wppUrl}" target="_blank" class="btn btn-primary btn-sm" style="flex:1.2; text-decoration:none; background:#25D366; color:#fff; font-weight:700; border:none; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+          💬 Abrir WhatsApp
+        </a>
+        <button class="btn btn-secondary btn-sm" style="flex:1; font-size:11px;" onclick="navigator.clipboard.writeText(document.getElementById('txtWppMsg-${id}').value); toast('Mensaje copiado ✓', 'success');">
+          📋 Copiar Texto
+        </button>
+      </div>
+    </div>
+  `;
+  addGeminiMessage('system-card', '', html);
+}
+
+/* 📊 3. Tarjeta Resumen de Métricas KPIs */
+function renderKPIsCard() {
+  const totalProps = typeof allProps !== 'undefined' ? allProps.length : 0;
+  const totalLeads = typeof leads !== 'undefined' ? leads.length : 0;
+  const totalCitas = typeof citas !== 'undefined' ? citas.length : 0;
+  
+  let ingMes = 0;
+  let egrMes = 0;
+  if (typeof contMovimientos !== 'undefined' && Array.isArray(contMovimientos)) {
+    const yyyymm = new Date().toISOString().substring(0, 7);
+    contMovimientos.forEach(m => {
+      if (m.fecha && m.fecha.startsWith(yyyymm)) {
+        if (m.tipo === 'ingreso') ingMes += (Number(m.precio) || 0);
+        if (m.tipo === 'egreso') egrMes += (Number(m.precio) || 0);
+      }
+    });
+  }
+
+  const html = `
+    <div class="gemini-card" style="border:1px solid var(--gold); background:linear-gradient(145deg, rgba(212,168,75,0.08), rgba(18,18,18,0.95));">
+      <div class="gemini-card-title" style="color:var(--gold); font-size:13px; font-weight:800;">📊 Resumen Ejecutivo del Negocio (KPIs)</div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:8px; border-radius:8px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#fff;">${totalProps}</div>
+          <div style="font-size:10px; color:var(--muted); text-transform:uppercase;">Inmuebles Activos</div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:8px; border-radius:8px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:var(--gold);">${totalLeads}</div>
+          <div style="font-size:10px; color:var(--muted); text-transform:uppercase;">Leads Registrados</div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:8px; border-radius:8px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#3b82f6;">${totalCitas}</div>
+          <div style="font-size:10px; color:var(--muted); text-transform:uppercase;">Visitas Agendadas</div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:8px; border-radius:8px; text-align:center;">
+          <div style="font-size:14px; font-weight:800; color:#22c55e;">$${ingMes.toLocaleString()}</div>
+          <div style="font-size:10px; color:var(--muted); text-transform:uppercase;">Ingresos Mes</div>
+        </div>
+      </div>
+    </div>
+  `;
+  addGeminiMessage('system-card', '', html);
+}
+
+async function renderDescripcionGeneradaCard(codigo) {
+  const prop = allProps.find(p => String(p['Código']).trim() === String(codigo).trim());
+  if (!prop) {
+    addGeminiMessage('assistant', `❌ No pude encontrar la propiedad con código **${codigo}** en el catálogo local para generar su descripción.`);
+    return;
+  }
+
+  toast('Redactando descripción...', 'success');
+  addGeminiMessage('assistant', `Escribiendo una descripción profesional y atractiva para la propiedad con código **${codigo}**... ✍️`);
+
+  try {
+    const details = JSON.stringify(prop);
+    const systemPrompt = `Eres un experto redactor inmobiliario senior. Toma los datos técnicos del inmueble y redacta una descripción vendedora, atractiva y elegante para publicarla en el sitio web y redes sociales de ICDE Inmobiliaria. 
+    Destaca los puntos fuertes (comuna, barrio, habitaciones, baños, parqueaderos, áreas, etc). Agrega una llamada a la acción emocionante al final. Responde UNICAMENTE con el texto de la descripción redactada.`;
+
+    const desc = await callAIEngine(`Detalles de propiedad: ${details}`, systemPrompt);
+
+    const divId = 'desc_' + Date.now();
+    const html = `
+      <div class="gemini-card">
+        <div class="gemini-card-title">✨ Descripción Generada</div>
+        <div style="max-height:180px; overflow-y:auto; font-size:11.5px; line-height:1.5; color:#ddd; padding-right:4px;" id="${divId}">${desc.replace(/\n/g, '<br>')}</div>
+        <div class="gemini-card-footer">
+          <button class="btn btn-gold btn-sm" style="flex:1;" onclick="copiarAlPortapapeles('${divId}')">📋 Copiar al Portapapeles</button>
+        </div>
+      </div>
+    `;
+    addGeminiMessage('system-card', '', html);
+  } catch (err) {
+    console.error('Error generating description:', err);
+    addGeminiMessage('assistant', '❌ No fue posible generar la descripción del inmueble en este momento.');
+  }
+}
+
+function copiarAlPortapapeles(divId) {
+  const el = document.getElementById(divId);
+  if (el) {
+    const text = el.innerText || el.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      toast('¡Copiado con éxito! ✓', 'success');
+    }).catch(err => {
+      console.error('Error copying text:', err);
+      toast('Error al copiar', 'error');
+    });
+  }
+}
+
+function renderFinanzasCard(consulta) {
+  // Query actual admin data
+  let totalEsperado = 0;
+  let totalRecaudado = 0;
+  let totalPendiente = 0;
+  let ocupados = 0;
+  let totalActivos = 0;
+
+  if (adminData && Array.isArray(adminData.properties)) {
+    adminData.properties.forEach(p => {
+      const paymentsYear = p.payments[currentAdminYear] || [];
+      const rent = parseFloat(p.monthly_rent) || 0;
+
+      // Sumar todos los cobros pendientes del año actual
+      paymentsYear.forEach(m => {
+        if (m.status === 'PENDING') {
+          totalPendiente += rent;
+        }
+      });
+
+      const paymentMonth = paymentsYear.find(m => m.month === currentAdminMonth);
+      if (paymentMonth) {
+        const st = paymentMonth.status;
+        const val = parseFloat(paymentMonth.value) || 0;
+
+        if (st === 'PAID') {
+          totalEsperado += rent;
+          totalRecaudado += val || rent;
+          ocupados++;
+          totalActivos++;
+        } else if (st === 'PENDING') {
+          totalEsperado += rent;
+          ocupados++;
+          totalActivos++;
+        } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT') {
+          totalEsperado += rent;
+          if (val > 0) totalRecaudado += val;
+          ocupados++;
+          totalActivos++;
+        } else if (st === 'VACANT') {
+          totalActivos++;
+        }
+      }
+    });
+  }
+
+  let totalRecaudoSilvia = 0;
+  let totalAbonoSilvia = 0;
+  if (adminData && adminData.silvia_ledger) {
+    const silviaTx = adminData.silvia_ledger[currentAdminYear] || [];
+    silviaTx.forEach(t => {
+      totalRecaudoSilvia += parseFloat(t.recaudo) || 0;
+      totalAbonoSilvia += parseFloat(t.abono) || 0;
+    });
+  }
+  const balanceSilvia = totalRecaudoSilvia - totalAbonoSilvia;
+
+  const html = `
+    <div class="gemini-card">
+      <div class="gemini-card-title">💼 Reporte Financiero (${currentAdminMonth} ${currentAdminYear})</div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Canon Esperado:</span><span class="gemini-card-val">${safeFormatP(totalEsperado)}</span></div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Total Recaudado:</span><span class="gemini-card-val" style="color:#22c55e;">${safeFormatP(totalRecaudado)}</span></div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Saldo Pendiente:</span><span class="gemini-card-val" style="color:#ef4444;">${safeFormatP(totalPendiente)}</span></div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Edif. Silvia Recaudo:</span><span class="gemini-card-val">${safeFormatP(totalAbonoSilvia)}</span></div>
+      <div class="gemini-card-row"><span class="gemini-card-lbl">Edif. Silvia Pendiente:</span><span class="gemini-card-val">${safeFormatP(balanceSilvia)}</span></div>
+      <div class="gemini-card-footer">
+        <button class="btn btn-secondary btn-sm" style="flex:1;" onclick="showTab('administracion')">⚙️ Ir a Módulo Administración</button>
+      </div>
+    </div>
+  `;
+  addGeminiMessage('system-card', '', html);
+}
+function toggleSection(header){
+  const section = header.parentElement;
+  section.classList.toggle('collapsed');
+}
+
+/* CHAT LOGIC */
+async function loadChatHistory(phone, isUpdate = false){
+    if(!settings.waApi) {
+        const h = document.getElementById('chatHistory');
+        if(h && !isUpdate) h.innerHTML = '<div style="margin:auto; color:var(--orange); font-size:11px; text-align:center; padding:20px;">⚠️ Configura la URL del Puente en Settings para ver el chat.</div>';
+        return;
+    }
+    try {
+        const res = await fetch(`${settings.waApi}/messages/${phone}`);
+        if(!res.ok) throw new Error('Error API');
+        const messages = await res.json();
+        const container = document.getElementById('chatHistory');
+        if(!container) return;
+        
+        const oldContent = container.innerHTML;
+        const newContent = messages.map(m => {
+            const time = new Date(m.timestamp * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            return `
+                <div class="chat-bubble ${m.fromMe ? 'bubble-out' : 'bubble-in'}">
+                    <div class="bubble-text">${m.text}</div>
+                    <div class="bubble-time">${time}</div>
+                </div>
+            `;
+        }).join('') || '<div style="margin:auto; color:#666; font-size:11px;">No hay mensajes previos</div>';
+        
+        if(oldContent !== newContent) {
+            container.innerHTML = newContent;
+            // Scroll al fondo si es la primera carga o si el usuario ya estaba abajo
+            if(!isUpdate || container.scrollHeight - container.scrollTop < 600) {
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                }, 50);
+            }
+        }
+        document.getElementById('chatStatus').style.color = 'var(--green)';
+        document.getElementById('chatStatus').textContent = '● Conectado';
+    } catch(e) {
+        console.error('Chat error:', e);
+        document.getElementById('chatStatus').style.color = 'var(--red)';
+        document.getElementById('chatStatus').textContent = '● Desconectado';
+    }
+}
+
+async function sendMessageFromPanel(phone){
+    const inp = document.getElementById('chatInput');
+    const msg = inp.value.trim();
+    if(!msg || !settings.waApi) return;
+    
+    inp.disabled = true;
+    try {
+        const res = await fetch(`${settings.waApi}/send-message`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ number: phone, message: msg })
+        });
+        if(res.ok) {
+            inp.value = '';
+            loadChatHistory(phone, true);
+        } else {
+            toast('Error al enviar','error');
+        }
+    } catch(e) {
+        toast('Error de conexión','error');
+    }
+    inp.disabled = false;
+    inp.focus();
+}
+
+/* ═══════════════════════════════════════════════
+   MÓDULO ADMINISTRACIÓN (SISTEMA INTEGRADO ICDE)
+   ═══════════════════════════════════════════════ */
+let adminData = { properties: [], silvia_ledger: {} };
+let currentAdminSubTab = 'matriz';
+let currentAdminYear = '2026';
+let currentAdminMonth = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"][new Date().getMonth()] || 'MAYO';
+let currentAdminFilter = 'todos'; // 'todos', 'ocupados', 'disponibles'
+let showAdminCharts = false;
+let currentAdminSort = 'nombre'; // 'nombre', 'precio', 'disponibles', 'ocupados'
+let currentAdminPropName = null;
+let currentCitaId = null;
+let waBridgeConnected = false;
+
+// Formateador seguro de moneda
+const safeFormatP = (v) => {
+  if (typeof formatP === 'function') return formatP(v);
+  return '$' + Math.round(v).toLocaleString('es-CO');
+};
+
+function ensureUniqueIds(data) {
+  if (data && data.properties) {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonthIdx = today.getMonth();
+
+    data.properties.forEach(p => {
+      if (p.excel_row) {
+        p.id = String(p.excel_row);
+      }
+
+      if (p.payments) {
+        const sortedYears = Object.keys(p.payments).map(Number).sort((a, b) => a - b);
+        const chronologicalMonths = [];
+        sortedYears.forEach(year => {
+          p.payments[year].forEach((m, mIdx) => {
+            chronologicalMonths.push({
+              year,
+              monthIdx: mIdx,
+              cell: m
+            });
+          });
+        });
+
+        const paidIndices = [];
+        const deliveryIndices = [];
+
+        chronologicalMonths.forEach((item, idx) => {
+          const m = item.cell;
+          const valUpper = String(m.value).trim().toUpperCase();
+          const numVal = parseFloat(String(m.value).replace(/[^0-9.]/g, ''));
+          const isPaidCell = (!isNaN(numVal) && numVal > 0) || m.status === 'PAID' || m.status === 'NEW_CONTRACT' || valUpper.includes('CONTRATO') || valUpper.includes('NUEVO');
+          const isDeliveryCell = m.status === 'DELIVERY' || valUpper.includes('ENTREGA');
+
+          if (isPaidCell) {
+            paidIndices.push(idx);
+          } else if (isDeliveryCell) {
+            deliveryIndices.push(idx);
+          }
+        });
+
+        const hasAnyPayment = paidIndices.length > 0;
+        const maxPaidIdx = hasAnyPayment ? Math.max(...paidIndices) : -1;
+
+        let startDt = null;
+        if (p.start_date) {
+          const sStr = String(p.start_date).trim();
+          if (sStr.includes('-')) {
+            const parts = sStr.split('-');
+            if (parts.length === 3) {
+              if (parts[0].length === 4) startDt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+              else startDt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, 1);
+            }
+          } else if (sStr.includes('/')) {
+            const parts = sStr.split('/');
+            if (parts.length === 3) {
+              if (parts[2].length === 4) startDt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, 1);
+              else startDt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+            }
+          }
+        }
+        let durationMonths = parseInt(p.duration, 10) || 12;
+        const hasTenant = p.tenant_name && String(p.tenant_name).trim() !== '';
+        const isVacantByName = p.name && String(p.name).toUpperCase().includes('DESOCUPAD');
+
+        const isOccupiedProp = !isVacantByName && (hasTenant || Boolean(startDt));
+
+        let dynamicOverallStatus = isOccupiedProp ? 'Ocupado' : 'Desocupado';
+
+        let rolledEndDt = null;
+        if (startDt && isOccupiedProp) {
+          rolledEndDt = new Date(startDt.getFullYear(), startDt.getMonth() + durationMonths, 1);
+          const lastDelivery = deliveryIndices.reduce((max, i) => Math.max(max, i), -1);
+          const lastPaid = paidIndices.reduce((max, i) => Math.max(max, i), -1);
+          const hasDelivered = (lastDelivery > lastPaid);
+
+          if (!hasDelivered) {
+            const targetDate = new Date(currentYear, currentMonthIdx, 1);
+            while (rolledEndDt <= targetDate) {
+              rolledEndDt = new Date(rolledEndDt.getFullYear(), rolledEndDt.getMonth() + durationMonths, 1);
+            }
+          }
+        }
+
+        chronologicalMonths.forEach((item, idx) => {
+          const m = item.cell;
+          const y = item.year;
+          const mIdx = item.monthIdx;
+          const valUpper = String(m.value).trim().toUpperCase();
+          const numVal = parseFloat(String(m.value).replace(/[^0-9.]/g, ''));
+          const isPaidCell = (!isNaN(numVal) && numVal > 0) || m.status === 'PAID' || m.status === 'NEW_CONTRACT' || valUpper.includes('CONTRATO') || valUpper.includes('NUEVO');
+          const isDeliveryCell = m.status === 'DELIVERY' || valUpper.includes('ENTREGA');
+
+          const lastDelivery = deliveryIndices.filter(i => i <= idx).reduce((max, i) => Math.max(max, i), -1);
+          const lastPaid = paidIndices.filter(i => i <= idx).reduce((max, i) => Math.max(max, i), -1);
+
+          const mDate = new Date(y, mIdx, 1);
+          let isBeforeStart = false;
+          let isAfterEnd = false;
+          if (startDt) {
+            const cStart = new Date(startDt.getFullYear(), startDt.getMonth(), 1);
+            if (mDate < cStart) isBeforeStart = true;
+          }
+          if (rolledEndDt) {
+            if (mDate >= rolledEndDt) isAfterEnd = true;
+          }
+
+          const isCurrent = (y === currentYear && mIdx === currentMonthIdx);
+          const isFuture = (y > currentYear || (y === currentYear && mIdx > currentMonthIdx));
+
+          if (isPaidCell) {
+            // Keep PAID / NEW_CONTRACT
+          } else if (isDeliveryCell) {
+            m.status = 'DELIVERY';
+          } else if (!isOccupiedProp || lastDelivery > lastPaid || isBeforeStart || isAfterEnd) {
+            m.status = 'VACANT';
+            m.value = 'DESOCUPADO';
+          } else if (isFuture) {
+            m.status = 'FUTURE';
+            m.value = '-';
+          } else if (isCurrent) {
+            const todayDay = today.getDate();
+            const limitDay = (p.due_day && p.due_day > 0) ? p.due_day : 5;
+            if (todayDay < limitDay) {
+              m.status = 'AL_DIA';
+            } else {
+              m.status = 'PENDING';
+            }
+            m.value = '-';
+          } else {
+            // Past month during active contract
+            m.status = 'PENDING';
+            m.value = '-';
+          }
+
+          if (isCurrent) {
+            dynamicOverallStatus = (m.status === 'VACANT') ? 'Desocupado' : 'Ocupado';
+          }
+        });
+        p.status = dynamicOverallStatus;
+      }
+    });
+  }
+  return data;
+}
+
+function mergeLocalAdminData(freshData) {
+  const cachedStr = localStorage.getItem('icde_admin_data');
+  if (!cachedStr) return freshData;
+  try {
+    const cachedData = JSON.parse(cachedStr);
+    if (!cachedData || !cachedData.properties) return freshData;
+
+    freshData.properties.forEach(freshProp => {
+      const cachedProp = cachedData.properties.find(c => String(c.id) === String(freshProp.id) || (c.excel_row && String(c.excel_row) === String(freshProp.excel_row)));
+      if (cachedProp) {
+        ['tenant_name', 'tenant_phone', 'start_date', 'duration', 'deposit', 'increase_notes', 'damage_notes'].forEach(key => {
+          if (cachedProp[key] && !freshProp[key]) {
+            freshProp[key] = cachedProp[key];
+          }
+        });
+        if (cachedProp.payments && freshProp.payments) {
+          Object.keys(cachedProp.payments).forEach(year => {
+            if (!freshProp.payments[year]) freshProp.payments[year] = cachedProp.payments[year];
+            else {
+              cachedProp.payments[year].forEach(cPay => {
+                const fPay = freshProp.payments[year].find(f => f.month === cPay.month);
+                if (fPay) {
+                  if (cPay.status && cPay.status !== 'UNSTARTED' && cPay.status !== 'PENDING' && fPay.status === 'PENDING') {
+                    fPay.status = cPay.status;
+                    fPay.value = cPay.value;
+                  }
+                } else {
+                  freshProp.payments[year].push(cPay);
+                }
+              });
+            }
+          });
+        }
+      }
+    });
+
+    cachedData.properties.forEach(cachedProp => {
+      const existsInFresh = freshData.properties.some(f => String(f.id) === String(cachedProp.id) || (f.excel_row && String(f.excel_row) === String(cachedProp.excel_row)));
+      if (!existsInFresh) {
+        freshData.properties.push(cachedProp);
+      }
+    });
+  } catch(e) {
+    console.warn("Error en mergeLocalAdminData:", e);
+  }
+  return freshData;
+}
+
+async function loadAdminData() {
+  try {
+    console.log('Cargando datos de administración desde la nube...');
+    // Intentar desde Apps Script con un abort controller
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s
+    
+    const url = ADMIN_SCRIPT_URL + '?action=getAdminData&t=' + Date.now();
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    
+    if (res.ok) {
+      const data = await res.json();
+      if (data && !data.error && data.properties && data.properties.length) {
+        adminData = ensureUniqueIds(mergeLocalAdminData(data));
+        localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+        console.log('Datos de administración cargados desde la nube con éxito.');
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('No se pudo cargar desde la nube. Usando caché local...', e);
+  }
+
+  // Fallback 1: admin_data.json local
+  try {
+    const res = await fetch('admin_data.json');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.properties && data.properties.length) {
+        adminData = ensureUniqueIds(mergeLocalAdminData(data));
+        console.log('Datos de administración cargados desde el archivo estático local.');
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('No se pudo cargar desde admin_data.json:', e);
+  }
+
+  // Fallback 2: localStorage
+  const cached = localStorage.getItem('icde_admin_data');
+  if (cached) {
+    try {
+      adminData = ensureUniqueIds(JSON.parse(cached));
+      console.log('Datos de administración cargados desde la caché de localStorage.');
+      return;
+    } catch (err) {
+      console.error('Error parseando caché de adminData:', err);
+    }
+  }
+}
+
+async function checkWhatsAppBridge() {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1200);
+    const res = await fetch('http://localhost:3000/status', { 
+      mode: 'cors',
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    waBridgeConnected = res.ok;
+  } catch (e) {
+    waBridgeConnected = false;
+  }
+  updateWhatsAppStatusDot();
+}
+
+function updateWhatsAppStatusDot() {
+  const dot = document.getElementById('waStatusDot');
+  const text = document.getElementById('waStatusText');
+  if (dot && text) {
+    if (waBridgeConnected) {
+      dot.className = 'wa-status-dot active';
+      text.textContent = 'Puente WA: Conectado (Port 3000)';
+      text.style.color = '#22c55e';
+    } else {
+      dot.className = 'wa-status-dot inactive';
+      text.textContent = 'Puente WA: Desconectado';
+      text.style.color = 'var(--muted)';
+    }
+  }
+}
+
+function changeAdminSubTab(tabName) {
+  currentAdminSubTab = tabName;
+  renderAdministracion();
+}
+
+function changeAdminYear(year) {
+  currentAdminYear = year;
+  renderAdministracion();
+}
+
+function changeAdminMonth(month) {
+  currentAdminMonth = month;
+  renderAdministracion();
+}
+
+function setAdminFilter(filterVal) {
+  currentAdminFilter = filterVal;
+  document.querySelectorAll('#adminFiltersContainer .chip-filtro').forEach(btn => {
+    btn.classList.toggle('sel', btn.getAttribute('data-filter') === filterVal);
+  });
+  renderAdministracionContent();
+}
+
+function setAdminSort(sortVal) {
+  currentAdminSort = sortVal;
+  renderAdministracionContent();
+}
+
+function toggleAdminCharts() {
+  showAdminCharts = !showAdminCharts;
+  const wrapper = document.getElementById('adminAnalyticsWrapper');
+  if (wrapper) {
+    wrapper.style.display = showAdminCharts ? 'block' : 'none';
+  }
+  if (showAdminCharts) {
+    setTimeout(() => {
+      if (window.adminComisionesChartInstance) {
+        window.adminComisionesChartInstance.resize();
+      }
+    }, 50);
+  }
+}
+
+function renderAdministracion() {
+  const c = document.getElementById('mainContent');
+  if (!c) return;
+
+  if (!adminData.properties.length) {
+    c.innerHTML = `
+      <div class="section-header"><div class="section-title">💼 Administración de Inmuebles</div></div>
+      <div class="panel-section" style="text-align:center; padding:60px;">
+        <div class="spinner" style="margin:0 auto 20px;"></div>
+        <p>Cargando base de datos de administración y ledger contable...</p>
+        <button class="btn btn-secondary btn-sm" style="margin-top:20px;" onclick="refreshAdminData()">⟳ Forzar Recarga</button>
+      </div>`;
+    loadAdminData().then(() => {
+      checkWhatsAppBridge();
+      renderAdministracion();
+    });
+    return;
+  }
+
+  // Asegurar que el modal unificado existe en el DOM
+  if (!document.getElementById('adminUnifiedModal')) {
+    const overlay = document.createElement('div');
+    overlay.id = 'modalOverlay';
+    overlay.className = 'modal-overlay';
+    overlay.onclick = () => { closeUnifiedModal(); };
+    document.body.appendChild(overlay);
+
+    const modal = document.createElement('div');
+    modal.id = 'adminUnifiedModal';
+    modal.className = 'matrix-detail-modal';
+    document.body.appendChild(modal);
+  }
+
+  // Renderizar la base estructural
+  c.innerHTML = `
+    <div class="section-header" style="margin-bottom:15px;">
+      <div class="section-title" style="margin-bottom:0;">💼 Administración de Inmuebles</div>
+    </div>
+
+    <!-- KPI GRID DINÁMICO (SIEMPRE VISIBLE) -->
+    <div id="adminKpisContainer" style="margin-bottom: 14px;">
+      <!-- Se llena dinámicamente -->
+    </div>
+
+    <!-- PANEL DE CONTROLES DE ADMINISTRACIÓN -->
+    <div class="panel-section" style="padding: 10px 0; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); margin-bottom: 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap: wrap; row-gap: 10px; width: 100%; padding: 0 20px; box-sizing: border-box;">
+        <!-- BUSCADOR (IZQUIERDA) -->
+        <div class="pc-buscar-row-premium" style="max-width: 320px; margin-bottom: 0; flex-shrink: 1; min-width: 140px;">
+          <span style="padding:0 8px 0 12px; color: var(--gold); display: flex; align-items: center; flex-shrink: 0;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </span>
+          <input type="text" id="adminPropertySearch" placeholder="Buscar inmueble, dueño o inquilino..." oninput="renderAdministracionContent()" style="font-size:13px; background: transparent; color: #fff; border: none; outline: none; width: 100%; min-width: 0;"/>
+        </div>
+
+        <!-- FILTROS DE ESTADO (CENTRO) -->
+        <div id="adminFiltersContainer" style="display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap;">
+          <button class="chip-filtro ${currentAdminFilter==='todos'?'sel':''}" data-filter="todos" onclick="setAdminFilter('todos')">Todos</button>
+          <button class="chip-filtro ${currentAdminFilter==='pendientes'?'sel':''}" data-filter="pendientes" onclick="setAdminFilter('pendientes')">🔴 Pendientes</button>
+          <button class="chip-filtro ${currentAdminFilter==='disponibles'?'sel':''}" data-filter="disponibles" onclick="setAdminFilter('disponibles')">⚪ Desocupados</button>
+          <button class="chip-filtro ${currentAdminFilter==='silvia'?'sel':''}" data-filter="silvia" onclick="setAdminFilter('silvia')">🏢 Silvia</button>
+        </div>
+
+        <!-- ORDENACIÓN (DERECHA-CENTRO) -->
+        <div style="position: relative; display: inline-block; flex-shrink: 0; cursor: pointer;">
+          <div class="form-input" style="display: flex; align-items: center; justify-content: space-between; width: 130px; height: 38px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; padding: 0 14px; box-sizing: border-box; pointer-events: none;">
+            <span>Ordenar por</span>
+            <span style="color: var(--gold); font-size: 10px; margin-left: 6px;">▼</span>
+          </div>
+          <select id="adminSortSelect" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 13px; color-scheme: dark;" onchange="setAdminSort(this.value)">
+            <option value="nombre" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'nombre' ? 'selected' : ''}>Nombre</option>
+            <option value="precio" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'precio' ? 'selected' : ''}>Precio</option>
+            <option value="propietario" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'propietario' ? 'selected' : ''}>Propietario</option>
+            <option value="disponibles" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'disponibles' ? 'selected' : ''}>Disponibles</option>
+            <option value="ocupados" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'ocupados' ? 'selected' : ''}>Ocupados</option>
+            <option value="fecha_inicio" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'fecha_inicio' ? 'selected' : ''}>Día de pago</option>
+          </select>
+        </div>
+
+        <!-- ACCIONES Y FILTROS (DERECHA) -->
+        <div style="display: flex; gap: 10px; align-items: center; flex-shrink: 0; flex-wrap: wrap; min-width: 0; row-gap: 8px;">
+          <span style="font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing:0.05em; flex-shrink: 0;">AÑO:</span>
+          <select id="adminYearSelect" class="form-input" style="width: 80px; height: 38px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; cursor:pointer; flex-shrink: 0; color-scheme: dark;" onchange="changeAdminYear(this.value)">
+            <option value="2023" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2023' ? 'selected' : ''}>2023</option>
+            <option value="2024" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2024' ? 'selected' : ''}>2024</option>
+            <option value="2025" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2025' ? 'selected' : ''}>2025</option>
+            <option value="2026" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2026' ? 'selected' : ''}>2026</option>
+            <option value="2027" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2027' ? 'selected' : ''}>2027</option>
+          </select>
+
+
+
+
+          <button class="btn btn-gold btn-sm" style="height: 38px; border-radius: 10px; margin-left: 5px; flex-shrink: 0; padding: 0 16px; font-weight: 700;" onclick="abrirCrearInmuebleAdmin()">➕ Crear Nueva Propiedad</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL MATRIZ DE PAGOS -->
+    <div class="unified-admin-panel" style="margin-top: 0;">
+      <!-- CONTENIDO GENERAL -->
+      <div id="adminTabContent" style="position:relative; min-height: 200px;">
+        <!-- Se renderiza según subpestaña -->
+      </div>
+    </div>
+  `;
+
+  checkWhatsAppBridge();
+  renderAdministracionContent();
+}
+
+function getMonthlyComisionesData(year) {
+  const monthsNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+  const expected = new Array(12).fill(0);
+  const collected = new Array(12).fill(0);
+
+  adminData.properties.forEach(p => {
+    const rent = parseFloat(p.monthly_rent) || 0;
+    const paymentsYear = p.payments[year] || [];
+    
+    paymentsYear.forEach(m => {
+      const mIdx = monthsNames.indexOf(m.month.toUpperCase());
+      if (mIdx !== -1) {
+        const st = m.status;
+        const val = parseFloat(m.value) || 0;
+
+        if (st === 'PAID') {
+          expected[mIdx] += rent;
+          collected[mIdx] += val || rent;
+        } else if (st === 'PENDING') {
+          expected[mIdx] += rent;
+        } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'AL_DIA' || st === 'FUTURE') {
+          expected[mIdx] += rent;
+          if (val > 0) {
+            collected[mIdx] += val;
+          }
+        } else if (st === 'DELIVERY') {
+          // En Entrega no se cobra canon ese mes (no suma a expected)
+          if (val > 0) {
+            collected[mIdx] += val;
+          }
+        }
+      }
+    });
+  });
+
+  return {
+    expected: expected.map(v => v * 0.10),
+    collected: collected.map(v => v * 0.10)
+  };
+}
+
+function renderAdministracionContent() {
+  const searchVal = document.getElementById('adminPropertySearch') ? document.getElementById('adminPropertySearch').value.toLowerCase().trim() : '';
+  const tabContent = document.getElementById('adminTabContent');
+  const kpisContainer = document.getElementById('adminKpisContainer');
+  if (!tabContent || !kpisContainer) return;
+
+  const isOccupied = (p) => {
+    const paymentsYear = p.payments[currentAdminYear] || [];
+    const payMonth = paymentsYear.find(m => m.month === currentAdminMonth);
+    if (!payMonth) return false;
+    const st = payMonth.status;
+    return st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY' || st === 'AL_DIA';
+  };
+
+  const filteredProperties = adminData.properties.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchVal) ||
+                          (p.owner && p.owner.toLowerCase().includes(searchVal)) ||
+                          (p.owner_phone && p.owner_phone.includes(searchVal)) ||
+                          (p.tenant_name && p.tenant_name.toLowerCase().includes(searchVal)) ||
+                          (p.tenant_phone && p.tenant_phone.includes(searchVal)) ||
+                          (p.increase_notes && p.increase_notes.toLowerCase().includes(searchVal));
+    if (!matchesSearch) return false;
+
+    const getMonthStatus = (prop) => {
+      const paymentsYear = prop.payments[currentAdminYear] || [];
+      const payMonth = paymentsYear.find(m => m.month === currentAdminMonth);
+      return payMonth ? payMonth.status : 'VACANT';
+    };
+
+    const statusMonth = getMonthStatus(p);
+    const occupied = isOccupied(p);
+
+    if (currentAdminFilter === 'ocupados') return occupied;
+    if (currentAdminFilter === 'disponibles') return !occupied;
+    if (currentAdminFilter === 'pendientes') return statusMonth === 'PENDING';
+    if (currentAdminFilter === 'aldia') return statusMonth === 'AL_DIA';
+    if (currentAdminFilter === 'pagados') return statusMonth === 'PAID' || statusMonth === 'NEW_CONTRACT';
+    if (currentAdminFilter === 'silvia') {
+      const ownerMatch = p.owner && String(p.owner).toLowerCase().includes('silvia');
+      const nameMatch = p.name && String(p.name).toLowerCase().includes('silvia');
+      const conjuntoMatch = (p['Conjunto'] || p['Conjunto / Edificio'] || p['edificio'] || p['conjunto']) && String(p['Conjunto'] || p['Conjunto / Edificio'] || p['edificio'] || p['conjunto']).toLowerCase().includes('silvia');
+      return ownerMatch || nameMatch || conjuntoMatch;
+    }
+    return true;
+  });
+
+  filteredProperties.sort((a, b) => {
+    if (currentAdminSort === 'fecha_inicio') {
+      const getDayNum = (p) => {
+        if (p.due_day && p.due_day > 0) return parseInt(p.due_day, 10);
+        if (p.start_date) {
+          const parts = p.start_date.split('-');
+          if (parts.length === 3) {
+            const d = parseInt(parts[2], 10);
+            if (!isNaN(d)) return d;
+          }
+        }
+        return 31;
+      };
+      const dayA = getDayNum(a);
+      const dayB = getDayNum(b);
+      if (dayA !== dayB) return dayA - dayB;
+      return a.name.localeCompare(b.name);
+    }
+    if (currentAdminSort === 'precio') {
+      return (parseFloat(b.monthly_rent) || 0) - (parseFloat(a.monthly_rent) || 0);
+    }
+    if (currentAdminSort === 'propietario') {
+      return (a.owner || '').localeCompare(b.owner || '');
+    }
+    if (currentAdminSort === 'pendientes') {
+      const getMonthStatus = (prop) => {
+        const paymentsYear = prop.payments[currentAdminYear] || [];
+        const payMonth = paymentsYear.find(m => m.month === currentAdminMonth);
+        return payMonth ? payMonth.status : 'VACANT';
+      };
+      const aPend = getMonthStatus(a) === 'PENDING' ? 1 : 0;
+      const bPend = getMonthStatus(b) === 'PENDING' ? 1 : 0;
+      if (aPend !== bPend) return bPend - aPend;
+      return a.name.localeCompare(b.name);
+    }
+    if (currentAdminSort === 'aldia') {
+      const getMonthStatus = (prop) => {
+        const paymentsYear = prop.payments[currentAdminYear] || [];
+        const payMonth = paymentsYear.find(m => m.month === currentAdminMonth);
+        return payMonth ? payMonth.status : 'VACANT';
+      };
+      const aDia = getMonthStatus(a) === 'AL_DIA' ? 1 : 0;
+      const bDia = getMonthStatus(b) === 'AL_DIA' ? 1 : 0;
+      if (aDia !== bDia) return bDia - aDia;
+      return a.name.localeCompare(b.name);
+    }
+    if (currentAdminSort === 'disponibles') {
+      const aOcc = isOccupied(a) ? 1 : 0;
+      const bOcc = isOccupied(b) ? 1 : 0;
+      if (aOcc !== bOcc) return aOcc - bOcc; // 0 (disponible) antes de 1 (ocupado)
+      return a.name.localeCompare(b.name);
+    }
+    if (currentAdminSort === 'ocupados') {
+      const aOcc = isOccupied(a) ? 1 : 0;
+      const bOcc = isOccupied(b) ? 1 : 0;
+      if (aOcc !== bOcc) return bOcc - aOcc; // 1 (ocupado) antes de 0 (disponible)
+      return a.name.localeCompare(b.name);
+    }
+    // Default: nombre
+    return a.name.localeCompare(b.name);
+  });
+
+  // KPIs de arrendamiento
+  let totalEsperado = 0, totalRecaudado = 0, totalPendiente = 0, ocupados = 0, totalActivos = 0;
+  
+  // Metricas Edificio Silvia
+  let silviaEsperado = 0, silviaRecaudado = 0, silviaPendiente = 0, silviaOcupados = 0, silviaActivos = 0;
+  let inquilinosMoraCount = 0;
+
+  adminData.properties.forEach(p => {
+    const paymentsYear = p.payments[currentAdminYear] || [];
+    const rent = parseFloat(p.monthly_rent) || 0;
+    const isSilvia = p.owner && String(p.owner).toLowerCase().trim() === 'silvia';
+
+    let tieneMora = false;
+    // Sumar todos los cobros pendientes del año actual
+    paymentsYear.forEach(m => {
+      if (m.status === 'PENDING') {
+        totalPendiente += rent;
+        if (isSilvia) silviaPendiente += rent;
+        tieneMora = true;
+      }
+    });
+
+    if (tieneMora) {
+      inquilinosMoraCount++;
+    }
+
+    const paymentMonth = paymentsYear.find(m => m.month === currentAdminMonth);
+    if (paymentMonth) {
+      const st = paymentMonth.status;
+      const val = parseFloat(paymentMonth.value) || 0;
+      if (st === 'PAID') {
+        totalEsperado += rent; totalRecaudado += val || rent; ocupados++; totalActivos++;
+        if (isSilvia) {
+          silviaEsperado += rent; silviaRecaudado += val || rent; silviaOcupados++; silviaActivos++;
+        }
+      } else if (st === 'PENDING') {
+        totalEsperado += rent; ocupados++; totalActivos++;
+        if (isSilvia) {
+          silviaEsperado += rent; silviaOcupados++; silviaActivos++;
+        }
+      } else if (st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'AL_DIA') {
+        totalEsperado += rent;
+        if (val > 0) { totalRecaudado += val; }
+        ocupados++; totalActivos++;
+        if (isSilvia) {
+          silviaEsperado += rent;
+          if (val > 0) { silviaRecaudado += val; }
+          silviaOcupados++; silviaActivos++;
+        }
+      } else if (st === 'DELIVERY') {
+        // En Entrega no se cobra canon ese mes (no suma a canon esperado)
+        if (val > 0) { totalRecaudado += val; }
+        ocupados++; totalActivos++;
+        if (isSilvia) {
+          if (val > 0) { silviaRecaudado += val; }
+          silviaOcupados++; silviaActivos++;
+        }
+      } else if (st === 'VACANT') {
+        totalActivos++;
+        if (isSilvia) silviaActivos++;
+      }
+    }
+  });
+
+  const ocupacionPorcentaje = totalActivos > 0 ? Math.round((ocupados / totalActivos) * 100) : 0;
+  const totalComision = totalRecaudado * 0.10;
+  const comisionEsperada = totalEsperado * 0.10;
+  const progressPercent = comisionEsperada > 0 ? Math.round((totalComision / comisionEsperada) * 100) : 0;
+  const dashOffset = 263.89 - (263.89 * Math.min(100, progressPercent)) / 100;
+  const ocupacionDashOffset = 263.89 - (263.89 * Math.min(100, ocupacionPorcentaje)) / 100;
+  const recaudacionPorcentaje = totalEsperado > 0 ? Math.round((totalRecaudado / totalEsperado) * 100) : 0;
+  const recaudacionDashOffset = 263.89 - (263.89 * Math.min(100, recaudacionPorcentaje)) / 100;
+
+  kpisContainer.innerHTML = `
+    <div class="cont-hero" style="margin-bottom: 14px;">
+      <!-- 1. INMUEBLES ADMINISTRADOS -->
+      <div class="cont-hero-card" style="--card-accent: var(--gold);">
+        <span class="ch-icon">🏢</span>
+        <div class="ch-lbl">Inmuebles Administrados</div>
+        <div class="ch-val" style="display: flex; align-items: baseline; gap: 3px;">
+          <span style="color: #22c55e;">${ocupados}</span>
+          <span style="color: rgba(255,255,255,0.4); font-size: 15px; font-weight: 600; margin: 0 2px;">/</span>
+          <span style="color: #fff;">${totalActivos}</span>
+        </div>
+        <div class="ch-sub">
+          <span style="color: #22c55e;">🟢 ${ocupacionPorcentaje}% ocupación</span> (${ocupados} de ${totalActivos})
+        </div>
+      </div>
+
+      <!-- 2. RECAUDADO / CANON ESPERADO -->
+      <div class="cont-hero-card" style="--card-accent: #22c55e;">
+        <span class="ch-icon">💵</span>
+        <div class="ch-lbl">Recaudado / Canon (${currentAdminMonth})</div>
+        <div class="ch-val" style="color: #22c55e; font-size: 19px;">
+          ${safeFormatP(totalRecaudado)} <span style="color: rgba(255,255,255,0.4); font-size: 13px; font-weight: 600;">/ ${safeFormatP(totalEsperado)}</span>
+        </div>
+        <div class="ch-sub">
+          <span style="color: #22c55e;">🟢 ${recaudacionPorcentaje}% Recaudado</span>
+        </div>
+      </div>
+
+      <!-- 3. COMISIÓN ACUMULADA -->
+      <div class="cont-hero-card" style="--card-accent: var(--gold);">
+        <span class="ch-icon">📈</span>
+        <div class="ch-lbl">Comisión Acumulada (10%)</div>
+        <div class="ch-val" style="color: var(--gold); font-size: 19px;">
+          ${safeFormatP(totalComision)} <span style="color: rgba(255,255,255,0.4); font-size: 13px; font-weight: 600;">/ ${safeFormatP(totalEsperado * 0.10)}</span>
+        </div>
+        <div class="ch-sub">
+          <span style="color: var(--gold);">⭐ ${progressPercent}% del esperado</span>
+        </div>
+      </div>
+
+      <!-- 4. CARTERA PENDIENTE -->
+      <div class="cont-hero-card" style="--card-accent: ${totalPendiente > 0 ? '#ef4444' : 'var(--gold)'};">
+        <span class="ch-icon">${totalPendiente > 0 ? '🚨' : '✅'}</span>
+        <div class="ch-lbl">Cartera Pendiente</div>
+        <div class="ch-val" style="color: ${totalPendiente > 0 ? '#ef4444' : '#fff'}; font-size: 19px;">${safeFormatP(totalPendiente)}</div>
+        <div class="ch-sub" style="color: ${totalPendiente > 0 ? '#ef4444' : '#22c55e'};">${totalPendiente > 0 ? `🔴 ${inquilinosMoraCount} ${inquilinosMoraCount === 1 ? 'inquilino con mora activa' : 'inquilinos en mora activa'}` : '✓ Arrendatarios al día'}</div>
+      </div>
+
+      <!-- 5. EDIFICIO SILVIA -->
+      <div class="cont-hero-card" style="--card-accent: #f59e0b; display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid rgba(245,158,11,0.2); padding-bottom: 4px;">
+          <div class="ch-lbl" style="color: #f59e0b; margin-bottom: 0; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 4px;">🏛️ EDIFICIO SILVIA</div>
+          <div style="display: flex; align-items: baseline; gap: 2px; font-size: 15px; font-weight: 800; background: rgba(255,255,255,0.06); padding: 3px 8px; border-radius: 6px;" title="${silviaOcupados} ocupados de ${silviaActivos} inmuebles">
+            <span style="color: #22c55e;">${silviaOcupados}</span>
+            <span style="color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 600; margin: 0 1px;">/</span>
+            <span style="color: #fff; font-size: 15px;">${silviaActivos}</span>
+          </div>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: rgba(255,255,255,0.85); width: 100%;">
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 2px;">
+            <span style="color: var(--muted);">Canon Esperado:</span>
+            <strong style="color: #fff;">${safeFormatP(silviaEsperado)}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 2px;">
+            <span style="color: var(--muted);">Recaudado Efectivo:</span>
+            <strong style="color: #22c55e;">${safeFormatP(silviaRecaudado)}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 2px;">
+            <span style="color: var(--muted);">Cartera Pendiente:</span>
+            <strong style="color: ${silviaPendiente > 0 ? '#ef4444' : '#fff'};">${safeFormatP(silviaPendiente)}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--muted);">Comisión Acum. (10%):</span>
+            <strong style="color: #eab308;">${safeFormatP(silviaRecaudado * 0.10)}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  tabContent.innerHTML = renderMatrizPagos(filteredProperties);
+}
+
+function renderResumenCobros(propertiesList) {
+  if (propertiesList.length === 0) {
+    return `<div class="panel-section" style="text-align:center; padding:40px; color:var(--muted);">No se encontraron inmuebles con el filtro ingresado.</div>`;
+  }
+
+  return `
+    <div class="panel-section" style="padding:0; overflow:hidden; border:none; border-radius: 16px;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Propiedad</th>
+            <th>Propietario / Inquilino</th>
+            <th>Canon Mensual</th>
+            <th style="text-align:center;">Días de Cobro</th>
+            <th style="text-align:center;">Estado en ${currentAdminMonth}</th>
+            <th style="text-align:center; width: 140px;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${propertiesList.map(p => {
+            const paymentsYear = p.payments[currentAdminYear] || [];
+            const payInfo = paymentsYear.find(m => m.month === currentAdminMonth) || { status: 'UNSTARTED', value: 0 };
+            
+            const dueDay = p.due_day ? Math.round(p.due_day) : 5;
+            const maxDueDay = p.max_due_day ? Math.round(p.max_due_day) : 10;
+            
+            return `
+              <tr>
+                <td>
+                  <div style="font-weight:700; color:#fff; font-size:14px; letter-spacing:-0.01em;">${p.name}</div>
+                  <div style="font-size:11px; color:var(--muted); margin-top:2px;">
+                    ${p.increase_notes ? `📈 ${p.increase_notes.split('|')[1] || p.increase_notes}` : 'Sin notas de incremento'}
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight:600; color:rgba(255,255,255,0.9);">${p.tenant_name || ''}</div>
+                  <div style="font-size:11px; color:var(--muted); margin-top:2px;">Inicio: ${p.start_date || 'N/A'} (${p.duration || 12} meses)</div>
+                </td>
+                <td>
+                  <div style="color:var(--gold); font-weight:700; font-size:14px;">${safeFormatP(p.monthly_rent)}</div>
+                  ${p.deposit > 0 ? `<div style="font-size:11px; color:rgba(34,197,94,0.85); margin-top:2px;">Depósito: ${safeFormatP(p.deposit)}</div>` : ''}
+                </td>
+                <td style="text-align:center;">
+                  <span style="font-weight:600; color:#fff; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; font-size: 11px;">
+                    Días ${dueDay} - ${maxDueDay}
+                  </span>
+                </td>
+                <td style="text-align:center;">
+                  <span class="${getStatusBadgeClass(payInfo.status)}">
+                    ${getStatusLabel(payInfo.status)}
+                  </span>
+                </td>
+                <td style="text-align:center;">
+                  <div style="display:flex; gap:8px; justify-content:center;">
+                    <button class="btn btn-sm btn-secondary" style="padding: 6px 10px; font-size: 14px;" 
+                            onclick="sendAdminReminder('${p.tenant_name || ''}', '${p.name}', '${p.monthly_rent}', '${currentAdminMonth}', '${currentAdminYear}', ${dueDay})" 
+                            title="Enviar recordatorio WhatsApp">
+                      💬
+                    </button>
+                    <button class="btn btn-sm btn-secondary" style="padding: 6px 10px; font-size: 14px;" 
+                            onclick="addIndividualToCalendar('${p.name}', '${p.tenant_name || ''}', ${p.monthly_rent}, '${currentAdminYear}', '${currentAdminMonth}', ${dueDay}, ${maxDueDay})" 
+                            title="Agregar a Google Calendar">
+                      📅
+                    </button>
+                    <button class="btn btn-sm btn-secondary" style="padding: 6px 10px; font-size: 14px;" 
+                            onclick="abrirEditarInmueble('${p.id}')" 
+                            title="Editar Inmueble">
+                      ✏️
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderMatrizPagos(propertiesList) {
+  const monthsAbbr = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+  const monthsFull = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+
+  if (propertiesList.length === 0) {
+    return `<div class="panel-section" style="text-align:center; padding:40px; color:var(--muted);">No se encontraron inmuebles.</div>`;
+  }
+
+  return `
+    <div class="matrix-wrapper">
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th class="col-prop">Propiedad</th>
+            ${monthsAbbr.map(m => `<th>${m}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${propertiesList.map(p => {
+            const paymentsYear = p.payments[currentAdminYear] || [];
+            
+            const isSelected = String(p.name).trim() === String(currentAdminPropName).trim();
+            return `
+              <tr class="${isSelected ? 'active-admin-row' : ''}" data-prop-name="${String(p.name).trim()}" onclick="abrirEditarInmueble('${p.id}', 'cobro')">
+                <td class="cell-prop" title="${p.name} (Propietario: ${p.owner}${p.tenant_name ? `, Inquilino: ${p.tenant_name}` : ''})">
+                  <div style="font-weight:700; color:#fff; font-size:13px;">${p.name}${p.tenant_name ? ' - ' + p.tenant_name : ''}</div>
+                  <div style="font-size:10px; color:var(--muted); font-weight:500;">${p.owner || ''}</div>
+                </td>
+                ${monthsFull.map(mFull => {
+                  let pay = paymentsYear.find(m => m.month === mFull) || { status: 'UNSTARTED', value: 0 };
+
+                  // Si AL_DIA pero hay pagos PENDIENTES en meses PASADOS del año actual, mostrar como Futuro
+                  if (pay.status === 'AL_DIA') {
+                    const _viewY = parseInt(currentAdminYear, 10);
+                    const _now = new Date();
+                    const _nowY = _now.getFullYear();
+                    const _nowM = _now.getMonth(); // 0-based
+                    const hasPastPending = (p.payments[_viewY] || []).some((m, mIdx) => {
+                      const isPast = _viewY < _nowY || (_viewY === _nowY && mIdx < _nowM);
+                      return isPast && m.status === 'PENDING';
+                    });
+                    if (hasPastPending) pay = { ...pay, status: 'FUTURE' };
+                  }
+                  let cellContent = '·';
+                  if (pay.status === 'PAID') cellContent = '✓';
+                  else if (pay.status === 'PENDING') cellContent = '$';
+                  else if (pay.status === 'PREAVISO') cellContent = '⚠';
+                  else if (pay.status === 'NEW_CONTRACT') cellContent = '★';
+                  else if (pay.status === 'VACANT') cellContent = '-';
+                  else if (pay.status === 'NO_RENEW') cellContent = '⌛';
+                  else if (pay.status === 'DELIVERY') cellContent = '⛳';
+                  else if (pay.status === 'AL_DIA') cellContent = '☀';
+                  
+                  const tooltipText = `${p.name} - ${mFull}: ${getStatusLabel(pay.status)} ${pay.value && parseFloat(pay.value) > 0 ? safeFormatP(pay.value) : ''}`;
+                  
+                  return `
+                    <td>
+                      <div id="cell-${p.id}-${mFull}-${currentAdminYear}" class="matrix-cell status-cell-${pay.status}" 
+                           data-tooltip="${tooltipText}"
+                           style="position: relative;">
+                        ${cellContent}
+                        <select style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; color-scheme: dark;"
+                                onclick="event.stopPropagation();"
+                                onchange="quickSaveAdminPaymentStatus('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${mFull}', '${currentAdminYear}', this.value)">
+                          <option value="PAID" style="background-color: #121212; color: #fff;" ${pay.status === 'PAID' ? 'selected' : ''}>🟢 Pagado</option>
+                          <option value="PENDING" style="background-color: #121212; color: #fff;" ${pay.status === 'PENDING' ? 'selected' : ''}>🔴 Pendiente</option>
+                          <option value="VACANT" style="background-color: #121212; color: #fff;" ${pay.status === 'VACANT' ? 'selected' : ''}>⚪ Desocupado</option>
+                          <option value="PREAVISO" style="background-color: #121212; color: #fff;" ${pay.status === 'PREAVISO' ? 'selected' : ''}>🟣 Preaviso</option>
+                          <option value="NEW_CONTRACT" style="background-color: #121212; color: #fff;" ${pay.status === 'NEW_CONTRACT' ? 'selected' : ''}>🔵 Nuevo Contrato</option>
+                          <option value="NO_RENEW" style="background-color: #121212; color: #fff;" ${pay.status === 'NO_RENEW' ? 'selected' : ''}>🟡 No Renovará</option>
+                          <option value="DELIVERY" style="background-color: #121212; color: #fff;" ${pay.status === 'DELIVERY' ? 'selected' : ''}>🟠 Entrega</option>
+                          <option value="FUTURE" style="background-color: #121212; color: #fff;" ${pay.status === 'FUTURE' ? 'selected' : ''}>⚫ Futuro</option>
+                          <option value="AL_DIA" style="background-color: #121212; color: #fff;" ${pay.status === 'AL_DIA' ? 'selected' : ''}>☀️ Al día</option>
+                        </select>
+                      </div>
+                    </td>
+                  `;
+                }).join('')}
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderEdificioSilvia(searchVal) {
+  const transactions = adminData.silvia_ledger[currentAdminYear] || [];
+  
+  const filteredTx = transactions.filter(t => {
+    return t.description.toLowerCase().includes(searchVal) || t.date.includes(searchVal);
+  });
+
+  if (filteredTx.length === 0) {
+    return `<div class="panel-section" style="text-align:center; padding:40px; color:var(--muted);">No hay transacciones registradas para el Edificio Silvia en el año ${currentAdminYear} con los filtros ingresados.</div>`;
+  }
+
+  return `
+    <div style="margin-bottom:15px; background:rgba(212,168,75,0.05); border:1px solid rgba(212,168,75,0.15); padding:14px; border-radius:12px; color:var(--gold); font-size:12.5px; font-weight:600;">
+      🏢 Informes de Recaudos y Abonos Contables - Hojas de Administración de Copropiedad Edificio Silvia
+    </div>
+    
+    <div class="panel-section" style="padding:0; overflow:hidden; border:none; border-radius: 16px;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th style="width:100px;">Fecha</th>
+            <th>Descripción Contable</th>
+            <th style="text-align:right; width:150px;">Recaudo Mes (Débito)</th>
+            <th style="text-align:right; width:150px;">Abono Real (Crédito)</th>
+            <th style="text-align:right; width:150px;">Saldo</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filteredTx.map(t => {
+            const recVal = parseFloat(t.recaudo) || 0;
+            const aboVal = parseFloat(t.abono) || 0;
+            const salVal = parseFloat(t.saldo) || 0;
+            
+            return `
+              <tr>
+                <td style="font-weight:600; color:rgba(255,255,255,0.7);">${t.date || '<span style="color:var(--muted);">S/F</span>'}</td>
+                <td style="font-weight:500; color:#fff; font-size:13px; max-width:400px; overflow:hidden; text-overflow:ellipsis;">
+                  ${t.description}
+                </td>
+                <td style="text-align:right; color:rgba(255,255,255,0.95); font-weight:600;">
+                  ${recVal > 0 ? safeFormatP(recVal) : '—'}
+                </td>
+                <td style="text-align:right; color:#22c55e; font-weight:700;">
+                  ${aboVal > 0 ? safeFormatP(aboVal) : '—'}
+                </td>
+                <td style="text-align:right; color:var(--gold); font-weight:700;">
+                  ${safeFormatP(salVal)}
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function syncPropertyToCalendar(propertyId) {
+  toast('Generando archivo de calendario...', 'success');
+  try {
+    const prop = adminData.properties.find(p => p.id === propertyId);
+    if (!prop) {
+      toast('Inmueble no encontrado', 'error');
+      return;
+    }
+    const icsContent = generateICS([prop], currentAdminYear);
+    
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `ICDE_${prop.name.replace(/\s+/g, '_')}_Calendario_${currentAdminYear}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast('Calendario individual descargado ✓', 'success');
+  } catch (e) {
+    console.error('Error generating property ICS:', e);
+    toast('Error al generar calendario', 'error');
+  }
+}
+
+function sendAdminReminder(tenantName, prop, amount, month, year, dueDay, directPhone) {
+  let phone = directPhone || '';
+  if (!phone && tenantName) {
+    const lead = leads.find(l => l.nombre && (l.nombre.toLowerCase().includes(tenantName.toLowerCase()) || tenantName.toLowerCase().includes(l.nombre.toLowerCase())));
+    phone = lead ? lead.celular : prompt(`No se encontró el teléfono del arrendatario para ${tenantName}. Por favor ingrésalo (código de país incluido sin '+', ej: 573001234567):`);
+  }
+  
+  if (!phone) return;
+  
+  const cleanPhone = phone.replace(/[^\d]/g, '');
+  
+  const ahora = new Date();
+  const monthsMap = {
+    "ENERO": 0, "FEBRERO": 1, "MARZO": 2, "ABRIL": 3, "MAYO": 4, "JUNIO": 5,
+    "JULIO": 6, "AGOSTO": 7, "SEPTIEMBRE": 8, "OCTUBRE": 9, "NOVIEMBRE": 10, "DICIEMBRE": 11
+  };
+  const targetMonthNum = monthsMap[String(month).toUpperCase()] || ahora.getMonth();
+  const targetYearNum = parseInt(year, 10) || ahora.getFullYear();
+  const dueDayVal = Math.round(dueDay) || 5;
+
+  const dueTargetDate = new Date(targetYearNum, targetMonthNum, dueDayVal, 0, 0, 0, 0);
+  const todayZero = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 0, 0, 0, 0);
+
+  let msg = '';
+  if (todayZero.getTime() < dueTargetDate.getTime()) {
+    // Un día antes (o antes) del día de cobro
+    msg = `¡Buenos días, ${tenantName || 'Inquilino'}! ☀️\n\nLe contacta el asistente IA de ICDE Inmobiliaria, espero se encuentre muy bien.\n\nPara recordarle que mañana es el día acordado para el pago del arrendamiento de ${prop}.\n\nSabemos que la vida cotidiana es agitada y a veces se nos pueden pasar los detalles, por eso estamos aquí para apoyarle. 😊\n\nValoramos su compromiso y puntualidad. Si tiene alguna pregunta o novedad, no dude en comunicarse con nosotros, con gusto le atendemos. ¡Gracias por ser parte de la familia ICDE!\n\nAtentamente, 🏠 ICDE Inmobiliaria`;
+  } else {
+    // Cuando inicie el día de cobro (o después)
+    msg = `Hola ${tenantName || 'Inquilino'} te escribimos de ICDE Inmobiliaria para recordarte el pago del arrendamiento de ${prop}. ¡Muchas gracias!`;
+  }
+  
+  if (waBridgeConnected) {
+    toast('Enviando recordatorio automático...', 'info');
+    fetch('http://localhost:3000/send-message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number: cleanPhone, message: msg })
+    }).then(res => {
+      if (res.ok) {
+        toast('Recordatorio WhatsApp enviado ✓', 'success');
+      } else {
+        toast('Error al enviar. Usando enlace manual...', 'warning');
+        fallbackToManualWA(cleanPhone, msg);
+      }
+    }).catch(() => {
+      fallbackToManualWA(cleanPhone, msg);
+    });
+  } else {
+    fallbackToManualWA(cleanPhone, msg);
+  }
+}
+
+function fallbackToManualWA(phone, msg) {
+  const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+  toast('Abriendo enlace de WhatsApp Web...', 'success');
+}
+
+async function sendBulkReminders() {
+  const pending = [];
+  adminData.properties.forEach(p => {
+    const pay = (p.payments[currentAdminYear] || []).find(m => m.month === currentAdminMonth);
+    if (pay && pay.status === 'PENDING') {
+      pending.push({ prop: p, pay: pay });
+    }
+  });
+  
+  if (pending.length === 0) {
+    toast(`No hay cobros PENDIENTES en ${currentAdminMonth} de ${currentAdminYear}`, 'info');
+    return;
+  }
+  
+  if (!confirm(`¿Deseas enviar recordatorios automáticos de cobro a los ${pending.length} inquilinos con cobros pendientes para ${currentAdminMonth} de ${currentAdminYear}?`)) return;
+  
+  if (waBridgeConnected) {
+    toast(`Iniciando envío de ${pending.length} recordatorios...`, 'info');
+    let successCount = 0;
+    
+    for (const item of pending) {
+      const p = item.prop;
+      const searchName = p.tenant_name || p.owner;
+      let phone = p.tenant_phone;
+      if (!phone && searchName) {
+        const lead = leads.find(l => l.nombre && (l.nombre.toLowerCase().includes(searchName.toLowerCase()) || searchName.toLowerCase().includes(l.nombre.toLowerCase())));
+        phone = lead ? lead.celular : null;
+      }
+      if (!phone) continue;
+      
+      const cleanPhone = phone.replace(/[^\d]/g, '');
+      try {
+        const res = await fetch('http://localhost:3000/send-reminder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            number: cleanPhone, 
+            name: p.tenant_name || p.owner, 
+            property: p.name, 
+            amount: p.monthly_rent, 
+            dueDate: p.due_day 
+          })
+        });
+        if (res.ok) successCount++;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    toast(`Envío finalizado: ${successCount} recordatorios enviados de ${pending.length}`, 'success');
+  } else {
+    alert("El puente de WhatsApp local (localhost:3000) está desconectado. Inicie la aplicación en 'whatsapp-bridge/server.js' para poder enviar masivamente en segundo plano sin intervención manual. Por ahora, use el botón individual 💬 en la lista para enviar por WhatsApp Web.");
+  }
+}
+
+function syncAllToCalendar() {
+  toast('Generando archivo de calendario para importación...', 'success');
+  try {
+    const icsContent = generateICS(adminData.properties, currentAdminYear);
+    
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `ICDE_Cobros_Calendario_${currentAdminYear}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast('Calendario descargado ✓ impórtalo en Google Calendar', 'success');
+  } catch (e) {
+    console.error('Error creating ICS:', e);
+    toast('Error al sincronizar calendario', 'error');
+  }
+}
+
+function generateICS(properties, year) {
+  let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ICDE Inmobiliaria//Calendar Sync//ES\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\n";
+  
+  properties.forEach(p => {
+    const dueDay = p.due_day ? Math.round(p.due_day) : 5;
+    const maxDueDay = p.max_due_day ? Math.round(p.max_due_day) : 10;
+    const rent = parseFloat(p.monthly_rent) || 0;
+    
+    const yearPayments = p.payments[year] || [];
+    yearPayments.forEach((pay, index) => {
+      if (pay.status === 'PENDING' || pay.status === 'PAID' || pay.status === 'PREAVISO' || pay.status === 'NEW_CONTRACT') {
+        const monthNum = index + 1;
+        const monthStr = monthNum < 10 ? '0' + monthNum : '' + monthNum;
+        const dayStr = dueDay < 10 ? '0' + dueDay : '' + dueDay;
+        
+        const dateStr = `${year}${monthStr}${dayStr}`;
+        
+        icsContent += "BEGIN:VEVENT\n";
+        icsContent += `UID:rent-${p.id}-${year}-${monthStr}@icde.com\n`;
+        icsContent += `DTSTART;VALUE=DATE:${dateStr}\n`;
+        icsContent += `SUMMARY:Cobro Arriendo - ${p.name} (${p.tenant_name || ''})\n`;
+        icsContent += `DESCRIPTION:Cobro de canon de arrendamiento de la propiedad ${p.name} por valor de ${safeFormatP(rent)}. Inquilino: ${p.tenant_name || ''}. Pagar antes del dia ${maxDueDay}.\n`;
+        icsContent += "SEQUENCE:0\nSTATUS:CONFIRMED\nTRANSP:TRANSPARENT\nEND:VEVENT\n";
+      }
+    });
+  });
+  
+  icsContent += "END:VCALENDAR";
+  return icsContent;
+}
+
+function addIndividualToCalendar(propName, tenantName, rent, year, month, dueDay, maxDueDay) {
+  const monthsMap = {
+    "ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, "MAYO": 5, "JUNIO": 6,
+    "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12
+  };
+  const monthNum = monthsMap[month] || 5;
+  const monthStr = monthNum < 10 ? '0' + monthNum : '' + monthNum;
+  const dayStr = dueDay < 10 ? '0' + dueDay : '' + dueDay;
+  
+  const eventDate = `${year}${monthStr}${dayStr}`;
+  const title = `Cobro Arriendo - ${propName} (${tenantName || ''})`;
+  const details = `Cobro de canon de arrendamiento de la propiedad ${propName} por valor de ${safeFormatP(rent)}. Inquilino: ${tenantName || ''}. Plazo maximo de pago: dia ${maxDueDay}.`;
+  
+  const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${eventDate}/${eventDate}&details=${encodeURIComponent(details)}&sf=true&output=xml`;
+  window.open(url, '_blank');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODAL UNIFICADO DE PROPIEDAD
+// ─────────────────────────────────────────────────────────────────────────────
+
+function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
+  let currentActiveTab = activeTab;
+  if (currentActiveTab === 'contrato') {
+    currentActiveTab = 'cobro';
+  }
+
+  const paymentsYear = p.payments[String(year)] || [];
+  const pay = paymentsYear.find(m => m.month === monthName) || { status: 'UNSTARTED', value: 0 };
+  const dueDay = p.due_day ? Math.round(p.due_day) : 5;
+  const maxDueDay = p.max_due_day ? Math.round(p.max_due_day) : 10;
+
+  const searchName = p.tenant_name || p.owner;
+  const lead = (leads || []).find(l => l.nombre && searchName && (l.nombre.toLowerCase().includes(searchName.toLowerCase()) || searchName.toLowerCase().includes(l.nombre.toLowerCase())));
+  const phone = p.tenant_phone || ((lead && lead.celular) ? lead.celular : '—');
+
+  // Silvia transactions for this year
+  const silviaTxs = (adminData.silvia_ledger && adminData.silvia_ledger[String(year)]) || [];
+  const silviaTotal = { recaudo: 0, abono: 0 };
+  silviaTxs.forEach(t => { silviaTotal.recaudo += parseFloat(t.recaudo) || 0; silviaTotal.abono += parseFloat(t.abono) || 0; });
+
+  const tabs = [
+    { id: 'cobro',    icon: '💳', label: 'Cobro' },
+    { id: 'inmueble', icon: '🏠', label: 'Inmueble' },
+    { id: 'silvia',   icon: '🏢', label: 'Silvia' }
+  ];
+
+  const tabsHTML = tabs.map(t => `
+    <button class="u-tab-btn ${t.id === currentActiveTab ? 'active' : ''}"
+            onclick="switchUnifiedTab('${t.id}')">
+      ${t.icon} ${t.label}
+    </button>`).join('');
+
+  // ── TAB 1: COBRO Y CONTRATO UNIFICADOS ──────────────────────────────────────
+  const tabCobro = `
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div class="u-modal-grid" style="row-gap: 12px;">
+        <!-- Fila 1 -->
+        <div>
+          <div class="u-field-label">Inmueble</div>
+          <div style="font-size:17px; font-weight:800; color:#fff; letter-spacing:-0.01em;">${p.name}</div>
+        </div>
+        <div>
+          <div class="u-field-label">Estado</div>
+          <div style="position: relative; display: inline-flex; cursor: pointer; align-items: center; border-radius: 20px;">
+            <span id="topPayStatusBadge" class="${getStatusBadgeClass(pay.status)}" style="padding:4px 10px; font-size:11px; display: inline-flex; align-items: center; gap: 4px; pointer-events: none;">
+              <span id="topPayStatusText">${getStatusLabel(pay.status)}</span>
+              <span style="color: var(--gold); font-size: 8px; margin-left: 2px;">▼</span>
+            </span>
+            <select id="topPayStatusSelect" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 11px; color-scheme: dark;" onchange="updatePayStatusFromTop(this.value)">
+              <option value="PAID" style="background-color: #121212; color: #fff;" ${pay.status === 'PAID' ? 'selected' : ''}>🟢 Pagado</option>
+              <option value="PENDING" style="background-color: #121212; color: #fff;" ${pay.status === 'PENDING' ? 'selected' : ''}>🔴 Pendiente</option>
+              <option value="VACANT" style="background-color: #121212; color: #fff;" ${pay.status === 'VACANT' ? 'selected' : ''}>⚪ Desocupado</option>
+              <option value="PREAVISO" style="background-color: #121212; color: #fff;" ${pay.status === 'PREAVISO' ? 'selected' : ''}>🟣 Preaviso</option>
+              <option value="NEW_CONTRACT" style="background-color: #121212; color: #fff;" ${pay.status === 'NEW_CONTRACT' ? 'selected' : ''}>🔵 Nuevo Contrato</option>
+              <option value="NO_RENEW" style="background-color: #121212; color: #fff;" ${pay.status === 'NO_RENEW' ? 'selected' : ''}>🟡 No Renovará</option>
+              <option value="DELIVERY" style="background-color: #121212; color: #fff;" ${pay.status === 'DELIVERY' ? 'selected' : ''}>🟠 Entrega</option>
+              <option value="FUTURE" style="background-color: #121212; color: #fff;" ${pay.status === 'FUTURE' ? 'selected' : ''}>⚫ Futuro</option>
+              <option value="AL_DIA" style="background-color: #121212; color: #fff;" ${pay.status === 'AL_DIA' ? 'selected' : ''}>☀️ Al día</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Fila 2 -->
+        <div>
+          <div class="u-field-label">Mes / Año</div>
+          <div class="u-field-value">${monthName} ${year}</div>
+        </div>
+        <div>
+          <div class="u-field-label">Canon Mensual</div>
+          <div class="u-field-gold">${safeFormatP(p.monthly_rent)}</div>
+        </div>
+
+        <!-- Fila 3 -->
+        <div>
+          <div class="u-field-label">Rango de Pago</div>
+          <div class="u-field-value">Día ${dueDay} al ${maxDueDay}</div>
+        </div>
+        <div></div>
+      </div>
+
+      <!-- SECCIÓN DEL CONTRATO UNIFICADA -->
+      <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:12px; margin-top:4px; display:flex; flex-direction:column; gap:11px;">
+        <div style="font-size:11px; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">
+          📄 Detalles del Contrato
+        </div>
+        <div>
+          <label class="u-inp-label">Nombre del inquilino</label>
+          <input type="text" id="editContraTenantName" class="u-inp" value="${p.tenant_name || ''}">
+        </div>
+        <div>
+          <label class="u-inp-label">Celular del inquilino</label>
+          <input type="text" id="editContraTenantPhone" class="u-inp" value="${p.tenant_phone || ''}">
+        </div>
+
+        <div class="u-modal-grid">
+          <div>
+            <label class="u-inp-label">Inicio Contrato</label>
+            <input type="date" id="editContraStartDate" class="u-inp" value="${p.start_date || ''}" style="height:32px; padding:4px 8px;">
+          </div>
+          <div>
+            <label class="u-inp-label">Duración (Meses)</label>
+            <input type="number" id="editContraDuration" class="u-inp" value="${p.duration || ''}">
+          </div>
+        </div>
+
+        <div class="u-modal-grid">
+          <div>
+            <label class="u-inp-label">Canon Mensual</label>
+            <input type="number" id="editContraRent" class="u-inp" value="${p.monthly_rent || ''}">
+          </div>
+          <div>
+            <label class="u-inp-label">Depósito en Garantía</label>
+            <input type="text" id="editContraDeposit" class="u-inp" value="${p.deposit || ''}">
+          </div>
+        </div>
+
+        <div class="u-modal-grid">
+          <div>
+            <label class="u-inp-label">Día de Cobro</label>
+            <input type="number" id="editContraDueDay" class="u-inp" value="${p.due_day || ''}">
+          </div>
+          <div>
+            <label class="u-inp-label">Día Límite</label>
+            <input type="number" id="editContraMaxDueDay" class="u-inp" value="${p.max_due_day || ''}">
+          </div>
+        </div>
+
+        <div>
+          <label class="u-inp-label">Incrementos y Notas</label>
+          <input type="text" id="editContraIncreaseNotes" class="u-inp" value="${p.increase_notes || ''}" placeholder="Ej: Aumento Agosto 2026...">
+        </div>
+
+        <div>
+          <label class="u-inp-label">Daños / Observaciones</label>
+          <textarea id="editContraDamageNotes" class="u-inp" style="resize:vertical; min-height:54px;">${p.damage_notes || ''}</textarea>
+        </div>
+      </div>
+
+      <!-- SECCIÓN REGISTRAR PAGO (AL FINAL) -->
+      <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:12px; margin-top:12px;">
+        <div style="font-size:11px; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">
+          ✏️ Registrar Pago — Sincronización Nube
+        </div>
+        <div class="u-modal-grid" style="margin-bottom:10px;">
+          <div>
+            <label class="u-inp-label">Nuevo Estado</label>
+            <select id="editPayStatus" class="u-inp" style="height:32px; padding:4px 8px; color-scheme: dark; background-color: #121212; color: #fff; border: 1px solid rgba(255,255,255,0.08);" onchange="updatePayStatusFromBottom(this.value)">
+              <option value="PAID" style="background-color: #121212; color: #fff;" ${pay.status === 'PAID' ? 'selected' : ''}>🟢 Pagado</option>
+              <option value="PENDING" style="background-color: #121212; color: #fff;" ${pay.status === 'PENDING' ? 'selected' : ''}>🔴 Pendiente</option>
+              <option value="VACANT" style="background-color: #121212; color: #fff;" ${pay.status === 'VACANT' ? 'selected' : ''}>⚪ Desocupado</option>
+              <option value="PREAVISO" style="background-color: #121212; color: #fff;" ${pay.status === 'PREAVISO' ? 'selected' : ''}>🟣 Preaviso</option>
+              <option value="NEW_CONTRACT" style="background-color: #121212; color: #fff;" ${pay.status === 'NEW_CONTRACT' ? 'selected' : ''}>🔵 Nuevo Contrato</option>
+              <option value="NO_RENEW" style="background-color: #121212; color: #fff;" ${pay.status === 'NO_RENEW' ? 'selected' : ''}>🟡 No Renovará</option>
+              <option value="DELIVERY" style="background-color: #121212; color: #fff;" ${pay.status === 'DELIVERY' ? 'selected' : ''}>🟠 Entrega</option>
+              <option value="FUTURE" style="background-color: #121212; color: #fff;" ${pay.status === 'FUTURE' ? 'selected' : ''}>⚫ Futuro</option>
+              <option value="AL_DIA" style="background-color: #121212; color: #fff;" ${pay.status === 'AL_DIA' ? 'selected' : ''}>☀️ Al día</option>
+            </select>
+          </div>
+          <div>
+            <label class="u-inp-label">Valor Recibido</label>
+            <input type="number" id="editPayValue" class="u-inp" style="height:32px;"
+                   value="${pay.value && parseFloat(pay.value) > 0 ? parseFloat(pay.value) : ''}"
+                   placeholder="${p.monthly_rent}">
+          </div>
+        </div>
+        <button class="btn btn-gold btn-sm" id="btnSaveUnifiedCobro"
+                style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; margin-bottom:10px;"
+                onclick="saveUnifiedAdminCobro('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${monthName}', '${year}')">
+          💾 Guardar
+        </button>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px; margin-bottom:10px;">
+        <button class="btn btn-secondary btn-sm"
+                style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; background:rgba(37,211,102,0.08); color:#25d366; border:1px solid rgba(37,211,102,0.2);"
+                onclick="sendAdminReminder('${p.tenant_name || ''}', '${p.name.replace(/'/g, "\\'")}', '${p.monthly_rent}', '${monthName}', '${year}', ${dueDay}, '${p.tenant_phone || ''}')">
+          💬 WhatsApp
+        </button>
+        <button class="btn btn-primary btn-sm"
+                style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700;"
+                onclick="addIndividualToCalendar('${p.name.replace(/'/g, "\\'")}', '${p.tenant_name || ''}', ${p.monthly_rent}, '${year}', '${monthName}', ${dueDay}, ${maxDueDay})">
+          📅 Calendar
+        </button>
+      </div>
+      <button class="btn btn-primary btn-sm"
+              style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; width:100%; background:rgba(212,168,75,0.08); color:var(--gold); border:1px solid rgba(212,168,75,0.2);"
+              onclick="syncPropertyToCalendar('${p.id}')">
+        📥 Sincronizar Calendario Anual (ICS)
+      </button>
+    </div>`;
+
+  // ── TAB 2: INMUEBLE (Edición) ─────────────────────────────────────────────
+  const tabInmueble = `
+    <div style="display:flex; flex-direction:column; gap:11px;">
+      <div>
+        <label class="u-inp-label">Nombre del Inmueble</label>
+        <input type="text" id="editPropName" class="u-inp" value="${p.name || ''}">
+      </div>
+      <div>
+        <label class="u-inp-label">Propietario</label>
+        <input type="text" id="editPropOwner" class="u-inp" value="${p.owner || ''}">
+      </div>
+      <div>
+        <label class="u-inp-label">Celular Propietario</label>
+        <input type="text" id="editPropOwnerPhone" class="u-inp" value="${p.owner_phone || ''}">
+      </div>
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Canon Mensual</label>
+          <input type="number" id="editPropRent" class="u-inp" value="${p.monthly_rent || ''}">
+        </div>
+        <div>
+          <label class="u-inp-label">Depósito</label>
+          <input type="number" id="editPropDeposit" class="u-inp" value="${p.deposit || ''}">
+        </div>
+      </div>
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Inicio Contrato</label>
+          <input type="date" id="editPropStartDate" class="u-inp" value="${p.start_date || ''}" style="height:32px; padding:4px 8px;">
+        </div>
+        <div>
+          <label class="u-inp-label">Duración (Meses)</label>
+          <input type="number" id="editPropDuration" class="u-inp" value="${p.duration || ''}">
+        </div>
+      </div>
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Día de Cobro</label>
+          <input type="number" id="editPropDueDay" class="u-inp" value="${p.due_day || ''}">
+        </div>
+        <div>
+          <label class="u-inp-label">Día Límite</label>
+          <input type="number" id="editPropMaxDueDay" class="u-inp" value="${p.max_due_day || ''}">
+        </div>
+      </div>
+      <div>
+        <label class="u-inp-label">Notas de Incremento</label>
+        <input type="text" id="editPropIncreaseNotes" class="u-inp" value="${p.increase_notes || ''}" placeholder="Ej: Aumento Agosto 2026...">
+      </div>
+      <div>
+        <label class="u-inp-label">Daños / Observaciones</label>
+        <textarea id="editPropDamageNotes" class="u-inp" style="resize:vertical; min-height:54px;">${p.damage_notes || ''}</textarea>
+      </div>
+      <button class="btn btn-gold btn-sm" id="btnSaveAdminProperty"
+              style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; margin-top:4px;"
+              onclick="saveAdminPropertyDetails('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
+        💾 Guardar Cambios en la Nube
+      </button>
+      <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; margin-top: 12px;">
+        <button class="btn btn-danger btn-sm" id="btnDeleteAdminProperty"
+                style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.08);"
+                onclick="deleteAdminProperty('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
+          🗑️ Eliminar Inmueble Permanentemente
+        </button>
+      </div>
+    </div>`;
+
+  // ── TAB 3: EDIFICIO SILVIA ────────────────────────────────────────────────
+  const silviaRows = silviaTxs.slice(0, 30).map(t => {
+    const rec = parseFloat(t.recaudo) || 0;
+    const abo = parseFloat(t.abono) || 0;
+    const sal = parseFloat(t.saldo) || 0;
+    return `
+      <div class="u-silvia-row">
+        <div style="color:rgba(255,255,255,0.5);">${t.date || '—'}</div>
+        <div style="color:#fff; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${t.description}">${t.description}</div>
+        <div style="text-align:right; color:rgba(255,255,255,0.85);">${rec > 0 ? safeFormatP(rec) : '—'}</div>
+        <div style="text-align:right; color:#22c55e; font-weight:600;">${abo > 0 ? safeFormatP(abo) : '—'}</div>
+        <div style="text-align:right; color:var(--gold); font-weight:700;">${sal !== 0 ? safeFormatP(sal) : '—'}</div>
+      </div>`;
+  }).join('');
+
+  const tabSilvia = `
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="font-size:13px; font-weight:700; color:var(--gold);">🏢 Edificio Silvia — Año ${year}</div>
+        <div style="font-size:11px; color:var(--muted);">${silviaTxs.length} movimientos</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px;">
+        <div class="u-section-box" style="text-align:center;">
+          <div class="u-field-label">Total Recaudado</div>
+          <div style="font-size:14px; font-weight:700; color:#fff;">${safeFormatP(silviaTotal.recaudo)}</div>
+        </div>
+        <div class="u-section-box" style="text-align:center;">
+          <div class="u-field-label">Total Abonado</div>
+          <div style="font-size:14px; font-weight:700; color:#22c55e;">${safeFormatP(silviaTotal.abono)}</div>
+        </div>
+        <div class="u-section-box" style="text-align:center;">
+          <div class="u-field-label">Balance</div>
+          <div style="font-size:14px; font-weight:700; color:${silviaTotal.recaudo - silviaTotal.abono > 0 ? '#ef4444' : 'var(--gold)'};">
+            ${safeFormatP(Math.abs(silviaTotal.recaudo - silviaTotal.abono))}
+            <span style="font-size:9px; display:block; color:var(--muted); font-weight:500; margin-top:1px;">
+              ${silviaTotal.recaudo - silviaTotal.abono > 0 ? 'por cobrar' : silviaTotal.recaudo - silviaTotal.abono < 0 ? 'a favor' : 'al día'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      ${silviaTxs.length > 0 ? `
+      <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:10px; max-height:260px; overflow-y:auto;">
+        <div class="u-silvia-row u-silvia-header">
+          <div>Fecha</div>
+          <div>Descripción</div>
+          <div style="text-align:right;">Recaudo</div>
+          <div style="text-align:right;">Abono</div>
+          <div style="text-align:right;">Saldo</div>
+        </div>
+        ${silviaRows}
+        ${silviaTxs.length > 30 ? `<div style="text-align:center; color:var(--muted); font-size:11px; padding:8px 0;">... y ${silviaTxs.length - 30} movimientos más. Ver pestaña 🏢 Edificio Silvia para el detalle completo.</div>` : ''}
+      </div>` : `
+      <div style="text-align:center; padding:30px; color:var(--muted); font-size:13px;">
+        No hay transacciones del Edificio Silvia para el año ${year}.
+      </div>`}
+    </div>`;
+
+  return `
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; flex-shrink:0;">
+      <div style="font-size:15px; font-weight:800; color:var(--gold); display:flex; align-items:center; gap:8px; letter-spacing:-0.01em;">
+        🏢 ${p.name}
+        <span style="font-size:11px; color:var(--muted); font-weight:500; letter-spacing:0; margin-left:2px;">${monthName} ${year}</span>
+      </div>
+      <button onclick="closeUnifiedModal()" style="background:transparent; border:none; color:var(--muted); font-size:20px; cursor:pointer; font-weight:700; line-height:1; padding:0 0 0 8px; transition:color 0.2s; flex-shrink:0;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--muted)'">×</button>
+    </div>
+
+    <div class="u-modal-tabs">${tabsHTML}</div>
+
+    <div id="uTab-cobro"    class="u-tab-content ${currentActiveTab==='cobro'    ? 'active' : ''}">${tabCobro}</div>
+    <div id="uTab-inmueble" class="u-tab-content ${currentActiveTab==='inmueble' ? 'active' : ''}">${tabInmueble}</div>
+    <div id="uTab-silvia"   class="u-tab-content ${currentActiveTab==='silvia'   ? 'active' : ''}">${tabSilvia}</div>
+  `;
+}
+
+function openMatrixCellDetails(propId, monthName, year) {
+  const p = adminData.properties.find(x => x.id === propId);
+  if (!p) return;
+
+  const pName = String(p.name || '').trim();
+  currentAdminPropName = pName;
+
+  document.querySelectorAll('.matrix-table tbody tr').forEach(row => {
+    const rowName = row.getAttribute('data-prop-name');
+    if (rowName === pName) {
+      row.classList.add('active-admin-row');
+    } else {
+      row.classList.remove('active-admin-row');
+    }
+  });
+
+  const modal = document.getElementById('adminUnifiedModal');
+  const overlay = document.getElementById('modalOverlay');
+  if (!modal || !overlay) return;
+
+  // Store context on modal for switchUnifiedTab
+  modal.dataset.propId    = propId;
+  modal.dataset.monthName = monthName;
+  modal.dataset.year      = year;
+
+  modal.innerHTML = _buildUnifiedModalHTML(p, monthName, year, 'cobro');
+  modal.classList.add('active');
+  overlay.classList.add('active');
+}
+
+function abrirCrearInmuebleAdmin() {
+  const modal = document.getElementById('adminUnifiedModal');
+  const overlay = document.getElementById('modalOverlay');
+  if (!modal || !overlay) return;
+
+  modal.dataset.propId = 'NEW';
+  modal.dataset.monthName = currentAdminMonth;
+  modal.dataset.year = currentAdminYear;
+
+  modal.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; flex-shrink:0;">
+      <div style="font-size:15px; font-weight:800; color:var(--gold); display:flex; align-items:center; gap:8px; letter-spacing:-0.01em;">
+        🏢 Crear Nuevo Inmueble (Administración)
+      </div>
+      <button onclick="closeUnifiedModal()" style="background:transparent; border:none; color:var(--muted); font-size:20px; cursor:pointer; font-weight:700; line-height:1; padding:0 0 0 8px; transition:color 0.2s; flex-shrink:0;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--muted)'">×</button>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:11px; max-height:480px; overflow-y:auto; padding-right:4px;">
+      <div>
+        <label class="u-inp-label">Nombre del Inmueble *</label>
+        <input type="text" id="newAdminPropName" class="u-inp" placeholder="Ej: APTO 1011">
+      </div>
+      
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Propietario</label>
+          <input type="text" id="newAdminPropOwner" class="u-inp" placeholder="Nombre dueño">
+        </div>
+        <div>
+          <label class="u-inp-label">Celular Propietario</label>
+          <input type="text" id="newAdminPropOwnerPhone" class="u-inp" placeholder="Celular dueño">
+        </div>
+      </div>
+
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Inquilino</label>
+          <input type="text" id="newAdminPropTenant" class="u-inp" placeholder="Nombre inquilino">
+        </div>
+        <div>
+          <label class="u-inp-label">Celular Inquilino</label>
+          <input type="text" id="newAdminPropTenantPhone" class="u-inp" placeholder="Celular inquilino">
+        </div>
+      </div>
+
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Inicio Contrato</label>
+          <input type="date" id="newAdminPropStartDate" class="u-inp" style="height:32px; padding:4px 8px;">
+        </div>
+        <div>
+          <label class="u-inp-label">Duración (Meses)</label>
+          <input type="number" id="newAdminPropDuration" class="u-inp" value="12">
+        </div>
+      </div>
+
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Canon Mensual *</label>
+          <input type="number" id="newAdminPropRent" class="u-inp" placeholder="Valor arriendo">
+        </div>
+        <div>
+          <label class="u-inp-label">Depósito en Garantía</label>
+          <input type="text" id="newAdminPropDeposit" class="u-inp" placeholder="Valor depósito">
+        </div>
+      </div>
+
+      <div class="u-modal-grid">
+        <div>
+          <label class="u-inp-label">Día de Cobro</label>
+          <input type="number" id="newAdminPropDueDay" class="u-inp" value="5">
+        </div>
+        <div>
+          <label class="u-inp-label">Día Límite</label>
+          <input type="number" id="newAdminPropMaxDueDay" class="u-inp" value="10">
+        </div>
+      </div>
+
+      <div>
+        <label class="u-inp-label">Incrementos y Notas</label>
+        <input type="text" id="newAdminPropIncreaseNotes" class="u-inp" placeholder="Ej: Aumento Octubre 2026...">
+      </div>
+
+      <div>
+        <label class="u-inp-label">Daños / Observaciones</label>
+        <textarea id="newAdminPropDamageNotes" class="u-inp" style="resize:vertical; min-height:54px;"></textarea>
+      </div>
+
+      <button class="btn btn-gold btn-sm" id="btnSaveNewAdminProp"
+              style="width:100%; justify-content:center; gap:6px; font-weight:700; height:36px; margin-top:4px;"
+              onclick="saveNewAdminProperty()">
+        💾 Crear Propiedad en la Nube
+      </button>
+    </div>
+  `;
+
+  modal.classList.add('active');
+  overlay.classList.add('active');
+}
+
+async function saveNewAdminProperty() {
+  const saveBtn = document.getElementById('btnSaveNewAdminProp');
+  if (!saveBtn) return;
+
+  const name = document.getElementById('newAdminPropName').value.trim();
+  const owner = document.getElementById('newAdminPropOwner').value.trim();
+  const owner_phone = document.getElementById('newAdminPropOwnerPhone').value.trim();
+  const tenant_name = document.getElementById('newAdminPropTenant').value.trim();
+  const tenant_phone = document.getElementById('newAdminPropTenantPhone').value.trim();
+  const monthly_rent = parseFloat(document.getElementById('newAdminPropRent').value) || 0;
+  const deposit = document.getElementById('newAdminPropDeposit').value.trim();
+  const start_date = document.getElementById('newAdminPropStartDate').value;
+  const duration = document.getElementById('newAdminPropDuration').value.trim();
+  const due_day = parseInt(document.getElementById('newAdminPropDueDay').value) || 5;
+  const max_due_day = parseInt(document.getElementById('newAdminPropMaxDueDay').value) || 10;
+  const increase_notes = document.getElementById('newAdminPropIncreaseNotes').value.trim();
+  const damage_notes = document.getElementById('newAdminPropDamageNotes').value.trim();
+
+  if (!name) { toast('El nombre del inmueble es obligatorio.', 'error'); return; }
+  if (monthly_rent <= 0) { toast('El canon mensual es obligatorio y debe ser mayor que 0.', 'error'); return; }
+
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Creando...';
+
+  const payload = {
+    action: 'saveAdminProperty',
+    isNew: true,
+    name,
+    owner,
+    owner_phone,
+    tenant_name,
+    tenant_phone,
+    monthly_rent,
+    deposit,
+    start_date,
+    duration,
+    due_day,
+    max_due_day,
+    increase_notes,
+    damage_notes
+  };
+
+  try {
+    const response = await fetch(ADMIN_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    if (response.ok) {
+      const resData = await response.json();
+      if (resData.success) {
+        toast('¡Inmueble creado en la nube con éxito!', 'success');
+        
+        const newId = String(resData.propertyId);
+        const newProp = {
+          id: newId,
+          name: name,
+          owner: owner,
+          owner_phone: owner_phone,
+          tenant_name: tenant_name,
+          tenant_phone: tenant_phone,
+          monthly_rent: monthly_rent,
+          deposit: deposit,
+          start_date: start_date,
+          duration: duration,
+          due_day: due_day,
+          max_due_day: max_due_day,
+          increase_notes: increase_notes,
+          damage_notes: damage_notes,
+          payments: {}
+        };
+        
+        const currentYear = new Date().getFullYear();
+        newProp.payments[String(currentYear)] = [];
+        
+        adminData.properties.push(newProp);
+        localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+        
+        closeUnifiedModal();
+        
+        toast('Recargando datos de administración...', 'info');
+        loadAdminData().then(() => {
+          renderAdministracion();
+        });
+      } else {
+        throw new Error(resData.error || 'Error del servidor');
+      }
+    } else {
+      throw new Error('Error HTTP');
+    }
+  } catch (err) {
+    console.error('Error al crear inmueble:', err);
+    toast('Error al crear en la nube: ' + err.message + '. Intenta de nuevo.', 'error');
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '💾 Crear Propiedad en la Nube';
+  }
+}
+
+function abrirEditarInmueble(propId, openTab) {
+  const p = adminData.properties.find(x => x.id === propId);
+  if (!p) return;
+
+  const pName = String(p.name || '').trim();
+  currentAdminPropName = pName;
+
+  document.querySelectorAll('.matrix-table tbody tr').forEach(row => {
+    const rowName = row.getAttribute('data-prop-name');
+    if (rowName === pName) {
+      row.classList.add('active-admin-row');
+    } else {
+      row.classList.remove('active-admin-row');
+    }
+  });
+
+  const modal = document.getElementById('adminUnifiedModal');
+  const overlay = document.getElementById('modalOverlay');
+  if (!modal || !overlay) return;
+
+  const monthName = modal.dataset.monthName || currentAdminMonth;
+  const year      = modal.dataset.year      || currentAdminYear;
+
+  modal.dataset.propId    = propId;
+  modal.dataset.monthName = monthName;
+  modal.dataset.year      = year;
+
+  modal.innerHTML = _buildUnifiedModalHTML(p, monthName, year, openTab || 'inmueble');
+  modal.classList.add('active');
+  overlay.classList.add('active');
+}
+
+function switchUnifiedTab(tabId) {
+  document.querySelectorAll('.u-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.toLowerCase().includes(tabId) || btn.onclick && btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + tabId + "'"));
+  });
+  // Re-check by reading onclick attribute properly
+  document.querySelectorAll('.u-tab-btn').forEach(btn => {
+    const onc = btn.getAttribute('onclick') || '';
+    btn.classList.toggle('active', onc.includes("'" + tabId + "'"));
+  });
+  document.querySelectorAll('.u-tab-content').forEach(tc => {
+    tc.classList.toggle('active', tc.id === 'uTab-' + tabId);
+  });
+}
+
+function closeUnifiedModal() {
+  const modal   = document.getElementById('adminUnifiedModal');
+  const overlay = document.getElementById('modalOverlay');
+  if (modal)   modal.classList.remove('active');
+  if (overlay) overlay.classList.remove('active');
+}
+
+// Legacy aliases so any remaining references don't break
+function closeMatrixCellDetails()   { closeUnifiedModal(); }
+function closeAdminPropertyEdit()   { closeUnifiedModal(); }
+
+function updatePayStatusFromTop(val) {
+  const textSpan = document.getElementById('topPayStatusText');
+  const badge = document.getElementById('topPayStatusBadge');
+  if (textSpan && badge) {
+    textSpan.textContent = getStatusLabel(val);
+    badge.className = getStatusBadgeClass(val);
+  }
+  const bottomSelect = document.getElementById('editPayStatus');
+  if (bottomSelect) {
+    bottomSelect.value = val;
+  }
+}
+
+function updatePayStatusFromBottom(val) {
+  const topSelect = document.getElementById('topPayStatusSelect');
+  if (topSelect) {
+    topSelect.value = val;
+  }
+  const textSpan = document.getElementById('topPayStatusText');
+  const badge = document.getElementById('topPayStatusBadge');
+  if (textSpan && badge) {
+    textSpan.textContent = getStatusLabel(val);
+    badge.className = getStatusBadgeClass(val);
+  }
+}
+
+async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
+  const saveBtn = document.getElementById('btnSaveUnifiedCobro');
+  if (!saveBtn) return;
+
+  const elTenantName = document.getElementById('editContraTenantName');
+  const elTenantPhone = document.getElementById('editContraTenantPhone');
+  const elRent = document.getElementById('editContraRent');
+  const elDeposit = document.getElementById('editContraDeposit');
+  const elStartDate = document.getElementById('editContraStartDate');
+  const elDuration = document.getElementById('editContraDuration');
+  const elDueDay = document.getElementById('editContraDueDay');
+  const elMaxDueDay = document.getElementById('editContraMaxDueDay');
+  const elIncreaseNotes = document.getElementById('editContraIncreaseNotes');
+  const elDamageNotes = document.getElementById('editContraDamageNotes');
+
+  const tenant_name = elTenantName ? elTenantName.value.trim() : '';
+  const tenant_phone = elTenantPhone ? elTenantPhone.value.trim() : '';
+  const monthly_rent = elRent ? (parseFloat(elRent.value) || 0) : 0;
+  const deposit = elDeposit ? elDeposit.value.trim() : '';
+  const start_date = elStartDate ? elStartDate.value : '';
+  const duration = elDuration ? elDuration.value.trim() : '';
+  const due_day = elDueDay ? (parseInt(elDueDay.value) || 5) : 5;
+  const max_due_day = elMaxDueDay ? (parseInt(elMaxDueDay.value) || 10) : 10;
+  const increase_notes = elIncreaseNotes ? elIncreaseNotes.value.trim() : '';
+  const damage_notes = elDamageNotes ? elDamageNotes.value.trim() : '';
+
+  const topSelect = document.getElementById('topPayStatusSelect');
+  const bottomSelect = document.getElementById('editPayStatus');
+  const statusSelect = topSelect || bottomSelect;
+  const status = statusSelect ? statusSelect.value : 'PENDING';
+  
+  const valueInput = document.getElementById('editPayValue');
+  let rawValue = valueInput ? valueInput.value.trim() : '';
+
+  let finalValue = '';
+  if (status === 'PAID') {
+    const parsedVal = parseFloat(rawValue);
+    if (isNaN(parsedVal) || parsedVal <= 0) {
+      const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim() || (x.excel_row && String(x.excel_row) === String(propId)));
+      finalValue = monthly_rent || (p ? p.monthly_rent : 0);
+    } else { finalValue = parsedVal; }
+  } else if (status === 'VACANT') { finalValue = 'DESOCUPADO'; }
+  else if (status === 'FUTURE' || status === 'AL_DIA') { finalValue = '-'; }
+  else if (status === 'PREAVISO')      { finalValue = 'PREAVISO'; }
+  else if (status === 'NEW_CONTRACT')  { finalValue = 'CONTRATO NUEVO'; }
+  else if (status === 'NO_RENEW')      { finalValue = 'NO RENOVARA'; }
+  else if (status === 'DELIVERY')      { finalValue = 'ENTREGA'; }
+  else if (status === 'PENDING')       { finalValue = 'Pendiente'; }
+  else { finalValue = rawValue || '-'; }
+
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
+
+  const applyPropToMemory = () => {
+    const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim() || (x.excel_row && String(x.excel_row) === String(propId)));
+    if (p) {
+      Object.assign(p, {
+        tenant_name, tenant_phone, monthly_rent,
+        deposit, start_date, duration,
+        due_day, max_due_day,
+        increase_notes, damage_notes
+      });
+      ensureUniqueIds(adminData);
+      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+    }
+  };
+
+  const applyPayToMemory = () => {
+    const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim() || (x.excel_row && String(x.excel_row) === String(propId)));
+    if (p) {
+      if (!p.payments[year]) p.payments[year] = [];
+      let mPay = p.payments[year].find(m => m.month === monthName);
+      if (mPay) { mPay.status = status; mPay.value = finalValue; }
+      else p.payments[year].push({ month: monthName, value: finalValue, status: status });
+      ensureUniqueIds(adminData);
+      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+    }
+  };
+
+  applyPropToMemory();
+  applyPayToMemory();
+
+  const payloadProp = {
+    action: 'saveAdminProperty',
+    propertyId: propId,
+    propertyNameOld: propName,
+    name:           propName,
+    tenant_name,
+    tenant_phone,
+    monthly_rent,
+    deposit,
+    start_date,
+    duration,
+    due_day,
+    max_due_day,
+    increase_notes,
+    damage_notes
+  };
+
+  const monthsNames = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+  const monthIdx = monthsNames.indexOf(monthName.toUpperCase());
+
+  const payloadPay = {
+    action: 'saveAdminPayment',
+    propertyId: propId, propertyName: propName,
+    year: year, monthIndex: monthIdx, value: finalValue
+  };
+
+  fetch(ADMIN_SCRIPT_URL, {
+    method: 'POST', headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payloadProp)
+  }).catch(e => null);
+
+  fetch(ADMIN_SCRIPT_URL, {
+    method: 'POST', headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payloadPay)
+  }).catch(e => null);
+
+  toast('¡Cambios guardados con éxito!', 'success');
+  closeUnifiedModal();
+  renderAdministracion();
+}
+
+async function saveAdminPaymentStatus(propId, propName, monthName, year) {
+  const statusSelect = document.getElementById('editPayStatus');
+  const valueInput   = document.getElementById('editPayValue');
+  const saveBtn      = document.getElementById('btnSaveAdminPay');
+  if (!statusSelect || !saveBtn) return;
+
+  const status = statusSelect.value;
+  let rawValue = valueInput ? valueInput.value.trim() : '';
+
+  let finalValue = '';
+  if (status === 'PAID') {
+    const parsedVal = parseFloat(rawValue);
+    if (isNaN(parsedVal) || parsedVal <= 0) {
+      const p = adminData.properties.find(x => x.id === propId);
+      finalValue = p ? p.monthly_rent : 0;
+    } else { finalValue = parsedVal; }
+  } else if (status === 'VACANT') { finalValue = 'DESOCUPADO'; }
+  else if (status === 'FUTURE' || status === 'AL_DIA') { finalValue = '-'; }
+  else if (status === 'PREAVISO')      { finalValue = 'PREAVISO'; }
+  else if (status === 'NEW_CONTRACT')  { finalValue = 'CONTRATO NUEVO'; }
+  else if (status === 'NO_RENEW')      { finalValue = 'NO RENOVARA'; }
+  else if (status === 'DELIVERY')      { finalValue = 'ENTREGA'; }
+  else if (status === 'PENDING')       { finalValue = 'Pendiente'; }
+  else if (status === 'AL_DIA')        { finalValue = '-'; }
+  else { finalValue = rawValue || '-'; }
+
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
+
+  const monthsNames = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+  const monthIdx = monthsNames.indexOf(monthName.toUpperCase());
+
+  const payload = {
+    action: 'saveAdminPayment',
+    propertyId: propId, propertyName: propName,
+    year: year, monthIndex: monthIdx, value: finalValue
+  };
+
+  try {
+    const response = await fetch(ADMIN_SCRIPT_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    if (response.ok) {
+      const resData = await response.json();
+      if (resData.success) {
+        toast('Pago actualizado en la nube con éxito!', 'success');
+        const p = adminData.properties.find(x => x.id === propId);
+        if (p) {
+          if (!p.payments[year]) p.payments[year] = [];
+          let mPay = p.payments[year].find(m => m.month === monthName);
+          if (mPay) { mPay.status = status; mPay.value = finalValue; }
+          else p.payments[year].push({ month: monthName, value: finalValue, status: status });
+          ensureUniqueIds(adminData);
+          localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+        }
+        closeUnifiedModal();
+        renderAdministracion();
+      } else { throw new Error(resData.error || 'Error desconocido del servidor'); }
+    } else { throw new Error('Error de conexión HTTP'); }
+  } catch (err) {
+    console.error('Error al guardar pago en la nube:', err);
+    toast('Error al guardar en la nube: ' + err.message + '. Se guardó en caché local.', 'warning');
+    const p = adminData.properties.find(x => x.id === propId);
+    if (p) {
+      if (!p.payments[year]) p.payments[year] = [];
+      let mPay = p.payments[year].find(m => m.month === monthName);
+      if (mPay) { mPay.status = status; mPay.value = finalValue; }
+      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+      closeUnifiedModal();
+      renderAdministracion();
+    }
+  }
+}
+
+async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, status) {
+  const monthsNames = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+  const monthIdx = monthsNames.indexOf(monthName.toUpperCase());
+
+  let finalValue = '';
+  if (status === 'PAID') {
+    const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim());
+    finalValue = p ? p.monthly_rent : 0;
+  } else if (status === 'VACANT') { finalValue = 'DESOCUPADO'; }
+  else if (status === 'FUTURE' || status === 'AL_DIA') { finalValue = '-'; }
+  else if (status === 'PREAVISO')      { finalValue = 'PREAVISO'; }
+  else if (status === 'NEW_CONTRACT')  { finalValue = 'CONTRATO NUEVO'; }
+  else if (status === 'NO_RENEW')      { finalValue = 'NO RENOVARA'; }
+  else if (status === 'DELIVERY')      { finalValue = 'ENTREGA'; }
+  else if (status === 'PENDING')       { finalValue = 'Pendiente'; }
+  else { finalValue = '-'; }
+
+  const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim() || (x.excel_row && String(x.excel_row) === String(propId)));
+  if (p) {
+    if (!p.payments[year]) p.payments[year] = [];
+    let mPay = p.payments[year].find(m => m.month === monthName);
+    if (mPay) { mPay.status = status; mPay.value = finalValue; }
+    else p.payments[year].push({ month: monthName, value: finalValue, status: status });
+    ensureUniqueIds(adminData);
+    localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+  }
+  renderAdministracion();
+
+  const payload = {
+    action: 'saveAdminPayment',
+    propertyId: propId, propertyName: propName,
+    year: year, monthIndex: monthIdx, value: finalValue
+  };
+
+  fetch(ADMIN_SCRIPT_URL, {
+    method: 'POST', headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  }).then(async response => {
+    if (response.ok) {
+      const resData = await response.json();
+      if (resData.success) {
+        toast('Pago actualizado en la nube con éxito!', 'success');
+      }
+    }
+  }).catch(err => {
+    console.warn('Sync en segundo plano:', err);
+  });
+}
+
+async function saveAdminPropertyDetails(propId, propNameOld) {
+  const saveBtn = document.getElementById('btnSaveAdminProperty');
+  if (!saveBtn) return;
+
+  const elPropName = document.getElementById('editPropName');
+  const elPropOwner = document.getElementById('editPropOwner');
+  const elPropOwnerPhone = document.getElementById('editPropOwnerPhone');
+  const elPropRent = document.getElementById('editPropRent');
+  const elPropDeposit = document.getElementById('editPropDeposit');
+  const elPropStartDate = document.getElementById('editPropStartDate');
+  const elPropDuration = document.getElementById('editPropDuration');
+  const elPropDueDay = document.getElementById('editPropDueDay');
+  const elPropMaxDueDay = document.getElementById('editPropMaxDueDay');
+  const elPropIncreaseNotes = document.getElementById('editPropIncreaseNotes');
+  const elPropDamageNotes = document.getElementById('editPropDamageNotes');
+
+  const payload = {
+    action: 'saveAdminProperty',
+    propertyId: propId,
+    propertyNameOld: propNameOld,
+    name:           elPropName ? elPropName.value.trim() : propNameOld,
+    owner:          elPropOwner ? elPropOwner.value.trim() : '',
+    owner_phone:    elPropOwnerPhone ? elPropOwnerPhone.value.trim() : '',
+    monthly_rent:   elPropRent ? (parseFloat(elPropRent.value) || 0) : 0,
+    deposit:        elPropDeposit ? elPropDeposit.value.trim() : '',
+    start_date:     elPropStartDate ? elPropStartDate.value : '',
+    duration:       elPropDuration ? elPropDuration.value.trim() : '',
+    due_day:        elPropDueDay ? (parseInt(elPropDueDay.value) || 5) : 5,
+    max_due_day:    elPropMaxDueDay ? (parseInt(elPropMaxDueDay.value) || 10) : 10,
+    increase_notes: elPropIncreaseNotes ? elPropIncreaseNotes.value.trim() : '',
+    damage_notes:   elPropDamageNotes ? elPropDamageNotes.value.trim() : ''
+  };
+
+  if (!payload.name) { toast('El nombre del inmueble no puede estar vacío', 'error'); return; }
+
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
+
+  const applyToMemory = () => {
+    const p = adminData.properties.find(x => String(x.id) === String(propId));
+    if (p) {
+      Object.assign(p, {
+        name: payload.name, owner: payload.owner, owner_phone: payload.owner_phone, monthly_rent: payload.monthly_rent,
+        deposit: payload.deposit, start_date: payload.start_date, duration: payload.duration,
+        due_day: payload.due_day, max_due_day: payload.max_due_day,
+        increase_notes: payload.increase_notes, damage_notes: payload.damage_notes
+      });
+      ensureUniqueIds(adminData);
+      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+    }
+  };
+
+  applyToMemory();
+
+  fetch(ADMIN_SCRIPT_URL, {
+    method: 'POST', headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  }).catch(e => null);
+
+  toast('Inmueble guardado con éxito!', 'success');
+  closeUnifiedModal();
+  renderAdministracion();
+}
+
+async function deleteAdminProperty(propId, propName) {
+  if (!confirm(`¿Estás seguro de que deseas eliminar el inmueble "${propName}" permanentemente de la administración?\nEsta acción lo borrará de la nube y no se puede deshacer.`)) {
+    return;
+  }
+
+  const deleteBtn = document.getElementById('btnDeleteAdminProperty');
+  if (deleteBtn) {
+    deleteBtn.disabled = true;
+    deleteBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Eliminando...';
+  }
+
+  const payload = {
+    action: 'deleteAdminProperty',
+    propertyId: propId,
+    name: propName
+  };
+
+  const applyDeletionToMemory = () => {
+    adminData.properties = adminData.properties.filter(x => x.id !== propId);
+    localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+  };
+
+  try {
+    const response = await fetch(ADMIN_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    if (response.ok) {
+      const resData = await response.json();
+      if (resData.success) {
+        toast('¡Inmueble eliminado de la nube con éxito!', 'success');
+        applyDeletionToMemory();
+        closeUnifiedModal();
+        renderAdministracion();
+      } else {
+        throw new Error(resData.error || 'Error del servidor');
+      }
+    } else {
+      throw new Error('Error de red');
+    }
+  } catch (err) {
+    console.error(err);
+    toast('Error al eliminar de la nube: ' + err.message + '. Se eliminó localmente.', 'warning');
+    applyDeletionToMemory();
+    closeUnifiedModal();
+    renderAdministracion();
+  }
+}
+
+async function saveAdminContractDetails(propId, propNameOld) {
+  const saveBtn = document.getElementById('btnSaveAdminContract');
+  if (!saveBtn) return;
+
+  const p = adminData.properties.find(x => x.id === propId);
+  const propName = p ? p.name : propNameOld;
+
+  const payload = {
+    action: 'saveAdminProperty',
+    propertyId: propId,
+    propertyNameOld: propNameOld,
+    name:           propName,
+    tenant_name:    document.getElementById('editContraTenantName').value.trim(),
+    tenant_phone:   document.getElementById('editContraTenantPhone').value.trim(),
+    monthly_rent:   parseFloat(document.getElementById('editContraRent').value) || 0,
+    deposit:        document.getElementById('editContraDeposit').value.trim(),
+    start_date:     document.getElementById('editContraStartDate').value,
+    duration:       document.getElementById('editContraDuration').value.trim(),
+    due_day:        parseInt(document.getElementById('editContraDueDay').value) || 5,
+    max_due_day:    parseInt(document.getElementById('editContraMaxDueDay').value) || 10,
+    increase_notes: document.getElementById('editContraIncreaseNotes').value.trim(),
+    damage_notes:   document.getElementById('editContraDamageNotes').value.trim()
+  };
+
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
+
+  const applyToMemory = () => {
+    if (p) {
+      Object.assign(p, {
+        tenant_name: payload.tenant_name, tenant_phone: payload.tenant_phone, monthly_rent: payload.monthly_rent,
+        deposit: payload.deposit, start_date: payload.start_date, duration: payload.duration,
+        due_day: payload.due_day, max_due_day: payload.max_due_day,
+        increase_notes: payload.increase_notes, damage_notes: payload.damage_notes
+      });
+      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+    }
+  };
+
+  try {
+    const response = await fetch(ADMIN_SCRIPT_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    if (response.ok) {
+      const resData = await response.json();
+      if (resData.success) {
+        toast('Contrato actualizado en la nube con éxito!', 'success');
+        applyToMemory();
+        closeUnifiedModal();
+        renderAdministracion();
+      } else { throw new Error(resData.error || 'Error del servidor'); }
+    } else { throw new Error('Error de red'); }
+  } catch (err) {
+    console.error(err);
+    toast('Error al guardar: ' + err.message + '. Guardado en caché local.', 'warning');
+    applyToMemory();
+    closeUnifiedModal();
+    renderAdministracion();
+  }
+}
+
+function getStatusBadgeClass(status) {
+  switch(status) {
+    case 'PAID': return 'badge-status paid';
+    case 'PENDING': return 'badge-status late';
+    case 'VACANT': return 'badge-status vacant';
+    case 'PREAVISO': return 'badge-status preaviso';
+    case 'NEW_CONTRACT': return 'badge-status new';
+    case 'NO_RENEW': return 'badge-status norenew';
+    case 'DELIVERY': return 'badge-status delivery';
+    case 'FUTURE': return 'badge-status vacant';
+    case 'AL_DIA': return 'badge-status norenew';
+    case 'UNSTARTED': return 'badge-status vacant';
+    default: return 'badge-status vacant';
+  }
+}
+
+function getStatusLabel(status) {
+  switch(status) {
+    case 'PAID': return 'Pagado';
+    case 'PENDING': return 'Pendiente';
+    case 'VACANT': return 'Desocupado';
+    case 'PREAVISO': return 'Preaviso';
+    case 'NEW_CONTRACT': return 'Nuevo Contrato';
+    case 'NO_RENEW': return 'No Renovara';
+    case 'DELIVERY': return 'Entrega';
+    case 'FUTURE': return 'Futuro';
+    case 'AL_DIA': return 'Al día';
+    case 'UNSTARTED': return 'No Iniciado';
+    default: return status || 'Sin Estado';
+  }
+}
+
+async function refreshAdminData() {
+  toast('Limpiando caché y recargando...', 'success');
+  localStorage.removeItem('icde_admin_data');
+  await loadAdminData();
+  renderAdministracion();
+}
+
+
+
+
+
+
+// === MAPA INTERACTIVO ===
+let leafletMap = null;
+let mapMarkersObj = {};
+let mapMarkers = [];
+
+function toggleMapa(pfx) {
+  const container = document.getElementById(`mapaContenedor_${pfx}`);
+  const toggle = document.getElementById(`btnToggleMapa_${pfx}`);
+  if(!container || !toggle) return;
+  
+  const st = getFSt(pfx);
+  st.mapActive = toggle.checked;
+
+  if(!toggle.checked) {
+    container.classList.remove('open');
+  } else {
+    container.classList.add('open');
+
+    // ── Si leafletMap existe pero su contenedor ya no está en el DOM
+    //    (ocurre cuando renderNuevo() reconstruyó el HTML), forzar re-init ──
+    if(leafletMap) {
+      try {
+        const mc = leafletMap.getContainer();
+        if(!mc || !document.body.contains(mc)) { leafletMap = null; }
+      } catch(e) { leafletMap = null; }
+    }
+
+    if(!leafletMap) {
+      setTimeout(() => initMapa(pfx), 300);
+    } else {
+      setTimeout(() => { 
+        leafletMap.invalidateSize(); 
+        actualizarPinesMapa(pfx); // Sin forceFit: mantiene posición actual
+      }, 300);
+    }
+  }
+  
+  fnActualizarConteo(pfx);
+}
+
+function initMapa(pfx) {
+  // Centro por defecto: Neiva
+  leafletMap = L.map(`mapaLeaflet_${pfx}`, {
+    scrollWheelZoom: true, // Habilitar zoom con scroll
+    smoothWheelZoom: true,
+    smoothSensitivity: 1
+  }).setView([2.9273, -75.2819], 13);
+  
+  // Habilitar zoom con scroll solo si se presiona Ctrl (opcional, mejor desactivar por ahora para evitar confusión)
+  // leafletMap.on('focus', () => { leafletMap.scrollWheelZoom.enable(); });
+  // leafletMap.on('blur', () => { leafletMap.scrollWheelZoom.disable(); });
+  L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    attribution: '&copy; Google Maps',
+    maxZoom: 20
+  }).addTo(leafletMap);
+
+  // Viewport filtering listeners
+  leafletMap.on('moveend', () => updateMapBoundsFilter(pfx));
+  leafletMap.on('zoomend', () => updateMapBoundsFilter(pfx));
+
+  // Unified map click handler: Add Property Mode OR Street View Reverse Geocoding
+  leafletMap.on('click', (e) => {
+    console.log("Map clicked!", e.latlng);
+    console.log("Current mapAddMode state:", mapAddMode);
+    
+    // --- MODO AGREGAR PROPIEDAD ---
+    if (mapAddMode) {
+      console.log("Executing mapAddMode logic...");
+      mapAddMode = false;
+      document.querySelectorAll('.btn-map-add-mode').forEach(b => b.classList.remove('active'));
+      leafletMap.getContainer().style.cursor = '';
+      leafletMap.getContainer().classList.remove('map-add-mode-active');
+      const banner = document.getElementById('mapAddModeBanner');
+      if (banner) banner.style.display = 'none';
+      if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
+      
+      const clickedLat = e.latlng.lat;
+      const clickedLng = e.latlng.lng;
+      
+      if (_pendingGeoProp !== null) {
+        console.log("Georeferencing existing property:", _pendingGeoProp['Código']);
+        // PASO 2: GEOREFERENCIAR INMUEBLE EXISTENTE
+        const cod = _pendingGeoProp['Código'];
+        const idx = allProps.findIndex(x => x['Código'] === cod);
+        if (idx >= 0) {
+          allProps[idx]['Latitud'] = String(clickedLat);
+          allProps[idx]['Longitud'] = String(clickedLng);
+          
+          // Guardar coordenadas en Apps Script
+          syncCoords(cod, String(clickedLat), String(clickedLng));
+          
+          // Guardar en localStorage
+          const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
+          const cIdx = customProps.findIndex(x => x['Código'] === cod);
+          const updated = { ...allProps[idx] };
+          if (cIdx >= 0) customProps[cIdx] = updated;
+          else customProps.push(updated);
+          localStorage.setItem('icde_custom_props', JSON.stringify(customProps));
+          
+          // Actualizar pines del mapa
+          actualizarPinesMapa('nl');
+          
+          toast(`✅ ${cod} georeferenciado correctamente`, 'success');
+        }
+        _pendingGeoProp = null; // Limpiar
+      } else {
+        console.log("Adding new property at:", clickedLat, clickedLng);
+        // PASO 3: CREAR NUEVO INMUEBLE DESDE CERO
+        // Si venimos de reubicar desde adentro del formulario
+        if (typeof originalEditorState !== 'undefined' && originalEditorState !== null) {
+          console.log("Restoring originalEditorState...");
+          // Reabrir formulario con las nuevas coordenadas
+          abrirEditorProp(originalEditorState.codigo, clickedLat, clickedLng);
+          
+          // Restaurar todos los valores guardados
+          document.getElementById('edPropCod').readOnly = originalEditorState.readOnly;
+          document.getElementById('edPropNom').value = originalEditorState.nombre;
+          document.getElementById('edPropPre').value = originalEditorState.precio;
+          document.getElementById('edPropTipo').value = originalEditorState.tipo;
+          document.getElementById('edPropContrato').value = originalEditorState.contrato;
+          document.getElementById('edPropZona').value = originalEditorState.zona;
+          document.getElementById('edPropBar').value = originalEditorState.barrio;
+          document.getElementById('edPropHab').value = originalEditorState.habitaciones;
+          document.getElementById('edPropBan').value = originalEditorState.baños;
+          document.getElementById('edPropGar').value = originalEditorState.garaje;
+          document.getElementById('edPropCocina').value = originalEditorState.cocina;
+          document.getElementById('edPropArea').value = originalEditorState.area;
+          document.getElementById('edPropDimensiones').value = originalEditorState.dimensiones;
+          document.getElementById('edPropAntiguedad').value = originalEditorState.antiguedad;
+          document.getElementById('edPropAire').value = originalEditorState.aire;
+          document.getElementById('edPropGFotos').value = originalEditorState.gfotos;
+          document.getElementById('edPropInmob').value = originalEditorState.inmob;
+          document.getElementById('edPropPropietario').value = originalEditorState.propietario;
+          document.getElementById('edPropCelulares').value = originalEditorState.celulares;
+          document.getElementById('edPropCelular2').value = originalEditorState.celular2;
+          document.getElementById('edPropRenta').value = originalEditorState.renta;
+          document.getElementById('edPropDesc').value = originalEditorState.desc;
+          document.getElementById('edPropImgs').value = originalEditorState.imgs;
+          if (typeof updateEditorImgs === 'function') updateEditorImgs();
+          
+          originalEditorState = null; // Limpiar estado
+        } else {
+          console.log("Opening fresh editor...");
+          abrirEditorProp(null, clickedLat, clickedLng);
+        }
+      }
+      return;
+    }
+    // Close any active marker popup
+    leafletMap.closePopup();
+    
+
+    const lat = e.latlng.lat;
+    const lng = e.latlng.lng;
+    
+    if (typeof google !== 'undefined' && google.maps && google.maps.Geocoder) {
+      const geocoder = new google.maps.Geocoder();
+      
+      // Place search pin
+      showSearchResultPinOnly(lat, lng);
+      
+      geocoder.geocode({ location: { lat: lat, lng: lng } }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+          const place = results[0];
+          const parts = place.formatted_address.split(',');
+          const addressMain = parts[0].trim();
+          const addressSub = parts.slice(1).join(',').trim();
+          mostrarBottomCard(lat, lng, addressMain, addressSub, place.formatted_address);
+        } else {
+          mostrarBottomCard(lat, lng, `${lat.toFixed(6)}, ${lng.toFixed(6)}`, "Coordenadas seleccionadas", `${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+        }
+      });
+    }
+  });
+
+  // --- FLOATING GOOGLE MAPS SEARCH BAR ---
+  const searchContainer = document.createElement('div');
+  searchContainer.className = 'google-search-container';
+  searchContainer.innerHTML = `
+    <input type="text" class="google-search-input" placeholder="Buscar en Google Maps" autocomplete="off" spellcheck="false" />
+    <button class="google-search-btn" title="Buscar">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    </button>
+    <div class="google-search-divider"></div>
+    <button class="google-directions-btn" title="Cómo llegar">
+      <svg viewBox="0 0 24 24">
+        <path d="M21.71 11.29l-9-9a.996.996 0 0 0-1.41 0l-9 9a.996.996 0 0 0 0 1.41l9 9c.39.39.9.39 1.29 0l9-9a.996.996 0 0 0 .12-1.41z" fill="#00838f"/>
+        <path d="M14 14.5V12h-4v3H8v-5h6V7.5l4 4-4 3z" fill="#ffffff"/>
+      </svg>
+    </button>
+    <div class="google-search-suggestions"></div>
+  `;
+
+  // Prevent Leaflet events from leaking when clicking/scrolling/typing inside the search box
+  L.DomEvent.disableClickPropagation(searchContainer);
+  L.DomEvent.disableScrollPropagation(searchContainer);
+  L.DomEvent.on(searchContainer, 'keydown', (e) => {
+    e.stopPropagation();
+  });
+
+  // Append search bar directly to Leaflet container
+  const mapDiv = document.getElementById(`mapaLeaflet_${pfx}`);
+  if (mapDiv) {
+    mapDiv.appendChild(searchContainer);
+  }
+
+  // Create Bottom Card for map clicks
+  const bottomCard = document.createElement('div');
+  bottomCard.id = 'googleMapsBottomCard';
+  bottomCard.className = 'google-maps-bottom-card';
+  bottomCard.innerHTML = `
+    <button class="bottom-card-close" onclick="cerrarBottomCard()">&times;</button>
+    <div class="bottom-card-thumbnail" id="bottomCardThumbnail">
+      <img id="bottomCardImg" src="" alt="Street View" onerror="this.style.display='none';this.parentElement.style.background='#ccc'"/>
+      <div class="bottom-card-thumbnail-overlay">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="#fff" style="flex-shrink:0;">
+          <circle cx="12" cy="12" r="10" stroke="#fff" stroke-width="1.5" fill="none"/>
+          <circle cx="12" cy="12" r="3" fill="#fff"/>
+        </svg>
+        <span>Street View</span>
+      </div>
+    </div>
+    <div class="bottom-card-info">
+      <div class="bottom-card-address-main" id="bottomCardAddressMain"></div>
+      <div class="bottom-card-address-sub" id="bottomCardAddressSub"></div>
+      <div class="bottom-card-separator"></div>
+      <div class="bottom-card-latlng" id="bottomCardLatLng"></div>
+    </div>
+    <div class="bottom-card-actions">
+      <button class="bottom-card-action-btn" id="bottomCardSvBtn" title="Street View" style="display: none;"></button>
+      <button class="bottom-card-action-btn primary" id="bottomCardDirBtn" title="Cómo llegar">
+         <svg viewBox="0 0 24 24" width="22" height="22" style="width:22px;height:22px;"><path d="M21.71 11.29l-9-9a.996.996 0 0 0-1.41 0l-9 9a.996.996 0 0 0 0 1.41l9 9c.39.39.9.39 1.29 0l9-9a.996.996 0 0 0 .12-1.41z" fill="#ffffff"/><path d="M14 14.5V12h-4v3H8v-5h6V7.5l4 4-4 3z" fill="#007b83"/></svg>
+      </button>
+      <button class="bottom-card-action-btn share" id="bottomCardShareBtn" title="Compartir ubicación">
+         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </button>
+    </div>
+  `;
+  L.DomEvent.disableClickPropagation(bottomCard);
+  L.DomEvent.disableScrollPropagation(bottomCard);
+
+  if (mapDiv) {
+    mapDiv.appendChild(bottomCard);
+  }
+
+  leafletMap._tempSearchMarker = null;
+
+  const searchInput = searchContainer.querySelector('.google-search-input');
+  const suggestionsDropdown = searchContainer.querySelector('.google-search-suggestions');
+
+  async function performSearch() {
+    const query = searchInput.value.trim();
+    if (!query) return;
+
+    hideSuggestionsDropdown();
+
+    // 1. Check coordinates
+    const coordRegex = /^\s*(-?\d+(?:\.\d+)?)\s*[\s,]\s*(-?\d+(?:\.\d+)?)\s*$/;
+    const match = query.match(coordRegex);
+    if (match) {
+      const lat = parseFloat(match[1]);
+      const lng = parseFloat(match[2]);
+      showSearchResult(lat, lng, `Coordenadas: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+      return;
+    }
+
+    let searchQuery = query;
+    if (!query.toLowerCase().includes("neiva") && !query.toLowerCase().includes("colombia") && !query.toLowerCase().includes("huila")) {
+      searchQuery += ", Neiva, Huila, Colombia";
+    }
+
+    try {
+      searchInput.disabled = true;
+
+      // Try Nominatim Geocoder first (free and has no key/billing requirements)
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&addressdetails=1&limit=1&countrycodes=co`;
+        const res = await fetch(url, { headers: { 'User-Agent': 'ICDE_Catalog_Admin/1.0' } });
+        if (res.ok) {
+          const results = await res.json();
+          if (results && results.length > 0) {
+            const lat = parseFloat(results[0].lat);
+            const lng = parseFloat(results[0].lon);
+            showSearchResult(lat, lng, results[0].display_name);
+            searchInput.disabled = false;
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Nominatim geocoding failed, trying Google Maps:", err);
+      }
+
+      // 2. Geocode with Google Maps (Fallback)
+      if (typeof google !== 'undefined' && google.maps && google.maps.Geocoder) {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address: searchQuery, componentRestrictions: { country: 'CO' } }, (results, status) => {
+          if (status === 'OK' && results[0]) {
+            const lat = results[0].geometry.location.lat();
+            const lng = results[0].geometry.location.lng();
+            showSearchResult(lat, lng, results[0].formatted_address);
+          } else {
+            toast('No se encontró el lugar. Intenta con más detalles.', 'error');
+          }
+          searchInput.disabled = false;
+          searchInput.focus();
+        });
+      } else {
+        toast('Google Maps no está disponible en este momento.', 'error');
+        searchInput.disabled = false;
+      }
+    } catch (e) {
+      console.error(e);
+      toast('Error al buscar dirección', 'error');
+      searchInput.disabled = false;
+    }
+  }
+
+  function showSearchResult(lat, lng, title) {
+    if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
+    if (leafletMap._tempSearchMarker) {
+      leafletMap.removeLayer(leafletMap._tempSearchMarker);
+    }
+
+    // Fly smoothly to target coordinate (offsetting latitude slightly North so the popup fits perfectly)
+    leafletMap.flyTo([lat + 0.0018, lng], 16, { animate: true, duration: 1.5 });
+
+    // Custom modern Google Maps search result marker
+    const searchIcon = L.divIcon({
+      className: 'google-search-pin-wrap',
+      html: `
+        <div class="google-search-pin">
+          <div class="google-search-pin-circle"></div>
+        </div>
+      `,
+      iconSize: [24, 24],
+      iconAnchor: [12, 24]
+    });
+
+    leafletMap._tempSearchMarker = L.marker([lat, lng], { icon: searchIcon }).addTo(leafletMap);
+
+    const staticSvUrl = `https://maps.googleapis.com/maps/api/streetview?size=220x115&scale=2&location=${lat},${lng}&key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0`;
+    const popupContent = `
+      <div style="font-family: 'Outfit', sans-serif; padding: 4px 6px; color: #333; width: 220px;">
+        <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px; color: #1a73e8;">📍 Dirección Encontrada</div>
+        <div style="font-size: 11.5px; color: #555; margin-bottom: 8px; line-height: 1.3;">${title}</div>
+        
+        <div style="position: relative; width: 100%; height: 115px; margin-bottom: 8px; border-radius: 8px; overflow: hidden; cursor: pointer; border: 1px solid #ddd; background: #eaeaea; background-image: linear-gradient(135deg, #e5e5e5 25%, transparent 25%), linear-gradient(225deg, #e5e5e5 25%, transparent 25%), linear-gradient(45deg, #e5e5e5 25%, transparent 25%), linear-gradient(315deg, #e5e5e5 25%, #eaeaea 25%); background-position: 10px 0, 10px 0, 0 0, 0 0; background-size: 10px 10px;" onclick="abrirStreetView(${lat}, ${lng})">
+          <img src="${staticSvUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'"/>
+          <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.25); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.35)'" onmouseout="this.style.background='rgba(0,0,0,0.25)'">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 2px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            <span style="font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 700; color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.8); letter-spacing: 0.2px;">Street View</span>
+            <span style="position: absolute; bottom: 5px; left: 8px; font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 700; color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.8); opacity: 0.9;">Google</span>
+          </div>
+        </div>
+
+        <div style="font-size: 10px; color: #888; margin-bottom: 8px;">${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+        <div style="display: flex; gap: 6px;">
+          <button id="btnRemoveSearchPin" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px; background: #f1f1f1; border: 1px solid #ddd; color: #333 !important; border-radius: 4px; cursor: pointer; flex: 1;">Limpiar Pin</button>
+        </div>
+      </div>
+    `;
+
+    leafletMap._tempSearchMarker.bindPopup(popupContent, { maxWidth: 230, autoPanPadding: [20, 50] }).openPopup();
+
+    leafletMap.on('popupopen', () => {
+      const btn = document.getElementById('btnRemoveSearchPin');
+      if (btn) {
+        L.DomEvent.on(btn, 'click', () => {
+          if (leafletMap._tempSearchMarker) {
+            leafletMap.removeLayer(leafletMap._tempSearchMarker);
+            leafletMap._tempSearchMarker = null;
+          }
+        });
+      }
+    });
+  }
+
+  // --- AUTOCOMPLETE SUGGESTIONS LOGIC ---
+  let autocompleteService = null;
+  async function updateSuggestions(query) {
+    if (!query) {
+      hideSuggestionsDropdown();
+      return;
+    }
+
+    const cleanQuery = query.toLowerCase().trim();
+    const suggestionsList = [];
+
+    // 1. Search in local catalog properties (allProps)
+    if (typeof allProps !== 'undefined' && Array.isArray(allProps)) {
+      const localMatches = allProps.filter(p => {
+        if (!p || p.isKmzOnly) return false;
+        const code = String(p['Código'] || '').toLowerCase();
+        const name = String(p['Nombre'] || '').toLowerCase();
+        const barrio = String(p['Barrio'] || '').toLowerCase();
+        return code.includes(cleanQuery) || name.includes(cleanQuery) || barrio.includes(cleanQuery);
+      }).slice(0, 3);
+
+      localMatches.forEach(p => {
+        const lat = parseFloat(String(p['Latitud'] || p['Lat'] || '0').replace(',', '.'));
+        const lng = parseFloat(String(p['Longitud'] || p['Lng'] || '0').replace(',', '.'));
+        if (!isNaN(lat) && lat !== 0 && !isNaN(lng) && lng !== 0) {
+          suggestionsList.push({
+            main: `${p['Código']} · ${p['Nombre']}`,
+            secondary: p['Barrio'] || p['Zona'] || 'Propiedad del catálogo',
+            lat: lat,
+            lng: lng,
+            fullName: `${p['Nombre']} (${p['Código']})`,
+            type: 'prop'
+          });
+        }
+      });
+    }
+
+    // 2. Query Nominatim (OpenStreetMap) for suggestions in Neiva/Colombia
+    try {
+      let searchQuery = query;
+      if (!cleanQuery.includes('neiva') && !cleanQuery.includes('colombia') && !cleanQuery.includes('huila')) {
+        searchQuery += ', Neiva, Huila, Colombia';
+      }
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&addressdetails=1&limit=5&countrycodes=co`;
+      const res = await fetch(url, { headers: { 'User-Agent': 'ICDE_Catalog_Admin/1.0' } });
+      if (res.ok) {
+        const results = await res.json();
+        results.forEach(item => {
+          const displayName = item.display_name;
+          const parts = displayName.split(',');
+          const mainText = parts[0].trim();
+          const secondaryText = parts.slice(1).map(p => p.trim()).join(', ');
+          
+          if (!suggestionsList.some(s => s.main.toLowerCase() === mainText.toLowerCase())) {
+            suggestionsList.push({
+              main: mainText,
+              secondary: secondaryText,
+              lat: parseFloat(item.lat),
+              lng: parseFloat(item.lon),
+              fullName: displayName,
+              type: 'place'
+            });
+          }
+        });
+      }
+    } catch (err) {
+      console.error("Nominatim suggestions query failed:", err);
+    }
+
+    // 3. Fallback to Google Places Autocomplete if available
+    try {
+      if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+        if (!autocompleteService) autocompleteService = new google.maps.places.AutocompleteService();
+
+        let searchQuery = query;
+        if (!cleanQuery.includes('neiva') && !cleanQuery.includes('colombia') && !cleanQuery.includes('huila')) {
+          searchQuery += ', Neiva, Huila';
+        }
+
+        const request = {
+          input: searchQuery,
+          componentRestrictions: { country: 'co' }
+        };
+
+        autocompleteService.getPlacePredictions(request, (predictions, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+            predictions.slice(0, 5).forEach(place => {
+              const mainText = place.structured_formatting ? place.structured_formatting.main_text : place.description.split(',')[0].trim();
+              const secondaryText = place.structured_formatting ? place.structured_formatting.secondary_text : place.description.split(',').slice(1).join(',').trim();
+              
+              if (!suggestionsList.some(s => s.main.toLowerCase() === mainText.toLowerCase())) {
+                suggestionsList.push({
+                  main: mainText,
+                  secondary: secondaryText,
+                  placeId: place.place_id,
+                  fullName: place.description,
+                  type: 'google_place'
+                });
+              }
+            });
+          }
+          renderSuggestions(suggestionsList);
+        });
+        return;
+      }
+    } catch (e) {
+      console.error('Google Places fetch error:', e);
+    }
+    
+    renderSuggestions(suggestionsList);
+  }
+
+  function renderSuggestions(list) {
+    if (list.length === 0) {
+      hideSuggestionsDropdown();
+      return;
+    }
+
+    suggestionsDropdown.innerHTML = '';
+
+    // Pin icon identical to Google Maps
+    const pinSvg = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
+
+    list.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'google-suggestion-item';
+
+      row.innerHTML = `
+        <div class="google-suggestion-icon">${pinSvg}</div>
+        <div class="google-suggestion-text">
+          <span class="google-suggestion-main">${item.main}</span>
+          ${item.secondary ? `<span class="google-suggestion-secondary">${item.secondary}</span>` : ''}
+        </div>
+      `;
+
+      row.addEventListener('click', (e) => {
+        e.stopPropagation();
+        searchInput.value = item.main + (item.secondary ? ', ' + item.secondary : '');
+        if (item.lat && item.lng) {
+          showSearchResult(item.lat, item.lng, item.fullName || item.main);
+        } else if (item.placeId && typeof google !== 'undefined') {
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ placeId: item.placeId }, (results, status) => {
+            if (status === 'OK' && results[0]) {
+              const lat = results[0].geometry.location.lat();
+              const lng = results[0].geometry.location.lng();
+              showSearchResult(lat, lng, item.fullName);
+            }
+          });
+        }
+        hideSuggestionsDropdown();
+      });
+
+      suggestionsDropdown.appendChild(row);
+    });
+
+    searchContainer.classList.add('has-suggestions');
+    suggestionsDropdown.classList.add('active');
+  }
+
+  function hideSuggestionsDropdown() {
+    searchContainer.classList.remove('has-suggestions');
+    suggestionsDropdown.classList.remove('active');
+  }
+
+  // --- EVENT LISTENERS ---
+  let debounceTimeout = null;
+
+  searchInput.addEventListener('input', () => {
+    const val = searchInput.value.trim();
+    if (debounceTimeout) clearTimeout(debounceTimeout);
+    
+    if (!val) {
+      hideSuggestionsDropdown();
+      return;
+    }
+    
+    debounceTimeout = setTimeout(() => {
+      updateSuggestions(val);
+    }, 350);
+  });
+
+  searchInput.addEventListener('focus', () => {
+    const val = searchInput.value.trim();
+    if (val) {
+      updateSuggestions(val);
+    }
+  });
+
+  // Close dropdown on click outside
+  document.addEventListener('click', (e) => {
+    if (!searchContainer.contains(e.target)) {
+      hideSuggestionsDropdown();
+    }
+  });
+
+  // Bind Enter key press
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      performSearch();
+    }
+  });
+
+  // Bind buttons click
+  searchContainer.querySelector('.google-search-btn').addEventListener('click', performSearch);
+
+  searchContainer.querySelector('.google-directions-btn').addEventListener('click', () => {
+    let dest = "Neiva, Huila";
+    if (leafletMap._tempSearchMarker) {
+      const latlng = leafletMap._tempSearchMarker.getLatLng();
+      dest = `${latlng.lat},${latlng.lng}`;
+    }
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;
+    window.open(url, '_blank');
+  });
+
+  // Prevent click leakage from floating controls
+  const floatControls = document.querySelector(`#mapaContenedor_${pfx} .map-floating-controls`);
+  if (floatControls) {
+    L.DomEvent.disableClickPropagation(floatControls);
+  }
+
+  actualizarPinesMapa(pfx);
+
+  // Si modo agregar está activo, aplicar estilos al contenedor del mapa
+  if (mapAddMode) {
+    leafletMap.getContainer().style.cursor = 'crosshair';
+    leafletMap.getContainer().classList.add('map-add-mode-active');
+  }
+}
+
+
+function actualizarPinesMapa(pfx, forceFit = false) {
+  if(!leafletMap) return;
+  
+  // Limpiar todos los marcadores sin dejar residuos huérfanos/duplicados
+  mapMarkers.forEach(m => {
+    try { leafletMap.removeLayer(m); } catch(e) {}
+  });
+  mapMarkers = [];
+  mapMarkersObj = {};
+  
+  let propsToShow = [];
+  if(pfx === 'nl') {
+    propsToShow = filtrarProps(nuevoLead.filtros, true, true);
+  } else if (pfx === 'ef') {
+    propsToShow = filtrarProps(tempFiltros, true, true);
+  } else {
+    propsToShow = filtrarProps(_fst[pfx], true, true);
+  }
+  
+  if(propsToShow.length === 0) return;
+
+  const bounds = [];
+  
+  propsToShow.forEach((p, idx) => {
+    let lat = parseFloat(String(p['Latitud'] || p['Lat']).replace(',','.'));
+    let lng = parseFloat(String(p['Longitud'] || p['Lng']).replace(',','.'));
+    const code = String(p['Código'] || '');
+    
+    // Si no tiene coordenadas reales, no la mostramos para evitar amontonar en un punto falso
+    if(isNaN(lat) || isNaN(lng) || lat === 0) return;
+    
+    const price = p['Precio'] ? formatShortPrice(p['Precio']) : 'N/A';
+    const icon = L.divIcon({
+      className: 'z-marker-wrap',
+      html: `<div class="z-marker" id="m-${code}" title="${p['Nombre']}">${price}</div>`,
+      iconSize: [60, 25],
+      iconAnchor: [30, 25]
+    });
+
+    const marker = L.marker([lat, lng], { icon }).addTo(leafletMap);
+    
+    // Popup compacto estilo Google Maps
+    const imagesArr = (p['Imagenes']||'').split('|').map(x=>x.trim()).filter(x=>x);
+    if (imagesArr.length === 0) {
+      imagesArr.push(p['Image'] || 'https://i.imgur.com/Pc9M3I8.png');
+    }
+    window.popupImagesRegistry = window.popupImagesRegistry || {};
+    window.popupImagesRegistry[code] = imagesArr;
+
+    const imgSrc2 = imagesArr[0];
+    const numFotos2 = imagesArr.length;
+    const priceLbl2 = formatShortPrice(p['Precio'] || 0) || 'N/A';
+    
+    const prevArrowHtml = numFotos2 > 1 ? `
+      <button onclick="L.DomEvent.stopPropagation(event); changePopupImage('${code}', -1)" class="popup-arrow-btn prev" title="Anterior foto">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" style="display:block;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+    ` : '';
+    
+    const nextArrowHtml = numFotos2 > 1 ? `
+      <button onclick="L.DomEvent.stopPropagation(event); changePopupImage('${code}', 1)" class="popup-arrow-btn next" title="Siguiente foto">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" style="display:block;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    ` : '';
+
+    const popupHtml = `
+      <div class="popup-prop-card">
+        <div class="popup-prop-header">
+          <span class="popup-prop-code">${code}</span>
+          <span class="popup-prop-price">${priceLbl2}</span>
+        </div>
+        <div class="popup-prop-img-wrap" style="position: relative;">
+          <img class="popup-prop-img" id="popup-img-${code}" data-index="0" src="${imgSrc2}" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+          <div class="popup-prop-counter" id="popup-counter-${code}">1 de ${numFotos2} ›</div>
+          ${prevArrowHtml}
+          ${nextArrowHtml}
+          <button onclick="L.DomEvent.stopPropagation(event); abrirStreetView(${lat}, ${lng})" class="pegman-btn" title="Ver Street View" style="position: absolute; bottom: 8px; left: 8px; height: 28px; padding: 0 10px; border-radius: 14px; background: #ffffff; border: 1px solid rgba(0,0,0,0.15); box-shadow: 0 2px 5px rgba(0,0,0,0.25); cursor: pointer; display: flex; align-items: center; gap: 6px; z-index: 10;">
+            <svg viewBox="0 0 32 32" style="width: 16px; height: 16px; flex-shrink: 0;">
+              <path d="M16,2.5C18.2,2.5,20,4.3,20,6.5S18.2,10.5,16,10.5S12,8.7,12,6.5S13.8,2.5,16,2.5z" fill="#f4b400"/>
+              <path d="M16,11.5c-3.3,0-6,2.7-6,6v10.5c0,0.8,0.7,1.5,1.5,1.5h3.5v-8h2v8h3.5c0.8,0,1.5-0.7,1.5-1.5V17.5C22,14.2,19.3,11.5,16,11.5z" fill="#f4b400"/>
+              <path d="M16,13.5c-1.1,0-2,0.9-2,2v5h4v-5C18,14.4,17.1,13.5,16,13.5z" fill="#e37400"/>
+            </svg>
+            <span style="font-size: 10px; font-weight: 700; color: #333; font-family: 'Outfit', sans-serif;">Street View (360°)</span>
+          </button>
+        </div>
+        <div class="popup-prop-body">
+          <table class="popup-prop-table">
+            <tr><td>Hab:</td><td>${p['Habitaciones'] || '—'}</td></tr>
+            <tr><td>Baños:</td><td>${p['Baños'] || '—'}</td></tr>
+            <tr><td>Garaje:</td><td>${p['Garaje'] || '—'}</td></tr>
+            <tr><td>Área:</td><td>${p['Área'] || '—'} m²</td></tr>
+            <tr><td>Ubicación:</td><td>${(p['Ubicación']||'—').substring(0,18)}</td></tr>
+          </table>
+        </div>
+        <div class="popup-prop-footer">
+          <div class="popup-prop-latlng">📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}</div>
+          <div class="popup-prop-actions">
+            <button onclick="abrirEditorProp('${code}')" title="Editar propiedad">✏️</button>
+            <button onclick="abrirModalProp('${code}')" title="Ver detalles">🔍</button>
+            <button onclick="toggleProp('${code}')" title="Seleccionar">📌</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    marker.bindPopup(popupHtml, { maxWidth: 230, autoPan: true, autoPanPadding: [20, 20] });
+    
+    marker.on('click', (e) => {
+      L.DomEvent.stopPropagation(e);
+      if (typeof cerrarBottomCard === 'function') cerrarBottomCard();
+      // El popup se abre automáticamente por bindPopup
+    });
+
+    mapMarkers.push(marker);
+    mapMarkersObj[code] = marker;
+    bounds.push([lat, lng]);
+  });
+  
+  // Solo ajustar vista si se solicita explícitamente (forceFit)
+  if(bounds.length > 0 && forceFit) {
+    leafletMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+  }
+
+  // Si el filtro de viewport está activo, actualizar la grilla ahora
+  if (mapViewportFilterActive) {
+    setTimeout(() => updateMapBoundsFilter(pfx), 500); // Dar tiempo a que el mapa se estabilice
+  }
+}
+
+function focusProperty(code) {
+  if (!leafletMap || !mapMarkersObj[code]) return;
+  
+  // Solo hacer zoom si el contenedor del mapa está visible
+  const container = leafletMap.getContainer().parentElement;
+  if (!container || !container.classList.contains('open')) return;
+
+  const marker = mapMarkersObj[code];
+  const latlng = marker.getLatLng();
+  
+  leafletMap.flyTo(latlng, 17, {
+    animate: true,
+    duration: 0.8
+  });
+
+  // Resaltar visualmente
+  document.querySelectorAll('.z-marker').forEach(m => m.classList.remove('active'));
+  const el = document.getElementById(`m-${code}`);
+  if (el) el.classList.add('active');
+}
+
+// --- Lógica de Edición de Propiedades ---
+var mapAddMode = false;
+var originalEditorState = null;
+var _pendingGeoProp = null;
+
+// Abre el formulario de nueva propiedad directamente, con coordenadas del centro del mapa
+function abrirNuevaPropiedad() {
+  let lat = null, lng = null;
+  if (leafletMap) {
+    const center = leafletMap.getCenter();
+    lat = center.lat;
+    lng = center.lng;
+  }
+  abrirEditorProp(null, lat, lng);
+}
+
+function toggleMapAddMode(pfx) {
+  console.log("toggleMapAddMode called for pfx:", pfx);
+  mapAddMode = !mapAddMode;
+  console.log("mapAddMode set to:", mapAddMode);
+  const btn = document.getElementById(`btnAddProp_${pfx}`);
+  if (btn) btn.classList.toggle('active', mapAddMode);
+  
+  if (mapAddMode) {
+    toast('Modo Agregar Activo: Haz clic en el mapa para ubicar la propiedad', 'success');
+    if (leafletMap) {
+      console.log("Setting map cursor to crosshair");
+      leafletMap.getContainer().style.cursor = 'crosshair';
+    } else {
+      console.warn("leafletMap is null when activating mapAddMode!");
+    }
+  } else {
+    if (leafletMap) {
+      console.log("Restoring map cursor");
+      leafletMap.getContainer().style.cursor = '';
+    }
+  }
+}
+
+function seleccionarCoordenadasEnMapa() {
+  // Capturar todos los campos actuales del formulario para no perder datos ingresados
+  originalEditorState = {
+    codigo: document.getElementById('edPropCod').value,
+    readOnly: document.getElementById('edPropCod').readOnly,
+    nombre: document.getElementById('edPropNom').value,
+    precio: document.getElementById('edPropPre').value,
+    tipo: document.getElementById('edPropTipo').value,
+    contrato: document.getElementById('edPropContrato').value,
+    zona: document.getElementById('edPropZona').value,
+    barrio: document.getElementById('edPropBar').value,
+    habitaciones: document.getElementById('edPropHab').value,
+    baños: document.getElementById('edPropBan').value,
+    garaje: document.getElementById('edPropGar').value,
+    cocina: document.getElementById('edPropCocina').value,
+    area: document.getElementById('edPropArea').value,
+    dimensiones: document.getElementById('edPropDimensiones').value,
+    antiguedad: document.getElementById('edPropAntiguedad').value,
+    aire: document.getElementById('edPropAire').value,
+    gfotos: document.getElementById('edPropGFotos').value,
+    inmob: document.getElementById('edPropInmob').value,
+    propietario: document.getElementById('edPropPropietario').value,
+    celulares: document.getElementById('edPropCelulares').value,
+    celular2: document.getElementById('edPropCelular2').value,
+    renta: document.getElementById('edPropRenta').value,
+    desc: document.getElementById('edPropDesc').value,
+    imgs: document.getElementById('edPropImgs').value,
+  };
+
+  // Cerrar el modal temporalmente
+  document.getElementById('modalEditorProp').classList.remove('open');
+  
+  // Asegurar que el mapa esté abierto y visible
+  const mapToggle = document.getElementById('btnToggleMapa_nl');
+  if (mapToggle && !mapToggle.checked) {
+    mapToggle.checked = true;
+    toggleMapa('nl');
+  }
+
+  // Activar modo agregar
+  toggleMapAddMode('nl');
+  
+  toast('Haz clic en cualquier punto del mapa para capturar las coordenadas', 'info');
+}
+
+function abrirEditorProp(codigo, lat, lng) {
+  const isEdit = !!codigo;
+  const p = isEdit ? allProps.find(x => x['Código'] === codigo) : null;
+  
+  // Capturar valores actuales por si vienen de un clic previo en el mapa
+  const currentLat = document.getElementById('edPropLat')?.value || '';
+  const currentLng = document.getElementById('edPropLng')?.value || '';
+
+  document.getElementById('editorPropTitle').textContent = isEdit ? '✏️ Editar Propiedad' : '➕ Nueva Propiedad';
+  document.getElementById('edPropCod').value = isEdit ? codigo : '';
+  document.getElementById('edPropCod').readOnly = isEdit;
+  document.getElementById('edPropNom').value = p ? (p['Nombre'] || '') : '';
+  document.getElementById('edPropPre').value = p ? (p['Precio'] || '') : '';
+  
+  // Poblar tipos de inmueble dinámicamente desde la matriz
+  const selectTipo = document.getElementById('edPropTipo');
+  const tipos = getUniqueVals('Tipo de inmueble');
+  selectTipo.innerHTML = tipos.map(t => `<option value="${t}">${t}</option>`).join('');
+  // Si es una propiedad nueva y no hay tipos, o si queremos agregar uno manualmente, 
+  // podríamos permitirlo, pero el usuario pidió que sea según la matriz.
+  if (p) selectTipo.value = p['Tipo de inmueble'] || '';
+
+  document.getElementById('edPropZona').value = p ? (p['Zona'] || '') : '';
+  document.getElementById('edPropBar').value = p ? (p['Barrio'] || '') : '';
+  document.getElementById('edPropHab').value = p ? (p['Habitaciones'] || '') : '';
+  document.getElementById('edPropBan').value = p ? (p['Baños'] || '') : '';
+  document.getElementById('edPropGar').value = p ? (p['Garaje'] || '') : '';
+  document.getElementById('edPropArea').value = p ? (p['Área Construida'] || p['Área'] || '') : '';
+  
+  // Prioridad: 1. Argumentos explícitos (lat/lng) si se proporcionan (por ejemplo, al hacer clic en el mapa),
+  //            2. Datos de la propiedad (p) si existen en la base de datos,
+  //            3. Valor actual en el input
+  document.getElementById('edPropLat').value = lat !== undefined && lat !== null ? lat : ((p && p['Latitud']) ? p['Latitud'] : currentLat);
+  document.getElementById('edPropLng').value = lng !== undefined && lng !== null ? lng : ((p && p['Longitud']) ? p['Longitud'] : currentLng);
+  
+  document.getElementById('edPropContrato').value = p ? (p['Contrato'] || 'Directo') : 'Directo';
+  document.getElementById('edPropUbicacion').value = p ? (p['DIRECCIÓN'] || p['DIRECCIÒN-VEREDA'] || p['Ubicación'] || '') : '';
+  document.getElementById('edPropCocina').value = p ? (p['Cocina'] || 'No') : 'No';
+  document.getElementById('edPropGFotos').value = p ? (p['Google Fotos'] || '') : '';
+  document.getElementById('edPropPropietario').value = p ? (p['Nombre del Propietario'] || '') : '';
+  document.getElementById('edPropCelulares').value = p ? (p['Celular 1'] || p['Celulares'] || '') : '';
+  document.getElementById('edPropCelular2').value = p ? (p['Celular 2'] || '') : '';
+  document.getElementById('edPropRenta').value = p ? (p['Cuánto Renta ($)'] || '') : '';
+  document.getElementById('edPropDimensiones').value = p ? (p['Dimensiones'] || '') : '';
+  document.getElementById('edPropAire').value = p ? (p['Aire Acondicionado'] || '') : '';
+  document.getElementById('edPropAntiguedad').value = p ? (p['Antigüedad del Inmueble'] || '') : '';
+  
+  document.getElementById('edPropInmob').value = p ? (p['Inmobiliaria'] || '') : '';
+  document.getElementById('edPropDesc').value = p ? (p['Descripción'] || '') : '';
+  document.getElementById('edPropImgs').value = p ? (p['Imagenes'] || '') : '';
+  
+  updateEditorImgs();
+  document.getElementById('edPropCodResults').style.display = 'none';
+  document.getElementById('modalEditorProp').classList.add('open');
+}
+
+function checkPropCode(val) {
+  const resCont = document.getElementById('edPropCodResults');
+  if (!val || val.length < 1) {
+    resCont.style.display = 'none';
+    return;
+  }
+
+  const query = val.toLowerCase();
+  const matches = allProps.filter(p => String(p['Código']).toLowerCase().includes(query)).slice(0, 5);
+
+  if (matches.length > 0) {
+    resCont.innerHTML = matches.map(p => `
+      <div class="ed-cod-item" onclick="abrirEditorProp('${eq(p['Código'])}')">
+        <span><span class="match-code">${p['Código']}</span> · ${p['Nombre'] || ''}</span>
+        <span style="font-size:10px; color:var(--muted);">${p['Zona'] || ''}</span>
+      </div>
+    `).join('');
+    resCont.style.display = 'block';
+  } else {
+    resCont.style.display = 'none';
+  }
+}
+
+function updateEditorImgs() {
+  const val = document.getElementById('edPropImgs').value;
+  const urls = val.split(/[|\n]/).map(u => u.trim()).filter(u => u.startsWith('http'));
+  const preview = document.getElementById('edPropImgPreview');
+  preview.innerHTML = urls.map(u => `<div class="img-preview-item"><img src="${u}" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/></div>`).join('');
+}
+
+async function guardarPropiedadEditor() {
+  const cod = document.getElementById('edPropCod').value.trim();
+  if (!cod) { toast('El código es obligatorio', 'error'); return; }
+  
+  const p = {
+    'Código': cod,
+    'Nombre': document.getElementById('edPropNom').value.trim(),
+    'Precio': document.getElementById('edPropPre').value.trim(),
+    'Tipo de inmueble': document.getElementById('edPropTipo').value,
+    'Contrato': document.getElementById('edPropContrato').value,
+    'Zona': document.getElementById('edPropZona').value.trim(),
+    'Barrio': document.getElementById('edPropBar').value.trim(),
+    'DIRECCIÓN': document.getElementById('edPropUbicacion').value.trim(),
+    'Habitaciones': document.getElementById('edPropHab').value,
+    'Baños': document.getElementById('edPropBan').value,
+    'Garaje': document.getElementById('edPropGar').value,
+    'Cocina': document.getElementById('edPropCocina').value,
+    'Área Construida': document.getElementById('edPropArea').value.trim(),
+    'Dimensiones': document.getElementById('edPropDimensiones').value.trim(),
+    'Antigüedad del Inmueble': document.getElementById('edPropAntiguedad').value.trim(),
+    'Aire Acondicionado': document.getElementById('edPropAire').value.trim(),
+    'Google Fotos': document.getElementById('edPropGFotos').value.trim(),
+    'Latitud': document.getElementById('edPropLat').value.trim(),
+    'Longitud': document.getElementById('edPropLng').value.trim(),
+    'Inmobiliaria': document.getElementById('edPropInmob').value.trim(),
+    'Nombre del Propietario': document.getElementById('edPropPropietario').value.trim(),
+    'Celular 1': document.getElementById('edPropCelulares').value.trim(),
+    'Celular 2': document.getElementById('edPropCelular2').value.trim(),
+    'Celulares': document.getElementById('edPropCelulares').value.trim(),
+    'Cuánto Renta ($)': document.getElementById('edPropRenta').value.trim(),
+    'Descripción': document.getElementById('edPropDesc').value.trim(),
+    'Imagenes': document.getElementById('edPropImgs').value.trim(),
+    'Publicar': 'si'
+  };
+
+  const idx = allProps.findIndex(x => x['Código'] === cod);
+  if (idx >= 0) {
+    // CORRECCIÓN CRÍTICA: Solo sobrescribir campos que el usuario realmente editó.
+    // Si un campo viene vacío del formulario mini del mapa, NO borrar la info
+    // rica que ya existe en la propiedad (descripción, puntos clave, ciudad, etc.)
+    const updated = { ...allProps[idx] };
+    for (const [key, val] of Object.entries(p)) {
+      if (val !== '' && val !== null && val !== undefined) {
+        updated[key] = val;
+      }
+    }
+    allProps[idx] = updated;
+    toast('Propiedad actualizada ✓ (información de la matriz preservada)', 'success');
+  } else {
+    allProps.push(p);
+    toast('Nueva propiedad agregada localmente ✓', 'success');
+  }
+
+  // Guardar en persistencia local extendida (opcional)
+  const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
+  const cIdx = customProps.findIndex(x => x['Código'] === cod);
+  if (cIdx >= 0) customProps[cIdx] = p;
+  else customProps.push(p);
+  localStorage.setItem('icde_custom_props', JSON.stringify(customProps));
+  
+  // Sincronización en tiempo real con la nube
+  syncProperty(p);
+
+  closeModal('modalEditorProp');
+  renderNuevo();
+  actualizarPinesMapa('nl');
+  
+  // Sugerencia de sincronización
+  console.log("Para persistencia permanente, actualiza el Excel maestro con este JSON:", p);
+}
+
+// ═══════════════════════════════════════════════════════════
+// GEOCODIFICADOR MASIVO – asigna coordenadas a propiedades
+// sin lat/lng haciendo clic en el mapa, una por una.
+// ═══════════════════════════════════════════════════════════
+var _geoQueue = [];      // propiedades pendientes de geolocalizar
+var _geoIdx   = 0;       // índice actual
+var _geoMap   = null;    // instancia Leaflet dentro del modal
+var _geoMarker= null;    // marcador temporal
+var _geoWait  = false;   // esperando clic del usuario
+
+function abrirGeocodificadorMasivo() {
+  // Obtener propiedades SIN coordenadas
+  _geoQueue = allProps.filter(p => {
+    const lat = parseFloat(String(p['Latitud'] || '').replace(',','.'));
+    const lng = parseFloat(String(p['Longitud'] || '').replace(',','.'));
+    return isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0;
+  });
+  _geoIdx  = 0;
+  _geoWait = false;
+
+  if (_geoQueue.length === 0) {
+    toast('✅ Todas las propiedades ya tienen coordenadas', 'success');
+    return;
+  }
+
+  // Mostrar modal
+  document.getElementById('modalGeoMasivo').classList.add('open');
+
+  // Inicializar mapa dentro del modal
+  setTimeout(() => {
+    const cont = document.getElementById('geoMapContainer');
+    if (!_geoMap) {
+      _geoMap = L.map('geoMapContainer', { scrollWheelZoom: true })
+        .setView([2.9273, -75.2819], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap', maxZoom: 19
+      }).addTo(_geoMap);
+
+      _geoMap.on('click', (e) => {
+        if (!_geoWait) return;
+        const lat = e.latlng.lat.toFixed(7);
+        const lng = e.latlng.lng.toFixed(7);
+
+        // Colocar/mover marcador
+        if (_geoMarker) _geoMap.removeLayer(_geoMarker);
+        _geoMarker = L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: '',
+            html: `<div style="background:#be8939;color:#fff;padding:3px 7px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)">${_geoQueue[_geoIdx]['Código']}</div>`,
+            iconAnchor: [20, 12]
+          })
+        }).addTo(_geoMap);
+
+        // Mostrar coordenadas capturadas
+        document.getElementById('geoLatVal').textContent = lat;
+        document.getElementById('geoLngVal').textContent = lng;
+        document.getElementById('geoBtnConfirm').disabled = false;
+        _geoWait = false;
+
+        // Cambiar cursor
+        _geoMap.getContainer().style.cursor = '';
+      });
+    } else {
+      _geoMap.invalidateSize();
+    }
+    geoMostrarActual();
+  }, 400);
+}
+
+function geoMostrarActual() {
+  if (_geoIdx >= _geoQueue.length) {
+    document.getElementById('geoInfoBox').innerHTML = `
+      <div style="text-align:center;padding:20px;color:#4ade80;font-size:16px;font-weight:700">✅ ¡Listo! Todas las propiedades fueron geolocalizadas.</div>`;
+    document.getElementById('geoBtnPin').style.display = 'none';
+    document.getElementById('geoBtnSkip').style.display = 'none';
+    document.getElementById('geoBtnConfirm').style.display = 'none';
+    return;
+  }
+  const p = _geoQueue[_geoIdx];
+  const total = _geoQueue.length;
+
+  // Limpiar estado
+  _geoWait = false;
+  document.getElementById('geoBtnConfirm').disabled = true;
+  const elLat = document.getElementById('geoLatVal');
+  const elLng = document.getElementById('geoLngVal');
+  if (elLat) elLat.textContent = '—';
+  if (elLng) elLng.textContent = '—';
+  if (_geoMarker) { _geoMap.removeLayer(_geoMarker); _geoMarker = null; }
+
+  // Info de la propiedad
+  const imgSrc = (p['Imagenes']||'').split('|')[0].trim() || 'https://i.imgur.com/Pc9M3I8.png';
+  document.getElementById('geoInfoBox').innerHTML = `
+    <div style="display:flex;gap:12px;align-items:center">
+      <img src="${imgSrc}" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'" style="width:72px;height:60px;object-fit:cover;border-radius:6px;flex-shrink:0">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;color:#be8939;font-weight:700">${p['Código'] || ''}</div>
+        <div style="font-size:14px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p['Nombre'] || '(Sin nombre)'}</div>
+        <div style="font-size:11px;color:#999;margin-top:2px">${[p['Zona'],p['Barrio'],p['DIRECCIÓN']||p['Ubicación']].filter(Boolean).join(' • ')}</div>
+        <div style="font-size:11px;color:#4ade80;margin-top:2px;font-weight:600">${p['Precio'] ? '$'+Number(p['Precio']).toLocaleString('es-CO') : ''}</div>
+      </div>
+      <div style="font-size:11px;color:#666;text-align:right;flex-shrink:0">${_geoIdx+1} / ${total}</div>
+    </div>
+    <div style="margin-top:10px;background:rgba(255,255,255,.04);border-radius:6px;padding:6px 10px;display:flex;gap:16px;font-size:11px;color:#aaa">
+      <span>📍 Lat: <b id="geoLatVal" style="color:#fff">—</b></span>
+      <span>📍 Lng: <b id="geoLngVal" style="color:#fff">—</b></span>
+    </div>`;
+
+  // Si tiene barrio/zona, intentar centrar cerca
+  const zona = p['Zona'] || p['Barrio'] || '';
+  if (_geoMap) _geoMap.invalidateSize();
+}
+
+function geoActivarClic() {
+  if (_geoIdx >= _geoQueue.length) return;
+  _geoWait = true;
+  _geoMap.getContainer().style.cursor = 'crosshair';
+  document.getElementById('geoBtnPin').textContent = '🎯 Clic en el mapa...';
+  toast('Haz clic en el mapa para ubicar: ' + (_geoQueue[_geoIdx]['Código'] || ''), 'info');
+  setTimeout(() => { document.getElementById('geoBtnPin').textContent = '📍 Hacer clic en mapa'; }, 2000);
+}
+
+function geoConfirmar() {
+  const lat = document.getElementById('geoLatVal').textContent;
+  const lng = document.getElementById('geoLngVal').textContent;
+  if (lat === '—' || lng === '—') return;
+
+  const p = _geoQueue[_geoIdx];
+  const idx = allProps.findIndex(x => x['Código'] === p['Código']);
+  if (idx >= 0) {
+    allProps[idx]['Latitud']  = lat;
+    allProps[idx]['Longitud'] = lng;
+    // Guardar coordenadas en localStorage + hoja maestra del catálogo
+    syncCoords(p['Código'], lat, lng);
+    // Actualizar localStorage
+    const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
+    const cIdx = customProps.findIndex(x => x['Código'] === p['Código']);
+    const updated = { ...allProps[idx] };
+    if (cIdx >= 0) customProps[cIdx] = updated;
+    else customProps.push(updated);
+    localStorage.setItem('icde_custom_props', JSON.stringify(customProps));
+    toast(`✅ ${p['Código']} → guardado en hoja maestra`, 'success');
+  }
+
+  _geoIdx++;
+  geoMostrarActual();
+}
+
+function geoSaltar() {
+  _geoWait = false;
+  if (_geoMarker) { _geoMap.removeLayer(_geoMarker); _geoMarker = null; }
+  _geoIdx++;
+  geoMostrarActual();
+}
+
+function cerrarGeoMasivo() {
+  _geoWait = false;
+  if (_geoMap) _geoMap.getContainer().style.cursor = '';
+  document.getElementById('modalGeoMasivo').classList.remove('open');
+  actualizarPinesMapa('nl');
+}
+
+// --- NUEVO BUSCADOR PARA AGREGAR AL MAPA (OPCIÓN A) ---
+function abrirModalBuscarPropMapa() {
+  document.getElementById('searchPropMapaInput').value = '';
+  document.getElementById('searchPropMapaResults').innerHTML = '';
+  
+  // Mostrar sugerencias iniciales
+  filtrarPropsParaMapa('');
+  
+  document.getElementById('modalBuscarPropMapa').classList.add('open');
+  setTimeout(() => {
+    document.getElementById('searchPropMapaInput').focus();
+  }, 100);
+}
+
+function cerrarModalBuscarPropMapa() {
+  document.getElementById('modalBuscarPropMapa').classList.remove('open');
+}
+
+function filtrarPropsParaMapa(q) {
+  const container = document.getElementById('searchPropMapaResults');
+  const query = (q || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  
+  const matches = allProps.filter(p => {
+    if (!p) return false;
+    if (p.isKmzOnly) return false;
+    // Si no hay búsqueda, sugerir las primeras 5 propiedades que NO tengan coordenadas
+    if (!query) {
+      const lat = parseFloat(String(p['Latitud'] || p['Lat'] || '').replace(',','.'));
+      const lng = parseFloat(String(p['Longitud'] || p['Lng'] || '').replace(',','.'));
+      return isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0;
+    }
+    const cod = String(p['Código'] || '').toLowerCase();
+    const nom = String(p['Nombre'] || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return cod.includes(query) || nom.includes(query);
+  }).slice(0, 8);
+  
+  let html = '';
+  
+  if (matches.length > 0) {
+    html += matches.map(p => {
+      const barrio = p['Barrio'] || '';
+      const zona = p['Zona'] || '';
+      const loc = [barrio, zona].filter(Boolean).join(' / ');
+      return `
+        <div class="ed-cod-item" style="padding:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:8px; cursor:pointer; display:flex; flex-direction:column; gap:2px;" onclick="seleccionarPropParaMapa('${eq(p['Código'])}')">
+          <span style="font-size:13px; color:#fff; font-weight:600;"><span style="color:#d4a84b; font-weight:700;">${p['Código']}</span> · ${p['Nombre'] || ''}</span>
+          ${loc ? `<span style="font-size:11px; color:#888;">📍 ${loc}</span>` : ''}
+        </div>
+      `;
+    }).join('');
+  } else if (query) {
+    html += `
+      <div style="font-size:12px; color:var(--muted); text-align:center; padding:10px;">
+        No se encontraron propiedades en la matriz con ese término.
+      </div>
+    `;
+  } else {
+    html += `
+      <div style="font-size:12px; color:var(--muted); text-align:center; padding:10px;">
+        Todas las propiedades ya están ubicadas en el mapa.
+      </div>
+    `;
+  }
+  
+  // Agregar opción para crear nueva
+  html += `
+    <div class="ed-cod-item" style="padding:10px; background:rgba(212,168,75,0.08); border:1px solid rgba(212,168,75,0.25); border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="crearNuevaPropDesdeMapa()">
+      <span style="font-size:13px; color:#d4a84b; font-weight:700;">➕ Crear nueva propiedad desde cero</span>
+    </div>
+  `;
+  
+  container.innerHTML = html;
+}
+
+function seleccionarPropParaMapa(codigo) {
+  const p = allProps.find(x => x['Código'] === codigo);
+  if (!p) return;
+  
+  _pendingGeoProp = p;
+  cerrarModalBuscarPropMapa();
+  
+  // Asegurar que el mapa esté abierto y visible
+  const mapToggle = document.getElementById('btnToggleMapa_nl');
+  if (mapToggle && !mapToggle.checked) {
+    mapToggle.checked = true;
+    toggleMapa('nl');
+  }
+  
+  // Activar modo agregar
+  _activarModoAgregarMapaDirecto();
+  
+  toast(`Haz clic en el mapa para ubicar: ${p['Código']}`, 'info');
+}
+
+function crearNuevaPropDesdeMapa() {
+  _pendingGeoProp = null;
+  cerrarModalBuscarPropMapa();
+  
+  // Asegurar que el mapa esté abierto
+  const mapToggle = document.getElementById('btnToggleMapa_nl');
+  if (mapToggle && !mapToggle.checked) {
+    mapToggle.checked = true;
+    toggleMapa('nl');
+  }
+  
+  _activarModoAgregarMapaDirecto();
+  toast('Haz clic en el mapa para ubicar la nueva propiedad', 'info');
+}
+
+function _activarModoAgregarMapaDirecto() {
+  const btn = document.getElementById('btnAddProp_nl');
+  // Asegurarse de que el mapa esté inicializado
+  if (!leafletMap) {
+    toast('Primero activa el mapa con el toggle 🗺', 'error');
+    return;
+  }
+  mapAddMode = true;
+  if (btn) btn.classList.add('active');
+  leafletMap.getContainer().style.cursor = 'crosshair';
+  leafletMap.getContainer().classList.add('map-add-mode-active');
+  // Banner visual en el mapa
+  let banner = document.getElementById('mapAddModeBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'mapAddModeBanner';
+    banner.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:2000;background:rgba(34,197,94,0.92);color:#fff;font-family:Outfit,sans-serif;font-size:13px;font-weight:700;padding:8px 18px;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,0.35);pointer-events:none;white-space:nowrap;';
+    banner.textContent = '🖱 Haz clic en el mapa para ubicar la propiedad';
+    const mapDiv = leafletMap.getContainer();
+    if (mapDiv) mapDiv.style.position = 'relative';
+    leafletMap.getContainer().parentElement.appendChild(banner);
+  }
+  banner.style.display = '';
+}
+
+// --- SCRIPT 2 ---
+
+let lbIdx = 0;
+let lbFotos = [];
+
+window.lbAbrir = function(fotos, idx){
+  lbFotos = fotos;
+  lbIdx = idx;
+  document.getElementById('lightboxOverlay').classList.add('activo');
+  
+  const mins = document.getElementById('lightboxMins');
+  mins.innerHTML = lbFotos.map((u,i)=>`<img src="${u}" class="lightbox-min ${i===lbIdx?'activa':''}" onclick="lbIr(${i})"/>`).join('');
+  
+  lbIr(lbIdx);
+}
+
+window.lbIr = function(idx){
+  const n = lbFotos.length;
+  if(n<=0) return;
+  lbIdx = (idx + n) % n;
+  
+  const img = document.getElementById('lightboxImg');
+  img.src = lbFotos[lbIdx];
+  
+  document.getElementById('lightboxCounter').textContent = `${lbIdx+1} / ${n}`;
+  
+  const mins = document.querySelectorAll('.lightbox-min');
+  mins.forEach((m,i)=>m.classList.toggle('activa', i===lbIdx));
+  if(mins[lbIdx]) mins[lbIdx].scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+}
+
+window.lbCerrar = function(){
+  document.getElementById('lightboxOverlay').classList.remove('activo');
+}
+
+document.addEventListener('keydown', e => {
+  if(!document.getElementById('lightboxOverlay').classList.contains('activo')) return;
+  if(e.key==='Escape') lbCerrar();
+  if(e.key==='ArrowLeft') lbIr(lbIdx-1);
+  if(e.key==='ArrowRight') lbIr(lbIdx+1);
+});
+
+function generarSlugPropiedad(inmueble) {
+  const nombre = (inmueble["Nombre"] || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').substring(0, 60);
+  const codigo = String(inmueble["Código"] || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  return nombre ? nombre + '-' + codigo : 'propiedad-' + codigo;
+}
+
+function compartirPropiedad(codigo, btn){
+  const p = allProps.find(x=>x['Código']===codigo);
+  if(!p) return;
+  const url = 'https://icdeinmobiliaria.com/propiedad/' + generarSlugPropiedad(p) + '.html';
+  
+  navigator.clipboard.writeText(url).then(() => {
+    toast('Enlace copiado ✓');
+    if(btn){
+      const original = btn.innerHTML;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Enlace copiado';
+      btn.style.color = '#22c55e';
+      setTimeout(() => {
+        btn.innerHTML = original;
+        btn.style.color = '';
+      }, 2000);
+    }
+  });
+}
+
+let mpCarruselFotos = [];
+let mpCarruselIdx = 0;
+let mpMapaInstance = null;
+let mpMapaMarker = null;
+
+function abrirModalProp(codigoOrProp){
+  let p;
+  let isPreview = false;
+  if (typeof codigoOrProp === 'object') {
+    p = codigoOrProp;
+    isPreview = true;
+  } else {
+    p = allProps.find(x=>x['Código']===codigoOrProp);
+  }
+  if(!p) return;
+  
+  document.getElementById('mpTitle').textContent = p['Nombre'];
+  document.getElementById('mpType').textContent = p['Tipo de inmueble'] || 'Inmueble';
+  document.getElementById('mpCode').textContent = `Código: ${p['Código']}`;
+  document.getElementById('mpPrice').textContent = formatFullPrice(p['Precio']);
+  document.getElementById('mpDesc').textContent = p['Descripción'] || 'Sin descripción';
+  document.getElementById('mpKeyPoints').textContent = p['Puntos Clave'] || 'No especificados';
+  
+  // Fotos
+  mpCarruselFotos = (p['Imagenes']||'').split('|').map(u=>u.trim()).filter(u=>u.length>5);
+  if(!mpCarruselFotos.length) mpCarruselFotos = [p['Image'] || 'https://i.imgur.com/Pc9M3I8.png'];
+  
+  mpCarruselInit();
+  
+  const tags = document.getElementById('mpTags');
+  tags.innerHTML = '';
+  if(p['Habitaciones']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/ykKdGwE.png" width="16"/> <strong>${p['Habitaciones']}</strong> Hab</div>`;
+  if(p['Baños']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/h9NqA32.png" width="16"/> <strong>${p['Baños']}</strong> Baños</div>`;
+  if(p['Garaje'] && p['Garaje']!=='No') tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/4Yixa77.png" width="16"/> <strong>${p['Garaje']}</strong> Garaje</div>`;
+  if(p['Cocina'] && p['Cocina']!=='No') tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/rH6cXMa.png" width="16"/> <strong>Cocina</strong> ${p['Cocina']}</div>`;
+  if(p['Pisos']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://img.icons8.com/ios-filled/50/ffffff/stairs.png" width="16"/> <strong>${p['Pisos']}</strong> Pisos</div>`;
+  
+  const specsTable = document.getElementById('mpSpecsTable');
+  const items = [
+    ['Ciudad', p['Ciudad']],
+    ['Zona', p['Zona']],
+    ['Comuna', p['Comuna']],
+    ['Estrato', p['Estrato']],
+    ['Ubicación', p['Ubicación']],
+    ['Área construida', p['Área Construida'] || p['Área'] || p['area'] || ''],
+    ['Área lote', p['Área lote']],
+    ['Closets', p['Closet']],
+    ['Cocina', p['Cocina']],
+    ['Ascensor', p['Ascensor']],
+    ['Número de Cortinas', p['Número de Cortinas']],
+    ['Aire Acondicionado', p['Aire Acondicionado']],
+    ['Reja Antejardín', p['Reja Antejardín']],
+    ['Patio', p['Patio']],
+    ['Piscina', p['Piscina']],
+    ['Antigüedad', p['Antigüedad del Inmueble']],
+    ['Dimensiones', p['Dimensiones']],
+    ['Administración', p['Administración'] || p['Administracion'] || ''],
+    ['Retorno de la inversión', p['Retorno de la inversión'] || p['Rentabilidad'] || p['rentabilidad'] || ''],
+    ['Propietario', p['Nombre del Propietario']],
+    ['Celular 1', p['Celular 1'] || p['Celulares']],
+    ['Celular 2', p['Celular 2']],
+    ['Cuánto Renta', p['Cuánto Renta ($)'] ? `$${Number(p['Cuánto Renta ($)']).toLocaleString('es-CO')}` : ''],
+    ['Inventario', p['Inventario'] && String(p['Inventario']).trim() !== '' ? String(p['Inventario']).trim() : 'NO'],
+    ['Inmobiliaria', p['Inmobiliaria'] || 'Directo'],
+    ['Dirección', p['DIRECCIÓN'] || p['DIRECCIÒN-VEREDA'] || p['Ubicación'] || '']
+  ];
+  specsTable.innerHTML = items.map(([k,v]) => {
+    const displayVal = (v !== undefined && v !== null && String(v).trim() !== '') ? String(v).trim() : '—';
+    return `<tr><td>${k}</td><td>${displayVal}</td></tr>`;
+  }).join('');
+  
+  const btnShare = document.querySelector('.modal-btn-compartir');
+  if(btnShare) {
+    if (isPreview) {
+      btnShare.style.display = 'none';
+    } else {
+      btnShare.style.display = 'flex';
+      btnShare.onclick = () => compartirPropiedad(p['Código'], btnShare);
+    }
+  }
+
+  const btnEdit = document.querySelector('.btn-edit-prop');
+  if(btnEdit) {
+    if (isPreview) {
+      btnEdit.style.display = 'none';
+    } else {
+      btnEdit.style.display = 'flex';
+      btnEdit.onclick = () => { cerrarModalProp(); abrirEditorProp(p['Código']); };
+    }
+  }
+  
+  // Custom top banner for simulated preview
+  let banner = document.getElementById('mpPreviewBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'mpPreviewBanner';
+    banner.style.cssText = 'position:absolute; top:0; left:0; right:0; background:rgba(212,168,75,0.9); color:#000; text-align:center; padding:8px; font-weight:bold; font-size:12px; z-index:10000; letter-spacing:1px; text-transform:uppercase;';
+    banner.textContent = 'Vista previa — aún no guardada';
+    document.getElementById('modalPropOverlay').appendChild(banner);
+  }
+  banner.style.display = isPreview ? 'block' : 'none';
+  
+  document.getElementById('modalPropOverlay').classList.add('active');
+
+  // Inicializar/Actualizar Mapa
+  setTimeout(() => {
+    initMpMapa(p);
+  }, 300); // Esperar a que el modal sea visible
+}
+
+function initMpMapa(p) {
+  const container = document.getElementById('mpMapa');
+  const errorMsg = document.getElementById('mpMapaError');
+  if(!container) return;
+
+  let lat = parseFloat(String(p['Latitud'] || p['Lat'] || '').replace(',','.'));
+  let lng = parseFloat(String(p['Longitud'] || p['Lng'] || '').replace(',','.'));
+
+  if(isNaN(lat) || isNaN(lng) || lat === 0) {
+    container.style.display = 'none';
+    if(errorMsg) errorMsg.style.display = 'block';
+    return;
+  }
+
+  container.style.display = 'block';
+  if(errorMsg) errorMsg.style.display = 'none';
+
+  if(!mpMapaInstance) {
+    mpMapaInstance = L.map('mpMapa', { zoomControl: false }).setView([lat, lng], 16);
+    L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      attribution: '&copy; Google Maps',
+      maxZoom: 20
+    }).addTo(mpMapaInstance);
+    L.control.zoom({ position: 'bottomright' }).addTo(mpMapaInstance);
+  } else {
+    mpMapaInstance.setView([lat, lng], 16);
+    mpMapaInstance.invalidateSize();
+  }
+
+  if(mpMapaMarker) mpMapaInstance.removeLayer(mpMapaMarker);
+
+  const price = p['Precio'] ? formatShortPrice(p['Precio']) : 'N/A';
+  const icon = L.divIcon({
+    className: 'z-marker-wrap',
+    html: `<div class="z-marker active" style="transform: scale(1.2);">${price}</div>`,
+    iconSize: [60, 25],
+    iconAnchor: [30, 25]
+  });
+
+  mpMapaMarker = L.marker([lat, lng], { icon }).addTo(mpMapaInstance);
+
+  // Update Street View thumbnail
+  const svThumb = document.getElementById('mpStreetViewThumb');
+  const svImg = document.getElementById('mpStreetViewImg');
+  if (svThumb && svImg) {
+    window._mpSvLat = lat;
+    window._mpSvLng = lng;
+    svImg.src = `https://maps.googleapis.com/maps/api/streetview?size=100x70&scale=2&location=${lat},${lng}&key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0`;
+    svImg.style.display = 'block';
+    svThumb.style.display = 'block';
+  }
+}
+
+function mpCarruselInit(){
+  mpCarruselIdx = 0;
+  const principal = document.getElementById('mpCarruselPrincipal');
+  principal.querySelectorAll('.carrusel-slide').forEach(s=>s.remove());
+  
+  mpCarruselFotos.forEach((u,i)=>{
+    const slide = document.createElement('div');
+    slide.className = 'carrusel-slide' + (i===0?' activa':'');
+    slide.innerHTML = `<img src="${u}" loading="lazy" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>`;
+    principal.insertBefore(slide, principal.querySelector('.carrusel-prev'));
+  });
+  
+  const mini = document.getElementById('mpCarruselMiniaturas');
+  mini.innerHTML = mpCarruselFotos.map((u,i)=>`<img src="${u}" class="carrusel-min ${i===0?'activa':''}" onclick="mpCarruselIrA(${i})"/>`).join('');
+  
+  document.getElementById('mpCarruselCounter').textContent = `1 / ${mpCarruselFotos.length}`;
+}
+
+function mpCarruselIr(delta){
+  mpCarruselIrA(mpCarruselIdx + delta);
+}
+
+function mpCarruselIrA(idx){
+  const n = mpCarruselFotos.length;
+  if(n<=1) return;
+  mpCarruselIdx = (idx + n) % n;
+  
+  const slides = document.querySelectorAll('#mpCarruselPrincipal .carrusel-slide');
+  slides.forEach((s,i)=>s.classList.toggle('activa', i===mpCarruselIdx));
+  
+  const mins = document.querySelectorAll('#mpCarruselMiniaturas .carrusel-min');
+  mins.forEach((m,i)=>m.classList.toggle('activa', i===mpCarruselIdx));
+  if(mins[mpCarruselIdx]) mins[mpCarruselIdx].scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+  
+  document.getElementById('mpCarruselCounter').textContent = `${mpCarruselIdx+1} / ${n}`;
+}
+
+function cerrarModalProp(){
+  document.getElementById('modalPropOverlay').classList.remove('active');
+  // No destruimos la instancia para reutilizarla, pero podemos limpiar el marcador si queremos
+}
+function updTimelineNota(leadId, idx, val) {
+  const l = leads.find(x => String(x.id) === String(leadId));
+  if (!l || !l.historialEnvios || !l.historialEnvios[idx]) return;
+  l.historialEnvios[idx].notas = val;
+  saveLeads();
+  syncSheets(l);
+  toast('Nota actualizada', 'success');
+}
+
+function sincronizarAliadosConPropiedades() {
+  let aliados = JSON.parse(localStorage.getItem('icde_aliados') || '[]');
+  if (!Array.isArray(aliados)) aliados = [];
+  
+  // Limpiar las que se insertaron automáticamente por etiquetas en pruebas anteriores
+  // También limpiar Finca Raíz, Metrocuadrado y Ciencuadras ya que el usuario no las quiere.
+  const lenOriginal = aliados.length;
+  aliados = aliados.filter(a => {
+    if (!a || typeof a !== 'object') return false;
+    if (a.notas === 'Autosincronizado desde propiedad') return false;
+    if (['finca raiz', 'metrocuadrado', 'ciencuadras'].includes(norm(a.nombre))) return false;
+    return true;
+  });
+  
+  const LW_PARTNERS = [
+    { nombre: "Elite Group", urlBase: "https://inmobiliariaelitegroupsas.com/", notas: "Carrusel Index" },
+    { nombre: "Soluciones La Primavera", urlBase: "https://www.solucioneslaprimavera.com/", notas: "Carrusel Index" },
+    { nombre: "Rocha Finca Raíz", urlBase: "https://rochafincaraiz.com/welcome/", notas: "Carrusel Index" },
+    { nombre: "Inmobiliaria Jovel Muñoz", urlBase: "https://www.inmobiliariajovelmunoz.com.co/", notas: "Carrusel Index" },
+    { nombre: "Inmobiliaria Santa María Vera", urlBase: "https://inmobiliariasantamariavera.com/", notas: "Carrusel Index" },
+    { nombre: "MAC Negocios Inmobiliarios", urlBase: "https://web.facebook.com/people/MAC-negocios-Inmobiliarios/61581485549130/", notas: "Carrusel Index" },
+    { nombre: "Inmobiliaria JP Escobar", urlBase: "https://www.inmobiliariajpescobar.com.co/", notas: "Carrusel Index" },
+    { nombre: "Asuntos Inmobiliarios", urlBase: "https://www.facebook.com/figueroayasociadoshuila/?locale=es_LA", notas: "Carrusel Index" },
+    { nombre: "Casa Honor Inmobiliaria", urlBase: "https://casahonorinmobiliaria.com/", notas: "Carrusel Index" },
+    { nombre: "Rediis Armiento", urlBase: "https://www.instagram.com/rediisarmiento/", notas: "Carrusel Index" },
+    { nombre: "Inmobiliaria Casa & Casa", urlBase: "https://casaycasainmobiliariadelhuila.com/", notas: "Carrusel Index" },
+    { nombre: "Inmobiliaria Rustik House", urlBase: "https://inmobiliarianeiva.com/", notas: "Carrusel Index" },
+    { nombre: "Menber", urlBase: "https://casasenventaneiva.com/", notas: "Carrusel Index" }
+  ];
+
+  const nombresExistentes = new Set(aliados.map(a => a && a.nombre ? norm(a.nombre) : ''));
+  let updated = (aliados.length !== lenOriginal);
+
+  LW_PARTNERS.forEach((p, idx) => {
+    const n = norm(p.nombre);
+    if (!nombresExistentes.has(n)) {
+      nombresExistentes.add(n);
+      aliados.push({
+        id: 'ally_' + Date.now().toString() + '_' + idx,
+        nombre: p.nombre,
+        urlBase: p.urlBase,
+        frecuenciaDias: 15,
+        ultimoBarrido: '',
+        notas: p.notas
+      });
+      updated = true;
+    } else {
+      const existing = aliados.find(a => norm(a.nombre) === n);
+      if (existing && (!existing.urlBase || existing.notas === 'Autosincronizado desde propiedad')) {
+        existing.urlBase = p.urlBase;
+        existing.notas = p.notas;
+        updated = true;
+      }
+    }
+  });
+
+  if (updated || !localStorage.getItem('icde_aliados_migrated')) {
+    localStorage.setItem('icde_aliados', JSON.stringify(aliados));
+    localStorage.setItem('icde_aliados_migrated', 'true');
+  }
+}
+
+function renderGestion() {
+  sincronizarAliadosConPropiedades();
+  const c = document.getElementById('mainContent');
+  if (!window.currentGestionSubTab) {
+    window.currentGestionSubTab = 'nueva';
+  }
+  
+  c.innerHTML = `
+    <div class="section-header" style="margin-bottom: 20px;">
+      <div class="section-title" style="display: flex; align-items: center; gap: 10px;">
+        <span>🏠</span> Gestión de Inmuebles
+      </div>
+      <div class="sub-tabs" style="display: flex; gap: 10px;">
+        <button class="btn ${window.currentGestionSubTab==='nueva'?'btn-primary':'btn-secondary'}" onclick="setGestionSubTab('nueva')">🏠 Nueva Propiedad</button>
+        <button class="btn ${window.currentGestionSubTab==='barrido'?'btn-primary':'btn-secondary'}" onclick="setGestionSubTab('barrido')">📡 Barrido de Aliados</button>
+        <button class="btn ${window.currentGestionSubTab==='aliados'?'btn-primary':'btn-secondary'}" onclick="setGestionSubTab('aliados')">👥 Gestión de Aliados</button>
+      </div>
+    </div>
+    
+    <div id="gestionAlerts"></div>
+    <div id="gestionSubContent"></div>
+  `;
+  
+  if (window.currentGestionSubTab === 'nueva') {
+    renderNuevaPropiedad();
+  } else if (window.currentGestionSubTab === 'barrido') {
+    renderBarridoAliados();
+  } else if (window.currentGestionSubTab === 'aliados') {
+    renderGestionAliados();
+  }
+  
+  checkOverdueSweepAlert();
+}
+
+function setGestionSubTab(subTab) {
+  window.currentGestionSubTab = subTab;
+  renderGestion();
+}
+
+/* SUB-TAB 1: NUEVA PROPIEDAD */
+function renderNuevaPropiedad() {
+  const sub = document.getElementById('gestionSubContent');
+  const uniqueBarrios = Array.from(new Set(allProps.map(p => p['Barrio']).filter(Boolean)));
+  const datalistHTML = `<datalist id="datalist_barrios">${uniqueBarrios.map(b => `<option value="${b}"></option>`).join('')}</datalist>`;
+  
+  sub.innerHTML = `
+    ${datalistHTML}
+    <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px;">
+        <div style="font-size: 16px; font-weight: 700; color: var(--gold);">📝 Registrar Nuevo Inmueble</div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary btn-sm" id="btn_gp_ia" onclick="gpAutoGenerarIA()">✨ Generar con IA</button>
+        </div>
+      </div>
+      
+      <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 24px;">
+        <div class="form-group" style="position:relative;"><label class="form-label">Código</label>
+          <input class="form-input" id="gp_codigo" type="text" placeholder="Año + Secuencia (Auto-generar si está vacío)" oninput="validarCodigoExistente(this.value)"/>
+          <span id="gp_codigo_msg" style="display:none; position:absolute; right:10px; bottom:-16px; font-size:11px; font-weight:600;"></span>
+          
+          <!-- Dropdown para autocompletar -->
+          <div id="gp_codigo_dropdown" style="display:none; position:absolute; left:0; right:0; top:calc(100% + 2px); background:#141210; border:1px solid rgba(212,168,75,0.3); border-radius:10px; padding:0; z-index:100; box-shadow:0 10px 30px rgba(0,0,0,0.8); max-height:200px; overflow-y:auto;">
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Nombre *</label>
+          <div style="display:flex; gap:6px;">
+            <input class="form-input" id="gp_nombre" type="text" placeholder="Apartamento en barrio X" style="flex:1;"/>
+            <button class="btn btn-secondary btn-sm" onclick="gpAutoGenerarNombre()" style="padding:0 8px;">Auto</button>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Tipo de inmueble *</label>
+          <select class="form-input" id="gp_tipo">
+            <option value="Apartamento">Apartamento</option>
+            <option value="Casa">Casa</option>
+            <option value="Local">Local</option>
+            <option value="Lote">Lote</option>
+            <option value="Bodega">Bodega</option>
+            <option value="Finca">Finca</option>
+            <option value="Oficina">Oficina</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Contrato *</label>
+          <select class="form-input" id="gp_contrato">
+            <option value="Directo">Directo</option>
+            <option value="Aliado">Aliado</option>
+            <option value="Verbal">Verbal</option>
+            <option value="No Servicio">No Servicio</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Precio *</label><input class="form-input" id="gp_precio" type="text" placeholder="COP (Separador miles al escribir)" oninput="formatPrecioOnInput(this)"/></div>
+        <div class="form-group" style="position:relative;"><label class="form-label">Barrio *</label>
+          <input class="form-input" id="gp_barrio" type="text" list="datalist_barrios" placeholder="Barrio" onblur="autocompletarBarrio(this.value)"/>
+          <span class="autofilled-msg" id="gp_barrio_msg" style="display:none; position:absolute; right:10px; bottom:-16px;"></span>
+        </div>
+        <div class="form-group"><label class="form-label">Conjunto / Edificio</label><input class="form-input" id="gp_conjunto" type="text" placeholder="Ej: Condominio Real"/></div>
+        <div class="form-group"><label class="form-label">Zona</label>
+          <select class="form-input" id="gp_zona">
+            <option value="">Selecciona...</option>
+            <option value="Centro">Centro</option>
+            <option value="Norte">Norte</option>
+            <option value="Occidente">Occidente</option>
+            <option value="Oriente">Oriente</option>
+            <option value="Rural">Rural</option>
+            <option value="Sur">Sur</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Ciudad</label><input class="form-input" id="gp_ciudad" type="text" value="Cali"/></div>
+        <div class="form-group"><label class="form-label">Estrato</label>
+          <select class="form-input" id="gp_estrato">
+            <option value="">Selecciona...</option>
+            ${[1,2,3,4,5,6].map(e => `<option value="${e}">${e}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Dirección</label><input class="form-input" id="gp_ubicacion" type="text" placeholder="Dirección exacta"/></div>
+        <div class="form-group"><label class="form-label">Habitaciones</label>
+          <select class="form-input" id="gp_habitaciones">
+            ${[1,2,3,4,5,'6+'].map(h => `<option value="${h}">${h}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Baños</label>
+          <select class="form-input" id="gp_banos">
+            ${[1,2,3,4,'5+'].map(b => `<option value="${b}">${b}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Garaje</label>
+          <select class="form-input" id="gp_garaje">
+            <option value="No">No</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3+">3+</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Cocina</label>
+          <select class="form-input" id="gp_cocina">
+            <option value="No">No</option>
+            <option value="Integral">Integral</option>
+            <option value="Semi-integral">Semi-integral</option>
+            <option value="Tradicional">Tradicional</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Piscina</label>
+          <select class="form-input" id="gp_piscina">
+            <option value="No tiene">No tiene</option>
+            <option value="Privada">Privada</option>
+            <option value="Social">Social</option>
+            <option value="Jacuzzi">Jacuzzi</option>
+            <option value="Jacuzzi/Social">Jacuzzi/Social</option>
+            <option value="Propia">Propia (Vieja)</option>
+            <option value="Comunal">Comunal (Vieja)</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Pisos</label>
+          <select class="form-input" id="gp_pisos">
+            ${Array.from({length: 18}, (_, i) => '<option value="' + i + '"' + (i === 1 ? ' selected' : '') + '>' + i + '</option>').join('')}
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Ubicación (Posición)</label>
+          <select class="form-input" id="gp_ubicacion_posicion">
+            <option value="Medianera">Medianera</option>
+            <option value="Esquinera">Esquinera</option>
+            <option value="Intermedia">Intermedia</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Google Fotos (Link Álbum)</label>
+          <input class="form-input" id="gp_gfotos" type="text" placeholder="https://photos.app.goo.gl/..." oninput="debounceGFotosPreview(this.value)"/>
+          <div id="gp_gfotos_preview" style="margin-top:10px;"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Inmobiliaria / Aliado</label><input class="form-input" id="gp_inmobiliaria" type="text" placeholder="Dejar vacío para ICDE (Nativa)"/></div>
+        <div class="form-group"><label class="form-label">Administración ($)</label><input class="form-input" id="gp_administracion" type="text" placeholder="Valor mensual" oninput="formatPrecioOnInput(this)"/></div>
+        <div class="form-group"><label class="form-label">Retorno inversión (Rentabilidad)</label><input class="form-input" id="gp_rentabilidad" type="text" placeholder="Ej: 8% anual"/></div>
+        
+        <div class="form-group"><label class="form-label">Comuna</label>
+          <select class="form-input" id="gp_comuna">
+            ${Array.from({length: 11}, (_, i) => '<option value="' + i + '">' + i + '</option>').join('')}
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Área de Lote (m²)</label><input class="form-input" id="gp_area_lote" type="number" placeholder="m²"/></div>
+        <div class="form-group"><label class="form-label">Área Construida (m²)</label><input class="form-input" id="gp_area" type="number" placeholder="m²"/></div>
+        <div class="form-group"><label class="form-label">Clósets</label>
+          <select class="form-input" id="gp_closets">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5+">5+</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Inventario</label>
+          <select class="form-input" id="gp_inventario">
+            <option value="NO">NO</option>
+            <option value="Inventario">Inventario</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Celular 1</label><input class="form-input" id="gp_celulares" type="text" placeholder="Celular 1"/></div>
+        <div class="form-group"><label class="form-label">Celular 2</label><input class="form-input" id="gp_celular_2" type="text" placeholder="Celular 2"/></div>
+        <div class="form-group"><label class="form-label">Nombre del Propietario</label><input class="form-input" id="gp_propietario" type="text" placeholder="Propietario"/></div>
+        <div class="form-group"><label class="form-label">Cuánto Renta ($)</label><input class="form-input" id="gp_renta" type="text" placeholder="Cuánto renta" oninput="formatPrecioOnInput(this)"/></div>
+        <div class="form-group"><label class="form-label">Ascensor</label>
+          <select class="form-input" id="gp_ascensor">
+            <option value="NO">NO</option>
+            <option value="SI">SI</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Número de Cortinas</label>
+          <select class="form-input" id="gp_cortinas">
+            <option value="0">0</option>
+            <option value="NO">NO</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="SI">SI</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Aire Acondicionado</label>
+          <select class="form-input" id="gp_aire_acondicionado">
+            <option value="0">0</option>
+            <option value="NO">NO</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="SI">SI</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Reja Antejardín</label>
+          <select class="form-input" id="gp_reja_antejardin">
+            <option value="NO">NO</option>
+            <option value="SI">SI</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Antigüedad del Inmueble</label><input class="form-input" id="gp_antiguedad" type="text" placeholder="Ej: 5 años, Nuevo, Remodelado"/></div>
+        <div class="form-group"><label class="form-label">Patio</label>
+          <select class="form-input" id="gp_patio">
+            <option value="0">0</option>
+            <option value="SI">SI</option>
+            <option value="NO">NO</option>
+            <option value="G">G</option>
+            <option value="M">M</option>
+            <option value="P">P</option>
+            <option value="A">A</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Dimensiones</label><input class="form-input" id="gp_dimensiones" type="text" placeholder="Ej: 7x12m"/></div>
+        
+        <div class="form-group"><label class="form-label">Latitud</label><input class="form-input" id="gp_lat" type="number" step="any" placeholder="3.3986"/></div>
+        <div class="form-group"><label class="form-label">Longitud</label><input class="form-input" id="gp_lng" type="number" step="any" placeholder="-76.5321"/></div>
+        
+        <div class="form-group" style="display:flex; flex-direction:column; gap:8px; justify-content:center; background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; border:1px solid var(--border);">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12.5px;"><input type="checkbox" id="gp_destacada" style="transform: scale(1.1);"/> Destacada ⭐</label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12.5px;"><input type="checkbox" id="gp_publicar" checked style="transform: scale(1.1);"/> Publicar en Web 👁️</label>
+        </div>
+        
+        <div class="form-group full">
+          <label class="form-label">Descripción *</label>
+          <textarea class="form-input" id="gp_descripcion" style="min-height: 100px;" placeholder="Descripción completa del inmueble..."></textarea>
+        </div>
+        
+        <div class="form-group full">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label class="form-label">Puntos Clave (Uno por línea)</label>
+            <button class="btn btn-secondary btn-sm" id="btn_gp_pc_ia" onclick="gpGenerarPuntosClaveIA()" style="font-size:10px; padding:2px 6px;">✨ Extraer de Desc.</button>
+          </div>
+          <textarea class="form-input" id="gp_puntos_clave" style="min-height: 80px;" placeholder="Ej: Cocina integral americana&#10;Vista exterior al parque&#10;Dos garajes lineales cubiertos"></textarea>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;">
+        <button class="btn btn-danger" onclick="resetNuevaPropForm()">❌ Cancelar / Limpiar</button>
+        <button class="btn btn-secondary" onclick="gpVistaPrevia()">👁️ Vista Previa</button>
+        <button class="btn btn-primary" id="btn_gp_guardar" onclick="guardarPropiedad()">💾 Guardar Propiedad</button>
+      </div>
+    </div>
+  `;
+  
+  checkBorradorPropiedad();
+}
+
+function gpAutoGenerarNombre() {
+  const tipo = document.getElementById('gp_tipo').value;
+  const barrio = document.getElementById('gp_barrio').value;
+  if (barrio) {
+    document.getElementById('gp_nombre').value = `${tipo} en barrio ${barrio}`;
+    toast('Nombre auto-generado ✓', 'success');
+  } else {
+    toast('Por favor escribe el barrio para generar el nombre', 'error');
+  }
+}
+
+function autocompletarBarrio(barrioName) {
+  if (!barrioName) return;
+  const match = allProps.find(p => norm(p['Barrio']) === norm(barrioName));
+  if (match) {
+    const z = match['Zona'] || '';
+    const c = match['Ciudad'] || 'Cali';
+    const e = match['Estrato'] || '';
+    
+    const inputZona = document.getElementById('gp_zona');
+    const inputCiudad = document.getElementById('gp_ciudad');
+    const inputEstrato = document.getElementById('gp_estrato');
+    
+    let autofilled = false;
+    if (inputZona && !inputZona.value) { inputZona.value = z; autofilled = true; }
+    if (inputCiudad && (!inputCiudad.value || inputCiudad.value === 'Cali')) { inputCiudad.value = c; autofilled = true; }
+    if (inputEstrato && !inputEstrato.value) { inputEstrato.value = e; autofilled = true; }
+    
+    if (autofilled) {
+      const msg = document.getElementById('gp_barrio_msg');
+      if (msg) {
+        msg.style.display = 'inline-block';
+        msg.textContent = '✓ autocompletado';
+        setTimeout(() => { msg.style.display = 'none'; }, 4000);
+      }
+      toast('Datos de barrio autocompletados ✓', 'success');
+    }
+  }
+}
+
+function formatPrecioOnInput(el) {
+  let val = el.value.replace(/[^\d]/g, "");
+  if (val) {
+    el.value = Number(val).toLocaleString('es-CO');
+  } else {
+    el.value = "";
+  }
+}
+
+let icdeMatrixText = '';
+let loadingMatrix = false;
+window.currentMatchedProp = null;
+
+async function validarCodigoExistente(codigo) {
+  const msg = document.getElementById('gp_codigo_msg');
+  const input = document.getElementById('gp_codigo');
+  const dropdown = document.getElementById('gp_codigo_dropdown');
+  
+  if (!codigo) {
+    if (msg) msg.style.display = 'none';
+    if (input) input.style.borderColor = '';
+    if (dropdown) dropdown.style.display = 'none';
+    window.currentMatchedProp = null;
+    return;
+  }
+  
+  let exactMatch = null;
+  
+  // Buscar coincidencia exacta en allProps (Datos de Apps Script / Matriz), ignorando KMZ
+  const propFromAllProps = allProps.find(p => {
+    if (p.isKmzOnly) return false;
+    const codeStr = String(p['Código'] || '').trim();
+    if (codeStr.toLowerCase() === codigo.toLowerCase()) return true;
+    if (!isNaN(codeStr) && !isNaN(codigo) && parseFloat(codeStr) === parseFloat(codigo)) return true;
+    return false;
+  });
+  
+  if (propFromAllProps) {
+    exactMatch = {...propFromAllProps};
+  }
+
+  if (exactMatch) {
+    window.currentMatchedProp = exactMatch;
+    if (msg) {
+      msg.style.display = 'inline-block';
+      msg.style.color = '#ef4444';
+      msg.textContent = '✕ Código ya existe';
+    }
+    if (input) input.style.borderColor = '#ef4444';
+  } else {
+    window.currentMatchedProp = null;
+    if (msg) {
+      msg.style.display = 'inline-block';
+      msg.style.color = '#22c55e';
+      msg.textContent = '✓ Disponible';
+    }
+    if (input) input.style.borderColor = '#22c55e';
+  }
+
+  // Filtrar sugerencias de inmuebles códigos que están en la matriz base de datos (excluyendo KMZ)
+  const query = codigo.toLowerCase();
+  const matches = allProps.filter(p => {
+    if (p.isKmzOnly) return false;
+    const codeStr = String(p['Código'] || '').trim().toLowerCase();
+    return codeStr.includes(query);
+  }).slice(0, 10);
+
+  if (matches.length > 0) {
+    if (dropdown) {
+      dropdown.style.display = 'block';
+      dropdown.innerHTML = matches.map(p => {
+        const name = p['Nombre'] || 'Sin nombre';
+        const barrio = p['Barrio'] || '';
+        const zona = p['Zona'] || '';
+        const code = p['Código'] || codigo;
+        return `
+          <div class="gp-cod-item" style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(212,168,75,0.1)'" onmouseout="this.style.background=''" onclick="autofillPropiedadPorCodigo('${eq(code)}')">
+            <div>
+              <span style="color:var(--gold); font-weight:700;">${code}</span> · ${name}
+              <div style="font-size:11px; color:var(--muted); margin-top:2px;">${barrio}</div>
+            </div>
+            <div style="font-size:11px; color:rgba(255,255,255,0.5);">${zona}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  } else {
+    if (dropdown) dropdown.style.display = 'none';
+  }
+}
+
+// Ocultar dropdown de códigos al hacer clic fuera
+document.addEventListener('click', function(e) {
+  const gpCod = document.getElementById('gp_codigo');
+  const gpDrop = document.getElementById('gp_codigo_dropdown');
+  if (gpDrop && gpCod && !gpCod.contains(e.target) && !gpDrop.contains(e.target)) {
+    gpDrop.style.display = 'none';
+  }
+});
+
+function autofillPropiedadPorCodigo(selectedCode) {
+  let p = null;
+  if (selectedCode) {
+    p = allProps.find(x => !x.isKmzOnly && String(x['Código'] || '').trim().toLowerCase() === String(selectedCode).trim().toLowerCase());
+  } else {
+    p = window.currentMatchedProp;
+  }
+  if (!p) return;
+  
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (val === undefined || val === null) { el.value = ''; return; }
+    el.value = val;
+    // Si es un select y el valor no coincidió con ninguna opción, inyectarlo dinámicamente
+    if (el.tagName === 'SELECT' && val && el.value !== val) {
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = val;
+      el.appendChild(opt);
+      el.value = val;
+    }
+  };
+  const setChecked = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+  
+  setVal('gp_codigo', p['Código']);
+  setVal('gp_nombre', p['Nombre'] || p['nombre']);
+  setVal('gp_tipo', p['Tipo de inmueble'] || p['tipo'] || 'Apartamento');
+  setVal('gp_contrato', p['Contrato'] || p['contrato'] || 'Directo');
+  
+  const precioEl = document.getElementById('gp_precio');
+  const precioVal = p['Precio'] || p['precio'] || '';
+  if (precioEl) {
+    precioEl.value = precioVal;
+    formatPrecioOnInput(precioEl);
+  }
+  
+  setVal('gp_barrio', p['Barrio'] || p['barrio']);
+  setVal('gp_conjunto', p['Conjunto'] || p['Conjunto / Edificio'] || p['conjunto'] || p['Edificio']);
+  setVal('gp_zona', p['Zona'] || p['zona']);
+  setVal('gp_ciudad', p['Ciudad'] || p['ciudad'] || 'Cali');
+  setVal('gp_estrato', p['Estrato'] || p['estrato']);
+  
+  // Dirección exacta (Ubicación posicional es distinto)
+  setVal('gp_ubicacion', p['DIRECCIÓN'] || p['Dirección'] || p['DIRECCIÒN-VEREDA'] || p['Dirección-Vereda'] || '');
+  
+  setVal('gp_habitaciones', p['Habitaciones'] || p['habitaciones'] || '1');
+  setVal('gp_banos', p['Baños'] || p['banos'] || '1');
+  setVal('gp_garaje', p['Garaje'] || p['garaje'] || 'No');
+  setVal('gp_area', p['Área Construida'] || p['Área'] || p['Área (m²)'] || p['area'] || '');
+  
+  setVal('gp_cocina', p['Cocina'] || p['cocina'] || 'No');
+  setVal('gp_piscina', p['Piscina'] || p['piscina'] || 'No tiene');
+  setVal('gp_pisos', p['Pisos'] || p['pisos'] || '1');
+  
+  // Posición (Medianera, etc)
+  setVal('gp_ubicacion_posicion', p['Ubicación'] || p['Ubicación (Posición)'] || p['Posición'] || 'Medianera');
+  
+  let gfLink = p['Google Fotos'] || '';
+  console.log(`[Diagnostic Log] Autocompletando Google Fotos para inmueble ${selectedCode || p['Código']}. Valor en p['Google Fotos']: "${p['Google Fotos'] || ''}"`);
+  if (!gfLink) {
+    const possibleKeys = ['Google Fotos (Link Álbum)', 'googleFotos', 'Imagenes', 'Image'];
+    for (const k of possibleKeys) {
+      if (p[k] && typeof p[k] === 'string' && (p[k].includes('photos.app.goo.gl') || p[k].includes('photos.google.com'))) {
+        gfLink = p[k];
+        console.log(`[Diagnostic Log] Enlace de Google Fotos recuperado de la llave alternativa "${k}": "${gfLink}"`);
+        break;
+      }
+    }
+  }
+  if (!gfLink) {
+    console.warn(`[Diagnostic Log] ¡Advertencia! No se encontró un enlace de Google Fotos para este inmueble en ninguna llave. Llaves disponibles en el objeto del inmueble:`, Object.keys(p));
+  } else {
+    console.log(`[Diagnostic Log] Asignando enlace final de Google Fotos al input 'gp_gfotos': "${gfLink}"`);
+  }
+  setVal('gp_gfotos', gfLink);
+  
+  setVal('gp_inmobiliaria', p['Inmobiliaria'] || p['Inmobiliaria / Aliado'] || p['inmobiliaria'] || p['Inmob'] || '');
+  setVal('gp_administracion', p['Administración'] || p['Administración ($)'] || p['administracion']);
+  setVal('gp_rentabilidad', p['Retorno de la Inversión'] || p['Retorno de la inversión'] || p['Retorno inversión (Rentabilidad)'] || p['rentabilidad']);
+  
+  setVal('gp_comuna', p['Comuna'] || p['comuna'] || '');
+  setVal('gp_area_lote', p['Área lote'] || p['Área de lote'] || p['areaLote'] || '');
+  setVal('gp_closets', p['Closet'] || p['Closets'] || p['closet'] || '0');
+  setVal('gp_inventario', p['Inventario'] || p['inventario'] || 'NO');
+  setVal('gp_celulares', p['Celular 1'] || p['Celulares'] || p['celulares'] || '');
+  setVal('gp_celular_2', p['Celular 2'] || p['celular 2'] || p['celular_2'] || '');
+  setVal('gp_propietario', p['Nombre del Propietario'] || p['propietario'] || p['Nombre del propietario'] || p['PROPIETARIO'] || '');
+  
+  const rentaEl = document.getElementById('gp_renta');
+  if (rentaEl) {
+    // A veces Rentabilidad contiene el valor en pesos
+    let rentaStr = p['Cuánto Renta ($)'] || p['renta'] || p['Cuánto renta'] || '';
+    if (!rentaStr && p['Rentabilidad'] && p['Rentabilidad'].toLowerCase().includes('rentabilidad')) {
+      rentaStr = p['Rentabilidad'].replace(/[^\d]/g, '');
+    }
+    rentaEl.value = rentaStr;
+    formatPrecioOnInput(rentaEl);
+  }
+  
+  setVal('gp_ascensor', p['Ascensor'] || p['ascensor'] || 'NO');
+  setVal('gp_cortinas', p['Número de Cortinas'] || p['cortinas'] || '0');
+  setVal('gp_aire_acondicionado', p['Aire Acondicionado'] || p['aire_acondicionado'] || p['Aire acondicionado'] || '');
+  setVal('gp_reja_antejardin', p['Reja Antejardín'] || p['rejaAntejardin'] || 'NO');
+  setVal('gp_antiguedad', p['Antigüedad del Inmueble'] || p['Antigüedad'] || p['antiguedad'] || p['Antiguedad del Inmueble'] || '');
+  setVal('gp_patio', p['Patio'] || p['patio'] || 'NO');
+  console.log(`[Diagnostic Log] Autocompletando Dimensiones para inmueble ${selectedCode || p['Código']}. Valor en p['Dimensiones']: "${p['Dimensiones'] || ''}"`);
+  setVal('gp_dimensiones', p['Dimensiones'] || p['dimensiones'] || '');
+  
+  setVal('gp_lat', p['Latitud'] || p['latitud'] || p['Lat']);
+  setVal('gp_lng', p['Longitud'] || p['longitud'] || p['Lng']);
+  setVal('gp_descripcion', p['Descripción'] || p['descripcion']);
+  
+  const pcEl = document.getElementById('gp_puntos_clave');
+  if (pcEl) {
+    let pc = p['Puntos Clave'] || p['puntosClave'] || '';
+    if (Array.isArray(pc)) pc = pc.join('\n');
+    pcEl.value = pc;
+  }
+  
+  const dest = p['Destacada'] || p['destacada'];
+  setChecked('gp_destacada', dest === 'SI' || dest === true || dest === 'true');
+  
+  const pub = p['Publicar en Web'] || p['publicar'];
+  setChecked('gp_publicar', pub !== 'NO' && pub !== false && pub !== 'false');
+  
+  const dropdown = document.getElementById('gp_codigo_dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+  
+  // Como ya existe en allProps, actualizamos el estado visual de validación a "Código ya existe"
+  const msg = document.getElementById('gp_codigo_msg');
+  const input = document.getElementById('gp_codigo');
+  if (msg) {
+    msg.style.display = 'inline-block';
+    msg.style.color = '#ef4444';
+    msg.textContent = '✕ Código ya existe';
+  }
+  if (input) input.style.borderColor = '#ef4444';
+  
+  const btnGuardar = document.getElementById('btn_gp_guardar');
+  if (btnGuardar) {
+    btnGuardar.innerHTML = '💾 Actualizar Propiedad';
+  }
+  
+  // Guardar en variable global para que el botón de Guardar actúe como actualizar
+  window.currentMatchedProp = {...p};
+  
+  toast('Datos cargados para editar ✓', 'success');
+}
+
+function resetNuevaPropForm() {
+  const ids = [
+    'gp_codigo', 'gp_nombre', 'gp_tipo', 'gp_contrato', 'gp_precio', 'gp_barrio', 'gp_conjunto', 'gp_zona', 'gp_ciudad', 'gp_estrato', 'gp_ubicacion', 'gp_habitaciones', 'gp_banos', 'gp_garaje', 'gp_area', 'gp_gfotos', 'gp_inmobiliaria', 'gp_administracion', 'gp_rentabilidad', 'gp_lat', 'gp_lng', 'gp_descripcion', 'gp_puntos_clave',
+    'gp_comuna', 'gp_area_lote', 'gp_closets', 'gp_inventario', 'gp_celulares', 'gp_propietario', 'gp_renta', 'gp_ascensor', 'gp_cortinas', 'gp_aire_acondicionado', 'gp_reja_antejardin', 'gp_antiguedad', 'gp_patio', 'gp_dimensiones'
+  ];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (id === 'gp_tipo') el.value = 'Apartamento';
+      else if (id === 'gp_contrato') el.value = 'Directo';
+      else if (id === 'gp_ciudad') el.value = 'Cali';
+      else if (['gp_closets', 'gp_cortinas'].includes(id)) el.value = '0';
+      else if (['gp_inventario', 'gp_ascensor', 'gp_reja_antejardin', 'gp_patio'].includes(id)) el.value = 'NO';
+      else el.value = '';
+    }
+  });
+  
+  const checks = ['gp_destacada', 'gp_publicar'];
+  checks.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.checked = (id === 'gp_publicar');
+  });
+  
+  const msg = document.getElementById('gp_codigo_msg');
+  if (msg) msg.style.display = 'none';
+  
+  const input = document.getElementById('gp_codigo');
+  if (input) input.style.borderColor = '';
+  
+  const dropdown = document.getElementById('gp_codigo_dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+  
+  const btnGuardar = document.getElementById('btn_gp_guardar');
+  if (btnGuardar) btnGuardar.innerHTML = '💾 Guardar Propiedad';
+  
+  const preview = document.getElementById('gp_gfotos_preview');
+  if (preview) preview.innerHTML = '';
+  
+  window.currentMatchedProp = null;
+  
+  toast('Formulario limpiado ✓', 'success');
+}
+
+/* DRAFT SAVE & RESTORE */
+function getNuevaPropData() {
+  return {
+    codigo: document.getElementById('gp_codigo')?.value || '',
+    nombre: document.getElementById('gp_nombre')?.value || '',
+    tipo: document.getElementById('gp_tipo')?.value || '',
+    contrato: document.getElementById('gp_contrato')?.value || '',
+    precio: document.getElementById('gp_precio')?.value || '',
+    barrio: document.getElementById('gp_barrio')?.value || '',
+    conjunto: document.getElementById('gp_conjunto')?.value || '',
+    zona: document.getElementById('gp_zona')?.value || '',
+    ciudad: document.getElementById('gp_ciudad')?.value || '',
+    estrato: document.getElementById('gp_estrato')?.value || '',
+    ubicacion: document.getElementById('gp_ubicacion')?.value || '',
+    habitaciones: document.getElementById('gp_habitaciones')?.value || '',
+    banos: document.getElementById('gp_banos')?.value || '',
+    garaje: document.getElementById('gp_garaje')?.value || '',
+    pisos: document.getElementById('gp_pisos')?.value || '',
+    area: document.getElementById('gp_area')?.value || '',
+    piscina: document.getElementById('gp_piscina')?.value || '',
+    cocina: document.getElementById('gp_cocina')?.value || '',
+    administracion: document.getElementById('gp_administracion')?.value || '',
+    rentabilidad: document.getElementById('gp_rentabilidad')?.value || '',
+    descripcion: document.getElementById('gp_descripcion')?.value || '',
+    puntos_clave: document.getElementById('gp_puntos_clave')?.value || '',
+    lat: document.getElementById('gp_lat')?.value || '',
+    lng: document.getElementById('gp_lng')?.value || '',
+    gfotos: document.getElementById('gp_gfotos')?.value || '',
+    destacada: document.getElementById('gp_destacada')?.checked || false,
+    publicar: document.getElementById('gp_publicar')?.checked || false,
+    inmobiliaria: document.getElementById('gp_inmobiliaria')?.value || '',
+    ubicacion_posicion: document.getElementById('gp_ubicacion_posicion')?.value || 'Medianera',
+    
+    comuna: document.getElementById('gp_comuna')?.value || '',
+    area_lote: document.getElementById('gp_area_lote')?.value || '',
+    closets: document.getElementById('gp_closets')?.value || '0',
+    inventario: document.getElementById('gp_inventario')?.value || 'NO',
+    celulares: document.getElementById('gp_celulares')?.value || '',
+    celular_2: document.getElementById('gp_celular_2')?.value || '',
+    propietario: document.getElementById('gp_propietario')?.value || '',
+    renta: document.getElementById('gp_renta')?.value || '',
+    ascensor: document.getElementById('gp_ascensor')?.value || 'NO',
+    cortinas: document.getElementById('gp_cortinas')?.value || '0',
+    aire_acondicionado: document.getElementById('gp_aire_acondicionado')?.value || '',
+    reja_antejardin: document.getElementById('gp_reja_antejardin')?.value || 'NO',
+    antiguedad: document.getElementById('gp_antiguedad')?.value || '',
+    patio: document.getElementById('gp_patio')?.value || 'NO',
+    dimensiones: document.getElementById('gp_dimensiones')?.value || ''
+  };
+}
+
+function saveBorradorPropiedad() {
+  if (window.currentGestionSubTab !== 'nueva') return;
+  const data = getNuevaPropData();
+  const hasContent = Object.values(data).some(v => v !== '' && v !== false && v !== 'Cali' && v !== 'Apartamento' && v !== 'Venta' && v !== '1' && v !== 'No' && v !== 'NO' && v !== '0');
+  if (hasContent) {
+    const draft = {
+      timestamp: Date.now(),
+      data: data
+    };
+    localStorage.setItem('icde_borrador_propiedad', JSON.stringify(draft));
+    console.log('Borrador auto-guardado.');
+  }
+}
+
+function checkBorradorPropiedad() {
+  const draftStr = localStorage.getItem('icde_borrador_propiedad');
+  if (!draftStr) return;
+  try {
+    const draft = JSON.parse(draftStr);
+    const age = Date.now() - draft.timestamp;
+    if (age < 24 * 60 * 60 * 1000) {
+      const date = new Date(draft.timestamp);
+      const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const dateStr = date.toLocaleDateString();
+      
+      const banner = document.getElementById('gestionAlerts');
+      if (banner) {
+        banner.innerHTML = `
+          <div class="draft-banner" style="background: rgba(212,168,75,0.12); border: 1px solid var(--gold); border-radius: 12px; padding: 15px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; animation: slideIn 0.3s ease;">
+            <div style="font-size: 13px;">
+              📝 Hay un borrador guardado el <strong>${dateStr}</strong> a las <strong>${timeStr}</strong>. ¿Deseas recuperarlo?
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-primary btn-sm" onclick="recuperarBorradorPropiedad()">Recuperar</button>
+              <button class="btn btn-secondary btn-sm" onclick="descartarBorradorPropiedad()">Descartar</button>
+            </div>
+          </div>
+        `;
+      }
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function recuperarBorradorPropiedad() {
+  const draftStr = localStorage.getItem('icde_borrador_propiedad');
+  if (!draftStr) return;
+  try {
+    const draft = JSON.parse(draftStr);
+    poblarNuevaPropForm(draft.data);
+    descartarBorradorPropiedad(true);
+    toast('Borrador recuperado con éxito ✓', 'success');
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function descartarBorradorPropiedad(onlyVisual = false) {
+  if (!onlyVisual) {
+    localStorage.removeItem('icde_borrador_propiedad');
+  }
+  const banner = document.getElementById('gestionAlerts');
+  if (banner) banner.innerHTML = '';
+}
+
+function poblarNuevaPropForm(data) {
+  if (!data) return;
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  const setCheck = (id, val) => { const el = document.getElementById(id); if (el) el.checked = val; };
+  
+  setVal('gp_codigo', data.codigo);
+  setVal('gp_nombre', data.nombre);
+  setVal('gp_tipo', data.tipo);
+  setVal('gp_contrato', data.contrato);
+  setVal('gp_precio', data.precio);
+  setVal('gp_barrio', data.barrio);
+  setVal('gp_conjunto', data.conjunto);
+  setVal('gp_zona', data.zona);
+  setVal('gp_ciudad', data.ciudad);
+  setVal('gp_estrato', data.estrato);
+  setVal('gp_ubicacion', data.ubicacion);
+  setVal('gp_habitaciones', data.habitaciones);
+  setVal('gp_banos', data.banos);
+  setVal('gp_garaje', data.garaje);
+  setVal('gp_pisos', data.pisos || '1');
+  setVal('gp_area', data.area);
+  setVal('gp_piscina', data.piscina);
+  setVal('gp_cocina', data.cocina);
+  setVal('gp_administracion', data.administracion);
+  setVal('gp_rentabilidad', data.rentabilidad);
+  setVal('gp_descripcion', data.descripcion);
+  setVal('gp_puntos_clave', data.puntos_clave);
+  setVal('gp_lat', data.lat);
+  setVal('gp_lng', data.lng);
+  setVal('gp_gfotos', data.gfotos);
+  setCheck('gp_destacada', data.destacada);
+  setCheck('gp_publicar', data.publicar);
+  setVal('gp_inmobiliaria', data.inmobiliaria);
+  setVal('gp_ubicacion_posicion', data.ubicacion_posicion || 'Medianera');
+  
+  setVal('gp_comuna', data.comuna || '');
+  setVal('gp_area_lote', data.area_lote || '');
+  setVal('gp_closets', data.closets || '0');
+  setVal('gp_inventario', data.inventario || 'NO');
+  setVal('gp_celulares', data.celulares || '');
+  setVal('gp_propietario', data.propietario || '');
+  setVal('gp_renta', data.renta || '');
+  setVal('gp_ascensor', data.ascensor || 'NO');
+  setVal('gp_cortinas', data.cortinas || '0');
+  setVal('gp_aire_acondicionado', data.aire_acondicionado || '');
+  setVal('gp_reja_antejardin', data.reja_antejardin || 'NO');
+  setVal('gp_antiguedad', data.antiguedad || '');
+  setVal('gp_patio', data.patio || 'NO');
+  setVal('gp_dimensiones', data.dimensiones || '');
+  
+  if (data.gfotos) {
+    debounceGFotosPreview(data.gfotos);
+  }
+}
+
+/* GOOGLE PHOTOS PREVIEW ALBUM (FASE 7) */
+let gphotosTimeout = null;
+function debounceGFotosPreview(url) {
+  clearTimeout(gphotosTimeout);
+  gphotosTimeout = setTimeout(() => {
+    gpPreviewPhotos(url);
+  }, 800);
+}
+
+async function gpPreviewPhotos(url) {
+  const container = document.getElementById('gp_gfotos_preview');
+  if (!container) return;
+  
+  if (!url || !url.startsWith('http')) {
+    container.innerHTML = '';
+    return;
+  }
+  
+  container.innerHTML = '<div style="font-size:12px; color:var(--gold);"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--gold); border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; margin-right:6px;"></span> Cargando fotos del álbum...</div>';
+  
+  try {
+    const proxiedUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxiedUrl);
+    const data = await res.json();
+    const html = data.contents;
+    
+    const imgRegex = /"https:\/\/(?:lh[3-6]\.googleusercontent\.com|lh[3-6]\.gpht\.com)\/[a-zA-Z0-9_-]+"/g;
+    const matches = html.match(imgRegex) || [];
+    const uniqueImgs = Array.from(new Set(matches.map(m => m.replace(/"/g, ''))))
+      .filter(img => !img.includes('placeholder') && !img.includes('profile'));
+      
+    if (uniqueImgs.length > 0) {
+      const thumbs = uniqueImgs.slice(0, 3);
+      container.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+          <div style="font-size: 11px; color: #22c55e;">✓ Enlace verificado. Fotos extraídas con éxito:</div>
+          <div style="display: flex; gap: 8px;">
+            ${thumbs.map(t => `<img src="${t}=w120-h90-c" style="width: 80px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border);" onerror="this.style.display='none'"/>`).join('')}
+          </div>
+        </div>
+      `;
+    } else {
+      container.innerHTML = '<div style="font-size: 11px; color: var(--muted);">Vista previa no disponible — el enlace se guardará igual</div>';
+    }
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = '<div style="font-size: 11px; color: var(--muted);">Vista previa no disponible — el enlace se guardará igual</div>';
+  }
+}
+
+/* GEMINI AI CORE GENERATION (FASE 3) */
+async function gpAutoGenerarIA() {
+  if (!settings.geminiKey) {
+    toast('Por favor configura tu API Key de IA en Configuración ⚙️', 'error');
+    return;
+  }
+  
+  const tipo = document.getElementById('gp_tipo').value;
+  const contrato = document.getElementById('gp_contrato').value;
+  const precio = document.getElementById('gp_precio').value;
+  const barrio = document.getElementById('gp_barrio').value;
+  const zona = document.getElementById('gp_zona').value;
+  const ciudad = document.getElementById('gp_ciudad').value;
+  const habs = document.getElementById('gp_habitaciones').value;
+  const banos = document.getElementById('gp_banos').value;
+  const garaje = document.getElementById('gp_garaje').value;
+  const area = document.getElementById('gp_area').value;
+  
+  if (!tipo || !precio || !barrio) {
+    toast('Llena Tipo, Precio y Barrio para generar con IA', 'error');
+    return;
+  }
+  
+  const currentNombre = document.getElementById('gp_nombre').value;
+  const currentDesc = document.getElementById('gp_descripcion').value;
+  if (currentNombre || currentDesc) {
+    if (!confirm('¿Quieres sobrescribir el Nombre, Descripción y Puntos Clave actuales con IA?')) {
+      return;
+    }
+  }
+  
+  const btn = document.getElementById('btn_gp_ia');
+  const btnText = btn.innerHTML;
+  btn.innerHTML = `<span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; margin-right:4px;"></span> Generando...`;
+  btn.disabled = true;
+  
+  const prompt = `Eres un redactor inmobiliario profesional para el mercado colombiano. A partir de los siguientes datos, genera en formato JSON puro (sin bloques de código \`\`\`json, sin markdown, solo el JSON directo):
+  {
+    "nombre": "Título profesional, atractivo y comercial del inmueble (ej: 'Espectacular Apartamento en barrio El Ingenio').",
+    "descripcion": "Descripción persuasiva, vendedora y atractiva del inmueble, resaltando los espacios. Mínimo 150 palabras.",
+    "puntosClave": ["Característica 1", "Característica 2", "Característica 3", "Característica 4", "Característica 5"]
+  }
+  
+  Datos del inmueble:
+  - Tipo de inmueble: ${tipo}
+  - Contrato: ${contrato}
+  - Precio: ${precio} COP
+  - Barrio: ${barrio}
+  - Zona: ${zona}
+  - Ciudad: ${ciudad}
+  - Habitaciones: ${habs}
+  - Baños: ${banos}
+  - Garajes: ${garaje}
+  - Área: ${area} m²`;
+  
+  try {
+    let text = await callAIEngine(prompt);
+    text = text.replace(/```json|```/g, '').trim();
+    
+    const result = JSON.parse(text);
+    
+    async function typeWriter(elementId, fullText, delay = 10) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      el.value = "";
+      for (let i = 0; i < fullText.length; i++) {
+        el.value += fullText[i];
+        el.dispatchEvent(new Event('input'));
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
+    
+    await typeWriter('gp_nombre', result.nombre, 15);
+    await typeWriter('gp_descripcion', result.descripcion, 4);
+    
+    const keyPointsText = (result.puntosClave || []).join('\n');
+    await typeWriter('gp_puntos_clave', keyPointsText, 10);
+    
+    toast('¡Propiedad generada con éxito con IA! ✓', 'success');
+  } catch (e) {
+    console.error(e);
+    toast('Error generando con IA', 'error');
+  } finally {
+    btn.innerHTML = btnText;
+    btn.disabled = false;
+  }
+}
+
+async function gpGenerarPuntosClaveIA() {
+  if (!settings.geminiKey) {
+    toast('Por favor configura tu API Key de IA en Configuración ⚙️', 'error');
+    return;
+  }
+  
+  const desc = document.getElementById('gp_descripcion').value;
+  if (!desc) {
+    toast('Escribe una descripción primero para extraer puntos clave', 'error');
+    return;
+  }
+  
+  const btn = document.getElementById('btn_gp_pc_ia');
+  const btnText = btn.innerHTML;
+  btn.innerHTML = `Generando...`;
+  btn.disabled = true;
+  
+  const prompt = `Analiza la siguiente descripción de un inmueble en Colombia y extrae exactamente entre 4 y 6 puntos clave o características destacadas de una línea cada una (ej: 'Cocina integral con mesón de granito', 'Ubicación privilegiada cerca a centros comerciales'). Responde UNICAMENTE con un array JSON de strings (ej: ["Punto 1", "Punto 2", ...]). Sin markdown ni bloques de código.
+  
+  Descripción:
+  "${desc}"`;
+  
+  try {
+    let text = await callAIEngine(prompt);
+    text = text.replace(/```json|```/g, '').trim();
+    
+    const result = JSON.parse(text);
+    
+    async function typeWriter(elementId, fullText, delay = 10) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      el.value = "";
+      for (let i = 0; i < fullText.length; i++) {
+        el.value += fullText[i];
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
+    
+    await typeWriter('gp_puntos_clave', result.join('\n'), 15);
+    toast('Puntos clave generados con éxito ✓', 'success');
+  } catch (e) {
+    console.error(e);
+    toast('Error al extraer puntos clave', 'error');
+  } finally {
+    btn.innerHTML = btnText;
+    btn.disabled = false;
+  }
+}
+
+/* CATALOG PREVIEW (FASE 9) */
+function gpVistaPrevia() {
+  const data = getNuevaPropData();
+  const codigo = data.codigo;
+  
+  // Si el código ya existe en el catálogo (allProps), mostramos el modal REAL
+  if (codigo) {
+    const propReal = allProps.find(p => {
+      const codeStr = String(p['Código'] || '').trim();
+      if (codeStr.toLowerCase() === codigo.toLowerCase()) return true;
+      if (!isNaN(codeStr) && !isNaN(codigo) && parseFloat(codeStr) === parseFloat(codigo)) return true;
+      return false;
+    });
+    
+    if (propReal) {
+      // Usamos la función oficial del catálogo pasándole el código
+      abrirModalProp(propReal['Código']);
+      return;
+    }
+  }
+  
+  // Si es un inmueble nuevo que no está en el catálogo, mantenemos la simulación
+  const propSimulada = {
+    'Código': data.codigo || 'PREVIEW',
+    'Nombre': data.nombre || 'Simulación de Propiedad',
+    'Tipo de inmueble': data.tipo || 'Apartamento',
+    'Contrato': data.contrato || 'Directo',
+    'Precio': data.precio ? data.precio.replace(/[^\d]/g, "") : '0',
+    'Barrio': data.barrio || 'El Ingenio',
+    'Conjunto': data.conjunto || '',
+    'Zona': data.zona || '',
+    'Ciudad': data.ciudad || 'Cali',
+    'Estrato': data.estrato || '',
+    'Ubicación': data.ubicacion || '',
+    'Habitaciones': data.habitaciones || '3',
+    'Baños': data.banos || '2',
+    'Garaje': data.garaje || 'No',
+    'Cocina': data.cocina || 'No',
+    'Piscina': data.piscina || 'No',
+    'Área': data.area || '',
+    'Área Construida': data.area || '',
+    'Administración': data.administracion || '',
+    'Retorno de la inversión': data.rentabilidad || '',
+    'Descripción': data.descripcion || '',
+    'Puntos Clave': data.puntos_clave || '',
+    'Latitud': data.lat || '3.3986',
+    'Longitud': data.lng || '-76.5321',
+    'Imagenes': '',
+    'Inmobiliaria': data.inmobiliaria || 'ICDE',
+    
+    'Comuna': data.comuna || '',
+    'Área lote': data.area_lote || '',
+    'Closet': data.closets || '0',
+    'Inventario': data.inventario || 'NO',
+    'Celular 1': data.celulares || '',
+    'Celular 2': data.celular_2 || '',
+    'Celulares': data.celulares || '',
+    'Nombre del Propietario': data.propietario || '',
+    'Cuánto Renta ($)': data.renta ? data.renta.replace(/[^\d]/g, "") : '',
+    'Ascensor': data.ascensor || 'NO',
+    'Número de Cortinas': data.cortinas || '0',
+    'Aire Acondicionado': data.aire_acondicionado || '',
+    'Reja Antejardín': data.reja_antejardin || 'NO',
+    'Antigüedad del Inmueble': data.antiguedad || '',
+    'Patio': data.patio || 'NO',
+    'Dimensiones': data.dimensiones || ''
+  };
+  
+  const previewDiv = document.getElementById('gp_gfotos_preview');
+  if (previewDiv) {
+    const imgs = Array.from(previewDiv.querySelectorAll('img')).map(img => img.src.split('=')[0]);
+    if (imgs.length > 0) {
+      propSimulada['Imagenes'] = imgs.join('|');
+    }
+  }
+  
+  abrirModalProp(propSimulada);
+}
+
+/* DUPLICATE DETECTOR (FASE 6) */
+function calcularDuplicado(newProp) {
+  let matchedProp = null;
+  let maxScore = 0;
+  
+  const newPrice = parseP(newProp['Precio']);
+  const newBarrio = norm(newProp['Barrio']);
+  const newArea = parseFloat(newProp['Área']) || 0;
+  const newRooms = String(newProp['Habitaciones'] || '').trim();
+  
+  for (let p of allProps) {
+    let score = 0;
+    if (newBarrio && norm(p['Barrio']) === newBarrio) score += 1;
+    
+    const pPrice = parseP(p['Precio']);
+    if (newPrice > 0 && pPrice > 0) {
+      const diff = Math.abs(newPrice - pPrice) / pPrice;
+      if (diff <= 0.15) score += 1;
+    }
+    
+    const pArea = parseFloat(p['Área'] || p['Área Construida']) || 0;
+    if (newArea > 0 && pArea > 0) {
+      const diff = Math.abs(newArea - pArea) / pArea;
+      if (diff <= 0.10) score += 1;
+    }
+    
+    const pRooms = String(p['Habitaciones'] || '').trim();
+    if (newRooms && pRooms === newRooms) score += 1;
+    
+    if (score > maxScore) {
+      maxScore = score;
+      matchedProp = p;
+    }
+  }
+  
+  return { score: maxScore, prop: matchedProp };
+}
+
+function showDuplicateModal(newProp, oldProp, onConfirm) {
+  let modal = document.getElementById('duplicateWarningModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'duplicateWarningModal';
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '20000';
+    document.body.appendChild(modal);
+  }
+  
+  const formatP = v => Number(v).toLocaleString('es-CO');
+  
+  modal.innerHTML = `
+    <div class="modal-box large" style="border: 2px solid var(--orange); animation: zoomIn 0.3s ease;">
+      <div class="modal-title" style="color: var(--orange); display: flex; align-items: center; gap: 10px;">
+        ⚠️ Alerta: Posible Propiedad Duplicada Detectada
+      </div>
+      <p style="font-size: 13.5px; color: var(--muted); margin-bottom: 20px;">
+        Hemos encontrado una propiedad existente muy similar en la base de datos. Por favor compara antes de proceder:
+      </p>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+        <div style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+          <h4 style="color: var(--gold); margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">Nueva Propiedad</h4>
+          <table style="width: 100%; font-size: 12.5px; border-collapse: collapse;">
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Código</td><td>${newProp['Código'] || '(Auto-generado)'}</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Tipo</td><td>${newProp['Tipo de inmueble']}</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Barrio</td><td>${newProp['Barrio']}</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Precio</td><td>$${formatP(newProp['Precio'])}</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Área</td><td>${newProp['Área']} m²</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Habs / Baños</td><td>${newProp['Habitaciones']} / ${newProp['Baños']}</td></tr>
+          </table>
+        </div>
+        <div style="background: rgba(212,168,75,0.03); padding: 16px; border-radius: 12px; border: 1px solid rgba(212,168,75,0.2);">
+          <h4 style="color: var(--gold); margin-bottom: 12px; border-bottom: 1px solid rgba(212,168,75,0.1); padding-bottom: 6px;">Propiedad Existente (${oldProp['Código']})</h4>
+          <table style="width: 100%; font-size: 12.5px; border-collapse: collapse;">
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Código</td><td>${oldProp['Código']}</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Tipo</td><td>${oldProp['Tipo de inmueble']}</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Barrio</td><td>${oldProp['Barrio']}</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Precio</td><td>$${formatP(oldProp['Precio'])}</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Área</td><td>${oldProp['Área'] || oldProp['Área Construida'] || '—'} m²</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);"><td style="padding: 6px 0; font-weight: bold; color: var(--muted);">Habs / Baños</td><td>${oldProp['Habitaciones']} / ${oldProp['Baños']}</td></tr>
+          </table>
+        </div>
+      </div>
+      
+      <div class="modal-footer" style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button class="btn btn-secondary" onclick="document.getElementById('duplicateWarningModal').classList.remove('active')">Cancelar Guardado</button>
+        <button class="btn btn-gold" id="btn_gp_dup_confirm">Guardar de todos modos (Es diferente)</button>
+      </div>
+    </div>
+  `;
+  
+  modal.classList.add('active');
+  document.getElementById('btn_gp_dup_confirm').onclick = () => {
+    modal.classList.remove('active');
+    onConfirm();
+  };
+}
+
+/* SAVE ACTION CORE */
+function resetNuevaPropForm() {
+  const ids = [
+    'gp_codigo', 'gp_nombre', 'gp_precio', 'gp_barrio', 'gp_conjunto', 'gp_zona', 'gp_ubicacion', 'gp_area', 'gp_administracion', 'gp_rentabilidad', 'gp_descripcion', 'gp_puntos_clave', 'gp_lat', 'gp_lng', 'gp_gfotos', 'gp_inmobiliaria',
+    'gp_area_lote', 'gp_celulares', 'gp_celular_2', 'gp_propietario', 'gp_renta', 'gp_antiguedad', 'gp_dimensiones'
+  ];
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  
+  const selectIds = [
+    'gp_tipo', 'gp_contrato', 'gp_estrato', 'gp_habitaciones', 'gp_banos', 'gp_garaje', 'gp_piscina', 'gp_cocina', 'gp_pisos',
+    'gp_comuna', 'gp_closets', 'gp_ascensor', 'gp_reja_antejardin', 'gp_patio', 'gp_cortinas', 'gp_aire_acondicionado'
+  ];
+  selectIds.forEach(id => { const el = document.getElementById(id); if (el) el.selectedIndex = 0; });
+
+  const invEl = document.getElementById('gp_inventario');
+  if (invEl) invEl.value = 'NO';
+  
+  const checkIds = ['gp_destacada', 'gp_publicar'];
+  checkIds.forEach(id => { const el = document.getElementById(id); if (el) el.checked = (id==='gp_publicar'); });
+  
+  const preview = document.getElementById('gp_gfotos_preview');
+  if (preview) preview.innerHTML = '';
+}
+
+async function guardarPropiedad(scraperAllyName = '') {
+  const year = new Date().getFullYear();
+  const prefix = String(year);
+  let highestSeq = 0;
+  allProps.forEach(p => {
+    const cod = String(p['Código'] || '').trim();
+    if (cod.startsWith(prefix)) {
+      const seq = parseInt(cod.substring(prefix.length)) || 0;
+      if (seq > highestSeq) highestSeq = seq;
+    }
+  });
+  const newSeq = String(highestSeq + 1).padStart(2, '0');
+  const generatedCode = prefix + newSeq;
+  
+  const codigo = document.getElementById('gp_codigo').value.trim() || generatedCode;
+  const tipo = document.getElementById('gp_tipo').value;
+  const contrato = document.getElementById('gp_contrato').value;
+  const precioRaw = document.getElementById('gp_precio').value.replace(/[^\d]/g, "");
+  const precio = parseFloat(precioRaw) || 0;
+  const barrio = document.getElementById('gp_barrio').value.trim();
+  
+  if (!tipo || precio <= 0 || !barrio || !contrato) {
+    toast('Completa Tipo, Precio (>0), Barrio y Contrato', 'error');
+    return;
+  }
+  
+  const gpData = getNuevaPropData();
+  const finalProp = {
+    'Código': codigo,
+    'Nombre': gpData.nombre || `${tipo} en barrio ${barrio}`,
+    'Tipo de inmueble': tipo,
+    'Contrato': contrato,
+    'Precio': precioRaw,
+    'Barrio': barrio,
+    'Conjunto': gpData.conjunto,
+    'Zona': gpData.zona,
+    'Ciudad': gpData.ciudad || 'Cali',
+    'Estrato': gpData.estrato,
+    'Ubicación': gpData.ubicacion_posicion || 'Medianera',
+    'DIRECCIÓN': gpData.ubicacion,
+    'Habitaciones': gpData.habitaciones,
+    'Baños': gpData.banos,
+    'Garaje': gpData.garaje,
+    'Pisos': gpData.pisos || '1',
+    'Área': gpData.area,
+    'Área Construida': gpData.area,
+    'Piscina': gpData.piscina,
+    'Cocina': gpData.cocina,
+    'Administración': gpData.administracion.replace(/[^\d]/g, ""),
+    'Retorno de la inversión': gpData.rentabilidad,
+    'Descripción': gpData.descripcion,
+    'Puntos Clave': gpData.puntos_clave,
+    'Latitud': gpData.lat,
+    'Longitud': gpData.lng,
+    'Google Fotos': gpData.gfotos,
+    'Imagenes': '',
+    'Publicar': gpData.publicar ? 'SI' : 'NO',
+    'Destacada': gpData.destacada ? 'SI' : 'NO',
+    'Inmobiliaria': scraperAllyName || gpData.inmobiliaria || '',
+    'Comuna': gpData.comuna,
+    'Área lote': gpData.area_lote,
+    'Closet': gpData.closets,
+    'Inventario': gpData.inventario,
+    'Celular 1': gpData.celulares,
+    'Celular 2': gpData.celular_2,
+    'Celulares': gpData.celulares,
+    'Nombre del Propietario': gpData.propietario,
+    'Cuánto Renta ($)': gpData.renta ? gpData.renta.replace(/[^\d]/g, "") : '',
+    'Ascensor': gpData.ascensor,
+    'Número de Cortinas': gpData.cortinas,
+    'Aire Acondicionado': gpData.aire_acondicionado,
+    'Reja Antejardín': gpData.reja_antejardin,
+    'Antigüedad del Inmueble': gpData.antiguedad,
+    'Patio': gpData.patio,
+    'Dimensiones': gpData.dimensiones
+  };
+  
+  const previewDiv = document.getElementById('gp_gfotos_preview');
+  if (previewDiv) {
+    const imgs = Array.from(previewDiv.querySelectorAll('img')).map(img => img.src.split('=')[0]);
+    if (imgs.length > 0) {
+      finalProp['Imagenes'] = imgs.join('|');
+    }
+  }
+  
+  const dupCheck = calcularDuplicado(finalProp);
+  if (dupCheck.score >= 3) {
+    showDuplicateModal(finalProp, dupCheck.prop, () => {
+      ejecutarGuardadoPropiedad(finalProp);
+    });
+  } else {
+    ejecutarGuardadoPropiedad(finalProp);
+  }
+}
+
+async function ejecutarGuardadoPropiedad(prop) {
+  const btn = document.getElementById('btn_gp_guardar');
+  const btnText = btn.innerHTML;
+  btn.innerHTML = 'Guardando...';
+  btn.disabled = true;
+  
+  try {
+    const scriptUrl = APPS_SCRIPT_URL.split('?')[0];
+    
+    // AGREGAR AL APPS SCRIPT:
+    // case 'appendRow':
+    //   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Base de Datos');
+    //   const row = buildRowFromJson(JSON.parse(e.postData.contents));
+    //   sheet.appendRow(row);
+    //   return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+    
+    const response = await fetch(`${scriptUrl}?action=appendRow`, {
+      method: 'POST',
+      body: JSON.stringify(prop)
+    });
+    const result = await response.json();
+    
+    if (result && result.ok) {
+      toast('Propiedad guardada y sincronizada ✓', 'success');
+      
+      const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
+      customProps.push(prop);
+      localStorage.setItem('icde_custom_props', JSON.stringify(customProps));
+      
+      allProps.push(prop);
+      
+      if (prop['Inmobiliaria']) {
+        actualizarUltimoBarridoAliado(prop['Inmobiliaria']);
+        logSweepRecord(prop['Inmobiliaria'], 1, 1, 0);
+      }
+      
+      descartarBorradorPropiedad();
+      resetNuevaPropForm();
+      renderGestion();
+    } else {
+      throw new Error('Sync fail');
+    }
+  } catch (e) {
+    console.error(e);
+    toast('Error en sync. Guardando localmente...', 'warning');
+    
+    const customProps = JSON.parse(localStorage.getItem('icde_custom_props') || '[]');
+    customProps.push(prop);
+    localStorage.setItem('icde_custom_props', JSON.stringify(customProps));
+    
+    allProps.push(prop);
+    
+    if (prop['Inmobiliaria']) {
+      actualizarUltimoBarridoAliado(prop['Inmobiliaria']);
+      logSweepRecord(prop['Inmobiliaria'], 1, 1, 0);
+    }
+    
+    descartarBorradorPropiedad();
+    resetNuevaPropForm();
+    renderGestion();
+  } finally {
+    btn.innerHTML = btnText;
+    btn.disabled = false;
+  }
+}
+
+/* SUB-TAB 2: BARRIDO DE ALIADOS */
+function renderBarridoAliados() {
+  const sub = document.getElementById('gestionSubContent');
+  const aliados = JSON.parse(localStorage.getItem('icde_aliados') || '[]');
+  
+  if (!window.currentBarridoMode) {
+    window.currentBarridoMode = 'link';
+  }
+  
+  sub.innerHTML = `
+    <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px;">
+      <div style="font-size:16px; font-weight:700; color:var(--gold); margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:10px;">
+        📡 Extractor de Propiedades Aliadas
+      </div>
+      
+      <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 20px;">
+        <div class="form-group">
+          <label class="form-label">Seleccionar Aliado</label>
+          <select class="form-input" id="sw_aliado">
+            <option value="">Selecciona...</option>
+            ${aliados.map(a => `<option value="${a.nombre}" ${window.preselectedAllyId===a.id?'selected':''}>${a.nombre}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Método de Extracción</label>
+          <div style="display:flex; gap:8px;">
+            <button class="btn ${window.currentBarridoMode==='link'?'btn-primary':'btn-secondary'}" onclick="setBarridoMode('link')" style="flex:1; padding:6px 0;">🔗 Link</button>
+            <button class="btn ${window.currentBarridoMode==='screenshot'?'btn-primary':'btn-secondary'}" onclick="setBarridoMode('screenshot')" style="flex:1; padding:6px 0;">📸 Captura</button>
+            <button class="btn ${window.currentBarridoMode==='text'?'btn-primary':'btn-secondary'}" onclick="setBarridoMode('text')" style="flex:1; padding:6px 0;">✍️ Texto</button>
+          </div>
+        </div>
+      </div>
+      
+      <div id="sw_mode_content"></div>
+    </div>
+    
+    <div id="sw_review_container" style="display:none; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 24px;"></div>
+  `;
+  
+  // Clear preselected
+  window.preselectedAllyId = null;
+  
+  renderBarridoModeContent();
+}
+
+function setBarridoMode(mode) {
+  window.currentBarridoMode = mode;
+  renderBarridoModeContent();
+  const container = document.getElementById('sw_review_container');
+  if (container) container.style.display = 'none';
+}
+
+function renderBarridoModeContent() {
+  const c = document.getElementById('sw_mode_content');
+  if (!c) return;
+  
+  const selectAlly = document.getElementById('sw_aliado');
+  
+  if (window.currentBarridoMode === 'link') {
+    c.innerHTML = `
+      <div class="form-group full">
+        <label class="form-label">Pegar URL del Inmueble</label>
+        <div style="display:flex; gap:10px;">
+          <input class="form-input" id="sw_url" type="text" placeholder="https://ejemplo.com/propiedad/apartamento-arriendo-..." style="flex:1;"/>
+          <button class="btn btn-gold" id="btn_sw_link_ia" onclick="swExtraerLinkIA()">✨ Extraer con IA</button>
+        </div>
+      </div>
+    `;
+  } else if (window.currentBarridoMode === 'screenshot') {
+    c.innerHTML = `
+      <div class="form-group full">
+        <label class="form-label">Cargar o Pegar Captura de Pantalla</label>
+        <div class="sw-dropzone" id="sw_dropzone" onclick="document.getElementById('sw_file_input').click()">
+          <span style="font-size:24px; display:block; margin-bottom:8px;">📸</span>
+          Haz clic para cargar imagen o presiona <strong>Ctrl+V</strong> en cualquier parte para pegar una captura del clipboard
+        </div>
+        <input type="file" id="sw_file_input" style="display:none;" accept="image/*" onchange="onScreenshotUploaded(this)"/>
+        <div id="sw_screenshot_preview" style="margin-top:15px; text-align:center;"></div>
+        <button class="btn btn-gold" id="btn_sw_screenshot_ia" onclick="swExtraerScreenshotIA()" style="width:100%; margin-top:15px;">✨ Extraer de Imagen con Vision</button>
+      </div>
+    `;
+    setupDropzonePaste();
+  } else if (window.currentBarridoMode === 'text') {
+    c.innerHTML = `
+      <div class="form-group full">
+        <label class="form-label">Pegar Texto Libre o Ficha Técnica</label>
+        <textarea class="form-input" id="sw_text" style="min-height: 150px;" placeholder="Pega aquí la descripción o ficha técnica completa del inmueble..."></textarea>
+        <button class="btn btn-gold" id="btn_sw_text_ia" onclick="swExtraerTextoIA()" style="width:100%; margin-top:15px;">✨ Extraer de Texto con IA</button>
+      </div>
+    `;
+  }
+}
+
+async function swExtraerLinkIA() {
+  const url = document.getElementById('sw_url').value.trim();
+  const aliado = document.getElementById('sw_aliado').value;
+  if (!url || !aliado) {
+    toast('Por favor selecciona un aliado y pega una URL', 'error');
+    return;
+  }
+  
+  if (!settings.geminiKey) {
+    toast('Configura tu API Key de IA en Configuración ⚙️', 'error');
+    return;
+  }
+  
+  const btn = document.getElementById('btn_sw_link_ia');
+  btn.innerHTML = 'Extrayendo...';
+  btn.disabled = true;
+  
+  try {
+    const proxiedUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxiedUrl);
+    const data = await res.json();
+    let html = data.contents || "";
+    
+    // Clean raw html tags and script tags
+    const cleanText = html.replace(new RegExp('<script\\b[^<]*(?:(?!</' + 'script>)<[^<]*)*</' + 'script>', 'gi'), '')
+                          .replace(new RegExp('<style\\b[^<]*(?:(?!</' + 'style>)<[^<]*)*</' + 'style>', 'gi'), '')
+                          .replace(/<[^>]+>/g, ' ')
+                          .replace(/\s+/g, ' ')
+                          .substring(0, 16000);
+                          
+    const prompt = `Eres un extractor de datos de propiedades inmobiliarias colombianas. Del siguiente texto de una página web inmobiliaria, extrae toda la información en JSON puro, sin bloques de código ni markdown (objeto JSON directo):
+    {
+      "codigo": "Código",
+      "nombre": "Nombre del inmueble",
+      "tipo": "Casa, Apartamento, Local, Lote, Bodega, Finca, Oficina",
+      "contrato": "Venta, Arriendo, Venta/Arriendo",
+      "precio": 350000000,
+      "barrio": "Barrio",
+      "zona": "Zona",
+      "ciudad": "Ciudad",
+      "estrato": "1 a 6",
+      "ubicacion": "Dirección",
+      "habitaciones": "1 a 6+",
+      "banos": "1 a 5+",
+      "garaje": "No, 1, 2, 3+",
+      "area": 120,
+      "descripcion": "Descripción larga comercial",
+      "puntosClave": ["Punto 1", "Punto 2"],
+      "latitud": 3.3986,
+      "longitud": -76.5321,
+      "googleFotos": "",
+      "comuna": "Comuna si se menciona",
+      "areaLote": 200,
+      "closets": "0, 1, 2, 3, 4, o 5+",
+      "inventario": "SI o NO",
+      "celulares": "Celulares del propietario si se mencionan",
+      "propietario": "Nombre del propietario si se menciona",
+      "renta": 1200000,
+      "ascensor": "SI o NO",
+      "cortinas": 0,
+      "aireAcondicionado": "SI o NO o cantidad o texto libre",
+      "rejaAntejardin": "SI o NO",
+      "antiguedad": "Antigüedad del inmueble, ej: 5 años, Nuevo, Remodelado",
+      "patio": "SI o NO",
+      "dimensiones": "dimensiones del lote/inmueble, ej: 7x12"
+    }
+    Si no encuentras un campo usa null o el valor por defecto si corresponde.
+    
+    Texto web:
+    "${cleanText}"`;
+    
+    let resultText = await callAIEngine(prompt);
+    resultText = resultText.replace(/```json|```/g, '').trim();
+    
+    const result = JSON.parse(resultText);
+    swShowReviewForm(result);
+    toast('¡Datos extraídos con éxito! ✓', 'success');
+  } catch (e) {
+    console.error(e);
+    toast('Error al extraer datos de la URL', 'error');
+  } finally {
+    btn.innerHTML = '✨ Extraer con IA';
+    btn.disabled = false;
+  }
+}
+
+function setupDropzonePaste() {
+  setTimeout(() => {
+    const dz = document.getElementById('sw_dropzone');
+    if (!dz) return;
+    
+    // Paste handler
+    window.onPasteScreenshot = function(e) {
+      if (window.currentGestionSubTab !== 'barrido' || window.currentBarridoMode !== 'screenshot') return;
+      const items = e.clipboardData.items;
+      for (let item of items) {
+        if (item.type.indexOf('image') !== -1) {
+          const file = item.getAsFile();
+          readScreenshotFile(file);
+        }
+      }
+    };
+    document.addEventListener('paste', window.onPasteScreenshot);
+  }, 100);
+}
+
+function onScreenshotUploaded(input) {
+  if (input.files && input.files[0]) {
+    readScreenshotFile(input.files[0]);
+  }
+}
+
+function readScreenshotFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const base64 = event.target.result;
+    const preview = document.getElementById('sw_screenshot_preview');
+    if (preview) {
+      preview.innerHTML = `<img src="${base64}" style="max-width:100%; max-height:220px; border-radius:12px; border:2px solid var(--gold); box-shadow:var(--shadow);"/>`;
+    }
+    window.pastedScreenshotBase64 = base64.split(',')[1];
+    toast('Imagen cargada ✓. Presiona Extraer.', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+async function swExtraerScreenshotIA() {
+  if (!settings.geminiKey) {
+    toast('Configura tu API Key de IA en Configuración ⚙️', 'error');
+    return;
+  }
+  
+  if (!window.pastedScreenshotBase64) {
+    toast('Carga o pega una imagen primero', 'error');
+    return;
+  }
+  
+  const btn = document.getElementById('btn_sw_screenshot_ia');
+  btn.innerHTML = 'Extrayendo con Vision...';
+  btn.disabled = true;
+  
+  const prompt = `Eres un extractor de datos de propiedades inmobiliarias colombianas. Analiza el screenshot del inmueble adjunto y extrae todos los detalles posibles en JSON puro, sin bloques de código ni markdown (objeto JSON directo):
+  {
+    "codigo": "Código si existe en la imagen",
+    "nombre": "Título del inmueble",
+    "tipo": "Casa, Apartamento, Local, Lote, Bodega, Finca, Oficina",
+    "contrato": "Venta, Arriendo, Venta/Arriendo",
+    "precio": 350000000,
+    "barrio": "Barrio",
+    "zona": "Zona si se menciona",
+    "ciudad": "Cali u otra",
+    "estrato": "1 a 6",
+    "ubicacion": "Dirección si se menciona",
+    "habitaciones": "1 a 6+",
+    "banos": "1 a 5+",
+    "garaje": "No, 1, 2, 3+",
+    "area": 120,
+    "descripcion": "Descripción detallada comercial",
+    "puntosClave": ["Punto 1", "Punto 2"],
+    "latitud": 3.3986,
+    "longitud": -76.5321,
+    "googleFotos": "",
+    "comuna": "Comuna si se menciona",
+    "areaLote": 200,
+    "closets": "0, 1, 2, 3, 4, o 5+",
+    "inventario": "SI o NO",
+    "celulares": "Celulares del propietario si se mencionan",
+    "propietario": "Nombre del propietario si se menciona",
+    "renta": 1200000,
+    "ascensor": "SI o NO",
+    "cortinas": 0,
+    "aireAcondicionado": "SI o NO o cantidad o texto libre",
+    "rejaAntejardin": "SI o NO",
+    "antiguedad": "Antigüedad del inmueble, ej: 5 años, Nuevo, Remodelado",
+    "patio": "SI o NO",
+    "dimensiones": "dimensiones del lote/inmueble, ej: 7x12"
+  }
+  Si no encuentras un campo usa null o el valor por defecto si corresponde.`;
+  
+  try {
+    let text = await callAIEngine(prompt, '', window.pastedScreenshotBase64);
+    text = text.replace(/```json|```/g, '').trim();
+    
+    const result = JSON.parse(text);
+    swShowReviewForm(result);
+    toast('¡Datos extraídos con éxito! ✓', 'success');
+  } catch (e) {
+    console.error(e);
+    toast('Error al extraer datos de Vision', 'error');
+  } finally {
+    btn.innerHTML = '✨ Extraer de Imagen con Vision';
+    btn.disabled = false;
+  }
+}
+
+async function swExtraerTextoIA() {
+  const val = document.getElementById('sw_text').value.trim();
+  const aliado = document.getElementById('sw_aliado').value;
+  if (!val || !aliado) {
+    toast('Por favor selecciona un aliado y pega la ficha técnica', 'error');
+    return;
+  }
+  
+  if (!settings.geminiKey) {
+    toast('Configura tu API Key de IA en Configuración ⚙️', 'error');
+    return;
+  }
+  
+  const btn = document.getElementById('btn_sw_text_ia');
+  btn.innerHTML = 'Procesando...';
+  btn.disabled = true;
+  
+  const prompt = `Eres un extractor de datos de propiedades inmobiliarias colombianas. Del siguiente texto o ficha técnica, extrae toda la información en JSON puro, sin bloques de código ni markdown (objeto JSON directo):
+  {
+    "codigo": "Código",
+    "nombre": "Nombre del inmueble",
+    "tipo": "Casa, Apartamento, Local, Lote, Bodega, Finca, Oficina",
+    "contrato": "Venta, Arriendo, Venta/Arriendo",
+    "precio": 350000000,
+    "barrio": "Barrio",
+    "zona": "Zona",
+    "ciudad": "Ciudad",
+    "estrato": "1 a 6",
+    "ubicacion": "Dirección",
+    "habitaciones": "1 a 6+",
+    "banos": "1 a 5+",
+    "garaje": "No, 1, 2, 3+",
+    "area": 120,
+    "descripcion": "Descripción larga comercial",
+    "puntosClave": ["Punto 1", "Punto 2"],
+    "latitud": 3.3986,
+    "longitud": -76.5321,
+    "googleFotos": "",
+    "comuna": "Comuna si se menciona",
+    "areaLote": 200,
+    "closets": "0, 1, 2, 3, 4, o 5+",
+    "inventario": "SI o NO",
+    "celulares": "Celulares del propietario si se mencionan",
+    "propietario": "Nombre del propietario si se menciona",
+    "renta": 1200000,
+    "ascensor": "SI o NO",
+    "cortinas": 0,
+    "aireAcondicionado": "SI o NO o cantidad o texto libre",
+    "rejaAntejardin": "SI o NO",
+    "antiguedad": "Antigüedad del inmueble, ej: 5 años, Nuevo, Remodelado",
+    "patio": "SI o NO",
+    "dimensiones": "dimensiones del lote/inmueble, ej: 7x12"
+  }
+  Si no encuentras un campo usa null o el valor por defecto si corresponde.
+  
+  Texto:
+  "${val}"`;
+  
+  try {
+    let text = await callAIEngine(prompt);
+    text = text.replace(/```json|```/g, '').trim();
+    
+    const result = JSON.parse(text);
+    swShowReviewForm(result);
+    toast('¡Datos extraídos con éxito! ✓', 'success');
+  } catch (e) {
+    console.error(e);
+    toast('Error al extraer datos del texto', 'error');
+  } finally {
+    btn.innerHTML = '✨ Extraer de Texto con IA';
+    btn.disabled = false;
+  }
+}
+
+function swShowReviewForm(data) {
+  const container = document.getElementById('sw_review_container');
+  container.style.display = 'block';
+  
+  const emptyClass = val => (!val || val === 'null' || val === 'undefined') ? 'empty-orange' : 'extracted-gold';
+  const emptyCheck = val => (!val || val === 'null' || val === 'undefined') ? '' : val;
+  
+  let priceStr = "";
+  if (data.precio) {
+    priceStr = Number(data.precio).toLocaleString('es-CO');
+  }
+  
+  const normSiNo = val => {
+    if (!val) return 'NO';
+    const clean = String(val).toUpperCase().trim();
+    return (clean === 'SI' || clean === 'SÍ' || clean === 'YES' || clean === 'TRUE' || clean === '1') ? 'SI' : 'NO';
+  };
+  const closetsVal = data.closets !== undefined && data.closets !== null ? String(data.closets).trim() : '0';
+  let rentaStr = "";
+  if (data.renta) {
+    const rawRenta = String(data.renta).replace(/[^\d]/g, "");
+    if (rawRenta) {
+      rentaStr = Number(rawRenta).toLocaleString('es-CO');
+    }
+  }
+  
+  const uniqueBarrios = Array.from(new Set(allProps.map(p => p['Barrio']).filter(Boolean)));
+  const datalistHTML = `<datalist id="datalist_barrios">${uniqueBarrios.map(b => `<option value="${b}"></option>`).join('')}</datalist>`;
+  
+  container.innerHTML = `
+    ${datalistHTML}
+    <div style="font-size:16px; font-weight:700; color:var(--gold); margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:8px;">
+      🔍 Verificar Inmueble Extraído
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:20px;">
+      Bordes <span style="color:var(--gold); font-weight:bold;">dorados</span>: Datos exitosos. Bordes <span style="color:#f97316; font-weight:bold;">naranjas</span>: Vacíos o aproximados.
+    </p>
+    
+    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 24px;">
+      <div class="form-group"><label class="form-label">Código</label><input class="form-input ${emptyClass(data.codigo)}" id="gp_codigo" type="text" value="${emptyCheck(data.codigo)}" placeholder="Generación automática"/></div>
+      <div class="form-group"><label class="form-label">Nombre *</label>
+        <div style="display:flex; gap:6px;">
+          <input class="form-input ${emptyClass(data.nombre)}" id="gp_nombre" type="text" value="${emptyCheck(data.nombre)}" style="flex:1;"/>
+          <button class="btn btn-secondary btn-sm" onclick="gpAutoGenerarNombre()" style="padding:0 8px;">Auto</button>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Tipo de inmueble</label>
+        <select class="form-input ${emptyClass(data.tipo)}" id="gp_tipo">
+          <option value="Apartamento" ${data.tipo==='Apartamento'?'selected':''}>Apartamento</option>
+          <option value="Casa" ${data.tipo==='Casa'?'selected':''}>Casa</option>
+          <option value="Local" ${data.tipo==='Local'?'selected':''}>Local</option>
+          <option value="Lote" ${data.tipo==='Lote'?'selected':''}>Lote</option>
+          <option value="Bodega" ${data.tipo==='Bodega'?'selected':''}>Bodega</option>
+          <option value="Finca" ${data.tipo==='Finca'?'selected':''}>Finca</option>
+          <option value="Oficina" ${data.tipo==='Oficina'?'selected':''}>Oficina</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Contrato</label>
+        <select class="form-input ${emptyClass(data.contrato)}" id="gp_contrato">
+          <option value="Directo" ${data.contrato==='Directo'?'selected':''}>Directo</option>
+          <option value="Aliado" ${data.contrato==='Aliado'?'selected':''}>Aliado</option>
+          <option value="Verbal" ${data.contrato==='Verbal'?'selected':''}>Verbal</option>
+          <option value="No Servicio" ${data.contrato==='No Servicio'?'selected':''}>No Servicio</option>
+          ${data.contrato && !['Directo','Aliado','Verbal','No Servicio'].includes(data.contrato) ? `<option value="${data.contrato}" selected>${data.contrato}</option>` : ''}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Precio *</label><input class="form-input ${emptyClass(data.precio)}" id="gp_precio" type="text" value="${priceStr}" oninput="formatPrecioOnInput(this)"/></div>
+      <div class="form-group" style="position:relative;"><label class="form-label">Barrio *</label>
+        <input class="form-input ${emptyClass(data.barrio)}" id="gp_barrio" type="text" value="${emptyCheck(data.barrio)}" onblur="autocompletarBarrio(this.value)" list="datalist_barrios"/>
+        <span class="autofilled-msg" id="gp_barrio_msg" style="display:none; position:absolute; right:10px; bottom:-16px;"></span>
+      </div>
+      <div class="form-group"><label class="form-label">Conjunto / Edificio</label><input class="form-input ${emptyClass(data.conjunto)}" id="gp_conjunto" type="text" value="${emptyCheck(data.conjunto)}"/></div>
+      <div class="form-group"><label class="form-label">Zona</label>
+        <select class="form-input ${emptyClass(data.zona)}" id="gp_zona">
+          <option value="">Selecciona...</option>
+          ${['Centro', 'Norte', 'Occidente', 'Oriente', 'Rural', 'Sur'].map(z => `<option value="${z}" ${data.zona === z ? 'selected' : ''}>${z}</option>`).join('')}
+          ${data.zona && !['Centro', 'Norte', 'Occidente', 'Oriente', 'Rural', 'Sur'].includes(data.zona) ? `<option value="${data.zona}" selected>${data.zona}</option>` : ''}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Ciudad</label><input class="form-input ${emptyClass(data.ciudad)}" id="gp_ciudad" type="text" value="${data.ciudad || 'Cali'}"/></div>
+      <div class="form-group"><label class="form-label">Estrato</label>
+        <select class="form-input ${emptyClass(data.estrato)}" id="gp_estrato">
+          <option value="">Selecciona...</option>
+          ${[1,2,3,4,5,6].map(e => `<option value="${e}" ${data.estrato==e?'selected':''}>${e}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Dirección</label><input class="form-input ${emptyClass(data.ubicacion)}" id="gp_ubicacion" type="text" value="${emptyCheck(data.ubicacion)}"/></div>
+      <div class="form-group"><label class="form-label">Habitaciones</label>
+        <select class="form-input ${emptyClass(data.habitaciones)}" id="gp_habitaciones">
+          ${[1,2,3,4,5,'6+'].map(h => `<option value="${h}" ${data.habitaciones==h?'selected':''}>${h}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Baños</label>
+        <select class="form-input ${emptyClass(data.banos)}" id="gp_banos">
+          ${[1,2,3,4,'5+'].map(b => `<option value="${b}" ${data.banos==b?'selected':''}>${b}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Garaje</label>
+        <select class="form-input ${emptyClass(data.garaje)}" id="gp_garaje">
+          <option value="No" ${data.garaje==='No'?'selected':''}>No</option>
+          <option value="1" ${data.garaje==='1'?'selected':''}>1</option>
+          <option value="2" ${data.garaje==='2'?'selected':''}>2</option>
+          <option value="3+" ${data.garaje==='3+'?'selected':''}>3+</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Google Fotos (Álbum)</label>
+        <input class="form-input ${emptyClass(data.googleFotos)}" id="gp_gfotos" type="text" value="${emptyCheck(data.googleFotos)}" oninput="debounceGFotosPreview(this.value)"/>
+        <div id="gp_gfotos_preview" style="margin-top:10px;"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Inmobiliaria / Aliado</label><input class="form-input" id="gp_inmobiliaria" type="text" value="${document.getElementById('sw_aliado')?.value || ''}" readonly/></div>
+      <div class="form-group"><label class="form-label">Administración ($)</label><input class="form-input" id="gp_administracion" type="text" value="" oninput="formatPrecioOnInput(this)"/></div>
+      <div class="form-group"><label class="form-label">Retorno inversión</label><input class="form-input" id="gp_rentabilidad" type="text" placeholder="Ej: 8% anual"/></div>
+      
+      <div class="form-group"><label class="form-label">Comuna</label>
+        <select class="form-input ${emptyClass(data.comuna)}" id="gp_comuna">
+          ${Array.from({length: 11}, (_, i) => {
+            const isSelected = String(data.comuna).trim() === String(i) ? 'selected' : '';
+            return `<option value="${i}" ${isSelected}>${i}</option>`;
+          }).join('')}
+          ${data.comuna && !Array.from({length: 11}, (_, i) => String(i)).includes(String(data.comuna).trim()) ? `<option value="${data.comuna}" selected>${data.comuna}</option>` : ''}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Área de Lote (m²)</label><input class="form-input ${emptyClass(data.areaLote)}" id="gp_area_lote" type="number" value="${emptyCheck(data.areaLote)}" placeholder="m²"/></div>
+      <div class="form-group"><label class="form-label">Área Construida (m²)</label><input class="form-input ${emptyClass(data.area)}" id="gp_area" type="number" value="${emptyCheck(data.area)}"/></div>
+      <div class="form-group"><label class="form-label">Clósets</label>
+        <select class="form-input ${emptyClass(data.closets)}" id="gp_closets">
+          ${['0','1','2','3','4','5+'].map(val => `<option value="${val}" ${closetsVal === val ? 'selected' : ''}>${val}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Inventario</label>
+        <select class="form-input ${emptyClass(data.inventario)}" id="gp_inventario">
+          <option value="NO" ${normSiNo(data.inventario) === 'NO' ? 'selected' : ''}>NO</option>
+          <option value="Inventario" ${normSiNo(data.inventario) === 'SI' || String(data.inventario).toUpperCase().trim() === 'INVENTARIO' ? 'selected' : ''}>Inventario</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Celular 1</label><input class="form-input ${emptyClass(data.celulares)}" id="gp_celulares" type="text" value="${emptyCheck(data.celulares)}" placeholder="Celular 1"/></div>
+      <div class="form-group"><label class="form-label">Celular 2</label><input class="form-input ${emptyClass(data.celular_2 || data.celular2)}" id="gp_celular_2" type="text" value="${emptyCheck(data.celular_2 || data.celular2)}" placeholder="Celular 2"/></div>
+      <div class="form-group"><label class="form-label">Nombre del Propietario</label><input class="form-input ${emptyClass(data.propietario)}" id="gp_propietario" type="text" value="${emptyCheck(data.propietario)}" placeholder="Propietario"/></div>
+      <div class="form-group"><label class="form-label">Cuánto Renta ($)</label><input class="form-input ${emptyClass(data.renta)}" id="gp_renta" type="text" value="${rentaStr}" oninput="formatPrecioOnInput(this)" placeholder="Cuánto renta"/></div>
+      <div class="form-group"><label class="form-label">Ascensor</label>
+        <select class="form-input ${emptyClass(data.ascensor)}" id="gp_ascensor">
+          <option value="NO" ${normSiNo(data.ascensor) === 'NO' ? 'selected' : ''}>NO</option>
+          <option value="SI" ${normSiNo(data.ascensor) === 'SI' ? 'selected' : ''}>SI</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Número de Cortinas</label>
+        <select class="form-input ${emptyClass(data.cortinas)}" id="gp_cortinas">
+          ${['0', 'NO', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'SI'].map(val => {
+            const isSelected = String(data.cortinas).trim().toUpperCase() === String(val).toUpperCase() ? 'selected' : '';
+            return `<option value="${val}" ${isSelected}>${val}</option>`;
+          }).join('')}
+          ${data.cortinas && !['0', 'NO', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'SI'].map(x => x.toUpperCase()).includes(String(data.cortinas).trim().toUpperCase()) ? `<option value="${data.cortinas}" selected>${data.cortinas}</option>` : ''}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Aire Acondicionado</label>
+        <select class="form-input ${emptyClass(data.aireAcondicionado)}" id="gp_aire_acondicionado">
+          ${['0', 'NO', '1', '2', '3', '4', '5', 'SI'].map(val => {
+            const isSelected = String(data.aireAcondicionado).trim().toUpperCase() === String(val).toUpperCase() ? 'selected' : '';
+            return `<option value="${val}" ${isSelected}>${val}</option>`;
+          }).join('')}
+          ${data.aireAcondicionado && !['0', 'NO', '1', '2', '3', '4', '5', 'SI'].map(x => x.toUpperCase()).includes(String(data.aireAcondicionado).trim().toUpperCase()) ? `<option value="${data.aireAcondicionado}" selected>${data.aireAcondicionado}</option>` : ''}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Reja Antejardín</label>
+        <select class="form-input ${emptyClass(data.rejaAntejardin)}" id="gp_reja_antejardin">
+          <option value="NO" ${normSiNo(data.rejaAntejardin) === 'NO' ? 'selected' : ''}>NO</option>
+          <option value="SI" ${normSiNo(data.rejaAntejardin) === 'SI' ? 'selected' : ''}>SI</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Antigüedad del Inmueble</label><input class="form-input ${emptyClass(data.antiguedad)}" id="gp_antiguedad" type="text" value="${emptyCheck(data.antiguedad)}" placeholder="Ej: 5 años, Nuevo, Remodelado"/></div>
+      <div class="form-group"><label class="form-label">Patio</label>
+        <select class="form-input ${emptyClass(data.patio)}" id="gp_patio">
+          ${['0', 'SI', 'NO', 'G', 'M', 'P', 'A', '1', '2'].map(val => {
+            const isSelected = String(data.patio).trim().toUpperCase() === String(val).toUpperCase() ? 'selected' : '';
+            return `<option value="${val}" ${isSelected}>${val}</option>`;
+          }).join('')}
+          ${data.patio && !['0', 'SI', 'NO', 'G', 'M', 'P', 'A', '1', '2'].map(x => x.toUpperCase()).includes(String(data.patio).trim().toUpperCase()) ? `<option value="${data.patio}" selected>${data.patio}</option>` : ''}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Dimensiones</label><input class="form-input ${emptyClass(data.dimensiones)}" id="gp_dimensiones" type="text" value="${emptyCheck(data.dimensiones)}" placeholder="Ej: 7x12m"/></div>
+      
+      <div class="form-group"><label class="form-label">Latitud</label><input class="form-input" id="gp_lat" type="number" step="any" value="${emptyCheck(data.latitud)}"/></div>
+      <div class="form-group"><label class="form-label">Longitud</label><input class="form-input" id="gp_lng" type="number" step="any" value="${emptyCheck(data.longitud)}"/></div>
+      
+      <div class="form-group" style="display:flex; flex-direction:column; gap:8px; justify-content:center; background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; border:1px solid var(--border);">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12.5px;"><input type="checkbox" id="gp_destacada"/> Destacada ⭐</label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12.5px;"><input type="checkbox" id="gp_publicar" checked/> Publicar en Web 👁️</label>
+      </div>
+      
+      <div class="form-group full"><label class="form-label">Descripción</label><textarea class="form-input ${emptyClass(data.descripcion)}" id="gp_descripcion" style="min-height:100px;">${emptyCheck(data.descripcion)}</textarea></div>
+      <div class="form-group full">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <label class="form-label">Puntos Clave</label>
+          <button class="btn btn-secondary btn-sm" id="btn_gp_pc_ia" onclick="gpGenerarPuntosClaveIA()" style="font-size:10px; padding:2px 6px;">✨ Extraer de Desc.</button>
+        </div>
+        <textarea class="form-input ${emptyClass(data.puntosClave)}" id="gp_puntos_clave" style="min-height:80px;">${(data.puntosClave || []).join('\n')}</textarea>
+      </div>
+    </div>
+    
+    <div style="display:flex; gap:12px; justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="gpVistaPrevia()">👁️ Vista Previa</button>
+      <button class="btn btn-primary" id="btn_gp_guardar" onclick="guardarBarridoPropiedad()">💾 Guardar Propiedad</button>
+    </div>
+  `;
+  
+  if (data.googleFotos) {
+    debounceGFotosPreview(data.googleFotos);
+  }
+}
+
+function guardarBarridoPropiedad() {
+  const aliadoName = document.getElementById('gp_inmobiliaria').value;
+  guardarPropiedad(aliadoName);
+}
+
+/* HISTORIAL DE BARRIDOS & DIFF (FASE 8) */
+function logSweepRecord(aliado, total, nuevos, actualizados) {
+  const history = JSON.parse(localStorage.getItem('icde_historial_barridos') || '[]');
+  const record = {
+    id: Date.now() + Math.floor(Math.random()*1000),
+    aliado: aliado,
+    fecha: new Date().toISOString().split('T')[0],
+    propiedadesTotal: total,
+    propiedadesNuevas: nuevos,
+    propiedadesActualizadas: actualizados
+  };
+  history.unshift(record);
+  localStorage.setItem('icde_historial_barridos', JSON.stringify(history));
+}
+
+/* SUB-TAB 3: GESTION DE ALIADOS & CRUD */
+function renderGestionAliados() {
+  const sub = document.getElementById('gestionSubContent');
+  const aliados = JSON.parse(localStorage.getItem('icde_aliados') || '[]');
+  const history = JSON.parse(localStorage.getItem('icde_historial_barridos') || '[]');
+  
+  const getStatusBadge = (aliado) => {
+    if (!aliado.ultimoBarrido) return `<span class="ally-badge badge-warning">Nunca</span>`;
+    
+    const lastDate = new Date(aliado.ultimoBarrido);
+    const nextDate = new Date(lastDate);
+    nextDate.setDate(nextDate.getDate() + (parseInt(aliado.frecuenciaDias) || 15));
+    
+    const today = new Date();
+    const diff = Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24));
+    
+    if (diff < 0) return `<span class="ally-badge badge-overdue">Vencido (${Math.abs(diff)}d)</span>`;
+    if (diff <= 2) return `<span class="ally-badge badge-warning">Próximo (${diff}d)</span>`;
+    return `<span class="ally-badge badge-ontime">Al día</span>`;
+  };
+  
+  sub.innerHTML = `
+    <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 24px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:12px;">
+        <div style="font-size:16px; font-weight:700; color:var(--gold);">📋 Directorio de Aliados</div>
+        <button class="btn btn-primary btn-sm" onclick="showAddAllyModal()">➕ Agregar Aliado</button>
+      </div>
+      
+      <div style="overflow-x:auto;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>URL Base</th>
+              <th>Frecuencia</th>
+              <th>Último Barrido</th>
+              <th>Próximo Barrido</th>
+              <th>Estado</th>
+              <th style="text-align:right;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${aliados.map(a => {
+              const last = a.ultimoBarrido || 'Nunca';
+              let next = '—';
+              if (a.ultimoBarrido) {
+                const nextDate = new Date(a.ultimoBarrido);
+                nextDate.setDate(nextDate.getDate() + (parseInt(a.frecuenciaDias) || 15));
+                next = nextDate.toISOString().split('T')[0];
+              }
+              
+              const allyHist = history.filter(h => norm(h.aliado) === norm(a.nombre)).slice(0, 5);
+              
+              return `
+                <tr>
+                  <td>
+                    <div style="font-weight:700; color:#fff;">${a.nombre}</div>
+                    <div style="font-size:11px; color:var(--muted);">${a.notas || 'Sin notas'}</div>
+                    ${allyHist.length > 0 ? `
+                      <div style="margin-top:6px;">
+                        <a href="javascript:void(0)" onclick="toggleAllyHistory('${a.id}')" style="font-size:11px; color:var(--gold); text-decoration:none;">📜 Historial (${allyHist.length} barridos)</a>
+                        <div id="hist_${a.id}" style="display:none; margin-top:6px; background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; border:1px solid var(--border); font-size:10.5px; color:var(--muted);">
+                          ${allyHist.map(h => `<div>· <strong>${h.fecha}</strong>: Extraído <strong>${h.propiedadesTotal}</strong> prop.</div>`).join('')}
+                        </div>
+                      </div>
+                    ` : ''}
+                  </td>
+                  <td><a href="${a.urlBase}" target="_blank" style="color:var(--gold); text-decoration:none; font-size:12px;">${a.urlBase}</a></td>
+                  <td>Cada ${a.frecuenciaDias} días</td>
+                  <td>${last}</td>
+                  <td>${next}</td>
+                  <td>${getStatusBadge(a)}</td>
+                  <td style="text-align:right;">
+                    <button class="btn btn-secondary btn-sm" onclick="iniciarBarridoAliado('${a.id}')" style="padding:4px 8px; font-size:11px; margin-right:4px;">📡 Barrer</button>
+                    <button class="btn btn-secondary btn-sm" onclick="showEditAllyModal('${a.id}')" style="padding:4px 8px; font-size:11px; margin-right:4px;">✏️</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteAlly('${a.id}')" style="padding:4px 8px; font-size:11px;">🗑️</button>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function toggleAllyHistory(allyId) {
+  const el = document.getElementById(`hist_${allyId}`);
+  if (el) {
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+function checkOverdueSweepAlert() {
+  const aliados = JSON.parse(localStorage.getItem('icde_aliados') || '[]');
+  const alertContainer = document.getElementById('gestionAlerts');
+  if (!alertContainer) return;
+  
+  const today = new Date();
+  let overdueAlly = null;
+  let overdueDaysStr = "";
+  
+  for (let a of aliados) {
+    if (!a.ultimoBarrido) {
+      overdueAlly = a;
+      overdueDaysStr = "primera vez";
+      break;
+    }
+    
+    const lastDate = new Date(a.ultimoBarrido);
+    const nextDate = new Date(lastDate);
+    nextDate.setDate(nextDate.getDate() + (parseInt(a.frecuenciaDias) || 15));
+    
+    const timeDiff = nextDate - today;
+    const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    
+    if (daysDiff <= 2) {
+      overdueAlly = a;
+      const formattedNextDate = nextDate.toLocaleDateString();
+      overdueDaysStr = daysDiff < 0 ? `vencido hace ${Math.abs(daysDiff)} días` : `programado para el ${formattedNextDate}`;
+      break;
+    }
+  }
+  
+  if (overdueAlly) {
+    const alertDiv = document.createElement('div');
+    alertDiv.style.cssText = 'background:rgba(212,168,75,0.12); border:1px solid var(--gold); border-radius:12px; padding:15px; display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; animation:slideIn 0.3s ease;';
+    alertDiv.innerHTML = `
+      <div style="font-size:13px; display:flex; align-items:center; gap:8px;">
+        <span>⚠️</span> 
+        <span>El barrido para <strong>${overdueAlly.nombre}</strong> está <strong>${overdueDaysStr}</strong>.</span>
+      </div>
+      <button class="btn btn-gold btn-sm" onclick="iniciarBarridoAliado('${overdueAlly.id}')">📡 Iniciar ahora</button>
+    `;
+    alertContainer.appendChild(alertDiv);
+  }
+}
+
+function iniciarBarridoAliado(allyId) {
+  window.currentGestionSubTab = 'barrido';
+  window.preselectedAllyId = allyId;
+  renderGestion();
+}
+
+/* ALLY CRUD DIALOGS */
+function showAddAllyModal() {
+  let modal = document.getElementById('allyCrudModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'allyCrudModal';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+  
+  modal.innerHTML = `
+    <div class="modal-box" style="animation: zoomIn 0.3s ease;">
+      <div class="modal-title">➕ Agregar Nuevo Aliado</div>
+      <div class="form-grid" style="grid-template-columns: 1fr; gap:12px; margin-bottom:20px;">
+        <div class="form-group"><label class="form-label">Nombre del Aliado *</label><input class="form-input" id="ca_nombre" type="text" placeholder="Ej: Finca Raíz"/></div>
+        <div class="form-group"><label class="form-label">URL Base *</label><input class="form-input" id="ca_url" type="text" placeholder="https://www.fincaraiz.com.co"/></div>
+        <div class="form-group"><label class="form-label">Frecuencia de Barrido (Días) *</label><input class="form-input" id="ca_frec" type="number" value="15"/></div>
+        <div class="form-group"><label class="form-label">Notas / Comentarios</label><input class="form-input" id="ca_notas" type="text" placeholder="Ej: Scraper principal"/></div>
+      </div>
+      
+      <div class="modal-footer" style="display:flex; gap:10px; justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="document.getElementById('allyCrudModal').classList.remove('active')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveAddAlly()">Guardar Aliado</button>
+      </div>
+    </div>
+  `;
+  
+  modal.classList.add('active');
+}
+
+function saveAddAlly() {
+  const nombre = document.getElementById('ca_nombre').value.trim();
+  const url = document.getElementById('ca_url').value.trim();
+  const frec = parseInt(document.getElementById('ca_frec').value) || 15;
+  const notas = document.getElementById('ca_notas').value.trim();
+  
+  if (!nombre || !url) {
+    toast('Nombre y URL son requeridos', 'error');
+    return;
+  }
+  
+  const aliados = JSON.parse(localStorage.getItem('icde_aliados') || '[]');
+  aliados.push({
+    id: Date.now().toString(),
+    nombre: nombre,
+    urlBase: url,
+    frecuenciaDias: frec,
+    ultimoBarrido: '',
+    notas: notas
+  });
+  
+  localStorage.setItem('icde_aliados', JSON.stringify(aliados));
+  document.getElementById('allyCrudModal').classList.remove('active');
+  toast('Aliado agregado con éxito ✓', 'success');
+  renderGestion();
+}
+
+function showEditAllyModal(id) {
+  const aliados = JSON.parse(localStorage.getItem('icde_aliados') || '[]');
+  const match = aliados.find(a => String(a.id) === String(id));
+  if (!match) return;
+  
+  let modal = document.getElementById('allyCrudModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'allyCrudModal';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+  
+  modal.innerHTML = `
+    <div class="modal-box" style="animation: zoomIn 0.3s ease;">
+      <div class="modal-title">✏️ Editar Aliado</div>
+      <div class="form-grid" style="grid-template-columns: 1fr; gap:12px; margin-bottom:20px;">
+        <div class="form-group"><label class="form-label">Nombre del Aliado *</label><input class="form-input" id="ca_nombre" type="text" value="${match.nombre}"/></div>
+        <div class="form-group"><label class="form-label">URL Base *</label><input class="form-input" id="ca_url" type="text" value="${match.urlBase}"/></div>
+        <div class="form-group"><label class="form-label">Frecuencia de Barrido (Días) *</label><input class="form-input" id="ca_frec" type="number" value="${match.frecuenciaDias}"/></div>
+        <div class="form-group"><label class="form-label">Notas / Comentarios</label><input class="form-input" id="ca_notas" type="text" value="${match.notas || ''}"/></div>
+      </div>
+      
+      <div class="modal-footer" style="display:flex; gap:10px; justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="document.getElementById('allyCrudModal').classList.remove('active')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveEditAlly('${id}')">Guardar Cambios</button>
+      </div>
+    </div>
+  `;
+  
+  modal.classList.add('active');
+}
+
+function saveEditAlly(id) {
+  const nombre = document.getElementById('ca_nombre').value.trim();
+  const url = document.getElementById('ca_url').value.trim();
+  const frec = parseInt(document.getElementById('ca_frec').value) || 15;
+  const notas = document.getElementById('ca_notas').value.trim();
+  
+  if (!nombre || !url) {
+    toast('Nombre y URL son requeridos', 'error');
+    return;
+  }
+  
+  const aliados = JSON.parse(localStorage.getItem('icde_aliados') || '[]');
+  const match = aliados.find(a => String(a.id) === String(id));
+  if (match) {
+    match.nombre = nombre;
+    match.urlBase = url;
+    match.frecuenciaDias = frec;
+    match.notas = notas;
+    
+    localStorage.setItem('icde_aliados', JSON.stringify(aliados));
+    document.getElementById('allyCrudModal').classList.remove('active');
+    toast('Aliado actualizado ✓', 'success');
+    renderGestion();
+  }
+}
+
+function deleteAlly(id) {
+  if (!confirm('¿Estás seguro de que deseas eliminar este aliado?')) return;
+  
+  let aliados = JSON.parse(localStorage.getItem('icde_aliados') || '[]');
+  aliados = aliados.filter(a => String(a.id) !== String(id));
+  
+  localStorage.setItem('icde_aliados', JSON.stringify(aliados));
+  toast('Aliado eliminado', 'success');
+  renderGestion();
+}
+
+
+
+
+// --- GOOGLE STREET VIEW INTEGRATION ---
+function abrirStreetView(lat, lng) {
+  // Street View eliminado — abre en Google Maps en nueva pestaña
+  window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
+}
+
+// Function to change property popup images
+window.popupImagesRegistry = window.popupImagesRegistry || {};
+function changePopupImage(code, direction) {
+  const images = window.popupImagesRegistry[code];
+  if (!images || images.length <= 1) return;
+  
+  const imgEl = document.getElementById(`popup-img-${code}`);
+  const counterEl = document.getElementById(`popup-counter-${code}`);
+  if (!imgEl || !counterEl) return;
+  
+  let currentIndex = parseInt(imgEl.getAttribute('data-index') || '0', 10);
+  let newIndex = currentIndex + direction;
+  
+  if (newIndex < 0) {
+    newIndex = images.length - 1;
+  } else if (newIndex >= images.length) {
+    newIndex = 0;
+  }
+  
+  imgEl.src = images[newIndex];
+  imgEl.setAttribute('data-index', newIndex);
+  counterEl.textContent = `${newIndex + 1} de ${images.length} ›`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const closeBtn = document.getElementById('closeStreetView');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      const modal = document.getElementById('streetViewModal');
+      const panoramaDiv = document.getElementById('streetViewPanorama');
+    });
+  }
+  if (typeof initGeminiIdleActions === 'function') {
+    initGeminiIdleActions();
+  }
+});
+
+function showSearchResultPinOnly(lat, lng) {
+  if (leafletMap._tempSearchMarker) {
+    leafletMap.removeLayer(leafletMap._tempSearchMarker);
+  }
+  const searchIcon = L.divIcon({
+    className: 'google-search-pin-wrap',
+    html: `
+      <div class="google-search-pin">
+        <div class="google-search-pin-circle"></div>
+      </div>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 24]
+  });
+  leafletMap._tempSearchMarker = L.marker([lat, lng], { icon: searchIcon }).addTo(leafletMap);
+}
+
+function mostrarBottomCard(lat, lng, main, sub, full) {
+  const card = document.getElementById('googleMapsBottomCard');
+  if (!card) return;
+  
+  document.getElementById('bottomCardAddressMain').textContent = main;
+  document.getElementById('bottomCardAddressSub').textContent = sub;
+  document.getElementById('bottomCardLatLng').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  
+  // Set street view preview image
+  const staticSvUrl = `https://maps.googleapis.com/maps/api/streetview?size=110x75&scale=2&location=${lat},${lng}&key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0`;
+  const imgEl = document.getElementById('bottomCardImg');
+  imgEl.src = staticSvUrl;
+  imgEl.style.display = 'block';
+  
+  // Thumbnail click starts Street View
+  const thumbEl = document.getElementById('bottomCardThumbnail');
+  thumbEl.onclick = () => abrirStreetView(lat, lng);
+
+  // Street View button
+  const svBtn = document.getElementById('bottomCardSvBtn');
+  if (svBtn) svBtn.onclick = () => abrirStreetView(lat, lng);
+  
+  // Directions action
+  const dirBtn = document.getElementById('bottomCardDirBtn');
+  dirBtn.onclick = () => {
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(full)}`;
+    window.open(url, '_blank');
+  };
+  
+  // Share action (copies coordinates and address)
+  const shareBtn = document.getElementById('bottomCardShareBtn');
+  shareBtn.onclick = () => {
+    const textToCopy = `${main}, ${sub} (${lat.toFixed(6)}, ${lng.toFixed(6)})`;
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      toast("Dirección copiada al portapapeles", "success");
+    }).catch(err => {
+      console.error('Could not copy text: ', err);
+    });
+  };
+  
+  card.classList.add('active');
+}
+
+function cerrarBottomCard() {
+  const card = document.getElementById('googleMapsBottomCard');
+  if (card) card.classList.remove('active');
+  if (leafletMap && leafletMap._tempSearchMarker) {
+    leafletMap.removeLayer(leafletMap._tempSearchMarker);
+    leafletMap._tempSearchMarker = null;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MÓDULO CONTABILIDAD — ICDE Inmobiliaria
+═══════════════════════════════════════════════════════════════ */
+function contDeduplicarMovimientos(arr) {
+  if (!Array.isArray(arr)) return [];
+  const map = new Map();
+  arr.forEach(m => {
+    if (!m || !m.id) return;
+    const cleanId = String(m.id).trim();
+    if (!map.has(cleanId)) {
+      map.set(cleanId, m);
+    } else {
+      const existing = map.get(cleanId);
+      if (existing.isPending && !m.isPending) {
+        map.set(cleanId, m);
+      }
+    }
+  });
+  return Array.from(map.values());
+}
+
+let contMovimientos = [];
+try {
+  contMovimientos = JSON.parse(localStorage.getItem('icde_contabilidad') || '[]');
+  if (!Array.isArray(contMovimientos)) contMovimientos = [];
+  contMovimientos = contDeduplicarMovimientos(contMovimientos);
+} catch (e) {
+  console.error("Error al inicializar contMovimientos:", e);
+  contMovimientos = [];
+}
+
+let contMetas = {"ingMes":20000000,"ingAnual":240000000,"gastoMes":8000000};
+try {
+  const savedMetas = localStorage.getItem('icde_cont_metas');
+  if (savedMetas) {
+    contMetas = JSON.parse(savedMetas);
+  }
+} catch (e) {
+  console.error("Error al inicializar contMetas:", e);
+}
+
+async function contCargarDatos() {
+  if (!CONT_SCRIPT_URL) return;
+  if (window.contSyncCount && window.contSyncCount > 0) {
+    console.log('Sincronización en curso, omitiendo recarga desde Drive.');
+    return;
+  }
+  try {
+    const res = await fetch(CONT_SCRIPT_URL + '?action=getContabilidad&t=' + Date.now());
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.movimientos)) {
+        // Combinación inteligente sin duplicados por ID
+        const driveIds = new Set(data.movimientos.map(m => String(m.id).trim()));
+        const pendingUpload = contMovimientos.filter(m => !m.isAuto && m.isPending && !driveIds.has(String(m.id).trim()));
+        
+        contMovimientos = contDeduplicarMovimientos([...data.movimientos, ...pendingUpload]);
+        localStorage.setItem('icde_contabilidad', JSON.stringify(contMovimientos));
+      }
+      if (data && data.metas) {
+        // Sólo actualizamos metas si tienen datos válidos y no están en 0
+        if (data.metas.ingMes > 0 || data.metas.ingAnual > 0) {
+          contMetas = data.metas;
+          localStorage.setItem('icde_cont_metas', JSON.stringify(contMetas));
+        }
+      }
+      console.log('Datos de contabilidad sincronizados desde Drive.');
+    }
+  } catch (err) {
+    console.error('Error cargando contabilidad de Drive:', err);
+  }
+}
+
+let contActiveTab = 'flujo';
+let contAnoFiltro = new Date().getFullYear();
+let contMesFiltro = 0;
+let contSortOrder = 'fecha';
+let contDetalleMesSortOrder = 'fecha';
+let contDetalleMesActivo = null;
+let contCharts = {};
+
+let contAuditLog = [];
+try {
+  contAuditLog = JSON.parse(localStorage.getItem('icde_cont_audit') || '[]');
+  if (!Array.isArray(contAuditLog)) contAuditLog = [];
+} catch(e) {
+  contAuditLog = [];
+}
+
+function contRegistrarAuditoria(tipoAccion, antes, despues) {
+  const logEntry = {
+    id: 'AUD-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+    tipoAccion: tipoAccion,
+    fechaAccion: new Date().toISOString(),
+    movimientoId: antes ? String(antes.id) : (despues ? String(despues.id) : ''),
+    antes: antes ? { ...antes, historial: undefined } : null,
+    despues: despues ? { ...despues, historial: undefined } : null
+  };
+  contAuditLog.push(logEntry);
+  localStorage.setItem('icde_cont_audit', JSON.stringify(contAuditLog));
+}
+
+const CONT_MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const CONT_MESES_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const CONT_CAT_ICONS = {
+  'Venta de Inmueble':'\uD83C\uDFE0','Arriendo':'\uD83D\uDD11','Aval\u00FAos':'\uD83D\uDCCB',
+  'Remodelaci\u00F3n':'\uD83D\uDD28','Reparaci\u00F3n':'\uD83D\uDD27','Arquitectura':'\uD83D\uDCD0',
+  'Gesti\u00F3n/Administraci\u00F3n':'\uD83D\uDCBC','Consultor\u00EDa':'\uD83D\uDCA1','Recaudo de cartera':'\uD83D\uDCE5','Otro Servicio':'\u2B50',
+  'N\u00F3mina/Personal':'\uD83D\uDC65','Arriendo Oficina':'\uD83C\uDFE2','Marketing':'\uD83D\uDCE3',
+  'Servicios P\u00FAblicos':'\uD83D\uDCA1','Impuestos':'\uD83D\uDCDD','Software/Tecnolog\u00EDa':'\uD83D\uDCBB',
+  'Inversi\u00F3n':'\uD83D\uDCC8','Aseo/Mantenimiento':'\uD83E\uDDF9','Cafeter\u00EDa':'\u2615','Deudas':'\uD83D\uDCB8','Transporte':'\uD83D\uDE97','Papeler\u00EDa':'\uD83D\uDCCE','Otro Gasto':'\u274C',
+  'Pago a socios':'\uD83E\uDD1D','Pago de deudas':'\uD83D\uDCB3'
+};
+
+function contFmt(n){
+  if(!n&&n!==0)return'$0';
+  return (n<0?'-':'')+'$'+Math.abs(n).toLocaleString('es-CO');
+}
+function contSave(){
+  contMovimientos = contDeduplicarMovimientos(contMovimientos);
+  localStorage.setItem('icde_contabilidad', JSON.stringify(contMovimientos));
+}
+function contSaveMetas(){localStorage.setItem('icde_cont_metas',JSON.stringify(contMetas));}
+function contDestroyChart(id){if(contCharts[id]){try{contCharts[id].destroy();}catch(e){}delete contCharts[id];}}
+function contSumTipo(lista,tipo){return lista.filter(m=>m.tipo===tipo).reduce((a,m)=>a+(parseFloat(m.monto)||0),0);}
+
+function contObtenerComisionAdministracionEsperada(year, month) {
+  if (typeof adminData === 'undefined' || !adminData || !adminData.properties) {
+    return 0;
+  }
+  const monthsNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+  let totalEsperado = 0;
+  
+  adminData.properties.forEach(p => {
+    const rent = parseFloat(p.monthly_rent) || 0;
+    const paymentsYear = (p.payments && p.payments[year]) ? p.payments[year] : [];
+    
+    paymentsYear.forEach(m => {
+      const mIdx = monthsNames.indexOf(m.month.toUpperCase());
+      if (mIdx !== -1) {
+        if (month === 0 || mIdx === (month - 1)) {
+          const st = m.status;
+          if (st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'AL_DIA' || st === 'FUTURE') {
+            totalEsperado += rent * 0.10;
+          }
+        }
+      }
+    });
+  });
+  
+  return totalEsperado;
+}
+
+function contGetParaAno(year) {
+  let lista = contMovimientos.filter(m => {
+    const mAno = m.ano ? parseInt(m.ano) : (m.fecha ? parseInt(m.fecha.split('-')[0]) : null);
+    return mAno === year;
+  });
+
+  if (typeof adminData !== 'undefined' && adminData && adminData.properties) {
+    const monthsNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+    adminData.properties.forEach(p => {
+      const rent = parseFloat(p.monthly_rent) || 0;
+      const paymentsYear = (p.payments && p.payments[year]) ? p.payments[year] : [];
+      paymentsYear.forEach(m => {
+        const mIdx = monthsNames.indexOf(m.month.toUpperCase());
+        if (mIdx !== -1) {
+          const st = m.status;
+          const val = parseFloat(m.value) || 0;
+          let recaudado = 0;
+          if (st === 'PAID') {
+            recaudado = val > 0 ? val : rent;
+          } else if (['PREAVISO', 'NEW_CONTRACT', 'NO_RENEW', 'AL_DIA', 'DELIVERY'].includes(st)) {
+            if (val > 0) recaudado = val;
+          }
+
+          const comVal = recaudado * 0.10;
+          if (comVal > 0) {
+            const propName = p.name || 'Propiedad';
+            const mIdx1Based = mIdx + 1;
+            lista.push({
+              id: 'AUTO-ADMIN-COMISION-' + (p.id || propName.replace(/\s+/g, '-')) + '-' + year + '-' + mIdx1Based,
+              tipo: 'ingreso',
+              categoria: 'Gestión/Administración',
+              descripcion: 'Comisión Administración - ' + propName,
+              monto: comVal,
+              fecha: year + '-' + String(mIdx1Based).padStart(2, '0') + '-01',
+              mes: mIdx1Based,
+              ano: year,
+              notas: 'Generado automáticamente para el inmueble: ' + propName,
+              isAuto: true
+            });
+          }
+        }
+      });
+    });
+  }
+  return lista;
+}
+
+function contGetFiltrado(){
+  let lista = contGetParaAno(contAnoFiltro);
+  if (contMesFiltro > 0) {
+    lista = lista.filter(m => parseInt(m.mes) === contMesFiltro);
+  }
+  return lista;
+}
+
+async function renderContabilidad(){
+  if (window.contFiltersInitialized === undefined) {
+    contAnoFiltro = new Date().getFullYear();
+    contMesFiltro = new Date().getMonth() + 1;
+    window.contFiltersInitialized = true;
+  }
+  const c=document.getElementById('mainContent');
+  
+  // Dibujar estructura básica de contabilidad
+  const syncMsg = CONT_SCRIPT_URL ? 'Sincronizando con Drive... 🔄' : 'Modo Local 💻';
+  c.innerHTML=`
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div class="section-title" style="font-size:1.3rem;">\uD83D\uDCB0 Contabilidad</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:6px;">
+        <span>Control financiero de ICDE Inmobiliaria</span>
+        <span id="contSyncIndicator" style="background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:12px;color:#aaa;font-size:10px;font-weight:600;">${syncMsg}</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:6px 12px;">
+        <span style="font-size:12px;color:var(--muted);">A\u00F1o:</span>
+        <button onclick="contCambiarAno(-1)" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:16px;padding:0 4px;">\u25C4</button>
+        <span id="contAnoLabel" style="font-size:14px;font-weight:700;color:#fff;min-width:40px;text-align:center;">${contAnoFiltro}</span>
+        <button onclick="contCambiarAno(1)" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:16px;padding:0 4px;">\u25BA</button>
+      </div>
+      <select id="contMesSel" class="form-input" style="width:auto;padding:8px 12px;font-size:13px;" onchange="contCambiarMes(this.value)">
+        <option value="0">Todos los meses</option>
+        ${CONT_MESES_FULL.map((m,i)=>'<option value="'+(i+1)+'"'+(contMesFiltro===i+1?' selected':'')+'>'+m+'</option>').join('')}
+      </select>
+      <button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Agregar Movimiento</button>
+      <button class="btn btn-secondary btn-sm" onclick="contAbrirMetas()" title="Metas">\uD83C\uDFAF Metas</button>
+    </div>
+  </div>
+  <div class="cont-hero" id="contHero"></div>
+  <div class="cont-tabs">
+    <button class="cont-tab-btn${contActiveTab==='flujo'?' active':''}" onclick="contSwitchTab('flujo')">\uD83D\uDCC8 Flujo Mensual</button>
+    <button class="cont-tab-btn${contActiveTab==='inversiones'?' active':''}" onclick="contSwitchTab('inversiones')">\uD83D\uDC8E Inversiones</button>
+    <button class="cont-tab-btn${contActiveTab==='movimientos'?' active':''}" onclick="contSwitchTab('movimientos')">\uD83D\uDCCB Movimientos</button>
+  </div>
+  <div id="contTabContent"></div>`;
+  
+  // Render inicial de héroe rápido (con caché/local)
+  contRenderHero(); contRenderMetas(); contRenderTabContent();
+  
+  // Carga asíncrona en segundo plano desde Drive
+  if (CONT_SCRIPT_URL) {
+    try {
+      await contCargarDatos();
+      const indicator = document.getElementById('contSyncIndicator');
+      if (indicator) {
+        indicator.textContent = 'Sincronizado con Drive ☁️';
+        indicator.style.color = '#22c55e';
+        indicator.style.background = 'rgba(34,197,94,0.1)';
+      }
+      // Re-renderizar paneles con los datos actualizados
+      contRenderHero(); contRenderMetas(); contRenderTabContent();
+    } catch(err) {
+      console.warn("Fallo de sincronización al renderizar contabilidad:", err);
+      const indicator = document.getElementById('contSyncIndicator');
+      if (indicator) {
+        indicator.textContent = 'Error de Conexión ⚠️';
+        indicator.style.color = '#ef4444';
+        indicator.style.background = 'rgba(239,68,68,0.1)';
+      }
+    }
+  }
+}
+
+function contCambiarAno(d){contAnoFiltro+=d;const el=document.getElementById('contAnoLabel');if(el)el.textContent=contAnoFiltro;contRenderHero();contRenderMetas();contRenderTabContent();}
+function contCambiarMes(v){contMesFiltro=parseInt(v)||0;contRenderHero();contRenderMetas();contRenderTabContent();}
+
+function contSwitchTab(tab){
+  if (tab === 'pareto') {
+    tab = 'inversiones';
+    contMostrarParetoGraficas = true;
+  }
+  contActiveTab=tab;
+  document.querySelectorAll('.cont-tab-btn').forEach((btn,i)=>{
+    const tabs=['flujo','inversiones','movimientos'];
+    btn.classList.toggle('active',tabs[i]===tab);
+  });
+  contRenderTabContent();
+}
+
+function contRenderHero(){
+  const lista=contGetFiltrado();
+  const ingresos=contSumTipo(lista,'ingreso');
+  const egresos=contSumTipo(lista,'egreso');
+  const utilidad=ingresos-egresos;
+  const margen=ingresos>0?((utilidad/ingresos)*100).toFixed(1):0;
+  const pMeta=contMetas.ingMes>0?Math.round((ingresos/contMetas.ingMes)*100):0;
+  const el=document.getElementById('contHero');if(!el)return;
+  el.innerHTML=
+    '<div class="cont-hero-card" style="--card-accent:#22c55e;"><span class="ch-icon">\uD83D\uDCB9</span><div class="ch-lbl">Ingresos Totales</div><div class="ch-val">'+contFmt(ingresos)+'</div><div class="ch-sub">'+lista.filter(m=>m.tipo==='ingreso').length+' transacciones</div></div>'+
+    '<div class="cont-hero-card" style="--card-accent:#ef4444;"><span class="ch-icon">\uD83D\uDCC9</span><div class="ch-lbl">Egresos Totales</div><div class="ch-val">'+contFmt(egresos)+'</div><div class="ch-sub">'+lista.filter(m=>m.tipo==='egreso').length+' transacciones</div></div>'+
+    '<div class="cont-hero-card" style="--card-accent:'+(utilidad>=0?'#22c55e':'#ef4444')+'"><span class="ch-icon">'+(utilidad>=0?'\uD83D\uDCC8':'\uD83D\uDCC9')+'</span><div class="ch-lbl">Utilidad Neta</div><div class="ch-val" style="color:'+(utilidad>=0?'#22c55e':'#ef4444')+'">'+contFmt(utilidad)+'</div><div class="ch-sub">Margen: '+margen+'%</div></div>'+
+    '<div class="cont-hero-card" style="--card-accent:var(--gold)"><span class="ch-icon">\uD83D\uDCCA</span><div class="ch-lbl">Margen</div><div class="ch-val" style="color:var(--gold)">'+margen+'%</div><div class="ch-sub">'+(utilidad>=0?'\u2705 Positivo':'\u26A0\uFE0F Negativo')+'</div></div>'+
+    '<div class="cont-hero-card" style="--card-accent:#3b82f6"><span class="ch-icon">\uD83C\uDFAF</span><div class="ch-lbl">Meta Mes</div><div class="ch-val" style="color:#3b82f6">'+pMeta+'%</div><div class="ch-sub">Meta: '+contFmt(contMetas.ingMes)+'</div></div>';
+}
+
+function contRenderMetas(){
+  return;
+}
+
+function contRenderTabContent(){
+  const el=document.getElementById('contTabContent');if(!el)return;
+  Object.keys(contCharts).forEach(k=>contDestroyChart(k));
+  if(contActiveTab==='resumen')contRenderResumen(el);
+  else if(contActiveTab==='flujo')contRenderFlujo(el);
+  else if(contActiveTab==='pareto')contRenderPareto(el);
+  else if(contActiveTab==='inversiones')contRenderInversiones(el);
+  else if(contActiveTab==='movimientos')contRenderMovimientos(el);
+}
+
+function contRenderResumen(el){
+  const lista=contGetFiltrado();
+  const ingresos=contSumTipo(lista,'ingreso');
+  const egresos=contSumTipo(lista,'egreso');
+  const catIng={};lista.filter(m=>m.tipo==='ingreso').forEach(m=>{catIng[m.categoria]=(catIng[m.categoria]||0)+parseFloat(m.monto||0);});
+  const catEgr={};lista.filter(m=>m.tipo==='egreso').forEach(m=>{catEgr[m.categoria]=(catEgr[m.categoria]||0)+parseFloat(m.monto||0);});
+  const sI=Object.entries(catIng).sort((a,b)=>parseFloat(b[1]||0)-parseFloat(a[1]||0));
+  const sE=Object.entries(catEgr).sort((a,b)=>parseFloat(b[1]||0)-parseFloat(a[1]||0));
+  const ciC=['#22c55e','#16a34a','#4ade80','#86efac','#d4a84b','#f97316','#3b82f6','#a855f7'];
+  const ceC=['#ef4444','#dc2626','#f87171','#fca5a5','#f97316','#a855f7','#eab308','#888'];
+  const txList = [...lista];
+  if (contSortOrder === 'fecha') {
+    txList.sort((a,b) => new Date(b.fecha||0) - new Date(a.fecha||0));
+  } else if (contSortOrder === 'tipo') {
+    txList.sort((a,b) => {
+      const tComp = (a.tipo||'').localeCompare(b.tipo||'');
+      if (tComp !== 0) return tComp;
+      const cComp = (a.categoria||'').localeCompare(b.categoria||'');
+      if (cComp !== 0) return cComp;
+      return new Date(b.fecha||0) - new Date(a.fecha||0);
+    });
+  } else if (contSortOrder === 'categoria') {
+    txList.sort((a,b) => {
+      const cComp = (a.categoria||'').localeCompare(b.categoria||'');
+      if (cComp !== 0) return cComp;
+      return new Date(b.fecha||0) - new Date(a.fecha||0);
+    });
+  } else if (contSortOrder === 'precio') {
+    txList.sort((a,b) => (parseFloat(b.monto||0)) - (parseFloat(a.monto||0)));
+  } else {
+    txList.sort((a,b) => new Date(b.fecha||0) - new Date(a.fecha||0));
+  }
+
+  const panelMovsTitle = (typeof contMesFiltro !== 'undefined' && contMesFiltro > 0) ? ('\uD83D\uDCCB Movimientos de ' + CONT_MESES_FULL[contMesFiltro - 1]) : '\uD83D\uDCCB \u00DAltimos Movimientos';
+  el.innerHTML=
+  '<div class="cont-layout">'+
+    '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDCB9 Ingresos por Servicio</div><span style="font-size:12px;color:var(--gold);font-weight:700;">'+contFmt(ingresos)+'</span></div>'+
+    '<div class="cont-panel-body">'+(ingresos===0?'<div class="cont-empty">Sin ingresos.<br><button class="cont-btn-add" onclick="contAbrirModal(\'ingreso\')" style="margin-top:12px;">\u2795 Agregar</button></div>':
+      '<div class="cont-chart-wrap"><canvas id="chartIngCat"></canvas></div><div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">'+
+      sI.map(function(e,i){return'<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;"><span style="color:#ccc;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+ciC[i%ciC.length]+';"></span>'+(CONT_CAT_ICONS[e[0]]||'\u2022')+' '+e[0]+'</span><span style="color:var(--gold);font-weight:700;">'+contFmt(e[1])+'</span></div>';}).join('')+
+      '</div>')+'</div></div>'+
+    '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDD34 Egresos por Categor\u00EDa</div><span style="font-size:12px;color:#ef4444;font-weight:700;">'+contFmt(egresos)+'</span></div>'+
+    '<div class="cont-panel-body">'+(egresos===0?'<div class="cont-empty">Sin egresos.<br><button class="cont-btn-add" onclick="contAbrirModal(\'egreso\')" style="margin-top:12px;">\u2795 Agregar</button></div>':
+      '<div class="cont-chart-wrap"><canvas id="chartEgrCat"></canvas></div><div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">'+
+      sE.map(function(e,i){return'<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;"><span style="color:#ccc;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+ceC[i%ceC.length]+';"></span>'+(CONT_CAT_ICONS[e[0]]||'\u2022')+' '+e[0]+'</span><span style="color:#ef4444;font-weight:700;">'+contFmt(e[1])+'</span></div>';}).join('')+
+      '</div>')+'</div></div>'+
+  '</div>'+
+  '<div class="cont-panel"><div class="cont-panel-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;"><div class="cont-panel-title">'+panelMovsTitle+'</div>'+'<div style="display:flex;gap:8px;align-items:center;"><span style="font-size:12px;color:var(--muted);white-space:nowrap;">Ordenar por:</span><select class="form-input" style="width:auto;height:32px;padding:0 8px;background:#18181b;border:1px solid rgba(255,255,255,0.08);color:#fff;font-size:12px;border-radius:8px;cursor:pointer;color-scheme:dark;" onchange="contCambiarOrden(this.value)"><option value="fecha"'+(contSortOrder==='fecha'?' selected':'')+'>\uD83D\uDCC5 Fecha</option><option value="tipo"'+(contSortOrder==='tipo'?' selected':'')+'>\uD83D\uDD04 Tipo</option><option value="categoria"'+(contSortOrder==='categoria'?' selected':'')+'>\uD83C\uDFF7\uFE0F Categor\u00EDa</option><option value="precio"'+(contSortOrder==='precio'?' selected':'')+'>\uD83D\uDCB0 Precio</option></select><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Nuevo</button></div></div>'+
+  '<div class="cont-panel-body">'+(lista.length===0?'<div class="cont-empty">Ninguno a\u00FAn.<br><br><button class="cont-btn-add" onclick="contAbrirModal()">\u2795 Primero</button></div>':
+    '<div class="cont-tx-list">'+txList.map(function(m){return'<div class="cont-tx-item" '+(m.isAuto?'':'onclick="contEditarMovimiento(\''+m.id+'\')" style="cursor:pointer;"')+'><div class="cont-tx-icon '+m.tipo+'">'+(CONT_CAT_ICONS[m.categoria]||'\uD83D\uDCB0')+'</div><div class="cont-tx-info"><div class="cont-tx-desc">'+(m.descripcion||m.categoria)+'</div><div class="cont-tx-cat">'+m.categoria+' \u00B7 '+(m.fecha||'\u2014')+'</div></div><div style="text-align:right;"><div class="cont-tx-amount '+m.tipo+'">'+(m.tipo==='ingreso'?'+':'-')+contFmt(parseFloat(m.monto||0))+'</div><div class="cont-tx-date">'+CONT_MESES_FULL[(parseInt(m.mes)||1)-1]+'</div></div></div>';}).join('')+'</div>')+'</div></div>';
+  setTimeout(function(){
+    try {
+      if(ingresos>0&&sI.length){const ctx=document.getElementById('chartIngCat');if(ctx){contCharts['chartIngCat']=new Chart(ctx,{type:'doughnut',data:{labels:sI.map(function(e){return e[0];}),datasets:[{data:sI.map(function(e){return e[1];}),backgroundColor:ciC,borderWidth:2,borderColor:'#18181b'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+contFmt(ctx.raw);}}}},cutout:'62%'}});}}
+      if(egresos>0&&sE.length){const ctx=document.getElementById('chartEgrCat');if(ctx){contCharts['chartEgrCat']=new Chart(ctx,{type:'doughnut',data:{labels:sE.map(function(e){return e[0];}),datasets:[{data:sE.map(function(e){return e[1];}),backgroundColor:ceC,borderWidth:2,borderColor:'#18181b'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+contFmt(ctx.raw);}}}},cutout:'62%'}});}}
+    } catch (e) {
+      console.warn("No se pudieron cargar los gráficos de resumen:", e);
+    }
+  },80);
+}
+
+function contActualizarMesContableDesdeFecha(fechaVal){
+  if (!fechaVal) return;
+  const parts = fechaVal.split('-');
+  if (parts.length === 3) {
+    const mes = parseInt(parts[1]);
+    const sel = document.getElementById('contMovMes');
+    if (sel && !isNaN(mes)) {
+      sel.value = String(mes);
+    }
+  }
+}
+
+function contCambiarOrdenDetalleMes(val) {
+  contDetalleMesSortOrder = val;
+  contSeleccionarMesYVerMovimientos();
+}
+
+function contSeleccionarMesYVerMovimientos(mes){
+  if (mes !== undefined) {
+    contDetalleMesActivo = mes;
+  }
+  const mesInt = parseInt(contDetalleMesActivo) || 1;
+  const year = contAnoFiltro;
+  
+  // Set modal title
+  document.getElementById('contDetalleMesTitle').textContent = '📋 Movimientos de ' + CONT_MESES_FULL[mesInt - 1] + ' ' + year;
+  
+  // Sync sorting dropdown state if present
+  const sortSelect = document.getElementById('contDetalleMesSort');
+  if (sortSelect) {
+    sortSelect.value = contDetalleMesSortOrder;
+  }
+  
+  // Filter movements
+  const listaAno = contGetParaAno(year);
+  const listaMes = listaAno.filter(function(m) {
+    return parseInt(m.mes) === mesInt;
+  });
+  
+  // Apply sorting
+  if (contDetalleMesSortOrder === 'fecha') {
+    listaMes.sort(function(a, b) {
+      return new Date(b.fecha || 0) - new Date(a.fecha || 0);
+    });
+  } else if (contDetalleMesSortOrder === 'tipo') {
+    listaMes.sort(function(a, b) {
+      const tComp = (a.tipo || '').localeCompare(b.tipo || '');
+      if (tComp !== 0) return tComp;
+      const cComp = (a.categoria || '').localeCompare(b.categoria || '');
+      if (cComp !== 0) return cComp;
+      return new Date(b.fecha || 0) - new Date(a.fecha || 0);
+    });
+  } else if (contDetalleMesSortOrder === 'categoria') {
+    listaMes.sort(function(a, b) {
+      const cComp = (a.categoria || '').localeCompare(b.categoria || '');
+      if (cComp !== 0) return cComp;
+      return new Date(b.fecha || 0) - new Date(a.fecha || 0);
+    });
+  } else if (contDetalleMesSortOrder === 'precio') {
+    listaMes.sort(function(a, b) {
+      return (parseFloat(b.monto || 0)) - (parseFloat(a.monto || 0));
+    });
+  }
+  
+  const body = document.getElementById('contDetalleMesBody');
+  if (!body) return;
+  
+  if (listaMes.length === 0) {
+    body.innerHTML = '<div class="cont-empty" style="padding:40px; text-align:center; color:var(--muted);">Sin movimientos registrados en este mes.</div>';
+  } else {
+    body.innerHTML = 
+      '<table style="width:100%; border-collapse:collapse; font-size:13px;">' +
+      '<thead>' +
+        '<tr style="background:rgba(212,168,75,0.04); border-bottom:1px solid rgba(212,168,75,0.15);">' +
+          '<th style="padding:10px 12px; text-align:left; color:var(--gold); font-size:11px; text-transform:uppercase;">Fecha</th>' +
+          '<th style="padding:10px 12px; text-align:left; color:var(--gold); font-size:11px; text-transform:uppercase;">Categoría</th>' +
+          '<th style="padding:10px 12px; text-align:left; color:var(--gold); font-size:11px; text-transform:uppercase;">Descripción</th>' +
+          '<th style="padding:10px 12px; text-align:right; color:var(--gold); font-size:11px; text-transform:uppercase;">Monto</th>' +
+          '<th style="padding:10px 12px; text-align:center; color:var(--gold); font-size:11px; text-transform:uppercase;">Acc.</th>' +
+        '</tr>' +
+      '</thead>' +
+      '<tbody>' +
+        listaMes.map(function(m) {
+          const catIcon = CONT_CAT_ICONS[m.categoria] || '•';
+          const montoColor = m.tipo === 'ingreso' ? '#22c55e' : '#ef4444';
+          const montoSign = m.tipo === 'ingreso' ? '+' : '-';
+          const editBtn = m.isAuto ? '<span style="color:#555; font-size:11px;">Auto</span>' : 
+            '<button onclick="contEditarMovimiento(\'' + m.id + '\')" style="background:none; border:1px solid rgba(255,255,255,0.1); border-radius:7px; color:#888; padding:3px 6px; cursor:pointer; font-size:11px;" onmouseover="this.style.borderColor=\'var(--gold)\'; this.style.color=\'var(--gold)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.1)\'; this.style.color=\'#888\'">✏️</button>';
+          
+          return '<tr style="border-bottom:1px solid rgba(255,255,255,0.03);" onmouseover="this.style.background=\'rgba(255,255,255,0.025)\'" onmouseout="this.style.background=\'\'">' +
+            '<td style="padding:8px 12px; color:#888; white-space:nowrap;">' + (m.fecha || '—') + '</td>' +
+            '<td style="padding:8px 12px; color:#ccc;">' + catIcon + ' ' + m.categoria + '</td>' +
+            '<td style="padding:8px 12px; color:#fff; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + (m.descripcion || '') + '">' + (m.descripcion || '—') + '</td>' +
+            '<td style="padding:8px 12px; text-align:right; color:' + montoColor + '; font-weight:700;">' + montoSign + contFmt(parseFloat(m.monto || 0)) + '</td>' +
+            '<td style="padding:8px 12px; text-align:center;">' + editBtn + '</td>' +
+          '</tr>';
+        }).join('') +
+      '</tbody>' +
+      '</table>';
+  }
+  
+  // Show the modal
+  document.getElementById('modalContDetalleMes').classList.add('open');
+}
+
+let contMostrarGraficas = false;
+function contToggleGraficas(){
+  contMostrarGraficas = !contMostrarGraficas;
+  contRenderTabContent();
+}
+
+function contRenderFlujo(el){
+  const listaAno=contGetParaAno(contAnoFiltro);
+  const md=CONT_MESES.map(function(label,idx){const mn=idx+1;const ml=listaAno.filter(function(m){return parseInt(m.mes)===mn;});return{label:label,ingreso:contSumTipo(ml,'ingreso'),egreso:contSumTipo(ml,'egreso'),utilidad:contSumTipo(ml,'ingreso')-contSumTipo(ml,'egreso')};});
+  const ti=md.reduce(function(a,m){return a+m.ingreso;},0);
+  const te=md.reduce(function(a,m){return a+m.egreso;},0);
+  const tu=ti-te;
+
+  const lista=contGetFiltrado();
+  const ingresos=contSumTipo(lista,'ingreso');
+  const egresos=contSumTipo(lista,'egreso');
+  const catIng={};lista.filter(m=>m.tipo==='ingreso').forEach(m=>{catIng[m.categoria]=(catIng[m.categoria]||0)+parseFloat(m.monto||0);});
+  const catEgr={};lista.filter(m=>m.tipo==='egreso').forEach(m=>{catEgr[m.categoria]=(catEgr[m.categoria]||0)+parseFloat(m.monto||0);});
+  const sI=Object.entries(catIng).sort((a,b)=>parseFloat(b[1]||0)-parseFloat(a[1]||0));
+  const sE=Object.entries(catEgr).sort((a,b)=>parseFloat(b[1]||0)-parseFloat(a[1]||0));
+  const ciC=['#22c55e','#16a34a','#4ade80','#86efac','#d4a84b','#f97316','#3b82f6','#a855f7'];
+  const ceC=['#ef4444','#dc2626','#f87171','#fca5a5','#f97316','#a855f7','#eab308','#888'];
+
+  el.innerHTML=
+  '<div id="contChartsWrapper" style="display:'+(contMostrarGraficas?'block':'none')+';">'+
+    '<div class="cont-layout" style="margin-bottom:20px;">'+
+      '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDCB9 Ingresos por Servicio</div><span style="font-size:12px;color:var(--gold);font-weight:700;">'+contFmt(ingresos)+'</span></div>'+
+      '<div class="cont-panel-body">'+(ingresos===0?'<div class="cont-empty">Sin ingresos.<br><button class="cont-btn-add" onclick="contAbrirModal(\'ingreso\')" style="margin-top:12px;">\u2795 Agregar</button></div>':
+        '<div class="cont-chart-wrap"><canvas id="chartIngCat"></canvas></div><div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">'+
+        sI.map(function(e,i){return'<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;"><span style="color:#ccc;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+ciC[i%ciC.length]+';"></span>'+(CONT_CAT_ICONS[e[0]]||'\u2022')+' '+e[0]+'</span><span style="color:var(--gold);font-weight:700;">'+contFmt(e[1])+'</span></div>';}).join('')+
+        '</div>')+'</div></div>'+
+      '<div class="cont-panel"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDD34 Egresos por Categor\u00EDa</div><span style="font-size:12px;color:#ef4444;font-weight:700;">'+contFmt(egresos)+'</span></div>'+
+      '<div class="cont-panel-body">'+(egresos===0?'<div class="cont-empty">Sin egresos.<br><button class="cont-btn-add" onclick="contAbrirModal(\'egreso\')" style="margin-top:12px;">\u2795 Agregar</button></div>':
+        '<div class="cont-chart-wrap"><canvas id="chartEgrCat"></canvas></div><div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">'+
+        sE.map(function(e,i){return'<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;"><span style="color:#ccc;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+ceC[i%ceC.length]+';"></span>'+(CONT_CAT_ICONS[e[0]]||'\u2022')+' '+e[0]+'</span><span style="color:#ef4444;font-weight:700;">'+contFmt(e[1])+'</span></div>';}).join('')+
+        '</div>')+'</div></div>'+
+    '</div>'+
+    '<div class="cont-panel" style="margin-bottom:20px;"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDCC8 Flujo Caja Mensual \u2014 '+contAnoFiltro+'</div></div><div class="cont-panel-body"><div class="cont-chart-wrap" style="height:310px;"><canvas id="chartFlujo"></canvas></div></div></div>'+
+  '</div>'+
+  '<div class="cont-panel"><div class="cont-panel-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;"><div class="cont-panel-title" style="display:flex; align-items:center; gap:8px;">📋 Detalle mensual año '+contAnoFiltro+'<div style="display:inline-flex; align-items:center; gap:4px; margin-left:6px; background:rgba(255,255,255,0.04); padding:2px 6px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);"><button onclick="contCambiarAno(-1)" style="background:none; border:none; color:var(--gold); cursor:pointer; font-size:12px; padding:0 2px;">◄</button><span style="font-size:12px; font-weight:700; color:#fff; min-width:30px; text-align:center;">'+contAnoFiltro+'</span><button onclick="contCambiarAno(1)" style="background:none; border:none; color:var(--gold); cursor:pointer; font-size:12px; padding:0 2px;">►</button></div></div><div style="display:flex; align-items:center; gap:12px;"><button onclick="contToggleGraficas()" style="background:linear-gradient(180deg, #d9ac3b 0%, #9e751d 100%); border:1px solid #785614; color:#0f0f0f; font-size:12px; font-weight:700; font-family:system-ui, -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; letter-spacing:0.2px; padding:4px 12px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; box-shadow:0 3px 6px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.45); transition:all 0.15s ease;" onmouseover="this.style.transform=\'scale(1.03)\'" onmouseout="this.style.transform=\'scale(1)\'">📊 Gráficas</button><span style="font-size:12px;color:'+(tu>=0?'#22c55e':'#ef4444')+';font-weight:700;">Utilidad A\u00F1o: '+contFmt(tu)+'</span></div></div>'+
+  '<div class="cont-panel-body" style="padding:0;"><table style="width:100%;border-collapse:collapse;font-size:13px;">'+
+  '<thead><tr style="background:rgba(212,168,75,0.04);border-bottom:1px solid rgba(212,168,75,0.15);"><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Mes</th><th style="padding:12px 16px;text-align:right;color:var(--gold);font-size:11px;text-transform:uppercase;">Ingresos</th><th style="padding:12px 16px;text-align:right;color:var(--gold);font-size:11px;text-transform:uppercase;">Egresos</th><th style="padding:12px 16px;text-align:right;color:var(--gold);font-size:11px;text-transform:uppercase;">Utilidad</th><th style="padding:12px 16px;text-align:right;color:var(--gold);font-size:11px;text-transform:uppercase;">Margen</th></tr></thead>'+
+  '<tbody>'+md.map(function(m,i){return'<tr style="border-bottom:1px solid rgba(255,255,255,0.03); cursor:pointer;" onclick="contSeleccionarMesYVerMovimientos('+(i+1)+')" onmouseover="this.style.background=\'rgba(255,255,255,0.04)\'" onmouseout="this.style.background=\'\'"><td style="padding:10px 16px;color:#fff;opacity:'+(m.ingreso||m.egreso?1:0.4)+';">'+CONT_MESES_FULL[i]+'</td><td style="padding:10px 16px;text-align:right;color:#22c55e;font-weight:600;">'+(m.ingreso?contFmt(m.ingreso):'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:#ef4444;font-weight:600;">'+(m.egreso?contFmt(m.egreso):'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:'+(m.utilidad>=0?'#22c55e':'#ef4444')+';font-weight:700;">'+(m.ingreso||m.egreso?contFmt(m.utilidad):'\u2014')+'</td><td style="padding:10px 16px;text-align:right;color:#888;">'+(m.ingreso>0?((m.utilidad/m.ingreso)*100).toFixed(0)+'%':'\u2014')+'</td></tr>';}).join('')+
+  '<tr style="background:rgba(212,168,75,0.05);border-top:2px solid rgba(212,168,75,0.2);"><td style="padding:12px 16px;font-weight:800;color:var(--gold);">TOTAL</td><td style="padding:12px 16px;text-align:right;color:#22c55e;font-weight:800;">'+contFmt(ti)+'</td><td style="padding:12px 16px;text-align:right;color:#ef4444;font-weight:800;">'+contFmt(te)+'</td><td style="padding:12px 16px;text-align:right;color:'+(tu>=0?'#22c55e':'#ef4444')+';font-weight:800;">'+contFmt(tu)+'</td><td style="padding:12px 16px;text-align:right;color:var(--gold);font-weight:800;">'+(ti>0?((tu/ti)*100).toFixed(0)+'%':'\u2014')+'</td></tr>'+
+  '</tbody></table></div></div>';
+  setTimeout(function(){
+    try {
+      if(ingresos>0&&sI.length){const ctx=document.getElementById('chartIngCat');if(ctx){contCharts['chartIngCat']=new Chart(ctx,{type:'doughnut',data:{labels:sI.map(function(e){return e[0];}),datasets:[{data:sI.map(function(e){return e[1];}),backgroundColor:ciC,borderWidth:2,borderColor:'#18181b'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+contFmt(ctx.raw);}}}},cutout:'62%'}});}}
+      if(egresos>0&&sE.length){const ctx=document.getElementById('chartEgrCat');if(ctx){contCharts['chartEgrCat']=new Chart(ctx,{type:'doughnut',data:{labels:sE.map(function(e){return e[0];}),datasets:[{data:sE.map(function(e){return e[1];}),backgroundColor:ceC,borderWidth:2,borderColor:'#18181b'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+contFmt(ctx.raw);}}}},cutout:'62%'}});}}
+      const ctx=document.getElementById('chartFlujo');
+      if(ctx){
+        contCharts['chartFlujo']=new Chart(ctx,{
+          type:'bar',
+          data:{
+            labels:CONT_MESES,
+            datasets:[
+              {
+                label:'Barra Mayor',
+                data:md.map(function(m){return Math.max(m.ingreso, m.egreso);}),
+                backgroundColor:md.map(function(m){return m.ingreso >= m.egreso ? '#22c55e' : '#ef4444';}),
+                borderColor:md.map(function(m){return m.ingreso >= m.egreso ? '#22c55e' : '#ef4444';}),
+                borderWidth:0,
+                borderRadius:6,
+                borderSkipped:false,
+                barThickness:34,
+                order:2
+              },
+              {
+                label:'Barra Menor',
+                data:md.map(function(m){return Math.min(m.ingreso, m.egreso);}),
+                backgroundColor:md.map(function(m){return m.ingreso >= m.egreso ? '#ef4444' : '#22c55e';}),
+                borderColor:md.map(function(m){return m.ingreso >= m.egreso ? '#ef4444' : '#22c55e';}),
+                borderWidth:0,
+                borderRadius:6,
+                borderSkipped:false,
+                barThickness:34,
+                order:1
+              }
+            ]
+          },
+          options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            grouped:false,
+            interaction:{mode:'index',intersect:false},
+            plugins:{
+              legend:{display:false},
+              tooltip:{
+                backgroundColor:'#121212',
+                titleColor:'#fff',
+                bodyColor:'#ccc',
+                borderColor:'rgba(255,255,255,0.08)',
+                borderWidth:1,
+                padding:10,
+                callbacks:{
+                  title:function(items){return items[0]?items[0].label:'';},
+                  label:function(ctx){
+                    if(ctx.datasetIndex!==0) return null;
+                    const m=md[ctx.dataIndex];
+                    return [
+                      ' 🔵 Ingresos (Total): '+contFmt(m.ingreso),
+                      ' 🔴 Egresos (Gastos): '+contFmt(m.egreso),
+                      ' 🟢 Utilidad (Ganancia): '+contFmt(m.utilidad)
+                    ];
+                  }
+                }
+              }
+            },
+            scales:{
+              x:{
+                stacked:false,
+                grid:{
+                  color:'rgba(255,255,255,0.035)',
+                  borderDash:[4, 4],
+                  drawTicks:false
+                },
+                ticks:{
+                  color:'#888',
+                  font:{size:11, family:'Outfit, sans-serif'}
+                }
+              },
+              y:{
+                stacked:false,
+                grid:{
+                  color:'rgba(255,255,255,0.035)',
+                  borderDash:[4, 4],
+                  drawTicks:false
+                },
+                ticks:{
+                  color:'#888',
+                  font:{size:11, family:'Outfit, sans-serif'},
+                  callback:function(v){return contFmt(v);}
+                },
+                beginAtZero:true
+              }
+            }
+          }
+        });
+      }
+    } catch (e) {
+      console.warn("No se pudo cargar el gráfico de flujo:", e);
+    }
+  },80);
+}
+
+function contRenderPareto(el){
+  const lista=contGetFiltrado();
+  const ingresos=lista.filter(function(m){return m.tipo==='ingreso';});
+  const totalIng=ingresos.reduce(function(a,m){return a+parseFloat(m.monto||0);},0);
+  const catMap={};ingresos.forEach(function(m){if(!catMap[m.categoria])catMap[m.categoria]={total:0,count:0};catMap[m.categoria].total+=parseFloat(m.monto||0);catMap[m.categoria].count++;});
+  const sortedCats=Object.entries(catMap).sort(function(a,b){return b[1].total-a[1].total;});
+  let acum=0;
+  const pd=sortedCats.map(function(entry){const cat=entry[0];const data=entry[1];acum+=data.total;const pct=totalIng>0?(data.total/totalIng*100):0;const pctAcum=totalIng>0?(acum/totalIng*100):0;return{cat:cat,total:data.total,count:data.count,pct:pct,pctAcum:pctAcum,is80:pctAcum<=80.1};});
+  const n80=Math.max(1,(pd.findIndex(function(p){return p.pctAcum>=80;}))+1);
+  el.innerHTML=
+  '<div class="cont-panel">'+
+  '<div class="cont-panel-header"><div class="cont-panel-title">\u2696\uFE0F An\u00E1lisis Pareto</div><span style="font-size:12px;color:var(--muted);">'+n80+' '+(n80===1?'categor\u00EDa genera':'categor\u00EDas generan')+' el 80%</span></div>'+
+  '<div class="cont-panel-body">'+
+  (totalIng===0?'<div class="cont-empty">Sin ingresos para analizar.</div>':
+    '<div style="background:rgba(212,168,75,0.08);border:1px solid rgba(212,168,75,0.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;">\uD83C\uDFAF <strong style="color:var(--gold);">Regla 80/20:</strong> <span style="color:#ccc;">Las <strong style="color:#fff;">'+n80+'</strong> categor\u00EDas m\u00E1s rentables generan el <strong style="color:#22c55e;">80%</strong> de tus ingresos.</span></div>'+
+    '<div class="cont-chart-wrap" style="height:280px;"><canvas id="chartPareto"></canvas></div>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:16px;"><thead><tr style="border-bottom:1px solid rgba(255,255,255,0.06);"><th style="padding:8px 10px;text-align:left;color:var(--gold);font-size:10px;text-transform:uppercase;">Categor\u00EDa</th><th style="padding:8px 10px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">Ingresos</th><th style="padding:8px 10px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">%</th><th style="padding:8px 10px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">% Acum.</th><th style="padding:8px 10px;text-align:center;color:var(--gold);font-size:10px;text-transform:uppercase;">Impacto</th></tr></thead>'+
+    '<tbody>'+pd.map(function(p){return'<tr style="border-bottom:1px solid rgba(255,255,255,0.03);background:'+(p.is80?'rgba(34,197,94,0.04)':'')+'"><td style="padding:8px 10px;color:#fff;font-weight:'+(p.is80?700:400)+';">'+(CONT_CAT_ICONS[p.cat]||'\u2022')+' '+p.cat+'</td><td style="padding:8px 10px;text-align:right;color:#22c55e;font-weight:600;">'+contFmt(p.total)+'</td><td style="padding:8px 10px;text-align:right;color:#ccc;">'+p.pct.toFixed(1)+'%</td><td style="padding:8px 10px;text-align:right;color:'+(p.pctAcum<=80?'#22c55e':'#888')+';">'+p.pctAcum.toFixed(1)+'%</td><td style="padding:8px 10px;text-align:center;">'+(p.is80?'<span style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">\u2B50 VITAL</span>':'<span style="color:#555;font-size:10px;">Complementario</span>')+'</td></tr>';}).join('')+'</tbody></table>')+'</div></div>';
+  setTimeout(function(){
+    try {
+      if(totalIng>0&&pd.length){const ctx=document.getElementById('chartPareto');if(ctx){const cols=pd.map(function(p){return p.is80?'rgba(34,197,94,0.75)':'rgba(100,100,100,0.45)';});contCharts['chartPareto']=new Chart(ctx,{type:'bar',data:{labels:pd.map(function(p){return p.cat;}),datasets:[{label:'Ingresos',data:pd.map(function(p){return p.total;}),backgroundColor:cols,borderWidth:1.5,borderRadius:5,order:2},{label:'% Acumulado',data:pd.map(function(p){return p.pctAcum;}),type:'line',borderColor:'#d4a84b',backgroundColor:'rgba(212,168,75,0.08)',borderWidth:2,pointRadius:4,tension:0.3,yAxisID:'y1',order:1}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.datasetIndex===0?' '+contFmt(ctx.raw):' '+ctx.raw.toFixed(1)+'%';}}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:10},maxRotation:30}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:10},callback:function(v){return contFmt(v);}},beginAtZero:true},y1:{position:'right',min:0,max:100,grid:{display:false},ticks:{color:'#d4a84b',font:{size:10},callback:function(v){return v+'%';}}}}}});}}
+    } catch (e) {
+      console.warn("No se pudo cargar el gráfico de Pareto:", e);
+    }
+  },80);
+}
+
+let contMostrarParetoGraficas = false;
+function contToggleParetoGraficas(){
+  contMostrarParetoGraficas = !contMostrarParetoGraficas;
+  contRenderTabContent();
+}
+
+let contInversionesCustom = null;
+
+function contObtenerInversionesCustom() {
+  if (!contInversionesCustom) {
+    try {
+      contInversionesCustom = JSON.parse(localStorage.getItem('cont_inversiones_custom') || 'null');
+    } catch (e) {
+      contInversionesCustom = null;
+    }
+    if (!contInversionesCustom || !Array.isArray(contInversionesCustom)) {
+      contInversionesCustom = [
+        { id: 'inv-1', titulo: 'Drom - Contratar servicio', categoria: 'Tecnología e IA', precio: 2000000, roi: 50, riesgo: 'baja', horizonte: '1 mes', accion: 'Automatización y servicio Drom para operaciones.', paretoBoost: true },
+        { id: 'inv-2', titulo: 'Computador y pantalla 3er puesto', categoria: 'Tecnología e IA', precio: 3000000, roi: 45, riesgo: 'baja', horizonte: '1-2 meses', accion: 'Equipamiento de hardware para 3er puesto de trabajo.', paretoBoost: true },
+        { id: 'inv-3', titulo: 'Mapa informativo y marco MDF', categoria: 'Tecnología e IA', precio: 350000, roi: 30, riesgo: 'baja', horizonte: '1 mes', accion: 'Plano impreso $150k + superficie MDF + liviano $150k.', paretoBoost: true },
+        { id: 'inv-4', titulo: 'Bot de Marketplace', categoria: 'Marketing Digital', precio: 300000, roi: 50, riesgo: 'baja', horizonte: '1 mes', accion: 'Bot para prospección automática en Marketplace.', paretoBoost: true },
+        { id: 'inv-5', titulo: 'Mensualidad Facebook Ads', categoria: 'Marketing Digital', precio: 80000, roi: 40, riesgo: 'baja', horizonte: '1 mes', accion: 'Pauta publicitaria mensual en redes sociales.', paretoBoost: true },
+        { id: 'inv-6', titulo: 'Mantenimiento Moto Completo', categoria: 'Transporte / Logística', precio: 350000, roi: 20, riesgo: 'media', horizonte: '1 mes', accion: 'Llantas $120k + alineación/rin + tacómetro $150k.', paretoBoost: false },
+        { id: 'inv-7', titulo: 'Vehículo / Carro de Segunda', categoria: 'Transporte / Logística', precio: 23000000, roi: 25, riesgo: 'media', horizonte: '3-6 meses', accion: 'Vehículo/camioneta mediana desde 2020 para captaciones y visitas.', paretoBoost: false },
+        { id: 'inv-8', titulo: 'Señalización Oficina Completa', categoria: 'Oficina / Mantenimiento', precio: 250000, roi: 15, riesgo: 'baja', horizonte: '1 mes', accion: 'Salida emergencia, recepción, áreas espera, administración y botiquín.', paretoBoost: false },
+        { id: 'inv-9', titulo: 'Losa de cocina y cristales', categoria: 'Oficina / Mantenimiento', precio: 330000, roi: 10, riesgo: 'baja', horizonte: '1 mes', accion: 'Losa blanca Corona (platos, sopas) $250k + Cristales $80k.', paretoBoost: false },
+        { id: 'inv-10', titulo: 'Tapete acceso y detalles oficina', categoria: 'Oficina / Mantenimiento', precio: 200000, roi: 12, riesgo: 'baja', horizonte: '1 mes', accion: 'Tapete acceso $100k + matera, plantas y decoración $100k.', paretoBoost: false },
+        { id: 'inv-11', titulo: 'Refuerzo Mercado Gastos Fijos', categoria: 'Oficina / Mantenimiento', precio: 200000, roi: 10, riesgo: 'baja', horizonte: '1 mes', accion: 'Mercado, carnes, aseo con facturas.', paretoBoost: false }
+      ];
+      localStorage.setItem('cont_inversiones_custom', JSON.stringify(contInversionesCustom));
+    }
+  }
+  return contInversionesCustom;
+}
+
+function contCalcularConvenienciaPareto(inv, catMap, pd, totalIng) {
+  const isParetoVitalCat = pd.some(p => p.is80 && (
+    (inv.categoria && inv.categoria.toLowerCase().includes(p.cat.toLowerCase())) ||
+    (p.cat.toLowerCase().includes('arriendo') && (inv.categoria.includes('Arriendos') || inv.titulo.includes('Arriendo'))) ||
+    (p.cat.toLowerCase().includes('comisi') && (inv.categoria.includes('Venta') || inv.titulo.includes('Captación')))
+  ));
+
+  const isTechOrMarketing = inv.categoria.includes('Tecnología') || inv.categoria.includes('Marketing') || (inv.roi && inv.roi >= 35);
+
+  if (isParetoVitalCat || isTechOrMarketing || inv.paretoBoost) {
+    return {
+      label: '⭐ REC. PARETO (80/20)',
+      bg: 'rgba(34,197,94,0.15)',
+      color: '#22c55e',
+      border: 'rgba(34,197,94,0.3)',
+      desc: 'Alta rentabilidad e impacto estratégico en los principales generadores de ingresos'
+    };
+  } else if ((inv.roi && inv.roi >= 20) || inv.categoria.includes('Transporte') || inv.categoria.includes('Ventas')) {
+    return {
+      label: '⚖️ MEDIA CONVENIENCIA',
+      bg: 'rgba(212,168,75,0.15)',
+      color: 'var(--gold)',
+      border: 'rgba(212,168,75,0.3)',
+      desc: 'Impacto operativo medio o retorno progresivo'
+    };
+  } else {
+    return {
+      label: '🔍 COMPLEMENTARIO',
+      bg: 'rgba(255,255,255,0.06)',
+      color: '#aaa',
+      border: 'rgba(255,255,255,0.12)',
+      desc: 'Gasto operativo, mantenimiento o confort general'
+    };
+  }
+}
+
+function contAbrirModalInversion(invId) {
+  const modal = document.getElementById('modalContInversion');
+  if (!modal) return;
+
+  const inputId = document.getElementById('contInvId');
+  const inputTitulo = document.getElementById('contInvTitulo');
+  const inputCat = document.getElementById('contInvCategoria');
+  const inputPrecio = document.getElementById('contInvPrecio');
+  const inputRoi = document.getElementById('contInvRoi');
+  const inputRiesgo = document.getElementById('contInvRiesgo');
+  const inputHoriz = document.getElementById('contInvHorizonte');
+  const inputAccion = document.getElementById('contInvAccion');
+  const titleEl = document.getElementById('contInvModalTitle');
+  const deleteBtn = document.getElementById('btnContInvDelete');
+
+  const customList = contObtenerInversionesCustom();
+
+  if (invId) {
+    const item = customList.find(x => String(x.id) === String(invId));
+    if (item) {
+      inputId.value = item.id;
+      inputTitulo.value = item.titulo || '';
+      inputCat.value = item.categoria || 'Tecnología e IA';
+      inputPrecio.value = item.precio !== undefined ? item.precio : '';
+      inputRoi.value = item.roi !== undefined ? item.roi : 30;
+      inputRiesgo.value = item.riesgo || 'baja';
+      inputHoriz.value = item.horizonte || '1-2 meses';
+      inputAccion.value = item.accion || '';
+      if (titleEl) titleEl.innerHTML = '✏️ Editar Inversión Proyectada';
+      if (deleteBtn) deleteBtn.style.display = 'inline-block';
+    }
+  } else {
+    inputId.value = '';
+    inputTitulo.value = '';
+    inputCat.value = 'Tecnología e IA';
+    inputPrecio.value = '';
+    inputRoi.value = 35;
+    inputRiesgo.value = 'baja';
+    inputHoriz.value = '1-2 meses';
+    inputAccion.value = '';
+    if (titleEl) titleEl.innerHTML = '💎 Agregar Posible Inversión';
+    if (deleteBtn) deleteBtn.style.display = 'none';
+  }
+
+  modal.classList.add('open');
+}
+
+function contGuardarInversion() {
+  const inputId = document.getElementById('contInvId').value;
+  const titulo = document.getElementById('contInvTitulo').value.trim();
+  const categoria = document.getElementById('contInvCategoria').value;
+  const precio = parseFloat(document.getElementById('contInvPrecio').value) || 0;
+  const roi = parseFloat(document.getElementById('contInvRoi').value) || 0;
+  const riesgo = document.getElementById('contInvRiesgo').value;
+  const horizonte = document.getElementById('contInvHorizonte').value.trim() || '1-2 meses';
+  const accion = document.getElementById('contInvAccion').value.trim();
+
+  if (!titulo || precio < 0) {
+    alert('Por favor completa los campos requeridos con datos válidos.');
+    return;
+  }
+
+  const customList = contObtenerInversionesCustom();
+
+  if (inputId) {
+    const idx = customList.findIndex(x => String(x.id) === String(inputId));
+    if (idx !== -1) {
+      customList[idx] = {
+        id: inputId,
+        titulo: titulo,
+        categoria: categoria,
+        precio: precio,
+        roi: roi,
+        riesgo: riesgo,
+        horizonte: horizonte,
+        accion: accion,
+        isCustom: true
+      };
+    }
+  } else {
+    const newObj = {
+      id: 'inv-custom-' + Date.now(),
+      titulo: titulo,
+      categoria: categoria,
+      precio: precio,
+      roi: roi,
+      riesgo: riesgo,
+      horizonte: horizonte,
+      accion: accion,
+      isCustom: true
+    };
+    customList.unshift(newObj);
+  }
+
+  localStorage.setItem('cont_inversiones_custom', JSON.stringify(customList));
+  closeModal('modalContInversion');
+  contRenderTabContent();
+}
+
+function contEliminarInversion(invIdToDelete) {
+  const targetId = invIdToDelete || document.getElementById('contInvId').value;
+  if (!targetId) return;
+
+  if (confirm('¿Estás seguro de que deseas eliminar esta inversión de tu lista?')) {
+    const customList = contObtenerInversionesCustom();
+    const updated = customList.filter(x => String(x.id) !== String(targetId));
+    contInversionesCustom = updated;
+    localStorage.setItem('cont_inversiones_custom', JSON.stringify(updated));
+    closeModal('modalContInversion');
+    contRenderTabContent();
+  }
+}
+
+let contInversionesSortOrder = 'pareto';
+let contSelectedInversiones = new Set();
+
+function contCambiarOrdenInversiones(val) {
+  contInversionesSortOrder = val;
+  contRenderTabContent();
+}
+
+function contToggleSeleccionInversion(invId) {
+  if (contSelectedInversiones.has(invId)) {
+    contSelectedInversiones.delete(invId);
+  } else {
+    contSelectedInversiones.add(invId);
+  }
+  contRenderTabContent();
+}
+
+function contToggleSeleccionarTodasInversiones(checked, allIdsJsonStr) {
+  try {
+    const ids = JSON.parse(allIdsJsonStr);
+    if (checked) {
+      ids.forEach(id => contSelectedInversiones.add(id));
+    } else {
+      contSelectedInversiones.clear();
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  contRenderTabContent();
+}
+
+function contLimpiarSeleccionInversiones() {
+  contSelectedInversiones.clear();
+  contRenderTabContent();
+}
+function contRenderInversiones(el){
+  const lista = contGetFiltrado();
+  const totalIng = contSumTipo(lista,'ingreso');
+  const ingresos = lista.filter(m => m.tipo === 'ingreso');
+  const utilidad = totalIng - contSumTipo(lista,'egreso');
+  const catMap = {};
+  ingresos.forEach(m => {
+    if (!catMap[m.categoria]) catMap[m.categoria] = {total:0, count:0};
+    catMap[m.categoria].total += parseFloat(m.monto || 0);
+    catMap[m.categoria].count++;
+  });
+  const sortedCats = Object.entries(catMap).sort((a,b) => b[1].total - a[1].total);
+  let acum = 0;
+  const pd = sortedCats.map(entry => {
+    const cat = entry[0];
+    const data = entry[1];
+    acum += data.total;
+    const pct = totalIng > 0 ? (data.total / totalIng * 100) : 0;
+    const pctAcum = totalIng > 0 ? (acum / totalIng * 100) : 0;
+    return {cat:cat, total:data.total, count:data.count, pct:pct, pctAcum:pctAcum, is80:pctAcum <= 80.1};
+  });
+  const n80 = Math.max(1, (pd.findIndex(p => p.pctAcum >= 80)) + 1);
+  const montoPropuesto = utilidad > 0 ? utilidad * 0.3 : 0;
+
+  const customList = contObtenerInversionesCustom();
+
+  const presets = [
+    {id: 'preset-1', titulo:'🏠 Ampliar Cartera Ventas', categoria:'Ampliar Cartera Ventas', desc:'Captación de inmuebles exclusivos. Alta rentabilidad por comisiones.', precio:0, roi:28, riesgo:'media', horizonte:'3-6 meses', accion:'Contratar agente de captación. Publicidad en portales especializados.', paretoBoost:!!(catMap['Venta de Inmueble']&&catMap['Venta de Inmueble'].total>0)},
+    {id: 'preset-2', titulo:'🔑 Expandir Arriendos', categoria:'Expandir Arriendos', desc:'Más inmuebles en administración. Ingreso recurrente y predecible.', precio:0, roi:22, riesgo:'baja', horizonte:'1-3 meses', accion:'Buscar nuevos propietarios. Paquete de administración premium.', paretoBoost:true},
+    {id: 'preset-3', titulo:'📋 Avaluós Premium', categoria:'Avaluós Premium', desc:'Bajo costo operativo, alta demanda. Excelente ROI por hora.', precio:0, roi:35, riesgo:'baja', horizonte:'1 mes', accion:'Certificación en avaluós. Alianza con bancos y entidades.', paretoBoost:true},
+    {id: 'preset-4', titulo:'🔨 Remodelación/Reparación', categoria:'Remodelación/Reparación', desc:'Alianzas con contratistas para paquetes integrales.', precio:0, roi:18, riesgo:'media', horizonte:'2-4 meses', accion:'Red de contratistas confiables. Diferenciación como inmobiliaria integral.', paretoBoost:!!(catMap['Remodelación']||catMap['Reparación'])},
+    {id: 'preset-5', titulo:'📐 Arquitectura/Diseño', categoria:'Arquitectura/Diseño', desc:'Servicio de valor agregado. Alta demanda en remodelaciones.', precio:0, roi:25, riesgo:'media', horizonte:'3-5 meses', accion:'Alianza con arquitectos locales. Paquetes diseño + gestión de obra.', paretoBoost:!!(catMap['Arquitectura']&&catMap['Arquitectura'].total>0)},
+    {id: 'preset-6', titulo:'📢 Marketing Digital', categoria:'Marketing Digital', desc:'SEO, redes sociales y pauta. Mayor captación con menos esfuerzo.', precio:0, roi:40, riesgo:'baja', horizonte:'2-4 meses', accion:'Google Ads + Meta Ads + SEO local. Retorno 4x del invertido.', paretoBoost:true},
+    {id: 'preset-7', titulo:'💻 Tecnología e IA', categoria:'Tecnología e IA', desc:'Automatización y herramientas que multiplican tu eficiencia.', precio:0, roi:50, riesgo:'baja', horizonte:'1-2 meses', accion:'Panel ICDE avanzado, automatizaciones e inteligencia artificial.', paretoBoost:true}
+  ];
+
+  const allInversiones = [...customList, ...presets];
+
+  // Aplicar ordenamiento
+  if (contInversionesSortOrder === 'precio') {
+    allInversiones.sort((a,b) => (parseFloat(b.precio)||0) - (parseFloat(a.precio)||0));
+  } else if (contInversionesSortOrder === 'roi') {
+    allInversiones.sort((a,b) => (parseFloat(b.roi)||0) - (parseFloat(a.roi)||0));
+  } else if (contInversionesSortOrder === 'categoria') {
+    allInversiones.sort((a,b) => (a.categoria||'').localeCompare(b.categoria||''));
+  } else if (contInversionesSortOrder === 'nombre') {
+    allInversiones.sort((a,b) => (a.titulo||'').localeCompare(b.titulo||''));
+  } else {
+    // Default 'pareto'
+    allInversiones.sort((a,b) => {
+      const evalA = contCalcularConvenienciaPareto(a, catMap, pd, totalIng);
+      const evalB = contCalcularConvenienciaPareto(b, catMap, pd, totalIng);
+      const scoreA = evalA.label.includes('80/20') ? 3 : (evalA.label.includes('MEDIA') ? 2 : 1);
+      const scoreB = evalB.label.includes('80/20') ? 3 : (evalB.label.includes('MEDIA') ? 2 : 1);
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      return (parseFloat(b.roi)||0) - (parseFloat(a.roi)||0);
+    });
+  }
+
+  const totalCostoInversiones = customList.reduce((acc, x) => acc + (parseFloat(x.precio) || 0), 0);
+
+  const catCosts = {};
+  customList.forEach(x => {
+    const c = x.categoria || 'Otro';
+    if (!catCosts[c]) catCosts[c] = 0;
+    catCosts[c] += (parseFloat(x.precio) || 0);
+  });
+
+  const invCatIcons = {
+    'Tecnología e IA': '💻',
+    'Marketing Digital': '📢',
+    'Oficina / Mantenimiento': '🏢',
+    'Transporte / Logística': '🚗',
+    'Ventas / Captación': '🏠',
+    'Otro': '⭐'
+  };
+  const invCatColors = ['#3b82f6', '#a855f7', '#22c55e', '#f97316', '#d4a84b', '#ec4899', '#06b6d4', '#84cc16'];
+  const invCatEntries = Object.entries(catCosts)
+    .map(([cat, total]) => ({
+      cat: cat,
+      total: total,
+      pct: totalCostoInversiones > 0 ? ((total / totalCostoInversiones) * 100) : 0
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  const selectedList = allInversiones.filter(x => contSelectedInversiones.has(x.id));
+  const sumSelected = selectedList.reduce((acc, x) => acc + (parseFloat(x.precio) || 0), 0);
+  const countSelected = selectedList.length;
+
+  const selectedCatCosts = {};
+  selectedList.forEach(x => {
+    const c = x.categoria || 'Otro';
+    if (!selectedCatCosts[c]) selectedCatCosts[c] = 0;
+    selectedCatCosts[c] += (parseFloat(x.precio) || 0);
+  });
+
+  const selectedCatEntries = Object.entries(selectedCatCosts)
+    .map(([cat, total]) => ({
+      cat: cat,
+      total: total,
+      pct: sumSelected > 0 ? ((total / sumSelected) * 100) : 0
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  let seleccionResumenHtml = '';
+  if (countSelected > 0) {
+    let coberHtml = '';
+    if (sumSelected === 0) {
+      coberHtml = '<span style="color:#aaa; font-size:11.5px;">(Las inversiones seleccionadas no tienen costo asignado)</span>';
+    } else if (montoPropuesto > 0) {
+      if (sumSelected <= montoPropuesto) {
+        coberHtml = '<span style="background:rgba(34,197,94,0.18); color:#22c55e; border:1px solid rgba(34,197,94,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">✓ Cubierto con tu 30% de utilidad del mes</span>';
+      } else {
+        const diff = sumSelected - montoPropuesto;
+        const mesesEst = (sumSelected / montoPropuesto).toFixed(1);
+        coberHtml = `<span style="background:rgba(249,115,22,0.18); color:#f97316; border:1px solid rgba(249,115,22,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">⏳ Excede tu 30% por ${contFmt(diff)} (~${mesesEst} meses de utilidad)</span>`;
+      }
+    } else if (utilidad > 0) {
+      if (sumSelected <= utilidad) {
+        coberHtml = '<span style="background:rgba(34,197,94,0.18); color:#22c55e; border:1px solid rgba(34,197,94,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">✓ Cubierto con la utilidad total del mes</span>';
+      } else {
+        const diff = sumSelected - utilidad;
+        coberHtml = `<span style="background:rgba(239,68,68,0.18); color:#ef4444; border:1px solid rgba(239,68,68,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">⚠ Excede utilidad total en ${contFmt(diff)}</span>`;
+      }
+    } else {
+      coberHtml = '<span style="background:rgba(239,68,68,0.18); color:#ef4444; border:1px solid rgba(239,68,68,0.35); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">⚠ Requiere generar utilidad</span>';
+    }
+
+    let selectedChartBoxHtml = '';
+    if (selectedCatEntries.length > 0) {
+      selectedChartBoxHtml = `
+        <div style="margin-top:12px; padding:12px 16px; background:rgba(0,0,0,0.35); border:1px solid rgba(212,168,75,0.25); border-radius:10px; width:100%;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="font-size:12.5px; font-weight:700; color:var(--gold); display:flex; align-items:center; gap:6px;">
+              🍩 Distribución por Categoría (Selección Actual)
+            </div>
+            <span style="font-size:11px; color:#aaa;">${selectedCatEntries.length} ${selectedCatEntries.length === 1 ? 'categoría' : 'categorías'}</span>
+          </div>
+          <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
+            <div style="width:140px; height:140px; flex-shrink:0; position:relative;">
+              <canvas id="chartSelectedInvCat"></canvas>
+            </div>
+            <div style="flex:1; min-width:220px; display:flex; flex-direction:column; gap:6px; max-height:140px; overflow-y:auto; padding-right:4px;">
+              ${selectedCatEntries.map((e, i) => {
+                const icon = invCatIcons[e.cat] || (CONT_CAT_ICONS[e.cat] || '•');
+                const color = invCatColors[i % invCatColors.length];
+                return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; padding:4px 8px; background:rgba(255,255,255,0.03); border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+                  <span style="color:#eee; display:flex; align-items:center; gap:6px;">
+                    <span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:${color}; box-shadow:0 0 5px ${color}88;"></span>
+                    ${icon} ${e.cat}
+                  </span>
+                  <span style="display:flex; align-items:center; gap:10px;">
+                    <strong style="color:var(--gold);">${contFmt(e.total)}</strong>
+                    <span style="color:#aaa; font-size:10.5px; min-width:38px; text-align:right;">${e.pct.toFixed(1)}%</span>
+                  </span>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    seleccionResumenHtml = `
+      <div style="background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.3); border-radius:10px; padding:12px 16px; margin-top:12px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.05); width:100%;">
+        <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+          <span style="color:#fff; font-size:13px; font-weight:600;">☑️ Seleccionadas: <strong style="color:var(--gold); font-size:14px;">${countSelected}</strong></span>
+          <span style="color:#22c55e; font-size:15px; font-weight:800;">Suma Total: ${contFmt(sumSelected)}</span>
+          ${coberHtml}
+          <button onclick="contLimpiarSeleccionInversiones()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--gold); cursor:pointer; font-size:11px; padding:3px 10px; border-radius:8px; font-weight:600; margin-left:auto; transition:all 0.2s;" onmouseover="this.style.background='rgba(212,168,75,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">🧹 Limpiar Selección</button>
+        </div>
+        ${selectedChartBoxHtml}
+      </div>`;
+  } else {
+    seleccionResumenHtml = `
+      <div style="background:rgba(255,255,255,0.02); border:1px dashed rgba(212,168,75,0.35); border-radius:10px; padding:8px 16px; display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12px; color:var(--muted); width:100%;">
+        <span>☑️ <strong>Simulador de Selección:</strong> Selecciona casillas en la lista para sumar posibles inversiones y verificar si tu presupuesto alcanza.</span>
+      </div>`;
+  }
+
+  const paretoHtml = `
+    <div id="contParetoChartsWrapper" style="display:${contMostrarParetoGraficas ? 'block' : 'none'}; margin-bottom:20px;">
+      <div class="cont-panel">
+        <div class="cont-panel-header"><div class="cont-panel-title">⚖️ Análisis Pareto</div><span style="font-size:12px;color:var(--muted);">${n80} ${n80 === 1 ? 'categoría genera' : 'categorías generan'} el 80%</span></div>
+        <div class="cont-panel-body">
+        ${totalIng === 0 ? '<div class="cont-empty">Sin ingresos para analizar.</div>' : `
+          <div style="background:rgba(212,168,75,0.08);border:1px solid rgba(212,168,75,0.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;">🎯 <strong style="color:var(--gold);">Regla 80/20:</strong> <span style="color:#ccc;">Las <strong style="color:#fff;">${n80}</strong> categorías más rentables generan el <strong style="color:#22c55e;">80%</strong> de tus ingresos.</span></div>
+          <div class="cont-chart-wrap" style="height:280px;"><canvas id="chartPareto"></canvas></div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:16px;"><thead><tr style="border-bottom:1px solid rgba(255,255,255,0.06);"><th style="padding:8px 10px;text-align:left;color:var(--gold);font-size:10px;text-transform:uppercase;">Categoría</th><th style="padding:8px 10px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">Ingresos</th><th style="padding:8px 10px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">%</th><th style="padding:8px 10px;text-align:right;color:var(--gold);font-size:10px;text-transform:uppercase;">% Acum.</th><th style="padding:8px 10px;text-align:center;color:var(--gold);font-size:10px;text-transform:uppercase;">Impacto</th></tr></thead>
+          <tbody>${pd.map(p => `<tr style="border-bottom:1px solid rgba(255,255,255,0.03);background:${p.is80 ? 'rgba(34,197,94,0.04)' : ''}"><td style="padding:8px 10px;color:#fff;font-weight:${p.is80 ? 700 : 400};">${CONT_CAT_ICONS[p.cat] || '•'} ${p.cat}</td><td style="padding:8px 10px;text-align:right;color:#22c55e;font-weight:600;">${contFmt(p.total)}</td><td style="padding:8px 10px;text-align:right;color:#ccc;">${p.pct.toFixed(1)}%</td><td style="padding:8px 10px;text-align:right;color:${p.pctAcum <= 80 ? '#22c55e' : '#888'};">${p.pctAcum.toFixed(1)}%</td><td style="padding:8px 10px;text-align:center;">${p.is80 ? '<span style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">⭐ VITAL</span>' : '<span style="color:#555;font-size:10px;">Complementario</span>'}</td></tr>`).join('')}</tbody></table>
+        `}
+        </div>
+      </div>
+    </div>`;
+
+  const catPillsHtml = Object.entries(catCosts).map(([c, total]) => {
+    return `<span style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:3px 10px; border-radius:12px; font-size:11px; color:#ddd;"><strong style="color:var(--gold);">${c}:</strong> $${contFmt(total)}</span>`;
+  }).join(' ');
+
+  const allIdsJsonEscaped = JSON.stringify(allInversiones.map(x => x.id)).split('"').join('&quot;');
+
+  el.innerHTML = `
+  <div style="background:linear-gradient(135deg,rgba(212,168,75,0.08),rgba(34,197,94,0.04));border:1px solid rgba(212,168,75,0.2);border-radius:14px;padding:18px 22px;margin-bottom:20px;">
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:space-between;">
+      <div style="display:flex;gap:16px;align-items:center;flex:1;">
+        <div style="font-size:28px;">🤖</div>
+        <div><div style="font-weight:700;color:var(--gold);font-size:15px;margin-bottom:4px;">Recomendaciones Análisis Pareto & Plan de Inversiones</div>
+        <div style="color:#ccc;font-size:13px;line-height:1.5;">Ingresos <strong style="color:#22c55e;">${contFmt(totalIng)}</strong> · Utilidad <strong style="color:${utilidad >= 0 ? '#22c55e' : '#ef4444'}">${contFmt(utilidad)}</strong>${utilidad > 0 ? ` · Reinvertir hasta <strong style="color:var(--gold);">${contFmt(montoPropuesto)}</strong> (30%)` : ' · Optimiza gastos antes de invertir.'} · Total Inversiones Planificadas: <strong style="color:var(--gold); font-weight:700;">$${contFmt(totalCostoInversiones)}</strong></div>
+        ${catPillsHtml ? `<div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">${catPillsHtml}</div>` : ''}
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <div style="display:flex; gap:6px; align-items:center;">
+          <span style="font-size:12px; color:var(--muted); white-space:nowrap;">Ordenar por:</span>
+          <select class="form-input" style="width:auto; height:32px; padding:0 8px; background:#18181b; border:1px solid rgba(255,255,255,0.08); color:#fff; font-size:12px; border-radius:8px; cursor:pointer; color-scheme:dark;" onchange="contCambiarOrdenInversiones(this.value)">
+            <option value="pareto"${contInversionesSortOrder==='pareto'?' selected':''}>⭐ Rec. Pareto (80/20)</option>
+            <option value="precio"${contInversionesSortOrder==='precio'?' selected':''}>💰 Precio / Costo</option>
+            <option value="roi"${contInversionesSortOrder==='roi'?' selected':''}>📈 ROI Estimado</option>
+            <option value="categoria"${contInversionesSortOrder==='categoria'?' selected':''}>🏷️ Categoría</option>
+            <option value="nombre"${contInversionesSortOrder==='nombre'?' selected':''}>🔤 Nombre</option>
+          </select>
+        </div>
+        <button onclick="contAbrirModalInversion(null)" style="background:var(--gold); border:none; color:#121212; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 6px rgba(0,0,0,0.4); transition:all 0.15s ease;" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter=''">➕ Agregar Inversión</button>
+        <button onclick="contToggleParetoGraficas()" style="background:linear-gradient(180deg, #d9ac3b 0%, #9e751d 100%); border:1px solid #785614; color:#0f0f0f; font-size:12px; font-weight:700; letter-spacing:0.2px; padding:6px 16px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 6px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.45); transition:all 0.15s ease;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">📊 Gráficas</button>
+      </div>
+    </div>
+    ${seleccionResumenHtml}
+  </div>
+  ${paretoHtml}
+  <div class="cont-panel" style="overflow-x:auto; padding:0; background:#141416; border:1px solid rgba(255,255,255,0.08); border-radius:14px; margin-top:12px;">
+    <table style="width:100%; border-collapse:collapse; font-size:12.5px; text-align:left;">
+      <thead>
+        <tr style="background:rgba(212,168,75,0.06); border-bottom:1px solid rgba(212,168,75,0.2);">
+          <th style="padding:11px 10px; text-align:center; width:38px;">
+            <input type="checkbox" onchange="contToggleSeleccionarTodasInversiones(this.checked, '${allIdsJsonEscaped}')" title="Seleccionar todas las inversiones" ${allInversiones.length > 0 && allInversiones.every(x => contSelectedInversiones.has(x.id)) ? 'checked' : ''} style="cursor:pointer; transform:scale(1.15); accent-color:var(--gold);" />
+          </th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em;">Opción de Inversión</th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em; text-align:right;">Precio / Costo</th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em;">Acción / Descripción</th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em; text-align:center;">Riesgo</th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em; text-align:right;">ROI Est.</th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em; text-align:center;">Evaluación Pareto</th>
+          <th style="padding:11px 14px; color:var(--gold); font-size:11px; text-transform:uppercase; font-weight:700; letter-spacing:0.05em; text-align:center;">Acc.</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${allInversiones.map(inv => {
+          const isSelected = contSelectedInversiones.has(inv.id);
+          const paretoEval = contCalcularConvenienciaPareto(inv, catMap, pd, totalIng);
+          const precioNum = parseFloat(inv.precio) || 0;
+          
+          let viabilidadHtml = '';
+          if (precioNum > 0) {
+            if (montoPropuesto > 0) {
+              if (precioNum <= montoPropuesto) {
+                viabilidadHtml = '<div style="font-size:9.5px; color:#22c55e; margin-top:2px;">✓ Cubierto mes</div>';
+              } else {
+                const mesesNec = (precioNum / montoPropuesto).toFixed(1);
+                viabilidadHtml = '<div style="font-size:9.5px; color:#f97316; margin-top:2px;">⏳ ~' + mesesNec + ' mes</div>';
+              }
+            } else {
+              viabilidadHtml = '<div style="font-size:9.5px; color:#888; margin-top:2px;">Proyectado</div>';
+            }
+          }
+
+          const roiColor = (inv.roi || 0) >= 40 ? '#22c55e' : ((inv.roi || 0) >= 25 ? 'var(--gold)' : '#ccc');
+          const editBtn = `<button onclick="event.stopPropagation(); contAbrirModalInversion('${inv.id}')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:var(--gold); cursor:pointer; font-size:11px; padding:3px 7px; border-radius:6px; transition:all 0.2s;" title="Editar o eliminar inversión" onmouseover="this.style.background='rgba(212,168,75,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">✏️</button>`;
+
+          const rowBgStyle = isSelected 
+            ? 'background:rgba(212,168,75,0.09); border-bottom:1px solid rgba(212,168,75,0.25);' 
+            : 'border-bottom:1px solid rgba(255,255,255,0.035);';
+
+          return `
+          <tr style="${rowBgStyle} cursor:pointer;" onclick="contAbrirModalInversion('${inv.id}')" onmouseover="this.style.background='${isSelected ? 'rgba(212,168,75,0.15)' : 'rgba(255,255,255,0.025)'}'" onmouseout="this.style.background='${isSelected ? 'rgba(212,168,75,0.09)' : ''}'">
+            <td style="padding:10px 10px; text-align:center;" onclick="event.stopPropagation();">
+              <input type="checkbox" onchange="contToggleSeleccionInversion('${inv.id}')" onclick="event.stopPropagation();" ${isSelected ? 'checked' : ''} style="cursor:pointer; transform:scale(1.15); accent-color:var(--gold);" />
+            </td>
+            <td style="padding:10px 14px; white-space:nowrap;">
+              <div style="color:#fff; font-weight:${isSelected ? 700 : 600}; font-size:13px;">${inv.titulo}</div>
+              <div style="font-size:11px; color:#22c55e; opacity:0.9; font-weight:400; margin-top:2px; display:flex; align-items:center; gap:4px;">${CONT_CAT_ICONS[inv.categoria] || '•'} ${inv.categoria || 'General'}</div>
+            </td>
+            <td style="padding:10px 14px; text-align:right; white-space:nowrap;">
+              ${precioNum > 0 ? `<strong style="color:#22c55e; font-size:13px; font-weight:700;">${contFmt(precioNum)}</strong>${viabilidadHtml}` : '<span style="color:#666;">—</span>'}
+            </td>
+            <td style="padding:10px 14px; color:#aaa; max-width:380px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${(inv.accion || inv.desc || '').split('"').join('&quot;')}">
+              ${inv.accion || inv.desc || '—'}
+            </td>
+            <td style="padding:10px 14px; text-align:center; white-space:nowrap;">
+              <span class="cont-inv-badge ${inv.riesgo || 'baja'}">Riesgo ${inv.riesgo || 'baja'}</span>
+            </td>
+            <td style="padding:10px 14px; text-align:right; white-space:nowrap;">
+              <strong style="color:${roiColor}; font-size:13px;">~${inv.roi || 30}%</strong>
+            </td>
+            <td style="padding:10px 14px; text-align:center; white-space:nowrap;">
+              <span style="background:${paretoEval.bg}; color:${paretoEval.color}; border:1px solid ${paretoEval.border}; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700;">${paretoEval.label}</span>
+            </td>
+            <td style="padding:10px 14px; text-align:center; white-space:nowrap;">
+              ${editBtn}
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`;
+
+  if (contMostrarParetoGraficas) {
+    setTimeout(function(){
+      try {
+        if(totalIng>0&&pd.length){const ctx=document.getElementById('chartPareto');if(ctx){const cols=pd.map(function(p){return p.is80?'rgba(34,197,94,0.75)':'rgba(100,100,100,0.45)';});contCharts['chartPareto']=new Chart(ctx,{type:'bar',data:{labels:pd.map(function(p){return p.cat;}),datasets:[{label:'Ingresos',data:pd.map(function(p){return p.total;}),backgroundColor:cols,borderWidth:1.5,borderRadius:5,order:2},{label:'% Acumulado',data:pd.map(function(p){return p.pctAcum;}),type:'line',borderColor:'#d4a84b',backgroundColor:'rgba(212,168,75,0.08)',borderWidth:2,pointRadius:4,tension:0.3,yAxisID:'y1',order:1}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.datasetIndex===0?' '+contFmt(ctx.raw):' '+ctx.raw.toFixed(1)+'%';}}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:10},maxRotation:30}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:10},callback:function(v){return contFmt(v);}},beginAtZero:true},y1:{position:'right',min:0,max:100,grid:{display:false},ticks:{color:'#d4a84b',font:{size:10},callback:function(v){return v+'%';}}}}}});}}
+      } catch (e) {
+        console.warn("No se pudo cargar el gráfico de Pareto:", e);
+      }
+    },80);
+  }
+
+  if (countSelected > 0 && selectedCatEntries.length > 0) {
+    setTimeout(function() {
+      try {
+        const ctxSel = document.getElementById('chartSelectedInvCat');
+        if (ctxSel) {
+          contDestroyChart('chartSelectedInvCat');
+          contCharts['chartSelectedInvCat'] = new Chart(ctxSel, {
+            type: 'doughnut',
+            data: {
+              labels: selectedCatEntries.map(function(e){ return e.cat; }),
+              datasets: [{
+                data: selectedCatEntries.map(function(e){ return e.total; }),
+                backgroundColor: selectedCatEntries.map(function(_, i){ return invCatColors[i % invCatColors.length]; }),
+                borderColor: '#18181b',
+                borderWidth: 2
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              cutout: '68%',
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const val = context.raw || 0;
+                      const pct = sumSelected > 0 ? ((val / sumSelected) * 100).toFixed(1) : 0;
+                      return ' ' + contFmt(val) + ' (' + pct + '%)';
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("No se pudo cargar el gráfico de dona de selección:", e);
+      }
+    }, 50);
+  }
+}
+
+let contBusquedaMovimientos = '';
+
+function contFiltrarMovimientos(val) {
+  contBusquedaMovimientos = val;
+  const inputEl = document.getElementById('inputBuscarMovimientos');
+  const selStart = inputEl ? inputEl.selectionStart : null;
+  const selEnd = inputEl ? inputEl.selectionEnd : null;
+
+  contRenderTabContent();
+
+  setTimeout(() => {
+    const inp = document.getElementById('inputBuscarMovimientos');
+    if (inp) {
+      inp.focus();
+      if (selStart !== null && selEnd !== null) {
+        try { inp.setSelectionRange(selStart, selEnd); } catch(e){}
+      }
+    }
+  }, 0);
+}
+
+function contLimpiarBusquedaMovimientos() {
+  contBusquedaMovimientos = '';
+  contRenderTabContent();
+}
+
+function contRenderMovimientos(el){
+  let lista=contGetFiltrado();
+
+  if (contBusquedaMovimientos) {
+    const q = contBusquedaMovimientos.toLowerCase().trim();
+    lista = lista.filter(m => {
+      const desc = (m.descripcion || '').toLowerCase();
+      const cat = (m.categoria || '').toLowerCase();
+      const monto = String(m.monto || '').toLowerCase();
+      const fecha = (m.fecha || '').toLowerCase();
+      const tipo = (m.tipo || '').toLowerCase();
+      const notas = (m.notas || '').toLowerCase();
+      return desc.includes(q) || cat.includes(q) || monto.includes(q) || fecha.includes(q) || tipo.includes(q) || notas.includes(q);
+    });
+  }
+
+  if (contSortOrder === 'fecha') {
+    lista.sort(function(a,b){return new Date(b.fecha||0)-new Date(a.fecha||0);});
+  } else if (contSortOrder === 'tipo') {
+    lista.sort(function(a,b){
+      const tComp = (a.tipo||'').localeCompare(b.tipo||'');
+      if (tComp !== 0) return tComp;
+      const cComp = (a.categoria||'').localeCompare(b.categoria||'');
+      if (cComp !== 0) return cComp;
+      return new Date(b.fecha||0) - new Date(a.fecha||0);
+    });
+  } else if (contSortOrder === 'categoria') {
+    lista.sort(function(a,b){
+      const cComp = (a.categoria||'').localeCompare(b.categoria||'');
+      if (cComp !== 0) return cComp;
+      return new Date(b.fecha||0) - new Date(a.fecha||0);
+    });
+  } else if (contSortOrder === 'mes') {
+    lista.sort(function(a,b){
+      return (parseInt(a.mes) || 0) - (parseInt(b.mes) || 0);
+    });
+  } else if (contSortOrder === 'ultimo') {
+    lista.sort(function(a,b){
+      const logsA = contAuditLog.filter(log => String(log.movimientoId) === String(a.id));
+      const latestA = logsA.length > 0 ? logsA.reduce((max, log) => new Date(log.fechaAccion) > new Date(max.fechaAccion) ? log : max) : null;
+      const timeA = latestA ? new Date(latestA.fechaAccion) : (a.creadoEn ? new Date(a.creadoEn) : new Date(a.fecha || 0));
+
+      const logsB = contAuditLog.filter(log => String(log.movimientoId) === String(b.id));
+      const latestB = logsB.length > 0 ? logsB.reduce((max, log) => new Date(log.fechaAccion) > new Date(max.fechaAccion) ? log : max) : null;
+      const timeB = latestB ? new Date(latestB.fechaAccion) : (b.creadoEn ? new Date(b.creadoEn) : new Date(b.fecha || 0));
+
+      return timeB - timeA;
+    });
+  }
+
+  const searchInputHtml = `
+    <div style="flex:1; max-width:380px; min-width:200px; margin:4px 0; position:relative; display:flex; align-items:center;">
+      <input type="text" id="inputBuscarMovimientos" placeholder="🔍 Buscar por descripción, categoría, monto..." value="${contBusquedaMovimientos.split('"').join('&quot;')}" oninput="contFiltrarMovimientos(this.value)" style="width:100%; height:34px; padding:0 30px 0 12px; background:#18181c; border:1px solid rgba(212,168,75,0.4); border-radius:8px; color:#fff; font-size:12.5px; outline:none; transition:all 0.2s;" onfocus="this.style.borderColor='var(--gold)'; this.style.boxShadow='0 0 0 2px rgba(212,168,75,0.25)';" onblur="this.style.borderColor='rgba(212,168,75,0.4)'; this.style.boxShadow='none';" />
+      ${contBusquedaMovimientos ? `<button id="btnLimpiarBusquedaMovs" onclick="contLimpiarBusquedaMovimientos()" style="position:absolute; right:10px; background:none; border:none; color:var(--gold); cursor:pointer; font-size:13px; font-weight:bold;" title="Limpiar búsqueda">✕</button>` : ''}
+    </div>`;
+
+  el.innerHTML=
+  '<div class="cont-panel"><div class="cont-panel-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;"><div class="cont-panel-title" style="white-space:nowrap;">📋 Todos los Movimientos</div>'+
+  searchInputHtml +
+  '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">'+
+    '<span style="font-size:12px;color:var(--muted);white-space:nowrap;">Ordenar por:</span>'+
+    '<select class="form-input" style="width:auto;height:32px;padding:0 8px;background:#18181b;border:1px solid rgba(255,255,255,0.08);color:#fff;font-size:12px;border-radius:8px;cursor:pointer;" onchange="contCambiarOrden(this.value)">'+
+      '<option value="fecha"'+(contSortOrder==='fecha'?' selected':'')+'>\uD83D\uDCC5 Fecha</option>'+
+      '<option value="tipo"'+(contSortOrder==='tipo'?' selected':'')+'>\uD83D\uDD04 Tipo</option>'+
+      '<option value="categoria"'+(contSortOrder==='categoria'?' selected':'')+'>\uD83C\uDFF7\uFE0F Categor\u00EDa</option>'+
+      '<option value="mes"'+(contSortOrder==='mes'?' selected':'')+'>\uD83D\uDDD3\uFE0F Mes</option>'+
+      '<option value="ultimo"'+(contSortOrder==='ultimo'?' selected':'')+'>\u23F1\uFE0F \u00DAltimo movimiento</option>'+
+    '</select>'+
+    '<button class="cont-btn-add" onclick="contAbrirModal(\'ingreso\')">\u2795 Ingreso</button><button class="cont-btn-add" onclick="contAbrirModal(\'egreso\')" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444;">\u2795 Egreso</button>'+
+  '</div></div>'+
+  '<div class="cont-panel-body" style="padding:0;">'+
+  (lista.length===0?'<div class="cont-empty" style="padding:40px;">'+(contBusquedaMovimientos?'No se encontraron movimientos para "'+contBusquedaMovimientos+'".':'Ninguno aún.')+'<br><br><button class="cont-btn-add" onclick="'+(contBusquedaMovimientos?'contLimpiarBusquedaMovimientos()':'contAbrirModal()')+'">'+(contBusquedaMovimientos?'🔄 Limpiar búsqueda':'➕ Primero')+'</button></div>':
+  '<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
+  '<thead><tr style="background:rgba(212,168,75,0.04);border-bottom:1px solid rgba(212,168,75,0.15);"><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Fecha</th><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Categor\u00EDa</th><th style="padding:12px 16px;text-align:left;color:var(--gold);font-size:11px;text-transform:uppercase;">Descripci\u00F3n</th><th style="padding:12px 16px;text-align:right;color:var(--gold);font-size:11px;text-transform:uppercase;">Monto</th><th style="padding:12px 16px;text-align:center;color:var(--gold);font-size:11px;text-transform:uppercase;">Tipo</th><th style="padding:12px 16px;text-align:center;color:var(--gold);font-size:11px;text-transform:uppercase;">Acc.</th></tr></thead>'+
+  '<tbody>'+lista.map(function(m){
+    const logs = contAuditLog.filter(log => String(log.movimientoId) === String(m.id));
+    const hasHistory = logs.length > 0;
+    const latestLog = hasHistory ? logs.reduce((max, log) => new Date(log.fechaAccion) > new Date(max.fechaAccion) ? log : max) : null;
+    
+    const dateDisplay = m.fecha || '—';
+    const descDisplay = m.descripcion || '—';
+    const rowStyle = m.isDeleted ? 'border-bottom:1px solid rgba(255,255,255,0.03); opacity:0.65; background:rgba(239,68,68,0.02);' : 'border-bottom:1px solid rgba(255,255,255,0.03);';
+    const textStyle = m.isDeleted ? 'text-decoration:line-through; color:rgba(255,255,255,0.45);' : '';
+    
+    let timestampHtml = '';
+    if (m.isDeleted) {
+      timestampHtml = '<div style="font-size:9px;color:#ef4444;margin-top:2px;">❌ Eliminado el '+contFormatearFechaHora(m.creadoEn)+'</div>';
+    } else {
+      const displayTime = latestLog ? latestLog.fechaAccion : m.creadoEn;
+      if (displayTime) {
+        if (latestLog && latestLog.tipoAccion === 'Restablecido') {
+          timestampHtml = '<div style="font-size:9px;color:#10b981;margin-top:2px;">♻️ Restablecido el '+contFormatearFechaHora(displayTime)+'</div>';
+        } else {
+          timestampHtml = '<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:2px;">\u23F1\uFE0F '+contFormatearFechaHora(displayTime)+'</div>';
+        }
+      }
+    }
+    
+    if (hasHistory) {
+      timestampHtml += '<div onclick="event.stopPropagation(); contVerHistorial(\''+m.id+'\')" style="font-size:9px;color:var(--gold);margin-top:2.5px;cursor:pointer;text-decoration:underline;display:inline-block;">(Ver antes/después)</div>';
+    }
+
+    let actionBtnHtml = '';
+    if (m.isDeleted) {
+      actionBtnHtml = '<button onclick="contRestablecerMovimiento(\''+m.id+'\')" style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:7px;color:#22c55e;padding:4px 8px;cursor:pointer;font-size:11px;" onmouseover="this.style.background=\'rgba(34,197,94,0.2)\'" onmouseout="this.style.background=\'rgba(34,197,94,0.1)\'">↩️ Restablecer</button>';
+    } else if (m.isAuto) {
+      actionBtnHtml = '<span style="color:#555;font-size:11px;">Auto</span>';
+    } else {
+      actionBtnHtml = '<button onclick="contEditarMovimiento(\''+m.id+'\')" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#888;padding:4px 8px;cursor:pointer;font-size:11px;" onmouseover="this.style.borderColor=\'var(--gold)\';this.style.color=\'var(--gold)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.1)\';this.style.color=\'#888\'">\u270F\uFE0F</button>';
+      if (latestLog && latestLog.tipoAccion === 'Restablecido') {
+        actionBtnHtml += '<div style="font-size:9.5px;color:#10b981;margin-top:4px;font-weight:600;">♻️ Restablecido</div>';
+      }
+    }
+    
+    return '<tr style="'+rowStyle+'"><td style="padding:12px 16px;"><div style="'+textStyle+'">'+dateDisplay+'</div>'+timestampHtml+'</td><td style="padding:12px 16px;"><div style="'+textStyle+'">'+(m.categoria||'Sin cat.')+'</div></td><td style="padding:12px 16px;"><div style="'+textStyle+'">'+descDisplay+'</div></td><td style="padding:12px 16px;text-align:right;"><div style="'+textStyle+'font-weight:600;color:'+(m.tipo==='egreso'?'#ef4444':'#22c55e')+'">'+(m.tipo==='egreso'?'-':'')+contFmt(m.monto)+'</div></td><td style="padding:12px 16px;text-align:center;"><div style="'+textStyle+'">'+(m.tipo==='ingreso'?'\u2B06\uFE0F Ing.':'\u2B07\uFE0F Egr.')+'</div></td><td style="padding:12px 16px;text-align:center;">'+actionBtnHtml+'</td></tr>';
+  }).join('')+'</tbody></table>')+'</div></div>';
+}
+function contCambiarOrden(val){
+  contSortOrder = val;
+  contRenderTabContent();
+}
+
+function contFormatearFechaHora(isoStr) {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hr = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return y + '-' + m + '-' + day + ' ' + hr + ':' + min;
+  } catch (e) {
+    return '';
+  }
+}
+
+function contVerHistorial(id) {
+  const logs = contAuditLog.filter(log => String(log.movimientoId) === String(id));
+  if (logs.length === 0) {
+    toast('No hay historial de cambios para este movimiento', 'info');
+    return;
+  }
+  
+  const contentEl = document.getElementById('contHistorialContent');
+  if (!contentEl) return;
+  
+  // Sort logs newest first
+  logs.sort((a, b) => new Date(b.fechaAccion) - new Date(a.fechaAccion));
+  
+  let html = '';
+  
+  logs.forEach((log, idx) => {
+    const diffs = [];
+    const fields = [
+      { name: 'Fecha', key: 'fecha' },
+      { name: 'Tipo', key: 'tipo' },
+      { name: 'Categoría', key: 'categoria' },
+      { name: 'Descripción', key: 'descripcion' },
+      { name: 'Monto', key: 'monto', fmt: v => contFmt(parseFloat(v || 0)) },
+      { name: 'Mes Contable', key: 'mes', fmt: v => CONT_MESES_FULL[(parseInt(v) || 1) - 1] },
+      { name: 'Notas', key: 'notas' }
+    ];
+    
+    const stateBefore = log.antes || {};
+    const stateAfter = log.despues || {};
+    
+    fields.forEach(f => {
+      const valBefore = stateBefore[f.key] || '';
+      const valAfter = stateAfter[f.key] || '';
+      
+      const beforeStr = f.fmt ? f.fmt(valBefore) : String(valBefore);
+      const afterStr = f.fmt ? f.fmt(valAfter) : String(valAfter);
+      
+      if (beforeStr !== afterStr) {
+        diffs.push({
+          label: f.name,
+          before: beforeStr || '(vacío)',
+          after: afterStr || '(vacío)'
+        });
+      }
+    });
+    
+    let actionBadgeColor = '#d4a84b'; // edit
+    if (log.tipoAccion === 'Creado') actionBadgeColor = '#22c55e';
+    if (log.tipoAccion === 'Eliminado') actionBadgeColor = '#ef4444';
+    if (log.tipoAccion === 'Restablecido') actionBadgeColor = '#10b981';
+    
+    html += '<div style="margin-bottom:16px; background:rgba(255,255,255,0.015); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px;">'+
+      '<div style="font-weight:700; color:var(--gold); font-size:12.5px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">'+
+        '<span>\u23F1\uFE0F Acción: <span style="color:'+actionBadgeColor+';">'+log.tipoAccion+'</span> el '+contFormatearFechaHora(log.fechaAccion)+'</span>'+
+        '<span style="font-size:10px; color:var(--muted);">Registro '+(logs.length - idx)+'</span>'+
+      '</div>';
+      
+    if (log.tipoAccion === 'Creado') {
+      html += '<div style="font-size:12px; color:#ccc; line-height:1.4;">'+
+        '<strong>Creado con:</strong><br>'+
+        '💰 Monto: <span style="color:#22c55e; font-weight:700;">'+contFmt(parseFloat(stateAfter.monto || 0))+'</span><br>'+
+        '🏷️ Categoría: '+stateAfter.categoria+'<br>'+
+        '📝 Descripción: '+stateAfter.descripcion+'<br>'+
+        '📅 Fecha: '+stateAfter.fecha+
+      '</div>';
+    } else if (log.tipoAccion === 'Eliminado') {
+      html += '<div style="font-size:12px; color:#ccc; line-height:1.4;">'+
+        '<strong>Eliminado con el estado:</strong><br>'+
+        '💰 Monto: <span style="color:#ef4444; font-weight:700;">'+contFmt(parseFloat(stateBefore.monto || 0))+'</span><br>'+
+        '🏷️ Categoría: '+stateBefore.categoria+'<br>'+
+        '📝 Descripción: '+stateBefore.descripcion+'<br>'+
+        '📅 Fecha: '+stateBefore.fecha+
+      '</div>';
+    } else if (log.tipoAccion === 'Restablecido') {
+      html += '<div style="font-size:12px; color:#ccc; line-height:1.4;">'+
+        '<strong>Restablecido a su estado activo:</strong><br>'+
+        '💰 Monto: <span style="color:#10b981; font-weight:700;">'+contFmt(parseFloat(stateAfter.monto || 0))+'</span><br>'+
+        '🏷️ Categoría: '+stateAfter.categoria+'<br>'+
+        '📝 Descripción: '+stateAfter.descripcion+'<br>'+
+        '📅 Fecha: '+stateAfter.fecha+
+      '</div>';
+    } else {
+      if (diffs.length === 0) {
+        html += '<div style="color:var(--muted); font-size:12px;">No se registraron cambios en los campos principales.</div>';
+      } else {
+        html += '<table style="width:100%; font-size:12px; border-collapse:collapse;">'+
+          '<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><th style="text-align:left; color:var(--muted); padding:6px 4px; font-weight:600;">Campo Modificado</th><th style="text-align:left; color:#f87171; padding:6px 4px; font-weight:600;">Antes</th><th style="text-align:left; color:#4ade80; padding:6px 4px; font-weight:600;">Después</th></tr></thead>'+
+          '<tbody>'+
+            diffs.map(d => '<tr style="border-bottom:1px solid rgba(255,255,255,0.02);"><td style="padding:6px 4px; font-weight:600; color:#ccc;">'+d.label+'</td><td style="padding:6px 4px; color:#f87171; text-decoration:line-through;">'+d.before+'</td><td style="padding:6px 4px; color:#4ade80;">'+d.after+'</td></tr>').join('')+
+          '</tbody></table>';
+      }
+    }
+    
+    html += '</div>';
+  });
+  
+  contentEl.innerHTML = html;
+  document.getElementById('modalContHistorial').classList.add('open');
+}
+
+
+function contAbrirModal(tipoDefault, mesDefault, anoDefault){
+  document.getElementById('contModalTitle').textContent='\u2795 Agregar Movimiento';
+  document.getElementById('contMovId').value='';
+  document.getElementById('contMovTipo').value=tipoDefault||'ingreso';
+  document.getElementById('contMovCat').value=(tipoDefault==='egreso'?'N\u00F3mina/Personal':'Venta de Inmueble');
+  document.getElementById('contMovDesc').value='';
+  document.getElementById('contMovMonto').value='';
+  
+  const targetYear = anoDefault || contAnoFiltro || new Date().getFullYear();
+  const targetMonth = mesDefault || contDetalleMesActivo || (new Date().getMonth() + 1);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const targetMonthStr = String(targetMonth).padStart(2, '0');
+  
+  const today = new Date();
+  if (today.getFullYear() === parseInt(targetYear) && (today.getMonth() + 1) === parseInt(targetMonth)) {
+    document.getElementById('contMovFecha').value = todayStr;
+  } else {
+    document.getElementById('contMovFecha').value = `${targetYear}-${targetMonthStr}-01`;
+  }
+  
+  document.getElementById('contMovMes').value = String(targetMonth);
+  document.getElementById('contMovMesesActivo').value='1';
+  document.getElementById('contMovMesesActivoDiv').style.display='';
+  document.getElementById('contMovNotas').value='';
+  document.getElementById('contMovBtnEliminar').style.display='none';
+  contToggleTipo();
+  document.getElementById('modalContabilidad').classList.add('open');
+}
+
+function contEditarMovimiento(id){
+  const m=contMovimientos.find(function(x){return x.id===id;});if(!m)return;
+  document.getElementById('contModalTitle').textContent='\u270F\uFE0F Editar Movimiento';
+  document.getElementById('contMovId').value=m.id;
+  document.getElementById('contMovTipo').value=m.tipo;
+  document.getElementById('contMovCat').value=m.categoria;
+  document.getElementById('contMovDesc').value=m.descripcion||'';
+  document.getElementById('contMovMonto').value=m.monto;
+  document.getElementById('contMovFecha').value=m.fecha||'';
+  document.getElementById('contMovMes').value=String(m.mes||1);
+  document.getElementById('contMovMesesActivo').value='1';
+  document.getElementById('contMovMesesActivoDiv').style.display='';
+  document.getElementById('contMovNotas').value=m.notas||'';
+  document.getElementById('contMovBtnEliminar').style.display='inline-flex';
+  contToggleTipo();
+  document.getElementById('modalContabilidad').classList.add('open');
+}
+
+function contToggleTipo(){
+  const tipo=document.getElementById('contMovTipo').value;
+  const catSel=document.getElementById('contMovCat');
+  const egresosCats=['N\u00F3mina/Personal','Arriendo Oficina','Marketing','Servicios P\u00FAblicos','Impuestos','Software/Tecnolog\u00EDa','Inversi\u00F3n','Aseo/Mantenimiento','Cafeter\u00EDa','Deudas','Transporte','Papeler\u00EDa','Otro Gasto'];
+  const ingresosCats=['Venta de Inmueble','Arriendo','Aval\u00FAos','Remodelaci\u00F3n','Reparaci\u00F3n','Arquitectura','Gesti\u00F3n/Administraci\u00F3n','Consultor\u00EDa','Recaudo de cartera','Otro Servicio'];
+  Array.from(catSel.options).forEach(function(opt){
+    if(tipo==='egreso')opt.style.display=egresosCats.includes(opt.value)?'':'none';
+    else opt.style.display=ingresosCats.includes(opt.value)?'':'none';
+  });
+  const vis=Array.from(catSel.options).find(function(o){return o.style.display!=='none';});
+  if(vis&&!Array.from(catSel.options).find(function(o){return o.selected&&o.style.display!=='none';}))catSel.value=vis.value;
+}
+
+async function contSincronizarMovimientoDrive(obj) {
+  if (!CONT_SCRIPT_URL) return;
+  window.contSyncCount = (window.contSyncCount || 0) + 1;
+  try {
+    await fetch(CONT_SCRIPT_URL, {
+      method: 'POST',
+      
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'saveMovimiento', movimiento: JSON.stringify(obj) })
+    });
+    console.log('Movimiento sincronizado en Drive exitosamente.');
+    const idx = contMovimientos.findIndex(m => m.id === obj.id);
+    if (idx >= 0) {
+      delete contMovimientos[idx].isPending;
+      contSave();
+    }
+  } catch (err) {
+    console.error('Error al sincronizar movimiento en Drive:', err);
+  } finally {
+    window.contSyncCount = Math.max(0, (window.contSyncCount || 0) - 1);
+  }
+}
+
+
+async function contEliminarMovimientoDrive(id) {
+  if (!CONT_SCRIPT_URL) return;
+  window.contSyncCount = (window.contSyncCount || 0) + 1;
+  try {
+    await fetch(CONT_SCRIPT_URL, {
+      method: 'POST',
+      
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'deleteMovimiento', id: id })
+    });
+    console.log('Movimiento eliminado de Drive exitosamente.');
+  } catch (err) {
+    console.error('Error al eliminar movimiento en Drive:', err);
+  } finally {
+    window.contSyncCount = Math.max(0, (window.contSyncCount || 0) - 1);
+  }
+}
+
+async function contSincronizarMetasDrive(metasObj) {
+  if (!CONT_SCRIPT_URL) return;
+  try {
+    await fetch(CONT_SCRIPT_URL, {
+      method: 'POST',
+      
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'saveMetas', metas: JSON.stringify(metasObj) })
+    });
+    console.log('Metas sincronizadas en Drive exitosamente.');
+  } catch (err) {
+    console.error('Error al sincronizar metas en Drive:', err);
+  }
+}
+
+function contGuardarMovimiento(){
+  const id=document.getElementById('contMovId').value||('C'+Date.now());
+  const tipo=document.getElementById('contMovTipo').value;
+  const cat=document.getElementById('contMovCat').value;
+  const desc=document.getElementById('contMovDesc').value.trim();
+  const monto=parseFloat(document.getElementById('contMovMonto').value)||0;
+  const fecha=document.getElementById('contMovFecha').value;
+  const mes=parseInt(document.getElementById('contMovMes').value)||1;
+  const notas=document.getElementById('contMovNotas').value.trim();
+  if(!monto||monto<=0){toast('El monto debe ser mayor a 0','error');return;}
+  if(!fecha){toast('Selecciona una fecha','error');return;}
+
+  const mesesActivo = parseInt(document.getElementById('contMovMesesActivo').value) || 1;
+
+  const movementsToAdd = [];
+  const startTimestamp = Date.now();
+
+  for (let i = 0; i < mesesActivo; i++) {
+    let currentId = i === 0 ? id : ('C' + (startTimestamp + i));
+    let tempFecha = new Date(fecha + 'T00:00:00');
+    tempFecha.setMonth(tempFecha.getMonth() + i);
+    let nextFechaStr = tempFecha.toISOString().split('T')[0];
+    let nextMes = tempFecha.getMonth() + 1;
+    let nextAno = tempFecha.getFullYear();
+
+    const obj = {
+      id: currentId,
+      tipo: tipo,
+      categoria: cat,
+      descripcion: desc,
+      monto: monto,
+      fecha: nextFechaStr,
+      mes: nextMes,
+      ano: nextAno,
+      notas: notas,
+      creadoEn: new Date().toISOString(),
+      isPending: !!CONT_SCRIPT_URL
+    };
+    movementsToAdd.push(obj);
+  }
+
+  movementsToAdd.forEach(function(obj) {
+    const idx=contMovimientos.findIndex(function(m){return m.id===obj.id;});
+    if(idx>=0) {
+      const oldMov = contMovimientos[idx];
+      contRegistrarAuditoria('Editado', oldMov, obj);
+      contMovimientos[idx]=obj;
+    } else {
+      contRegistrarAuditoria('Creado', null, obj);
+      contMovimientos.push(obj);
+    }
+  });
+  
+  contSave();
+  closeModal('modalContabilidad');
+  renderContabilidad();
+  
+  if (document.getElementById('modalContDetalleMes').classList.contains('open') && typeof contDetalleMesActivo !== 'undefined' && contDetalleMesActivo !== null) {
+    contSeleccionarMesYVerMovimientos(contDetalleMesActivo);
+  }
+  
+  if (mesesActivo > 1) {
+    toast(mesesActivo + ' movimientos guardados \u2713', 'success');
+  } else {
+    toast('Movimiento guardado \u2713', 'success');
+  }
+  
+  if (CONT_SCRIPT_URL) {
+    (async function() {
+      for (let i = 0; i < movementsToAdd.length; i++) {
+        await contSincronizarMovimientoDrive(movementsToAdd[i]);
+      }
+      renderContabilidad();
+      if (document.getElementById('modalContDetalleMes').classList.contains('open') && typeof contDetalleMesActivo !== 'undefined' && contDetalleMesActivo !== null) {
+        contSeleccionarMesYVerMovimientos(contDetalleMesActivo);
+      }
+    })();
+  }
+}
+
+function contEliminarMovimiento(){
+  const id=document.getElementById('contMovId').value;if(!id)return;
+  if(!confirm('\u00BFEliminar este movimiento?'))return;
+  const oldMov = contMovimientos.find(function(m){return m.id===id;});
+  if (oldMov) {
+    contRegistrarAuditoria('Eliminado', oldMov, null);
+  }
+  contMovimientos=contMovimientos.filter(function(m){return m.id!==id;});
+  
+  contSave();
+  closeModal('modalContabilidad');
+  renderContabilidad();
+  toast('Movimiento eliminado','success');
+  
+  if (document.getElementById('modalContDetalleMes').classList.contains('open') && typeof contDetalleMesActivo !== 'undefined' && contDetalleMesActivo !== null) {
+    contSeleccionarMesYVerMovimientos(contDetalleMesActivo);
+  }
+  
+  if (CONT_SCRIPT_URL) {
+    contEliminarMovimientoDrive(id).then(() => {
+      renderContabilidad();
+      if (document.getElementById('modalContDetalleMes').classList.contains('open') && typeof contDetalleMesActivo !== 'undefined' && contDetalleMesActivo !== null) {
+        contSeleccionarMesYVerMovimientos(contDetalleMesActivo);
+      }
+    });
+  }
+}
+
+function contRestablecerMovimiento(id) {
+  const logs = contAuditLog.filter(log => String(log.movimientoId) === String(id) && log.tipoAccion === 'Eliminado');
+  if (logs.length === 0) {
+    toast('No se encontró el registro de eliminación para este movimiento', 'error');
+    return;
+  }
+  logs.sort((a, b) => new Date(b.fechaAccion) - new Date(a.fechaAccion));
+  const deleteLog = logs[0];
+  if (!deleteLog || !deleteLog.antes) {
+    toast('No se encontró el estado anterior del movimiento', 'error');
+    return;
+  }
+  
+  if (!confirm('¿Desea restablecer este movimiento eliminado?')) return;
+  
+  const restoredMov = {
+    ...deleteLog.antes,
+    creadoEn: new Date().toISOString(),
+    isPending: !!CONT_SCRIPT_URL
+  };
+  delete restoredMov.isDeleted;
+  
+  contMovimientos.push(restoredMov);
+  
+  contRegistrarAuditoria('Restablecido', null, restoredMov);
+  
+  contSave();
+  renderContabilidad();
+  toast('Movimiento restablecido ✓', 'success');
+  
+  if (CONT_SCRIPT_URL) {
+    contSincronizarMovimientoDrive(restoredMov).then(() => {
+      renderContabilidad();
+    });
+  }
+}
+
+function contAbrirMetas(){
+  document.getElementById('metaIngMes').value=contMetas.ingMes||'';
+  document.getElementById('metaIngAnual').value=contMetas.ingAnual||'';
+  document.getElementById('metaGastoMes').value=contMetas.gastoMes||'';
+  document.getElementById('modalContMeta').classList.add('open');
+}
+
+
+function contLimpiarDuplicados() {
+  const initialCount = contMovimientos.length;
+  
+  // 1. Deduplicar por ID
+  let cleaned = contDeduplicarMovimientos(contMovimientos);
+
+  // 2. Deduplicar registros idénticos por firma (fecha + tipo + categoria + descripcion + monto)
+  const seenSignatures = new Set();
+  const finalMovs = [];
+
+  cleaned.forEach(m => {
+    if (m.isAuto) {
+      finalMovs.push(m);
+      return;
+    }
+    const signature = `${m.fecha || ''}_${m.tipo || ''}_${(m.categoria || '').trim().toLowerCase()}_${(m.descripcion || '').trim().toLowerCase()}_${parseFloat(m.monto) || 0}`;
+    if (!seenSignatures.has(signature)) {
+      seenSignatures.add(signature);
+      finalMovs.push(m);
+    }
+  });
+
+  const removedCount = initialCount - finalMovs.length;
+  contMovimientos = finalMovs;
+  contSave();
+  renderContabilidad();
+
+  if (removedCount > 0) {
+    toast(`Se depuraron ${removedCount} movimientos duplicados ✓`, 'success');
+    if (CONT_SCRIPT_URL) {
+      contPushTotal();
+    }
+  } else {
+    toast('No se encontraron movimientos duplicados ✓', 'info');
+  }
+}
+
+function contGuardarMetas(){
+  contMetas.ingMes=parseFloat(document.getElementById('metaIngMes').value)||0;
+  contMetas.ingAnual=parseFloat(document.getElementById('metaIngAnual').value)||0;
+  contMetas.gastoMes=parseFloat(document.getElementById('metaGastoMes').value)||0;
+  
+  contSaveMetas();
+  closeModal('modalContMeta');
+  if(currentTab==='contabilidad')renderContabilidad();
+  toast('Metas guardadas \u2713','success');
+  
+  if (CONT_SCRIPT_URL) {
+    contSincronizarMetasDrive(contMetas).then(() => {
+      if(currentTab==='contabilidad')renderContabilidad();
+    });
+  }
+}
+async function contPushTotal() {
+  if (!CONT_SCRIPT_URL) { toast('No hay URL de contabilidad configurada', 'error'); return; }
+  
+  let localMovs = [];
+  try {
+    localMovs = JSON.parse(localStorage.getItem('icde_contabilidad') || '[]');
+  } catch (e) {}
+  
+  // Filtrar los que no son automáticos
+  const manualMovs = localMovs.filter(m => !m.isAuto);
+  
+  const btn = document.getElementById('btnContPush');
+  if (btn) { btn.disabled = true; btn.textContent = 'Subiendo...'; }
+
+  try {
+    const payload = {
+      action: 'importContabilidad',
+      data: JSON.stringify({
+        movimientos: manualMovs,
+        metas: contMetas
+      })
+    };
+    
+    const res = await fetch(CONT_SCRIPT_URL, {
+      method: 'POST',
+      
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    
+    if (res.ok || res.type === 'opaque') {
+      toast('Contabilidad sincronizada en Drive correctamente ✓', 'success');
+      contMovimientos.forEach(m => { delete m.isPending; });
+      contSave();
+    } else {
+
+      throw new Error('Error al sincronizar');
+    }
+  } catch (err) {
+    console.error('Error en contPushTotal:', err);
+    toast('Error al subir contabilidad a Drive', 'error');
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = '☁️ Subir contabilidad local a Drive'; }
+  await contCargarDatos();
+  renderContabilidad();
+}
+
+/* FIN MÓDULO CONTABILIDAD */
+
