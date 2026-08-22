@@ -8136,20 +8136,29 @@ font-weight: 500;
                         try { localStorage.removeItem('icde_cached_datos'); } catch(e) {}
                         document.body.classList.add('cargando');
 
-                        async function cargarDesdeAppsScript() {
-                            const urlLive = APPS_SCRIPT_URL + "&_t=" + Date.now();
-                            const res = await fetch(urlLive, { cache: 'no-store' });
-                            const data = await res.json();
-                            return Array.isArray(data) ? data : [];
-                        }
-
-                        cargarDesdeAppsScript()
+                        const liveUrl = 'datos_catalogo.json?_t=' + Date.now();
+                        fetch(liveUrl, { cache: 'no-store' })
+                            .then(res => {
+                                if (!res.ok) throw new Error('HTTP Error ' + res.status);
+                                return res.json();
+                            })
                             .then(data => {
-                                inicializar(data);
+                                if (Array.isArray(data) && data.length > 0) {
+                                    inicializar(data);
+                                } else {
+                                    throw new Error('Formato no válido');
+                                }
                             })
                             .catch(err => {
-                                console.error("Error al cargar datos en vivo:", err);
-                                document.body.classList.remove('cargando');
+                                console.warn('Fallback directo a Apps Script:', err);
+                                const urlApps = APPS_SCRIPT_URL + "&_t=" + Date.now();
+                                fetch(urlApps, { cache: 'no-store' })
+                                    .then(r => r.json())
+                                    .then(data => inicializar(Array.isArray(data) ? data : []))
+                                    .catch(e => {
+                                        console.error("Error crítico al cargar datos:", e);
+                                        document.body.classList.remove('cargando');
+                                    });
                             });
                     }
 

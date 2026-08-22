@@ -5144,9 +5144,23 @@ async function cargarProps(){
     try { localStorage.removeItem('icde_cached_admin_props'); } catch(e) {}
     const st = document.getElementById('syncStatus');
     if (st) st.textContent = '⟳ Cargando datos en vivo...';
-    const urlBusca = APPS_SCRIPT_URL + "&t=" + Date.now();
-    const res = await fetch(urlBusca, { cache: 'no-store' });
-    const data = await res.json();
+
+    let data = null;
+    try {
+      const liveUrl = 'datos_catalogo.json?_t=' + Date.now();
+      const res = await fetch(liveUrl, { cache: 'no-store' });
+      if (res.ok) {
+        data = await res.json();
+      }
+    } catch(e) {
+      console.warn('Fallback a Apps Script:', e);
+    }
+
+    if (!Array.isArray(data) || data.length === 0) {
+      const urlBusca = APPS_SCRIPT_URL + "&t=" + Date.now();
+      const resBusca = await fetch(urlBusca, { cache: 'no-store' });
+      data = await resBusca.json();
+    }
     // LOG DE DIAGNÓSTICO CRÍTICO PARA EL USUARIO
     console.log("[Diagnostic Log] --- NUEVO CARGUE DE PROPIEDADES ---");
     console.log("[Diagnostic Log] Total de propiedades recibidas del API de Sheets:", data.length);
