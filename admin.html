@@ -65,6 +65,8 @@
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
 
 /* LOGIN */
+html.is-logged-in #loginScreen { display: none !important; }
+html.is-logged-in #app { display: flex !important; flex-direction: column !important; }
 #loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:24px;}
 #loginScreen img{width:80px;}
 #loginScreen h1{font-size:1.4rem;font-weight:600;color:var(--gold);}
@@ -2873,6 +2875,7 @@ html, body {
 </style>
 </head>
 <body>
+<script>if(localStorage.getItem('icde_logged_in')==='true'){document.documentElement.classList.add('is-logged-in');}</script>
 
 <!-- LOGIN -->
 <div id="loginScreen">
@@ -4322,7 +4325,19 @@ function fnLimpiar(pfx){
 /* ═══════════════════════════════════════════════
    LOGIN
 ═══════════════════════════════════════════════ */
-window.doLogin = function(){
+window.doLogin = function(isAuto = false){
+  if (!isAuto) {
+    const input = document.getElementById('passInput');
+    const pass = input ? input.value.trim() : '';
+    if (pass !== PASSWORD) {
+      const err = document.getElementById('loginError');
+      if (err) err.style.display = 'block';
+      if (input) input.value = '';
+      return;
+    }
+  }
+
+  document.documentElement.classList.add('is-logged-in');
   const loginScreen = document.getElementById('loginScreen');
   if (loginScreen) loginScreen.style.display = 'none';
   const app = document.getElementById('app');
@@ -4330,16 +4345,19 @@ window.doLogin = function(){
     app.style.display = 'flex';
     app.style.flexDirection = 'column';
   }
+  const err = document.getElementById('loginError');
+  if (err) err.style.display = 'none';
+
   localStorage.setItem('icde_logged_in', 'true');
   if (typeof initApp === 'function') {
     initApp().catch(e => console.error("Error in initApp:", e));
   }
 };
 
-// Auto-ingreso automático si ya ha iniciado sesión
+// Auto-ingreso automático si ya ha iniciado sesión en este dispositivo
 document.addEventListener('DOMContentLoaded', () => {
   if (localStorage.getItem('icde_logged_in') === 'true') {
-    doLogin();
+    doLogin(true);
   }
 });
 function hardResetData() {
@@ -4415,10 +4433,13 @@ async function repararFullJSON() {
 }
 function doLogout(){
   localStorage.removeItem('icde_logged_in');
-  document.getElementById('loginScreen').style.display='flex';
-  document.getElementById('app').style.display='none';
-  if (document.getElementById('passInput')) document.getElementById('passInput').value='';
-  if (document.getElementById('loginError')) document.getElementById('loginError').style.display='none';
+  document.documentElement.classList.remove('is-logged-in');
+  const loginScreen = document.getElementById('loginScreen');
+  if (loginScreen) loginScreen.style.display = 'flex';
+  const app = document.getElementById('app');
+  if (app) app.style.display = 'none';
+  if (document.getElementById('passInput')) document.getElementById('passInput').value = '';
+  if (document.getElementById('loginError')) document.getElementById('loginError').style.display = 'none';
 }
 /* ═══════════════════════════════════════════════
    INIT
