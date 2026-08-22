@@ -4483,13 +4483,35 @@ function reproducirTonoNotificacion() {
   } catch(e) {}
 }
 
+function obtenerVozLeonidas(voices) {
+  if (!voices || voices.length === 0) return null;
+  const esVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
+  
+  // Buscar voces masculinas profundas/autoritarias en español (Leónidas el Espartano)
+  const maleNames = ['jorge', 'raul', 'alvaro', 'david', 'mateo', 'pablo', 'julio', 'humberto', 'yago', 'jose', 'hombre', 'male'];
+  
+  let selected = esVoices.find(v => {
+    const name = v.name.toLowerCase();
+    return maleNames.some(m => name.includes(m));
+  });
+  
+  if (!selected) {
+    selected = esVoices.find(v => {
+      const name = v.name.toLowerCase();
+      return !name.includes('sabina') && !name.includes('monica') && !name.includes('paulina') && !name.includes('female');
+    });
+  }
+  
+  return selected || esVoices[0] || voices[0];
+}
+
 function hablarNotificacionTexto(texto) {
   if (!('speechSynthesis' in window)) return;
   try {
     window.speechSynthesis.cancel();
     const clean = texto.replace(/[^\w\sÁÉÍÓÚáéíóúÑñ0-9:,.!\-]/gi, '').trim();
     if (!clean) return;
-    
+
     // Forzar activación del canal multimedia para Honor / MagicOS
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -4499,37 +4521,34 @@ function hablarNotificacionTexto(texto) {
       }
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
-          title: 'Notificación ICDE',
-          artist: 'ICDE Inmobiliaria'
+          title: 'Voz de Leónidas - ICDE',
+          artist: 'Rey Leónidas Inmobiliaria'
         });
       }
     } catch(e) {}
 
-    const utterance = new SpeechSynthesisUtterance(clean);
+    // Frase con estilo épico de Leónidas
+    const textoLeonidas = `¡Atención! ${clean}`;
+    const utterance = new SpeechSynthesisUtterance(textoLeonidas);
     utterance.lang = 'es-CO';
     
     const voices = window.speechSynthesis.getVoices();
-    if (voices && voices.length > 0) {
-      const esVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
-      const naturalKeywords = ['google', 'natural', 'online', 'neural', 'premium', 'sabina', 'monica', 'paulina', 'david', 'jorge'];
-      let selectedVoice = esVoices.find(v => {
-        const name = v.name.toLowerCase();
-        return naturalKeywords.some(k => name.includes(k));
-      }) || esVoices[0];
-      
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        utterance.lang = selectedVoice.lang;
-      }
+    const leonidasVoice = obtenerVozLeonidas(voices);
+    if (leonidasVoice) {
+      utterance.voice = leonidasVoice;
+      utterance.lang = leonidasVoice.lang;
     }
     
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    
+    // Parámetros oficiales de la VOZ DE LEÓNIDAS (Espartano, grave, imponente, comandante)
+    utterance.rate = 0.82; // Cadencia pausada e imponente
+    utterance.pitch = isMobile ? 0.72 : 0.52; // Tono extra bajo y grueso de líder espartano
     utterance.volume = 1.0;
     
     window.speechSynthesis.speak(utterance);
   } catch(e) {
-    console.error('Error al hablar notificación:', e);
+    console.error('Error al hablar voz de Leónidas:', e);
   }
 }
 
@@ -8454,8 +8473,6 @@ function speakText(text) {
 
 function speakTextBrowserFallback(cleanText) {
   if ('speechSynthesis' in window) {
-    // Si las voces no se han cargado todavía en el navegador, esperar 150ms y reintentar
-    // Esto evita que el primer saludo se escuche con voz de mujer por falta de carga inicial
     let voices = window.speechSynthesis.getVoices();
     if (!voices || voices.length === 0) {
       setTimeout(() => {
@@ -8468,51 +8485,16 @@ function speakTextBrowserFallback(cleanText) {
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'es-CO';
     
-    const esVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
+    const leonidasVoice = obtenerVozLeonidas(voices);
+    if (leonidasVoice) {
+      utterance.voice = leonidasVoice;
+      utterance.lang = leonidasVoice.lang;
+    }
+    
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    
-    // Nombres típicos de voces naturales / preferidas en español
-    const naturalKeywords = ['google', 'natural', 'online', 'neural', 'premium', 'sabina', 'monica', 'paulina', 'david', 'jorge'];
-    const maleNames = ['raul', 'jorge', 'alvaro', 'david', 'mateo', 'pablo', 'julio', 'yago', 'jose', 'humberto', 'male', 'hombre', 'es-co', 'es-mx', 'es-es'];
-    
-    // 1. Intentar buscar voz de alta calidad (Google / Natural / Neural)
-    let selectedVoice = esVoices.find(v => {
-      const name = v.name.toLowerCase();
-      return naturalKeywords.some(k => name.includes(k));
-    });
-    
-    // 2. Intentar buscar voz masculina en español (si es en PC)
-    if (!selectedVoice && !isMobile) {
-      selectedVoice = esVoices.find(v => {
-        const name = v.name.toLowerCase();
-        return maleNames.some(m => name.includes(m));
-      });
-    }
-    
-    // 3. Fallback: cualquier voz en español
-    if (!selectedVoice) {
-      selectedVoice = esVoices.find(v => v.lang.toLowerCase().startsWith('es'));
-    }
-    
-    // 4. Último recurso: primera voz del sistema
-    if (!selectedVoice) {
-      selectedVoice = esVoices[0];
-    }
-    
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-      utterance.lang = selectedVoice.lang;
-    }
-    
-    if (isMobile) {
-      // En celular: Tono (1.0) y velocidad (1.0) totalmente naturales sin distorsión metálica
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-    } else {
-      // En PC: Tono más grave (0.58) y pausado (0.88)
-      utterance.rate = 0.88;
-      utterance.pitch = 0.58;
-    }
+    utterance.rate = 0.82; // Cadencia imponente de Leónidas
+    utterance.pitch = isMobile ? 0.72 : 0.52; // Tono de comandante espartano
+    utterance.volume = 1.0;
     
     window.speechSynthesis.speak(utterance);
   }
