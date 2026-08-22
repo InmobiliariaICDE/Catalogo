@@ -4369,6 +4369,22 @@ async function initServiceWorkerNotif() {
     try {
       swRegistration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
       console.log('[Service Worker] Registrado correctamente:', swRegistration.scope);
+      
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'SET_CONFIG',
+          crmUrl: typeof CRM_SCRIPT_URL !== 'undefined' ? CRM_SCRIPT_URL : ''
+        });
+      }
+
+      if ('periodicSync' in swRegistration) {
+        try {
+          await swRegistration.periodicSync.register('icde-check-updates', {
+            minInterval: 15 * 1000
+          });
+        } catch (e) {}
+      }
+
       actualizarEstadoBotonNotif();
     } catch (err) {
       console.warn('[Service Worker] No se pudo registrar sw.js:', err);
