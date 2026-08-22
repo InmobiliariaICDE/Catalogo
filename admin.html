@@ -2896,7 +2896,7 @@ html, body {
 <div id="app">
   <div class="topbar">
     <img src="https://i.imgur.com/YbnRomr.png" alt="ICDE"/>
-    <div class="brand" style="display: flex; align-items: baseline; gap: 8px;">ICDE Panel de Control <span>/ Gestión de Clientes</span><span style="font-size: 10px; font-weight: normal; color: var(--gold); opacity: 0.7; padding: 1px 6px; border: 1px solid rgba(212,168,75,0.3); border-radius: 6px; font-family: monospace;">v3.4</span></div>
+    <div class="brand" style="display: flex; align-items: baseline; gap: 8px;">ICDE Panel de Control <span>/ Gestión de Clientes</span><span style="font-size: 10px; font-weight: normal; color: var(--gold); opacity: 0.7; padding: 1px 6px; border: 1px solid rgba(212,168,75,0.3); border-radius: 6px; font-family: monospace;">v3.5</span></div>
     <div class="topbar-right">
       <span id="syncStatus" style="font-size:12px;color:#888;"></span>
       <span id="autoSyncIndicator" style="font-size:11px; color:#888; display:none; align-items:center; gap:5px;">
@@ -5141,45 +5141,12 @@ function normalizarPropiedades(data) {
 
 async function cargarProps(){
   try {
-    let hasLoadedFast = false;
-    try {
-      const cached = localStorage.getItem('icde_cached_admin_props');
-      if (cached) {
-        const cachedData = JSON.parse(cached);
-        if (Array.isArray(cachedData) && cachedData.length > 0) {
-          props = cachedData;
-          hasLoadedFast = true;
-          if (typeof renderPropsGrid === 'function') renderPropsGrid();
-          const st = document.getElementById('syncStatus');
-          if (st) st.textContent = '✓ ' + props.length + ' en caché (sincronizando...)';
-        }
-      }
-    } catch(e) {}
-
-    if (!hasLoadedFast) {
-      try {
-        const staticRes = await fetch('datos_catalogo.json');
-        if (staticRes.ok) {
-          const staticData = await staticRes.json();
-          if (Array.isArray(staticData) && staticData.length > 0) {
-            props = staticData;
-            if (typeof renderPropsGrid === 'function') renderPropsGrid();
-            const st = document.getElementById('syncStatus');
-            if (st) st.textContent = '✓ ' + props.length + ' desde CDN (sincronizando...)';
-          }
-        }
-      } catch(e) {}
-    }
-
+    try { localStorage.removeItem('icde_cached_admin_props'); } catch(e) {}
     const st = document.getElementById('syncStatus');
-    if (st) st.textContent = '⟳ Sincronizando en vivo...';
+    if (st) st.textContent = '⟳ Cargando datos en vivo...';
     const urlBusca = APPS_SCRIPT_URL + "&t=" + Date.now();
-    const res = await fetch(urlBusca);
+    const res = await fetch(urlBusca, { cache: 'no-store' });
     const data = await res.json();
-    if (Array.isArray(data) && data.length > 0) {
-      try { localStorage.setItem('icde_cached_admin_props', JSON.stringify(data)); } catch(e) {}
-    }
-    
     // LOG DE DIAGNÓSTICO CRÍTICO PARA EL USUARIO
     console.log("[Diagnostic Log] --- NUEVO CARGUE DE PROPIEDADES ---");
     console.log("[Diagnostic Log] Total de propiedades recibidas del API de Sheets:", data.length);
