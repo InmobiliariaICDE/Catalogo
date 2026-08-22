@@ -8133,8 +8133,9 @@ font-weight: 500;
                     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxki98uXR_fXbFCPynfzvQN5ibiwQY23zKpLkLKTL7A26GlipdC20oQTKOrUwAMeIJ2gw/exec?action=getData";
 
                     function cargarDatos() {
-                        // ⚡ CARGA INSTANTÁNEA (<20ms): mostrar inmediatamente los datos guardados en caché local
                         let loadedFromCache = false;
+
+                        // 1. CARGA ULTRARRÁPIDA DESDE MEMORIA LOCAL (< 20ms)
                         try {
                             const cached = localStorage.getItem('icde_cached_datos');
                             if (cached) {
@@ -8149,10 +8150,22 @@ font-weight: 500;
                             console.error('Error cargando caché local:', e);
                         }
 
+                        // 2. CARGA RÁPIDA DESDE CDN ESTÁTICO (< 150ms) si no había caché local
                         if (!loadedFromCache) {
                             document.body.classList.add('cargando');
+                            fetch('datos_catalogo.json')
+                                .then(res => res.json())
+                                .then(staticData => {
+                                    if (Array.isArray(staticData) && staticData.length > 0 && !window._icdeDatosListos) {
+                                        console.log('⚡ Carga rápida desde datos_catalogo.json CDN:', staticData.length, 'propiedades');
+                                        try { localStorage.setItem('icde_cached_datos', JSON.stringify(staticData)); } catch(e) {}
+                                        inicializar(staticData);
+                                    }
+                                })
+                                .catch(err => console.warn('No se pudo cargar datos_catalogo.json:', err));
                         }
 
+                        // 3. SINCRONIZACIÓN EN SEGUNDO PLANO DESDE APPS SCRIPT (NUBE)
                         async function cargarDesdeAppsScript() {
                             const res = await fetch(APPS_SCRIPT_URL);
                             const data = await res.json();

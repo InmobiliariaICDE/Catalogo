@@ -5141,12 +5141,14 @@ function normalizarPropiedades(data) {
 
 async function cargarProps(){
   try {
+    let hasLoadedFast = false;
     try {
       const cached = localStorage.getItem('icde_cached_admin_props');
       if (cached) {
         const cachedData = JSON.parse(cached);
         if (Array.isArray(cachedData) && cachedData.length > 0) {
           props = cachedData;
+          hasLoadedFast = true;
           if (typeof renderPropsGrid === 'function') renderPropsGrid();
           const st = document.getElementById('syncStatus');
           if (st) st.textContent = '✓ ' + props.length + ' en caché (sincronizando...)';
@@ -5154,8 +5156,23 @@ async function cargarProps(){
       }
     } catch(e) {}
 
+    if (!hasLoadedFast) {
+      try {
+        const staticRes = await fetch('datos_catalogo.json');
+        if (staticRes.ok) {
+          const staticData = await staticRes.json();
+          if (Array.isArray(staticData) && staticData.length > 0) {
+            props = staticData;
+            if (typeof renderPropsGrid === 'function') renderPropsGrid();
+            const st = document.getElementById('syncStatus');
+            if (st) st.textContent = '✓ ' + props.length + ' desde CDN (sincronizando...)';
+          }
+        }
+      } catch(e) {}
+    }
+
     const st = document.getElementById('syncStatus');
-    if (st) st.textContent = '⟳ Sincronizando...';
+    if (st) st.textContent = '⟳ Sincronizando en vivo...';
     const urlBusca = APPS_SCRIPT_URL + "&t=" + Date.now();
     const res = await fetch(urlBusca);
     const data = await res.json();
