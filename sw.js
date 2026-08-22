@@ -1,5 +1,7 @@
 // Service Worker para Notificaciones en Segundo Plano - ICDE Inmobiliaria Admin
 const CACHE_NAME = 'icde-admin-v1';
+const DEFAULT_ICON = 'https://i.imgur.com/s3dvfne.png';
+const DEFAULT_BADGE = 'https://i.imgur.com/s3dvfne.png';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -15,8 +17,8 @@ self.addEventListener('message', (event) => {
     const title = event.data.title || '🔔 ICDE Inmobiliaria';
     const options = {
       body: event.data.body || 'Tienes una nueva actualización en tu panel de control.',
-      icon: event.data.icon || '/apple-touch-icon.png',
-      badge: event.data.badge || '/favicon-32x32.png',
+      icon: event.data.icon || DEFAULT_ICON,
+      badge: event.data.badge || DEFAULT_BADGE,
       vibrate: [300, 100, 300, 100, 400],
       tag: event.data.tag || 'icde-notif-' + Date.now(),
       renotify: true,
@@ -41,8 +43,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || '🔔 Alerta ICDE Inmobiliaria';
   const options = {
     body: data.body || 'Nuevo evento registrado en tu panel de administración.',
-    icon: data.icon || '/apple-touch-icon.png',
-    badge: data.badge || '/favicon-32x32.png',
+    icon: data.icon || DEFAULT_ICON,
+    badge: data.badge || DEFAULT_BADGE,
     vibrate: [300, 100, 300, 100, 400],
     tag: data.tag || 'icde-push-' + Date.now(),
     renotify: true,

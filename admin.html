@@ -4427,19 +4427,23 @@ async function solicitarPermisoNotificaciones() {
 function enviarNotificacionSistema(titulo, cuerpo, datos = {}) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
+  const iconUrl = datos.icon || 'https://i.imgur.com/s3dvfne.png';
+
   if (navigator.serviceWorker && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({
       type: 'SHOW_NOTIFICATION',
       title: titulo,
       body: cuerpo,
+      icon: iconUrl,
+      badge: iconUrl,
       url: datos.url || '/admin.html',
       tag: datos.tag || 'icde-sys-' + Date.now()
     });
   } else if (swRegistration && swRegistration.showNotification) {
     swRegistration.showNotification(titulo, {
       body: cuerpo,
-      icon: '/apple-touch-icon.png',
-      badge: '/favicon-32x32.png',
+      icon: iconUrl,
+      badge: iconUrl,
       vibrate: [300, 100, 300, 100, 400],
       tag: datos.tag || 'icde-sys-' + Date.now(),
       renotify: true,
@@ -4449,7 +4453,7 @@ function enviarNotificacionSistema(titulo, cuerpo, datos = {}) {
     try {
       new Notification(titulo, {
         body: cuerpo,
-        icon: '/apple-touch-icon.png'
+        icon: iconUrl
       });
     } catch(e) {}
   }
