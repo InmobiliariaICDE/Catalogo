@@ -1,5 +1,5 @@
 // Service Worker con Polling y Temporizadores en Segundo Plano - ICDE Inmobiliaria Admin
-const CACHE_NAME = 'icde-admin-v4';
+const CACHE_NAME = 'icde-admin-v5';
 const DEFAULT_ICON = 'https://i.imgur.com/s3dvfne.png';
 const DEFAULT_BADGE = 'https://i.imgur.com/s3dvfne.png';
 
@@ -27,21 +27,28 @@ self.addEventListener('message', (event) => {
     CRM_SCRIPT_URL = event.data.crmUrl;
   }
 
-  // Programar notificación diferida en segundo plano dentro del proceso del SW
+  // Programar notificación diferida en segundo plano usando event.waitUntil
+  // esto evita que Android suspenda el Service Worker mientras la app está minimizada
   if (event.data.type === 'SCHEDULE_TEST_NOTIFICATION') {
     const delay = event.data.delayMs || 30000;
-    setTimeout(() => {
-      self.registration.showNotification('🔔 Alerta ICDE (30 Segundos en Segundo Plano)', {
-        body: '¡Excelente! Notificación en segundo plano enviada a los 30 segundos.',
-        icon: DEFAULT_ICON,
-        badge: DEFAULT_BADGE,
-        vibrate: [400, 150, 400, 150, 600],
-        tag: 'icde-test-30s-' + Date.now(),
-        renotify: true,
-        requireInteraction: true,
-        data: { url: '/admin.html' }
-      });
-    }, delay);
+    
+    event.waitUntil(
+      new Promise((resolve) => {
+        setTimeout(() => {
+          self.registration.showNotification('🔔 Alerta ICDE (30 Segundos en Segundo Plano)', {
+            body: '¡Excelente! Notificación enviada en segundo plano a los 30 segundos.',
+            icon: DEFAULT_ICON,
+            badge: DEFAULT_BADGE,
+            vibrate: [500, 200, 500, 200, 800],
+            silent: false,
+            tag: 'icde-test-30s-' + Date.now(),
+            renotify: true,
+            requireInteraction: true,
+            data: { url: '/admin.html' }
+          }).then(resolve).catch(resolve);
+        }, delay);
+      })
+    );
   }
 
   if (event.data.type === 'SHOW_NOTIFICATION') {
@@ -50,7 +57,8 @@ self.addEventListener('message', (event) => {
       body: event.data.body || 'Tienes una nueva actualización en tu panel de control.',
       icon: event.data.icon || DEFAULT_ICON,
       badge: event.data.badge || DEFAULT_BADGE,
-      vibrate: [400, 150, 400, 150, 600],
+      vibrate: [500, 200, 500, 200, 800],
+      silent: false,
       tag: event.data.tag || 'icde-notif-' + Date.now(),
       renotify: true,
       requireInteraction: true,
@@ -86,7 +94,8 @@ async function verificarNovedadesBackground() {
             body: `Cliente: ${clienteNom} | Fecha: ${fechaCita} | Inmueble: ${masReciente.codigo || ''}`,
             icon: DEFAULT_ICON,
             badge: DEFAULT_BADGE,
-            vibrate: [400, 150, 400, 150, 600],
+            vibrate: [500, 200, 500, 200, 800],
+            silent: false,
             tag: 'icde-cita-' + Date.now(),
             renotify: true,
             requireInteraction: true,
@@ -122,7 +131,8 @@ self.addEventListener('push', (event) => {
     body: data.body || 'Nuevo evento registrado en tu panel de administración.',
     icon: data.icon || DEFAULT_ICON,
     badge: data.badge || DEFAULT_BADGE,
-    vibrate: [400, 150, 400, 150, 600],
+    vibrate: [500, 200, 500, 200, 800],
+    silent: false,
     tag: data.tag || 'icde-push-' + Date.now(),
     renotify: true,
     requireInteraction: true,

@@ -4460,8 +4460,33 @@ async function solicitarPermisoNotificaciones() {
   }
 }
 
+function reproducirTonoNotificacion() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(783.99, ctx.currentTime); // G5
+    osc.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.12); // C6
+    
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 0.45);
+  } catch(e) {}
+}
+
 function enviarNotificacionSistema(titulo, cuerpo, datos = {}) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  reproducirTonoNotificacion();
 
   const iconUrl = datos.icon || 'https://i.imgur.com/s3dvfne.png';
 
@@ -4480,7 +4505,8 @@ function enviarNotificacionSistema(titulo, cuerpo, datos = {}) {
       body: cuerpo,
       icon: iconUrl,
       badge: iconUrl,
-      vibrate: [300, 100, 300, 100, 400],
+      vibrate: [500, 200, 500, 200, 800],
+      silent: false,
       tag: datos.tag || 'icde-sys-' + Date.now(),
       renotify: true,
       data: { url: datos.url || '/admin.html' }
@@ -4489,7 +4515,8 @@ function enviarNotificacionSistema(titulo, cuerpo, datos = {}) {
     try {
       new Notification(titulo, {
         body: cuerpo,
-        icon: iconUrl
+        icon: iconUrl,
+        vibrate: [500, 200, 500, 200, 800]
       });
     } catch(e) {}
   }
