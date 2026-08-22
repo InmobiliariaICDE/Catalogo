@@ -9961,20 +9961,12 @@ document.head.appendChild(schemaScript);
                     // ─────────────────────────────────────────────────
                     // 14. Reemplazamos DOMContentLoaded por window.onload
                     // ─────────────────────────────────────────────────
-                    window.addEventListener('load', () => {
+                    document.addEventListener('DOMContentLoaded', () => {
                         // 1) Estado inicial en historial
                         history.replaceState({ modalAbierto: false }, '', '');
 
-                        // 2) Inicia carga de datos cuando Choices.js esté listo
-                        // Usamos un intervalo corto para evitar race condition con el evento
-                        function esperarChoicesYCargar() {
-                            if (typeof Choices !== 'undefined') {
-                                cargarDatos();
-                            } else {
-                                setTimeout(esperarChoicesYCargar, 50);
-                            }
-                        }
-                        esperarChoicesYCargar();
+                        // 2) Inicia carga de datos INMEDIATAMENTE
+                        cargarDatos();
 
                         // 3) Menú hamburguesa
                         // 1) Para cada menú hamburguesa (tanto en GIF como en fixed)
