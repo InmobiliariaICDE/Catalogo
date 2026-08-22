@@ -4410,6 +4410,16 @@ async function solicitarPermisoNotificaciones() {
     return;
   }
 
+  if (Notification.permission === 'granted') {
+    toast('🧪 Notificación de prueba enviada. En 4 seg llegará la segunda alerta.', 'info');
+    enviarNotificacionSistema('🧪 Prueba ICDE Inmediata', '¡Excelente! Notificaciones activas y vinculadas correctamente.');
+    
+    setTimeout(() => {
+      enviarNotificacionSistema('🔔 Prueba ICDE Segundo Plano', '¡Confirmado! Esta alerta llega incluso con la pantalla bloqueada o estando en otra app.');
+    }, 4000);
+    return;
+  }
+
   try {
     const perm = await Notification.requestPermission();
     actualizarEstadoBotonNotif();
