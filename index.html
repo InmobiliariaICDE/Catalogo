@@ -8098,7 +8098,7 @@ font-weight: 500;
                     const FIRESTORE_URL = "https://firestore.googleapis.com/v1/projects/inmobiliariaicde/databases/(default)/documents/propiedades?pageSize=600";
 
                     let paginaActual = 1;
-                    const tarjetasPorPagina = 32;
+                    const tarjetasPorPagina = 16;
                     let datos = [];
 
                     const parsePrecio = txt => parseFloat((txt || "").toString().replace(/[^\d]/g, "")) || 0;
@@ -8704,7 +8704,8 @@ font-weight: 500;
                             }
                             if (!imgs.length && d["Image"]) imgs = [d["Image"]];
                             if (!imgs.length) imgs = [''];
-                            return imgs.map(function(src, i){
+                            var cardImgs = imgs.slice(0, 3);
+                            return cardImgs.map(function(src, i){
                                 return '<img src="' + src + '" alt="foto ' + (i+1) + '" loading="' + (i===0 ? 'eager' : 'lazy') + '" class="tarjeta-foto-slide' + (i===0 ? ' activa' : '') + '" />';
                             }).join('');
                         }
