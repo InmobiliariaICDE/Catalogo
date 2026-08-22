@@ -8344,36 +8344,35 @@ function speakTextBrowserFallback(cleanText) {
 
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = 'es-MX';
+    utterance.lang = 'es-CO';
     
     const esVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     
-    // Nombres típicos de voces masculinas en español
+    // Nombres típicos de voces naturales / preferidas en español
+    const naturalKeywords = ['google', 'natural', 'online', 'neural', 'premium', 'sabina', 'monica', 'paulina', 'david', 'jorge'];
     const maleNames = ['raul', 'jorge', 'alvaro', 'david', 'mateo', 'pablo', 'julio', 'yago', 'jose', 'humberto', 'male', 'hombre', 'es-co', 'es-mx', 'es-es'];
     
-    // 1. Intentar buscar voz masculina en español de alta calidad
+    // 1. Intentar buscar voz de alta calidad (Google / Natural / Neural)
     let selectedVoice = esVoices.find(v => {
       const name = v.name.toLowerCase();
-      return (name.includes('natural') || name.includes('online')) && maleNames.some(m => name.includes(m));
+      return naturalKeywords.some(k => name.includes(k));
     });
     
-    // 2. Intentar buscar cualquier voz masculina en español
-    if (!selectedVoice) {
+    // 2. Intentar buscar voz masculina en español (si es en PC)
+    if (!selectedVoice && !isMobile) {
       selectedVoice = esVoices.find(v => {
         const name = v.name.toLowerCase();
-        return maleNames.some(m => name.includes(m)) && !name.includes('sabina') && !name.includes('dalia') && !name.includes('zira') && !name.includes('helena');
+        return maleNames.some(m => name.includes(m));
       });
     }
     
-    // 3. Fallback: cualquier voz que no sea explícitamente femenina si es posible
+    // 3. Fallback: cualquier voz en español
     if (!selectedVoice) {
-      selectedVoice = esVoices.find(v => {
-        const name = v.name.toLowerCase();
-        return !name.includes('sabina') && !name.includes('dalia') && !name.includes('zira') && !name.includes('helena') && !name.includes('female') && !name.includes('mujer');
-      });
+      selectedVoice = esVoices.find(v => v.lang.toLowerCase().startsWith('es'));
     }
-
-    // 4. Último recurso: primera voz en español que encuentre
+    
+    // 4. Último recurso: primera voz del sistema
     if (!selectedVoice) {
       selectedVoice = esVoices[0];
     }
@@ -8383,8 +8382,15 @@ function speakTextBrowserFallback(cleanText) {
       utterance.lang = selectedVoice.lang;
     }
     
-    utterance.rate = 0.88; // Cadencia imponente y pausada
-    utterance.pitch = 0.58; // Tono extra bajo y grueso (voz súper gruesa de señor)
+    if (isMobile) {
+      // En celular: Tono (1.0) y velocidad (1.0) totalmente naturales sin distorsión metálica
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+    } else {
+      // En PC: Tono más grave (0.58) y pausado (0.88)
+      utterance.rate = 0.88;
+      utterance.pitch = 0.58;
+    }
     
     window.speechSynthesis.speak(utterance);
   }
