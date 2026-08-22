@@ -8096,7 +8096,7 @@ font-weight: 500;
                     const FIRESTORE_URL = "https://firestore.googleapis.com/v1/projects/inmobiliariaicde/databases/(default)/documents/propiedades?pageSize=600";
 
                     let paginaActual = 1;
-                    const tarjetasPorPagina = 12;
+                    const tarjetasPorPagina = 32;
                     let datos = [];
 
                     const parsePrecio = txt => parseFloat((txt || "").toString().replace(/[^\d]/g, "")) || 0;
@@ -8133,38 +8133,41 @@ font-weight: 500;
                     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxki98uXR_fXbFCPynfzvQN5ibiwQY23zKpLkLKTL7A26GlipdC20oQTKOrUwAMeIJ2gw/exec?action=getData";
 
                     function cargarDatos() {
-                        document.body.classList.add('cargando');
-
-                        // Intentar Firestore primero, si falla usar Apps Script
-                        async function fetchTodas(url, acum) {
-                            const res  = await fetch(url);
-                            const data = await res.json();
-                            const docs = data.documents || [];
-                            docs.forEach(doc => {
-                                const obj = {};
-                                Object.entries(doc.fields || {}).forEach(([k, v]) => {
-                                    obj[k] = v.stringValue ?? v.integerValue ?? v.doubleValue ?? '';
-                                });
-                                acum.push(obj);
-                            });
-                            if (data.nextPageToken) {
-                                const next = FIRESTORE_URL + '&pageToken=' + data.nextPageToken;
-                                await fetchTodas(next, acum);
+                        // ⚡ CARGA INSTANTÁNEA (<20ms): mostrar inmediatamente los datos guardados en caché local
+                        let loadedFromCache = false;
+                        try {
+                            const cached = localStorage.getItem('icde_cached_datos');
+                            if (cached) {
+                                const cachedData = JSON.parse(cached);
+                                if (Array.isArray(cachedData) && cachedData.length > 0) {
+                                    console.log('⚡ Carga instantánea desde caché local:', cachedData.length, 'propiedades');
+                                    loadedFromCache = true;
+                                    inicializar(cachedData);
+                                }
                             }
-                            return acum;
+                        } catch(e) {
+                            console.error('Error cargando caché local:', e);
+                        }
+
+                        if (!loadedFromCache) {
+                            document.body.classList.add('cargando');
                         }
 
                         async function cargarDesdeAppsScript() {
-                            console.log('Firestore no disponible, cargando desde Apps Script...');
                             const res = await fetch(APPS_SCRIPT_URL);
                             const data = await res.json();
                             return Array.isArray(data) ? data : [];
                         }
 
                         cargarDesdeAppsScript()
-                            .then(inicializar)
+                            .then(data => {
+                                if (Array.isArray(data) && data.length > 0) {
+                                    try { localStorage.setItem('icde_cached_datos', JSON.stringify(data)); } catch(e) {}
+                                    inicializar(data);
+                                }
+                            })
                             .catch(err => {
-                                console.error("Error al cargar datos:", err);
+                                console.error("Error al cargar datos de red:", err);
                                 document.body.classList.remove('cargando');
                             });
                     }

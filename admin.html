@@ -3572,7 +3572,7 @@ let leadViewMode = localStorage.getItem('icde_lead_view') || 'table';
 let searchTermLeads = '';
 let currentLeadFilter = 'todos';
 let nlPage = 0;
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 32;
 let criterioOrden = ''; // Default sort (no filter)
 let nlShowData = false; // Por defecto recogido para optimizar espacio
 let MAX_CATALOG_PRICE = 5000000000; // Valor por defecto
@@ -5141,10 +5141,27 @@ function normalizarPropiedades(data) {
 
 async function cargarProps(){
   try {
-    document.getElementById('syncStatus').textContent='⟳ Cargando...';
+    try {
+      const cached = localStorage.getItem('icde_cached_admin_props');
+      if (cached) {
+        const cachedData = JSON.parse(cached);
+        if (Array.isArray(cachedData) && cachedData.length > 0) {
+          props = cachedData;
+          if (typeof renderPropsGrid === 'function') renderPropsGrid();
+          const st = document.getElementById('syncStatus');
+          if (st) st.textContent = '✓ ' + props.length + ' en caché (sincronizando...)';
+        }
+      }
+    } catch(e) {}
+
+    const st = document.getElementById('syncStatus');
+    if (st) st.textContent = '⟳ Sincronizando...';
     const urlBusca = APPS_SCRIPT_URL + "&t=" + Date.now();
     const res = await fetch(urlBusca);
     const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      try { localStorage.setItem('icde_cached_admin_props', JSON.stringify(data)); } catch(e) {}
+    }
     
     // LOG DE DIAGNÓSTICO CRÍTICO PARA EL USUARIO
     console.log("[Diagnostic Log] --- NUEVO CARGUE DE PROPIEDADES ---");
