@@ -2900,6 +2900,7 @@ html, body {
         <span id="autoSyncDot" style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
         <span id="autoSyncTxt">En vivo</span>
       </span>
+      <button id="btnNotifCelular" class="settings-btn" onclick="solicitarPermisoNotificaciones()" title="Activar Notificaciones en Celular en Segundo Plano" style="background:rgba(212,168,75,0.15); border-color:var(--gold); color:var(--gold); display:inline-flex; align-items:center; gap:4px; font-size:12px; padding:4px 8px; border-radius:6px; font-weight:600;">🔔 Activar Alertas</button>
       <button class="settings-btn" onclick="refreshData()" title="Sincronizar Datos ahora" style="background:rgba(212,168,75,0.1); border-color:var(--border);">🔄</button>
       <button class="btn-logout" onclick="doLogout()">Salir</button>
     </div>
@@ -4357,7 +4358,101 @@ document.addEventListener('DOMContentLoaded', () => {
   if (localStorage.getItem('icde_logged_in') === 'true') {
     doLogin(true);
   }
+  initServiceWorkerNotif();
 });
+
+// ── SISTEMA DE NOTIFICACIONES EN SEGUNDO PLANO (SERVICE WORKER & SYSTEM PUSH) ──
+let swRegistration = null;
+
+async function initServiceWorkerNotif() {
+  if ('serviceWorker' in navigator) {
+    try {
+      swRegistration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      console.log('[Service Worker] Registrado correctamente:', swRegistration.scope);
+      actualizarEstadoBotonNotif();
+    } catch (err) {
+      console.warn('[Service Worker] No se pudo registrar sw.js:', err);
+    }
+  }
+}
+
+function actualizarEstadoBotonNotif() {
+  const btn = document.getElementById('btnNotifCelular');
+  if (!btn) return;
+  if (!('Notification' in window)) {
+    btn.style.display = 'none';
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    btn.innerHTML = '🔔 Alertas Activas';
+    btn.style.background = 'rgba(34,197,94,0.15)';
+    btn.style.borderColor = 'rgba(34,197,94,0.4)';
+    btn.style.color = '#22c55e';
+    btn.title = 'Notificaciones del sistema activadas en segundo plano';
+  } else if (Notification.permission === 'denied') {
+    btn.innerHTML = '🔕 Alertas Bloqueadas';
+    btn.style.background = 'rgba(239,68,68,0.15)';
+    btn.style.borderColor = 'rgba(239,68,68,0.4)';
+    btn.style.color = '#ef4444';
+    btn.title = 'Notificaciones bloqueadas en el navegador del celular';
+  } else {
+    btn.innerHTML = '🔔 Activar Alertas';
+    btn.style.background = 'rgba(212,168,75,0.15)';
+    btn.style.borderColor = 'var(--gold)';
+    btn.style.color = 'var(--gold)';
+  }
+}
+
+async function solicitarPermisoNotificaciones() {
+  if (!('Notification' in window)) {
+    toast('Tu navegador celular no soporta notificaciones push', 'error');
+    return;
+  }
+
+  try {
+    const perm = await Notification.requestPermission();
+    actualizarEstadoBotonNotif();
+    if (perm === 'granted') {
+      toast('¡Notificaciones en segundo plano activadas correctamente! 🔔', 'success');
+      enviarNotificacionSistema('🔔 ICDE Notificaciones Activas', 'Recibirás alertas en la pantalla de tu celular incluso con la app en segundo plano.');
+    } else if (perm === 'denied') {
+      toast('Permisos bloqueados en el navegador. Por favor actívalos en Ajustes del Celular -> Permisos de Sitio.', 'error');
+    }
+  } catch(e) {
+    console.error('Error al solicitar permiso:', e);
+  }
+}
+
+function enviarNotificacionSistema(titulo, cuerpo, datos = {}) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'SHOW_NOTIFICATION',
+      title: titulo,
+      body: cuerpo,
+      url: datos.url || '/admin.html',
+      tag: datos.tag || 'icde-sys-' + Date.now()
+    });
+  } else if (swRegistration && swRegistration.showNotification) {
+    swRegistration.showNotification(titulo, {
+      body: cuerpo,
+      icon: '/apple-touch-icon.png',
+      badge: '/favicon-32x32.png',
+      vibrate: [300, 100, 300, 100, 400],
+      tag: datos.tag || 'icde-sys-' + Date.now(),
+      renotify: true,
+      data: { url: datos.url || '/admin.html' }
+    });
+  } else {
+    try {
+      new Notification(titulo, {
+        body: cuerpo,
+        icon: '/apple-touch-icon.png'
+      });
+    } catch(e) {}
+  }
+}
 function hardResetData() {
   if (confirm("¿Estás seguro? Esto borrará la memoria local del navegador (caché) y recargará todo desde la nube. Úsalo si la página se queda trabada.")) {
     localStorage.clear();
