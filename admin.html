@@ -2900,7 +2900,7 @@ html, body {
         <span id="autoSyncDot" style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
         <span id="autoSyncTxt">En vivo</span>
       </span>
-      <button id="btnNotifCelular" class="settings-btn" onclick="solicitarPermisoNotificaciones()" title="Activar Notificaciones en Celular en Segundo Plano" style="background:rgba(212,168,75,0.15); border-color:var(--gold); color:var(--gold); display:inline-flex; align-items:center; gap:4px; font-size:12px; padding:4px 8px; border-radius:6px; font-weight:600;">🔔 Activar Alertas</button>
+      <button id="btnNotifCelular" class="settings-btn" onclick="solicitarPermisoNotificaciones()" title="Notificaciones en Celular (Segundo Plano)" style="background:rgba(212,168,75,0.15); border-color:var(--gold);">🔔</button>
       <button class="settings-btn" onclick="refreshData()" title="Sincronizar Datos ahora" style="background:rgba(212,168,75,0.1); border-color:var(--border);">🔄</button>
       <button class="btn-logout" onclick="doLogout()">Salir</button>
     </div>
@@ -4384,22 +4384,23 @@ function actualizarEstadoBotonNotif() {
     return;
   }
   if (Notification.permission === 'granted') {
-    btn.innerHTML = '🔔 Alertas Activas';
+    btn.innerHTML = '🔔';
     btn.style.background = 'rgba(34,197,94,0.15)';
     btn.style.borderColor = 'rgba(34,197,94,0.4)';
     btn.style.color = '#22c55e';
-    btn.title = 'Notificaciones del sistema activadas en segundo plano';
+    btn.title = 'Notificaciones activas en segundo plano';
   } else if (Notification.permission === 'denied') {
-    btn.innerHTML = '🔕 Alertas Bloqueadas';
+    btn.innerHTML = '🔕';
     btn.style.background = 'rgba(239,68,68,0.15)';
     btn.style.borderColor = 'rgba(239,68,68,0.4)';
     btn.style.color = '#ef4444';
-    btn.title = 'Notificaciones bloqueadas en el navegador del celular';
+    btn.title = 'Notificaciones bloqueadas (Permite en Ajustes de Navegador)';
   } else {
-    btn.innerHTML = '🔔 Activar Alertas';
+    btn.innerHTML = '🔔';
     btn.style.background = 'rgba(212,168,75,0.15)';
     btn.style.borderColor = 'var(--gold)';
     btn.style.color = 'var(--gold)';
+    btn.title = 'Activar notificaciones en segundo plano';
   }
 }
 
