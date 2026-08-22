@@ -1,11 +1,10 @@
-// Service Worker con Polling en Segundo Plano - ICDE Inmobiliaria Admin
-const CACHE_NAME = 'icde-admin-v2';
+// Service Worker con Polling y Temporizadores en Segundo Plano - ICDE Inmobiliaria Admin
+const CACHE_NAME = 'icde-admin-v3';
 const DEFAULT_ICON = 'https://i.imgur.com/s3dvfne.png';
 const DEFAULT_BADGE = 'https://i.imgur.com/s3dvfne.png';
 
 let CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvZg9LqnWm1n1iXe3eFgj-PtUbKTumrIJdA8BnJXpH9H4e8OXJcC7-fpmhbQJA5TvX/exec';
 let lastCitasCount = -1;
-let lastLeadsCount = -1;
 let backgroundTimer = null;
 
 self.addEventListener('install', (event) => {
@@ -23,6 +22,23 @@ self.addEventListener('message', (event) => {
 
   if (event.data.type === 'SET_CONFIG' && event.data.crmUrl) {
     CRM_SCRIPT_URL = event.data.crmUrl;
+  }
+
+  // Programar notificación diferida en segundo plano (funciona aun con la app minimizada)
+  if (event.data.type === 'SCHEDULE_TEST_NOTIFICATION') {
+    const delay = event.data.delayMs || 30000;
+    setTimeout(() => {
+      self.registration.showNotification('🔔 Alerta ICDE (30 Segundos en Segundo Plano)', {
+        body: '¡Excelente! Notificación en segundo plano enviada a los 30 segundos con el celular bloqueado o en otra app.',
+        icon: DEFAULT_ICON,
+        badge: DEFAULT_BADGE,
+        vibrate: [400, 150, 400, 150, 600],
+        tag: 'icde-test-30s-' + Date.now(),
+        renotify: true,
+        requireInteraction: true,
+        data: { url: '/admin.html' }
+      });
+    }, delay);
   }
 
   if (event.data.type === 'SHOW_NOTIFICATION') {

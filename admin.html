@@ -4427,12 +4427,31 @@ async function solicitarPermisoNotificaciones() {
   }
 
   if (Notification.permission === 'granted') {
-    toast('🧪 Notificación inicial enviada. Sal de la app: en 30 segundos llegará la alerta de prueba.', 'info');
-    enviarNotificacionSistema('🧪 Prueba ICDE Inmediata', '¡Excelente! Notificaciones activas. Sal de la app para probar la alerta en 30 seg.');
+    toast('⏱️ Prueba iniciada. Sal de la app o bloquea el celular: en 30 seg llegará la alerta.', 'info');
     
-    setTimeout(() => {
-      enviarNotificacionSistema('🔔 Prueba ICDE (30 Segundos)', '¡Confirmado! Esta alerta llegó 30 segundos después con la pantalla bloqueada o estando en otra app.');
-    }, 30000);
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SCHEDULE_TEST_NOTIFICATION',
+        delayMs: 30000
+      });
+    } else if (swRegistration && swRegistration.showNotification) {
+      setTimeout(() => {
+        swRegistration.showNotification('🔔 Alerta ICDE (30 Segundos en Segundo Plano)', {
+          body: '¡Excelente! Notificación en segundo plano enviada a los 30 segundos.',
+          icon: 'https://i.imgur.com/s3dvfne.png',
+          badge: 'https://i.imgur.com/s3dvfne.png',
+          vibrate: [400, 150, 400, 150, 600],
+          tag: 'icde-test-30s-' + Date.now(),
+          renotify: true,
+          requireInteraction: true,
+          data: { url: '/admin.html' }
+        });
+      }, 30000);
+    } else {
+      setTimeout(() => {
+        enviarNotificacionSistema('🔔 Alerta ICDE (30 Segundos)', 'Prueba completada a los 30 segundos.');
+      }, 30000);
+    }
     return;
   }
 
