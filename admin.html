@@ -2886,9 +2886,6 @@ html, body {
     <input type="password" id="passInput" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()"/>
     <button onclick="doLogin()">Ingresar</button>
     <div class="login-error" id="loginError">Contraseña incorrecta</div>
-    <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.05); padding-top:15px; text-align:center;">
-       <button onclick="hardResetData()" style="background:none; border:none; color:#666; font-size:12px; cursor:pointer; text-decoration:underline;">🧹 Limpiar memoria (Si se queda trabado)</button>
-    </div>
   </div>
 </div>
 
@@ -5259,7 +5256,11 @@ function showTab(tab){
     
     if(tab==='nuevo') renderNuevo(); 
     else if(tab==='leads') renderLeads();
-    else if(tab==='citas') renderCitas();
+    else if(tab==='citas') {
+      citasActiveFilterType = 'hoy';
+      citasActiveFilterValue = '';
+      renderCitas();
+    }
     else if(tab==='administracion') renderAdministracion();
     else if(tab==='gestion') renderGestion();
     else if(tab==='contabilidad') {
@@ -7371,7 +7372,7 @@ function renderCitas(){
               <button class="chip-filtro ${citasActiveFilterType === 'todas' ? 'sel' : ''}" onclick="filterCitas('todas',this)">Todas</button>
             </div>
 
-            <div id="citasSelFecha" style="font-size:12px; color:var(--gold); font-weight:600; flex-shrink: 0; margin-right: auto;">${citasActiveFilterType === 'fecha' ? 'Filtrado por: ' + citasActiveFilterValue : ''}</div>
+            <div id="citasSelFecha" style="font-size:12px; color:var(--gold); font-weight:600; flex-shrink: 0; margin-right: auto;">${citasActiveFilterType === 'fecha' ? 'Filtrado por: ' + citasActiveFilterValue : (citasActiveFilterType === 'hoy' ? 'Mostrando citas de hoy' : '')}</div>
 
             <div style="display:flex; align-items:center; gap:8px; flex-grow:1; justify-content: flex-end; flex-wrap: nowrap; min-width: 0;">
               <div class="pc-buscar-row-premium" style="max-width: 260px; margin-bottom: 0; flex-shrink: 1; min-width: 130px;">
@@ -7683,10 +7684,52 @@ async function guardarFeedback(){
   setTimeout(checkCitasFeedback, 3000);
 }
 
+function getFechaISO(fechaStr) {
+  if (!fechaStr) return '';
+  const str = String(fechaStr).trim();
+  if (str.length >= 10 && str.match(/^\d{4}-\d{2}-\d{2}/)) {
+    return str.slice(0, 10);
+  }
+  if (str.includes('/')) {
+    const parts = str.split('/');
+    if (parts.length === 3) {
+      const d = parts[0].padStart(2, '0');
+      const m = parts[1].padStart(2, '0');
+      const y = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+      return `${y}-${m}-${d}`;
+    }
+  }
+  try {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      const offset = d.getTimezoneOffset();
+      return new Date(d.getTime() - (offset * 60 * 1000)).toISOString().slice(0, 10);
+    }
+  } catch(e) {}
+  return str;
+}
+
 function renderCitasBody(lista){
   const b = document.getElementById('citasBody'); if(!b) return;
   const diasSem = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-  
+
+  if (!lista || lista.length === 0) {
+    let msg = 'No hay citas agendadas para hoy';
+    if (citasActiveFilterType === 'semana') msg = 'No hay citas agendadas para esta semana';
+    else if (citasActiveFilterType === 'mes') msg = 'No hay citas agendadas para este mes';
+    else if (citasActiveFilterType === 'fecha') msg = `No hay citas agendadas para la fecha ${citasActiveFilterValue}`;
+    else if (citasActiveFilterType === 'todas') msg = 'No hay citas registradas';
+
+    b.innerHTML = `<tr>
+      <td colspan="4" style="text-align:center; padding: 45px 20px; color: var(--muted); font-size:13px; background: rgba(0,0,0,0.1);">
+        <div style="font-size:32px; margin-bottom:10px;">📅</div>
+        <div style="font-weight:700; color:#fff; font-size:15px; margin-bottom:6px;">${msg}</div>
+        <div style="font-size:12px; color:#aaa;">Puedes hacer clic en <b>"Semana"</b>, <b>"Mes"</b> o <b>"Todas"</b> arriba para ver las citas de otras fechas.</div>
+      </td>
+    </tr>`;
+    return;
+  }
+
   // Clonar y ordenar por prioridad de estado (solicitó, agendada, visitada, cancelada) y luego por fecha/hora
   const ESTADO_PRIO = {
     'solicito_visita': 1,
@@ -7700,13 +7743,16 @@ function renderCitasBody(lista){
     if (prioA !== prioB) {
       return prioA - prioB;
     }
-    const da = a.fecha + (a.hora ? 'T' + a.hora : 'T00:00');
-    const db = b.fecha + (b.hora ? 'T' + b.hora : 'T00:00');
+    const isoA = getFechaISO(a.fecha) || a.fecha || '';
+    const isoB = getFechaISO(b.fecha) || b.fecha || '';
+    const da = isoA + (a.hora ? 'T' + a.hora : 'T00:00');
+    const db = isoB + (b.hora ? 'T' + b.hora : 'T00:00');
     return da.localeCompare(db);
   });
 
   b.innerHTML = ordenada.map(c => {
-    const d = new Date(c.fecha + 'T12:00:00');
+    const isoFecha = getFechaISO(c.fecha);
+    const d = new Date((isoFecha || c.fecha) + 'T12:00:00');
     const prop = allProps.find(p => String(p['Código']).trim() === String(c.codigo).trim());
     const inmobProp = prop ? (prop['Inmobiliaria'] || '') : '';
     let stBadge = '';
@@ -7717,7 +7763,7 @@ function renderCitasBody(lista){
 
     const isSelected = String(c.id).trim() === String(currentCitaId).trim();
     return `<tr class="clickable ${isSelected ? 'active-cita-row' : ''}" data-cita-id="${String(c.id).trim()}" onclick="abrirEditarCita('${c.id}')">
-      <td style="padding-left: 20px;"><div class="citas-time">${c.hora || '--:--'}</div><div class="citas-weekday">${isNaN(d.getDay()) ? '—' : diasSem[d.getDay()]} ${c.fecha}</div></td>
+      <td style="padding-left: 20px;"><div class="citas-time">${c.hora || '--:--'}</div><div class="citas-weekday">${isNaN(d.getDay()) ? '—' : diasSem[d.getDay()]} ${isoFecha || c.fecha}</div></td>
       <td>
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
           <div>
@@ -7770,7 +7816,7 @@ function filterCitas(tipo, btn){
 
   const elSelFecha = document.getElementById('citasSelFecha');
   if (elSelFecha) {
-    elSelFecha.textContent = '';
+    elSelFecha.textContent = tipo === 'hoy' ? 'Mostrando citas de hoy' : '';
   }
 
   aplicarFiltroYBusquedaCitas();
@@ -7798,30 +7844,37 @@ function aplicarFiltroYBusquedaCitas(){
   let filtered = citas;
 
   if (citasActiveFilterType === 'hoy') {
-    filtered = citas.filter(c => c.fecha === localToday);
+    filtered = citas.filter(c => getFechaISO(c.fecha) === localToday);
   } else if (citasActiveFilterType === 'semana') {
     const d1 = new Date(hoy);
     const start = new Date(d1.setDate(d1.getDate() - d1.getDay()));
     start.setHours(0, 0, 0, 0);
+    const startISO = new Date(start.getTime() - (offset * 60 * 1000)).toISOString().slice(0, 10);
+    
     const d2 = new Date(hoy);
     const end = new Date(d2.setDate(d2.getDate() - d2.getDay() + 6));
     end.setHours(23, 59, 59, 999);
+    const endISO = new Date(end.getTime() - (offset * 60 * 1000)).toISOString().slice(0, 10);
+
     filtered = citas.filter(c => {
-      if (!c.fecha) return false;
-      const d = new Date(c.fecha + 'T12:00:00');
-      return d >= start && d <= end;
+      const iso = getFechaISO(c.fecha);
+      return iso && iso >= startISO && iso <= endISO;
     });
   } else if (citasActiveFilterType === 'mes') {
     const yyyy = calDate.getFullYear();
     const mm = String(calDate.getMonth() + 1).padStart(2, '0');
-    filtered = citas.filter(c => c.fecha && c.fecha.startsWith(`${yyyy}-${mm}`));
+    const targetMonth = `${yyyy}-${mm}`;
+    filtered = citas.filter(c => {
+      const iso = getFechaISO(c.fecha);
+      return iso && iso.startsWith(targetMonth);
+    });
   } else if (citasActiveFilterType === 'fecha') {
-    filtered = citas.filter(c => c.fecha === citasActiveFilterValue);
+    filtered = citas.filter(c => getFechaISO(c.fecha) === citasActiveFilterValue);
   }
 
   if (searchTermCitas) {
     const normalizedTerm = norm(searchTermCitas);
-    filtered = filtered.filter(c => norm(c.cliente || '').includes(normalizedTerm) || norm(c.celular || '').includes(normalizedTerm));
+    filtered = filtered.filter(c => norm(c.cliente || '').includes(normalizedTerm) || norm(c.celular || '').includes(normalizedTerm) || norm(c.codigo || '').includes(normalizedTerm));
   }
 
   renderCitasBody(filtered);
