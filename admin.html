@@ -4427,18 +4427,18 @@ async function solicitarPermisoNotificaciones() {
   }
 
   if (Notification.permission === 'granted') {
-    toast('⏱️ Prueba iniciada. Sal de la app: en 30 seg llegará la alerta de prueba.', 'info');
+    toast('⏱️ Prueba iniciada. Sal de la app o bloquea el celular: en 10 seg llegará la alerta.', 'info');
     
     // Disparar alerta inmediata de verificación para comprobar que el celular emite sonidos
-    enviarNotificacionSistema('🔔 Verificación ICDE Inmediata', '¡Conexión exitosa! Sal de la app o bloquea el celular para recibir la alerta de 30 segundos.');
+    enviarNotificacionSistema('🔔 Verificación ICDE Inmediata', 'Conexión lista. Sal de la app o bloquea el celular para recibir la alerta a los 10 segundos.');
 
-    // Programar la alerta de 30 segundos a través del Service Worker listo
+    // Programar la alerta de 10 segundos a través del Service Worker listo
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then(reg => {
         if (reg.active) {
           reg.active.postMessage({
             type: 'SCHEDULE_TEST_NOTIFICATION',
-            delayMs: 30000
+            delayMs: 10000
           });
         }
       });

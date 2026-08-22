@@ -1,5 +1,5 @@
 // Service Worker con Polling y Temporizadores en Segundo Plano - ICDE Inmobiliaria Admin
-const CACHE_NAME = 'icde-admin-v5';
+const CACHE_NAME = 'icde-admin-v6';
 const DEFAULT_ICON = 'https://i.imgur.com/s3dvfne.png';
 const DEFAULT_BADGE = 'https://i.imgur.com/s3dvfne.png';
 
@@ -27,21 +27,20 @@ self.addEventListener('message', (event) => {
     CRM_SCRIPT_URL = event.data.crmUrl;
   }
 
-  // Programar notificación diferida en segundo plano usando event.waitUntil
-  // esto evita que Android suspenda el Service Worker mientras la app está minimizada
+  // Programar notificación diferida en segundo plano (10 segundos)
   if (event.data.type === 'SCHEDULE_TEST_NOTIFICATION') {
-    const delay = event.data.delayMs || 30000;
+    const delay = event.data.delayMs || 10000;
     
     event.waitUntil(
       new Promise((resolve) => {
         setTimeout(() => {
-          self.registration.showNotification('🔔 Alerta ICDE (30 Segundos en Segundo Plano)', {
-            body: '¡Excelente! Notificación enviada en segundo plano a los 30 segundos.',
+          self.registration.showNotification('🔔 Alerta ICDE (Prueba en Segundo Plano)', {
+            body: '¡Confirmado! Notificación recibida en segundo plano con el celular bloqueado o en otra app.',
             icon: DEFAULT_ICON,
             badge: DEFAULT_BADGE,
             vibrate: [500, 200, 500, 200, 800],
             silent: false,
-            tag: 'icde-test-30s-' + Date.now(),
+            tag: 'icde-test-10s-' + Date.now(),
             renotify: true,
             requireInteraction: true,
             data: { url: '/admin.html' }
