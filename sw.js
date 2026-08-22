@@ -1,5 +1,5 @@
-// Service Worker con Polling y Temporizadores en Segundo Plano - ICDE Inmobiliaria Admin
-const CACHE_NAME = 'icde-admin-v6';
+// Service Worker con Polling, Temporizadores y Voz en Segundo Plano - ICDE Inmobiliaria Admin
+const CACHE_NAME = 'icde-admin-v7';
 const DEFAULT_ICON = 'https://i.imgur.com/s3dvfne.png';
 const DEFAULT_BADGE = 'https://i.imgur.com/s3dvfne.png';
 
@@ -19,6 +19,14 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+function transmitirLecturaVoz(texto) {
+  self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+    for (const client of clients) {
+      client.postMessage({ type: 'SPEAK_TEXT', text: texto });
+    }
+  });
+}
+
 // Listener de mensajes desde admin.html
 self.addEventListener('message', (event) => {
   if (!event.data) return;
@@ -27,15 +35,18 @@ self.addEventListener('message', (event) => {
     CRM_SCRIPT_URL = event.data.crmUrl;
   }
 
-  // Programar notificación diferida en segundo plano (10 segundos)
+  // Programar notificación diferida en segundo plano
   if (event.data.type === 'SCHEDULE_TEST_NOTIFICATION') {
     const delay = event.data.delayMs || 10000;
     
     event.waitUntil(
       new Promise((resolve) => {
         setTimeout(() => {
-          self.registration.showNotification('🔔 Alerta ICDE (Prueba en Segundo Plano)', {
-            body: '¡Confirmado! Notificación recibida en segundo plano con el celular bloqueado o en otra app.',
+          const title = '🔔 Alerta ICDE Inmobiliaria';
+          const body = '¡Confirmado! Notificación recibida en segundo plano con lectura de voz activa.';
+          
+          self.registration.showNotification(title, {
+            body: body,
             icon: DEFAULT_ICON,
             badge: DEFAULT_BADGE,
             vibrate: [500, 200, 500, 200, 800],
@@ -44,7 +55,10 @@ self.addEventListener('message', (event) => {
             renotify: true,
             requireInteraction: true,
             data: { url: '/admin.html' }
-          }).then(resolve).catch(resolve);
+          }).then(() => {
+            transmitirLecturaVoz(title + '. ' + body);
+            resolve();
+          }).catch(resolve);
         }, delay);
       })
     );
@@ -52,8 +66,9 @@ self.addEventListener('message', (event) => {
 
   if (event.data.type === 'SHOW_NOTIFICATION') {
     const title = event.data.title || '🔔 ICDE Inmobiliaria';
+    const body = event.data.body || 'Tienes una nueva actualización en tu panel de control.';
     const options = {
-      body: event.data.body || 'Tienes una nueva actualización en tu panel de control.',
+      body: body,
       icon: event.data.icon || DEFAULT_ICON,
       badge: event.data.badge || DEFAULT_BADGE,
       vibrate: [500, 200, 500, 200, 800],
@@ -65,15 +80,17 @@ self.addEventListener('message', (event) => {
         url: event.data.url || '/admin.html'
       }
     };
-    event.waitUntil(self.registration.showNotification(title, options));
+    event.waitUntil(
+      self.registration.showNotification(title, options).then(() => {
+        transmitirLecturaVoz(title + '. ' + body);
+      })
+    );
   }
 });
 
 // Polling continuo en segundo plano (funciona aunque la pestaña esté minimizada o cerrada)
 function iniciarPollingBackground() {
   if (backgroundTimer) clearInterval(backgroundTimer);
-  
-  // Ejecutar verificación en segundo plano cada 20 segundos
   backgroundTimer = setInterval(verificarNovedadesBackground, 20000);
 }
 
@@ -88,9 +105,11 @@ async function verificarNovedadesBackground() {
           const masReciente = citas[citas.length - 1];
           const clienteNom = masReciente.cliente || 'Nuevo Cliente';
           const fechaCita = masReciente.fecha || 'Hoy';
+          const title = '📅 ¡Nueva Cita Registrada en ICDE!';
+          const body = `Cliente: ${clienteNom} | Fecha: ${fechaCita} | Inmueble: ${masReciente.codigo || ''}`;
           
-          self.registration.showNotification('📅 ¡Nueva Cita Registrada en ICDE!', {
-            body: `Cliente: ${clienteNom} | Fecha: ${fechaCita} | Inmueble: ${masReciente.codigo || ''}`,
+          self.registration.showNotification(title, {
+            body: body,
             icon: DEFAULT_ICON,
             badge: DEFAULT_BADGE,
             vibrate: [500, 200, 500, 200, 800],
@@ -100,6 +119,8 @@ async function verificarNovedadesBackground() {
             requireInteraction: true,
             data: { url: '/admin.html' }
           });
+          
+          transmitirLecturaVoz(`${title}. Cliente ${clienteNom}, agendó cita para el inmueble ${masReciente.codigo || ''}`);
         }
         lastCitasCount = citas.length;
       }
@@ -126,8 +147,9 @@ self.addEventListener('push', (event) => {
   }
 
   const title = data.title || '🔔 Alerta ICDE Inmobiliaria';
+  const body = data.body || 'Nuevo evento registrado en tu panel de administración.';
   const options = {
-    body: data.body || 'Nuevo evento registrado en tu panel de administración.',
+    body: body,
     icon: data.icon || DEFAULT_ICON,
     badge: data.badge || DEFAULT_BADGE,
     vibrate: [500, 200, 500, 200, 800],
@@ -140,7 +162,11 @@ self.addEventListener('push', (event) => {
     }
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    self.registration.showNotification(title, options).then(() => {
+      transmitirLecturaVoz(title + '. ' + body);
+    })
+  );
 });
 
 // Al hacer clic en la notificación del celular (en la barra superior o pantalla de bloqueo)
