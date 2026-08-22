@@ -4427,30 +4427,21 @@ async function solicitarPermisoNotificaciones() {
   }
 
   if (Notification.permission === 'granted') {
-    toast('⏱️ Prueba iniciada. Sal de la app o bloquea el celular: en 30 seg llegará la alerta.', 'info');
+    toast('⏱️ Prueba iniciada. Sal de la app: en 30 seg llegará la alerta de prueba.', 'info');
     
-    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'SCHEDULE_TEST_NOTIFICATION',
-        delayMs: 30000
+    // Disparar alerta inmediata de verificación para comprobar que el celular emite sonidos
+    enviarNotificacionSistema('🔔 Verificación ICDE Inmediata', '¡Conexión exitosa! Sal de la app o bloquea el celular para recibir la alerta de 30 segundos.');
+
+    // Programar la alerta de 30 segundos a través del Service Worker listo
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(reg => {
+        if (reg.active) {
+          reg.active.postMessage({
+            type: 'SCHEDULE_TEST_NOTIFICATION',
+            delayMs: 30000
+          });
+        }
       });
-    } else if (swRegistration && swRegistration.showNotification) {
-      setTimeout(() => {
-        swRegistration.showNotification('🔔 Alerta ICDE (30 Segundos en Segundo Plano)', {
-          body: '¡Excelente! Notificación en segundo plano enviada a los 30 segundos.',
-          icon: 'https://i.imgur.com/s3dvfne.png',
-          badge: 'https://i.imgur.com/s3dvfne.png',
-          vibrate: [400, 150, 400, 150, 600],
-          tag: 'icde-test-30s-' + Date.now(),
-          renotify: true,
-          requireInteraction: true,
-          data: { url: '/admin.html' }
-        });
-      }, 30000);
-    } else {
-      setTimeout(() => {
-        enviarNotificacionSistema('🔔 Alerta ICDE (30 Segundos)', 'Prueba completada a los 30 segundos.');
-      }, 30000);
     }
     return;
   }
@@ -4462,7 +4453,7 @@ async function solicitarPermisoNotificaciones() {
       toast('¡Notificaciones en segundo plano activadas correctamente! 🔔', 'success');
       enviarNotificacionSistema('🔔 ICDE Notificaciones Activas', 'Recibirás alertas en la pantalla de tu celular incluso con la app en segundo plano.');
     } else if (perm === 'denied') {
-      toast('Permisos bloqueados en el navegador. Por favor actívalos en Ajustes del Celular -> Permisos de Sitio.', 'error');
+      alert('⚠️ Las notificaciones están bloqueadas en tu celular.\n\nPara activarlas:\n1. Toca el candado o icono ⚙️ a la izquierda de la dirección de la página.\n2. Entra a "Permisos del sitio" / "Notificaciones".\n3. Selecciona "PERMITIR".');
     }
   } catch(e) {
     console.error('Error al solicitar permiso:', e);
