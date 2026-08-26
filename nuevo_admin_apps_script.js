@@ -33,6 +33,9 @@ function doGet(e) {
   try {
     const action = e.parameter.action;
     if (action === 'getAdminData') return getAdminData();
+    if (action === 'saveAdminPayment') return saveAdminPaymentToSheet(e.parameter);
+    if (action === 'saveAdminProperty') return saveAdminPropertyToSheet(e.parameter);
+    if (action === 'deleteAdminProperty') return deleteAdminPropertyFromSheet(e.parameter);
     return createJsonResponse({ error: 'Acción no válida en GET' });
   } catch (err) {
     return createJsonResponse({ error: err.toString() });

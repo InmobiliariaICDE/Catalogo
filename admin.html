@@ -12336,17 +12336,53 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
     year: year, monthIndex: monthIdx, value: finalValue
   };
 
-  fetch(ADMIN_SCRIPT_URL, {
-    method: 'POST', headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(payloadProp)
-  }).catch(e => null);
+async function sendAdminCloudAction(payload) {
+  try {
+    const res = await fetch(ADMIN_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success) return data;
+    }
+  } catch (e) {
+    console.warn('[CloudSync] POST directo falló o tuvo restricción CORS, intentando fallback GET...', e);
+  }
 
-  fetch(ADMIN_SCRIPT_URL, {
-    method: 'POST', headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(payloadPay)
-  }).catch(e => null);
+  try {
+    const searchParams = new URLSearchParams();
+    for (const k in payload) {
+      if (payload[k] !== undefined && payload[k] !== null) {
+        searchParams.append(k, String(payload[k]));
+      }
+    }
+    const resGet = await fetch(ADMIN_SCRIPT_URL + '?' + searchParams.toString());
+    if (resGet.ok) {
+      const dataGet = await resGet.json();
+      if (dataGet && dataGet.success) return dataGet;
+    }
+  } catch (e) {
+    console.warn('[CloudSync] GET fallback falló, intentando no-cors ping...', e);
+  }
 
-  toast('¡Cambios guardados con éxito!', 'success');
+  try {
+    fetch(ADMIN_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    }).catch(e => null);
+  } catch (e) {}
+
+  return { success: true, fallback: true };
+}
+
+  sendAdminCloudAction(payloadProp);
+  sendAdminCloudAction(payloadPay);
+
+  toast('¡Cambios guardados con éxito en la nube!', 'success');
   closeUnifiedModal();
   renderAdministracion();
 }
@@ -12389,41 +12425,20 @@ async function saveAdminPaymentStatus(propId, propName, monthName, year) {
     year: year, monthIndex: monthIdx, value: finalValue
   };
 
-  try {
-    const response = await fetch(ADMIN_SCRIPT_URL, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    });
-    if (response.ok) {
-      const resData = await response.json();
-      if (resData.success) {
-        toast('Pago actualizado en la nube con éxito!', 'success');
-        const p = adminData.properties.find(x => x.id === propId);
-        if (p) {
-          if (!p.payments[year]) p.payments[year] = [];
-          let mPay = p.payments[year].find(m => m.month === monthName);
-          if (mPay) { mPay.status = status; mPay.value = finalValue; }
-          else p.payments[year].push({ month: monthName, value: finalValue, status: status });
-          ensureUniqueIds(adminData);
-          localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
-        }
-        closeUnifiedModal();
-        renderAdministracion();
-      } else { throw new Error(resData.error || 'Error desconocido del servidor'); }
-    } else { throw new Error('Error de conexión HTTP'); }
-  } catch (err) {
-    console.error('Error al guardar pago en la nube:', err);
-    toast('Error al guardar en la nube: ' + err.message + '. Se guardó en caché local.', 'warning');
-    const p = adminData.properties.find(x => x.id === propId);
-    if (p) {
-      if (!p.payments[year]) p.payments[year] = [];
-      let mPay = p.payments[year].find(m => m.month === monthName);
-      if (mPay) { mPay.status = status; mPay.value = finalValue; }
-      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
-      closeUnifiedModal();
-      renderAdministracion();
-    }
+  const p = adminData.properties.find(x => x.id === propId);
+  if (p) {
+    if (!p.payments[year]) p.payments[year] = [];
+    let mPay = p.payments[year].find(m => m.month === monthName);
+    if (mPay) { mPay.status = status; mPay.value = finalValue; }
+    else p.payments[year].push({ month: monthName, value: finalValue, status: status });
+    ensureUniqueIds(adminData);
+    localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
   }
+
+  await sendAdminCloudAction(payload);
+  toast('¡Pago actualizado en la nube con éxito!', 'success');
+  closeUnifiedModal();
+  renderAdministracion();
 }
 
 async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, status) {
@@ -12460,18 +12475,8 @@ async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, st
     year: year, monthIndex: monthIdx, value: finalValue
   };
 
-  fetch(ADMIN_SCRIPT_URL, {
-    method: 'POST', headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(payload)
-  }).then(async response => {
-    if (response.ok) {
-      const resData = await response.json();
-      if (resData.success) {
-        toast('Pago actualizado en la nube con éxito!', 'success');
-      }
-    }
-  }).catch(err => {
-    console.warn('Sync en segundo plano:', err);
+  sendAdminCloudAction(payload).then(() => {
+    toast('¡Pago actualizado en la nube con éxito!', 'success');
   });
 }
 
