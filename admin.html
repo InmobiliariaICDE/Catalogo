@@ -10825,6 +10825,7 @@ function renderAdministracion() {
 
 
 
+          <button class="btn btn-secondary btn-sm" style="height: 38px; border-radius: 10px; margin-left: 5px; flex-shrink: 0; padding: 0 14px; font-weight: 700; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);" onclick="syncAllAdminLocalPaymentsToCloud(this)" title="Sincronizar y enviar todos los pagos guardados en este equipo a la nube (Google Sheets)">☁️ Subir Pagos a la Nube</button>
           <button class="btn btn-gold btn-sm" style="height: 38px; border-radius: 10px; margin-left: 5px; flex-shrink: 0; padding: 0 16px; font-weight: 700;" onclick="abrirCrearInmuebleAdmin()">➕ Crear Nueva Propiedad</button>
         </div>
       </div>
@@ -12693,6 +12694,73 @@ async function refreshAdminData() {
   localStorage.removeItem('icde_admin_data');
   await loadAdminData();
   renderAdministracion();
+}
+
+async function syncAllAdminLocalPaymentsToCloud(btn) {
+  if (!adminData || !adminData.properties || !adminData.properties.length) {
+    toast('No hay datos locales para sincronizar.', 'warning');
+    return;
+  }
+  if (!confirm('¿Deseas subir TODOS los datos y pagos de administración guardados en este computador a la nube en Google Sheets?')) return;
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Subiendo a la nube...';
+  }
+
+  toast('Sincronizando pagos con la nube en Google Sheets...', 'info');
+
+  let totalPushed = 0;
+  for (const p of adminData.properties) {
+    const payloadProp = {
+      action: 'saveAdminProperty',
+      propertyId: p.id,
+      name: p.name,
+      owner: p.owner || '',
+      owner_phone: p.owner_phone || '',
+      tenant_name: p.tenant_name || '',
+      tenant_phone: p.tenant_phone || '',
+      monthly_rent: p.monthly_rent || 0,
+      deposit: p.deposit || '',
+      start_date: p.start_date || '',
+      duration: p.duration || '',
+      due_day: p.due_day || 5,
+      max_due_day: p.max_due_day || 10,
+      increase_notes: p.increase_notes || '',
+      damage_notes: p.damage_notes || ''
+    };
+    await sendAdminCloudAction(payloadProp);
+
+    if (p.payments) {
+      for (const yearStr of Object.keys(p.payments)) {
+        const yearNum = parseInt(yearStr, 10);
+        const mList = p.payments[yearStr];
+        if (Array.isArray(mList)) {
+          for (let mIdx = 0; mIdx < mList.length; mIdx++) {
+            const payItem = mList[mIdx];
+            if (payItem && payItem.value !== undefined && payItem.value !== '' && payItem.value !== '-') {
+              const payloadPay = {
+                action: 'saveAdminPayment',
+                propertyId: p.id,
+                propertyName: p.name,
+                year: yearNum,
+                monthIndex: mIdx,
+                value: payItem.value
+              };
+              await sendAdminCloudAction(payloadPay);
+              totalPushed++;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  toast(`✅ ¡${totalPushed} registros subidos a la nube en Google Sheets!`, 'success');
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '☁️ Subir Pagos a la Nube';
+  }
 }
 
 
