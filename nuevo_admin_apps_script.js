@@ -389,11 +389,11 @@ function saveAdminPaymentToSheet(params) {
     if (targetIndex !== -1) {
       const valStr = String(params.value).trim().toUpperCase();
       const numVal = parseFloat(params.value);
-      const isPaidOrNew = (!isNaN(numVal) && numVal > 0) || valStr.includes('NUEVO') || valStr.includes('CONTRATO') || valStr === 'PAGADO' || valStr === 'AL DIA' || valStr === 'AL_DIA';
+      const isPaidOrNewOrFuture = (!isNaN(numVal) && numVal > 0) || valStr.includes('NUEVO') || valStr.includes('CONTRATO') || valStr === 'PAGADO' || valStr === 'AL DIA' || valStr === 'AL_DIA' || valStr === '-' || valStr === 'FUTURO' || params.status === 'FUTURE';
       const isVacant = valStr.includes('DESOCUPAD') || valStr.includes('ENTREGA');
 
       if (isVacant) {
-        // Propagate DESOCUPADO to subsequent cells until we hit a payment or active status
+        // Propagar DESOCUPADO a celdas subsecuentes hasta encontrar un pago o estado activo
         for (let k = targetIndex + 1; k < sortedPaymentCols.length; k++) {
           const nextCol = sortedPaymentCols[k].colIdx;
           const nextValRaw = sheet.getRange(rowIdx, nextCol).getValue();
@@ -408,14 +408,14 @@ function saveAdminPaymentToSheet(params) {
             break;
           }
         }
-      } else if (isPaidOrNew) {
-        // Clear stale DESOCUPADO from subsequent cells until we hit a payment or active status
+      } else if (isPaidOrNewOrFuture) {
+        // Limpiar DESOCUPADO heredado y dejar en '-' para meses de contrato vigentes / futuros
         for (let k = targetIndex + 1; k < sortedPaymentCols.length; k++) {
           const nextCol = sortedPaymentCols[k].colIdx;
           const nextValRaw = sheet.getRange(rowIdx, nextCol).getValue();
           const nextValStr = String(nextValRaw).trim().toUpperCase();
           
-          if (nextValStr.includes('DESOCUPAD') || nextValStr === '' || nextValStr === '-') {
+          if (nextValStr.includes('DESOCUPAD')) {
             sheet.getRange(rowIdx, nextCol).setValue('-');
           } else {
             break;
