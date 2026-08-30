@@ -4540,8 +4540,70 @@ function actualizarEstadoBotonNotif() {
     btn.innerHTML = '🔔 Notificaciones Activas en Celular (Verificado)';
     btn.style.background = 'rgba(34,197,94,0.15)';
     btn.style.borderColor = 'rgba(34,197,94,0.4)';
-    btn.stylasync function enviarWebPushDirecto(titulo, cuerpo) {
+    btn.style.color = '#22c55e';
+    btn.title = 'Notificaciones activas en segundo plano';
+  } else if (Notification.permission === 'denied') {
+    btn.innerHTML = '🔕 Notificaciones Bloqueadas (Revisa Permisos)';
+    btn.style.background = 'rgba(239,68,68,0.15)';
+    btn.style.borderColor = 'rgba(239,68,68,0.4)';
+    btn.style.color = '#ef4444';
+    btn.title = 'Notificaciones bloqueadas (Permite en Ajustes de Navegador)';
+  } else {
+    btn.innerHTML = '🔔 Activar Notificaciones en Celular';
+    btn.style.background = 'rgba(212,168,75,0.15)';
+    btn.style.borderColor = 'var(--gold)';
+    btn.style.color = 'var(--gold)';
+    btn.title = 'Activar notificaciones en segundo plano';
+  }
+}
+
+async function solicitarPermisoNotificaciones() {
+  if (!('Notification' in window)) {
+    toast('Tu navegador no soporta notificaciones push', 'error');
+    return;
+  }
+
+  if (Notification.permission === 'granted') {
+    actualizarEstadoBotonNotif();
+    toast('🟢 Notificaciones activas en este celular. Enviando prueba...', 'success');
+    enviarNotificacionSistema('🔔 Prueba ICDE', 'Las notificaciones están funcionando correctamente en tu celular.');
+    return;
+  }
+
+  if (Notification.permission === 'denied') {
+    actualizarEstadoBotonNotif();
+    alert('⚠️ Las notificaciones están bloqueadas en tu navegador móvil.\n\nPara activarlas:\n1. Toca el candado 🔒 o sintonizador a la izquierda de la dirección web (URL) en Chrome.\n2. Entra a "Permisos del sitio" ➔ "Notificaciones".\n3. Cambia la opción a "PERMITIR".\n4. Recarga la página.');
+    return;
+  }
+
   try {
+    if (window.OneSignalDeferred) {
+      window.OneSignalDeferred.push(async function(OneSignal) {
+        try {
+          await OneSignal.Notifications.requestPermission();
+          await OneSignal.User.PushSubscription.optIn();
+        } catch(e) {}
+      });
+    }
+    const perm = await Notification.requestPermission();
+    actualizarEstadoBotonNotif();
+    if (perm === 'granted') {
+      toast('¡Notificaciones activadas correctamente! 🟢', 'success');
+      enviarNotificacionSistema('🟢 ICDE Notificaciones Activas', 'Recibirás alertas en la pantalla de tu celular.');
+    } else if (perm === 'denied') {
+      alert('⚠️ Se han bloqueado las notificaciones.\n\nSi deseas recibirlas, por favor permite el acceso desde el icono del candado 🔒 en la barra de direcciones de Chrome.');
+    }
+  } catch(e) {
+    console.error('Error al solicitar permiso:', e);
+    actualizarEstadoBotonNotif();
+  }
+}
+
+async function enviarWebPushDirecto(titulo, cuerpo) {
+  try {
+    const apiKey = (typeof settings !== 'undefined' && settings.oneSignalApiKey) || '';
+    if (!apiKey) return;
+
     const payload = {
       app_id: 'ebb863b8-75a9-4f85-931d-c98e7c9a00ee',
       included_segments: ['All'],
@@ -4555,34 +4617,28 @@ function actualizarEstadoBotonNotif() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
-        'Authorization': 'Basic os_v2_app_5o4ghodvvfhyley5zghhzgqa53uweyb7fftemknbyq7hwwxyfwewzhrztdzy43rusizkrwbu7ciuzpjjx5obopckaqzkfwlcjei4gly'
+        'Authorization': 'Basic ' + apiKey
       },
       body: JSON.stringify(payload)
     });
   } catch(e) {
-    console.warn('Error enviando OneSignal Push Directo:', e);
+    console.warn('OneSignal Cloud Push omitido:', e);
   }
 }
 
 async function programarWebPushNube(titulo, cuerpo, targetDate, alertKey) {
   try {
     const sentMem = obtenerAlertasEnviadasMemoria();
-    if (sentMem[alertKey]) return; // Ya fue programada/despachada previamente
+    if (sentMem[alertKey]) return;
 
     const nowMs = Date.now();
     const targetMs = targetDate.getTime();
-    if (targetMs <= nowMs + 10000) return; // No programar en el pasado
+    if (targetMs <= nowMs + 10000) return;
 
-    const pad = n => String(n).padStart(2, '0');
-    const YYYY = targetDate.getFullYear();
-    const MM = pad(targetDate.getMonth() + 1);
-    const DD = pad(targetDate.getDate());
-    const hh = pad(targetDate.getHours());
-    const mm = pad(targetDate.getMinutes());
-    const ss = pad(targetDate.getSeconds());
+    const apiKey = (typeof settings !== 'undefined' && settings.oneSignalApiKey) || '';
+    if (!apiKey) return;
 
-    // Formato de hora para OneSignal send_after: YYYY-MM-DD HH:MM:SS GMT-0500
-    const sendAfterStr = `${YYYY}-${MM}-${DD} ${hh}:${mm}:${ss} GMT-0500`;
+    const sendAfterStr = targetDate.toISOString();
 
     const payload = {
       app_id: 'ebb863b8-75a9-4f85-931d-c98e7c9a00ee',
@@ -4598,7 +4654,7 @@ async function programarWebPushNube(titulo, cuerpo, targetDate, alertKey) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
-        'Authorization': 'Basic os_v2_app_5o4ghodvvfhyley5zghhzgqa53uweyb7fftemknbyq7hwwxyfwewzhrztdzy43rusizkrwbu7ciuzpjjx5obopckaqzkfwlcjei4gly'
+        'Authorization': 'Basic ' + apiKey
       },
       body: JSON.stringify(payload)
     });
@@ -4623,16 +4679,13 @@ function probarNotificacionBackground10s() {
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({
       type: 'SCHEDULE_TEST_NOTIFICATION',
+      title: '🔔 Alerta ICDE Inmobiliaria',
+      body: '¡Prueba Exitosa! Notificación recibida con el celular bloqueado.',
       delayMs: 10000
     });
   }
 
-  // Programar notificación en la nube a los 10 segundos
-  const targetDate = new Date(Date.now() + 10000);
-  programarWebPushNube('🔔 Alerta ICDE Inmobiliaria', '¡Prueba Exitosa! Notificación recibida con el celular bloqueado.', targetDate, 'test_cloud_' + Date.now());
-
-  setTimeout(async () => {
-    await enviarWebPushDirecto('🔔 Alerta ICDE Inmobiliaria', '¡Prueba Exitosa! Notificación y sonido recibidos en segundo plano.');
+  setTimeout(() => {
     enviarNotificacionSistema('🔔 Alerta ICDE Inmobiliaria', '¡Prueba Exitosa! Notificación y sonido recibidos en segundo plano.');
   }, 10000);
 }
