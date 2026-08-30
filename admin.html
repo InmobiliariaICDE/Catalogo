@@ -11584,7 +11584,7 @@ function addIndividualToCalendar(propName, tenantName, rent, year, month, dueDay
 
 function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
   let currentActiveTab = activeTab;
-  if (currentActiveTab === 'contrato') {
+  if (currentActiveTab === 'contrato' || currentActiveTab === 'silvia') {
     currentActiveTab = 'cobro';
   }
 
@@ -11597,15 +11597,9 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
   const lead = (leads || []).find(l => l.nombre && searchName && (l.nombre.toLowerCase().includes(searchName.toLowerCase()) || searchName.toLowerCase().includes(l.nombre.toLowerCase())));
   const phone = p.tenant_phone || ((lead && lead.celular) ? lead.celular : '—');
 
-  // Silvia transactions for this year
-  const silviaTxs = (adminData.silvia_ledger && adminData.silvia_ledger[String(year)]) || [];
-  const silviaTotal = { recaudo: 0, abono: 0 };
-  silviaTxs.forEach(t => { silviaTotal.recaudo += parseFloat(t.recaudo) || 0; silviaTotal.abono += parseFloat(t.abono) || 0; });
-
   const tabs = [
     { id: 'cobro',    icon: '💳', label: 'Cobro' },
-    { id: 'inmueble', icon: '🏠', label: 'Inmueble' },
-    { id: 'silvia',   icon: '🏢', label: 'Silvia' }
+    { id: 'inmueble', icon: '🏠', label: 'Inmueble' }
   ];
 
   const tabsHTML = tabs.map(t => `
@@ -11855,50 +11849,6 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
       </div>`;
   }).join('');
 
-  const tabSilvia = `
-    <div>
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <div style="font-size:13px; font-weight:700; color:var(--gold);">🏢 Edificio Silvia — Año ${year}</div>
-        <div style="font-size:11px; color:var(--muted);">${silviaTxs.length} movimientos</div>
-      </div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px;">
-        <div class="u-section-box" style="text-align:center;">
-          <div class="u-field-label">Total Recaudado</div>
-          <div style="font-size:14px; font-weight:700; color:#fff;">${safeFormatP(silviaTotal.recaudo)}</div>
-        </div>
-        <div class="u-section-box" style="text-align:center;">
-          <div class="u-field-label">Total Abonado</div>
-          <div style="font-size:14px; font-weight:700; color:#22c55e;">${safeFormatP(silviaTotal.abono)}</div>
-        </div>
-        <div class="u-section-box" style="text-align:center;">
-          <div class="u-field-label">Balance</div>
-          <div style="font-size:14px; font-weight:700; color:${silviaTotal.recaudo - silviaTotal.abono > 0 ? '#ef4444' : 'var(--gold)'};">
-            ${safeFormatP(Math.abs(silviaTotal.recaudo - silviaTotal.abono))}
-            <span style="font-size:9px; display:block; color:var(--muted); font-weight:500; margin-top:1px;">
-              ${silviaTotal.recaudo - silviaTotal.abono > 0 ? 'por cobrar' : silviaTotal.recaudo - silviaTotal.abono < 0 ? 'a favor' : 'al día'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      ${silviaTxs.length > 0 ? `
-      <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:10px; max-height:260px; overflow-y:auto;">
-        <div class="u-silvia-row u-silvia-header">
-          <div>Fecha</div>
-          <div>Descripción</div>
-          <div style="text-align:right;">Recaudo</div>
-          <div style="text-align:right;">Abono</div>
-          <div style="text-align:right;">Saldo</div>
-        </div>
-        ${silviaRows}
-        ${silviaTxs.length > 30 ? `<div style="text-align:center; color:var(--muted); font-size:11px; padding:8px 0;">... y ${silviaTxs.length - 30} movimientos más. Ver pestaña 🏢 Edificio Silvia para el detalle completo.</div>` : ''}
-      </div>` : `
-      <div style="text-align:center; padding:30px; color:var(--muted); font-size:13px;">
-        No hay transacciones del Edificio Silvia para el año ${year}.
-      </div>`}
-    </div>`;
-
   return `
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; flex-shrink:0;">
       <div style="font-size:15px; font-weight:800; color:var(--gold); display:flex; align-items:center; gap:8px; letter-spacing:-0.01em;">
@@ -11912,7 +11862,6 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
 
     <div id="uTab-cobro"    class="u-tab-content ${currentActiveTab==='cobro'    ? 'active' : ''}">${tabCobro}</div>
     <div id="uTab-inmueble" class="u-tab-content ${currentActiveTab==='inmueble' ? 'active' : ''}">${tabInmueble}</div>
-    <div id="uTab-silvia"   class="u-tab-content ${currentActiveTab==='silvia'   ? 'active' : ''}">${tabSilvia}</div>
   `;
 }
 
