@@ -79,8 +79,39 @@ function findAdminProperty(propId, propName) {
 }
 
 function syncPropertyContractMonths(p) {
-  // Respetar 100% los valores cargados desde Google Sheets
-  return;
+  if (!p || !p.start_date) return;
+  const parsed = parseAdminStartDate(p.start_date);
+  if (!parsed || parsed.month < 1 || parsed.month > 12 || !parsed.year) return;
+  const monthsArray = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+  const startMonthIdx = parsed.month - 1;
+  const startYear = parsed.year;
+  const dur = parseInt(p.duration, 10) || 12;
+  
+  if (!p.payments) p.payments = {};
+  
+  Object.keys(p.payments).forEach(yrStr => {
+    if (!Array.isArray(p.payments[yrStr])) return;
+    const yr = parseInt(yrStr, 10);
+    p.payments[yrStr].forEach(mitem => {
+      const mIdx = monthsArray.indexOf(mitem.month);
+      if (mIdx !== -1) {
+        const totalMonthsDiff = (yr - startYear) * 12 + (mIdx - startMonthIdx);
+        const isRenov = (totalMonthsDiff > 0 && (totalMonthsDiff % dur) === 0);
+        
+        if (isRenov) {
+          if (!["PAID", "PREAVISO", "DELIVERY", "NO_RENEW"].includes(mitem.status)) {
+            mitem.status = "NEW_CONTRACT";
+            mitem.value = "CONTRATO NUEVO";
+          }
+        } else {
+          if (mitem.status === "NEW_CONTRACT") {
+            mitem.status = p.tenant_name ? "PENDING" : "VACANT";
+            mitem.value = p.tenant_name ? "Pendiente" : "DESOCUPADO";
+          }
+        }
+      }
+    });
+  });
 }
 
 // Suprime el diálogo "Esta página no puede cargar Google Maps correctamente"
@@ -11304,9 +11335,13 @@ function renderMatrizPagos(propertiesList) {
                     if (hasPastPending) pay = { ...pay, status: "FUTURE" };
                   }
 
-                  // Si es el mes de renovación calculado y la casilla no tiene un valor fijo cargado de la hoja, indicar estrella de renovación
-                  if (isRenovMonth && (pay.status === "PENDING" || pay.status === "FUTURE" || pay.status === "UNSTARTED")) {
-                    pay = { ...pay, status: "NEW_CONTRACT" };
+                  // Si es el mes de renovación y no está en un estado resuelto especial (PAGADO, PREAVISO, ENTREGA, NO RENOVARA), marcar como NEW_CONTRACT para mostrar la estrella ★
+                  if (isRenovMonth) {
+                    if (!["PAID", "PREAVISO", "DELIVERY", "NO_RENEW"].includes(pay.status)) {
+                      pay = { ...pay, status: "NEW_CONTRACT" };
+                    }
+                  } else if (parsedSDate && pay.status === "NEW_CONTRACT") {
+                    pay = { ...pay, status: p.tenant_name ? "PENDING" : "VACANT" };
                   }
 
                   let cellContent = "·";
