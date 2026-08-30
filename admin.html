@@ -4540,66 +4540,7 @@ function actualizarEstadoBotonNotif() {
     btn.innerHTML = '🔔 Notificaciones Activas en Celular (Verificado)';
     btn.style.background = 'rgba(34,197,94,0.15)';
     btn.style.borderColor = 'rgba(34,197,94,0.4)';
-    btn.style.color = '#22c55e';
-    btn.title = 'Notificaciones activas en segundo plano';
-  } else if (Notification.permission === 'denied') {
-    btn.innerHTML = '🔕 Notificaciones Bloqueadas (Revisa Permisos)';
-    btn.style.background = 'rgba(239,68,68,0.15)';
-    btn.style.borderColor = 'rgba(239,68,68,0.4)';
-    btn.style.color = '#ef4444';
-    btn.title = 'Notificaciones bloqueadas (Permite en Ajustes de Navegador)';
-  } else {
-    btn.innerHTML = '🔔 Activar Notificaciones en Celular';
-    btn.style.background = 'rgba(212,168,75,0.15)';
-    btn.style.borderColor = 'var(--gold)';
-    btn.style.color = 'var(--gold)';
-    btn.title = 'Activar notificaciones en segundo plano';
-  }
-}
-
-async function solicitarPermisoNotificaciones() {
-  if (!('Notification' in window)) {
-    toast('Tu navegador no soporta notificaciones push', 'error');
-    return;
-  }
-
-  if (Notification.permission === 'granted') {
-    actualizarEstadoBotonNotif();
-    toast('🟢 Notificaciones activas en este celular. Enviando prueba...', 'success');
-    enviarNotificacionSistema('🔔 Prueba ICDE', 'Las notificaciones están funcionando correctamente en tu celular.');
-    return;
-  }
-
-  if (Notification.permission === 'denied') {
-    actualizarEstadoBotonNotif();
-    alert('⚠️ Las notificaciones están bloqueadas en tu navegador móvil.\n\nPara activarlas:\n1. Toca el candado 🔒 o sintonizador a la izquierda de la dirección web (URL) en Chrome.\n2. Entra a "Permisos del sitio" ➔ "Notificaciones".\n3. Cambia la opción a "PERMITIR".\n4. Recarga la página.');
-    return;
-  }
-
-  try {
-    if (window.OneSignalDeferred) {
-      window.OneSignalDeferred.push(async function(OneSignal) {
-        try {
-          await OneSignal.Notifications.requestPermission();
-          await OneSignal.User.PushSubscription.optIn();
-        } catch(e) {}
-      });
-    }
-    const perm = await Notification.requestPermission();
-    actualizarEstadoBotonNotif();
-    if (perm === 'granted') {
-      toast('¡Notificaciones activadas correctamente! 🟢', 'success');
-      enviarNotificacionSistema('🟢 ICDE Notificaciones Activas', 'Recibirás alertas en la pantalla de tu celular.');
-    } else if (perm === 'denied') {
-      alert('⚠️ Se han bloqueado las notificaciones.\n\nSi deseas recibirlas, por favor permite el acceso desde el icono del candado 🔒 en la barra de direcciones de Chrome.');
-    }
-  } catch(e) {
-    console.error('Error al solicitar permiso:', e);
-    actualizarEstadoBotonNotif();
-  }
-}
-
-async function enviarWebPushDirecto(titulo, cuerpo) {
+    btn.stylasync function enviarWebPushDirecto(titulo, cuerpo) {
   try {
     const payload = {
       app_id: 'ebb863b8-75a9-4f85-931d-c98e7c9a00ee',
@@ -4623,6 +4564,54 @@ async function enviarWebPushDirecto(titulo, cuerpo) {
   }
 }
 
+async function programarWebPushNube(titulo, cuerpo, targetDate, alertKey) {
+  try {
+    const sentMem = obtenerAlertasEnviadasMemoria();
+    if (sentMem[alertKey]) return; // Ya fue programada/despachada previamente
+
+    const nowMs = Date.now();
+    const targetMs = targetDate.getTime();
+    if (targetMs <= nowMs + 10000) return; // No programar en el pasado
+
+    const pad = n => String(n).padStart(2, '0');
+    const YYYY = targetDate.getFullYear();
+    const MM = pad(targetDate.getMonth() + 1);
+    const DD = pad(targetDate.getDate());
+    const hh = pad(targetDate.getHours());
+    const mm = pad(targetDate.getMinutes());
+    const ss = pad(targetDate.getSeconds());
+
+    // Formato de hora para OneSignal send_after: YYYY-MM-DD HH:MM:SS GMT-0500
+    const sendAfterStr = `${YYYY}-${MM}-${DD} ${hh}:${mm}:${ss} GMT-0500`;
+
+    const payload = {
+      app_id: 'ebb863b8-75a9-4f85-931d-c98e7c9a00ee',
+      included_segments: ['All'],
+      headings: { es: titulo, en: titulo },
+      contents: { es: cuerpo, en: cuerpo },
+      send_after: sendAfterStr,
+      url: 'https://inmobiliariaicde.web.app/admin.html',
+      chrome_web_icon: 'https://i.imgur.com/s3dvfne.png'
+    };
+
+    const res = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Authorization': 'Basic os_v2_app_5o4ghodvvfhyley5zghhzgqa53uweyb7fftemknbyq7hwwxyfwewzhrztdzy43rusizkrwbu7ciuzpjjx5obopckaqzkfwlcjei4gly'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      guardarAlertaEnviadaMemoria(alertKey);
+      console.log('☁️ Alerta de Nube OneSignal programada con éxito para:', sendAfterStr);
+    }
+  } catch(e) {
+    console.warn('Error al programar alerta en la nube OneSignal:', e);
+  }
+}
+
 function probarNotificacionBackground10s() {
   if (!('Notification' in window) || Notification.permission !== 'granted') {
     alert('Primero activa las notificaciones usando el botón de arriba.');
@@ -4631,7 +4620,6 @@ function probarNotificacionBackground10s() {
 
   toast('⏱️ ¡Prueba de 10 seg iniciada! Sal de Chrome o bloquea el celular AHORA.', 'info');
 
-  // Enviar mensaje al Service Worker local
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({
       type: 'SCHEDULE_TEST_NOTIFICATION',
@@ -4639,7 +4627,10 @@ function probarNotificacionBackground10s() {
     });
   }
 
-  // Disparar Web Push desde la Nube (OneSignal FCM Cloud Push) a los 10 segundos
+  // Programar notificación en la nube a los 10 segundos
+  const targetDate = new Date(Date.now() + 10000);
+  programarWebPushNube('🔔 Alerta ICDE Inmobiliaria', '¡Prueba Exitosa! Notificación recibida con el celular bloqueado.', targetDate, 'test_cloud_' + Date.now());
+
   setTimeout(async () => {
     await enviarWebPushDirecto('🔔 Alerta ICDE Inmobiliaria', '¡Prueba Exitosa! Notificación y sonido recibidos en segundo plano.');
     enviarNotificacionSistema('🔔 Alerta ICDE Inmobiliaria', '¡Prueba Exitosa! Notificación y sonido recibidos en segundo plano.');
@@ -4655,8 +4646,8 @@ function reproducirTonoNotificacion() {
     const gain = ctx.createGain();
     
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(783.99, ctx.currentTime); // G5
-    osc.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.12); // C6
+    osc.frequency.setValueAtTime(783.99, ctx.currentTime);
+    osc.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.12);
     
     gain.gain.setValueAtTime(0.4, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
@@ -4673,7 +4664,6 @@ function obtenerVozLeonidas(voices) {
   if (!voices || voices.length === 0) return null;
   const esVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
   
-  // Buscar voces masculinas profundas/autoritarias en español (Leónidas el Espartano)
   const maleNames = ['jorge', 'raul', 'alvaro', 'david', 'mateo', 'pablo', 'julio', 'humberto', 'yago', 'jose', 'hombre', 'male'];
   
   let selected = esVoices.find(v => {
@@ -4698,7 +4688,6 @@ function hablarNotificacionTexto(texto) {
     const clean = texto.replace(/[^\w\sÁÉÍÓÚáéíóúÑñ0-9:,.!\-]/gi, '').trim();
     if (!clean) return;
 
-    // Forzar activación del canal multimedia para Honor / MagicOS
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (AudioCtx) {
@@ -4725,9 +4714,8 @@ function hablarNotificacionTexto(texto) {
     
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     
-    // Parámetros oficiales de la VOZ DE LEÓNIDAS (Espartano, grave, imponente, comandante)
-    utterance.rate = 0.82; // Cadencia pausada e imponente
-    utterance.pitch = isMobile ? 0.72 : 0.52; // Tono extra bajo y grueso de líder espartano
+    utterance.rate = 0.82;
+    utterance.pitch = isMobile ? 0.72 : 0.52;
     utterance.volume = 1.0;
     
     window.speechSynthesis.speak(utterance);
@@ -4752,7 +4740,6 @@ function enviarNotificacionSistema(titulo, cuerpo, datos = {}) {
 
   const iconUrl = datos.icon || 'https://i.imgur.com/s3dvfne.png';
 
-  // Disparar Web Push Cloud a OneSignal para dispositivos en segundo plano o bloqueados
   enviarWebPushDirecto(titulo, cuerpo);
 
   if (navigator.serviceWorker && navigator.serviceWorker.controller) {
@@ -4818,7 +4805,7 @@ async function verificarAlertasProgramadasCRM() {
   const sentMem = obtenerAlertasEnviadasMemoria();
 
   // -------------------------------------------------------------
-  // 1. REVISIÓN DE CITAS (30 minutos antes)
+  // 1. REVISIÓN DE CITAS (30 minutos antes - Programación en Nube)
   // -------------------------------------------------------------
   if (typeof citas !== 'undefined' && Array.isArray(citas)) {
     citas.forEach(cita => {
@@ -4831,24 +4818,27 @@ async function verificarAlertasProgramadasCRM() {
       if (!year || !month || !day || isNaN(hours) || isNaN(minutes)) return;
 
       const citaDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
-      const diffMs = citaDate.getTime() - now.getTime();
-      const diffMins = Math.round(diffMs / 60000);
+      const alertTime = new Date(citaDate.getTime() - 30 * 60 * 1000); // 30 minutos antes de la cita
+      const alertKey = `cita_30m_${cita.id || cita.codigo}_${cita.fecha}_${cita.hora}`;
 
-      // Si faltan entre 15 y 35 minutos (alrededor de 30 min)
-      if (diffMins >= 15 && diffMins <= 35) {
-        const alertKey = `cita_30m_${cita.id || cita.codigo}_${cita.fecha}_${cita.hora}`;
-        if (!sentMem[alertKey]) {
-          guardarAlertaEnviadaMemoria(alertKey);
+      const clienteNom = cita.cliente || 'Cliente';
+      const codInm = cita.codigo ? `Inmueble: ${cita.codigo}` : '';
+      const horaTxt = cita.hora;
+      const titulo = '📅 Confirmar Cita (en 30 min)';
+      const cuerpo = `Debes confirmar la cita de las ${horaTxt} con ${clienteNom}. ${codInm}`.trim();
 
-          const clienteNom = cita.cliente || 'Cliente';
-          const codInm = cita.codigo ? `Inmueble: ${cita.codigo}` : '';
-          const horaTxt = cita.hora;
-
-          const titulo = '📅 Confirmar Cita (en 30 min)';
-          const cuerpo = `Debes confirmar la cita de las ${horaTxt} con ${clienteNom}. ${codInm}`.trim();
-
-          enviarWebPushDirecto(titulo, cuerpo);
-          enviarNotificacionSistema(titulo, cuerpo);
+      // Si la alerta es en el futuro (más de 1 minuto adelante), programar en NUBE OneSignal
+      if (alertTime.getTime() > now.getTime() + 60000) {
+        programarWebPushNube(titulo, cuerpo, alertTime, alertKey);
+      } else {
+        // Si la cita es inminente (entre 0 y 35 minutos), disparar de inmediato
+        const diffMins = Math.round((citaDate.getTime() - now.getTime()) / 60000);
+        if (diffMins >= 0 && diffMins <= 35) {
+          if (!sentMem[alertKey]) {
+            guardarAlertaEnviadaMemoria(alertKey);
+            enviarWebPushDirecto(titulo, cuerpo);
+            enviarNotificacionSistema(titulo, cuerpo);
+          }
         }
       }
     });
@@ -4873,44 +4863,50 @@ async function verificarAlertasProgramadasCRM() {
         const currentMonth = now.getMonth();
         const currentDate = now.getDate();
 
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
         const monthNamesList = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
         const monthName = monthNamesList[currentMonth];
 
-        // Verificar si el inquilino ya pagó este mes
         const paymentsYear = (p.payments && p.payments[String(currentYear)]) ? p.payments[String(currentYear)] : [];
         const payInfo = paymentsYear.find(m => m.month === monthName);
         const isPaid = payInfo && payInfo.status === 'PAID';
 
         if (!isPaid) {
-          // 1 Día Antes del Vencimiento de Arriendo
-          if (tomorrow.getDate() === dueDay) {
-            const key1Day = `arriendo_1d_${propId}_${currentYear}_${currentMonth}`;
-            if (!sentMem[key1Day]) {
-              guardarAlertaEnviadaMemoria(key1Day);
+          // Programar Alerta 1 Día Antes a las 08:00 AM en la Nube
+          let dayBefore = dueDay - 1;
+          let monthBefore = currentMonth;
+          let yearBefore = currentYear;
+          if (dayBefore < 1) {
+            monthBefore = currentMonth - 1;
+            if (monthBefore < 0) { monthBefore = 11; yearBefore--; }
+            dayBefore = 28;
+          }
+          const target1DayDate = new Date(yearBefore, monthBefore, dayBefore, 8, 0, 0);
+          const key1Day = `arriendo_1d_${propId}_${currentYear}_${currentMonth}`;
 
-              const titulo = '💰 Mañana Vence Cobro de Arriendo';
-              const cuerpo = `Mañana vence el arriendo de ${propName} (${inquilino}). ${canonVal ? 'Canon: ' + canonVal : ''}`.trim();
+          const tit1D = '💰 Mañana Vence Cobro de Arriendo';
+          const cue1D = `Mañana vence el arriendo de ${propName} (${inquilino}). ${canonVal ? 'Canon: ' + canonVal : ''}`.trim();
 
-              enviarWebPushDirecto(titulo, cuerpo);
-              enviarNotificacionSistema(titulo, cuerpo);
-            }
+          if (target1DayDate.getTime() > now.getTime() + 60000) {
+            programarWebPushNube(tit1D, cue1D, target1DayDate, key1Day);
+          } else if (now.getDate() === dayBefore && !sentMem[key1Day]) {
+            guardarAlertaEnviadaMemoria(key1Day);
+            enviarWebPushDirecto(tit1D, cue1D);
+            enviarNotificacionSistema(tit1D, cue1D);
           }
 
-          // El Mismo Día del Vencimiento de Arriendo
-          if (currentDate === dueDay) {
-            const keyToday = `arriendo_hoy_${propId}_${currentYear}_${currentMonth}`;
-            if (!sentMem[keyToday]) {
-              guardarAlertaEnviadaMemoria(keyToday);
+          // Programar Alerta El Mismo Día a las 08:00 AM en la Nube
+          const targetTodayDate = new Date(currentYear, currentMonth, dueDay, 8, 0, 0);
+          const keyToday = `arriendo_hoy_${propId}_${currentYear}_${currentMonth}`;
 
-              const titulo = '💰 Hoy Vence Cobro de Arriendo';
-              const cuerpo = `Hoy es el día de cobro de arriendo de ${propName} (${inquilino}). ${canonVal ? 'Canon: ' + canonVal : ''}`.trim();
+          const titHoy = '💰 Hoy Vence Cobro de Arriendo';
+          const cueHoy = `Hoy es el día de cobro de arriendo de ${propName} (${inquilino}). ${canonVal ? 'Canon: ' + canonVal : ''}`.trim();
 
-              enviarWebPushDirecto(titulo, cuerpo);
-              enviarNotificacionSistema(titulo, cuerpo);
-            }
+          if (targetTodayDate.getTime() > now.getTime() + 60000) {
+            programarWebPushNube(titHoy, cueHoy, targetTodayDate, keyToday);
+          } else if (currentDate === dueDay && !sentMem[keyToday]) {
+            guardarAlertaEnviadaMemoria(keyToday);
+            enviarWebPushDirecto(titHoy, cueHoy);
+            enviarNotificacionSistema(titHoy, cueHoy);
           }
         }
       }
@@ -4923,40 +4919,39 @@ async function verificarAlertasProgramadasCRM() {
         const endDateStr = calculateAdminEndDate(startDateStr, durationMonths);
         if (endDateStr) {
           const [endY, endM, endD] = endDateStr.split('-').map(Number);
-          const endDate = new Date(endY, endM - 1, endD, 0, 0, 0, 0);
+          const endDate = new Date(endY, endM - 1, endD, 8, 0, 0);
 
-          const diffMs = endDate.getTime() - now.getTime();
-          const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+          // 1 Mes (30 días) antes
+          const target30dDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+          const keyMonth = `preaviso_30d_${propId}_${endDateStr}`;
+          const tit30d = '💼 Preaviso de Contrato (Faltan 30 días)';
+          const cue30d = `Faltan 30 días para terminar el contrato de arriendo de ${inquilino} en ${propName}. Preparar preaviso o renovación.`.trim();
 
-          // 1 Mes (30 Días) Antes del Vencimiento del Contrato
-          if (diffDays >= 28 && diffDays <= 32) {
-            const keyMonth = `preaviso_30d_${propId}_${endDateStr}`;
-            if (!sentMem[keyMonth]) {
+          if (target30dDate.getTime() > now.getTime() + 60000) {
+            programarWebPushNube(tit30d, cue30d, target30dDate, keyMonth);
+          } else {
+            const diffDays = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            if (diffDays >= 28 && diffDays <= 32 && !sentMem[keyMonth]) {
               guardarAlertaEnviadaMemoria(keyMonth);
-
-              const titulo = '💼 Preaviso de Contrato (Faltan 30 días)';
-              const cuerpo = `Faltan 30 días para terminar el contrato de arriendo de ${inquilino} en ${propName}. Preparar preaviso o renovación.`.trim();
-
-              enviarWebPushDirecto(titulo, cuerpo);
-              enviarNotificacionSistema(titulo, cuerpo);
+              enviarWebPushDirecto(tit30d, cue30d);
+              enviarNotificacionSistema(tit30d, cue30d);
             }
           }
 
-          // 1 Día Antes del Vencimiento del Contrato
-          if (diffDays === 1) {
-            const key1DayContr = `preaviso_1d_${propId}_${endDateStr}`;
-            if (!sentMem[key1DayContr]) {
+          // 1 Día antes
+          const target1dContrDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+          const key1DayContr = `preaviso_1d_${propId}_${endDateStr}`;
+          const tit1dC = '💼 Mañana Vence Contrato de Arriendo';
+          const cue1dC = `Mañana finaliza el contrato de arriendo de ${inquilino} en ${propName}.`.trim();
+
+          if (target1dContrDate.getTime() > now.getTime() + 60000) {
+            programarWebPushNube(tit1dC, cue1dC, target1dContrDate, key1DayContr);
+          } else {
+            const diffDays = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            if (diffDays === 1 && !sentMem[key1DayContr]) {
               guardarAlertaEnviadaMemoria(key1DayContr);
-
-              const titulo = '💼 Mañana Vence Contrato de Arriendo';
-              const cuerpo = `Mañana finaliza el contrato de arriendo de ${inquilino} en ${propName}.`.trim();
-
-              enviarWebPushDirecto(titulo, cuerpo);
-              enviarNotificacionSistema(titulo, cuerpo);
-            }
-          }
-        }
-      }
+              enviarWebPushDirecto(tit1dC, cue1dC);
+              enviarNotificacionSistema(tit1dC, cue1dC);
     });
   }
 }
