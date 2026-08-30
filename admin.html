@@ -25,6 +25,22 @@
 <script async defer src="https://accounts.google.com/gsi/client"></script>
 <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&libraries=places&loading=async"></script>
 <script>
+
+function parseAdminStartDate(dStr) {
+  if (!dStr || typeof dStr !== 'string') return null;
+  const str = dStr.trim();
+  if (!str) return null;
+  if (str.match(/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}$/)) {
+    const parts = str.split(/[-\/]/);
+    return { year: parseInt(parts[0], 10), month: parseInt(parts[1], 10), day: parseInt(parts[2], 10) };
+  }
+  if (str.match(/^\d{1,2}[-\/]\d{1,2}[-\/]\d{4}$/)) {
+    const parts = str.split(/[-\/]/);
+    return { year: parseInt(parts[2], 10), month: parseInt(parts[1], 10), day: parseInt(parts[0], 10) };
+  }
+  return null;
+}
+
 // Suprime el diálogo "Esta página no puede cargar Google Maps correctamente"
 (function() {
   const hide = () => {
@@ -8664,11 +8680,11 @@ function verificarRecordatoriosDeArriendo() {
 
     // 2. Recordatorio de incremento de arriendo (aniversario del contrato)
     if (p.start_date) {
-      const parts = p.start_date.split('-');
-      if (parts.length === 3) {
-        const startYear = parseInt(parts[0], 10);
-        const startMonth = parseInt(parts[1], 10) - 1; // 0-indexed
-        const startDay = parseInt(parts[2], 10);
+      const parsedSD = parseAdminStartDate(p.start_date);
+      if (parsedSD) {
+        const startYear = parsedSD.year;
+        const startMonth = parsedSD.month - 1; // 0-indexed
+        const startDay = parsedSD.day;
 
         // a) Aniversario exacto (mañana se cumple 1 año o múltiplos)
         if (tomorrowYear > startYear && tomorrowMonth === startMonth && tomorrowDay === startDay) {
@@ -11258,13 +11274,18 @@ function renderMatrizPagos(propertiesList) {
                 </td>
                 ${monthsFull.map(mFull => {
                   let pay = paymentsYear.find(m => m.month === mFull) || { status: 'UNSTARTED', value: 0 };
-                  // Detectar si este mes es el mes de aniversario/renovación del contrato
+                  // Detectar si este mes es el mes de aniversario/renovación del contrato (soporta 6, 12 meses y cualquier formato de fecha)
                   let isRenovMonth = false;
-                  if (p.start_date && p.start_date.includes("-")) {
-                    const sMonthNum = parseInt(p.start_date.split("-")[1], 10);
+                  const parsedSDate = parseAdminStartDate(p.start_date);
+                  if (parsedSDate && parsedSDate.month >= 1 && parsedSDate.month <= 12) {
                     const monthsArray = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
-                    if (monthsArray[sMonthNum - 1] === mFull) {
-                      isRenovMonth = true;
+                    const startMonthIdx = parsedSDate.month - 1;
+                    const dur = parseInt(p.duration, 10) || 12;
+                    const targetMonthIdx = monthsArray.indexOf(mFull);
+                    if (targetMonthIdx !== -1) {
+                      let diff = (targetMonthIdx - startMonthIdx) % dur;
+                      if (diff < 0) diff += dur;
+                      if (diff === 0) isRenovMonth = true;
                     }
                   }
 
