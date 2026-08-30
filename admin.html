@@ -2491,11 +2491,34 @@ html, body {
     height: 26px !important;
   }
 
+  .btn-notif-mobile {
+    display: none !important;
+  }
+
   .topbar-right .settings-btn {
     padding: 3px 5px !important;
     font-size: 10px !important;
     height: 26px !important;
     width: 26px !important;
+  }
+
+  @media (max-width: 768px) {
+    .btn-notif-mobile {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 3px 5px !important;
+      font-size: 11px !important;
+      height: 26px !important;
+      width: 26px !important;
+      border-radius: 6px !important;
+      background: rgba(212,168,75,0.15) !important;
+      border: 1px solid var(--gold) !important;
+      color: var(--gold) !important;
+      cursor: pointer !important;
+      margin-left: 4px !important;
+      flex-shrink: 0 !important;
+    }
   }
 
   .tabs {
@@ -3005,6 +3028,7 @@ html, body {
         <button class="tab" onclick="showTab('administracion')">💼 Administración</button>
         <button class="tab" onclick="showTab('contabilidad')">💰 Contabilidad</button>
       </div>
+      <button id="btnNotifCelular" class="btn-notif-mobile" onclick="solicitarPermisoNotificaciones()" title="Notificaciones Celular">🔔</button>
       <button class="settings-btn" onclick="abrirSettings()" title="Configuración" style="margin: 0 0 0 8px;">⚙️</button>
     </div>
   </div>
@@ -4506,19 +4530,19 @@ function actualizarEstadoBotonNotif() {
     return;
   }
   if (Notification.permission === 'granted') {
-    btn.innerHTML = '🔔 Notificaciones Activas en Celular (Verificado)';
+    btn.innerHTML = '🔔';
     btn.style.background = 'rgba(34,197,94,0.15)';
     btn.style.borderColor = 'rgba(34,197,94,0.4)';
     btn.style.color = '#22c55e';
     btn.title = 'Notificaciones activas en segundo plano';
   } else if (Notification.permission === 'denied') {
-    btn.innerHTML = '🔕 Notificaciones Bloqueadas (Revisa Ajustes)';
+    btn.innerHTML = '🔕';
     btn.style.background = 'rgba(239,68,68,0.15)';
     btn.style.borderColor = 'rgba(239,68,68,0.4)';
     btn.style.color = '#ef4444';
     btn.title = 'Notificaciones bloqueadas (Permite en Ajustes de Navegador)';
   } else {
-    btn.innerHTML = '🔔 Activar Notificaciones en Celular';
+    btn.innerHTML = '🔔';
     btn.style.background = 'rgba(212,168,75,0.15)';
     btn.style.borderColor = 'var(--gold)';
     btn.style.color = 'var(--gold)';
