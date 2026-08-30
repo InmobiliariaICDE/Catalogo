@@ -4601,7 +4601,7 @@ async function solicitarPermisoNotificaciones() {
 
 async function enviarWebPushDirecto(titulo, cuerpo) {
   try {
-    const apiKey = (typeof settings !== 'undefined' && settings.oneSignalApiKey) || '';
+    const apiKey = (typeof settings !== 'undefined' && settings.oneSignalApiKey) || 'os_v2_app_5o4ghodvvfhyley5zghhzgqa52mwfpkq7rxueh5suhkeoz3g5wdfgukv6arrfqevhth7fmqhxqcskbxc3rbw3sfl4pkctd72hqbbpmq';
     if (!apiKey) return;
 
     const payload = {
@@ -4613,14 +4613,15 @@ async function enviarWebPushDirecto(titulo, cuerpo) {
       chrome_web_icon: 'https://i.imgur.com/s3dvfne.png'
     };
 
-    await fetch('https://onesignal.com/api/v1/notifications', {
+    const res = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
-        'Authorization': 'Basic ' + apiKey
+        'Authorization': 'Key ' + apiKey
       },
       body: JSON.stringify(payload)
     });
+    console.log('☁️ Push Nube Directo status:', res.status);
   } catch(e) {
     console.warn('OneSignal Cloud Push omitido:', e);
   }
@@ -4635,7 +4636,7 @@ async function programarWebPushNube(titulo, cuerpo, targetDate, alertKey) {
     const targetMs = targetDate.getTime();
     if (targetMs <= nowMs + 10000) return;
 
-    const apiKey = (typeof settings !== 'undefined' && settings.oneSignalApiKey) || '';
+    const apiKey = (typeof settings !== 'undefined' && settings.oneSignalApiKey) || 'os_v2_app_5o4ghodvvfhyley5zghhzgqa52mwfpkq7rxueh5suhkeoz3g5wdfgukv6arrfqevhth7fmqhxqcskbxc3rbw3sfl4pkctd72hqbbpmq';
     if (!apiKey) return;
 
     const sendAfterStr = targetDate.toISOString();
@@ -4654,7 +4655,7 @@ async function programarWebPushNube(titulo, cuerpo, targetDate, alertKey) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
-        'Authorization': 'Basic ' + apiKey
+        'Authorization': 'Key ' + apiKey
       },
       body: JSON.stringify(payload)
     });

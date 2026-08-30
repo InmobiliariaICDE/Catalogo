@@ -21,7 +21,7 @@ function getSpreadsheet() {
 // CONFIGURACIÓN DE NOTIFICACIONES PUSH EN SEGUNDO PLANO (ONESIGNAL)
 // ─────────────────────────────────────────────────────────────
 const ONE_SIGNAL_APP_ID = 'ebb863b8-75a9-4f85-931d-c98e7c9a00ee';
-const ONE_SIGNAL_REST_API_KEY = 'os_v2_app_5o4ghodvvfhyley5zghhzgqa53uweyb7fftemknbyq7hwwxyfwewzhrztdzy43rusizkrwbu7ciuzpjjx5obopckaqzkfwlcjei4gly';
+const ONE_SIGNAL_REST_API_KEY = 'os_v2_app_5o4ghodvvfhyley5zghhzgqa52mwfpkq7rxueh5suhkeoz3g5wdfgukv6arrfqevhth7fmqhxqcskbxc3rbw3sfl4pkctd72hqbbpmq';
 
 function enviarWebPushNotificacion(titulo, mensaje, targetUrl) {
   if (!ONE_SIGNAL_APP_ID || !ONE_SIGNAL_REST_API_KEY || ONE_SIGNAL_REST_API_KEY.includes('REEMPLAZAR')) {
@@ -41,7 +41,7 @@ function enviarWebPushNotificacion(titulo, mensaje, targetUrl) {
       method: 'post',
       contentType: 'application/json; charset=utf-8',
       headers: {
-        'Authorization': 'Basic ' + ONE_SIGNAL_REST_API_KEY
+        'Authorization': 'Key ' + ONE_SIGNAL_REST_API_KEY
       },
       payload: JSON.stringify(payload),
       muteHttpExceptions: true
