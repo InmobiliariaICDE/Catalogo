@@ -12317,20 +12317,33 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
   };
 
 async function sendAdminCloudAction(payload) {
+  // Intento 1: POST directo (Apps Script soporta CORS con Content-Type text/plain)
   try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 20000);
     const res = await fetch(ADMIN_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: ctrl.signal
     });
+    clearTimeout(tid);
     if (res.ok) {
       const data = await res.json();
-      if (data && data.success) return data;
+      if (data && data.success) {
+        console.log('[Drive] Guardado exitoso via POST:', payload.action);
+        return data;
+      }
+      if (data && data.error) {
+        console.error('[Drive] Error del servidor:', data.error);
+        throw new Error(data.error);
+      }
     }
   } catch (e) {
-    console.warn('[CloudSync] POST directo falló o tuvo restricción CORS, intentando fallback GET...', e);
+    console.warn('[Drive] POST falló, intentando GET...', e.message);
   }
 
+  // Intento 2: GET con parámetros en URL
   try {
     const searchParams = new URLSearchParams();
     for (const k in payload) {
@@ -12338,25 +12351,24 @@ async function sendAdminCloudAction(payload) {
         searchParams.append(k, String(payload[k]));
       }
     }
-    const resGet = await fetch(ADMIN_SCRIPT_URL + '?' + searchParams.toString());
+    const ctrl2 = new AbortController();
+    const tid2 = setTimeout(() => ctrl2.abort(), 20000);
+    const resGet = await fetch(ADMIN_SCRIPT_URL + '?' + searchParams.toString(), { signal: ctrl2.signal });
+    clearTimeout(tid2);
     if (resGet.ok) {
       const dataGet = await resGet.json();
-      if (dataGet && dataGet.success) return dataGet;
+      if (dataGet && dataGet.success) {
+        console.log('[Drive] Guardado exitoso via GET:', payload.action);
+        return dataGet;
+      }
+      if (dataGet && dataGet.error) throw new Error(dataGet.error);
     }
   } catch (e) {
-    console.warn('[CloudSync] GET fallback falló, intentando no-cors ping...', e);
+    console.error('[Drive] GET también falló:', e.message);
   }
 
-  try {
-    fetch(ADMIN_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    }).catch(e => null);
-  } catch (e) {}
-
-  return { success: true, fallback: true };
+  // Si ambos fallan, lanzar error real
+  throw new Error('No se pudo guardar en Google Drive. Verifique su conexión.');
 }
 
   sendAdminCloudAction(payloadProp);
@@ -12405,20 +12417,27 @@ async function saveAdminPaymentStatus(propId, propName, monthName, year) {
     year: year, monthIndex: monthIdx, value: finalValue
   };
 
+  // Actualizar en memoria para feedback inmediato
   const p = adminData.properties.find(x => x.id === propId);
   if (p) {
     if (!p.payments[year]) p.payments[year] = [];
     let mPay = p.payments[year].find(m => m.month === monthName);
     if (mPay) { mPay.status = status; mPay.value = finalValue; }
     else p.payments[year].push({ month: monthName, value: finalValue, status: status });
-    ensureUniqueIds(adminData);
-    localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
   }
-
-  await sendAdminCloudAction(payload);
-  toast('¡Pago actualizado en la nube con éxito!', 'success');
   closeUnifiedModal();
   renderAdministracion();
+
+  // Guardar en Drive y esperar confirmación real
+  try {
+    await sendAdminCloudAction(payload);
+    toast('✅ Pago guardado en Google Drive', 'success');
+  } catch (e) {
+    toast('❌ Error al guardar en Drive: ' + e.message, 'error');
+    console.error('[Drive] Error guardando pago:', e);
+  }
+  saveBtn.disabled = false;
+  saveBtn.innerHTML = 'Guardar';
 }
 
 async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, status) {
@@ -12444,8 +12463,6 @@ async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, st
     let mPay = p.payments[year].find(m => m.month === monthName);
     if (mPay) { mPay.status = status; mPay.value = finalValue; }
     else p.payments[year].push({ month: monthName, value: finalValue, status: status });
-    ensureUniqueIds(adminData);
-    localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
   }
   renderAdministracion();
 
@@ -12455,9 +12472,10 @@ async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, st
     year: year, monthIndex: monthIdx, value: finalValue
   };
 
-  sendAdminCloudAction(payload).then(() => {
-    toast('¡Pago actualizado en la nube con éxito!', 'success');
-  });
+  // Guardar en Drive con confirmación real
+  sendAdminCloudAction(payload)
+    .then(() => { toast('✅ Guardado en Google Drive', 'success'); })
+    .catch(e => { toast('❌ Error al guardar en Drive: ' + e.message, 'error'); });
 }
 
 async function saveAdminPropertyDetails(propId, propNameOld) {
@@ -12498,30 +12516,29 @@ async function saveAdminPropertyDetails(propId, propNameOld) {
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
 
-  const applyToMemory = () => {
-    const p = adminData.properties.find(x => String(x.id) === String(propId));
-    if (p) {
-      Object.assign(p, {
-        name: payload.name, owner: payload.owner, owner_phone: payload.owner_phone, monthly_rent: payload.monthly_rent,
-        deposit: payload.deposit, start_date: payload.start_date, duration: payload.duration,
-        due_day: payload.due_day, max_due_day: payload.max_due_day,
-        increase_notes: payload.increase_notes, damage_notes: payload.damage_notes
-      });
-      ensureUniqueIds(adminData);
-      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
-    }
-  };
-
-  applyToMemory();
-
-  fetch(ADMIN_SCRIPT_URL, {
-    method: 'POST', headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(payload)
-  }).catch(e => null);
-
-  toast('Inmueble guardado con éxito!', 'success');
+  // Actualizar en memoria
+  const p = adminData.properties.find(x => String(x.id) === String(propId));
+  if (p) {
+    Object.assign(p, {
+      name: payload.name, owner: payload.owner, owner_phone: payload.owner_phone, monthly_rent: payload.monthly_rent,
+      deposit: payload.deposit, start_date: payload.start_date, duration: payload.duration,
+      due_day: payload.due_day, max_due_day: payload.max_due_day,
+      increase_notes: payload.increase_notes, damage_notes: payload.damage_notes
+    });
+  }
   closeUnifiedModal();
   renderAdministracion();
+
+  // Guardar en Drive con confirmación real
+  try {
+    await sendAdminCloudAction(payload);
+    toast('✅ Inmueble guardado en Google Drive', 'success');
+  } catch (e) {
+    toast('❌ Error al guardar en Drive: ' + e.message, 'error');
+    console.error('[Drive] Error guardando propiedad:', e);
+  }
+  saveBtn.disabled = false;
+  saveBtn.innerHTML = 'Guardar';
 }
 
 async function deleteAdminProperty(propId, propName) {
