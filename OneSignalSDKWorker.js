@@ -1,5 +1,13 @@
 importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDKWorker.js');
 
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(clients.claim());
+});
+
 // ═════════════════════════════════════════════════════════════════
 // MANEJADOR DE NOTIFICACIONES SERVICE WORKER EN SEGUNDO PLANO
 // ═════════════════════════════════════════════════════════════════
@@ -11,7 +19,7 @@ self.addEventListener('message', (event) => {
 
   // Mostrar notificación de inmediato desde el Service Worker
   if (data.type === 'SHOW_NOTIFICATION') {
-    self.registration.showNotification(data.title || 'Alerta ICDE', {
+    self.registration.showNotification(data.title || 'Alerta ICDE Inmobiliaria', {
       body: data.body || '',
       icon: data.icon || 'https://i.imgur.com/s3dvfne.png',
       badge: data.badge || 'https://i.imgur.com/s3dvfne.png',

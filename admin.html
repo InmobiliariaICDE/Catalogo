@@ -35,6 +35,11 @@
       serviceWorkerParam: { scope: '/' },
       serviceWorkerPath: '/OneSignalSDKWorker.js'
     });
+    try {
+      if (OneSignal.Notifications && OneSignal.Notifications.permission) {
+        await OneSignal.User.PushSubscription.optIn();
+      }
+    } catch(e) {}
   });
 </script>
 <script>
@@ -4677,12 +4682,16 @@ function probarNotificacionBackground10s() {
 
   toast('⏱️ ¡Prueba de 10 seg iniciada! Sal de Chrome o bloquea el celular AHORA.', 'info');
 
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({
-      type: 'SCHEDULE_TEST_NOTIFICATION',
-      title: '🔔 Alerta ICDE Inmobiliaria',
-      body: '¡Prueba Exitosa! Notificación recibida con el celular bloqueado.',
-      delayMs: 10000
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.ready.then(reg => {
+      if (reg && reg.active) {
+        reg.active.postMessage({
+          type: 'SCHEDULE_TEST_NOTIFICATION',
+          title: '🔔 Alerta ICDE Inmobiliaria',
+          body: '¡Prueba Exitosa! Notificación recibida con el celular bloqueado.',
+          delayMs: 10000
+        });
+      }
     });
   }
 
@@ -4793,29 +4802,24 @@ function enviarNotificacionSistema(titulo, cuerpo, datos = {}) {
   hablarNotificacionTexto(`${titulo}. ${cuerpo}`);
 
   const iconUrl = datos.icon || 'https://i.imgur.com/s3dvfne.png';
+  const tag = datos.tag || 'icde-sys-' + Date.now();
 
   enviarWebPushDirecto(titulo, cuerpo);
 
-  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({
-      type: 'SHOW_NOTIFICATION',
-      title: titulo,
-      body: cuerpo,
-      icon: iconUrl,
-      badge: iconUrl,
-      url: datos.url || '/admin.html',
-      tag: datos.tag || 'icde-sys-' + Date.now()
-    });
-  } else if (swRegistration && swRegistration.showNotification) {
-    swRegistration.showNotification(titulo, {
-      body: cuerpo,
-      icon: iconUrl,
-      badge: iconUrl,
-      vibrate: [500, 200, 500, 200, 800],
-      silent: false,
-      tag: datos.tag || 'icde-sys-' + Date.now(),
-      renotify: true,
-      data: { url: datos.url || '/admin.html' }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.ready.then(reg => {
+      if (reg && reg.showNotification) {
+        reg.showNotification(titulo, {
+          body: cuerpo,
+          icon: iconUrl,
+          badge: iconUrl,
+          vibrate: [500, 200, 500, 200, 800],
+          silent: false,
+          tag: tag,
+          renotify: true,
+          data: { url: datos.url || '/admin.html' }
+        });
+      }
     });
   } else {
     try {
