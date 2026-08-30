@@ -8138,8 +8138,8 @@ font-weight: 500;
                         try { localStorage.removeItem('icde_cached_datos'); } catch(e) {}
                         document.body.classList.add('cargando');
 
-                        const liveUrl = 'datos_catalogo.json?_t=' + Date.now();
-                        fetch(liveUrl, { cache: 'no-store' })
+                        const urlApps = APPS_SCRIPT_URL + "&_t=" + Date.now();
+                        fetch(urlApps, { cache: 'no-store' })
                             .then(res => {
                                 if (!res.ok) throw new Error('HTTP Error ' + res.status);
                                 return res.json();
@@ -8148,13 +8148,13 @@ font-weight: 500;
                                 if (Array.isArray(data) && data.length > 0) {
                                     inicializar(data);
                                 } else {
-                                    throw new Error('Formato no válido');
+                                    throw new Error('Formato no válido desde Apps Script');
                                 }
                             })
                             .catch(err => {
-                                console.warn('Fallback directo a Apps Script:', err);
-                                const urlApps = APPS_SCRIPT_URL + "&_t=" + Date.now();
-                                fetch(urlApps, { cache: 'no-store' })
+                                console.warn('Fallback a datos_catalogo.json:', err);
+                                const liveUrl = 'datos_catalogo.json?_t=' + Date.now();
+                                fetch(liveUrl, { cache: 'no-store' })
                                     .then(r => r.json())
                                     .then(data => inicializar(Array.isArray(data) ? data : []))
                                     .catch(e => {

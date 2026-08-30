@@ -5461,19 +5461,19 @@ async function cargarProps(){
 
     let data = null;
     try {
-      const liveUrl = 'datos_catalogo.json?_t=' + Date.now();
-      const res = await fetch(liveUrl, { cache: 'no-store' });
-      if (res.ok) {
-        data = await res.json();
+      const urlBusca = APPS_SCRIPT_URL + "&t=" + Date.now();
+      const resBusca = await fetch(urlBusca, { cache: 'no-store' });
+      if (resBusca.ok) {
+        data = await resBusca.json();
       }
     } catch(e) {
-      console.warn('Fallback a Apps Script:', e);
+      console.warn('Fallback a datos_catalogo.json:', e);
     }
 
     if (!Array.isArray(data) || data.length === 0) {
-      const urlBusca = APPS_SCRIPT_URL + "&t=" + Date.now();
-      const resBusca = await fetch(urlBusca, { cache: 'no-store' });
-      data = await resBusca.json();
+      const liveUrl = 'datos_catalogo.json?_t=' + Date.now();
+      const res = await fetch(liveUrl, { cache: 'no-store' });
+      data = await res.json();
     }
     // LOG DE DIAGNÓSTICO CRÍTICO PARA EL USUARIO
     console.log("[Diagnostic Log] --- NUEVO CARGUE DE PROPIEDADES ---");

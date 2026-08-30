@@ -21,6 +21,7 @@ import re
 import unicodedata
 import urllib.request
 import urllib.error
+from datetime import datetime
 from pathlib import Path
 
 # ──────────────────────────────────────────────
@@ -119,6 +120,13 @@ def descargar_propiedades() -> list[dict]:
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         print(f"[OK] {len(data)} propiedades descargadas")
+
+        # Guardar automáticamente en datos_catalogo.json
+        json_path = Path(__file__).parent / "datos_catalogo.json"
+        with json_path.open("w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f"[OK] Sincronizado {json_path.name}")
+
         return data
     except urllib.error.URLError as e:
         print(f"[ERROR] Error de conexión: {e}")
@@ -1189,6 +1197,34 @@ function compartir() {{
 # MAIN
 # ──────────────────────────────────────────────
 
+def actualizar_sitemap(slugs_validos: list[str]):
+    sitemap_path = Path(__file__).parent / "sitemap.xml"
+    if not sitemap_path.exists():
+        return
+
+    content = sitemap_path.read_text(encoding="utf-8")
+    non_prop_blocks = []
+    for m in re.finditer(r'<url>(.*?)</url>', content, flags=re.DOTALL):
+        block = m.group(0)
+        loc_match = re.search(r'<loc>(.*?)</loc>', block)
+        if loc_match and "/propiedad/" not in loc_match.group(1):
+            non_prop_blocks.append(block.strip())
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    prop_blocks = []
+    for slug in sorted(slugs_validos):
+        url = f"{BASE_URL}/propiedad/{slug}"
+        block = f"<url>\n<loc>{url}</loc>\n<lastmod>{today}</lastmod>\n<changefreq>weekly</changefreq>\n<priority>0.9</priority>\n</url>"
+        prop_blocks.append(block)
+
+    xml = '<?xml version="1.0" encoding="utf-8"?>\n<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    xml += "\n".join(non_prop_blocks) + "\n"
+    xml += "\n".join(prop_blocks) + "\n</urlset>\n"
+
+    sitemap_path.write_text(xml, encoding="utf-8")
+    print(f"[OK] Sincronizado sitemap.xml ({len(non_prop_blocks)} estáticas + {len(prop_blocks)} propiedades)")
+
+
 def main():
     OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -1198,6 +1234,8 @@ def main():
     total = len(propiedades)
     ok = 0
     errores = []
+    archivos_validos = set()
+    slugs_validos = []
 
     print(f"Generando {total} archivos HTML en: {OUTPUT_DIR}")
     print("-" * 60)
@@ -1209,8 +1247,10 @@ def main():
                 print(f"  [WARNING] Sin slug — Codigo: {p.get('Código','?')} | Nombre: {p.get('Nombre','?')}")
                 continue
 
+            slugs_validos.append(slug)
             html     = build_html(p, slug)
             filename = slug + ".html"
+            archivos_validos.add(filename)
             out_path = OUTPUT_DIR / filename
             out_path.write_text(html, encoding="utf-8")
             ok += 1
@@ -1221,6 +1261,22 @@ def main():
         except Exception as e:
             errores.append((p.get("Código","?"), p.get("Nombre","?"), str(e)))
             print(f"  [ERROR] [{p.get('Código','?')}] {p.get('Nombre','?')}: {e}")
+
+    # Limpieza de archivos obsoletos en propiedad/
+    archivos_existentes = list(OUTPUT_DIR.glob("*.html"))
+    eliminados = 0
+    for file_path in archivos_existentes:
+        if file_path.name not in archivos_validos:
+            try:
+                file_path.unlink()
+                eliminados += 1
+            except Exception as e:
+                print(f"  [ERROR] No se pudo eliminar {file_path.name}: {e}")
+
+    if eliminados > 0:
+        print(f"[OK] Eliminados {eliminados} archivos obsoletos en {OUTPUT_DIR.name}")
+
+    actualizar_sitemap(slugs_validos)
 
     print("-" * 60)
     print(f"[OK] Completados: {ok}/{total}")
