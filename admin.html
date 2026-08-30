@@ -58,6 +58,8 @@ function calculateAdminEndDate(startDateStr, durationMonths) {
   const dd = String(parsed.day).padStart(2, '0');
   const mm = String(endMonth).padStart(2, '0');
   return `${endYear}-${mm}-${dd}`;
+}
+
 function findAdminProperty(propId, propName) {
   if (!adminData || !Array.isArray(adminData.properties)) return null;
   const targetId = (propId !== undefined && propId !== null) ? String(propId).trim() : '';
@@ -11374,7 +11376,7 @@ function renderMatrizPagos(propertiesList) {
                            style="position: relative;">
                         ${cellContent}
                         <select style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; color-scheme: dark;"
-                                onclick="openMatrixCellDetails('${p.id}', '${mFull}', '${currentAdminYear}')"
+                                onclick="event.stopPropagation();"
                                 onchange="quickSaveAdminPaymentStatus('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${mFull}', '${currentAdminYear}', this.value)">
                           <option value="PAID" style="background-color: #121212; color: #fff;" ${pay.status === 'PAID' ? 'selected' : ''}>🟢 Pagado</option>
                           <option value="PENDING" style="background-color: #121212; color: #fff;" ${pay.status === 'PENDING' ? 'selected' : ''}>🔴 Pendiente</option>
