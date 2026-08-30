@@ -561,6 +561,46 @@ function saveAdminPropertyToSheet(params) {
   if (params.max_due_day !== undefined) sheet.getRange(rowIdx, maxDueDayCol).setValue(Number(params.max_due_day));
   if (params.monthly_rent !== undefined) sheet.getRange(rowIdx, rentCol).setValue(Number(params.monthly_rent));
 
+  // Auto-popular los hitos de renovación de contrato (PREAVISO y CONTRATO NUEVO) en Google Sheets
+  try {
+    const sDateStr = params.start_date || sheet.getRange(rowIdx, startDateCol).getValue();
+    const durVal = parseInt(params.duration || sheet.getRange(rowIdx, durationCol).getValue(), 10) || 12;
+    if (sDateStr && String(sDateStr).includes('-')) {
+      const parts = String(sDateStr).split('-');
+      const sYear = parseInt(parts[0], 10);
+      const sMonth = parseInt(parts[1], 10);
+      const yearsMap = { 2023: 17, 2024: 30, 2025: 43, 2026: 56, 2027: 69 };
+      const monthsNames = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+      
+      Object.keys(yearsMap).forEach(yStr => {
+        const yNum = parseInt(yStr, 10);
+        const colStart = yearsMap[yNum];
+        monthsNames.forEach((mName, mIdx) => {
+          const mNum = mIdx + 1;
+          const totalMonthsDiff = (yNum - sYear) * 12 + (mNum - sMonth);
+          const isRenov = (totalMonthsDiff > 0 && (totalMonthsDiff % durVal) === 0);
+          
+          let nextMNum = mNum + 1;
+          let nextYNum = yNum;
+          if (nextMNum > 12) { nextMNum = 1; nextYNum = yNum + 1; }
+          const nextDiff = (nextYNum - sYear) * 12 + (nextMNum - sMonth);
+          const isPreaviso = (nextDiff > 0 && (nextDiff % durVal) === 0);
+          
+          const targetCol = colStart + mIdx + 1;
+          const currentCellVal = String(sheet.getRange(rowIdx, targetCol).getValue()).trim();
+          
+          if (isRenov && (currentCellVal === '-' || currentCellVal === '' || currentCellVal === 'DESOCUPADO' || currentCellVal === 'Pendiente')) {
+            sheet.getRange(rowIdx, targetCol).setValue('CONTRATO NUEVO');
+          } else if (isPreaviso && (currentCellVal === '-' || currentCellVal === '' || currentCellVal === 'DESOCUPADO' || currentCellVal === 'Pendiente')) {
+            sheet.getRange(rowIdx, targetCol).setValue('PREAVISO');
+          }
+        });
+      });
+    }
+  } catch (errMilestones) {
+    Logger.log("Error al auto-popular hitos de contrato en Sheet: " + errMilestones.toString());
+  }
+
   return createJsonResponse({ success: true, row: rowIdx });
 }
 
