@@ -63,21 +63,22 @@ function calculateAdminEndDate(startDateStr, durationMonths) {
 function syncPropertyContractMonths(p) {
   if (!p || !p.start_date) return;
   const parsed = parseAdminStartDate(p.start_date);
-  if (!parsed || parsed.month < 1 || parsed.month > 12) return;
+  if (!parsed || parsed.month < 1 || parsed.month > 12 || !parsed.year) return;
   const monthsArray = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
   const startMonthIdx = parsed.month - 1;
+  const startYear = parsed.year;
   const dur = parseInt(p.duration, 10) || 12;
   
   if (!p.payments) p.payments = {};
   
-  Object.keys(p.payments).forEach(yr => {
-    if (!Array.isArray(p.payments[yr])) return;
-    p.payments[yr].forEach(mitem => {
+  Object.keys(p.payments).forEach(yrStr => {
+    if (!Array.isArray(p.payments[yrStr])) return;
+    const yr = parseInt(yrStr, 10);
+    p.payments[yrStr].forEach(mitem => {
       const mIdx = monthsArray.indexOf(mitem.month);
       if (mIdx !== -1) {
-        let diff = (mIdx - startMonthIdx) % dur;
-        if (diff < 0) diff += dur;
-        const isRenov = (diff === 0);
+        const totalMonthsDiff = (yr - startYear) * 12 + (mIdx - startMonthIdx);
+        const isRenov = (totalMonthsDiff > 0 && (totalMonthsDiff % dur) === 0);
         
         if (isRenov) {
           if (!["PAID", "PREAVISO", "DELIVERY", "NO_RENEW"].includes(mitem.status)) {
@@ -11335,15 +11336,18 @@ function renderMatrizPagos(propertiesList) {
                   // Detectar si este mes es el mes de aniversario/renovación del contrato (soporta 6, 12 meses y cualquier formato de fecha)
                   let isRenovMonth = false;
                   const parsedSDate = parseAdminStartDate(p.start_date);
-                  if (parsedSDate && parsedSDate.month >= 1 && parsedSDate.month <= 12) {
+                  if (parsedSDate && parsedSDate.month >= 1 && parsedSDate.month <= 12 && parsedSDate.year > 0) {
                     const monthsArray = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
                     const startMonthIdx = parsedSDate.month - 1;
+                    const startYear = parsedSDate.year;
                     const dur = parseInt(p.duration, 10) || 12;
                     const targetMonthIdx = monthsArray.indexOf(mFull);
+                    const viewYear = parseInt(currentAdminYear, 10) || new Date().getFullYear();
                     if (targetMonthIdx !== -1) {
-                      let diff = (targetMonthIdx - startMonthIdx) % dur;
-                      if (diff < 0) diff += dur;
-                      if (diff === 0) isRenovMonth = true;
+                      const totalMonthsDiff = (viewYear - startYear) * 12 + (targetMonthIdx - startMonthIdx);
+                      if (totalMonthsDiff > 0 && (totalMonthsDiff % dur) === 0) {
+                        isRenovMonth = true;
+                      }
                     }
                   }
 

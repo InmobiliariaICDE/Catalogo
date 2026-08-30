@@ -260,8 +260,8 @@ def parse_properties(file):
 
             is_renov_m = False
             if start_dt:
-                diff_m = (m_idx - (start_dt.month - 1)) % duration_m
-                if diff_m == 0:
+                total_months_diff = (y - start_dt.year) * 12 + (m_idx - (start_dt.month - 1))
+                if total_months_diff > 0 and (total_months_diff % duration_m) == 0:
                     is_renov_m = True
 
             if is_paid:
