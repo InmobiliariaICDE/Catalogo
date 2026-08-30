@@ -58,6 +58,22 @@ function calculateAdminEndDate(startDateStr, durationMonths) {
   const dd = String(parsed.day).padStart(2, '0');
   const mm = String(endMonth).padStart(2, '0');
   return `${endYear}-${mm}-${dd}`;
+function findAdminProperty(propId, propName) {
+  if (!adminData || !Array.isArray(adminData.properties)) return null;
+  const targetId = (propId !== undefined && propId !== null) ? String(propId).trim() : '';
+  const targetName = (propName !== undefined && propName !== null) ? String(propName).trim().toLowerCase() : '';
+  
+  if (targetId) {
+    const foundById = adminData.properties.find(x => String(x.id).trim() === targetId);
+    if (foundById) return foundById;
+  }
+  
+  if (targetName) {
+    const foundByName = adminData.properties.find(x => String(x.name).trim().toLowerCase() === targetName);
+    if (foundByName) return foundByName;
+  }
+  
+  return null;
 }
 
 function syncPropertyContractMonths(p) {
@@ -10634,41 +10650,6 @@ function mergeLocalAdminData(freshData) {
     p.payments = p.payments || {};
   });
 
-  const cachedStr = localStorage.getItem('icde_admin_data');
-  if (!cachedStr) return freshData;
-  try {
-    const cachedData = JSON.parse(cachedStr);
-    if (!cachedData || !Array.isArray(cachedData.properties)) return freshData;
-
-    freshData.properties.forEach(freshProp => {
-      const cachedProp = cachedData.properties.find(c => String(c.id) === String(freshProp.id) || (c.excel_row && String(c.excel_row) === String(freshProp.excel_row)));
-      if (cachedProp) {
-        ['tenant_name', 'tenant_phone', 'start_date', 'duration', 'deposit', 'increase_notes', 'damage_notes'].forEach(key => {
-          if (cachedProp[key] && !freshProp[key]) {
-            freshProp[key] = cachedProp[key];
-          }
-        });
-        if (cachedProp.payments && freshProp.payments) {
-          Object.keys(cachedProp.payments).forEach(year => {
-            if (!freshProp.payments[year]) freshProp.payments[year] = cachedProp.payments[year];
-            else {
-              cachedProp.payments[year].forEach(cPay => {
-                const fPay = freshProp.payments[year].find(f => f.month === cPay.month);
-                if (fPay) {
-                  if (cPay.status && cPay.status !== 'UNSTARTED' && cPay.status !== 'PENDING' && fPay.status === 'PENDING') {
-                    fPay.status = cPay.status;
-                    fPay.value = cPay.value;
-                  }
-                }
-              });
-            }
-          });
-        }
-      }
-    });
-  } catch(e) {
-    console.warn("Error en mergeLocalAdminData:", e);
-  }
   return freshData;
 }
 
@@ -10703,6 +10684,7 @@ async function loadAdminData() {
       const data = await res.json();
       if (data && data.properties && data.properties.length) {
         adminData = ensureUniqueIds(mergeLocalAdminData(data));
+        localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
         console.log('Datos de administración cargados desde el archivo estático local.');
         return;
       }
@@ -12313,7 +12295,7 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
   if (status === 'PAID') {
     const parsedVal = parseFloat(rawValue);
     if (isNaN(parsedVal) || parsedVal <= 0) {
-      const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim() || (x.excel_row && String(x.excel_row) === String(propId)));
+      const p = findAdminProperty(propId, propName);
       finalValue = monthly_rent || (p ? p.monthly_rent : 0);
     } else { finalValue = parsedVal; }
   } else if (status === 'VACANT') { finalValue = 'DESOCUPADO'; }
@@ -12329,7 +12311,7 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
   saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando...';
 
   const applyPropToMemory = () => {
-    const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim() || (x.excel_row && String(x.excel_row) === String(propId)));
+    const p = findAdminProperty(propId, propName);
     if (p) {
       Object.assign(p, {
         tenant_name, tenant_phone, monthly_rent,
@@ -12344,7 +12326,7 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
   };
 
   const applyPayToMemory = () => {
-    const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim() || (x.excel_row && String(x.excel_row) === String(propId)));
+    const p = findAdminProperty(propId, propName);
     if (p) {
       if (!p.payments[year]) p.payments[year] = [];
       let mPay = p.payments[year].find(m => m.month === monthName);
@@ -12495,7 +12477,7 @@ async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, st
 
   let finalValue = '';
   if (status === 'PAID') {
-    const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim());
+    const p = findAdminProperty(propId, propName);
     finalValue = p ? p.monthly_rent : 0;
   } else if (status === 'VACANT') { finalValue = 'DESOCUPADO'; }
   else if (status === 'FUTURE' || status === 'AL_DIA') { finalValue = '-'; }
@@ -12506,7 +12488,7 @@ async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, st
   else if (status === 'PENDING')       { finalValue = 'Pendiente'; }
   else { finalValue = '-'; }
 
-  const p = adminData.properties.find(x => String(x.id) === String(propId) || String(x.name).trim() === String(propName).trim() || (x.excel_row && String(x.excel_row) === String(propId)));
+  const p = findAdminProperty(propId, propName);
   if (p) {
     if (!p.payments[year]) p.payments[year] = [];
     let mPay = p.payments[year].find(m => m.month === monthName);
