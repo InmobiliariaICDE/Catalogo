@@ -10696,8 +10696,6 @@ async function loadAdminData() {
       if (data && !data.error && data.properties && data.properties.length) {
         adminData = ensureUniqueIds(data);
         console.log('Datos cargados desde Drive. Total propiedades:', adminData.properties.length);
-        // Sincronizar celdas PENDIENTE al Drive en segundo plano
-        setTimeout(() => syncPendingToDrive(), 1500);
         return;
       } else if (data && data.error) {
         console.error('Error del servidor Drive:', data.error);
@@ -10711,64 +10709,6 @@ async function loadAdminData() {
   if (content && (!adminData || !adminData.properties || !adminData.properties.length)) {
     content.innerHTML = '<div style="padding:40px; text-align:center; color:#ef4444;"><div style="font-size:48px;">⚠️</div><div style="font-size:18px; font-weight:700; margin:16px 0;">No se pudo conectar con Google Drive</div><div style="color:#888; font-size:14px; max-width:400px; margin:0 auto;">Verifique su conexión a internet y recargue la página.</div><button onclick="location.reload()" style="margin-top:20px; background:var(--gold); color:#000; border:none; padding:10px 24px; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px;">🔄 Recargar</button></div>';
   }
-}
-
-// Sincroniza al Drive todos los meses que el panel muestra como PENDIENTE
-// pero que en el Drive tienen la celda vacía (no tienen ningún valor registrado).
-async function syncPendingToDrive() {
-  if (!adminData || !adminData.properties) return;
-  const today = new Date();
-  const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth(); // 0-indexed
-  const monthsNames = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-
-  const pendingCells = [];
-
-  adminData.properties.forEach(prop => {
-    if (!prop.payments) return;
-    Object.keys(prop.payments).forEach(yr => {
-      const yearNum = parseInt(yr);
-      prop.payments[yr].forEach((m, idx) => {
-        if (m.status !== 'PENDING') return;
-        // Solo meses pasados o el actual (no futuros)
-        const isFuture = yearNum > currentYear || (yearNum === currentYear && idx > currentMonth);
-        if (isFuture) return;
-        // Solo si el valor está vacío o es '-' (no fue registrado explicitamente)
-        const rawVal = String(m.value || '').trim();
-        if (rawVal && rawVal !== '-' && rawVal.toUpperCase() !== 'PENDIENTE') return;
-        pendingCells.push({
-          propertyId: String(prop.id),
-          propertyName: prop.name,
-          year: yearNum,
-          monthIndex: idx,
-          monthName: m.month
-        });
-      });
-    });
-  });
-
-  if (pendingCells.length === 0) return;
-  console.log('[Drive Sync] Sincronizando', pendingCells.length, 'celdas PENDIENTE al Drive...');
-
-  // Enviar en secuencia con pequeña pausa para no saturar el API
-  for (const cell of pendingCells) {
-    try {
-      await sendAdminCloudAction({
-        action: 'saveAdminPayment',
-        propertyId: cell.propertyId,
-        propertyName: cell.propertyName,
-        year: cell.year,
-        monthIndex: cell.monthIndex,
-        value: 'Pendiente'
-      });
-      console.log('[Drive Sync] OK -', cell.propertyName, cell.year + '/' + cell.monthName);
-    } catch (e) {
-      console.warn('[Drive Sync] Error en', cell.propertyName, cell.monthName, '-', e.message);
-    }
-    // Pausa de 300ms entre llamadas para no saturar Apps Script
-    await new Promise(r => setTimeout(r, 300));
-  }
-  console.log('[Drive Sync] Sincronización PENDIENTE completada.');
 }
 
 async function checkWhatsAppBridge() {
