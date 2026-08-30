@@ -561,11 +561,13 @@ function saveAdminPropertyToSheet(params) {
   if (params.max_due_day !== undefined) sheet.getRange(rowIdx, maxDueDayCol).setValue(Number(params.max_due_day));
   if (params.monthly_rent !== undefined) sheet.getRange(rowIdx, rentCol).setValue(Number(params.monthly_rent));
 
-  // Auto-popular los hitos de renovación de contrato (PREAVISO y CONTRATO NUEVO) en Google Sheets
+  // Auto-popular los hitos de renovación de contrato (PREAVISO y CONTRATO NUEVO) en Google Sheets sólo si hay un inquilino activo
   try {
+    const tenantVal = params.tenant_name || sheet.getRange(rowIdx, tenantCol).getValue();
     const sDateStr = params.start_date || sheet.getRange(rowIdx, startDateCol).getValue();
     const durVal = parseInt(params.duration || sheet.getRange(rowIdx, durationCol).getValue(), 10) || 12;
-    if (sDateStr && String(sDateStr).includes('-')) {
+    
+    if (tenantVal && String(tenantVal).trim() !== '' && sDateStr && String(sDateStr).includes('-')) {
       const parts = String(sDateStr).split('-');
       const sYear = parseInt(parts[0], 10);
       const sMonth = parseInt(parts[1], 10);
@@ -589,9 +591,10 @@ function saveAdminPropertyToSheet(params) {
           const targetCol = colStart + mIdx + 1;
           const currentCellVal = String(sheet.getRange(rowIdx, targetCol).getValue()).trim();
           
-          if (isRenov && (currentCellVal === '-' || currentCellVal === '' || currentCellVal === 'DESOCUPADO' || currentCellVal === 'Pendiente')) {
+          // NUNCA sobrescribir DESOCUPADO o celdas con pagos reales
+          if (isRenov && (currentCellVal === '-' || currentCellVal === '' || currentCellVal === 'Pendiente')) {
             sheet.getRange(rowIdx, targetCol).setValue('CONTRATO NUEVO');
-          } else if (isPreaviso && (currentCellVal === '-' || currentCellVal === '' || currentCellVal === 'DESOCUPADO' || currentCellVal === 'Pendiente')) {
+          } else if (isPreaviso && (currentCellVal === '-' || currentCellVal === '' || currentCellVal === 'Pendiente')) {
             sheet.getRange(rowIdx, targetCol).setValue('PREAVISO');
           }
         });
