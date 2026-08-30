@@ -1413,3 +1413,101 @@ function submitAdminForm(params) {
   
   return createJsonResponse({ success: true });
 }
+
+/**
+ * ═════════════════════════════════════════════════════════════════
+ * REVISIÓN Y DESPACHO AUTOMÁTICO DE ALERTAS PUSH EN LA NUBE (24/7)
+ * Ejecuta este método desde un activador por tiempo (Time-driven Trigger)
+ * en Apps Script (cada hora o diariamente a primera hora).
+ * ═════════════════════════════════════════════════════════════════
+ */
+function ejecutarRevisionAlertasCronCloud() {
+  const now = new Date();
+  const currentDate = now.getDate();
+
+  // 1. REVISAR CITAS (30 min antes)
+  try {
+    const citas = getCitas();
+    if (Array.isArray(citas)) {
+      citas.forEach(cita => {
+        if (!cita.fecha || !cita.hora) return;
+        if (String(cita.estado || '').toLowerCase() === 'cancelada') return;
+
+        const [y, m, d] = cita.fecha.split('-').map(Number);
+        const [hh, mm] = cita.hora.split(':').map(Number);
+        if (!y || !m || !d || isNaN(hh) || isNaN(mm)) return;
+
+        const citaDate = new Date(y, m - 1, d, hh, mm);
+        const diffMins = Math.round((citaDate.getTime() - now.getTime()) / 60000);
+
+        if (diffMins >= 15 && diffMins <= 45) {
+          enviarWebPushNotificacion(
+            '📅 Confirmar Cita (en 30 min)',
+            'Debes confirmar la cita de las ' + cita.hora + ' con ' + (cita.cliente || 'Cliente') + ' (' + (cita.codigo || '') + ')'
+          );
+        }
+      });
+    }
+  } catch(e) {
+    Logger.log("Error revisando citas en cron: " + e);
+  }
+
+  // 2. REVISAR ARRIENDOS Y PREAVISOS
+  try {
+    const adminData = getAdminData();
+    if (adminData && Array.isArray(adminData.properties)) {
+      adminData.properties.forEach(p => {
+        if (p.status !== 'Ocupado') return;
+        const propName = p.name || 'Inmueble';
+        const inquilino = p.tenant_name || 'Inquilino';
+
+        // --- A. Cobro de arriendo ---
+        if (p.due_day) {
+          const dueDay = Math.round(p.due_day);
+          const tomorrow = new Date(now);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+
+          if (tomorrow.getDate() === dueDay) {
+            enviarWebPushNotificacion(
+              '💰 Mañana Vence Cobro de Arriendo',
+              'Mañana vence el plazo para cobrar el arriendo de ' + propName + ' (' + inquilino + ')'
+            );
+          }
+          if (currentDate === dueDay) {
+            enviarWebPushNotificacion(
+              '💰 Hoy Vence Cobro de Arriendo',
+              'Hoy es el día de cobro de arriendo de ' + propName + ' (' + inquilino + ')'
+            );
+          }
+        }
+
+        // --- B. Preaviso de contrato ---
+        const startDateStr = p.start_date;
+        const durationMonths = parseInt(p.contract_duration_months, 10) || 12;
+        if (startDateStr) {
+          const endDateStr = calculateAdminEndDate(startDateStr, durationMonths);
+          if (endDateStr) {
+            const [endY, endM, endD] = endDateStr.split('-').map(Number);
+            const endDate = new Date(endY, endM - 1, endD);
+            const diffDays = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+            if (diffDays >= 28 && diffDays <= 32) {
+              enviarWebPushNotificacion(
+                '💼 Preaviso de Contrato (Faltan 30 días)',
+                'Faltan 30 días para vencer el contrato de ' + inquilino + ' en ' + propName + '. Preparar preaviso o renovación.'
+              );
+            }
+            if (diffDays === 1) {
+              enviarWebPushNotificacion(
+                '💼 Mañana Vence Contrato de Arriendo',
+                'Mañana finaliza el contrato de arriendo de ' + inquilino + ' en ' + propName + '.'
+              );
+            }
+          }
+        }
+      });
+    }
+  } catch(e) {
+    Logger.log("Error revisando arriendos en cron: " + e);
+  }
+}

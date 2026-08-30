@@ -4786,6 +4786,184 @@ function enviarNotificacionSistema(titulo, cuerpo, datos = {}) {
     } catch(e) {}
   }
 }
+
+/* ═════════════════════════════════════════════════════════════════
+   MOTOR DE ALERTAS Y ALARMAS AUTOMÁTICAS PARA MÓVIL
+   1. Citas: 30 minutos antes de la hora agendada
+   2. Arriendos: 1 día antes y el mismo día del vencimiento de cobro
+   3. Preaviso/Renovación: 30 días (1 mes) antes y 1 día antes del fin de contrato
+   ═════════════════════════════════════════════════════════════════ */
+
+function obtenerAlertasEnviadasMemoria() {
+  try {
+    const raw = localStorage.getItem('icde_alertas_enviadas');
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) {
+    return {};
+  }
+}
+
+function guardarAlertaEnviadaMemoria(key) {
+  try {
+    const mem = obtenerAlertasEnviadasMemoria();
+    mem[key] = Date.now();
+    localStorage.setItem('icde_alertas_enviadas', JSON.stringify(mem));
+  } catch(e) {}
+}
+
+async function verificarAlertasProgramadasCRM() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  const now = new Date();
+  const sentMem = obtenerAlertasEnviadasMemoria();
+
+  // -------------------------------------------------------------
+  // 1. REVISIÓN DE CITAS (30 minutos antes)
+  // -------------------------------------------------------------
+  if (typeof citas !== 'undefined' && Array.isArray(citas)) {
+    citas.forEach(cita => {
+      if (!cita.fecha || !cita.hora) return;
+      if (String(cita.estado || '').toLowerCase() === 'cancelada') return;
+
+      const [year, month, day] = cita.fecha.split('-').map(Number);
+      const [hours, minutes] = cita.hora.split(':').map(Number);
+
+      if (!year || !month || !day || isNaN(hours) || isNaN(minutes)) return;
+
+      const citaDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
+      const diffMs = citaDate.getTime() - now.getTime();
+      const diffMins = Math.round(diffMs / 60000);
+
+      // Si faltan entre 15 y 35 minutos (alrededor de 30 min)
+      if (diffMins >= 15 && diffMins <= 35) {
+        const alertKey = `cita_30m_${cita.id || cita.codigo}_${cita.fecha}_${cita.hora}`;
+        if (!sentMem[alertKey]) {
+          guardarAlertaEnviadaMemoria(alertKey);
+
+          const clienteNom = cita.cliente || 'Cliente';
+          const codInm = cita.codigo ? `Inmueble: ${cita.codigo}` : '';
+          const horaTxt = cita.hora;
+
+          const titulo = '📅 Confirmar Cita (en 30 min)';
+          const cuerpo = `Debes confirmar la cita de las ${horaTxt} con ${clienteNom}. ${codInm}`.trim();
+
+          enviarWebPushDirecto(titulo, cuerpo);
+          enviarNotificacionSistema(titulo, cuerpo);
+        }
+      }
+    });
+  }
+
+  // -------------------------------------------------------------
+  // 2. REVISIÓN DE ARRIENDOS Y PREAVISOS DE CONTRATO (ADMINISTRACIÓN)
+  // -------------------------------------------------------------
+  if (typeof adminData !== 'undefined' && adminData && Array.isArray(adminData.properties)) {
+    adminData.properties.forEach(p => {
+      if (p.status !== 'Ocupado') return;
+      const propId = String(p.id || p.name).trim();
+      const propName = p.name ? p.name.trim() : 'Inmueble';
+      const inquilino = p.tenant_name ? p.tenant_name.trim() : 'Inquilino';
+      const canonNum = parseFloat(p.monthly_rent) || 0;
+      const canonVal = canonNum > 0 ? safeFormatP(canonNum) : '';
+
+      // --- A. ALERTAS DE COBRO DE ARRIENDO (1 día antes y el mismo día) ---
+      if (p.due_day) {
+        const dueDay = Math.round(p.due_day);
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+        const currentDate = now.getDate();
+
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const monthNamesList = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+        const monthName = monthNamesList[currentMonth];
+
+        // Verificar si el inquilino ya pagó este mes
+        const paymentsYear = (p.payments && p.payments[String(currentYear)]) ? p.payments[String(currentYear)] : [];
+        const payInfo = paymentsYear.find(m => m.month === monthName);
+        const isPaid = payInfo && payInfo.status === 'PAID';
+
+        if (!isPaid) {
+          // 1 Día Antes del Vencimiento de Arriendo
+          if (tomorrow.getDate() === dueDay) {
+            const key1Day = `arriendo_1d_${propId}_${currentYear}_${currentMonth}`;
+            if (!sentMem[key1Day]) {
+              guardarAlertaEnviadaMemoria(key1Day);
+
+              const titulo = '💰 Mañana Vence Cobro de Arriendo';
+              const cuerpo = `Mañana vence el arriendo de ${propName} (${inquilino}). ${canonVal ? 'Canon: ' + canonVal : ''}`.trim();
+
+              enviarWebPushDirecto(titulo, cuerpo);
+              enviarNotificacionSistema(titulo, cuerpo);
+            }
+          }
+
+          // El Mismo Día del Vencimiento de Arriendo
+          if (currentDate === dueDay) {
+            const keyToday = `arriendo_hoy_${propId}_${currentYear}_${currentMonth}`;
+            if (!sentMem[keyToday]) {
+              guardarAlertaEnviadaMemoria(keyToday);
+
+              const titulo = '💰 Hoy Vence Cobro de Arriendo';
+              const cuerpo = `Hoy es el día de cobro de arriendo de ${propName} (${inquilino}). ${canonVal ? 'Canon: ' + canonVal : ''}`.trim();
+
+              enviarWebPushDirecto(titulo, cuerpo);
+              enviarNotificacionSistema(titulo, cuerpo);
+            }
+          }
+        }
+      }
+
+      // --- B. PREAVISO Y RENOVACIÓN DE CONTRATO (1 mes antes y 1 día antes) ---
+      const startDateStr = p.start_date;
+      const durationMonths = parseInt(p.contract_duration_months, 10) || 12;
+
+      if (startDateStr) {
+        const endDateStr = calculateAdminEndDate(startDateStr, durationMonths);
+        if (endDateStr) {
+          const [endY, endM, endD] = endDateStr.split('-').map(Number);
+          const endDate = new Date(endY, endM - 1, endD, 0, 0, 0, 0);
+
+          const diffMs = endDate.getTime() - now.getTime();
+          const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+          // 1 Mes (30 Días) Antes del Vencimiento del Contrato
+          if (diffDays >= 28 && diffDays <= 32) {
+            const keyMonth = `preaviso_30d_${propId}_${endDateStr}`;
+            if (!sentMem[keyMonth]) {
+              guardarAlertaEnviadaMemoria(keyMonth);
+
+              const titulo = '💼 Preaviso de Contrato (Faltan 30 días)';
+              const cuerpo = `Faltan 30 días para terminar el contrato de arriendo de ${inquilino} en ${propName}. Preparar preaviso o renovación.`.trim();
+
+              enviarWebPushDirecto(titulo, cuerpo);
+              enviarNotificacionSistema(titulo, cuerpo);
+            }
+          }
+
+          // 1 Día Antes del Vencimiento del Contrato
+          if (diffDays === 1) {
+            const key1DayContr = `preaviso_1d_${propId}_${endDateStr}`;
+            if (!sentMem[key1DayContr]) {
+              guardarAlertaEnviadaMemoria(key1DayContr);
+
+              const titulo = '💼 Mañana Vence Contrato de Arriendo';
+              const cuerpo = `Mañana finaliza el contrato de arriendo de ${inquilino} en ${propName}.`.trim();
+
+              enviarWebPushDirecto(titulo, cuerpo);
+              enviarNotificacionSistema(titulo, cuerpo);
+            }
+          }
+        }
+      }
+    });
+  }
+}
+
+// Iniciar revisión continua del motor de alertas cada 2 minutos
+setInterval(verificarAlertasProgramadasCRM, 120000);
+setTimeout(verificarAlertasProgramadasCRM, 8000);
 function hardResetData() {
   if (confirm("¿Estás seguro? Esto borrará la memoria local del navegador (caché) y recargará todo desde la nube. Úsalo si la página se queda trabada.")) {
     localStorage.clear();
