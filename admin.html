@@ -10558,11 +10558,22 @@ function ensureUniqueIds(data) {
 }
 
 function mergeLocalAdminData(freshData) {
+  if (!freshData || !Array.isArray(freshData.properties)) return freshData || { properties: [], silvia_ledger: {} };
+  
+  // Sanear cada propiedad devuelta por la fuente principal
+  freshData.properties.forEach(p => {
+    p.name = p.name ? String(p.name).trim() : 'Propiedad Sin Nombre';
+    p.owner = p.owner ? String(p.owner).trim() : '';
+    p.tenant_name = p.tenant_name ? String(p.tenant_name).trim() : '';
+    p.monthly_rent = parseFloat(p.monthly_rent) || 0;
+    p.payments = p.payments || {};
+  });
+
   const cachedStr = localStorage.getItem('icde_admin_data');
   if (!cachedStr) return freshData;
   try {
     const cachedData = JSON.parse(cachedStr);
-    if (!cachedData || !cachedData.properties) return freshData;
+    if (!cachedData || !Array.isArray(cachedData.properties)) return freshData;
 
     freshData.properties.forEach(freshProp => {
       const cachedProp = cachedData.properties.find(c => String(c.id) === String(freshProp.id) || (c.excel_row && String(c.excel_row) === String(freshProp.excel_row)));
@@ -10583,20 +10594,11 @@ function mergeLocalAdminData(freshData) {
                     fPay.status = cPay.status;
                     fPay.value = cPay.value;
                   }
-                } else {
-                  freshProp.payments[year].push(cPay);
                 }
               });
             }
           });
         }
-      }
-    });
-
-    cachedData.properties.forEach(cachedProp => {
-      const existsInFresh = freshData.properties.some(f => String(f.id) === String(cachedProp.id) || (f.excel_row && String(f.excel_row) === String(cachedProp.excel_row)));
-      if (!existsInFresh) {
-        freshData.properties.push(cachedProp);
       }
     });
   } catch(e) {
@@ -10893,13 +10895,22 @@ function renderAdministracionContent() {
     return st === 'PAID' || st === 'PENDING' || st === 'PREAVISO' || st === 'NEW_CONTRACT' || st === 'NO_RENEW' || st === 'DELIVERY' || st === 'AL_DIA';
   };
 
-  const filteredProperties = adminData.properties.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchVal) ||
-                          (p.owner && p.owner.toLowerCase().includes(searchVal)) ||
-                          (p.owner_phone && p.owner_phone.includes(searchVal)) ||
-                          (p.tenant_name && p.tenant_name.toLowerCase().includes(searchVal)) ||
-                          (p.tenant_phone && p.tenant_phone.includes(searchVal)) ||
-                          (p.increase_notes && p.increase_notes.toLowerCase().includes(searchVal));
+  const filteredProperties = (adminData.properties || []).filter(p => {
+    if (!p) return false;
+    const pName = String(p.name || '').toLowerCase();
+    const pOwner = String(p.owner || '').toLowerCase();
+    const pOwnerPhone = String(p.owner_phone || '');
+    const pTenant = String(p.tenant_name || '').toLowerCase();
+    const pTenantPhone = String(p.tenant_phone || '');
+    const pNotes = String(p.increase_notes || '').toLowerCase();
+
+    const matchesSearch = !searchVal || 
+                          pName.includes(searchVal) ||
+                          pOwner.includes(searchVal) ||
+                          pOwnerPhone.includes(searchVal) ||
+                          pTenant.includes(searchVal) ||
+                          pTenantPhone.includes(searchVal) ||
+                          pNotes.includes(searchVal);
     if (!matchesSearch) return false;
 
     const getMonthStatus = (prop) => {
