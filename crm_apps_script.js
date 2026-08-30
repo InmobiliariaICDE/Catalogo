@@ -31,7 +31,7 @@ function enviarWebPushNotificacion(titulo, mensaje, targetUrl) {
   try {
     const payload = {
       app_id: ONE_SIGNAL_APP_ID,
-      included_segments: ['Subscribed Users', 'Total Subscriptions', 'Active Subscriptions'],
+      included_segments: ['All'],
       headings: { 'es': titulo, 'en': titulo },
       contents: { 'es': mensaje, 'en': mensaje },
       url: targetUrl || 'https://inmobiliariaicde.web.app/admin.html'

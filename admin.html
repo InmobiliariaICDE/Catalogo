@@ -4599,36 +4599,51 @@ async function solicitarPermisoNotificaciones() {
   }
 }
 
+async function enviarWebPushDirecto(titulo, cuerpo) {
+  try {
+    const payload = {
+      app_id: 'ebb863b8-75a9-4f85-931d-c98e7c9a00ee',
+      included_segments: ['All'],
+      headings: { es: titulo, en: titulo },
+      contents: { es: cuerpo, en: cuerpo },
+      url: 'https://inmobiliariaicde.web.app/admin.html',
+      chrome_web_icon: 'https://i.imgur.com/s3dvfne.png'
+    };
+
+    await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Authorization': 'Basic os_v2_app_5o4ghodvvfhyley5zghhzgqa53uweyb7fftemknbyq7hwwxyfwewzhrztdzy43rusizkrwbu7ciuzpjjx5obopckaqzkfwlcjei4gly'
+      },
+      body: JSON.stringify(payload)
+    });
+  } catch(e) {
+    console.warn('Error enviando OneSignal Push Directo:', e);
+  }
+}
+
 function probarNotificacionBackground10s() {
   if (!('Notification' in window) || Notification.permission !== 'granted') {
     alert('Primero activa las notificaciones usando el botón de arriba.');
     return;
   }
 
-  toast('⏱️ ¡Prueba iniciada! Sal de Chrome o bloquea el celular AHORA. En 10 segundos sonará la alerta.', 'info');
+  toast('⏱️ ¡Prueba de 10 seg iniciada! Sal de Chrome o bloquea el celular AHORA.', 'info');
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.ready.then(reg => {
-      if (reg.active) {
-        reg.active.postMessage({
-          type: 'SCHEDULE_TEST_NOTIFICATION',
-          delayMs: 10000
-        });
-      } else {
-        setTimeout(() => {
-          enviarNotificacionSistema('🔔 Alerta ICDE Prueba', 'Esta es una notificación de prueba en segundo plano.');
-        }, 10000);
-      }
-    }).catch(() => {
-      setTimeout(() => {
-        enviarNotificacionSistema('🔔 Alerta ICDE Prueba', 'Esta es una notificación de prueba en segundo plano.');
-      }, 10000);
+  // Enviar mensaje al Service Worker local
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'SCHEDULE_TEST_NOTIFICATION',
+      delayMs: 10000
     });
-  } else {
-    setTimeout(() => {
-      enviarNotificacionSistema('🔔 Alerta ICDE Prueba', 'Esta es una notificación de prueba en segundo plano.');
-    }, 10000);
   }
+
+  // Disparar Web Push desde la Nube (OneSignal FCM Cloud Push) a los 10 segundos
+  setTimeout(async () => {
+    await enviarWebPushDirecto('🔔 Alerta ICDE Inmobiliaria', '¡Prueba Exitosa! Notificación y sonido recibidos en segundo plano.');
+    enviarNotificacionSistema('🔔 Alerta ICDE Inmobiliaria', '¡Prueba Exitosa! Notificación y sonido recibidos en segundo plano.');
+  }, 10000);
 }
 
 function reproducirTonoNotificacion() {
@@ -4736,6 +4751,9 @@ function enviarNotificacionSistema(titulo, cuerpo, datos = {}) {
   hablarNotificacionTexto(`${titulo}. ${cuerpo}`);
 
   const iconUrl = datos.icon || 'https://i.imgur.com/s3dvfne.png';
+
+  // Disparar Web Push Cloud a OneSignal para dispositivos en segundo plano o bloqueados
+  enviarWebPushDirecto(titulo, cuerpo);
 
   if (navigator.serviceWorker && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({
