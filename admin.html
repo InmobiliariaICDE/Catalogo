@@ -3021,7 +3021,6 @@ html, body {
       <button class="tab" onclick="showTab('contabilidad')">💰 Contabilidad</button>
     </div>
     <div class="topbar-actions">
-      <button id="btnNotifCelular" class="btn-notif-mobile" onclick="solicitarPermisoNotificaciones()" title="Notificaciones Celular">🔔</button>
       <button class="settings-btn" onclick="abrirSettings()" title="Configuración">⚙️</button>
     </div>
   </div>
@@ -4522,20 +4521,21 @@ function actualizarEstadoBotonNotif() {
     btn.style.display = 'none';
     return;
   }
+  btn.style.display = 'flex';
   if (Notification.permission === 'granted') {
-    btn.innerHTML = '🔔';
+    btn.innerHTML = '🔔 Notificaciones Activas en Celular (Verificado)';
     btn.style.background = 'rgba(34,197,94,0.15)';
     btn.style.borderColor = 'rgba(34,197,94,0.4)';
     btn.style.color = '#22c55e';
     btn.title = 'Notificaciones activas en segundo plano';
   } else if (Notification.permission === 'denied') {
-    btn.innerHTML = '🔕';
+    btn.innerHTML = '🔕 Notificaciones Bloqueadas (Revisa Permisos)';
     btn.style.background = 'rgba(239,68,68,0.15)';
     btn.style.borderColor = 'rgba(239,68,68,0.4)';
     btn.style.color = '#ef4444';
     btn.title = 'Notificaciones bloqueadas (Permite en Ajustes de Navegador)';
   } else {
-    btn.innerHTML = '🔔';
+    btn.innerHTML = '🔔 Activar Notificaciones en Celular';
     btn.style.background = 'rgba(212,168,75,0.15)';
     btn.style.borderColor = 'var(--gold)';
     btn.style.color = 'var(--gold)';
