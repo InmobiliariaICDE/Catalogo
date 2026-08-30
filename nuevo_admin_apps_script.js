@@ -87,7 +87,7 @@ function getAdminData() {
     2024: [30,31,32,33,34,35,36,37,38,39,40,41],
     2025: [43,44,45,46,47,48,49,50,51,52,53,54],
     2026: [56,57,58,59,60,61,62,63,64,65,66,67],
-    2027: [69,70,71,72,73,74,75,76,77,78,79,80]
+    2027: [70,71,72,73,74,75,76,77,78,79,80,81]
   };
   const monthsNames = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
 
@@ -324,7 +324,7 @@ function saveAdminPaymentToSheet(params) {
 
   const year = parseInt(params.year, 10);
   const monthIndex = parseInt(params.monthIndex, 10);
-  const standardYearsMap = { 2023: 17, 2024: 30, 2025: 43, 2026: 56, 2027: 69 };
+  const standardYearsMap = { 2023: 17, 2024: 30, 2025: 43, 2026: 56, 2027: 70 };
   const colStart = standardYearsMap[year];
   
   if (colStart === undefined) {
