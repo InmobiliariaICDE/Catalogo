@@ -4859,6 +4859,44 @@ function guardarAlertaEnviadaMemoria(key) {
   } catch(e) {}
 }
 
+function parseFechaISO(fechaStr, horaStr) {
+  if (!fechaStr) return null;
+  const str = String(fechaStr).trim();
+  if (!str) return null;
+
+  let y, m, d;
+  const parts = str.split(/[-\/]/).map(Number);
+  if (parts.length === 3) {
+    if (parts[0] > 1000) {
+      y = parts[0]; m = parts[1]; d = parts[2];
+    } else if (parts[2] > 1000) {
+      d = parts[0]; m = parts[1]; y = parts[2];
+    } else {
+      y = parts[0]; m = parts[1]; d = parts[2];
+    }
+  } else {
+    const dt = new Date(str);
+    if (!isNaN(dt.getTime())) {
+      y = dt.getFullYear(); m = dt.getMonth() + 1; d = dt.getDate();
+    } else {
+      return null;
+    }
+  }
+
+  let h = 0, min = 0;
+  if (horaStr) {
+    const timeParts = String(horaStr).trim().split(':').map(Number);
+    if (timeParts.length >= 2 && !isNaN(timeParts[0]) && !isNaN(timeParts[1])) {
+      h = timeParts[0];
+      min = timeParts[1];
+    }
+  }
+
+  if (!y || !m || !d || isNaN(y) || isNaN(m) || isNaN(d)) return null;
+
+  return new Date(y, m - 1, d, h, min, 0, 0);
+}
+
 async function verificarAlertasProgramadasCRM() {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
@@ -4866,21 +4904,20 @@ async function verificarAlertasProgramadasCRM() {
   const sentMem = obtenerAlertasEnviadasMemoria();
 
   // -------------------------------------------------------------
-  // 1. REVISIÓN DE CITAS (30 minutos antes - Programación en Nube)
+  // 1. REVISIÓN DE CITAS (30 minutos antes - Programación en Nube y Local)
   // -------------------------------------------------------------
   if (typeof citas !== 'undefined' && Array.isArray(citas)) {
     citas.forEach(cita => {
       if (!cita.fecha || !cita.hora) return;
       if (String(cita.estado || '').toLowerCase() === 'cancelada') return;
 
-      const [year, month, day] = cita.fecha.split('-').map(Number);
-      const [hours, minutes] = cita.hora.split(':').map(Number);
+      const citaDate = parseFechaISO(cita.fecha, cita.hora);
+      if (!citaDate || isNaN(citaDate.getTime())) return;
 
-      if (!year || !month || !day || isNaN(hours) || isNaN(minutes)) return;
-
-      const citaDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
       const alertTime = new Date(citaDate.getTime() - 30 * 60 * 1000); // 30 minutos antes de la cita
-      const alertKey = `cita_30m_${cita.id || cita.codigo}_${cita.fecha}_${cita.hora}`;
+      const idCode = cita.id || cita.codigo || 'cita';
+      const schedKey = `cita_sched_${idCode}_${cita.fecha}_${cita.hora}`;
+      const firedKey = `cita_fired_${idCode}_${cita.fecha}_${cita.hora}`;
 
       const clienteNom = cita.cliente || 'Cliente';
       const codInm = cita.codigo ? `Inmueble: ${cita.codigo}` : '';
@@ -4890,10 +4927,10 @@ async function verificarAlertasProgramadasCRM() {
 
       const diffMs = alertTime.getTime() - now.getTime();
 
-      // Si la alerta cae en el futuro (ej. faltan entre 1 minuto y 24 horas para los 30 min antes)
+      // CASO A: Programar la cita futura (faltan entre 1 minuto y 24 horas para los 30 min antes)
       if (diffMs > 0 && diffMs <= 24 * 3600 * 1000) {
-        if (!sentMem[alertKey]) {
-          guardarAlertaEnviadaMemoria(alertKey);
+        if (!sentMem[schedKey]) {
+          guardarAlertaEnviadaMemoria(schedKey);
 
           // 1. Programar temporizador diferido en Service Worker del celular
           if ('serviceWorker' in navigator) {
@@ -4904,24 +4941,24 @@ async function verificarAlertasProgramadasCRM() {
                   title: titulo,
                   body: cuerpo,
                   delayMs: diffMs,
-                  tag: alertKey
+                  tag: firedKey
                 });
               }
             });
           }
 
           // 2. Programar notificación en la NUBE OneSignal
-          programarWebPushNube(titulo, cuerpo, alertTime, alertKey);
+          programarWebPushNube(titulo, cuerpo, alertTime, schedKey);
         }
-      } else {
-        // Si la cita es inminente ahora mismo (faltan entre 0 y 35 minutos para la cita)
-        const diffMins = Math.round((citaDate.getTime() - now.getTime()) / 60000);
-        if (diffMins >= 0 && diffMins <= 35) {
-          if (!sentMem[alertKey]) {
-            guardarAlertaEnviadaMemoria(alertKey);
-            enviarWebPushDirecto(titulo, cuerpo);
-            enviarNotificacionSistema(titulo, cuerpo);
-          }
+      }
+
+      // CASO B: Disparar la alerta si el momento actual está dentro de los 35 minutos previos a la cita
+      const citaDiffMins = Math.round((citaDate.getTime() - now.getTime()) / 60000);
+      if (citaDiffMins >= 0 && citaDiffMins <= 35) {
+        if (!sentMem[firedKey]) {
+          guardarAlertaEnviadaMemoria(firedKey);
+          enviarWebPushDirecto(titulo, cuerpo);
+          enviarNotificacionSistema(titulo, cuerpo, { tag: firedKey });
         }
       }
     });
