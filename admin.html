@@ -10643,6 +10643,12 @@ function ensureUniqueIds(data) {
 function mergeLocalAdminData(freshData) {
   if (!freshData || !Array.isArray(freshData.properties)) return freshData || { properties: [], silvia_ledger: {} };
   
+  let localData = null;
+  try {
+    const cached = localStorage.getItem('icde_admin_data');
+    if (cached) localData = JSON.parse(cached);
+  } catch(e) {}
+
   // Sanear cada propiedad devuelta por la fuente principal
   freshData.properties.forEach(p => {
     p.name = p.name ? String(p.name).trim() : 'Propiedad Sin Nombre';
@@ -10650,6 +10656,28 @@ function mergeLocalAdminData(freshData) {
     p.tenant_name = p.tenant_name ? String(p.tenant_name).trim() : '';
     p.monthly_rent = parseFloat(p.monthly_rent) || 0;
     p.payments = p.payments || {};
+
+    if (localData && Array.isArray(localData.properties)) {
+      const localP = localData.properties.find(x => String(x.id).trim() === String(p.id).trim() || (x.name && p.name && String(x.name).trim().toLowerCase() === String(p.name).trim().toLowerCase()));
+      if (localP && localP.payments) {
+        for (const yr in localP.payments) {
+          if (!p.payments[yr]) {
+            p.payments[yr] = localP.payments[yr];
+          } else {
+            localP.payments[yr].forEach(localPay => {
+              let cloudPay = p.payments[yr].find(m => m.month === localPay.month);
+              if (cloudPay) {
+                // Si en local se asignó un estado activo (PAGADO, PENDIENTE, PREAVISO, etc.) y en nube figura libre/sin iniciar, mantener la versión local recién guardada
+                if (localPay.status && !['UNSTARTED', 'FUTURE'].includes(localPay.status) && ['UNSTARTED', 'FUTURE'].includes(cloudPay.status)) {
+                  cloudPay.status = localPay.status;
+                  cloudPay.value = localPay.value;
+                }
+              }
+            });
+          }
+        }
+      }
+    }
   });
 
   return freshData;
@@ -12369,10 +12397,21 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
   };
 
 async function sendAdminCloudAction(payload) {
+  // 1. Envío garantizado en segundo plano mediante sendBeacon (evita bloqueos CORS o cierres de pestaña)
+  try {
+    if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+      const blob = new Blob([JSON.stringify(payload)], { type: 'text/plain;charset=UTF-8' });
+      navigator.sendBeacon(ADMIN_SCRIPT_URL, blob);
+    }
+  } catch (e) {
+    console.warn('[CloudSync] sendBeacon no disponible o falló:', e);
+  }
+
+  // 2. Intentar fetch POST con Content-Type text/plain
   try {
     const res = await fetch(ADMIN_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
       body: JSON.stringify(payload)
     });
     if (res.ok) {
@@ -12380,9 +12419,10 @@ async function sendAdminCloudAction(payload) {
       if (data && data.success) return data;
     }
   } catch (e) {
-    console.warn('[CloudSync] POST directo falló o tuvo restricción CORS, intentando fallback GET...', e);
+    console.warn('[CloudSync] POST directo falló o tuvo restricción CORS, intentando fallback...', e);
   }
 
+  // 3. Fallback GET parametrizado
   try {
     const searchParams = new URLSearchParams();
     for (const k in payload) {
@@ -12399,11 +12439,12 @@ async function sendAdminCloudAction(payload) {
     console.warn('[CloudSync] GET fallback falló, intentando no-cors ping...', e);
   }
 
+  // 4. Fallback no-cors POST final
   try {
     fetch(ADMIN_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
       body: JSON.stringify(payload)
     }).catch(e => null);
   } catch (e) {}
@@ -12432,7 +12473,7 @@ async function saveAdminPaymentStatus(propId, propName, monthName, year) {
   if (status === 'PAID') {
     const parsedVal = parseFloat(rawValue);
     if (isNaN(parsedVal) || parsedVal <= 0) {
-      const p = adminData.properties.find(x => x.id === propId);
+      const p = findAdminProperty(propId, propName);
       finalValue = p ? p.monthly_rent : 0;
     } else { finalValue = parsedVal; }
   } else if (status === 'VACANT') { finalValue = 'DESOCUPADO'; }
@@ -12457,7 +12498,7 @@ async function saveAdminPaymentStatus(propId, propName, monthName, year) {
     year: year, monthIndex: monthIdx, value: finalValue
   };
 
-  const p = adminData.properties.find(x => x.id === propId);
+  const p = findAdminProperty(propId, propName);
   if (p) {
     if (!p.payments[year]) p.payments[year] = [];
     let mPay = p.payments[year].find(m => m.month === monthName);
