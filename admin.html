@@ -4888,11 +4888,33 @@ async function verificarAlertasProgramadasCRM() {
       const titulo = '📅 Confirmar Cita (en 30 min)';
       const cuerpo = `Debes confirmar la cita de las ${horaTxt} con ${clienteNom}. ${codInm}`.trim();
 
-      // Si la alerta es en el futuro (más de 1 minuto adelante), programar en NUBE OneSignal
-      if (alertTime.getTime() > now.getTime() + 60000) {
-        programarWebPushNube(titulo, cuerpo, alertTime, alertKey);
+      const diffMs = alertTime.getTime() - now.getTime();
+
+      // Si la alerta cae en el futuro (ej. faltan entre 1 minuto y 24 horas para los 30 min antes)
+      if (diffMs > 0 && diffMs <= 24 * 3600 * 1000) {
+        if (!sentMem[alertKey]) {
+          guardarAlertaEnviadaMemoria(alertKey);
+
+          // 1. Programar temporizador diferido en Service Worker del celular
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(reg => {
+              if (reg && reg.active) {
+                reg.active.postMessage({
+                  type: 'SCHEDULE_NOTIFICATION',
+                  title: titulo,
+                  body: cuerpo,
+                  delayMs: diffMs,
+                  tag: alertKey
+                });
+              }
+            });
+          }
+
+          // 2. Programar notificación en la NUBE OneSignal
+          programarWebPushNube(titulo, cuerpo, alertTime, alertKey);
+        }
       } else {
-        // Si la cita es inminente (entre 0 y 35 minutos), disparar de inmediato
+        // Si la cita es inminente ahora mismo (faltan entre 0 y 35 minutos para la cita)
         const diffMins = Math.round((citaDate.getTime() - now.getTime()) / 60000);
         if (diffMins >= 0 && diffMins <= 35) {
           if (!sentMem[alertKey]) {
@@ -5645,6 +5667,7 @@ function rebuildCitas() {
   }
 
   citas = allVisitas;
+  setTimeout(verificarAlertasProgramadasCRM, 1000);
 }
 
 function normalizarPropiedades(data) {
