@@ -4545,27 +4545,20 @@ function actualizarEstadoBotonNotif() {
 
 async function solicitarPermisoNotificaciones() {
   if (!('Notification' in window)) {
-    toast('Tu navegador celular no soporta notificaciones push', 'error');
+    toast('Tu navegador no soporta notificaciones push', 'error');
     return;
   }
 
   if (Notification.permission === 'granted') {
-    toast('⏱️ Prueba iniciada. Sal de la app o bloquea el celular: en 10 seg llegará la alerta.', 'info');
-    
-    // Disparar alerta inmediata de verificación para comprobar que el celular emite sonidos
-    enviarNotificacionSistema('🔔 Verificación ICDE Inmediata', 'Conexión lista. Sal de la app o bloquea el celular para recibir la alerta a los 10 segundos.');
+    actualizarEstadoBotonNotif();
+    toast('🟢 Notificaciones activas en este celular. Enviando prueba...', 'success');
+    enviarNotificacionSistema('🔔 Prueba ICDE', 'Las notificaciones están funcionando correctamente en tu celular.');
+    return;
+  }
 
-    // Programar la alerta de 10 segundos a través del Service Worker listo
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(reg => {
-        if (reg.active) {
-          reg.active.postMessage({
-            type: 'SCHEDULE_TEST_NOTIFICATION',
-            delayMs: 10000
-          });
-        }
-      });
-    }
+  if (Notification.permission === 'denied') {
+    actualizarEstadoBotonNotif();
+    alert('⚠️ Las notificaciones están bloqueadas en tu navegador móvil.\n\nPara activarlas:\n1. Toca el candado 🔒 o sintonizador a la izquierda de la dirección web (URL) en Chrome.\n2. Entra a "Permisos del sitio" ➔ "Notificaciones".\n3. Cambia la opción a "PERMITIR".\n4. Recarga la página.');
     return;
   }
 
@@ -4574,19 +4567,21 @@ async function solicitarPermisoNotificaciones() {
       window.OneSignalDeferred.push(async function(OneSignal) {
         try {
           await OneSignal.Notifications.requestPermission();
+          await OneSignal.User.PushSubscription.optIn();
         } catch(e) {}
       });
     }
     const perm = await Notification.requestPermission();
     actualizarEstadoBotonNotif();
     if (perm === 'granted') {
-      toast('¡Notificaciones en segundo plano activadas correctamente! 🔔', 'success');
-      enviarNotificacionSistema('🔔 ICDE Notificaciones Activas', 'Recibirás alertas en la pantalla de tu celular incluso con la app en segundo plano.');
+      toast('¡Notificaciones activadas correctamente! 🟢', 'success');
+      enviarNotificacionSistema('🟢 ICDE Notificaciones Activas', 'Recibirás alertas en la pantalla de tu celular.');
     } else if (perm === 'denied') {
-      alert('⚠️ Las notificaciones están bloqueadas en tu celular.\n\nPara activarlas:\n1. Toca el candado o icono ⚙️ a la izquierda de la dirección de la página.\n2. Entra a "Permisos del sitio" / "Notificaciones".\n3. Selecciona "PERMITIR".');
+      alert('⚠️ Se han bloqueado las notificaciones.\n\nSi deseas recibirlas, por favor permite el acceso desde el icono del candado 🔒 en la barra de direcciones de Chrome.');
     }
   } catch(e) {
     console.error('Error al solicitar permiso:', e);
+    actualizarEstadoBotonNotif();
   }
 }
 
@@ -8284,6 +8279,7 @@ function abrirSettings(){
   if (elevenlabsInput) elevenlabsInput.value = settings.elevenlabsKey || '';
   if (contInput)   contInput.value   = settings.contScriptUrl || '';
   document.getElementById('settingsModal').classList.add('open');
+  actualizarEstadoBotonNotif();
   // Limpiar diagnóstico previo
   const diag = document.getElementById('diagResultado');
   if (diag) diag.style.display = 'none';
