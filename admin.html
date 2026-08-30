@@ -11271,6 +11271,10 @@ function renderMatrizPagos(propertiesList) {
                     });
                     if (hasPastPending) pay = { ...pay, status: 'FUTURE' };
                   }
+                  // Si es el mes de renovación y no está pagado o desocupado, marcar como NEW_CONTRACT para mostrar la estrella de renovación
+                  if (isRenovMonth && (pay.status === 'PENDING' || pay.status === 'FUTURE' || pay.status === 'UNSTARTED')) {
+                    pay = { ...pay, status: 'NEW_CONTRACT' };
+                  }
                   let cellContent = '·';
                   if (pay.status === 'PAID') cellContent = '✓';
                   else if (pay.status === 'PENDING') cellContent = '$';
@@ -11281,7 +11285,18 @@ function renderMatrizPagos(propertiesList) {
                   else if (pay.status === 'DELIVERY') cellContent = '⛳';
                   else if (pay.status === 'AL_DIA') cellContent = '☀';
                   
-                  const tooltipText = `${p.name} - ${mFull}: ${getStatusLabel(pay.status)} ${pay.value && parseFloat(pay.value) > 0 ? safeFormatP(pay.value) : ''}`;
+                  // Detectar si este mes es el mes de aniversario/renovación del contrato
+                  let isRenovMonth = false;
+                  if (p.start_date && p.start_date.includes('-')) {
+                    const sMonthNum = parseInt(p.start_date.split('-')[1], 10);
+                    const monthsArray = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+                    if (monthsArray[sMonthNum - 1] === mFull) {
+                      isRenovMonth = true;
+                    }
+                  }
+
+                  const renovBadge = isRenovMonth ? ' | 📝 Mes de Renovación / Término de Contrato' : '';
+                  const tooltipText = `${p.name} - ${mFull}: ${getStatusLabel(pay.status)}${renovBadge} ${pay.value && parseFloat(pay.value) > 0 ? safeFormatP(pay.value) : ''}`;
                   
                   return `
                     <td onclick="openMatrixCellDetails('${p.id}', '${mFull}', '${currentAdminYear}')" style="cursor: pointer;">
@@ -12611,7 +12626,7 @@ function getStatusLabel(status) {
     case 'PENDING': return 'Pendiente';
     case 'VACANT': return 'Desocupado';
     case 'PREAVISO': return 'Preaviso';
-    case 'NEW_CONTRACT': return 'Nuevo Contrato';
+    case 'NEW_CONTRACT': return 'Renovación / Término de Contrato';
     case 'NO_RENEW': return 'No Renovara';
     case 'DELIVERY': return 'Entrega';
     case 'FUTURE': return 'Futuro';
