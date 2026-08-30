@@ -11175,7 +11175,7 @@ function renderResumenCobros(propertiesList) {
             const maxDueDay = p.max_due_day ? Math.round(p.max_due_day) : 10;
             
             return `
-              <tr>
+              <tr onclick="openMatrixCellDetails('${p.id}', '${currentAdminMonth}', '${currentAdminYear}')" style="cursor: pointer;">
                 <td>
                   <div style="font-weight:700; color:#fff; font-size:14px; letter-spacing:-0.01em;">${p.name}</div>
                   <div style="font-size:11px; color:var(--muted); margin-top:2px;">
@@ -11251,8 +11251,8 @@ function renderMatrizPagos(propertiesList) {
             
             const isSelected = String(p.name).trim() === String(currentAdminPropName).trim();
             return `
-              <tr class="${isSelected ? 'active-admin-row' : ''}" data-prop-name="${String(p.name).trim()}" onclick="abrirEditarInmueble('${p.id}', 'cobro')">
-                <td class="cell-prop" title="${p.name} (Propietario: ${p.owner}${p.tenant_name ? `, Inquilino: ${p.tenant_name}` : ''})">
+              <tr class="${isSelected ? 'active-admin-row' : ''}" data-prop-name="${String(p.name).trim()}" onclick="openMatrixCellDetails('${p.id}', '${currentAdminMonth}', '${currentAdminYear}')" style="cursor: pointer;">
+                <td class="cell-prop" title="${p.name} (Propietario: ${p.owner}${p.tenant_name ? `, Inquilino: ${p.tenant_name}` : ''})" onclick="openMatrixCellDetails('${p.id}', '${currentAdminMonth}', '${currentAdminYear}')" style="cursor: pointer;">
                   <div style="font-weight:700; color:#fff; font-size:13px;">${p.name}${p.tenant_name ? ' - ' + p.tenant_name : ''}</div>
                   <div style="font-size:10px; color:var(--muted); font-weight:500;">${p.owner || ''}</div>
                 </td>
@@ -11284,13 +11284,13 @@ function renderMatrizPagos(propertiesList) {
                   const tooltipText = `${p.name} - ${mFull}: ${getStatusLabel(pay.status)} ${pay.value && parseFloat(pay.value) > 0 ? safeFormatP(pay.value) : ''}`;
                   
                   return `
-                    <td>
+                    <td onclick="openMatrixCellDetails('${p.id}', '${mFull}', '${currentAdminYear}')" style="cursor: pointer;">
                       <div id="cell-${p.id}-${mFull}-${currentAdminYear}" class="matrix-cell status-cell-${pay.status}" 
                            data-tooltip="${tooltipText}"
                            style="position: relative;">
                         ${cellContent}
                         <select style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; color-scheme: dark;"
-                                onclick="event.stopPropagation();"
+                                onclick="openMatrixCellDetails('${p.id}', '${mFull}', '${currentAdminYear}')"
                                 onchange="quickSaveAdminPaymentStatus('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${mFull}', '${currentAdminYear}', this.value)">
                           <option value="PAID" style="background-color: #121212; color: #fff;" ${pay.status === 'PAID' ? 'selected' : ''}>🟢 Pagado</option>
                           <option value="PENDING" style="background-color: #121212; color: #fff;" ${pay.status === 'PENDING' ? 'selected' : ''}>🔴 Pendiente</option>
