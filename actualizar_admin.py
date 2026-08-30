@@ -258,10 +258,20 @@ def parse_properties(file):
             is_current = (y == _curr_year and m_idx == _curr_month_idx)
             is_future = (y > _curr_year or (y == _curr_year and m_idx > _curr_month_idx))
 
+            is_renov_m = False
+            if start_dt:
+                diff_m = (m_idx - (start_dt.month - 1)) % duration_m
+                if diff_m == 0:
+                    is_renov_m = True
+
             if is_paid:
                 pass
             elif is_delivery:
                 m["status"] = "DELIVERY"
+            elif is_renov_m and is_occupied_prop and not is_before_start and not is_after_end:
+                if m["status"] not in ("PAID", "PREAVISO", "DELIVERY", "NO_RENEW"):
+                    m["status"] = "NEW_CONTRACT"
+                    m["value"] = "CONTRATO NUEVO"
             elif not is_occupied_prop or last_delivery > last_paid or is_before_start or is_after_end:
                 m["status"] = "VACANT"
                 m["value"] = "DESOCUPADO"
