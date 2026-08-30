@@ -30,15 +30,34 @@ function parseAdminStartDate(dStr) {
   if (!dStr || typeof dStr !== 'string') return null;
   const str = dStr.trim();
   if (!str) return null;
-  if (str.match(/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}$/)) {
+  if (str.match(/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}/)) {
     const parts = str.split(/[-\/]/);
     return { year: parseInt(parts[0], 10), month: parseInt(parts[1], 10), day: parseInt(parts[2], 10) };
   }
-  if (str.match(/^\d{1,2}[-\/]\d{1,2}[-\/]\d{4}$/)) {
+  if (str.match(/^\d{1,2}[-\/]\d{1,2}[-\/]\d{4}/)) {
     const parts = str.split(/[-\/]/);
     return { year: parseInt(parts[2], 10), month: parseInt(parts[1], 10), day: parseInt(parts[0], 10) };
   }
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    return { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() };
+  }
   return null;
+}
+
+function calculateAdminEndDate(startDateStr, durationMonths) {
+  const parsed = parseAdminStartDate(startDateStr);
+  if (!parsed) return null;
+  const dur = parseInt(durationMonths, 10) || 12;
+  let endMonth = parsed.month + dur;
+  let endYear = parsed.year;
+  while (endMonth > 12) {
+    endMonth -= 12;
+    endYear += 1;
+  }
+  const dd = String(parsed.day).padStart(2, '0');
+  const mm = String(endMonth).padStart(2, '0');
+  return `${endYear}-${mm}-${dd}`;
 }
 
 // Suprime el diálogo "Esta página no puede cargar Google Maps correctamente"
@@ -11202,7 +11221,9 @@ function renderResumenCobros(propertiesList) {
                 </td>
                 <td>
                   <div style="font-weight:600; color:rgba(255,255,255,0.9);">${p.tenant_name || ''}</div>
-                  <div style="font-size:11px; color:var(--muted); margin-top:2px;">Inicio: ${p.start_date || 'N/A'} (${p.duration || 12} meses)</div>
+                  <div style="font-size:11px; color:var(--muted); margin-top:2px;">
+                    📅 Inicio: ${p.start_date || 'N/A'} | ⏳ Fin: <strong style="color:var(--gold);">${calculateAdminEndDate(p.start_date, p.duration) || 'N/A'}</strong> (${p.duration || 12} meses)
+                  </div>
                 </td>
                 <td>
                   <div style="color:var(--gold); font-weight:700; font-size:14px;">${safeFormatP(p.monthly_rent)}</div>
@@ -11717,6 +11738,10 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
             <label class="u-inp-label">Duración (Meses)</label>
             <input type="number" id="editContraDuration" class="u-inp" value="${p.duration || ''}">
           </div>
+        </div>
+
+        <div style="font-size:12px; font-weight:700; color:var(--gold); background:rgba(212,168,75,0.1); border:1px solid rgba(212,168,75,0.3); border-radius:6px; padding:6px 12px; margin-top:-2px; display:flex; align-items:center; gap:6px;">
+          🗓️ Fin / Vencimiento de Contrato: <strong>${calculateAdminEndDate(p.start_date, p.duration) || 'N/A'}</strong>
         </div>
 
         <div class="u-modal-grid">
