@@ -18,6 +18,43 @@ function getSpreadsheet() {
 }
 
 // ─────────────────────────────────────────────────────────────
+// CONFIGURACIÓN DE NOTIFICACIONES PUSH EN SEGUNDO PLANO (ONESIGNAL)
+// ─────────────────────────────────────────────────────────────
+const ONE_SIGNAL_APP_ID = 'ebb863b8-75a9-4f85-931d-c98e7c9a00ee';
+const ONE_SIGNAL_REST_API_KEY = 'os_v2_app_5o4ghodvvfhyley5zghhzgqa53uweyb7fftemknbyq7hwwxyfwewzhrztdzy43rusizkrwbu7ciuzpjjx5obopckaqzkfwlcjei4gly';
+
+function enviarWebPushNotificacion(titulo, mensaje, targetUrl) {
+  if (!ONE_SIGNAL_APP_ID || !ONE_SIGNAL_REST_API_KEY || ONE_SIGNAL_REST_API_KEY.includes('REEMPLAZAR')) {
+    Logger.log('OneSignal Web Push omitido: REST API Key no configurada.');
+    return;
+  }
+  try {
+    const payload = {
+      app_id: ONE_SIGNAL_APP_ID,
+      included_segments: ['Subscribed Users', 'Total Subscriptions', 'Active Subscriptions'],
+      headings: { 'es': titulo, 'en': titulo },
+      contents: { 'es': mensaje, 'en': mensaje },
+      url: targetUrl || 'https://inmobiliariaicde.web.app/admin.html'
+    };
+
+    const options = {
+      method: 'post',
+      contentType: 'application/json; charset=utf-8',
+      headers: {
+        'Authorization': 'Basic ' + ONE_SIGNAL_REST_API_KEY
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+
+    const res = UrlFetchApp.fetch('https://onesignal.com/api/v1/notifications', options);
+    Logger.log('Respuesta de OneSignal: ' + res.getContentText());
+  } catch (e) {
+    Logger.log('Error enviando OneSignal Push: ' + e);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // ROUTER GET
 // ─────────────────────────────────────────────────────────────
 function doGet(e) {
@@ -233,6 +270,12 @@ function saveLeadToSheet(lead) {
       if (nh in fieldMap) newRow[colIdx] = fieldMap[nh];
     });
     sheet.appendRow(newRow);
+
+    // Disparar Notificación Push en segundo plano
+    enviarWebPushNotificacion(
+      '👤 Nuevo Lead Registrado en ICDE',
+      'Cliente: ' + (lead.nombre || 'Nuevo Cliente') + ' | Tel: ' + (lead.celular || '')
+    );
   }
 
   return createJsonResponse({ success: true });
@@ -565,6 +608,12 @@ function saveCitaToSheet(cita) {
     sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
   } else {
     sheet.appendRow(rowData);
+
+    // Disparar Notificación Push en segundo plano
+    enviarWebPushNotificacion(
+      '📅 ¡Nueva Cita Agendada en ICDE!',
+      'Cliente: ' + (cita.cliente || 'Cliente') + ' | Inmueble: ' + (cita.codigo || '') + ' | Fecha: ' + (cita.fecha || 'Hoy')
+    );
   }
 
   return createJsonResponse({ success: true });

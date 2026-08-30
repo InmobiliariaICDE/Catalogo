@@ -24,6 +24,19 @@
 <script async defer src="https://apis.google.com/js/api.js"></script>
 <script async defer src="https://accounts.google.com/gsi/client"></script>
 <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0&libraries=places&loading=async"></script>
+<!-- OneSignal Web Push Notifications SDK -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "ebb863b8-75a9-4f85-931d-c98e7c9a00ee",
+      allowLocalhostAsSecureOrigin: true,
+      serviceWorkerParam: { scope: '/' },
+      serviceWorkerPath: '/OneSignalSDKWorker.js'
+    });
+  });
+</script>
 <script>
 
 function parseAdminStartDate(dStr) {
@@ -4529,6 +4542,13 @@ async function solicitarPermisoNotificaciones() {
   }
 
   try {
+    if (window.OneSignalDeferred) {
+      window.OneSignalDeferred.push(async function(OneSignal) {
+        try {
+          await OneSignal.Notifications.requestPermission();
+        } catch(e) {}
+      });
+    }
     const perm = await Notification.requestPermission();
     actualizarEstadoBotonNotif();
     if (perm === 'granted') {
