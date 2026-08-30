@@ -2894,16 +2894,7 @@ html, body {
   <div class="topbar">
     <img src="https://i.imgur.com/YbnRomr.png" alt="ICDE"/>
     <div class="brand" style="display: flex; align-items: baseline; gap: 8px;">ICDE Panel de Control <span>/ Gestión de Clientes</span><span style="font-size: 10px; font-weight: normal; color: var(--gold); opacity: 0.7; padding: 1px 6px; border: 1px solid rgba(212,168,75,0.3); border-radius: 6px; font-family: monospace;">v3.5</span></div>
-    <div class="topbar-right">
-      <span id="syncStatus" style="font-size:12px;color:#888;"></span>
-      <span id="autoSyncIndicator" style="font-size:11px; color:#888; display:none; align-items:center; gap:5px;">
-        <span id="autoSyncDot" style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
-        <span id="autoSyncTxt">En vivo</span>
-      </span>
-      <button id="btnNotifCelular" class="settings-btn" onclick="solicitarPermisoNotificaciones()" title="Notificaciones en Celular (Segundo Plano)" style="background:rgba(212,168,75,0.15); border-color:var(--gold);">🔔</button>
-      <button class="settings-btn" onclick="refreshData()" title="Sincronizar Datos ahora" style="background:rgba(212,168,75,0.1); border-color:var(--border);">🔄</button>
-      <button class="btn-logout" onclick="doLogout()">Salir</button>
-    </div>
+    <div class="topbar-right"></div>
   </div>
   <div class="tabs">
     <button class="tab active" onclick="showTab('nuevo')">🏡 Catálogo</button>
@@ -5465,8 +5456,8 @@ async function cargarProps(){
       }
     });
     
-    console.log("Admin: Remote:", remoteProps.length, "Custom:", customProps.length, "Total:", allProps.length);
-    document.getElementById('syncStatus').textContent=`✓ ${allProps.length} propiedades`;
+    const stSuccess = document.getElementById('syncStatus');
+    if (stSuccess) stSuccess.textContent=`✓ ${allProps.length} propiedades`;
     
     // Actualizar el precio máximo dinámico
     if(allProps.length > 0){
@@ -5476,7 +5467,8 @@ async function cargarProps(){
     
   } catch(e){
     console.error("Error cargando propiedades:", e);
-    document.getElementById('syncStatus').textContent='⚠ Sin conexión'; 
+    const stErr = document.getElementById('syncStatus');
+    if (stErr) stErr.textContent='⚠ Sin conexión'; 
     allProps=[];
   }
   if(currentTab==='nuevo') renderNuevo();
