@@ -299,8 +299,12 @@ function importAdminDataFromJSON(data) {
         rawNameVal += '  ' + p.increase_notes;
       }
       sheet.getRange(rowIdx + 1, 9).setValue(rawNameVal); // Inmueble (Col I)
-      sheet.getRange(rowIdx + 1, 10).setValue(p.tenant_name || ''); // Inquilino (Col J)
-      sheet.getRange(rowIdx + 1, 11).setValue(p.tenant_phone || ''); // Celular Inquilino (Col K)
+      if (p.tenant_name && p.tenant_name.trim() !== '') {
+        sheet.getRange(rowIdx + 1, 10).setValue(p.tenant_name); // Inquilino (Col J)
+      }
+      if (p.tenant_phone && p.tenant_phone.trim() !== '') {
+        sheet.getRange(rowIdx + 1, 11).setValue(p.tenant_phone); // Celular Inquilino (Col K)
+      }
       sheet.getRange(rowIdx + 1, 12).setValue(p.duration || ''); // Contrato Meses (Col L)
       sheet.getRange(rowIdx + 1, 13).setValue(p.deposit || ''); // Depósito (Col M)
       sheet.getRange(rowIdx + 1, 14).setValue(p.start_date || ''); // Fecha Inicio (Col N)
