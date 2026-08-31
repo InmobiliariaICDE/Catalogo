@@ -1511,3 +1511,21 @@ function ejecutarRevisionAlertasCronCloud() {
     Logger.log("Error revisando arriendos en cron: " + e);
   }
 }
+
+/**
+ * Función para instalar o renovar el activador automático cada 5 minutos en Google Apps Script.
+ * Ejecútala una sola vez desde el editor de Google Apps Script.
+ */
+function crearActivadorAutomaticoNube() {
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'ejecutarRevisionAlertasCronCloud') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  ScriptApp.newTrigger('ejecutarRevisionAlertasCronCloud')
+    .timeBased()
+    .everyMinutes(5)
+    .create();
+  Logger.log('🟢 Activador automático de 5 minutos creado con éxito en Google Apps Script.');
+}

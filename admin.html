@@ -11010,7 +11010,10 @@ function ensureUniqueIds(data) {
           const isCurrent = (y === currentYear && mIdx === currentMonthIdx);
           const isFuture = (y > currentYear || (y === currentYear && mIdx > currentMonthIdx));
 
-          if (isPaidCell) {
+          if (valUpper.includes('DESOCUPAD') || m.status === 'VACANT') {
+            m.status = 'VACANT';
+            m.value = 'DESOCUPADO';
+          } else if (isPaidCell) {
             // Keep PAID / NEW_CONTRACT
           } else if (isDeliveryCell) {
             m.status = 'DELIVERY';
