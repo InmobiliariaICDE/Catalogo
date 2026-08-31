@@ -3161,6 +3161,9 @@ html, body {
       <div class="form-group full"><label class="form-label">ElevenLabs API Key (Voz Tony Robbins)</label>
         <input class="form-input" id="setElevenlabsKey" type="password" placeholder="sk_..." value="${settings.elevenlabsKey || ''}"/>
       </div>
+      <div class="form-group full"><label class="form-label">OneSignal REST API Key (Push Notifications Nube)</label>
+        <input class="form-input" id="setOneSignalApiKey" type="password" placeholder="os_v2_app_..." value="${settings.oneSignalApiKey || ''}"/>
+      </div>
       <div class="form-group full"><label class="form-label">Contabilidad Google Apps Script URL (Sincronización Drive)</label>
         <input class="form-input" id="setContScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" value="${settings.contScriptUrl || ''}"/>
       </div>
@@ -4609,7 +4612,7 @@ async function solicitarPermisoNotificaciones() {
 
 async function enviarWebPushDirecto(titulo, cuerpo) {
   try {
-    const apiKey = (typeof settings !== 'undefined' && settings.oneSignalApiKey) || 'os_v2_app_5o4ghodvvfhyley5zghhzgqa52mwfpkq7rxueh5suhkeoz3g5wdfgukv6arrfqevhth7fmqhxqcskbxc3rbw3sfl4pkctd72hqbbpmq';
+    const apiKey = (typeof settings !== 'undefined' && settings.oneSignalApiKey) || '';
     if (!apiKey) return;
 
     const payload = {
@@ -4621,18 +4624,15 @@ async function enviarWebPushDirecto(titulo, cuerpo) {
       chrome_web_icon: 'https://i.imgur.com/s3dvfne.png'
     };
 
-    const res = await fetch('https://onesignal.com/api/v1/notifications', {
+    fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         'Authorization': 'Key ' + apiKey
       },
       body: JSON.stringify(payload)
-    });
-    console.log('☁️ Push Nube Directo status:', res.status);
-  } catch(e) {
-    console.warn('OneSignal Cloud Push omitido:', e);
-  }
+    }).catch(e => {});
+  } catch(e) {}
 }
 
 async function programarWebPushNube(titulo, cuerpo, targetDate, alertKey) {
@@ -4640,15 +4640,10 @@ async function programarWebPushNube(titulo, cuerpo, targetDate, alertKey) {
     const sentMem = obtenerAlertasEnviadasMemoria();
     if (sentMem[alertKey]) return;
 
-    const nowMs = Date.now();
-    const targetMs = targetDate.getTime();
-    if (targetMs <= nowMs + 10000) return;
-
-    const apiKey = (typeof settings !== 'undefined' && settings.oneSignalApiKey) || 'os_v2_app_5o4ghodvvfhyley5zghhzgqa52mwfpkq7rxueh5suhkeoz3g5wdfgukv6arrfqevhth7fmqhxqcskbxc3rbw3sfl4pkctd72hqbbpmq';
+    const apiKey = (typeof settings !== 'undefined' && settings.oneSignalApiKey) || '';
     if (!apiKey) return;
 
     const sendAfterStr = targetDate.toISOString();
-
     const payload = {
       app_id: 'ebb863b8-75a9-4f85-931d-c98e7c9a00ee',
       included_segments: ['All'],
@@ -4659,22 +4654,17 @@ async function programarWebPushNube(titulo, cuerpo, targetDate, alertKey) {
       chrome_web_icon: 'https://i.imgur.com/s3dvfne.png'
     };
 
-    const res = await fetch('https://onesignal.com/api/v1/notifications', {
+    fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         'Authorization': 'Key ' + apiKey
       },
       body: JSON.stringify(payload)
-    });
-
-    if (res.ok) {
-      guardarAlertaEnviadaMemoria(alertKey);
-      console.log('☁️ Alerta de Nube OneSignal programada con éxito para:', sendAfterStr);
-    }
-  } catch(e) {
-    console.warn('Error al programar alerta en la nube OneSignal:', e);
-  }
+    }).then(res => {
+      if (res.ok) guardarAlertaEnviadaMemoria(alertKey);
+    }).catch(e => {});
+  } catch(e) {}
 }
 
 function probarNotificacionBackground10s() {
@@ -8635,10 +8625,12 @@ function abrirSettings(){
   const waInput = document.getElementById('setWaApi');
   const geminiInput = document.getElementById('setGeminiKey');
   const elevenlabsInput = document.getElementById('setElevenlabsKey');
+  const oneSignalInput = document.getElementById('setOneSignalApiKey');
   const contInput = document.getElementById('setContScriptUrl');
   if (waInput)     waInput.value     = settings.waApi || '';
   if (geminiInput) geminiInput.value = settings.geminiKey || '';
   if (elevenlabsInput) elevenlabsInput.value = settings.elevenlabsKey || '';
+  if (oneSignalInput)  oneSignalInput.value  = settings.oneSignalApiKey || '';
   if (contInput)   contInput.value   = settings.contScriptUrl || '';
   document.getElementById('settingsModal').classList.add('open');
   actualizarEstadoBotonNotif();
@@ -8650,6 +8642,9 @@ function guardarSettings(){
   settings.waApi = document.getElementById('setWaApi').value.trim();
   settings.geminiKey = document.getElementById('setGeminiKey').value.trim();
   settings.elevenlabsKey = document.getElementById('setElevenlabsKey').value.trim();
+  if (document.getElementById('setOneSignalApiKey')) {
+    settings.oneSignalApiKey = document.getElementById('setOneSignalApiKey').value.trim();
+  }
   settings.contScriptUrl = document.getElementById('setContScriptUrl').value.trim();
   CONT_SCRIPT_URL = settings.contScriptUrl;
   console.log("Guardando claves - Gemini largo:", settings.geminiKey.length, "ElevenLabs largo:", settings.elevenlabsKey.length);

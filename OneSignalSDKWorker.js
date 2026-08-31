@@ -1,4 +1,8 @@
-importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDKWorker.js');
+try {
+  importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDKWorker.js');
+} catch(e) {
+  console.warn('SDK externo omitido, usando motor nativo de Service Worker.');
+}
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -9,7 +13,7 @@ self.addEventListener('activate', (event) => {
 });
 
 // ═════════════════════════════════════════════════════════════════
-// MEMORIA Y REVISIÓN CONTINUA DE NOTIFICACIONES EN SEGUNDO PLANO
+// MOTOR NATIVO DE ALARMAS Y NOTIFICACIONES PUSH (100% INDEPENDIENTE)
 // ═════════════════════════════════════════════════════════════════
 const pendingNotifications = [];
 
@@ -32,8 +36,8 @@ function checkPendingNotifications() {
   }
 }
 
-// Revisar la cola pendiente cada 15 segundos en segundo plano
-setInterval(checkPendingNotifications, 15000);
+// Revisión continua cada 10 segundos
+setInterval(checkPendingNotifications, 10000);
 
 self.addEventListener('message', (event) => {
   if (!event.data) return;
