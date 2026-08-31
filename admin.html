@@ -11739,9 +11739,10 @@ function renderMatrizPagos(propertiesList) {
                     if (hasPastPending) pay = { ...pay, status: "FUTURE" };
                   }
 
-                  // Si es el mes de renovación y no está en un estado resuelto especial (PAGADO, PREAVISO, ENTREGA, NO RENOVARA), marcar como NEW_CONTRACT para mostrar la estrella ★
+                  // Si es el mes de renovación y no está en un estado resuelto especial (PAGADO, PREAVISO, ENTREGA, NO RENOVARA, VACANT / DESOCUPADO), marcar como NEW_CONTRACT para mostrar la estrella ★
+                  const valUpperPay = String(pay.value || '').trim().toUpperCase();
                   if (isRenovMonth) {
-                    if (!["PAID", "PREAVISO", "DELIVERY", "NO_RENEW"].includes(pay.status)) {
+                    if (!["PAID", "PREAVISO", "DELIVERY", "NO_RENEW", "VACANT"].includes(pay.status) && !valUpperPay.includes('DESOCUPAD')) {
                       pay = { ...pay, status: "NEW_CONTRACT" };
                     }
                   } else if (parsedSDate && pay.status === "NEW_CONTRACT") {
@@ -11757,7 +11758,7 @@ function renderMatrizPagos(propertiesList) {
                   else if (pay.status === "NO_RENEW") cellContent = "⌛";
                   else if (pay.status === "DELIVERY") cellContent = "⛳";
                   else if (pay.status === "AL_DIA") cellContent = "☀";
-                  const renovBadge = isRenovMonth ? ' | 📝 Mes de Renovación / Término de Contrato' : '';
+                  const renovBadge = (isRenovMonth && pay.status !== "VACANT" && !valUpperPay.includes('DESOCUPAD')) ? ' | 📝 Mes de Renovación / Término de Contrato' : '';
                   const tooltipText = `${p.name} - ${mFull}: ${getStatusLabel(pay.status)}${renovBadge} ${pay.value && parseFloat(pay.value) > 0 ? safeFormatP(pay.value) : ''}`;
                   
                   return `
