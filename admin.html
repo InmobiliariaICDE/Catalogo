@@ -11900,10 +11900,8 @@ function sendAdminReminder(tenantName, prop, amount, month, year, dueDay, direct
 
   let msg = '';
   if (todayZero.getTime() < dueTargetDate.getTime()) {
-    // Un día antes (o antes) del día de cobro
     msg = `¡Buenos días, ${tenantName || 'Inquilino'}! ☀️\n\nLe contacta el asistente IA de ICDE Inmobiliaria, espero se encuentre muy bien.\n\nPara recordarle que mañana es el día acordado para el pago del arrendamiento de ${prop}.\n\nSabemos que la vida cotidiana es agitada y a veces se nos pueden pasar los detalles, por eso estamos aquí para apoyarle. 😊\n\nValoramos su compromiso y puntualidad. Si tiene alguna pregunta o novedad, no dude en comunicarse con nosotros, con gusto le atendemos. ¡Gracias por ser parte de la familia ICDE!\n\nAtentamente, 🏠 ICDE Inmobiliaria`;
   } else {
-    // Cuando inicie el día de cobro (o después)
     msg = `Hola ${tenantName || 'Inquilino'} te escribimos de ICDE Inmobiliaria para recordarte el pago del arrendamiento de ${prop}. ¡Muchas gracias!`;
   }
   
@@ -11934,149 +11932,77 @@ function fallbackToManualWA(phone, msg) {
   toast('Abriendo enlace de WhatsApp Web...', 'success');
 }
 
-async function sendBulkReminders() {
-  const pending = [];
-  adminData.properties.forEach(p => {
-    const pay = (p.payments[currentAdminYear] || []).find(m => m.month === currentAdminMonth);
-    if (pay && pay.status === 'PENDING') {
-      pending.push({ prop: p, pay: pay });
-    }
-  });
-  
-  if (pending.length === 0) {
-    toast(`No hay cobros PENDIENTES en ${currentAdminMonth} de ${currentAdminYear}`, 'info');
-    return;
+function calculateAdminRentInfo(p) {
+  const baseRent = parseFloat(p ? p.monthly_rent : 0) || 0;
+  const notes = String(p ? p.increase_notes || '' : '').trim();
+  if (!baseRent) return { baseRent: 0, increasedRent: 0, diff: 0, hasIncrease: false, desc: 'Sin incremento' };
+
+  const pctMatch = notes.match(/([0-9]+(?:\.[0-9]+)?)\s*%/);
+  if (pctMatch) {
+    const pct = parseFloat(pctMatch[1]);
+    const diff = Math.round(baseRent * (pct / 100.0));
+    const newRent = baseRent + diff;
+    return {
+      baseRent,
+      increasedRent: newRent,
+      diff,
+      hasIncrease: true,
+      desc: `+${pct}% IPC`
+    };
   }
-  
-  if (!confirm(`¿Deseas enviar recordatorios automáticos de cobro a los ${pending.length} inquilinos con cobros pendientes para ${currentAdminMonth} de ${currentAdminYear}?`)) return;
-  
-  if (waBridgeConnected) {
-    toast(`Iniciando envío de ${pending.length} recordatorios...`, 'info');
-    let successCount = 0;
-    
-    for (const item of pending) {
-      const p = item.prop;
-      const searchName = p.tenant_name || p.owner;
-      let phone = p.tenant_phone;
-      if (!phone && searchName) {
-        const lead = leads.find(l => l.nombre && (l.nombre.toLowerCase().includes(searchName.toLowerCase()) || searchName.toLowerCase().includes(l.nombre.toLowerCase())));
-        phone = lead ? lead.celular : null;
-      }
-      if (!phone) continue;
-      
-      const cleanPhone = phone.replace(/[^\d]/g, '');
-      try {
-        const res = await fetch('http://localhost:3000/send-reminder', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            number: cleanPhone, 
-            name: p.tenant_name || p.owner, 
-            property: p.name, 
-            amount: p.monthly_rent, 
-            dueDate: p.due_day 
-          })
-        });
-        if (res.ok) successCount++;
-      } catch (e) {
-        console.error(e);
+
+  const dollarMatches = notes.match(/\$\s*([0-9]{1,3}(?:\.[0-9]{3})+|[0-9]+)/g);
+  if (dollarMatches && dollarMatches.length) {
+    const lastMatch = dollarMatches[dollarMatches.length - 1];
+    const cleanVal = parseInt(lastMatch.replace(/[^0-9]/g, ''), 10);
+    if (cleanVal > 0) {
+      if (cleanVal < baseRent) {
+        const newRent = baseRent + cleanVal;
+        return {
+          baseRent,
+          increasedRent: newRent,
+          diff: cleanVal,
+          hasIncrease: true,
+          desc: `+${safeFormatP(cleanVal)}`
+        };
+      } else if (cleanVal > baseRent) {
+        const diff = cleanVal - baseRent;
+        return {
+          baseRent,
+          increasedRent: cleanVal,
+          diff,
+          hasIncrease: true,
+          desc: `Nuevo Canon ${safeFormatP(cleanVal)}`
+        };
       }
     }
-    toast(`Envío finalizado: ${successCount} recordatorios enviados de ${pending.length}`, 'success');
-  } else {
-    alert("El puente de WhatsApp local (localhost:3000) está desconectado. Inicie la aplicación en 'whatsapp-bridge/server.js' para poder enviar masivamente en segundo plano sin intervención manual. Por ahora, use el botón individual 💬 en la lista para enviar por WhatsApp Web.");
-  }
-}
-
-function syncAllToCalendar() {
-  toast('Generando archivo de calendario para importación...', 'success');
-  try {
-    const icsContent = generateICS(adminData.properties, currentAdminYear);
-    
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const link = document.createElement('a');
-    link.href = window.URL.createObjectURL(blob);
-    link.setAttribute('download', `ICDE_Cobros_Calendario_${currentAdminYear}.ics`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast('Calendario descargado ✓ impórtalo en Google Calendar', 'success');
-  } catch (e) {
-    console.error('Error creating ICS:', e);
-    toast('Error al sincronizar calendario', 'error');
-  }
-}
-
-function generateICS(properties, year) {
-  let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ICDE Inmobiliaria//Calendar Sync//ES\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\n";
-  
-  properties.forEach(p => {
-    const dueDay = p.due_day ? Math.round(p.due_day) : 5;
-    const maxDueDay = p.max_due_day ? Math.round(p.max_due_day) : 10;
-    const rent = parseFloat(p.monthly_rent) || 0;
-    
-    const yearPayments = p.payments[year] || [];
-    yearPayments.forEach((pay, index) => {
-      if (pay.status === 'PENDING' || pay.status === 'PAID' || pay.status === 'PREAVISO' || pay.status === 'NEW_CONTRACT') {
-        const monthNum = index + 1;
-        const monthStr = monthNum < 10 ? '0' + monthNum : '' + monthNum;
-        const dayStr = dueDay < 10 ? '0' + dueDay : '' + dueDay;
-        
-        const dateStr = `${year}${monthStr}${dayStr}`;
-        
-        icsContent += "BEGIN:VEVENT\n";
-        icsContent += `UID:rent-${p.id}-${year}-${monthStr}@icde.com\n`;
-        icsContent += `DTSTART;VALUE=DATE:${dateStr}\n`;
-        icsContent += `SUMMARY:Cobro Arriendo - ${p.name} (${p.tenant_name || ''})\n`;
-        icsContent += `DESCRIPTION:Cobro de canon de arrendamiento de la propiedad ${p.name} por valor de ${safeFormatP(rent)}. Inquilino: ${p.tenant_name || ''}. Pagar antes del dia ${maxDueDay}.\n`;
-        icsContent += "SEQUENCE:0\nSTATUS:CONFIRMED\nTRANSP:TRANSPARENT\nEND:VEVENT\n";
-      }
-    });
-  });
-  
-  icsContent += "END:VCALENDAR";
-  return icsContent;
-}
-
-function addIndividualToCalendar(propName, tenantName, rent, year, month, dueDay, maxDueDay) {
-  const monthsMap = {
-    "ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, "MAYO": 5, "JUNIO": 6,
-    "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12
-  };
-  const monthNum = monthsMap[month] || 5;
-  const monthStr = monthNum < 10 ? '0' + monthNum : '' + monthNum;
-  const dayStr = dueDay < 10 ? '0' + dueDay : '' + dueDay;
-  
-  const eventDate = `${year}${monthStr}${dayStr}`;
-  const title = `Cobro Arriendo - ${propName} (${tenantName || ''})`;
-  const details = `Cobro de canon de arrendamiento de la propiedad ${propName} por valor de ${safeFormatP(rent)}. Inquilino: ${tenantName || ''}. Plazo maximo de pago: dia ${maxDueDay}.`;
-  
-  const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${eventDate}/${eventDate}&details=${encodeURIComponent(details)}&sf=true&output=xml`;
-  window.open(url, '_blank');
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MODAL UNIFICADO DE PROPIEDAD
-// ─────────────────────────────────────────────────────────────────────────────
-
-function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
-  let currentActiveTab = activeTab;
-  if (currentActiveTab === 'contrato' || currentActiveTab === 'silvia') {
-    currentActiveTab = 'cobro';
   }
 
-  const paymentsYear = p.payments[String(year)] || [];
+  return { baseRent, increasedRent: baseRent, diff: 0, hasIncrease: false, desc: 'Sin incremento' };
+}
+
+function applyAdminRentIncrement(propId, newRent) {
+  const contraRentInp = document.getElementById('editContraRent');
+  const propRentInp = document.getElementById('editPropRent');
+  const payValueInp = document.getElementById('editPayValue');
+  
+  if (contraRentInp) contraRentInp.value = newRent;
+  if (propRentInp) propRentInp.value = newRent;
+  if (payValueInp) payValueInp.value = newRent;
+  
+  toast(`¡Fijado nuevo canon de ${safeFormatP(newRent)}! Presione 'Guardar' para sincronizar con Google Drive.`, 'success');
+}
+
+function _buildUnifiedModalHTML(p, monthName, year, activeTab = 'cobro') {
+  const paymentsYear = p.payments[year] || [];
   const pay = paymentsYear.find(m => m.month === monthName) || { status: 'UNSTARTED', value: 0 };
   const dueDay = p.due_day ? Math.round(p.due_day) : 5;
   const maxDueDay = p.max_due_day ? Math.round(p.max_due_day) : 10;
-
-  const searchName = p.tenant_name || p.owner;
-  const lead = (leads || []).find(l => l.nombre && searchName && (l.nombre.toLowerCase().includes(searchName.toLowerCase()) || searchName.toLowerCase().includes(l.nombre.toLowerCase())));
-  const phone = p.tenant_phone || ((lead && lead.celular) ? lead.celular : '—');
+  const currentActiveTab = activeTab || 'cobro';
+  const rentInfo = calculateAdminRentInfo(p);
 
   const tabs = [
-    { id: 'cobro',    icon: '💳', label: 'Cobro' },
+    { id: 'cobro',    icon: '💵', label: 'Cobro y Contrato' },
     { id: 'inmueble', icon: '🏠', label: 'Inmueble' }
   ];
 
@@ -12086,11 +12012,9 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
       ${t.icon} ${t.label}
     </button>`).join('');
 
-  // ── TAB 1: COBRO Y CONTRATO UNIFICADOS ──────────────────────────────────────
   const tabCobro = `
     <div style="display:flex; flex-direction:column; gap:12px;">
       <div class="u-modal-grid" style="row-gap: 12px;">
-        <!-- Fila 1 -->
         <div>
           <div class="u-field-label">Inmueble</div>
           <div style="font-size:17px; font-weight:800; color:#fff; letter-spacing:-0.01em;">${p.name}</div>
@@ -12115,8 +12039,6 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
             </select>
           </div>
         </div>
-
-        <!-- Fila 2 -->
         <div>
           <div class="u-field-label">Mes / Año</div>
           <div class="u-field-value">${monthName} ${year}</div>
@@ -12125,8 +12047,6 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
           <div class="u-field-label">Canon Mensual</div>
           <div class="u-field-gold">${safeFormatP(p.monthly_rent)}</div>
         </div>
-
-        <!-- Fila 3 -->
         <div>
           <div class="u-field-label">Rango de Pago</div>
           <div class="u-field-value">Día ${dueDay} al ${maxDueDay}</div>
@@ -12134,7 +12054,18 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab) {
         <div></div>
       </div>
 
-      <!-- SECCIÓN DEL CONTRATO UNIFICADA -->
+      ${rentInfo.hasIncrease ? `
+      <div style="background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.3); border-radius: 8px; padding: 8px 12px; margin-top: -4px; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="font-size:10px; color:#22c55e; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">📈 CANON CON INCREMENTO IPC / NOTA (${rentInfo.desc})</div>
+          <div style="font-size:15px; font-weight:800; color:#22c55e; margin-top:1px;">${safeFormatP(rentInfo.increasedRent)} <span style="font-size:11px; color:rgba(255,255,255,0.7); font-weight:500;">(Aumento: +${safeFormatP(rentInfo.diff)})</span></div>
+        </div>
+        <button type="button" class="btn btn-xs" style="font-size:11px; font-weight:700; background:#22c55e; color:#000; border:none; padding:4px 10px; border-radius:6px; cursor:pointer;" onclick="applyAdminRentIncrement('${p.id}', ${rentInfo.increasedRent})">
+          ⚡ Usar Nuevo Canon
+        </button>
+      </div>
+      ` : ''}
+
       <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:12px; margin-top:4px; display:flex; flex-direction:column; gap:11px;">
         <div style="font-size:11px; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">
           📄 Detalles del Contrato
@@ -12689,9 +12620,23 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
   if (status === 'PAID') {
     const parsedVal = parseFloat(rawValue);
     if (isNaN(parsedVal) || parsedVal <= 0) {
-      const p = findAdminProperty(propId, propName);
-      finalValue = monthly_rent || (p ? p.monthly_rent : 0);
+      const p = (typeof findAdminProperty === 'function') ? findAdminProperty(propId, propName) : adminData.properties.find(x => x.id === propId);
+      const rentInfo = p ? calculateAdminRentInfo(p) : null;
+      finalValue = (rentInfo && rentInfo.hasIncrease) ? rentInfo.increasedRent : (monthly_rent || (p ? p.monthly_rent : 0));
     } else { finalValue = parsedVal; }
+  } else if (status === 'NEW_CONTRACT') {
+    const parsedVal = parseFloat(rawValue);
+    if (!isNaN(parsedVal) && parsedVal > 0) {
+      finalValue = parsedVal;
+    } else {
+      const p = (typeof findAdminProperty === 'function') ? findAdminProperty(propId, propName) : adminData.properties.find(x => x.id === propId);
+      const rentInfo = p ? calculateAdminRentInfo(p) : null;
+      if (rentInfo && rentInfo.hasIncrease) {
+        finalValue = rentInfo.increasedRent;
+      } else {
+        finalValue = 'CONTRATO NUEVO';
+      }
+    }
   } else if (status === 'VACANT') { finalValue = 'DESOCUPADO'; }
   else if (status === 'FUTURE' || status === 'AL_DIA') { finalValue = '-'; }
   else if (status === 'PREAVISO')      { finalValue = 'PREAVISO'; }
