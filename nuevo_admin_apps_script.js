@@ -580,22 +580,29 @@ function saveAdminPropertyToSheet(params) {
         monthsNames.forEach((mName, mIdx) => {
           const mNum = mIdx + 1;
           const totalMonthsDiff = (yNum - sYear) * 12 + (mNum - sMonth);
-          const isRenov = (totalMonthsDiff > 0 && (totalMonthsDiff % durVal) === 0);
-          
-          let nextMNum = mNum + 1;
-          let nextYNum = yNum;
-          if (nextMNum > 12) { nextMNum = 1; nextYNum = yNum + 1; }
-          const nextDiff = (nextYNum - sYear) * 12 + (nextMNum - sMonth);
-          const isPreaviso = (nextDiff > 0 && (nextDiff % durVal) === 0);
-          
           const targetCol = colStart + mIdx + 1;
           const currentCellVal = String(sheet.getRange(rowIdx, targetCol).getValue()).trim();
+          const isNumericPayment = !isNaN(parseFloat(currentCellVal)) && parseFloat(currentCellVal) > 0;
           
-          // NUNCA sobrescribir DESOCUPADO o celdas con pagos reales
-          if (isRenov && (currentCellVal === '-' || currentCellVal === '' || currentCellVal === 'Pendiente')) {
-            sheet.getRange(rowIdx, targetCol).setValue('CONTRATO NUEVO');
-          } else if (isPreaviso && (currentCellVal === '-' || currentCellVal === '' || currentCellVal === 'Pendiente')) {
-            sheet.getRange(rowIdx, targetCol).setValue('PREAVISO');
+          if (!isNumericPayment && currentCellVal !== 'PAGADO' && currentCellVal !== 'ENTREGA') {
+            if (totalMonthsDiff >= 0 && totalMonthsDiff < durVal) {
+              // Mes dentro de la vigencia del contrato
+              if (totalMonthsDiff === durVal - 1) {
+                sheet.getRange(rowIdx, targetCol).setValue('PREAVISO');
+              } else if (currentCellVal === 'DESOCUPADO' || currentCellVal === '' || currentCellVal === 'Pendiente') {
+                sheet.getRange(rowIdx, targetCol).setValue('-');
+              }
+            } else if (totalMonthsDiff > 0 && (totalMonthsDiff % durVal) === 0) {
+              // Mes de renovación / término
+              if (currentCellVal === '-' || currentCellVal === '' || currentCellVal === 'DESOCUPADO' || currentCellVal === 'Pendiente') {
+                sheet.getRange(rowIdx, targetCol).setValue('CONTRATO NUEVO');
+              }
+            } else if (totalMonthsDiff >= durVal) {
+              // Meses posteriores al vencimiento
+              if (currentCellVal === '-' || currentCellVal === '') {
+                sheet.getRange(rowIdx, targetCol).setValue('DESOCUPADO');
+              }
+            }
           }
         });
       });
