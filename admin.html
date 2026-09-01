@@ -11932,6 +11932,11 @@ function fallbackToManualWA(phone, msg) {
   toast('Abriendo enlace de WhatsApp Web...', 'success');
 }
 
+function roundDownToNearest5k(val) {
+  if (!val || val <= 0) return 0;
+  return Math.floor(val / 5000) * 5000;
+}
+
 function calculateAdminRentInfo(p) {
   const baseRent = parseFloat(p ? p.monthly_rent : 0) || 0;
   const notes = String(p ? p.increase_notes || '' : '').trim();
@@ -11940,14 +11945,15 @@ function calculateAdminRentInfo(p) {
   const pctMatch = notes.match(/([0-9]+(?:\.[0-9]+)?)\s*%/);
   if (pctMatch) {
     const pct = parseFloat(pctMatch[1]);
-    const diff = Math.round(baseRent * (pct / 100.0));
-    const newRent = baseRent + diff;
+    const rawRent = baseRent * (1.0 + pct / 100.0);
+    const newRent = roundDownToNearest5k(rawRent);
+    const diff = newRent - baseRent;
     return {
       baseRent,
       increasedRent: newRent,
       diff,
-      hasIncrease: true,
-      desc: `+${pct}% IPC`
+      hasIncrease: diff > 0,
+      desc: `+${pct}% IPC (Ajustado a favor del inquilino)`
     };
   }
 
@@ -11957,22 +11963,25 @@ function calculateAdminRentInfo(p) {
     const cleanVal = parseInt(lastMatch.replace(/[^0-9]/g, ''), 10);
     if (cleanVal > 0) {
       if (cleanVal < baseRent) {
-        const newRent = baseRent + cleanVal;
+        const rawRent = baseRent + cleanVal;
+        const newRent = roundDownToNearest5k(rawRent);
+        const diff = newRent - baseRent;
         return {
           baseRent,
           increasedRent: newRent,
-          diff: cleanVal,
-          hasIncrease: true,
-          desc: `+${safeFormatP(cleanVal)}`
+          diff,
+          hasIncrease: diff > 0,
+          desc: `+${safeFormatP(diff)} (Ajustado a múltiple de $5.000)`
         };
       } else if (cleanVal > baseRent) {
-        const diff = cleanVal - baseRent;
+        const newRent = roundDownToNearest5k(cleanVal);
+        const diff = newRent - baseRent;
         return {
           baseRent,
-          increasedRent: cleanVal,
+          increasedRent: newRent,
           diff,
-          hasIncrease: true,
-          desc: `Nuevo Canon ${safeFormatP(cleanVal)}`
+          hasIncrease: diff > 0,
+          desc: `Nuevo Canon ${safeFormatP(newRent)} (Ajustado a $5.000)`
         };
       }
     }
