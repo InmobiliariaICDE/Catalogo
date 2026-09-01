@@ -11769,8 +11769,7 @@ function renderMatrizPagos(propertiesList) {
                         ${cellContent}
                         <select style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; color-scheme: dark;"
                                 onclick="event.stopPropagation();"
-                                onchange="quickSaveAdminPaymentStatus('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${mFull}', '${currentAdminYear}', this.value)">
-                          <option value="PAID" style="background-color: #121212; color: #fff;" ${pay.status === 'PAID' ? 'selected' : ''}>🟢 Pagado</option>
+<option value="PAID" style="background-color: #121212; color: #fff;" ${pay.status === 'PAID' ? 'selected' : ''}>🟢 Pagado</option>
                           <option value="PENDING" style="background-color: #121212; color: #fff;" ${pay.status === 'PENDING' ? 'selected' : ''}>🔴 Pendiente</option>
                           <option value="VACANT" style="background-color: #121212; color: #fff;" ${pay.status === 'VACANT' ? 'selected' : ''}>⚪ Desocupado</option>
                           <option value="PREAVISO" style="background-color: #121212; color: #fff;" ${pay.status === 'PREAVISO' ? 'selected' : ''}>🟣 Preaviso</option>
@@ -11793,155 +11792,20 @@ function renderMatrizPagos(propertiesList) {
   `;
 }
 
-function renderEdificioSilvia(searchVal) {
-  const transactions = adminData.silvia_ledger[currentAdminYear] || [];
-  
-  const filteredTx = transactions.filter(t => {
-    return t.description.toLowerCase().includes(searchVal) || t.date.includes(searchVal);
-  });
-
-  if (filteredTx.length === 0) {
-    return `<div class="panel-section" style="text-align:center; padding:40px; color:var(--muted);">No hay transacciones registradas para el Edificio Silvia en el año ${currentAdminYear} con los filtros ingresados.</div>`;
-  }
-
-  return `
-    <div style="margin-bottom:15px; background:rgba(212,168,75,0.05); border:1px solid rgba(212,168,75,0.15); padding:14px; border-radius:12px; color:var(--gold); font-size:12.5px; font-weight:600;">
-      🏢 Informes de Recaudos y Abonos Contables - Hojas de Administración de Copropiedad Edificio Silvia
-    </div>
-    
-    <div class="panel-section" style="padding:0; overflow:hidden; border:none; border-radius: 16px;">
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th style="width:100px;">Fecha</th>
-            <th>Descripción Contable</th>
-            <th style="text-align:right; width:150px;">Recaudo Mes (Débito)</th>
-            <th style="text-align:right; width:150px;">Abono Real (Crédito)</th>
-            <th style="text-align:right; width:150px;">Saldo</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${filteredTx.map(t => {
-            const recVal = parseFloat(t.recaudo) || 0;
-            const aboVal = parseFloat(t.abono) || 0;
-            const salVal = parseFloat(t.saldo) || 0;
-            
-            return `
-              <tr>
-                <td style="font-weight:600; color:rgba(255,255,255,0.7);">${t.date || '<span style="color:var(--muted);">S/F</span>'}</td>
-                <td style="font-weight:500; color:#fff; font-size:13px; max-width:400px; overflow:hidden; text-overflow:ellipsis;">
-                  ${t.description}
-                </td>
-                <td style="text-align:right; color:rgba(255,255,255,0.95); font-weight:600;">
-                  ${recVal > 0 ? safeFormatP(recVal) : '—'}
-                </td>
-                <td style="text-align:right; color:#22c55e; font-weight:700;">
-                  ${aboVal > 0 ? safeFormatP(aboVal) : '—'}
-                </td>
-                <td style="text-align:right; color:var(--gold); font-weight:700;">
-                  ${safeFormatP(salVal)}
-                </td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-function syncPropertyToCalendar(propertyId) {
-  toast('Generando archivo de calendario...', 'success');
-  try {
-    const prop = adminData.properties.find(p => p.id === propertyId);
-    if (!prop) {
-      toast('Inmueble no encontrado', 'error');
-      return;
-    }
-    const icsContent = generateICS([prop], currentAdminYear);
-    
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const link = document.createElement('a');
-    link.href = window.URL.createObjectURL(blob);
-    link.setAttribute('download', `ICDE_${prop.name.replace(/\s+/g, '_')}_Calendario_${currentAdminYear}.ics`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast('Calendario individual descargado ✓', 'success');
-  } catch (e) {
-    console.error('Error generating property ICS:', e);
-    toast('Error al generar calendario', 'error');
-  }
-}
-
-function sendAdminReminder(tenantName, prop, amount, month, year, dueDay, directPhone) {
-  let phone = directPhone || '';
-  if (!phone && tenantName) {
-    const lead = leads.find(l => l.nombre && (l.nombre.toLowerCase().includes(tenantName.toLowerCase()) || tenantName.toLowerCase().includes(l.nombre.toLowerCase())));
-    phone = lead ? lead.celular : prompt(`No se encontró el teléfono del arrendatario para ${tenantName}. Por favor ingrésalo (código de país incluido sin '+', ej: 573001234567):`);
-  }
-  
-  if (!phone) return;
-  
-  const cleanPhone = phone.replace(/[^\d]/g, '');
-  
-  const ahora = new Date();
-  const monthsMap = {
-    "ENERO": 0, "FEBRERO": 1, "MARZO": 2, "ABRIL": 3, "MAYO": 4, "JUNIO": 5,
-    "JULIO": 6, "AGOSTO": 7, "SEPTIEMBRE": 8, "OCTUBRE": 9, "NOVIEMBRE": 10, "DICIEMBRE": 11
-  };
-  const targetMonthNum = monthsMap[String(month).toUpperCase()] || ahora.getMonth();
-  const targetYearNum = parseInt(year, 10) || ahora.getFullYear();
-  const dueDayVal = Math.round(dueDay) || 5;
-
-  const dueTargetDate = new Date(targetYearNum, targetMonthNum, dueDayVal, 0, 0, 0, 0);
-  const todayZero = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 0, 0, 0, 0);
-
-  let msg = '';
-  if (todayZero.getTime() < dueTargetDate.getTime()) {
-    msg = `¡Buenos días, ${tenantName || 'Inquilino'}! ☀️\n\nLe contacta el asistente IA de ICDE Inmobiliaria, espero se encuentre muy bien.\n\nPara recordarle que mañana es el día acordado para el pago del arrendamiento de ${prop}.\n\nSabemos que la vida cotidiana es agitada y a veces se nos pueden pasar los detalles, por eso estamos aquí para apoyarle. 😊\n\nValoramos su compromiso y puntualidad. Si tiene alguna pregunta o novedad, no dude en comunicarse con nosotros, con gusto le atendemos. ¡Gracias por ser parte de la familia ICDE!\n\nAtentamente, 🏠 ICDE Inmobiliaria`;
-  } else {
-    msg = `Hola ${tenantName || 'Inquilino'} te escribimos de ICDE Inmobiliaria para recordarte el pago del arrendamiento de ${prop}. ¡Muchas gracias!`;
-  }
-  
-  if (waBridgeConnected) {
-    toast('Enviando recordatorio automático...', 'info');
-    fetch('http://localhost:3000/send-message', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ number: cleanPhone, message: msg })
-    }).then(res => {
-      if (res.ok) {
-        toast('Recordatorio WhatsApp enviado ✓', 'success');
-      } else {
-        toast('Error al enviar. Usando enlace manual...', 'warning');
-        fallbackToManualWA(cleanPhone, msg);
-      }
-    }).catch(() => {
-      fallbackToManualWA(cleanPhone, msg);
-    });
-  } else {
-    fallbackToManualWA(cleanPhone, msg);
-  }
-}
-
-function fallbackToManualWA(phone, msg) {
-  const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`;
-  window.open(url, '_blank');
-  toast('Abriendo enlace de WhatsApp Web...', 'success');
-}
+let defaultAdminIpcRate = 5.10;
 
 function roundDownToNearest5k(val) {
   if (!val || val <= 0) return 0;
   return Math.floor(val / 5000) * 5000;
 }
 
-function calculateAdminRentInfo(p) {
+function calculateAdminRentInfo(p, customIpcRate) {
   const baseRent = parseFloat(p ? p.monthly_rent : 0) || 0;
   const notes = String(p ? p.increase_notes || '' : '').trim();
-  if (!baseRent) return { baseRent: 0, increasedRent: 0, diff: 0, hasIncrease: false, desc: 'Sin incremento' };
+  if (!baseRent) return { baseRent: 0, increasedRent: 0, diff: 0, rawIncrease: 0, ipcPct: defaultAdminIpcRate, hasIncrease: false, desc: 'Sin incremento' };
 
+  let ipcPct = customIpcRate !== undefined ? parseFloat(customIpcRate) : defaultAdminIpcRate;
+  
   const pctMatch = notes.match(/([0-9]+(?:\.[0-9]+)?)\s*%/);
   if (pctMatch) {
     const pct = parseFloat(pctMatch[1]);
