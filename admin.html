@@ -14418,6 +14418,154 @@ function _activarModoAgregarMapaDirecto() {
         <input class="form-input" id="edPropLng"/>
       </div>
       <div class="form-group"><label class="form-label">Nombre del Propietario</label><input class="form-input" id="edPropPropietario"/></div>
+      <div class="form-group"><label class="form-label">Celular 1</label><input class="form-input" id="edPropCelulares"/></div>
+      <div class="form-group"><label class="form-label">Celular 2</label><input class="form-input" id="edPropCelular2"/></div>
+      <div class="form-group"><label class="form-label">Cuánto Renta ($)</label><input class="form-input" id="edPropRenta"/></div>
+      <div class="form-group full"><label class="form-label">Descripción</label><textarea class="form-input" id="edPropDesc" style="min-height:80px;"></textarea></div>
+      <div class="form-group full">
+        <label class="form-label">Imágenes (URLs separadas por | o nuevas líneas)</label>
+        <textarea class="form-input" id="edPropImgs" placeholder="https://i.imgur.com/... | https://..." oninput="updateEditorImgs()"></textarea>
+        <div class="img-preview-grid" id="edPropImgPreview"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalEditorProp')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarPropiedadEditor()">Guardar Propiedad</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROPIEDAD -->
+<div class="modal-overlay-prop" id="modalPropOverlay" onclick="if(event.target===this) cerrarModalProp()">
+  <div class="modal-prop">
+    <div class="modal-prop-header">
+      <button class="modal-prop-close" onclick="cerrarModalProp()">×</button>
+    </div>
+    <div class="modal-prop-body">
+      <div class="modal-contenido">
+        <!-- COL IZQ -->
+        <div class="modal-col-izq">
+          <div class="carrusel-wrapper">
+            <div class="carrusel-principal" id="mpCarruselPrincipal">
+              <button class="carrusel-btn carrusel-prev" onclick="mpCarruselIr(-1)">&#8249;</button>
+              <button class="carrusel-btn carrusel-next" onclick="mpCarruselIr(1)">&#8250;</button>
+              <span class="carrusel-counter" id="mpCarruselCounter">1 / 1</span>
+              <button class="carrusel-expand" onclick="lbAbrir(mpCarruselFotos, mpCarruselIdx)" title="Ver pantalla completa">
+                <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+              </button>
+            </div>
+            <div class="carrusel-miniaturas" id="mpCarruselMiniaturas"></div>
+          </div>
+          
+          <div class="modal-prop-info">
+            <div class="modal-prop-title" id="mpTitle">Nombre</div>
+            <div class="modal-prop-type" id="mpType">Tipo</div>
+            <div class="modal-prop-code" id="mpCode">Código: 000</div>
+            <div class="modal-prop-price" id="mpPrice">$0</div>
+            <div class="modal-prop-tags" id="mpTags"></div>
+          </div>
+        </div>
+        
+        <!-- COL DER -->
+        <div class="modal-col-der">
+          <div>
+            <div class="modal-subtitulo-nuevo">Características</div>
+            <table class="modal-tabla-caracteristicas" id="mpSpecsTable"></table>
+          </div>
+          
+          <div>
+            <div class="modal-subtitulo-nuevo">Puntos Clave</div>
+            <div class="modal-texto" id="mpKeyPoints"></div>
+          </div>
+          
+          <div>
+            <div class="modal-subtitulo-nuevo">Descripción</div>
+            <div class="modal-texto" id="mpDesc"></div>
+          </div>
+
+          <div style="margin-top:24px;">
+            <div class="modal-subtitulo-nuevo">Ubicación en Mapa</div>
+            <div style="position: relative;">
+              <div id="mpMapa" style="width:100%; height:350px; border-radius:12px; border:1px solid var(--border); background:var(--bg2); position:relative; overflow:hidden; z-index:5;"></div>
+              <div id="mpStreetViewThumb" onclick="abrirStreetView(window._mpSvLat, window._mpSvLng)" style="display:none; position:absolute; bottom:14px; right:14px; width:100px; height:70px; border-radius:8px; overflow:hidden; cursor:pointer; border:2px solid rgba(255,255,255,0.8); box-shadow:0 2px 8px rgba(0,0,0,0.4); z-index:10; background:#222;">
+                <img id="mpStreetViewImg" src="" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'"/>
+                <div style="position:absolute; inset:0; background:rgba(0,0,0,0.3); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.3)'">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1px; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  <span style="font-family:'Outfit',sans-serif; font-size:9px; font-weight:700; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.8);">Street View</span>
+                  <span style="position:absolute; bottom:3px; left:5px; font-family:'Outfit',sans-serif; font-size:7px; font-weight:700; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.8); opacity:0.85;">Google</span>
+                </div>
+              </div>
+            </div>
+            <div id="mpMapaError" style="display:none; color:var(--muted); font-size:12px; margin-top:8px; text-align:center;">Coordenadas no disponibles para este inmueble</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-prop-footer">
+      <button class="modal-btn-compartir">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Compartir
+      </button>
+      <button class="btn btn-gold btn-edit-prop" style="display:flex; align-items:center; gap:6px; font-weight:600; background:#be8939; color:#000; border:none; margin-left:12px;">
+        ✏️ Editar Propiedad
+      </button>
+      <button class="btn btn-secondary" onclick="cerrarModalProp()" style="margin-left:auto;">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div id="lightboxOverlay" onclick="if(event.target===this) lbCerrar()">
+  <button class="lightbox-close" onclick="lbCerrar()">&times;</button>
+  <span class="lightbox-counter" id="lightboxCounter">1 / 1</span>
+  <div class="lightbox-img-wrap">
+    <img id="lightboxImg" src="" />
+    <button id="lightboxPrev" onclick="lbIr(lbIdx-1)">&#8249;</button>
+    <button id="lightboxNext" onclick="lbIr(lbIdx+1)">&#8250;</button>
+  </div>
+  <div class="lightbox-mins" id="lightboxMins"></div>
+</div>
+
+<script>
+let lbIdx = 0;
+let lbFotos = [];
+
+window.lbAbrir = function(fotos, idx){
+  lbFotos = fotos;
+  lbIdx = idx;
+  document.getElementById('lightboxOverlay').classList.add('activo');
+  
+  const mins = document.getElementById('lightboxMins');
+  mins.innerHTML = lbFotos.map((u,i)=>`<img src="${u}" class="lightbox-min ${i===lbIdx?'activa':''}" onclick="lbIr(${i})"/>`).join('');
+  
+  lbIr(lbIdx);
+}
+
+window.lbIr = function(idx){
+  const n = lbFotos.length;
+  if(n<=0) return;
+  lbIdx = (idx + n) % n;
+  
+  const img = document.getElementById('lightboxImg');
+  img.src = lbFotos[lbIdx];
+  
+  document.getElementById('lightboxCounter').textContent = `${lbIdx+1} / ${n}`;
+  
+  const mins = document.querySelectorAll('.lightbox-min');
+  mins.forEach((m,i)=>m.classList.toggle('activa', i===lbIdx));
+  if(mins[lbIdx]) mins[lbIdx].scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+}
+
+window.lbCerrar = function(){
+  document.getElementById('lightboxOverlay').classList.remove('activo');
+}
+
+document.addEventListener('keydown', e => {
+  if(!document.getElementById('lightboxOverlay').classList.contains('activo')) return;
+  if(e.key==='Escape') lbCerrar();
+  if(e.key==='ArrowLeft') lbIr(lbIdx-1);
+  if(e.key==='ArrowRight') lbIr(lbIdx+1);
+});
+
 function generarSlugPropiedad(inmueble) {
   const nombre = (inmueble["Nombre"] || '').toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
