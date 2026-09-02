@@ -14790,6 +14790,7 @@ function initMpMapa(p) {
 }
 
 function mpCarruselInit(){
+  mpCarruselDetener();
   mpCarruselIdx = 0;
   const principal = document.getElementById('mpCarruselPrincipal');
   principal.querySelectorAll('.carrusel-slide').forEach(s=>s.remove());
@@ -14801,17 +14802,16 @@ function mpCarruselInit(){
     principal.insertBefore(slide, principal.querySelector('.carrusel-prev'));
   });
   
-  const mini = document.getElementById('mpCarruselMiniaturas');
-  mini.innerHTML = mpCarruselFotos.map((u,i)=>`<img src="${u}" class="carrusel-min ${i===0?'activa':''}" onclick="mpCarruselIrA(${i})"/>`).join('');
-  
+  mpCarruselActualizarMiniaturas();
   document.getElementById('mpCarruselCounter').textContent = `1 / ${mpCarruselFotos.length}`;
+  mpCarruselReiniciarProgreso();
 }
 
 function mpCarruselIr(delta){
   mpCarruselIrA(mpCarruselIdx + delta);
 }
 
-function mpCarruselIrA(idx){
+function mpCarruselIrA(idx, reiniciarTimer = true){
   const n = mpCarruselFotos.length;
   if(n<=1) return;
   mpCarruselIdx = (idx + n) % n;
@@ -14819,16 +14819,14 @@ function mpCarruselIrA(idx){
   const slides = document.querySelectorAll('#mpCarruselPrincipal .carrusel-slide');
   slides.forEach((s,i)=>s.classList.toggle('activa', i===mpCarruselIdx));
   
-  const mins = document.querySelectorAll('#mpCarruselMiniaturas .carrusel-min');
-  mins.forEach((m,i)=>m.classList.toggle('activa', i===mpCarruselIdx));
-  if(mins[mpCarruselIdx]) mins[mpCarruselIdx].scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
-  
+  mpCarruselActualizarMiniaturas();
   document.getElementById('mpCarruselCounter').textContent = `${mpCarruselIdx+1} / ${n}`;
+  if (reiniciarTimer) mpCarruselReiniciarProgreso();
 }
 
 function cerrarModalProp(){
+  mpCarruselDetener();
   document.getElementById('modalPropOverlay').classList.remove('active');
-  // No destruimos la instancia para reutilizarla, pero podemos limpiar el marcador si queremos
 }
 function updTimelineNota(leadId, idx, val) {
   const l = leads.find(x => String(x.id) === String(leadId));
