@@ -14537,6 +14537,47 @@ window.lbAbrir = function(fotos, idx){
   
   const mins = document.getElementById('lightboxMins');
   mins.innerHTML = lbFotos.map((u,i)=>`<img src="${u}" class="lightbox-min ${i===lbIdx?'activa':''}" onclick="lbIr(${i})"/>`).join('');
+
+  const lbImgWrap = document.querySelector('#lightboxOverlay .lightbox-img-wrap');
+  if (lbImgWrap && !lbImgWrap._swipeInit) {
+    lbImgWrap._swipeInit = true;
+    let _lbTx = null, _lbTy = null, _lbMoved = false;
+    lbImgWrap.addEventListener('touchstart', function(e){
+      if (e.touches.length !== 1) return;
+      _lbTx = e.touches[0].clientX;
+      _lbTy = e.touches[0].clientY;
+      _lbMoved = false;
+    }, { passive: true });
+    lbImgWrap.addEventListener('touchmove', function(e){
+      if (_lbTx === null) return;
+      const dx = e.touches[0].clientX - _lbTx;
+      const dy = e.touches[0].clientY - _lbTy;
+      if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) _lbMoved = true;
+    }, { passive: true });
+    lbImgWrap.addEventListener('touchend', function(e){
+      if (!_lbMoved || _lbTx === null) { _lbTx = null; _lbMoved = false; return; }
+      const dx = e.changedTouches[0].clientX - _lbTx;
+      const dy = e.changedTouches[0].clientY - _lbTy;
+      _lbTx = null; _lbMoved = false;
+      if (Math.abs(dx) < 30 || Math.abs(dy) > Math.abs(dx)) return;
+      if (dx < 0) lbIr(lbIdx + 1); else lbIr(lbIdx - 1);
+    }, { passive: true });
+
+    let pDown = false, pSx = 0;
+    lbImgWrap.addEventListener('pointerdown', function(e){
+      if (e.button !== 0) return;
+      pDown = true; pSx = e.clientX;
+    });
+    lbImgWrap.addEventListener('pointerup', function(e){
+      if (!pDown) return;
+      const dx = e.clientX - pSx;
+      pDown = false;
+      if (Math.abs(dx) > 35) {
+        if (dx < 0) lbIr(lbIdx + 1); else lbIr(lbIdx - 1);
+      }
+    });
+    lbImgWrap.addEventListener('pointercancel', () => { pDown = false; });
+  }
   
   lbIr(lbIdx);
 }
@@ -14802,6 +14843,41 @@ function mpCarruselInit(){
     slide.innerHTML = `<img src="${u}" loading="lazy" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>`;
     principal.insertBefore(slide, principal.querySelector('.carrusel-prev'));
   });
+
+  if (principal && !principal._swipeInit) {
+    principal._swipeInit = true;
+    let _tSx = 0, _tSy = 0, _tMoved = false;
+    principal.addEventListener('touchstart', function(e){
+      if (e.touches.length !== 1) return;
+      _tSx = e.touches[0].clientX; _tSy = e.touches[0].clientY; _tMoved = false;
+    }, { passive: true });
+    principal.addEventListener('touchmove', function(e){
+      if (Math.abs(e.touches[0].clientX - _tSx) > 10) _tMoved = true;
+    }, { passive: true });
+    principal.addEventListener('touchend', function(e){
+      if (!_tMoved) return;
+      const dx = e.changedTouches[0].clientX - _tSx;
+      const dy = e.changedTouches[0].clientY - _tSy;
+      _tMoved = false;
+      if (Math.abs(dx) < 30 || Math.abs(dy) > Math.abs(dx)) return;
+      if (dx < 0) mpCarruselIr(1); else mpCarruselIr(-1);
+    }, { passive: true });
+
+    let pDown = false, pSx = 0;
+    principal.addEventListener('pointerdown', function(e){
+      if (e.button !== 0) return;
+      pDown = true; pSx = e.clientX;
+    });
+    principal.addEventListener('pointerup', function(e){
+      if (!pDown) return;
+      const dx = e.clientX - pSx;
+      pDown = false;
+      if (Math.abs(dx) > 35) {
+        if (dx < 0) mpCarruselIr(1); else mpCarruselIr(-1);
+      }
+    });
+    principal.addEventListener('pointercancel', () => { pDown = false; });
+  }
   
   mpCarruselActualizarMiniaturas();
   document.getElementById('mpCarruselCounter').textContent = `1 / ${mpCarruselFotos.length}`;
