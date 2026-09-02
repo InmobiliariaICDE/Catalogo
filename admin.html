@@ -14417,156 +14417,7 @@ function _activarModoAgregarMapaDirecto() {
         <label class="form-label">Longitud</label>
         <input class="form-input" id="edPropLng"/>
       </div>
-      <div class="form-group"><label class="form-label">Inmobiliaria / Aliado</label><input class="form-input" id="edPropInmob" placeholder="Nombre de la inmobiliaria"/></div>
       <div class="form-group"><label class="form-label">Nombre del Propietario</label><input class="form-input" id="edPropPropietario"/></div>
-      <div class="form-group"><label class="form-label">Celular 1</label><input class="form-input" id="edPropCelulares"/></div>
-      <div class="form-group"><label class="form-label">Celular 2</label><input class="form-input" id="edPropCelular2"/></div>
-      <div class="form-group"><label class="form-label">Cuánto Renta ($)</label><input class="form-input" id="edPropRenta"/></div>
-      <div class="form-group full"><label class="form-label">Descripción</label><textarea class="form-input" id="edPropDesc" style="min-height:80px;"></textarea></div>
-      <div class="form-group full">
-        <label class="form-label">Imágenes (URLs separadas por | o nuevas líneas)</label>
-        <textarea class="form-input" id="edPropImgs" placeholder="https://i.imgur.com/... | https://..." oninput="updateEditorImgs()"></textarea>
-        <div class="img-preview-grid" id="edPropImgPreview"></div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modalEditorProp')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarPropiedadEditor()">Guardar Propiedad</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL PROPIEDAD -->
-<div class="modal-overlay-prop" id="modalPropOverlay" onclick="if(event.target===this) cerrarModalProp()">
-  <div class="modal-prop">
-    <div class="modal-prop-header">
-      <button class="modal-prop-close" onclick="cerrarModalProp()">×</button>
-    </div>
-    <div class="modal-prop-body">
-      <div class="modal-contenido">
-        <!-- COL IZQ -->
-        <div class="modal-col-izq">
-          <div class="carrusel-wrapper">
-            <div class="carrusel-principal" id="mpCarruselPrincipal">
-              <button class="carrusel-btn carrusel-prev" onclick="mpCarruselIr(-1)">&#8249;</button>
-              <button class="carrusel-btn carrusel-next" onclick="mpCarruselIr(1)">&#8250;</button>
-              <span class="carrusel-counter" id="mpCarruselCounter">1 / 1</span>
-              <button class="carrusel-expand" onclick="lbAbrir(mpCarruselFotos, mpCarruselIdx)" title="Ver pantalla completa">
-                <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-              </button>
-            </div>
-            <div class="carrusel-miniaturas" id="mpCarruselMiniaturas"></div>
-          </div>
-          
-          <div class="modal-prop-info">
-            <div class="modal-prop-title" id="mpTitle">Nombre</div>
-            <div class="modal-prop-type" id="mpType">Tipo</div>
-            <div class="modal-prop-code" id="mpCode">Código: 000</div>
-            <div class="modal-prop-price" id="mpPrice">$0</div>
-            <div class="modal-prop-tags" id="mpTags"></div>
-          </div>
-        </div>
-        
-        <!-- COL DER -->
-        <div class="modal-col-der">
-          <div>
-            <div class="modal-subtitulo-nuevo">Características</div>
-            <table class="modal-tabla-caracteristicas" id="mpSpecsTable"></table>
-          </div>
-          
-          <div>
-            <div class="modal-subtitulo-nuevo">Puntos Clave</div>
-            <div class="modal-texto" id="mpKeyPoints"></div>
-          </div>
-          
-          <div>
-            <div class="modal-subtitulo-nuevo">Descripción</div>
-            <div class="modal-texto" id="mpDesc"></div>
-          </div>
-
-          <div style="margin-top:24px;">
-            <div class="modal-subtitulo-nuevo">Ubicación en Mapa</div>
-            <div style="position: relative;">
-              <div id="mpMapa" style="width:100%; height:350px; border-radius:12px; border:1px solid var(--border); background:var(--bg2); position:relative; overflow:hidden; z-index:5;"></div>
-              <div id="mpStreetViewThumb" onclick="abrirStreetView(window._mpSvLat, window._mpSvLng)" style="display:none; position:absolute; bottom:14px; right:14px; width:100px; height:70px; border-radius:8px; overflow:hidden; cursor:pointer; border:2px solid rgba(255,255,255,0.8); box-shadow:0 2px 8px rgba(0,0,0,0.4); z-index:10; background:#222;">
-                <img id="mpStreetViewImg" src="" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'"/>
-                <div style="position:absolute; inset:0; background:rgba(0,0,0,0.3); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.3)'">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1px; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                  <span style="font-family:'Outfit',sans-serif; font-size:9px; font-weight:700; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.8);">Street View</span>
-                  <span style="position:absolute; bottom:3px; left:5px; font-family:'Outfit',sans-serif; font-size:7px; font-weight:700; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.8); opacity:0.85;">Google</span>
-                </div>
-              </div>
-            </div>
-            <div id="mpMapaError" style="display:none; color:var(--muted); font-size:12px; margin-top:8px; text-align:center;">Coordenadas no disponibles para este inmueble</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal-prop-footer">
-      <button class="modal-btn-compartir">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-        Compartir
-      </button>
-      <button class="btn btn-gold btn-edit-prop" style="display:flex; align-items:center; gap:6px; font-weight:600; background:#be8939; color:#000; border:none; margin-left:12px;">
-        ✏️ Editar Propiedad
-      </button>
-      <button class="btn btn-secondary" onclick="cerrarModalProp()" style="margin-left:auto;">Cerrar</button>
-    </div>
-  </div>
-</div>
-
-<div id="lightboxOverlay" onclick="if(event.target===this) lbCerrar()">
-  <button class="lightbox-close" onclick="lbCerrar()">&times;</button>
-  <span class="lightbox-counter" id="lightboxCounter">1 / 1</span>
-  <div class="lightbox-img-wrap">
-    <img id="lightboxImg" src="" />
-    <button id="lightboxPrev" onclick="lbIr(lbIdx-1)">&#8249;</button>
-    <button id="lightboxNext" onclick="lbIr(lbIdx+1)">&#8250;</button>
-  </div>
-  <div class="lightbox-mins" id="lightboxMins"></div>
-</div>
-
-<script>
-let lbIdx = 0;
-let lbFotos = [];
-
-window.lbAbrir = function(fotos, idx){
-  lbFotos = fotos;
-  lbIdx = idx;
-  document.getElementById('lightboxOverlay').classList.add('activo');
-  
-  const mins = document.getElementById('lightboxMins');
-  mins.innerHTML = lbFotos.map((u,i)=>`<img src="${u}" class="lightbox-min ${i===lbIdx?'activa':''}" onclick="lbIr(${i})"/>`).join('');
-  
-  lbIr(lbIdx);
-}
-
-window.lbIr = function(idx){
-  const n = lbFotos.length;
-  if(n<=0) return;
-  lbIdx = (idx + n) % n;
-  
-  const img = document.getElementById('lightboxImg');
-  img.src = lbFotos[lbIdx];
-  
-  document.getElementById('lightboxCounter').textContent = `${lbIdx+1} / ${n}`;
-  
-  const mins = document.querySelectorAll('.lightbox-min');
-  mins.forEach((m,i)=>m.classList.toggle('activa', i===lbIdx));
-  if(mins[lbIdx]) mins[lbIdx].scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
-}
-
-window.lbCerrar = function(){
-  document.getElementById('lightboxOverlay').classList.remove('activo');
-}
-
-document.addEventListener('keydown', e => {
-  if(!document.getElementById('lightboxOverlay').classList.contains('activo')) return;
-  if(e.key==='Escape') lbCerrar();
-  if(e.key==='ArrowLeft') lbIr(lbIdx-1);
-  if(e.key==='ArrowRight') lbIr(lbIdx+1);
-});
-
 function generarSlugPropiedad(inmueble) {
   const nombre = (inmueble["Nombre"] || '').toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -14598,6 +14449,39 @@ let mpCarruselFotos = [];
 let mpCarruselIdx = 0;
 let mpMapaInstance = null;
 let mpMapaMarker = null;
+let mpCarruselTimer = null;
+const MP_CARRUSEL_DELAY = 5000;
+
+function mpCarruselReiniciarProgreso() {
+  if (!mpCarruselFotos || mpCarruselFotos.length <= 1) return;
+  clearTimeout(mpCarruselTimer);
+  mpCarruselTimer = setTimeout(() => mpCarruselIr(1), MP_CARRUSEL_DELAY);
+}
+
+function mpCarruselDetener() {
+  clearTimeout(mpCarruselTimer);
+}
+
+function mpCarruselActualizarMiniaturas() {
+  const n = mpCarruselFotos.length;
+  if (!n) return;
+  const minDiv = document.getElementById('mpCarruselMiniaturas');
+  if (!minDiv) return;
+
+  if (n <= 4) {
+    minDiv.innerHTML = mpCarruselFotos.map((u, i) => 
+      `<img src="${u}" class="carrusel-min ${i === mpCarruselIdx ? 'activa' : ''}" onclick="mpCarruselIrA(${i})"/>`
+    ).join('');
+  } else {
+    let start = Math.max(0, mpCarruselIdx - 1);
+    if (start + 4 > n) start = Math.max(0, n - 4);
+    const ventana = [];
+    for (let i = start; i < start + 4 && i < n; i++) ventana.push(i);
+    minDiv.innerHTML = ventana.map(i => 
+      `<img src="${mpCarruselFotos[i]}" class="carrusel-min ${i === mpCarruselIdx ? 'activa' : ''}" onclick="mpCarruselIrA(${i})"/>`
+    ).join('');
+  }
+}
 
 function abrirModalProp(codigoOrProp){
   let p;
@@ -14614,6 +14498,188 @@ function abrirModalProp(codigoOrProp){
   document.getElementById('mpType').textContent = p['Tipo de inmueble'] || 'Inmueble';
   document.getElementById('mpCode').textContent = `Código: ${p['Código']}`;
   document.getElementById('mpPrice').textContent = formatFullPrice(p['Precio']);
+  document.getElementById('mpDesc').textContent = p['Descripción'] || 'Sin descripción';
+  document.getElementById('mpKeyPoints').textContent = p['Puntos Clave'] || 'No especificados';
+  
+  // Fotos
+  mpCarruselFotos = (p['Imagenes']||'').split('|').map(u=>u.trim()).filter(u=>u.length>5);
+  if(!mpCarruselFotos.length) mpCarruselFotos = [p['Image'] || 'https://i.imgur.com/Pc9M3I8.png'];
+  
+  mpCarruselInit();
+  
+  const tags = document.getElementById('mpTags');
+  tags.innerHTML = '';
+  if(p['Habitaciones']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/ykKdGwE.png" width="16"/> <strong>${p['Habitaciones']}</strong> Hab</div>`;
+  if(p['Baños']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/h9NqA32.png" width="16"/> <strong>${p['Baños']}</strong> Baños</div>`;
+  if(p['Garaje'] && p['Garaje']!=='No') tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/4Yixa77.png" width="16"/> <strong>${p['Garaje']}</strong> Garaje</div>`;
+  if(p['Cocina'] && p['Cocina']!=='No') tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/rH6cXMa.png" width="16"/> <strong>Cocina</strong> ${p['Cocina']}</div>`;
+  if(p['Pisos']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://img.icons8.com/ios-filled/50/ffffff/stairs.png" width="16"/> <strong>${p['Pisos']}</strong> Pisos</div>`;
+  
+  const specsTable = document.getElementById('mpSpecsTable');
+  const items = [
+    ['Ciudad', p['Ciudad']],
+    ['Zona', p['Zona']],
+    ['Comuna', p['Comuna']],
+    ['Estrato', p['Estrato']],
+    ['Ubicación', p['Ubicación']],
+    ['Área construida', p['Área Construida'] || p['Área'] || p['area'] || ''],
+    ['Área lote', p['Área lote']],
+    ['Closets', p['Closet']],
+    ['Cocina', p['Cocina']],
+    ['Ascensor', p['Ascensor']],
+    ['Número de Cortinas', p['Número de Cortinas']],
+    ['Aire Acondicionado', p['Aire Acondicionado']],
+    ['Reja Antejardín', p['Reja Antejardín']],
+    ['Patio', p['Patio']],
+    ['Piscina', p['Piscina']],
+    ['Antigüedad', p['Antigüedad del Inmueble']],
+    ['Dimensiones', p['Dimensiones']],
+    ['Administración', p['Administración'] || p['Administracion'] || ''],
+    ['Retorno de la inversión', p['Retorno de la inversión'] || p['Rentabilidad'] || p['rentabilidad'] || ''],
+    ['Propietario', p['Nombre del Propietario']],
+    ['Celular 1', p['Celular 1'] || p['Celulares']],
+    ['Celular 2', p['Celular 2']],
+    ['Cuánto Renta', p['Cuánto Renta ($)'] ? `$${Number(p['Cuánto Renta ($)']).toLocaleString('es-CO')}` : ''],
+    ['Inventario', p['Inventario'] && String(p['Inventario']).trim() !== '' ? String(p['Inventario']).trim() : 'NO'],
+    ['Inmobiliaria', p['Inmobiliaria'] || 'Directo'],
+    ['Dirección', p['DIRECCIÓN'] || p['DIRECCIÒN-VEREDA'] || p['Ubicación'] || '']
+  ];
+  specsTable.innerHTML = items.map(([k,v]) => {
+    const displayVal = (v !== undefined && v !== null && String(v).trim() !== '') ? String(v).trim() : '—';
+    return `<tr><td>${k}</td><td>${displayVal}</td></tr>`;
+  }).join('');
+  
+  const btnShare = document.querySelector('.modal-btn-compartir');
+  if(btnShare) {
+    if (isPreview) {
+      btnShare.style.display = 'none';
+    } else {
+      btnShare.style.display = 'flex';
+      btnShare.onclick = () => compartirPropiedad(p['Código'], btnShare);
+    }
+  }
+
+  const btnEdit = document.querySelector('.btn-edit-prop');
+  if(btnEdit) {
+    if (isPreview) {
+      btnEdit.style.display = 'none';
+    } else {
+      btnEdit.style.display = 'flex';
+      btnEdit.onclick = () => { cerrarModalProp(); abrirEditorProp(p['Código']); };
+    }
+  }
+  
+  // Custom top banner for simulated preview
+  let banner = document.getElementById('mpPreviewBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'mpPreviewBanner';
+    banner.style.cssText = 'position:absolute; top:0; left:0; right:0; background:rgba(212,168,75,0.9); color:#000; text-align:center; padding:8px; font-weight:bold; font-size:12px; z-index:10000; letter-spacing:1px; text-transform:uppercase;';
+    banner.textContent = 'Vista previa — aún no guardada';
+    document.getElementById('modalPropOverlay').appendChild(banner);
+  }
+  banner.style.display = isPreview ? 'block' : 'none';
+  
+  document.getElementById('modalPropOverlay').classList.add('active');
+
+  // Inicializar/Actualizar Mapa
+  setTimeout(() => {
+    initMpMapa(p);
+  }, 300); // Esperar a que el modal sea visible
+}
+
+function initMpMapa(p) {
+  const container = document.getElementById('mpMapa');
+  const errorMsg = document.getElementById('mpMapaError');
+  if(!container) return;
+
+  let lat = parseFloat(String(p['Latitud'] || p['Lat'] || '').replace(',','.'));
+  let lng = parseFloat(String(p['Longitud'] || p['Lng'] || '').replace(',','.'));
+
+  if(isNaN(lat) || isNaN(lng) || lat === 0) {
+    container.style.display = 'none';
+    if(errorMsg) errorMsg.style.display = 'block';
+    return;
+  }
+
+  container.style.display = 'block';
+  if(errorMsg) errorMsg.style.display = 'none';
+
+  if(!mpMapaInstance) {
+    mpMapaInstance = L.map('mpMapa', { zoomControl: false }).setView([lat, lng], 16);
+    L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      attribution: '&copy; Google Maps',
+      maxZoom: 20
+    }).addTo(mpMapaInstance);
+    L.control.zoom({ position: 'bottomright' }).addTo(mpMapaInstance);
+  } else {
+    mpMapaInstance.setView([lat, lng], 16);
+    mpMapaInstance.invalidateSize();
+  }
+
+  if(mpMapaMarker) mpMapaInstance.removeLayer(mpMapaMarker);
+
+  const price = p['Precio'] ? formatShortPrice(p['Precio']) : 'N/A';
+  const icon = L.divIcon({
+    className: 'z-marker-wrap',
+    html: `<div class="z-marker active" style="transform: scale(1.2);">${price}</div>`,
+    iconSize: [60, 25],
+    iconAnchor: [30, 25]
+  });
+
+  mpMapaMarker = L.marker([lat, lng], { icon }).addTo(mpMapaInstance);
+
+  // Update Street View thumbnail
+  const svThumb = document.getElementById('mpStreetViewThumb');
+  const svImg = document.getElementById('mpStreetViewImg');
+  if (svThumb && svImg) {
+    window._mpSvLat = lat;
+    window._mpSvLng = lng;
+    svImg.src = `https://maps.googleapis.com/maps/api/streetview?size=100x70&scale=2&location=${lat},${lng}&key=AIzaSyDoeGgX0VRgHY1wXjm4Z0SPZp9R4EBkUF0`;
+    svImg.style.display = 'block';
+    svThumb.style.display = 'block';
+  }
+}
+
+function mpCarruselInit(){
+  mpCarruselDetener();
+  mpCarruselIdx = 0;
+  const principal = document.getElementById('mpCarruselPrincipal');
+  principal.querySelectorAll('.carrusel-slide').forEach(s=>s.remove());
+  
+  mpCarruselFotos.forEach((u,i)=>{
+    const slide = document.createElement('div');
+    slide.className = 'carrusel-slide' + (i===0?' activa':'');
+    slide.innerHTML = `<img src="${u}" loading="lazy" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>`;
+    principal.insertBefore(slide, principal.querySelector('.carrusel-prev'));
+  });
+  
+  mpCarruselActualizarMiniaturas();
+  document.getElementById('mpCarruselCounter').textContent = `1 / ${mpCarruselFotos.length}`;
+  mpCarruselReiniciarProgreso();
+}
+
+function mpCarruselIr(delta){
+  mpCarruselIrA(mpCarruselIdx + delta);
+}
+
+function mpCarruselIrA(idx, reiniciarTimer = true){
+  const n = mpCarruselFotos.length;
+  if(n<=1) return;
+  mpCarruselIdx = (idx + n) % n;
+  
+  const slides = document.querySelectorAll('#mpCarruselPrincipal .carrusel-slide');
+  slides.forEach((s,i)=>s.classList.toggle('activa', i===mpCarruselIdx));
+  
+  mpCarruselActualizarMiniaturas();
+  document.getElementById('mpCarruselCounter').textContent = `${mpCarruselIdx+1} / ${n}`;
+  if (reiniciarTimer) mpCarruselReiniciarProgreso();
+}
+
+function cerrarModalProp(){
+  mpCarruselDetener();
+  document.getElementById('modalPropOverlay').classList.remove('active');
+}.getElementById('mpPrice').textContent = formatFullPrice(p['Precio']);
   document.getElementById('mpDesc').textContent = p['Descripción'] || 'Sin descripción';
   document.getElementById('mpKeyPoints').textContent = p['Puntos Clave'] || 'No especificados';
   
