@@ -9146,7 +9146,7 @@ function renderAdministracion() {
         <!-- ACCIONES Y FILTROS (DERECHA) -->
         <div style="display: flex; gap: 10px; align-items: center; flex-shrink: 0; flex-wrap: wrap; min-width: 0; row-gap: 8px;">
           <span style="font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing:0.05em; flex-shrink: 0;">AÑO:</span>
-          <select id="adminYearSelect" class="form-input" style="width: 80px; height: 38px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; cursor:pointer; flex-shrink: 0; color-scheme: dark;" onchange="changeAdminYear(this.value)">
+          <select id="adminYearSelect" class="form-input" style="min-width: 105px; width: 105px; height: 38px; padding: 0 28px 0 14px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; cursor:pointer; flex-shrink: 0; color-scheme: dark; box-sizing: border-box; line-height: 38px;" onchange="changeAdminYear(this.value)">
             <option value="2023" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2023' ? 'selected' : ''}>2023</option>
             <option value="2024" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2024' ? 'selected' : ''}>2024</option>
             <option value="2025" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2025' ? 'selected' : ''}>2025</option>
