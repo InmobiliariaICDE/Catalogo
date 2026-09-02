@@ -251,24 +251,27 @@ html.is-logged-in #app { display: flex !important; flex-direction: column !impor
 .carrusel-expand svg { width:18px; height:18px; fill:currentColor; }
 
 /* LIGHTBOX PANEL */
-#lightboxOverlay { position:fixed; inset:0; background:rgba(0,0,0,0.98); z-index:20000; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+#lightboxOverlay { display:none; position:fixed; inset:0; background:#000; z-index:99999; flex-direction:column; align-items:center; justify-content:flex-start; padding:0; }
 #lightboxOverlay.activo { display:flex; }
-.lightbox-img-wrap { position:relative; max-width:100%; max-height:80vh; display:flex; align-items:center; justify-content:center; }
-#lightboxImg { max-width:100%; max-height:100%; object-fit:contain; box-shadow:0 0 50px rgba(0,0,0,0.5); }
-.lightbox-close { position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:32px; cursor:pointer; z-index:20010; transition:all 0.2s; }
-.lightbox-close:hover { background:rgba(239,68,68,0.2); color:#ef4444; }
-.lightbox-counter { position:absolute; top:20px; left:50%; transform:translateX(-50%); color:#fff; font-size:14px; font-weight:600; background:rgba(255,255,255,0.1); padding:6px 16px; border-radius:20px; backdrop-filter:blur(10px); }
-.lightbox-mins { width:100%; max-width:800px; display:flex; gap:10px; overflow-x:auto; padding:20px 0; margin-top:20px; scrollbar-width:none; }
+.lightbox-img-wrap { flex:1 1 0; min-height:0; width:100%; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; }
+#lightboxImg { max-width:100%; max-height:100%; width:100%; height:100%; object-fit:contain; display:block; box-shadow:none; }
+.lightbox-close { position:absolute; top:12px; right:16px; background:none !important; border:none !important; color:#fff !important; font-size:28px !important; cursor:pointer !important; z-index:100000 !important; line-height:1 !important; opacity:0.8 !important; width:auto !important; height:auto !important; border-radius:0 !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; transform:none !important; }
+.lightbox-close:hover { opacity:1 !important; background:none !important; color:#fff !important; }
+.lightbox-counter { position:absolute; top:16px; left:16px; transform:none; color:#fff; font-size:13px; font-family:"Outfit", sans-serif; background:rgba(255,255,255,0.1); padding:3px 10px; border-radius:20px; z-index:100000; }
+.lightbox-mins { display:flex; gap:5px; padding:10px 8px; overflow-x:auto; width:100%; box-sizing:border-box; scrollbar-width:none; flex-shrink:0; max-width:100%; margin:0; }
 .lightbox-mins::-webkit-scrollbar { display:none; }
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
-.lightbox-min { width:60px; height:60px; object-fit:cover; border-radius:8px; opacity:0.3; cursor:pointer; transition:all 0.2s; border:2px solid transparent; flex-shrink:0; }
-.lightbox-min.activa { opacity:1; border-color:var(--gold); transform:scale(1.1); }
-#lightboxPrev, #lightboxNext { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; width:50px; height:50px; border-radius:50%; font-size:30px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(5px); }
-#lightboxPrev:hover, #lightboxNext:hover { background:var(--gold); border-color:var(--gold); }
-#lightboxPrev { left:-70px; }
-#lightboxNext { right:-70px; }
-@media (max-width:1100px){ #lightboxPrev{left:10px;} #lightboxNext{right:10px;} }
+.lightbox-min { flex-shrink:0; width:70px; height:52px; object-fit:cover; border-radius:4px; opacity:0.45; cursor:pointer; border:2px solid transparent; transition:opacity 0.2s, border-color 0.2s; transform:none; }
+.lightbox-min.activa { opacity:1; border-color:#d4a84b; transform:none; }
+#lightboxPrev, #lightboxNext { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.15); border-radius:50%; color:#fff; cursor:pointer; width:44px; height:44px; display:flex; align-items:center; justify-content:center; opacity:0.75; transition:opacity 0.2s, background 0.2s; padding:0; z-index:20; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); font-size:28px; line-height:1; }
+#lightboxPrev { left:12px; }
+#lightboxNext { right:12px; }
+#lightboxPrev:hover, #lightboxNext:hover { opacity:1; background:rgba(0,0,0,0.65); border-color:rgba(255,255,255,0.3); }
+@media (min-width: 601px) {
+  #lightboxPrev { width:52px; height:52px; left:18px; }
+  #lightboxNext { width:52px; height:52px; right:18px; }
+}
 
 @media (max-width:768px){ 
   .modal-overlay-prop{ padding:0 !important; }
