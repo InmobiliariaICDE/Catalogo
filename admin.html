@@ -2645,6 +2645,21 @@ html, body {
     text-overflow: ellipsis !important;
   }
 
+  /* Alineación inteligente de desplegables para la rejilla móvil de 2 columnas */
+  .filtros-grid-nueva .filtro-nuevo:nth-child(2n) .filtro-nuevo-dropdown {
+    left: auto !important;
+    right: 0 !important;
+  }
+  .filtros-grid-nueva .filtro-nuevo:nth-child(2n-1) .filtro-nuevo-dropdown {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .filtro-nuevo-dropdown {
+    max-width: calc(100vw - 28px) !important;
+    min-width: min(280px, calc(100vw - 28px)) !important;
+    box-sizing: border-box !important;
+  }
+
   .pc-buscar-row {
     display: flex !important;
     flex-direction: column !important;
@@ -11279,12 +11294,15 @@ function renderAdministracion() {
         <!-- ACCIONES Y FILTROS (DERECHA) -->
         <div style="display: flex; gap: 10px; align-items: center; flex-shrink: 0; flex-wrap: wrap; min-width: 0; row-gap: 8px;">
           <span style="font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing:0.05em; flex-shrink: 0;">AÑO:</span>
-          <select id="adminYearSelect" class="form-input" style="width: 80px; height: 38px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; cursor:pointer; flex-shrink: 0; color-scheme: dark;" onchange="changeAdminYear(this.value)">
+          <select id="adminYearSelect" class="form-input" style="min-width: 105px; width: 105px; height: 38px; padding: 0 28px 0 14px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; cursor:pointer; flex-shrink: 0; color-scheme: dark; box-sizing: border-box; line-height: 38px;" onchange="changeAdminYear(this.value)">
             <option value="2023" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2023' ? 'selected' : ''}>2023</option>
             <option value="2024" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2024' ? 'selected' : ''}>2024</option>
             <option value="2025" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2025' ? 'selected' : ''}>2025</option>
             <option value="2026" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2026' ? 'selected' : ''}>2026</option>
             <option value="2027" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2027' ? 'selected' : ''}>2027</option>
+            <option value="2028" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2028' ? 'selected' : ''}>2028</option>
+            <option value="2029" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2029' ? 'selected' : ''}>2029</option>
+            <option value="2030" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2030' ? 'selected' : ''}>2030</option>
           </select>
           <button class="btn btn-gold btn-sm" style="height: 38px; border-radius: 10px; margin-left: 5px; flex-shrink: 0; padding: 0 16px; font-weight: 700;" onclick="abrirCrearInmuebleAdmin()">➕ Crear Nueva Propiedad</button>
           <button class="btn btn-secondary btn-sm" style="height: 38px; border-radius: 10px; margin-left: 5px; flex-shrink: 0; padding: 0 14px; font-weight: 600;" onclick="reloadDirectFromDrive()" title="Sincronizar y leer la información real desde Google Drive">🔄 Leer de Drive</button>
