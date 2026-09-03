@@ -2777,12 +2777,36 @@ html, body {
     box-sizing: border-box !important;
     cursor: pointer !important;
     font-family: 'Outfit', sans-serif !important;
-    transition: background .2s, color .2s !important;
+    transition: all .2s ease !important;
   }
 
   .btn-limpiar-en-grid:hover {
     background: rgba(255,255,255,.12) !important;
     color: #fff !important;
+  }
+
+  /* Estado con relieve de los botones Limpiar filtros cuando HAY filtros activos */
+  .btn-limpiar-pc.has-filters,
+  .btn-limpiar-en-grid.has-filters {
+    background: linear-gradient(135deg, var(--gold, #d4a84b) 0%, #b8860b 100%) !important;
+    color: #000000 !important;
+    font-weight: 700 !important;
+    border: none !important;
+    box-shadow: 3px 3px 0px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.35), inset -1px -1px 0px rgba(0,0,0,0.4) !important;
+  }
+
+  .btn-limpiar-pc.has-filters:hover,
+  .btn-limpiar-en-grid.has-filters:hover {
+    background: linear-gradient(135deg, #e5b95c 0%, #a47b2a 100%) !important;
+    color: #000000 !important;
+    transform: translate(-1px, -1px) !important;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.45), inset 1px 1px 0px rgba(255,255,255,0.45), inset -1px -1px 0px rgba(0,0,0,0.4) !important;
+  }
+
+  .btn-limpiar-pc.has-filters:active,
+  .btn-limpiar-en-grid.has-filters:active {
+    box-shadow: inset 3px 3px 6px rgba(0,0,0,0.6), inset -1px -1px 0px rgba(255,255,255,0.1) !important;
+    transform: scale(0.97) !important;
   }
 
   /* Botón Datos del Cliente en row inferior (visible en móvil) */
@@ -4450,6 +4474,33 @@ function fnResetPrice(pfx, e){
   fnActualizarConteo(pfx);
 }
 
+function fnTieneFiltrosActivos(pfx){
+  const st = getFSt(pfx);
+  if(!st) return false;
+  for(let c of FCAMPOS){
+    const v = st[c.key];
+    if(Array.isArray(v) && v.length > 0) return true;
+  }
+  if(st.minPrice !== null || st.maxPrice !== null) return true;
+  const busVal = (document.getElementById(`fnBus_${pfx}`)?.value || '').trim();
+  if(busVal !== '') return true;
+  if(Array.isArray(st.kmzCategory) && st.kmzCategory.length > 0) return true;
+  return false;
+}
+
+function fnActualizarEstadoBotonLimpiar(pfx){
+  const tiene = fnTieneFiltrosActivos(pfx);
+  const wrap = document.getElementById(`fnGrid_${pfx}`)?.closest('.pc-filtros-wrapper') || document;
+  const btns = wrap.querySelectorAll('.btn-limpiar-pc, .btn-limpiar-en-grid, .btn-limpiar-desktop');
+  btns.forEach(b => {
+    if(tiene) {
+      b.classList.add('has-filters');
+    } else {
+      b.classList.remove('has-filters');
+    }
+  });
+}
+
 function fnActualizarConteo(pfx){
   const st = getFSt(pfx);
   const busVal = (document.getElementById(`fnBus_${pfx}`)?.value || '').trim();
@@ -4493,6 +4544,7 @@ function fnActualizarConteo(pfx){
     renderEditFiltrosGrid(f);
     actualizarPinesMapa(pfx); // Sincronizar pines en el mapa
   }
+  fnActualizarEstadoBotonLimpiar(pfx);
 }
 
 function renderEditFiltrosGrid(lista){
