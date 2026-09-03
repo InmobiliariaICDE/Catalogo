@@ -391,6 +391,7 @@ select.estado-badge option, select.badge option { background:#18181b; color:#fff
 .fn-option.fn-sel .fn-count{color:rgba(212,168,75,.6);}
 /* Fila buscar — copia de .buscar-row-nueva */
 .pc-buscar-row{display:flex;align-items:stretch;background:rgba(0,0,0,0.45);backdrop-filter:blur(14px);border:none;border-radius:var(--icde-radius);height:var(--icde-h);overflow:hidden;box-shadow:inset 3px 3px 6px rgba(0,0,0,0.6),inset -1px -1px 0px rgba(255,255,255,0.05);}
+.pc-buscar-input-wrap{display:flex;align-items:center;flex:1;min-width:0;height:100%;}
 .pc-buscar-row .bn-icon{padding:0 10px 0 14px;color:var(--icde-gold);display:flex;align-items:center;flex-shrink:0;}
 .pc-buscar-row input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:400;padding:0;}
 .pc-buscar-row input::placeholder{color:rgba(200,200,200,.45);font-weight:500;letter-spacing:.07em;font-size:12.5px;}
@@ -3279,10 +3280,12 @@ function buildFiltrosBar(containerId, pfx, initVals){
           </div>`).join('')}
       </div>
       <div class="pc-buscar-row">
-        <span class="bn-icon">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </span>
-        <input type="text" id="fnBus_${pfx}" placeholder="Buscar por nombre, código, barrio..." oninput="fnBuscar('${pfx}',this.value)"/>
+        <div class="pc-buscar-input-wrap">
+          <span class="bn-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </span>
+          <input type="text" id="fnBus_${pfx}" placeholder="Buscar por nombre, código, barrio..." oninput="fnBuscar('${pfx}',this.value)"/>
+        </div>
         <button class="btn-generar-pc" id="btnGen_${pfx}" onclick="fnGenerarLink('${pfx}', this)">Generar link</button>
         <button class="btn-limpiar-pc" onclick="fnLimpiar('${pfx}')">Limpiar filtros</button>
       </div>
