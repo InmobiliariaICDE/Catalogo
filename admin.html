@@ -512,9 +512,12 @@ select.estado-badge option, select.badge option { background:#18181b; color:#fff
   position: absolute;
   top: 100%;
   left: 0;
-  min-width: 240px;
+  right: 0;
+  width: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
   background: #0f0f11;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(212, 168, 75, 0.2);
   box-shadow: 0 24px 60px rgba(0,0,0,0.95), 0 4px 16px rgba(0,0,0,0.8);
   z-index: 9999;
   padding: 8px 0;
@@ -522,13 +525,6 @@ select.estado-badge option, select.badge option { background:#18181b; color:#fff
   overflow-y: auto;
 }
 .filtro-nuevo.fn-open .filtro-nuevo-dropdown{ display: block; }
-
-/* Alineación inteligente para evitar desbordes */
-.filtro-nuevo:nth-child(4n) .filtro-nuevo-dropdown,
-.filtro-nuevo:nth-child(4n-1) .filtro-nuevo-dropdown { 
-  left: auto; 
-  right: 0; 
-}
 
 .fn-option{ display: flex; align-items: center; gap: 10px; padding: 10px 18px; font-size: 13px; color: #c0c0c0; cursor: pointer; transition: all 0.1s; }
 .fn-option:hover{ background: rgba(255, 255, 255, 0.06); color: #fff; }
@@ -4189,7 +4185,8 @@ function fnPoblar(pfx, c){
     // Funciones de mapeo bilineal
     const valToPos = v => (v <= 1000) ? (v/1000)*70 : 70 + ((v-1000)/(topM-1000))*30;
 
-    drop.style.minWidth = '280px';
+    drop.style.width = '100%';
+    drop.style.minWidth = '100%';
     drop.innerHTML = `
       <div class="price-slider-wrap">
         <div class="price-inputs">
