@@ -1724,14 +1724,14 @@ textarea.gemini-card-input {
   .pc-buscar-row-premium:focus-within { background: rgba(0,0,0,0.4); box-shadow: inset 3px 3px 6px rgba(0,0,0,0.8), inset -1px -1px 0px rgba(212,168,75,0.3), 0 0 0 2px rgba(212,168,75,0.15); }
   .btn-nueva-cita-premium {
     height: 38px;
-    background: #18181B !important;
-    color: #C0C0C0 !important;
+    background: linear-gradient(135deg, var(--gold, #d4a84b) 0%, #b8860b 100%) !important;
+    color: #000000 !important;
     font-weight: 700;
     font-size: 13px;
     padding: 0 16px;
     border-radius: 8px;
-    border: 1px solid rgba(212, 168, 75, 0.4) !important;
-    box-shadow: 3px 3px 0px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.2), inset -1px -1px 0px rgba(0,0,0,0.4);
+    border: none !important;
+    box-shadow: 3px 3px 0px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.35), inset -1px -1px 0px rgba(0,0,0,0.4) !important;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -1741,15 +1741,14 @@ textarea.gemini-card-input {
     font-family: 'Outfit', sans-serif;
   }
   .btn-nueva-cita-premium:hover {
-    background: #242429 !important;
-    color: #ffffff !important;
-    border-color: rgba(212, 168, 75, 0.7) !important;
+    background: linear-gradient(135deg, #e5b95c 0%, #a47b2a 100%) !important;
+    color: #000000 !important;
     transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.3), inset -1px -1px 0px rgba(0,0,0,0.4);
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.45), inset 1px 1px 0px rgba(255,255,255,0.45), inset -1px -1px 0px rgba(0,0,0,0.4) !important;
   }
   .btn-nueva-cita-premium:active {
-    box-shadow: inset 3px 3px 6px rgba(0,0,0,0.6), inset -1px -1px 0px rgba(255,255,255,0.1);
-    transform: scale(0.98);
+    box-shadow: inset 3px 3px 6px rgba(0,0,0,0.6), inset -1px -1px 0px rgba(255,255,255,0.1) !important;
+    transform: scale(0.97);
   }
   .matrix-table { width: 100%; border-collapse: collapse; }
   .matrix-table th { padding: 14px 10px; font-size: 11px; font-weight: 700; text-align: center; text-transform: uppercase; color: var(--gold); border-bottom: 1px solid rgba(212,168,75,0.25); background: linear-gradient(rgba(212,168,75,0.04), rgba(212,168,75,0.04)), var(--bg2); position: sticky; top: 0; z-index: 100; }
@@ -5707,7 +5706,17 @@ function mergeVisitas(localArr, cloudArr) {
   return Array.from(vMap.values());
 }
 
-async function autoSyncLeads() {
+async function fetchJsonSeguro(url) {
+  const res = await fetch(url, { cache: 'no-store', redirect: 'follow' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  if (text.trim().startsWith('<')) {
+    throw new Error('Respuesta HTML de Google Apps Script (Servidor no publicado o 404)');
+  }
+  return JSON.parse(text);
+}
+
+async function autoSyncDrive() {
   if (!CRM_SCRIPT_URL) return;
   // Si hay una escritura pendiente reciente, no descargar de Drive todavía (evita revertir cambios locales)
   if (Date.now() < pendingWriteUntil) {
@@ -5719,12 +5728,10 @@ async function autoSyncLeads() {
   if (dot) { dot.style.background = '#d4a84b'; dot.style.boxShadow = '0 0 6px #d4a84b'; }
   if (txt) txt.textContent = 'Sincronizando...';
   try {
-    const [resLeads, resCitas] = await Promise.all([
-      fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now()),
-      fetch(CRM_SCRIPT_URL + '?action=getCitas&t=' + Date.now())
+    const [data, dataCitas] = await Promise.all([
+      fetchJsonSeguro(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now()),
+      fetchJsonSeguro(CRM_SCRIPT_URL + '?action=getCitas&t=' + Date.now())
     ]);
-    const data = await resLeads.json();
-    const dataCitas = await resCitas.json();
     if (!Array.isArray(data)) throw new Error('Respuesta inválida');
 
     // Cargar citas directamente desde el Excel (fuente de verdad)
@@ -5820,7 +5827,7 @@ async function autoSyncLeads() {
     if (txt) txt.textContent = 'En vivo';
     setTimeout(() => { if (dot) dot.style.boxShadow = ''; }, 1500);
   } catch (e) {
-    console.warn('[AutoSync] Error:', e);
+    console.warn('[AutoSync] Error:', e.message || e);
     if (dot) { dot.style.background = '#ef4444'; }
     if (txt) txt.textContent = 'Sin conexión';
     setTimeout(() => { if (dot) dot.style.background = '#888'; if (txt) txt.textContent = 'En vivo'; }, 10000);
@@ -5830,12 +5837,10 @@ async function autoSyncLeads() {
 async function cargarLeads(){
   if(!CRM_SCRIPT_URL) return;
   try {
-    const [resLeads, resCitas] = await Promise.all([
-      fetch(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now()),
-      fetch(CRM_SCRIPT_URL + '?action=getCitas&t=' + Date.now())
+    const [data, dataCitas] = await Promise.all([
+      fetchJsonSeguro(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now()),
+      fetchJsonSeguro(CRM_SCRIPT_URL + '?action=getCitas&t=' + Date.now())
     ]);
-    const data = await resLeads.json();
-    const dataCitas = await resCitas.json();
     
     if (Array.isArray(dataCitas)) {
       citas = dataCitas;
@@ -5847,7 +5852,7 @@ async function cargarLeads(){
       if(currentTab === 'leads') renderLeadsBody(leads);
       if(currentTab === 'citas') renderCitas();
     }
-  } catch(e){ console.error("Error cargando leads:", e); }
+  } catch(e){ console.error("Error cargando leads:", e.message || e); }
 }
 
 function normalizarIdsLeads(data) {
