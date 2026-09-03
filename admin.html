@@ -551,8 +551,8 @@ select.estado-badge option, select.badge option { background:#18181b; color:#fff
 .pc-buscar-row .bn-icon{padding:0 10px 0 14px;color:var(--icde-gold);display:flex;align-items:center;flex-shrink:0;}
 .pc-buscar-row input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:400;padding:0;}
 .pc-buscar-row input::placeholder{color:rgba(200,200,200,.45);font-weight:500;letter-spacing:.07em;font-size:12.5px;}
-.btn-limpiar-pc{flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0 18px;height:100%;background:rgba(180,180,180,.12);border:none;border-left:1px solid rgba(200,200,200,.18);color:rgba(220,220,220,.7);font-family:'Outfit',sans-serif;font-weight:500;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:background .2s,color .2s;}
-.btn-limpiar-pc:hover{background:rgba(255,255,255,.1);color:#fff;}
+.btn-limpiar-pc{flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0 18px;height:100%;background:#B4B4B41A;border:none;border-left:1px solid rgba(200,200,200,.18);color:#DCDCDCBF;font-family:'Outfit',sans-serif;font-weight:500;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:all .2s ease;box-shadow:none;}
+.btn-limpiar-pc:hover{background:rgba(255,255,255,.12);color:#fff;}
 .btn-generar-pc {
   flex-shrink:0; display:flex; align-items:center; justify-content:center;
   padding:0 18px; height:100%; background:linear-gradient(135deg, #22c55e 0%, #15803d 100%); border:1px solid rgba(255,255,255,0.25);
@@ -2766,50 +2766,47 @@ html, body {
     box-sizing: border-box !important;
   }
 
-  /* Botón Limpiar filtros en celda 12 del grid */
-  /* Botón Limpiar filtros INACTIVO (gris por defecto cuando no hay filtros) */
-  .btn-limpiar-en-grid,
-  .btn-limpiar-desktop {
+  /* Botón Limpiar filtros en celda 12 del grid (cuando NO hay filtros) */
+  .btn-limpiar-en-grid {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    width: 100% !important;
     height: 32px !important;
     min-height: 32px !important;
     border-radius: 6px !important;
     padding: 0 8px !important;
     font-size: 11px !important;
     font-weight: 500 !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    background: #27272A !important;
-    color: #9CA3AF !important;
+    border: 1px solid rgba(212, 168, 75, 0.15) !important;
+    background: #B4B4B41A !important;
+    color: #DCDCDCBF !important;
+    box-shadow: none !important;
+    transform: none !important;
     white-space: nowrap !important;
     box-sizing: border-box !important;
     cursor: pointer !important;
     font-family: 'Outfit', sans-serif !important;
-    box-shadow: none !important;
     transition: all .2s ease !important;
   }
 
-  .btn-limpiar-en-grid:hover,
-  .btn-limpiar-desktop:hover {
-    background: #3F3F46 !important;
-    color: #E5E7EB !important;
+  .btn-limpiar-en-grid:hover {
+    background: rgba(255,255,255,.12) !important;
+    color: #fff !important;
   }
 
-  /* Botón Limpiar filtros ACTIVO (amarillo en relieve solo cuando HAY filtros aplicados) */
+  /* Estado con relieve de los botones Limpiar filtros cuando HAY filtros activos */
   .btn-limpiar-pc.has-filters,
-  .btn-limpiar-en-grid.has-filters,
-  .btn-limpiar-desktop.has-filters {
-    background: linear-gradient(135deg, #d4a84b 0%, #b8860b 100%) !important;
+  .btn-limpiar-en-grid.has-filters {
+    background: linear-gradient(135deg, var(--gold, #d4a84b) 0%, #b8860b 100%) !important;
     color: #000000 !important;
     font-weight: 700 !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border: none !important;
     box-shadow: 3px 3px 0px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.35), inset -1px -1px 0px rgba(0,0,0,0.4) !important;
   }
 
   .btn-limpiar-pc.has-filters:hover,
-  .btn-limpiar-en-grid.has-filters:hover,
-  .btn-limpiar-desktop.has-filters:hover {
+  .btn-limpiar-en-grid.has-filters:hover {
     background: linear-gradient(135deg, #e5b95c 0%, #a47b2a 100%) !important;
     color: #000000 !important;
     transform: translate(-1px, -1px) !important;
@@ -2817,8 +2814,7 @@ html, body {
   }
 
   .btn-limpiar-pc.has-filters:active,
-  .btn-limpiar-en-grid.has-filters:active,
-  .btn-limpiar-desktop.has-filters:active {
+  .btn-limpiar-en-grid.has-filters:active {
     box-shadow: inset 3px 3px 6px rgba(0,0,0,0.6), inset -1px -1px 0px rgba(255,255,255,0.1) !important;
     transform: scale(0.97) !important;
   }
@@ -4528,18 +4524,18 @@ function fnTieneFiltrosActivos(pfx){
   const st = getFSt(pfx);
   if(!st) return false;
 
-  // 1. Campos multiselect / checkbox (FCAMPOS)
+  // 1. Campos multiselect / checkbox
   for(let c of FCAMPOS){
     if(c.key === 'rangoPrecio') continue;
     const v = st[c.key];
     if(Array.isArray(v) && v.length > 0) return true;
-    if(!Array.isArray(v) && v !== null && v !== undefined && String(v).trim() !== '') return true;
   }
 
-  // 2. Rango de precio (activo solo si el min > 0 o el max fue reducido)
-  const topPrice = typeof MAX_CATALOG_PRICE !== 'undefined' ? MAX_CATALOG_PRICE : 5000000000;
-  if(typeof st.minPrice === 'number' && st.minPrice > 0) return true;
-  if(typeof st.maxPrice === 'number' && st.maxPrice > 0 && st.maxPrice < topPrice) return true;
+  // 2. Rango de precio (activo solo si se modifica respecto al rango por defecto)
+  const maxLimit = typeof MAX_CATALOG_PRICE !== 'undefined' ? MAX_CATALOG_PRICE : 5000000000;
+  if((st.minPrice !== null && st.minPrice > 0) || (st.maxPrice !== null && st.maxPrice < maxLimit)) {
+    return true;
+  }
 
   // 3. Campo de búsqueda de texto
   const busInput = document.getElementById(`fnBus_${pfx}`);
