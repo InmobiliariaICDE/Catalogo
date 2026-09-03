@@ -616,7 +616,106 @@ function saveCitaToSheet(cita) {
     );
   }
 
+  // Sincronizar automáticamente con Google Calendar de icdesaladenegocios@gmail.com
+  crearEventoGoogleCalendar(cita);
+
   return createJsonResponse({ success: true });
+}
+
+/**
+ * Crea un evento en el Google Calendar principal del propietario del script (icdesaladenegocios@gmail.com)
+ */
+function crearEventoGoogleCalendar(cita) {
+  try {
+    if (!cita || !cita.fecha || !cita.hora) return;
+    if (String(cita.estado || '').toLowerCase() === 'cancelada') return;
+
+    const calendar = CalendarApp.getDefaultCalendar();
+    if (!calendar) return;
+
+    let fVal = cita.fecha;
+    let hVal = cita.hora;
+
+    if (fVal instanceof Date) {
+      const m = fVal.getMonth() + 1;
+      const d = fVal.getDate();
+      fVal = `${fVal.getFullYear()}-${m < 10 ? '0' + m : m}-${d < 10 ? '0' + d : d}`;
+    }
+    if (hVal instanceof Date) {
+      const hh = hVal.getHours();
+      const mm = hVal.getMinutes();
+      hVal = `${hh < 10 ? '0' + hh : hh}:${mm < 10 ? '0' + mm : mm}`;
+    }
+
+    const fParts = String(fVal).split(/[-\/]/).map(Number);
+    const hParts = String(hVal).split(':').map(Number);
+
+    if (fParts.length < 3 || hParts.length < 2) return;
+
+    let y = fParts[0], m = fParts[1], d = fParts[2];
+    if (y < 1000 && fParts[2] > 1000) { d = fParts[0]; m = fParts[1]; y = fParts[2]; }
+
+    const startTime = new Date(y, m - 1, d, hParts[0], hParts[1], 0, 0);
+    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hora de duración
+
+    const clienteNom = cita.cliente || 'Cliente';
+    const codInm = cita.codigo || '';
+    const title = `📅 Cita ICDE: ${clienteNom}${codInm ? ' - Inmueble ' + codInm : ''}`.trim();
+    const description = `Cliente: ${clienteNom}\nCelular: ${cita.celular || ''}\nInmueble: ${codInm}\nOferta: ${cita.oferta || 'N/A'}\nNotas: ${cita.notas || ''}`.trim();
+    const location = codInm ? `Inmueble ${codInm}, Neiva` : 'Neiva, Huila';
+
+    // Evitar eventos duplicados en Google Calendar
+    const existingEvents = calendar.getEvents(startTime, endTime);
+    for (let i = 0; i < existingEvents.length; i++) {
+      const evTitle = existingEvents[i].getTitle();
+      if ((codInm && evTitle.includes(codInm)) || (clienteNom && evTitle.includes(clienteNom))) {
+        return; // Ya existe en Google Calendar
+      }
+    }
+
+    calendar.createEvent(title, startTime, endTime, {
+      description: description,
+      location: location
+    });
+
+    Logger.log('🟢 Evento agendado en Google Calendar (icdesaladenegocios@gmail.com): ' + title);
+  } catch (e) {
+    Logger.log('⚠️ Error en crearEventoGoogleCalendar: ' + e);
+  }
+}
+
+/**
+ * Función para sincronizar todas las citas existentes en la hoja CRM_Citas directamente con Google Calendar.
+ * Ejecútala una sola vez desde el editor de Google Apps Script.
+ */
+function sincronizarGoogleCalendarCitas() {
+  try {
+    const ss = getSpreadsheet();
+    const sheet = ss.getSheetByName('CRM_Citas');
+    if (!sheet) return;
+
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return;
+
+    const headers = data[0].map(h => String(h || '').trim().toLowerCase());
+    const citas = data.slice(1).map(row => {
+      let obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i]; });
+      return obj;
+    });
+
+    let sincronizadas = 0;
+    citas.forEach(cita => {
+      if (cita.fecha && cita.hora && String(cita.estado || '').toLowerCase() !== 'cancelada') {
+        crearEventoGoogleCalendar(cita);
+        sincronizadas++;
+      }
+    });
+
+    Logger.log('🟢 Sincronización completada. Se procesaron ' + sincronizadas + ' citas hacia Google Calendar.');
+  } catch (e) {
+    Logger.log('Error en sincronizarGoogleCalendarCitas: ' + e);
+  }
 }
 
 function deleteCitaFromSheet(id) {
