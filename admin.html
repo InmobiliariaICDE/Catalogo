@@ -901,14 +901,8 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:rgba(212,168,75,.25);border-radius:2px;}
 .nuevo-lead-layout {
-  display: grid;
-  grid-template-columns: 65% 35%;
-  gap: 24px;
-  align-items: start;
-  transition: all 0.3s ease;
-}
-.nuevo-lead-layout.hide-data {
-  grid-template-columns: 1fr;
+  display: block;
+  width: 100%;
 }
 .nuevo-lead-layout.hide-data .nl-col-2 {
   display: none;
@@ -2806,7 +2800,7 @@ html, body {
     font-weight: 600 !important;
     border: 1px solid rgba(212, 168, 75, 0.35) !important;
     background: rgba(212, 168, 75, 0.10) !important;
-    color: var(--gold, #D4A84B) !important;
+    color: #C0C0C0 !important;
     white-space: nowrap !important;
     box-sizing: border-box !important;
     cursor: pointer !important;
@@ -6197,6 +6191,89 @@ function renderNuevo(){
           ${allProps.length ? `<div id="nlFiltrosWrap"></div>` : `<div class="loading"><div class="spinner"></div> Cargando catálogo...</div>`}
         </div>
 
+        <!-- COLUMNA DATOS Y PLAN (DESPUÉS DE div.pc-buscar-row) -->
+        <div class="nl-col-2" style="margin-top:16px;">
+          <div class="panel-section" style="border:1px solid rgba(212,168,75,0.2); border-radius:12px; padding:16px; background:rgba(255,255,255,0.02); margin-bottom:16px;">
+            <!-- BLOQUE 1: DATOS -->
+            <div class="form-section-header">
+              <div class="panel-section-title">Datos del Cliente</div>
+            </div>
+            <div class="section-content">
+              <div style="display:flex;gap:12px;margin-bottom:20px;margin-top:10px;">
+                <button id="btnTC" class="btn ${nuevoLead.tipo==='cliente'?'btn-primary':'btn-secondary'}" onclick="setTipo('cliente')">👤 Cliente</button>
+                <button id="btnTI" class="btn ${nuevoLead.tipo==='inmobiliaria'?'btn-gold':'btn-secondary'}"   onclick="setTipo('inmobiliaria')">🏢 Inmobiliaria</button>
+              </div>
+              <div id="nlDuplicateWarning" style="display:none; margin-bottom:15px; padding:12px 15px; background-color:rgba(249, 115, 22, 0.1); border:1px solid rgba(249, 115, 22, 0.3); border-radius:8px; color:#f97316; font-size:13px; align-items:center; justify-content:space-between;"></div>
+              <div class="form-grid">
+                <div class="form-group"><label class="form-label">Nombre Completo *</label><input class="form-input" id="nlN" value="${nuevoLead.nombre}" placeholder="Ej: Maria Perez" oninput="nuevoLead.nombre=this.value; checkDuplicateLead()"/></div>
+                <div class="form-group"><label class="form-label">WhatsApp / Celular *</label><input class="form-input" id="nlC" value="${nuevoLead.celular}" placeholder="3001234567" oninput="nuevoLead.celular=this.value; checkDuplicateLead()"/></div>
+                <div class="form-group full"><label class="form-label">Notas u Observaciones</label><textarea class="form-input" oninput="nuevoLead.notas=this.value" placeholder="¿Qué detalles adicionales tiene este cliente?">${nuevoLead.notas}</textarea></div>
+                <div class="form-group">
+                  <label class="form-label">Estado Inicial</label>
+                  <select class="form-input" onchange="nuevoLead.estado=this.value">
+                    <option value="enviando" ${nuevoLead.estado==='enviando'?'selected':''}>🟠 Enviando propuestas</option>
+                    <option value="proceso"  ${nuevoLead.estado==='proceso'?'selected':''}>🔵 Proceso de venta</option>
+                    <option value="visita"   ${nuevoLead.estado==='visita'?'selected':''}>🟢 Pendiente visita</option>
+                    <option value="banco"    ${nuevoLead.estado==='banco'?'selected':''}>🟣 Referido al banco</option>
+                    <option value="inactivo" ${nuevoLead.estado==='inactivo'?'selected':''}>⚫ Inactivo</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Prioridad / Etiqueta</label>
+                  <select class="form-input" onchange="nuevoLead.etiqueta=this.value">
+                    <option value="activo"   ${nuevoLead.etiqueta==='activo'?'selected':''}>🟢 Activo (Interesado)</option>
+                    <option value="tibio"    ${nuevoLead.etiqueta==='tibio'?'selected':''}>🟡 Tibio (Explorando)</option>
+                    <option value="inactivo" ${nuevoLead.etiqueta==='inactivo'?'selected':''}>⚫ Inactivo (No responde)</option>
+                  </select>
+                </div>
+              </div>
+              <div id="inmobExtra" style="display:${nuevoLead.tipo==='inmobiliaria'?'block':'none'}">
+                <div class="inmob-section">
+                  <div class="inmob-title">🏢 Datos de la Inmobiliaria Aliada</div>
+                  <div class="form-grid">
+                    <div class="form-group"><label class="form-label">Nombre Inmobiliaria</label><input class="form-input" value="${nuevoLead.nombreInmobiliaria}" placeholder="Nombre" oninput="nuevoLead.nombreInmobiliaria=this.value"/></div>
+                    <div class="form-group"><label class="form-label">Nombre del Agente</label><input class="form-input" value="${nuevoLead.nombreAgente}" placeholder="Agente" oninput="nuevoLead.nombreAgente=this.value"/></div>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-top:20px;">
+                <div class="form-label" style="margin-bottom:12px;">Método de Pago Preferido</div>
+                <div class="checklist">
+                  ${['Efectivo', 'Crédito', 'Caja Honor', 'Permuta'].map(m=>`<label class="check-item ${nuevoLead.metodoPago.includes(m)?'active':''}"><input type="checkbox" ${nuevoLead.metodoPago.includes(m)?'checked':''} onchange="toggleMetodo('${m}',this)"/> ${m}</label>`).join('')}
+                </div>
+              </div>
+            </div>
+
+            <div style="height:32px;"></div>
+            <div class="form-section-header" style="border-top:1px solid rgba(255,255,255,0.05); padding-top:24px;">
+              <div class="panel-section-title">Plan de Envío y Finalización</div>
+            </div>
+            <div class="section-content">
+              <div class="form-grid" style="margin-top:4px;">
+                <div class="form-group">
+                  <label class="form-label">Frecuencia de seguimiento</label>
+                  <select class="form-input" onchange="nuevoLead.frecuencia=this.value; updateFrec()">
+                    <option value="diaria" ${nuevoLead.frecuencia==='diaria'?'selected':''}>Diaria</option>
+                    <option value="semanal" ${nuevoLead.frecuencia==='semanal'?'selected':''}>Semanal</option>
+                    <option value="quincenal" ${nuevoLead.frecuencia==='quincenal'?'selected':''}>Quincenal</option>
+                    <option value="mensual" ${nuevoLead.frecuencia==='mensual'?'selected':''}>Mensual</option>
+                    <option value="manual" ${nuevoLead.frecuencia==='manual'?'selected':''}>Manual</option>
+                  </select>
+                </div>
+              </div>
+              <div class="freq-info" id="frecInfo" style="margin-top:20px; ${nuevoLead.frecuencia==='manual'?'display:none':''}">${getFrecInfo()}</div>
+
+              <div style="margin-top:32px; display:flex; gap:12px; flex-wrap:wrap; padding-top:24px; border-top:1px solid rgba(255,255,255,0.05);">
+                <button class="btn btn-primary" style="flex:1;" onclick="guardarLead(false, this)">💾 Solo Guardar</button>
+                ${nuevoLead.tipo==='cliente'
+                  ? `<button class="btn btn-green" style="flex:1.2; font-weight:700;" onclick="guardarLead(true, this)">💾 Guardar y Enviar WhatsApp ➜</button>`
+                  : `<button class="btn btn-gold" style="flex:1.2; font-weight:700;" onclick="guardarLead(true, this)">💾 Guardar y Msg. Agente ➜</button>`}
+                <button class="btn btn-secondary" onclick="resetNuevoLead()">🗑 Limpiar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div style="height:20px;"></div>
         <div class="form-section-header" style="border-top:1px solid rgba(255,255,255,0.05); padding-top:16px; display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <div>
@@ -6219,89 +6296,6 @@ function renderNuevo(){
         <div class="section-content">
           ${selectedProps.length?`<div class="selected-bar" style="margin-bottom:20px; display:flex; align-items:center; justify-content:space-between;"><div class="selected-chips">${selectedProps.map(c=>`<span class="sel-chip">${c}<button onclick="deselProp('${c}')">×</button></span>`).join('')}</div><button class="btn btn-sm" style="font-size:11px; padding:4px 12px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:8px; cursor:pointer; transition:all 0.2s; white-space:nowrap; margin-left:12px; flex-shrink:0;" onmouseover="this.style.background='rgba(239,68,68,0.3)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'" onclick="borrarSeleccion()">🗑 Borrar</button></div>`:''}
           <div id="propsGrid"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- COLUMNA 2: DATOS Y PLAN (60%) -->
-    <div class="nl-col-2">
-      <div class="panel-section">
-        <!-- BLOQUE 1: DATOS -->
-        <div class="form-section-header">
-          <div class="panel-section-title">Datos del Cliente</div>
-        </div>
-        <div class="section-content">
-          <div style="display:flex;gap:12px;margin-bottom:20px;margin-top:10px;">
-            <button id="btnTC" class="btn ${nuevoLead.tipo==='cliente'?'btn-primary':'btn-secondary'}" onclick="setTipo('cliente')">👤 Cliente</button>
-            <button id="btnTI" class="btn ${nuevoLead.tipo==='inmobiliaria'?'btn-gold':'btn-secondary'}"   onclick="setTipo('inmobiliaria')">🏢 Inmobiliaria</button>
-          </div>
-          <div id="nlDuplicateWarning" style="display:none; margin-bottom:15px; padding:12px 15px; background-color:rgba(249, 115, 22, 0.1); border:1px solid rgba(249, 115, 22, 0.3); border-radius:8px; color:#f97316; font-size:13px; align-items:center; justify-content:space-between;"></div>
-          <div class="form-grid">
-            <div class="form-group"><label class="form-label">Nombre Completo *</label><input class="form-input" id="nlN" value="${nuevoLead.nombre}" placeholder="Ej: Maria Perez" oninput="nuevoLead.nombre=this.value; checkDuplicateLead()"/></div>
-            <div class="form-group"><label class="form-label">WhatsApp / Celular *</label><input class="form-input" id="nlC" value="${nuevoLead.celular}" placeholder="3001234567" oninput="nuevoLead.celular=this.value; checkDuplicateLead()"/></div>
-            <div class="form-group full"><label class="form-label">Notas u Observaciones</label><textarea class="form-input" oninput="nuevoLead.notas=this.value" placeholder="¿Qué detalles adicionales tiene este cliente?">${nuevoLead.notas}</textarea></div>
-            <div class="form-group">
-              <label class="form-label">Estado Inicial</label>
-              <select class="form-input" onchange="nuevoLead.estado=this.value">
-                <option value="enviando" ${nuevoLead.estado==='enviando'?'selected':''}>🟠 Enviando propuestas</option>
-                <option value="proceso"  ${nuevoLead.estado==='proceso'?'selected':''}>🔵 Proceso de venta</option>
-                <option value="visita"   ${nuevoLead.estado==='visita'?'selected':''}>🟢 Pendiente visita</option>
-                <option value="banco"    ${nuevoLead.estado==='banco'?'selected':''}>🟣 Referido al banco</option>
-                <option value="inactivo" ${nuevoLead.estado==='inactivo'?'selected':''}>⚫ Inactivo</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Prioridad / Etiqueta</label>
-              <select class="form-input" onchange="nuevoLead.etiqueta=this.value">
-                <option value="activo"   ${nuevoLead.etiqueta==='activo'?'selected':''}>🟢 Activo (Interesado)</option>
-                <option value="tibio"    ${nuevoLead.etiqueta==='tibio'?'selected':''}>🟡 Tibio (Explorando)</option>
-                <option value="inactivo" ${nuevoLead.etiqueta==='inactivo'?'selected':''}>⚫ Inactivo (No responde)</option>
-              </select>
-            </div>
-          </div>
-          <div id="inmobExtra" style="display:${nuevoLead.tipo==='inmobiliaria'?'block':'none'}">
-            <div class="inmob-section">
-              <div class="inmob-title">🏢 Datos de la Inmobiliaria Aliada</div>
-              <div class="form-grid">
-                <div class="form-group"><label class="form-label">Nombre Inmobiliaria</label><input class="form-input" value="${nuevoLead.nombreInmobiliaria}" placeholder="Nombre" oninput="nuevoLead.nombreInmobiliaria=this.value"/></div>
-                <div class="form-group"><label class="form-label">Nombre del Agente</label><input class="form-input" value="${nuevoLead.nombreAgente}" placeholder="Agente" oninput="nuevoLead.nombreAgente=this.value"/></div>
-              </div>
-            </div>
-          </div>
-          <div style="margin-top:20px;">
-            <div class="form-label" style="margin-bottom:12px;">Método de Pago Preferido</div>
-            <div class="checklist">
-              ${['Efectivo', 'Crédito', 'Caja Honor', 'Permuta'].map(m=>`<label class="check-item ${nuevoLead.metodoPago.includes(m)?'active':''}"><input type="checkbox" ${nuevoLead.metodoPago.includes(m)?'checked':''} onchange="toggleMetodo('${m}',this)"/> ${m}</label>`).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div style="height:32px;"></div>
-        <div class="form-section-header" style="border-top:1px solid rgba(255,255,255,0.05); padding-top:24px;">
-          <div class="panel-section-title">Plan de Envío y Finalización</div>
-        </div>
-        <div class="section-content">
-          <div class="form-grid" style="margin-top:4px;">
-            <div class="form-group">
-              <label class="form-label">Frecuencia de seguimiento</label>
-              <select class="form-input" onchange="nuevoLead.frecuencia=this.value; updateFrec()">
-                <option value="diaria" ${nuevoLead.frecuencia==='diaria'?'selected':''}>Diaria</option>
-                <option value="semanal" ${nuevoLead.frecuencia==='semanal'?'selected':''}>Semanal</option>
-                <option value="quincenal" ${nuevoLead.frecuencia==='quincenal'?'selected':''}>Quincenal</option>
-                <option value="mensual" ${nuevoLead.frecuencia==='mensual'?'selected':''}>Mensual</option>
-                <option value="manual" ${nuevoLead.frecuencia==='manual'?'selected':''}>Manual</option>
-              </select>
-            </div>
-          </div>
-          <div class="freq-info" id="frecInfo" style="margin-top:20px; ${nuevoLead.frecuencia==='manual'?'display:none':''}">${getFrecInfo()}</div>
-
-          <div style="margin-top:32px; display:flex; gap:12px; flex-wrap:wrap; padding-top:24px; border-top:1px solid rgba(255,255,255,0.05);">
-            <button class="btn btn-primary" style="flex:1;" onclick="guardarLead(false, this)">💾 Solo Guardar</button>
-            ${nuevoLead.tipo==='cliente'
-              ? `<button class="btn btn-green" style="flex:1.2; font-weight:700;" onclick="guardarLead(true, this)">💾 Guardar y Enviar WhatsApp ➜</button>`
-              : `<button class="btn btn-gold" style="flex:1.2; font-weight:700;" onclick="guardarLead(true, this)">💾 Guardar y Msg. Agente ➜</button>`}
-            <button class="btn btn-secondary" onclick="resetNuevoLead()">🗑 Limpiar</button>
-          </div>
         </div>
       </div>
     </div>
