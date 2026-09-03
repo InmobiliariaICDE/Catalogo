@@ -2767,44 +2767,49 @@ html, body {
   }
 
   /* Botón Limpiar filtros en celda 12 del grid */
-  .btn-limpiar-en-grid {
+  /* Botón Limpiar filtros INACTIVO (gris por defecto cuando no hay filtros) */
+  .btn-limpiar-en-grid,
+  .btn-limpiar-desktop {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 100% !important;
     height: 32px !important;
     min-height: 32px !important;
     border-radius: 6px !important;
     padding: 0 8px !important;
     font-size: 11px !important;
     font-weight: 500 !important;
-    border: 1px solid rgba(212, 168, 75, 0.15) !important;
-    background: rgba(180,180,180,.10) !important;
-    color: rgba(220,220,220,.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: #27272A !important;
+    color: #9CA3AF !important;
     white-space: nowrap !important;
     box-sizing: border-box !important;
     cursor: pointer !important;
     font-family: 'Outfit', sans-serif !important;
+    box-shadow: none !important;
     transition: all .2s ease !important;
   }
 
-  .btn-limpiar-en-grid:hover {
-    background: rgba(255,255,255,.12) !important;
-    color: #fff !important;
+  .btn-limpiar-en-grid:hover,
+  .btn-limpiar-desktop:hover {
+    background: #3F3F46 !important;
+    color: #E5E7EB !important;
   }
 
-  /* Estado con relieve de los botones Limpiar filtros cuando HAY filtros activos */
+  /* Botón Limpiar filtros ACTIVO (amarillo en relieve solo cuando HAY filtros aplicados) */
   .btn-limpiar-pc.has-filters,
-  .btn-limpiar-en-grid.has-filters {
-    background: linear-gradient(135deg, var(--gold, #d4a84b) 0%, #b8860b 100%) !important;
+  .btn-limpiar-en-grid.has-filters,
+  .btn-limpiar-desktop.has-filters {
+    background: linear-gradient(135deg, #d4a84b 0%, #b8860b 100%) !important;
     color: #000000 !important;
     font-weight: 700 !important;
-    border: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
     box-shadow: 3px 3px 0px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.35), inset -1px -1px 0px rgba(0,0,0,0.4) !important;
   }
 
   .btn-limpiar-pc.has-filters:hover,
-  .btn-limpiar-en-grid.has-filters:hover {
+  .btn-limpiar-en-grid.has-filters:hover,
+  .btn-limpiar-desktop.has-filters:hover {
     background: linear-gradient(135deg, #e5b95c 0%, #a47b2a 100%) !important;
     color: #000000 !important;
     transform: translate(-1px, -1px) !important;
@@ -2812,7 +2817,8 @@ html, body {
   }
 
   .btn-limpiar-pc.has-filters:active,
-  .btn-limpiar-en-grid.has-filters:active {
+  .btn-limpiar-en-grid.has-filters:active,
+  .btn-limpiar-desktop.has-filters:active {
     box-shadow: inset 3px 3px 6px rgba(0,0,0,0.6), inset -1px -1px 0px rgba(255,255,255,0.1) !important;
     transform: scale(0.97) !important;
   }
@@ -4522,18 +4528,18 @@ function fnTieneFiltrosActivos(pfx){
   const st = getFSt(pfx);
   if(!st) return false;
 
-  // 1. Campos multiselect / checkbox
+  // 1. Campos multiselect / checkbox (FCAMPOS)
   for(let c of FCAMPOS){
     if(c.key === 'rangoPrecio') continue;
     const v = st[c.key];
     if(Array.isArray(v) && v.length > 0) return true;
+    if(!Array.isArray(v) && v !== null && v !== undefined && String(v).trim() !== '') return true;
   }
 
-  // 2. Rango de precio (activo solo si se modifica respecto al rango por defecto)
-  const maxLimit = typeof MAX_CATALOG_PRICE !== 'undefined' ? MAX_CATALOG_PRICE : 5000000000;
-  if((st.minPrice !== null && st.minPrice > 0) || (st.maxPrice !== null && st.maxPrice < maxLimit)) {
-    return true;
-  }
+  // 2. Rango de precio (activo solo si el min > 0 o el max fue reducido)
+  const topPrice = typeof MAX_CATALOG_PRICE !== 'undefined' ? MAX_CATALOG_PRICE : 5000000000;
+  if(typeof st.minPrice === 'number' && st.minPrice > 0) return true;
+  if(typeof st.maxPrice === 'number' && st.maxPrice > 0 && st.maxPrice < topPrice) return true;
 
   // 3. Campo de búsqueda de texto
   const busInput = document.getElementById(`fnBus_${pfx}`);
