@@ -2603,6 +2603,12 @@ html, body {
     margin: 0 !important;
   }
 
+  /* Ocultar botón Datos del Cliente del header superior en móvil (vive en el grid) */
+  .section-header .btn-secondary[onclick="toggleNlData()"],
+  .section-header .btn-primary[onclick="toggleNlData()"] {
+    display: none !important;
+  }
+
   .panel-section, .unified-admin-panel {
     padding: 0 !important;
     border-radius: 0 !important;
@@ -2758,13 +2764,8 @@ html, body {
     box-sizing: border-box !important;
   }
 
-  /* Ocultar el botón limpiar del row inferior en móvil */
-  .btn-limpiar-desktop {
-    display: none !important;
-  }
-
-  /* Botón limpiar dentro del grid de filtros (celda vacía 12ª) */
-  .btn-limpiar-en-grid {
+  /* Botón Datos del Cliente oculto en desktop (se mueve al grid en móvil) */
+  .btn-datos-en-grid {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -2774,10 +2775,10 @@ html, body {
     border-radius: 6px !important;
     padding: 0 8px !important;
     font-size: 11px !important;
-    font-weight: 500 !important;
-    border: 1px solid rgba(212, 168, 75, 0.15) !important;
-    background: rgba(180,180,180,.10) !important;
-    color: rgba(220,220,220,.75) !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(212, 168, 75, 0.35) !important;
+    background: rgba(212, 168, 75, 0.10) !important;
+    color: var(--gold, #D4A84B) !important;
     white-space: nowrap !important;
     box-sizing: border-box !important;
     cursor: pointer !important;
@@ -2785,15 +2786,37 @@ html, body {
     transition: background .2s, color .2s !important;
   }
 
-  .btn-limpiar-en-grid:hover {
-    background: rgba(255,255,255,.12) !important;
+  .btn-datos-en-grid:hover {
+    background: rgba(212, 168, 75, 0.22) !important;
     color: #fff !important;
   }
 
-  /* Ocultar el botón limpiar del grid en desktop */
+  /* Limpiar filtros ahora va en el row inferior en móvil */
+  .btn-limpiar-desktop {
+    display: flex !important;
+    flex: 1 !important;
+    width: 50% !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    border-radius: 6px !important;
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    border-left: none !important;
+    white-space: nowrap !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+  }
+
+  /* btn-generar-pc vuelve a 50% para compartir row con limpiar */
+  .btn-generar-pc {
+    flex: 1 !important;
+    width: 50% !important;
+  }
+
+  /* En desktop: ocultar el botón del grid */
   @media (min-width: 769px) {
-    .btn-limpiar-en-grid { display: none !important; }
-    .btn-limpiar-desktop { display: flex !important; }
+    .btn-datos-en-grid { display: none !important; }
   }
 
   .props-grid {
@@ -4175,7 +4198,7 @@ function buildFiltrosBar(containerId, pfx, initVals){
             </div>
             <div class="filtro-nuevo-dropdown" id="fnD_${pfx}_${c.key}" onclick="event.stopPropagation()"></div>
           </div>`).join('')}
-        <button class="btn-limpiar-pc btn-limpiar-en-grid" onclick="fnLimpiar('${pfx}')">Limpiar filtros</button>
+        ${pfx==='nl' ? `<button class="btn-datos-en-grid" onclick="toggleNlData()">👤 Datos del Cliente ▾</button>` : ''}
       </div>
       <div class="pc-buscar-row">
         <div class="pc-buscar-input-wrap">
