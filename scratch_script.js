@@ -3278,6 +3278,7 @@ function buildFiltrosBar(containerId, pfx, initVals){
             </div>
             <div class="filtro-nuevo-dropdown" id="fnD_${pfx}_${c.key}" onclick="event.stopPropagation()"></div>
           </div>`).join('')}
+        <button class="btn-limpiar-pc btn-limpiar-en-grid" onclick="fnLimpiar('${pfx}')">Limpiar filtros</button>
       </div>
       <div class="pc-buscar-row">
         <div class="pc-buscar-input-wrap">
@@ -3288,7 +3289,7 @@ function buildFiltrosBar(containerId, pfx, initVals){
         </div>
         <div class="pc-buscar-btns-wrap">
           <button class="btn-generar-pc" id="btnGen_${pfx}" onclick="fnGenerarLink('${pfx}', this)">Generar link</button>
-          <button class="btn-limpiar-pc" onclick="fnLimpiar('${pfx}')">Limpiar filtros</button>
+          <button class="btn-limpiar-pc btn-limpiar-desktop" onclick="fnLimpiar('${pfx}')">Limpiar filtros</button>
         </div>
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 4px;">
