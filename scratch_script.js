@@ -3286,8 +3286,10 @@ function buildFiltrosBar(containerId, pfx, initVals){
           </span>
           <input type="text" id="fnBus_${pfx}" placeholder="Buscar por nombre, código, barrio..." oninput="fnBuscar('${pfx}',this.value)"/>
         </div>
-        <button class="btn-generar-pc" id="btnGen_${pfx}" onclick="fnGenerarLink('${pfx}', this)">Generar link</button>
-        <button class="btn-limpiar-pc" onclick="fnLimpiar('${pfx}')">Limpiar filtros</button>
+        <div class="pc-buscar-btns-wrap">
+          <button class="btn-generar-pc" id="btnGen_${pfx}" onclick="fnGenerarLink('${pfx}', this)">Generar link</button>
+          <button class="btn-limpiar-pc" onclick="fnLimpiar('${pfx}')">Limpiar filtros</button>
+        </div>
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 4px;">
         <div class="pc-count-bar" style="padding:0; margin:0;">Propiedades encontradas: <strong id="fnCnt_${pfx}">—</strong></div>
