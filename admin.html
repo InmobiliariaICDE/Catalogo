@@ -3749,6 +3749,7 @@ html, body {
             <option value="tipo">🔄 Tipo</option>
             <option value="categoria">🏷️ Categoría</option>
             <option value="precio">💰 Precio</option>
+            <option value="ultimo">⏰ Último</option>
           </select>
         </div>
       </div>
@@ -17788,6 +17789,7 @@ function contFmt(n){
 function contSave(){
   contMovimientos = contDeduplicarMovimientos(contMovimientos);
   localStorage.setItem('icde_contabilidad', JSON.stringify(contMovimientos));
+  localStorage.setItem('icde_cont_audit', JSON.stringify(contAuditLog));
 }
 function contSaveMetas(){localStorage.setItem('icde_cont_metas',JSON.stringify(contMetas));}
 function contDestroyChart(id){if(contCharts[id]){try{contCharts[id].destroy();}catch(e){}delete contCharts[id];}}
@@ -18111,6 +18113,19 @@ function contSeleccionarMesYVerMovimientos(mes){
   } else if (contDetalleMesSortOrder === 'precio') {
     listaMes.sort(function(a, b) {
       return (parseFloat(b.monto || 0)) - (parseFloat(a.monto || 0));
+    });
+  } else if (contDetalleMesSortOrder === 'ultimo') {
+    listaMes.sort(function(a, b) {
+      const logsA = contAuditLog.filter(log => String(log.movimientoId) === String(a.id));
+      const latestA = logsA.length > 0 ? logsA.reduce((max, log) => new Date(log.fechaAccion) > new Date(max.fechaAccion) ? log : max) : null;
+      const timeA = a.isAuto ? 0 : (latestA ? new Date(latestA.fechaAccion).getTime() : (a.creadoEn ? new Date(a.creadoEn).getTime() : (a.fecha ? new Date(a.fecha + 'T00:00:00').getTime() : 0)));
+
+      const logsB = contAuditLog.filter(log => String(log.movimientoId) === String(b.id));
+      const latestB = logsB.length > 0 ? logsB.reduce((max, log) => new Date(log.fechaAccion) > new Date(max.fechaAccion) ? log : max) : null;
+      const timeB = b.isAuto ? 0 : (latestB ? new Date(latestB.fechaAccion).getTime() : (b.creadoEn ? new Date(b.creadoEn).getTime() : (b.fecha ? new Date(b.fecha + 'T00:00:00').getTime() : 0)));
+
+      if (timeB !== timeA) return timeB - timeA;
+      return new Date(b.fecha || 0) - new Date(a.fecha || 0);
     });
   }
   
@@ -18969,13 +18984,14 @@ function contRenderMovimientos(el){
     lista.sort(function(a,b){
       const logsA = contAuditLog.filter(log => String(log.movimientoId) === String(a.id));
       const latestA = logsA.length > 0 ? logsA.reduce((max, log) => new Date(log.fechaAccion) > new Date(max.fechaAccion) ? log : max) : null;
-      const timeA = latestA ? new Date(latestA.fechaAccion) : (a.creadoEn ? new Date(a.creadoEn) : new Date(a.fecha || 0));
+      const timeA = a.isAuto ? 0 : (latestA ? new Date(latestA.fechaAccion).getTime() : (a.creadoEn ? new Date(a.creadoEn).getTime() : (a.fecha ? new Date(a.fecha + 'T00:00:00').getTime() : 0)));
 
       const logsB = contAuditLog.filter(log => String(log.movimientoId) === String(b.id));
       const latestB = logsB.length > 0 ? logsB.reduce((max, log) => new Date(log.fechaAccion) > new Date(max.fechaAccion) ? log : max) : null;
-      const timeB = latestB ? new Date(latestB.fechaAccion) : (b.creadoEn ? new Date(b.creadoEn) : new Date(b.fecha || 0));
+      const timeB = b.isAuto ? 0 : (latestB ? new Date(latestB.fechaAccion).getTime() : (b.creadoEn ? new Date(b.creadoEn).getTime() : (b.fecha ? new Date(b.fecha + 'T00:00:00').getTime() : 0)));
 
-      return timeB - timeA;
+      if (timeB !== timeA) return timeB - timeA;
+      return new Date(b.fecha || 0) - new Date(a.fecha || 0);
     });
   }
 
@@ -19330,6 +19346,7 @@ function contGuardarMovimiento(){
     const idx=contMovimientos.findIndex(function(m){return m.id===obj.id;});
     if(idx>=0) {
       const oldMov = contMovimientos[idx];
+      if (oldMov.creadoEn) obj.creadoEn = oldMov.creadoEn;
       contRegistrarAuditoria('Editado', oldMov, obj);
       contMovimientos[idx]=obj;
     } else {
