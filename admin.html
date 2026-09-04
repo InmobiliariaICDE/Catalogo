@@ -3108,10 +3108,24 @@ html, body {
 
   /* ------------------- C. MÓDULO 2: LEADS (GESTIÓN DE CLIENTES) ------------------- */
   .chip-filtro {
-    padding: 5px 9px !important;
+    padding: 5px 8px !important;
     font-size: 10.5px !important;
     border-radius: 6px !important;
     flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  .chips-row-container {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 4px !important;
+    overflow-x: auto !important;
+    max-width: 100% !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .chips-row-container::-webkit-scrollbar {
+    display: none !important;
   }
 
   #searchLeadsInput {
@@ -6950,7 +6964,7 @@ function renderLeads(){
   <div class="panel-section" style="padding: 6px 0; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); margin-bottom: 16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap: wrap; width: 100%; padding: 0 4px; box-sizing: border-box; row-gap: 12px;">
       <!-- FILTROS (IZQUIERDA) -->
-      <div style="display:flex; gap:8px; flex-wrap: wrap; align-items: center;">
+      <div class="chips-row-container" style="display:flex; gap:4px; flex-wrap: nowrap; align-items: center; overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
         <button class="chip-filtro ${currentLeadFilter==='todos'?'sel':''}" id="fA" onclick="filtTabla('todos',this)">Todos</button>
         <button class="chip-filtro ${currentLeadFilter==='activo'?'sel':''}" id="fAc" onclick="filtTabla('activo',this)">🟢 Activos</button>
         <button class="chip-filtro ${currentLeadFilter==='tibio'?'sel':''}" id="fTi" onclick="filtTabla('tibio',this)">🟡 Tibios</button>
