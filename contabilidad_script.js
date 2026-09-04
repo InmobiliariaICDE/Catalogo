@@ -2878,14 +2878,6 @@ async function renderContabilidad(){
       <div style="font-size:12px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:6px;">
         <span>Control financiero de ICDE Inmobiliaria</span>
         <span id="contSyncIndicator" style="background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:12px;color:#aaa;font-size:10px;font-weight:600;">${syncMsg}</span>
-      </div>
-    </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-      <select id="contMesSel" class="form-input" style="width:auto;padding:8px 12px;font-size:13px;" onchange="contCambiarMes(this.value)">
-        <option value="0">Todos los meses</option>
-        ${CONT_MESES_FULL.map((m,i)=>'<option value="'+(i+1)+'"'+(contMesFiltro===i+1?' selected':'')+'>'+m+'</option>').join('')}
-      </select>
-      <button class="btn btn-secondary btn-sm" onclick="contAbrirMetas()" title="Metas">\uD83C\uDFAF Metas</button>
     </div>
   </div>
   <div class="cont-hero" id="contHero"></div>
