@@ -3177,19 +3177,11 @@ html, body {
     width: 100% !important;
   }
 
-  #calendarContainerWrap {
+  #calendarContainerWrap, #calendarContainer {
     order: 1 !important;
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
-  }
-
-  #calendarContainer {
-    order: 1 !important;
-  }
-
-  .cal-legend {
-    order: 2 !important;
   }
 
   #listContainer {
@@ -8556,13 +8548,6 @@ function renderCitas(){
     <div class="citas-layout-nuevo" style="display:grid; grid-template-columns: 320px 1fr; gap:24px; align-items:start;">
       <div id="calendarContainerWrap" style="display: flex; flex-direction: column; gap: 20px;">
         <div id="calendarContainer"></div>
-        <div class="cal-legend" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:11px; color:#aaa; background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:none; box-shadow:inset 3px 3px 6px rgba(0,0,0,0.6),inset -1px -1px 0px rgba(255,255,255,0.05);">
-          <div style="display:flex; align-items:center; gap:8px;"><div style="width:10px; height:10px; border-radius:2px; background:var(--gold);"></div> <span style="color:#fff;">Hoy</span></div>
-          <div style="display:flex; align-items:center; gap:8px;"><div style="width:6px; height:6px; border-radius:50%; background:#a855f7;"></div> <span>Solicitó Visita</span></div>
-          <div style="display:flex; align-items:center; gap:8px;"><div style="width:6px; height:6px; border-radius:50%; background:var(--gold);"></div> <span>Agendada</span></div>
-          <div style="display:flex; align-items:center; gap:8px;"><div style="width:6px; height:6px; border-radius:50%; background:var(--green);"></div> <span>Visitada</span></div>
-          <div style="display:flex; align-items:center; gap:8px;"><div style="width:6px; height:6px; border-radius:50%; background:var(--red);"></div> <span>Cancelada</span></div>
-        </div>
 
         <!-- TOP INMUEBLES MÁS VISITADOS -->
         <div style="background:var(--bg2); border-radius:20px; padding:20px; box-shadow:3px 3px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3);">
@@ -8790,9 +8775,15 @@ function renderCalendario(){
           ${dayEvents.length > 4 ? '<div style="font-size:8px; color:var(--gold);">+</div>' : ''}
         </div>
       </div>`;
-  }
-  
-  html += '</div></div>';
+  html += `</div>
+    <div class="cal-legend" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:11px; color:#aaa; background:rgba(255,255,255,0.02); padding:14px 16px; border-top:1px solid rgba(255,255,255,0.06);">
+      <div style="display:flex; align-items:center; gap:8px;"><div style="width:10px; height:10px; border-radius:2px; background:var(--gold);"></div> <span style="color:#fff;">Hoy</span></div>
+      <div style="display:flex; align-items:center; gap:8px;"><div style="width:6px; height:6px; border-radius:50%; background:#a855f7;"></div> <span>Solicitó Visita</span></div>
+      <div style="display:flex; align-items:center; gap:8px;"><div style="width:6px; height:6px; border-radius:50%; background:var(--gold);"></div> <span>Agendada</span></div>
+      <div style="display:flex; align-items:center; gap:8px;"><div style="width:6px; height:6px; border-radius:50%; background:var(--green);"></div> <span>Visitada</span></div>
+      <div style="display:flex; align-items:center; gap:8px;"><div style="width:6px; height:6px; border-radius:50%; background:var(--red);"></div> <span>Cancelada</span></div>
+    </div>
+  </div>`;
   container.innerHTML = html;
 }
 
