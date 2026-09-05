@@ -2538,8 +2538,9 @@ textarea.gemini-card-input {
 .cont-hero-card { background: linear-gradient(145deg, rgba(30,30,30,0.95), rgba(20,20,20,0.98)); border-radius: 16px; padding: 18px 20px; position: relative; overflow: hidden; box-shadow: 3px 3px 0px rgba(0,0,0,0.35), inset 1px 1px 0px rgba(255,255,255,0.12), inset -1px -1px 0px rgba(0,0,0,0.3); transition: all 0.25s; }
 .cont-hero-card:hover { transform: translateY(-2px); box-shadow: 5px 5px 0px rgba(0,0,0,0.45), inset 1px 1px 0px rgba(255,255,255,0.18); }
 .cont-hero-card::before { content:''; position:absolute; top:0; left:0; width:4px; height:100%; background: var(--card-accent, var(--gold)); border-radius: 4px 0 0 4px; }
-.cont-hero-card .ch-icon { font-size: 22px; margin-bottom: 8px; display: block; }
-.cont-hero-card .ch-lbl { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.ch-top-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.cont-hero-card .ch-icon { font-size: 22px; margin-bottom: 0; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cont-hero-card .ch-lbl { font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0; line-height: 1.2; }
 .cont-hero-card .ch-val { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
 .cont-hero-card .ch-sub { font-size: 11px; color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 5px; }
 .cont-hero-card .ch-delta-up { color: #22c55e; }
@@ -3376,16 +3377,35 @@ html, body {
   }
 
   .cont-hero-card {
-    padding: 6px 8px !important;
-    border-radius: 6px !important;
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
   }
 
-  .cont-hero-card .ch-val {
-    font-size: 13.5px !important;
+  .ch-top-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .cont-hero-card .ch-icon {
+    font-size: 20px !important;
+    margin-bottom: 0 !important;
+    display: inline-flex !important;
+    flex-shrink: 0 !important;
   }
 
   .cont-hero-card .ch-lbl {
-    font-size: 9px !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: var(--muted) !important;
+    text-transform: uppercase !important;
+    margin-bottom: 0 !important;
+    line-height: 1.2 !important;
+  }
+
+  .cont-hero-card .ch-val {
+    font-size: 14.5px !important;
   }
 
   .cont-layout {
@@ -12096,8 +12116,10 @@ function renderAdministracionContent() {
     <div class="cont-hero" style="margin-bottom: 14px;">
       <!-- 1. INMUEBLES ADMINISTRADOS -->
       <div class="cont-hero-card" style="--card-accent: var(--gold);">
-        <span class="ch-icon">🏢</span>
-        <div class="ch-lbl">Inmuebles Administrados</div>
+        <div class="ch-top-row">
+          <span class="ch-icon">🏢</span>
+          <div class="ch-lbl">Inmuebles Administrados</div>
+        </div>
         <div class="ch-val" style="display: flex; align-items: baseline; gap: 3px;">
           <span style="color: #22c55e;">${ocupados}</span>
           <span style="color: rgba(255,255,255,0.4); font-size: 15px; font-weight: 600; margin: 0 2px;">/</span>
@@ -12110,8 +12132,10 @@ function renderAdministracionContent() {
 
       <!-- 2. RECAUDADO / CANON ESPERADO -->
       <div class="cont-hero-card" style="--card-accent: #22c55e;">
-        <span class="ch-icon">💵</span>
-        <div class="ch-lbl">Recaudado / Canon (${currentAdminMonth})</div>
+        <div class="ch-top-row">
+          <span class="ch-icon">💵</span>
+          <div class="ch-lbl">Recaudado / Canon (${currentAdminMonth})</div>
+        </div>
         <div class="ch-val" style="color: #22c55e; font-size: 19px;">
           ${safeFormatP(totalRecaudado)} <span style="color: rgba(255,255,255,0.4); font-size: 13px; font-weight: 600;">/ ${safeFormatP(totalEsperado)}</span>
         </div>
@@ -12122,8 +12146,10 @@ function renderAdministracionContent() {
 
       <!-- 3. COMISIÓN ACUMULADA -->
       <div class="cont-hero-card" style="--card-accent: var(--gold);">
-        <span class="ch-icon">📈</span>
-        <div class="ch-lbl">Comisión Acumulada (10%)</div>
+        <div class="ch-top-row">
+          <span class="ch-icon">📈</span>
+          <div class="ch-lbl">Comisión Acumulada (10%)</div>
+        </div>
         <div class="ch-val" style="color: var(--gold); font-size: 19px;">
           ${safeFormatP(totalComision)} <span style="color: rgba(255,255,255,0.4); font-size: 13px; font-weight: 600;">/ ${safeFormatP(totalEsperado * 0.10)}</span>
         </div>
@@ -12134,8 +12160,10 @@ function renderAdministracionContent() {
 
       <!-- 4. CARTERA PENDIENTE -->
       <div class="cont-hero-card" style="--card-accent: ${totalPendiente > 0 ? '#ef4444' : 'var(--gold)'};">
-        <span class="ch-icon">${totalPendiente > 0 ? '🚨' : '✅'}</span>
-        <div class="ch-lbl">Cartera Pendiente</div>
+        <div class="ch-top-row">
+          <span class="ch-icon">${totalPendiente > 0 ? '🚨' : '✅'}</span>
+          <div class="ch-lbl">Cartera Pendiente</div>
+        </div>
         <div class="ch-val" style="color: ${totalPendiente > 0 ? '#ef4444' : '#fff'}; font-size: 19px;">${safeFormatP(totalPendiente)}</div>
         <div class="ch-sub" style="color: ${totalPendiente > 0 ? '#ef4444' : '#22c55e'};">${totalPendiente > 0 ? `🔴 ${inquilinosMoraCount} ${inquilinosMoraCount === 1 ? 'inquilino con mora activa' : 'inquilinos en mora activa'}` : '✓ Arrendatarios al día'}</div>
       </div>
@@ -18105,11 +18133,11 @@ function contRenderHero(){
   const pMeta=contMetas.ingMes>0?Math.round((ingresos/contMetas.ingMes)*100):0;
   const el=document.getElementById('contHero');if(!el)return;
   el.innerHTML=
-    '<div class="cont-hero-card" style="--card-accent:#22c55e;"><span class="ch-icon">\uD83D\uDCB9</span><div class="ch-lbl">Ingresos Totales</div><div class="ch-val">'+contFmt(ingresos)+'</div><div class="ch-sub">'+lista.filter(m=>m.tipo==='ingreso').length+' transacciones</div></div>'+
-    '<div class="cont-hero-card" style="--card-accent:#ef4444;"><span class="ch-icon">\uD83D\uDCC9</span><div class="ch-lbl">Egresos Totales</div><div class="ch-val">'+contFmt(egresos)+'</div><div class="ch-sub">'+lista.filter(m=>m.tipo==='egreso').length+' transacciones</div></div>'+
-    '<div class="cont-hero-card" style="--card-accent:'+(utilidad>=0?'#22c55e':'#ef4444')+'"><span class="ch-icon">'+(utilidad>=0?'\uD83D\uDCC8':'\uD83D\uDCC9')+'</span><div class="ch-lbl">Utilidad Neta</div><div class="ch-val" style="color:'+(utilidad>=0?'#22c55e':'#ef4444')+'">'+contFmt(utilidad)+'</div><div class="ch-sub">Margen: '+margen+'%</div></div>'+
-    '<div class="cont-hero-card" style="--card-accent:var(--gold)"><span class="ch-icon">\uD83D\uDCCA</span><div class="ch-lbl">Margen</div><div class="ch-val" style="color:var(--gold)">'+margen+'%</div><div class="ch-sub">'+(utilidad>=0?'\u2705 Positivo':'\u26A0\uFE0F Negativo')+'</div></div>'+
-    '<div class="cont-hero-card" style="--card-accent:#3b82f6"><span class="ch-icon">\uD83C\uDFAF</span><div class="ch-lbl">Meta Mes</div><div class="ch-val" style="color:#3b82f6">'+pMeta+'%</div><div class="ch-sub">Meta: '+contFmt(contMetas.ingMes)+'</div></div>';
+    '<div class="cont-hero-card" style="--card-accent:#22c55e;"><div class="ch-top-row"><span class="ch-icon">\uD83D\uDCB9</span><div class="ch-lbl">Ingresos Totales</div></div><div class="ch-val">'+contFmt(ingresos)+'</div><div class="ch-sub">'+lista.filter(m=>m.tipo==='ingreso').length+' transacciones</div></div>'+
+    '<div class="cont-hero-card" style="--card-accent:#ef4444;"><div class="ch-top-row"><span class="ch-icon">\uD83D\uDCC9</span><div class="ch-lbl">Egresos Totales</div></div><div class="ch-val">'+contFmt(egresos)+'</div><div class="ch-sub">'+lista.filter(m=>m.tipo==='egreso').length+' transacciones</div></div>'+
+    '<div class="cont-hero-card" style="--card-accent:'+(utilidad>=0?'#22c55e':'#ef4444')+'"><div class="ch-top-row"><span class="ch-icon">'+(utilidad>=0?'\uD83D\uDCC8':'\uD83D\uDCC9')+'</span><div class="ch-lbl">Utilidad Neta</div></div><div class="ch-val" style="color:'+(utilidad>=0?'#22c55e':'#ef4444')+'">'+contFmt(utilidad)+'</div><div class="ch-sub">Margen: '+margen+'%</div></div>'+
+    '<div class="cont-hero-card" style="--card-accent:var(--gold)"><div class="ch-top-row"><span class="ch-icon">\uD83D\uDCCA</span><div class="ch-lbl">Margen</div></div><div class="ch-val" style="color:var(--gold)">'+margen+'%</div><div class="ch-sub">'+(utilidad>=0?'\u2705 Positivo':'\u26A0\uFE0F Negativo')+'</div></div>'+
+    '<div class="cont-hero-card" style="--card-accent:#3b82f6"><div class="ch-top-row"><span class="ch-icon">\uD83C\uDFAF</span><div class="ch-lbl">Meta Mes</div></div><div class="ch-val" style="color:#3b82f6">'+pMeta+'%</div><div class="ch-sub">Meta: '+contFmt(contMetas.ingMes)+'</div></div>';
 }
 
 function contRenderMetas(){
