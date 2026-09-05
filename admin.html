@@ -1888,6 +1888,7 @@ textarea.gemini-card-input {
   /* Matriz de Pagos */
   .matrix-wrapper { overflow: auto; max-height: calc(100vh - 340px); background: transparent; border-radius: 0; border: none; box-shadow: none; }
   .unified-admin-panel { background: var(--bg2); border-radius: 16px; border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); padding: 0; overflow: hidden; margin-bottom: 20px; }
+  .admin-search-sort-row { display: contents; }
   .pc-buscar-row-premium { display: flex; align-items: center; height: 38px; border-radius: 8px; background: rgba(0,0,0,0.2); border: none; box-shadow: inset 3px 3px 6px rgba(0,0,0,0.6), inset -1px -1px 0px rgba(255,255,255,0.05); transition: all 0.2s ease; max-width: 260px; flex-grow: 1; }
   .pc-buscar-row-premium:focus-within { background: rgba(0,0,0,0.4); box-shadow: inset 3px 3px 6px rgba(0,0,0,0.8), inset -1px -1px 0px rgba(212,168,75,0.3), 0 0 0 2px rgba(212,168,75,0.15); }
   .leads-search-row { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; margin-bottom: 0; }
@@ -3333,11 +3334,68 @@ html, body {
     font-size: 9px !important;
   }
 
+  .admin-panel-controls-inner {
+    padding: 0 4px !important;
+    gap: 6px !important;
+  }
+
+  .admin-search-sort-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 6px !important;
+    order: 1 !important;
+  }
+
+  .admin-search-sort-row .admin-search-wrap {
+    flex: 1 1 auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin-bottom: 0 !important;
+    height: 38px !important;
+  }
+
+  .admin-search-sort-row .admin-sort-wrap {
+    flex-shrink: 0 !important;
+  }
+
+  .admin-search-sort-row .admin-sort-wrap .form-input {
+    width: 115px !important;
+    height: 38px !important;
+    padding: 0 10px !important;
+    font-size: 11.5px !important;
+  }
+
   #adminPropertySearch {
     width: 100% !important;
-    height: 32px !important;
-    font-size: 11.5px !important;
-    padding: 6px 10px !important;
+    height: 38px !important;
+    font-size: 12px !important;
+    padding: 0 8px !important;
+  }
+
+  #adminFiltersContainer {
+    order: 2 !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 4px !important;
+    scrollbar-width: none !important;
+  }
+
+  .admin-drive-btn {
+    order: 3 !important;
+  }
+
+  .admin-actions-wrap {
+    order: 4 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    gap: 6px !important;
   }
 
   /* Matriz de Pagos Responsiva */
@@ -11814,13 +11872,33 @@ function renderAdministracion() {
 
     <!-- PANEL DE CONTROLES DE ADMINISTRACIÓN -->
     <div class="panel-section" style="padding: 10px 0; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); margin-bottom: 16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap: wrap; row-gap: 10px; width: 100%; padding: 0 20px; box-sizing: border-box;">
-        <!-- BUSCADOR (IZQUIERDA) -->
-        <div class="pc-buscar-row-premium" style="max-width: 320px; margin-bottom: 0; flex-shrink: 1; min-width: 140px;">
-          <span style="padding:0 8px 0 12px; color: var(--gold); display: flex; align-items: center; flex-shrink: 0;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          </span>
-          <input type="text" id="adminPropertySearch" placeholder="Buscar inmueble, dueño o inquilino..." oninput="renderAdministracionContent()" style="font-size:13px; background: transparent; color: #fff; border: none; outline: none; width: 100%; min-width: 0;"/>
+      <div class="admin-panel-controls-inner" style="display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap: wrap; row-gap: 10px; width: 100%; padding: 0 20px; box-sizing: border-box;">
+        
+        <!-- FILA DE BÚSQUEDA Y ORDENACIÓN -->
+        <div class="admin-search-sort-row">
+          <!-- BUSCADOR (IZQUIERDA) -->
+          <div class="pc-buscar-row-premium admin-search-wrap" style="max-width: 320px; margin-bottom: 0; flex-shrink: 1; min-width: 140px;">
+            <span style="padding:0 8px 0 12px; color: var(--gold); display: flex; align-items: center; flex-shrink: 0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <input type="text" id="adminPropertySearch" placeholder="Buscar inmueble, dueño o inquilino..." oninput="renderAdministracionContent()" style="font-size:13px; background: transparent; color: #fff; border: none; outline: none; width: 100%; min-width: 0;"/>
+          </div>
+
+          <!-- ORDENACIÓN (DERECHA-CENTRO) -->
+          <div class="admin-sort-wrap" style="position: relative; display: inline-block; flex-shrink: 0; cursor: pointer;">
+            <div class="form-input" style="display: flex; align-items: center; justify-content: space-between; width: 130px; height: 38px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; padding: 0 14px; box-sizing: border-box; pointer-events: none;">
+              <span>Ordenar por</span>
+              <span style="color: var(--gold); font-size: 10px; margin-left: 6px;">▼</span>
+            </div>
+            <select id="adminSortSelect" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 13px; color-scheme: dark;" onchange="setAdminSort(this.value)">
+              <option value="nombre" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'nombre' ? 'selected' : ''}>Nombre</option>
+              <option value="precio" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'precio' ? 'selected' : ''}>Precio</option>
+              <option value="propietario" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'propietario' ? 'selected' : ''}>Propietario</option>
+              <option value="disponibles" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'disponibles' ? 'selected' : ''}>Disponibles</option>
+              <option value="ocupados" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'ocupados' ? 'selected' : ''}>Ocupados</option>
+              <option value="fecha_inicio" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'fecha_inicio' ? 'selected' : ''}>Día de pago</option>
+            </select>
+          </div>
         </div>
 
         <!-- FILTROS DE ESTADO (CENTRO) -->
@@ -11831,27 +11909,11 @@ function renderAdministracion() {
           <button class="chip-filtro ${currentAdminFilter==='silvia'?'sel':''}" data-filter="silvia" onclick="setAdminFilter('silvia')">🏢 Silvia</button>
         </div>
 
-        <!-- ORDENACIÓN (DERECHA-CENTRO) -->
-        <div style="position: relative; display: inline-block; flex-shrink: 0; cursor: pointer;">
-          <div class="form-input" style="display: flex; align-items: center; justify-content: space-between; width: 130px; height: 38px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; padding: 0 14px; box-sizing: border-box; pointer-events: none;">
-            <span>Ordenar por</span>
-            <span style="color: var(--gold); font-size: 10px; margin-left: 6px;">▼</span>
-          </div>
-          <select id="adminSortSelect" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 13px; color-scheme: dark;" onchange="setAdminSort(this.value)">
-            <option value="nombre" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'nombre' ? 'selected' : ''}>Nombre</option>
-            <option value="precio" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'precio' ? 'selected' : ''}>Precio</option>
-            <option value="propietario" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'propietario' ? 'selected' : ''}>Propietario</option>
-            <option value="disponibles" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'disponibles' ? 'selected' : ''}>Disponibles</option>
-            <option value="ocupados" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'ocupados' ? 'selected' : ''}>Ocupados</option>
-            <option value="fecha_inicio" style="background-color: #121212; color: #fff;" ${currentAdminSort === 'fecha_inicio' ? 'selected' : ''}>Día de pago</option>
-          </select>
-        </div>
-
         <!-- BOTÓN LEER DE DRIVE -->
-        <button class="btn btn-secondary btn-sm" style="height: 38px; border-radius: 10px; flex-shrink: 0; padding: 0 14px; font-weight: 600;" onclick="reloadDirectFromDrive()" title="Sincronizar y leer la información real desde Google Drive">🔄 Leer de Drive</button>
+        <button class="btn btn-secondary btn-sm admin-drive-btn" style="height: 38px; border-radius: 10px; flex-shrink: 0; padding: 0 14px; font-weight: 600;" onclick="reloadDirectFromDrive()" title="Sincronizar y leer la información real desde Google Drive">🔄 Leer de Drive</button>
 
         <!-- ACCIONES Y FILTROS (DERECHA) -->
-        <div style="display: flex; gap: 10px; align-items: center; flex-shrink: 0; flex-wrap: wrap; min-width: 0; row-gap: 8px;">
+        <div class="admin-actions-wrap" style="display: flex; gap: 10px; align-items: center; flex-shrink: 0; flex-wrap: wrap; min-width: 0; row-gap: 8px;">
           <span style="font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing:0.05em; flex-shrink: 0;">AÑO:</span>
           <select id="adminYearSelect" class="form-input" style="min-width: 105px; width: 105px; height: 38px; padding: 0 28px 0 14px; border-radius: 10px; background: #121212; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff; font-weight: 600; cursor:pointer; flex-shrink: 0; color-scheme: dark; box-sizing: border-box; line-height: 38px;" onchange="changeAdminYear(this.value)">
             <option value="2023" style="background-color: #121212; color: #fff;" ${currentAdminYear === '2023' ? 'selected' : ''}>2023</option>
