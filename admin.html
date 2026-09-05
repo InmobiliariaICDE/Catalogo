@@ -6995,6 +6995,12 @@ function estadoLbl(e){
 ═══════════════════════════════════════════════ */
 
 function renderLeads(){
+  const cntTodos = leads.length;
+  const cntActivos = leads.filter(l => l.etiqueta === 'activo').length;
+  const cntTibios = leads.filter(l => l.etiqueta === 'tibio').length;
+  const cntInactivos = leads.filter(l => l.etiqueta === 'inactivo').length;
+  const cntInmobiliarias = leads.filter(l => l.tipo === 'inmobiliaria').length;
+
   document.getElementById('mainContent').innerHTML=`
   <div class="section-header">
     <div class="section-title">👥 Leads (${leads.length})</div>
@@ -7005,11 +7011,11 @@ function renderLeads(){
     <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap: wrap; width: 100%; padding: 0 4px; box-sizing: border-box; row-gap: 12px;">
       <!-- FILTROS (IZQUIERDA) -->
       <div class="chips-row-container" style="display:flex; gap:4px; flex-wrap: nowrap; align-items: center; overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
-        <button class="chip-filtro ${currentLeadFilter==='todos'?'sel':''}" id="fA" onclick="filtTabla('todos',this)">Todos</button>
-        <button class="chip-filtro ${currentLeadFilter==='activo'?'sel':''}" id="fAc" onclick="filtTabla('activo',this)">🟢 Activos</button>
-        <button class="chip-filtro ${currentLeadFilter==='tibio'?'sel':''}" id="fTi" onclick="filtTabla('tibio',this)">🟡 Tibios</button>
-        <button class="chip-filtro ${currentLeadFilter==='inactivo'?'sel':''}" id="fIn" onclick="filtTabla('inactivo',this)">⚫ Inactivos</button>
-        <button class="chip-filtro ${currentLeadFilter==='inmobiliaria'?'sel':''}" id="fIm" onclick="filtTabla('inmobiliaria',this)">🏢 Inmobiliarias</button>
+        <button class="chip-filtro ${currentLeadFilter==='todos'?'sel':''}" id="fA" onclick="filtTabla('todos',this)">Todos (${cntTodos})</button>
+        <button class="chip-filtro ${currentLeadFilter==='activo'?'sel':''}" id="fAc" onclick="filtTabla('activo',this)">🟢 Activos (${cntActivos})</button>
+        <button class="chip-filtro ${currentLeadFilter==='tibio'?'sel':''}" id="fTi" onclick="filtTabla('tibio',this)">🟡 Tibios (${cntTibios})</button>
+        <button class="chip-filtro ${currentLeadFilter==='inactivo'?'sel':''}" id="fIn" onclick="filtTabla('inactivo',this)">⚫ Inactivos (${cntInactivos})</button>
+        <button class="chip-filtro ${currentLeadFilter==='inmobiliaria'?'sel':''}" id="fIm" onclick="filtTabla('inmobiliaria',this)">🏢 Inmobiliarias (${cntInmobiliarias})</button>
       </div>
 
       <!-- BUSCADOR Y ACCIONES (DERECHA) -->
