@@ -3443,13 +3443,12 @@ html, body {
   .admin-header-panel-section,
   .leads-header-panel-section,
   .citas-header-panel-section {
-    background: linear-gradient(145deg, rgba(30,30,30,0.95), rgba(20,20,20,0.98)) !important;
+    background: rgba(255,255,255,0.04) !important;
     border: none !important;
     border-radius: 14px !important;
-    box-shadow: 3px 3px 0px rgba(0,0,0,0.35), inset 1px 1px 0px rgba(255,255,255,0.12), inset -1px -1px 0px rgba(0,0,0,0.3) !important;
+    box-shadow: 3px 3px 6px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.1), inset -1px -1px 0px rgba(0,0,0,0.3) !important;
     padding: 10px 10px !important;
-    margin-top: 4px !important;
-    margin-bottom: 12px !important;
+    margin: 4px 0px 4px !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
@@ -3914,6 +3913,86 @@ html, body {
         <button class="btn btn-secondary" onclick="closeModal('visitaModal')">Cancelar</button>
         <button class="btn btn-primary" onclick="guardarVisita()">Guardar</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO LEAD -->
+<div class="modal-overlay" id="nuevoLeadModal" onclick="if(event.target===this) closeModal('nuevoLeadModal')">
+  <div class="modal-box large" style="max-width: 650px; animation: zoomIn 0.25s ease;">
+    <div class="modal-title" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px; margin-bottom:16px;">
+      <span style="display:flex; align-items:center; gap:8px;">👤 <b>Registrar Nuevo Lead</b></span>
+      <button class="panel-close" onclick="closeModal('nuevoLeadModal')" style="font-size:20px; background:transparent; border:none; color:#aaa; cursor:pointer;">✕</button>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-bottom:16px;">
+      <button id="modalBtnTC" class="btn btn-primary" style="flex:1;" onclick="setTipoModalLead('cliente')">👤 Cliente</button>
+      <button id="modalBtnTI" class="btn btn-secondary" style="flex:1;" onclick="setTipoModalLead('inmobiliaria')">🏢 Inmobiliaria Aliada</button>
+    </div>
+
+    <div id="modalNlDuplicateWarning" style="display:none; margin-bottom:15px; padding:12px 15px; background-color:rgba(249, 115, 22, 0.1); border:1px solid rgba(249, 115, 22, 0.3); border-radius:8px; color:#f97316; font-size:13px;"></div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Nombre Completo *</label>
+        <input class="form-input" id="mnlN" placeholder="Ej: María Pérez" oninput="checkDuplicateLeadModal()"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">WhatsApp / Celular *</label>
+        <input class="form-input" id="mnlC" placeholder="3001234567" oninput="checkDuplicateLeadModal()"/>
+      </div>
+      
+      <div id="modalInmobExtra" class="form-group full" style="display:none;">
+        <div class="inmob-section" style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid rgba(168, 85, 247, 0.2);">
+          <div class="inmob-title" style="margin-bottom:8px; color:var(--purple); font-weight:600;">🏢 Datos de la Inmobiliaria Aliada</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Nombre Inmobiliaria</label><input class="form-input" id="mnlNI" placeholder="Nombre inmobiliaria"/></div>
+            <div class="form-group"><label class="form-label">Nombre del Agente</label><input class="form-input" id="mnlNA" placeholder="Nombre agente"/></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Estado Inicial</label>
+        <select class="form-input" id="mnlEstado">
+          <option value="enviando">🟠 Enviando propuestas</option>
+          <option value="proceso">🔵 Proceso de venta</option>
+          <option value="visita">🟢 Pendiente visita</option>
+          <option value="banco">🟣 Referido al banco</option>
+          <option value="inactivo">⚫ Inactivo</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Prioridad / Etiqueta</label>
+        <select class="form-input" id="mnlEtiqueta">
+          <option value="activo">🟢 Activo (Interesado)</option>
+          <option value="tibio">🟡 Tibio (Explorando)</option>
+          <option value="inactivo">⚫ Inactivo (No responde)</option>
+        </select>
+      </div>
+
+      <div class="form-group full">
+        <label class="form-label">Frecuencia de seguimiento</label>
+        <select class="form-input" id="mnlFrecuencia">
+          <option value="diaria">Diaria</option>
+          <option value="semanal" selected>Semanal</option>
+          <option value="quincenal">Quincenal</option>
+          <option value="mensual">Mensual</option>
+          <option value="manual">Manual</option>
+        </select>
+      </div>
+
+      <div class="form-group full">
+        <label class="form-label">Notas u Observaciones</label>
+        <textarea class="form-input" id="mnlNotas" placeholder="¿Qué detalles adicionales tiene este cliente?"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px; flex-wrap:wrap; border-top:1px solid rgba(255,255,255,0.08); padding-top:16px;">
+      <button class="btn btn-secondary" onclick="closeModal('nuevoLeadModal')">Cancelar</button>
+      <button class="btn btn-gold" onclick="guardarModalLead(true, this)">🎯 Guardar y Elegir Propiedades</button>
+      <button class="btn btn-primary" onclick="guardarModalLead(false, this)">💾 Guardar Lead</button>
     </div>
   </div>
 </div>
@@ -4521,7 +4600,7 @@ let currentLeadFilter = 'todos';
 let nlPage = 0;
 const PAGE_SIZE = 32;
 let criterioOrden = ''; // Default sort (no filter)
-let nlShowData = false; // Por defecto recogido para optimizar espacio
+let nlShowData = true; // Por defecto visible para mostrar el formulario de lead
 let MAX_CATALOG_PRICE = 5000000000; // Valor por defecto
 let kmzProps = [];
 let kmzCategories = [];
@@ -7297,7 +7376,174 @@ function guardarLead(enviarAhora, btn){
 function resetNuevoLead(){
   nuevoLead = freshLead();
   selectedProps = [];
+  nlShowData = true;
   renderNuevo();
+}
+
+let modalTipoLead = 'cliente';
+
+function abrirModalNuevoLead() {
+  modalTipoLead = 'cliente';
+  const inputN = document.getElementById('mnlN');
+  const inputC = document.getElementById('mnlC');
+  const inputNI = document.getElementById('mnlNI');
+  const inputNA = document.getElementById('mnlNA');
+  const inputNotas = document.getElementById('mnlNotas');
+  const selEstado = document.getElementById('mnlEstado');
+  const selEtiqueta = document.getElementById('mnlEtiqueta');
+  const selFrecuencia = document.getElementById('mnlFrecuencia');
+  const warn = document.getElementById('modalNlDuplicateWarning');
+
+  if (inputN) inputN.value = '';
+  if (inputC) inputC.value = '';
+  if (inputNI) inputNI.value = '';
+  if (inputNA) inputNA.value = '';
+  if (inputNotas) inputNotas.value = '';
+  if (selEstado) selEstado.value = 'enviando';
+  if (selEtiqueta) selEtiqueta.value = 'activo';
+  if (selFrecuencia) selFrecuencia.value = 'semanal';
+  if (warn) warn.style.display = 'none';
+
+  setTipoModalLead('cliente');
+
+  const modal = document.getElementById('nuevoLeadModal');
+  if (modal) {
+    modal.classList.add('open', 'active');
+    modal.style.display = 'flex';
+  }
+}
+
+function setTipoModalLead(tipo) {
+  modalTipoLead = tipo;
+  const btnC = document.getElementById('modalBtnTC');
+  const btnI = document.getElementById('modalBtnTI');
+  const inmobExtra = document.getElementById('modalInmobExtra');
+  if (tipo === 'cliente') {
+    if (btnC) btnC.className = 'btn btn-primary';
+    if (btnI) btnI.className = 'btn btn-secondary';
+    if (inmobExtra) inmobExtra.style.display = 'none';
+  } else {
+    if (btnC) btnC.className = 'btn btn-secondary';
+    if (btnI) btnI.className = 'btn btn-gold';
+    if (inmobExtra) inmobExtra.style.display = 'block';
+  }
+}
+
+function checkDuplicateLeadModal() {
+  const nom = (document.getElementById('mnlN')?.value || '').trim();
+  const cel = (document.getElementById('mnlC')?.value || '').trim();
+  const warn = document.getElementById('modalNlDuplicateWarning');
+  if (!warn) return;
+
+  if (!nom && !cel) {
+    warn.style.display = 'none';
+    return;
+  }
+
+  const celClean = cel.replace(/\D/g, '');
+  const dup = leads.find(l => {
+    if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
+    const lCel = String(l.celular || '').replace(/\D/g, '');
+    const matchCel = celClean && lCel && (celClean.length >= 10 && lCel.length >= 10 ? celClean.slice(-10) === lCel.slice(-10) : celClean === lCel);
+    const matchNom = nom && l.nombre && typeof norm === 'function' && norm(l.nombre) === norm(nom);
+    return matchCel || matchNom;
+  });
+
+  if (dup) {
+    warn.style.display = 'block';
+    warn.innerHTML = `⚠️ <b>Atención:</b> Ya existe un cliente con datos similares: <b>${dup.nombre}</b> (${dup.celular}).`;
+  } else {
+    warn.style.display = 'none';
+  }
+}
+
+function guardarModalLead(irACatalogo, btn) {
+  const nom = (document.getElementById('mnlN')?.value || '').trim();
+  const cel = (document.getElementById('mnlC')?.value || '').trim();
+  const nomInmob = (document.getElementById('mnlNI')?.value || '').trim();
+  const nomAgente = (document.getElementById('mnlNA')?.value || '').trim();
+  const estado = document.getElementById('mnlEstado')?.value || 'enviando';
+  const etiqueta = document.getElementById('mnlEtiqueta')?.value || 'activo';
+  const frecuencia = document.getElementById('mnlFrecuencia')?.value || 'semanal';
+  const notas = (document.getElementById('mnlNotas')?.value || '').trim();
+
+  if (!nom && modalTipoLead !== 'inmobiliaria') { toast('Ingresa el nombre completo', 'error'); return; }
+  if (modalTipoLead === 'inmobiliaria' && !nomInmob) { toast('Ingresa nombre de la inmobiliaria', 'error'); return; }
+  if (!cel) { toast('Ingresa el celular', 'error'); return; }
+
+  const celClean = cel.replace(/\D/g, '');
+  const existe = leads.find(l => {
+    if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
+    const lCel = String(l.celular || '').replace(/\D/g, '');
+    const matchCel = celClean && lCel && (celClean.length >= 10 && lCel.length >= 10 ? celClean.slice(-10) === lCel.slice(-10) : celClean === lCel);
+    const matchNom = nom && l.nombre && typeof norm === 'function' && norm(l.nombre) === norm(nom);
+    return matchCel || matchNom;
+  });
+
+  if (existe) {
+    toast(`Ya existe un cliente con este nombre o celular (${existe.nombre})`, 'error');
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+
+  const lead = {
+    id: 'U-' + Date.now() + Math.floor(Math.random() * 1000),
+    tipo: modalTipoLead,
+    nombre: modalTipoLead === 'inmobiliaria' ? (nom || nomInmob) : nom,
+    celular: cel,
+    notas: notas,
+    metodoPago: [],
+    estado: estado,
+    etiqueta: etiqueta,
+    filtros: {},
+    frecuencia: frecuencia,
+    maxPorEnvio: 4,
+    nombreInmobiliaria: nomInmob,
+    nombreAgente: nomAgente,
+    propsFiltradas: [],
+    propsEnviadas: [],
+    proximosEnvios: typeof generarProximosCheck === 'function' ? generarProximosCheck(frecuencia) : [],
+    historialEnvios: [],
+    visitas: [],
+    creadoEn: new Date().toISOString()
+  };
+
+  leads.push(lead);
+  saveLeads();
+  toast('Cliente guardado con éxito ✓', 'success');
+  closeModal('nuevoLeadModal');
+
+  if (irACatalogo) {
+    nuevoLead = {
+      tipo: lead.tipo,
+      nombre: lead.nombre,
+      celular: lead.celular,
+      notas: lead.notas,
+      metodoPago: [],
+      estado: lead.estado,
+      etiqueta: lead.etiqueta,
+      filtros: {},
+      frecuencia: lead.frecuencia,
+      nombreInmobiliaria: lead.nombreInmobiliaria,
+      nombreAgente: lead.nombreAgente,
+      maxPorEnvio: 4
+    };
+    nlShowData = true;
+    showTab('nuevo');
+  } else {
+    if (currentTab === 'leads') {
+      renderLeads();
+    }
+  }
+
+  if (typeof syncSheets === 'function') {
+    syncSheets(lead).finally(() => {
+      if (btn) btn.disabled = false;
+    });
+  } else {
+    if (btn) btn.disabled = false;
+  }
 }
 
 function generarProximos(lista, frec, max, historial){
@@ -7352,7 +7598,7 @@ function renderLeads(){
 
   document.getElementById('mainContent').innerHTML=`
   <!-- PANEL DE CONTROLES DE LEADS -->
-  <div class="panel-section leads-header-panel-section" style="padding: 12px 0; background: linear-gradient(145deg, rgba(30,30,30,0.95), rgba(20,20,20,0.98)); border: none; border-radius: 16px; box-shadow: 3px 3px 0px rgba(0,0,0,0.35), inset 1px 1px 0px rgba(255,255,255,0.12), inset -1px -1px 0px rgba(0,0,0,0.3); margin-top: 4px; margin-bottom: 16px;">
+  <div class="panel-section leads-header-panel-section" style="padding: 12px 0; background: rgba(255,255,255,0.04); border: none; border-radius: 16px; box-shadow: 3px 3px 6px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.1), inset -1px -1px 0px rgba(0,0,0,0.3); margin: 4px 0px 4px;">
     <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap: wrap; width: 100%; padding: 0 4px; box-sizing: border-box; row-gap: 12px;">
       <!-- FILTROS (IZQUIERDA) -->
       <div class="chips-row-container" style="display:flex; gap:4px; flex-wrap: nowrap; align-items: center; overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
@@ -7374,7 +7620,7 @@ function renderLeads(){
             ${searchTermLeads ? `<button class="btn-limpiar-pc" style="padding:0 12px; border-radius:0 8px 8px 0; font-size:12px; color: #aaa; background: transparent; cursor: pointer; transition: color 0.2s; border: none; flex-shrink:0;" onclick="buscarLeads(''); document.getElementById('searchLeadsInput').value=''" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">✕</button>` : ''}
           </div>
 
-          <button class="btn-nueva-cita-premium" onclick="resetNuevoLead(); showTab('nuevo')" style="height: 38px; border-radius: 8px; flex-shrink: 0; white-space: nowrap;">
+          <button class="btn-nueva-cita-premium" onclick="abrirModalNuevoLead()" style="height: 38px; border-radius: 8px; flex-shrink: 0; white-space: nowrap;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             Nuevo Lead
           </button>
@@ -8883,7 +9129,7 @@ function setCitasView(mode){
 function renderCitas(){
   document.getElementById('mainContent').innerHTML=`
     <!-- PANEL DE CONTROLES -->
-    <div class="panel-section citas-header-panel-section" style="padding: 12px 0; background: linear-gradient(145deg, rgba(30,30,30,0.95), rgba(20,20,20,0.98)); border: none; border-radius: 16px; box-shadow: 3px 3px 0px rgba(0,0,0,0.35), inset 1px 1px 0px rgba(255,255,255,0.12), inset -1px -1px 0px rgba(0,0,0,0.3); margin-top: 4px; margin-bottom: 16px;">
+    <div class="panel-section citas-header-panel-section" style="padding: 12px 0; background: rgba(255,255,255,0.04); border: none; border-radius: 16px; box-shadow: 3px 3px 6px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.1), inset -1px -1px 0px rgba(0,0,0,0.3); margin: 4px 0px 4px;">
       <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap: wrap; width: 100%; padding: 0 4px; box-sizing: border-box; row-gap: 12px;">
         <!-- FILTROS (IZQUIERDA) -->
         <div class="chips-row-container" style="display:flex; gap:4px; flex-wrap: nowrap; align-items: center; overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
@@ -12054,7 +12300,7 @@ function renderAdministracion() {
     </div>
 
     <!-- PANEL DE CONTROLES DE ADMINISTRACIÓN -->
-    <div class="panel-section admin-header-panel-section" style="padding: 12px 0; background: linear-gradient(145deg, rgba(30,30,30,0.95), rgba(20,20,20,0.98)); border: none; border-radius: 16px; box-shadow: 3px 3px 0px rgba(0,0,0,0.35), inset 1px 1px 0px rgba(255,255,255,0.12), inset -1px -1px 0px rgba(0,0,0,0.3); margin-bottom: 16px;">
+    <div class="panel-section admin-header-panel-section" style="padding: 12px 0; background: rgba(255,255,255,0.04); border: none; border-radius: 16px; box-shadow: 3px 3px 6px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.1), inset -1px -1px 0px rgba(0,0,0,0.3); margin: 4px 0px 4px;">
       <div class="admin-panel-controls-inner" style="display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap: wrap; row-gap: 10px; width: 100%; padding: 0 20px; box-sizing: border-box;">
         
         <!-- FILA DE BÚSQUEDA Y ORDENACIÓN -->
@@ -18613,7 +18859,7 @@ function contRenderFlujo(el){
     '</div>'+
     '<div class="cont-panel" style="margin-bottom:20px;"><div class="cont-panel-header"><div class="cont-panel-title">\uD83D\uDCC8 Flujo Caja Mensual \u2014 '+contAnoFiltro+'</div></div><div class="cont-panel-body"><div class="cont-chart-wrap" style="height:310px;"><canvas id="chartFlujo"></canvas></div></div></div>'+
   '</div>'+
-  '<div class="panel-section cont-header-panel-section" style="padding: 12px 20px; background: linear-gradient(145deg, rgba(30,30,30,0.95), rgba(20,20,20,0.98)); border: none; border-radius: 16px; box-shadow: 3px 3px 0px rgba(0,0,0,0.35), inset 1px 1px 0px rgba(255,255,255,0.12), inset -1px -1px 0px rgba(0,0,0,0.3); margin-bottom: 16px;">'+
+  '<div class="panel-section cont-header-panel-section" style="padding: 12px 20px; background: rgba(255,255,255,0.04); border: none; border-radius: 16px; box-shadow: 3px 3px 6px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.1), inset -1px -1px 0px rgba(0,0,0,0.3); margin: 4px 0px 4px;">'+
     '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; width:100%;">'+
       '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">'+
         '<span style="font-size:13px; font-weight:700; color:var(--gold); letter-spacing:0.05em;">📋 DETALLE MENSUAL AÑO '+contAnoFiltro+'</span>'+
