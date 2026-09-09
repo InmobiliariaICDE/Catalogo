@@ -1085,7 +1085,7 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 @media(max-width:1000px){
   .topbar{padding:0 16px;}
   .tabs{padding:12px 16px;}
-  .content{padding:16px;}
+  .content{padding:16px; max-width: 100vw; overflow-x: hidden; box-sizing: border-box;}
   .panel-section, .unified-admin-panel{padding:16px;}
   .nuevo-lead-layout{grid-template-columns:1fr;}
   .form-grid{grid-template-columns:1fr;}
@@ -9185,23 +9185,23 @@ function renderCitas(){
       <div id="calendarContainerWrap" style="display: flex; flex-direction: column; gap: 20px;">
         <div id="calendarContainer"></div>
         <!-- TOP INMUEBLES MÁS VISITADOS -->
-        <div class="citas-card-top" style="background:var(--bg2); border-radius:20px; padding:20px; box-shadow:3px 3px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3);">
-          <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
-            <div style="width:3px; height:18px; background:var(--gold); border-radius:2px;"></div>
-            <span style="font-size:13px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.08em;">Top Inmuebles más Visitados</span>
+        <div class="citas-card-top" style="background:var(--bg2); border-radius:20px; padding:20px; box-shadow:3px 3px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3); width:100%; max-width:100%; box-sizing:border-box; overflow:hidden;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px; width:100%; box-sizing:border-box;">
+            <div style="width:3px; height:18px; background:var(--gold); border-radius:2px; flex-shrink:0;"></div>
+            <span style="font-size:13px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.08em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Top Inmuebles más Visitados</span>
           </div>
-          <div id="citasTopInmuebles" style="display:flex; flex-direction:column; gap:10px;">
+          <div id="citasTopInmuebles" style="display:flex; flex-direction:column; gap:10px; width:100%; box-sizing:border-box;">
             <div style="color:var(--muted); font-size:13px; text-align:center; padding:20px 0;">Calculando...</div>
           </div>
         </div>
 
         <!-- VISITAS POR MES -->
-        <div class="citas-card-mes" style="background:var(--bg2); border-radius:20px; padding:20px; box-shadow:3px 3px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3);">
-          <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
-            <div style="width:3px; height:18px; background:var(--gold); border-radius:2px;"></div>
-            <span style="font-size:13px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.08em;">Visitas por Mes</span>
+        <div class="citas-card-mes" style="background:var(--bg2); border-radius:20px; padding:20px; box-shadow:3px 3px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.3); width:100%; max-width:100%; box-sizing:border-box; overflow:hidden;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px; width:100%; box-sizing:border-box;">
+            <div style="width:3px; height:18px; background:var(--gold); border-radius:2px; flex-shrink:0;"></div>
+            <span style="font-size:13px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.08em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Visitas por Mes</span>
           </div>
-          <div id="citasVisitasMes" style="display:flex; flex-direction:column; gap:8px;">
+          <div id="citasVisitasMes" style="display:flex; flex-direction:column; gap:8px; width:100%; box-sizing:border-box;">
             <div style="color:var(--muted); font-size:13px; text-align:center; padding:20px 0;">Calculando...</div>
           </div>
         </div>
@@ -9209,7 +9209,7 @@ function renderCitas(){
       <div id="listContainer">
 
         <!-- TABLA DE CITAS -->
-        <div class="citas-table-wrap panel-section" style="padding: 0; background: rgba(255,255,255,0.04); border: none; border-radius: 12px; box-shadow: 3px 3px 6px rgba(0,0,0,0.4), inset 0 1px 0px rgba(255,255,255,0.15), inset 1px 1px 0px rgba(255,255,255,0.1), inset -1px -1px 0px rgba(0,0,0,0.3); margin-top: 0; overflow: hidden;">
+        <div class="citas-table-wrap panel-section" style="padding: 0; background: rgba(255,255,255,0.04); border: none; border-radius: 12px; box-shadow: 3px 3px 6px rgba(0,0,0,0.4), inset 0 1px 0px rgba(255,255,255,0.15), inset 1px 1px 0px rgba(255,255,255,0.1), inset -1px -1px 0px rgba(0,0,0,0.3); margin-top: 0; overflow-x: auto; max-width: 100%; box-sizing: border-box;">
           <table class="citas-table" style="border: none; border-radius: 0; background: transparent; border-collapse: separate; border-spacing: 0; overflow: visible;">
             <thead>
               <tr style="background: rgba(255, 255, 255, 0.03);">
@@ -9227,12 +9227,13 @@ function renderCitas(){
 
     <style>
       @media(max-width:900px){ 
-        .citas-layout-nuevo { display: flex !important; flex-direction: column !important; gap: 16px !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; } 
+        .citas-layout-nuevo { display: flex !important; flex-direction: column !important; gap: 16px !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; overflow-x: hidden !important; } 
         #calendarContainerWrap { display: contents !important; } 
-        #calendarContainer { order: 1 !important; }
-        #listContainer { order: 2 !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; } 
-        .citas-card-top { order: 97 !important; }
-        .citas-card-mes { order: 98 !important; }
+        #calendarContainer { order: 1 !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
+        #listContainer { order: 2 !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; overflow: hidden !important; } 
+        .citas-table-wrap { width: 100% !important; max-width: 100% !important; overflow-x: auto !important; box-sizing: border-box !important; }
+        .citas-card-top { order: 97 !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; padding: 14px 12px !important; border-radius: 14px !important; overflow: hidden !important; margin: 0 !important; }
+        .citas-card-mes { order: 98 !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; padding: 14px 12px !important; border-radius: 14px !important; overflow: hidden !important; margin: 0 !important; }
       }
       @media(max-width:700px){ #citasAnalyticsGrid { grid-template-columns: 1fr !important; } }
       .pc-buscar-row-premium {
@@ -9287,17 +9288,17 @@ function renderTopVisitados() {
     const rankColors = ['var(--gold)', '#c0c0c0', '#cd7f32', 'var(--muted)', 'var(--muted)', 'var(--muted)'];
 
     return `
-      <div style="display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.03); border-radius:12px; padding:10px 14px; box-shadow:2px 2px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.08);">
-        <span style="font-size:12px; font-weight:800; color:${rankColors[i]}; width:16px; text-align:center; flex-shrink:0;">#${i+1}</span>
-        <img src="${img}" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'" style="width:42px; height:42px; border-radius:8px; object-fit:cover; flex-shrink:0;"/>
-        <div style="flex:1; min-width:0;">
-          <div style="font-size:12px; font-weight:700; color:var(--gold); line-height:1.2;">${cod}</div>
-          <div style="font-size:12px; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${nombre}</div>
-          <div style="margin-top:5px; height:3px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden;">
+      <div style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.03); border-radius:12px; padding:8px 10px; box-shadow:2px 2px 0px rgba(0,0,0,0.3),inset 1px 1px 0px rgba(255,255,255,0.08); width:100%; box-sizing:border-box; overflow:hidden;">
+        <span style="font-size:11px; font-weight:800; color:${rankColors[i]}; width:14px; text-align:center; flex-shrink:0;">#${i+1}</span>
+        <img src="${img}" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'" style="width:38px; height:38px; border-radius:8px; object-fit:cover; flex-shrink:0;"/>
+        <div style="flex:1; min-width:0; overflow:hidden;">
+          <div style="font-size:12px; font-weight:700; color:var(--gold); line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cod}</div>
+          <div style="font-size:11.5px; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${nombre}</div>
+          <div style="margin-top:4px; height:3px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden;">
             <div style="height:100%; width:${pct}%; background:linear-gradient(90deg, var(--gold), rgba(212,168,75,0.4)); border-radius:2px; transition:width 0.6s ease;"></div>
           </div>
         </div>
-        <div style="font-size:14px; font-weight:800; color:var(--green); flex-shrink:0;">${count} <span style="font-size:10px; font-weight:500; color:var(--muted);">visita${count!==1?'s':''}</span></div>
+        <div style="font-size:12px; font-weight:800; color:var(--green); flex-shrink:0; white-space:nowrap;">${count} <span style="font-size:9.5px; font-weight:500; color:var(--muted);">vis.</span></div>
       </div>`;
   }).join('');
 }
@@ -9330,13 +9331,13 @@ function renderVisitasPorMes() {
 
   // Tarjeta de total
   const totalHtml = `
-    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); border-radius:12px; padding:12px 16px; margin-bottom:4px; box-shadow:inset 2px 2px 4px rgba(0,0,0,0.4);">
+    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); border-radius:12px; padding:10px 14px; margin-bottom:4px; box-shadow:inset 2px 2px 4px rgba(0,0,0,0.4); width:100%; box-sizing:border-box; overflow:hidden;">
       <div>
         <div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em;">Total registrado</div>
-        <div style="font-size:26px; font-weight:800; color:#fff; line-height:1.1; margin-top:2px;">${totalVisitas}</div>
+        <div style="font-size:24px; font-weight:800; color:#fff; line-height:1.1; margin-top:2px;">${totalVisitas}</div>
         <div style="font-size:11px; color:var(--gold); font-weight:600; margin-top:2px;">Histórico acumulado</div>
       </div>
-      <div style="font-size:28px; opacity:0.15;">📅</div>
+      <div style="font-size:26px; opacity:0.15; flex-shrink:0;">📅</div>
     </div>`;
 
   // Barras por mes
@@ -9344,16 +9345,16 @@ function renderVisitasPorMes() {
     const pct = Math.round((e.count / maxVal) * 100);
     const isCurrentMonth = e.label.startsWith(monthNames[now.getMonth()]);
     return `
-      <div style="display:flex; align-items:center; gap:10px;">
-        <div style="font-size:11px; color:var(--muted); width:36px; flex-shrink:0; text-align:right;">${e.label}</div>
-        <div style="flex:1; height:20px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden; position:relative;">
+      <div style="display:flex; align-items:center; gap:8px; width:100%; box-sizing:border-box;">
+        <div style="font-size:11px; color:var(--muted); width:32px; flex-shrink:0; text-align:right;">${e.label}</div>
+        <div style="flex:1; height:20px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden; position:relative; min-width:0;">
           <div style="position:absolute; left:0; top:0; height:100%; width:${pct}%; background:${isCurrentMonth ? 'linear-gradient(90deg, var(--gold), rgba(212,168,75,0.6))' : 'linear-gradient(90deg, rgba(59,130,246,0.7), rgba(59,130,246,0.3))'}; border-radius:4px; transition:width 0.6s ease;"></div>
           ${e.count > 0 ? `<span style="position:absolute; right:6px; top:50%; transform:translateY(-50%); font-size:10px; font-weight:700; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.8);">${e.count}</span>` : ''}
         </div>
       </div>`;
   }).join('');
 
-  container.innerHTML = totalHtml + `<div style="display:flex; flex-direction:column; gap:6px; margin-top:12px;">${barsHtml}</div>`;
+  container.innerHTML = totalHtml + `<div style="display:flex; flex-direction:column; gap:6px; margin-top:12px; width:100%; box-sizing:border-box;">${barsHtml}</div>`;
 }
 
 function selectCalDate(fecha){
