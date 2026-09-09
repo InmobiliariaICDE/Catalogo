@@ -6458,7 +6458,7 @@ async function autoSyncDrive() {
 
     leads = newList;
 
-    if (cambio || true) { 
+    if (cambio) { 
       rebuildCitas(); // Restaurado: fusiona CRM_Citas y CRM_Leads para evitar pantalla vacía
       const activeEl = document.activeElement;
       const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
@@ -7679,6 +7679,13 @@ function filtTabla(f,btn){
 function renderLeadsBody(lista){
   const container=document.getElementById('leadsContainer'); if(!container) return;
   
+  // Capturar posición de scroll antes de renderizar
+  const oldWrap = container.querySelector('.leads-table-wrap');
+  const prevScrollLeft = oldWrap ? oldWrap.scrollLeft : 0;
+  const prevScrollTop = oldWrap ? oldWrap.scrollTop : 0;
+  const mainContent = document.getElementById('mainContent');
+  const prevMainScrollTop = mainContent ? mainContent.scrollTop : 0;
+
   let listaFiltrada = [...lista];
 
   // Aplicar filtro de búsqueda si existe
@@ -7733,7 +7740,7 @@ function renderLeadsBody(lista){
 
   if(leadViewMode === 'table'){
     container.innerHTML=`
-    <div class="leads-table-wrap panel-section" style="padding:0; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); margin-top: 0;">
+    <div class="leads-table-wrap panel-section" style="padding:0; background: var(--bg2); border: none; box-shadow: 3px 3px 0px rgba(0,0,0,0.3), inset 1px 1px 0px rgba(255,255,255,0.15), inset -1px -1px 0px rgba(0,0,0,0.3); margin-top: 0; overflow-x: auto;">
       <table class="leads-table" style="border: none; border-radius: 0; background: transparent;">
         <thead>
           <tr style="background: rgba(212, 168, 75, 0.04);">
@@ -7827,6 +7834,16 @@ function renderLeadsBody(lista){
         </div>`;
       }).join('')}
     </div>`;
+  }
+
+  // Restaurar posición de scroll guardada (horizontal y vertical)
+  const newWrap = container.querySelector('.leads-table-wrap');
+  if (newWrap) {
+    newWrap.scrollLeft = prevScrollLeft;
+    newWrap.scrollTop = prevScrollTop;
+  }
+  if (mainContent && prevMainScrollTop) {
+    mainContent.scrollTop = prevMainScrollTop;
   }
 }
 function estadoLbl(e){ return {proceso:'Proceso de venta',enviando:'Enviando',visita:'Pdte. visita',banco:'Banco',inactivo:'Inactivo'}[e]||e; }
