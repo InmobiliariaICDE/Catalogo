@@ -1079,8 +1079,31 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
   display: block;
   width: 100%;
 }
+/* ── Desplegable animado de nl-col-2 ── */
+.nl-col-2 {
+  overflow: hidden;
+  max-height: 2000px;
+  transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+  opacity: 1;
+}
 .nuevo-lead-layout.hide-data .nl-col-2 {
-  display: none;
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Chevron del botón enviar propuestas */
+.btn-datos-chevron {
+  display: inline-block;
+  margin-left: 4px;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: rotate(0deg);
+  line-height: 1;
+  font-size: 10px;
+  vertical-align: middle;
+}
+.nl-data-open .btn-datos-chevron {
+  transform: rotate(180deg);
 }
 
 
@@ -4952,7 +4975,7 @@ function buildFiltrosBar(containerId, pfx, initVals){
           <input type="text" id="fnBus_${pfx}" placeholder="Buscar por nombre, código, barrio..." oninput="fnBuscar('${pfx}',this.value)"/>
         </div>
         <button class="btn-generar-pc" id="btnGen_${pfx}" onclick="fnGenerarLink('${pfx}', this)">🔗&thinsp;Generar link</button>
-        ${pfx==='nl' ? `<button class="btn-datos-en-grid btn-datos-bottom" onclick="toggleNlData()">${typeof nlShowData !== 'undefined' && nlShowData ? '📤 Enviar propuestas ▲' : '📤 Enviar propuestas ▾'}</button>` : `<button class="btn-limpiar-pc btn-limpiar-desktop" onclick="fnLimpiar('${pfx}')">❌ Limpiar filtros</button>`}
+        ${pfx==='nl' ? `<button class="btn-datos-en-grid btn-datos-bottom" onclick="toggleNlData()"><span class="btn-datos-lbl">📤 Enviar propuestas</span><span class="btn-datos-chevron">&#9660;</span></button>` : `<button class="btn-limpiar-pc btn-limpiar-desktop" onclick="fnLimpiar('${pfx}')">❌ Limpiar filtros</button>`}
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 4px;">
         <div class="pc-count-bar" style="padding:0; margin:0;">Propiedades encontradas: <strong id="fnCnt_${pfx}">—</strong></div>
@@ -6952,7 +6975,23 @@ function showTab(tab){
 }
 function toggleNlData(){
   nlShowData = !nlShowData;
-  renderNuevo();
+  // Animar sin re-renderizar toda la página
+  const layout = document.querySelector('.nuevo-lead-layout');
+  const btn    = document.querySelector('.btn-datos-bottom');
+  if(layout){
+    if(nlShowData){
+      layout.classList.remove('hide-data');
+      layout.classList.add('nl-data-open');
+    } else {
+      layout.classList.add('hide-data');
+      layout.classList.remove('nl-data-open');
+    }
+  }
+  if(btn){
+    const lbl = btn.querySelector('.btn-datos-lbl');
+    if(lbl) lbl.textContent = nlShowData ? '📤 Enviar propuestas' : '📤 Enviar propuestas';
+    // El chevron se anima via CSS (.nl-data-open .btn-datos-chevron)
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -6961,7 +7000,7 @@ function toggleNlData(){
 function renderNuevo(){
   const c=document.getElementById('mainContent');
   c.innerHTML=`
-  <div class="nuevo-lead-layout ${nlShowData ? '' : 'hide-data'}">
+  <div class="nuevo-lead-layout ${nlShowData ? 'nl-data-open' : 'hide-data'}">
     <!-- COLUMNA 1: FILTROS E INMUEBLES (30%) -->
     <div class="nl-col-1">
       <div class="panel-section">
