@@ -606,9 +606,9 @@ select.estado-badge option, select.badge option { background:#18181b; color:#fff
 
 .btn-generar-pc {
   grid-column: span 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   height: 44px;
   min-height: 44px;
   padding: 0 16px;
@@ -620,7 +620,8 @@ select.estado-badge option, select.badge option { background:#18181b; color:#fff
   cursor: pointer;
   white-space: nowrap;
   transition: all .2s ease;
-  gap: 6px;
+  gap: 6px !important;
+  line-height: 1 !important;
   box-shadow: 3px 3px 6px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.1), inset -1px -1px 0px rgba(0,0,0,0.3);
   box-sizing: border-box;
   border-radius: 0 !important;
@@ -3070,9 +3071,11 @@ html, body {
 
   /* Botón Generar Link con efecto relieve en móvil - idéntico a limpiar filtros */
   .btn-generar-pc {
-    display: flex !important;
+    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    gap: 6px !important;
+    line-height: 1 !important;
     flex: 1 !important;
     width: 100% !important;
     height: 32px !important;
@@ -4948,7 +4951,7 @@ function buildFiltrosBar(containerId, pfx, initVals){
           </span>
           <input type="text" id="fnBus_${pfx}" placeholder="Buscar por nombre, código, barrio..." oninput="fnBuscar('${pfx}',this.value)"/>
         </div>
-        <button class="btn-generar-pc" id="btnGen_${pfx}" onclick="fnGenerarLink('${pfx}', this)">Generar link</button>
+        <button class="btn-generar-pc" id="btnGen_${pfx}" onclick="fnGenerarLink('${pfx}', this)"><span style="display:inline-flex;align-items:center;justify-content:center;font-size:11px;line-height:1;margin-top:-1px;">🔗</span><span>Generar link</span></button>
         ${pfx==='nl' ? `<button class="btn-datos-en-grid btn-datos-bottom" onclick="toggleNlData()">${typeof nlShowData !== 'undefined' && nlShowData ? '📤 Enviar propuestas ▲' : '📤 Enviar propuestas ▾'}</button>` : `<button class="btn-limpiar-pc btn-limpiar-desktop" onclick="fnLimpiar('${pfx}')">❌ Limpiar filtros</button>`}
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 4px;">
@@ -5355,7 +5358,7 @@ function fnGenerarLink(pfx, btn){
   const link = getSearchLinkFromFilters(st, ids, leadId);
   navigator.clipboard.writeText(link).then(() => {
     const original = btn.innerHTML;
-    btn.textContent = '¡Copiado!';
+    btn.innerHTML = '<span style="display:inline-flex;align-items:center;justify-content:center;font-size:11px;line-height:1;margin-top:-1px;">✅</span><span>¡Copiado!</span>';
     setTimeout(() => { btn.innerHTML = original; }, 2000);
   });
 }
