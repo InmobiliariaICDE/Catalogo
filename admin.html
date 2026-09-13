@@ -2836,6 +2836,15 @@ html, body {
     box-sizing: border-box !important;
   }
 
+  .form-row-2col {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+    grid-column: 1 / -1 !important;
+    box-sizing: border-box !important;
+  }
+
   .panel-section, .unified-admin-panel {
     padding: 0 !important;
     border-radius: 0 !important;
@@ -4019,24 +4028,26 @@ html, body {
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Estado Inicial</label>
-        <select class="form-input" id="mnlEstado">
-          <option value="enviando">🟠 Enviando propuestas</option>
-          <option value="proceso">🔵 Proceso de venta</option>
-          <option value="visita">🟢 Pendiente visita</option>
-          <option value="banco">🟣 Referido al banco</option>
-          <option value="inactivo">⚫ Inactivo</option>
-        </select>
-      </div>
+      <div class="form-row-2col" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; grid-column:1/-1;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Estado Inicial</label>
+          <select class="form-input" id="mnlEstado">
+            <option value="enviando">🟠 Enviando propuestas</option>
+            <option value="proceso">🔵 Proceso de venta</option>
+            <option value="visita">🟢 Pendiente visita</option>
+            <option value="banco">🟣 Referido al banco</option>
+            <option value="inactivo">⚫ Inactivo</option>
+          </select>
+        </div>
 
-      <div class="form-group">
-        <label class="form-label">Prioridad / Etiqueta</label>
-        <select class="form-input" id="mnlEtiqueta">
-          <option value="activo">🟢 Activo (Interesado)</option>
-          <option value="tibio">🟡 Tibio (Explorando)</option>
-          <option value="inactivo">⚫ Inactivo (No responde)</option>
-        </select>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Prioridad / Etiqueta</label>
+          <select class="form-input" id="mnlEtiqueta">
+            <option value="activo">🟢 Activo (Interesado)</option>
+            <option value="tibio">🟡 Tibio (Explorando)</option>
+            <option value="inactivo">⚫ Inactivo (No responde)</option>
+          </select>
+        </div>
       </div>
 
       <div class="form-group full">
@@ -7064,23 +7075,25 @@ function renderNuevo(){
                 <div class="form-group"><label class="form-label">Nombre Completo *</label><input class="form-input" id="nlN" value="${nuevoLead.nombre}" placeholder="Ej: Maria Perez" oninput="nuevoLead.nombre=this.value; checkDuplicateLead()"/></div>
                 <div class="form-group"><label class="form-label">WhatsApp / Celular *</label><input class="form-input" id="nlC" value="${nuevoLead.celular}" placeholder="3001234567" oninput="nuevoLead.celular=this.value; checkDuplicateLead()"/></div>
                 <div class="form-group full"><label class="form-label">Notas u Observaciones</label><textarea class="form-input" oninput="nuevoLead.notas=this.value" placeholder="¿Qué detalles adicionales tiene este cliente?">${nuevoLead.notas}</textarea></div>
-                <div class="form-group">
-                  <label class="form-label">Estado Inicial</label>
-                  <select class="form-input" onchange="nuevoLead.estado=this.value">
-                    <option value="enviando" ${nuevoLead.estado==='enviando'?'selected':''}>🟠 Enviando propuestas</option>
-                    <option value="proceso"  ${nuevoLead.estado==='proceso'?'selected':''}>🔵 Proceso de venta</option>
-                    <option value="visita"   ${nuevoLead.estado==='visita'?'selected':''}>🟢 Pendiente visita</option>
-                    <option value="banco"    ${nuevoLead.estado==='banco'?'selected':''}>🟣 Referido al banco</option>
-                    <option value="inactivo" ${nuevoLead.estado==='inactivo'?'selected':''}>⚫ Inactivo</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Prioridad / Etiqueta</label>
-                  <select class="form-input" onchange="nuevoLead.etiqueta=this.value">
-                    <option value="activo"   ${nuevoLead.etiqueta==='activo'?'selected':''}>🟢 Activo (Interesado)</option>
-                    <option value="tibio"    ${nuevoLead.etiqueta==='tibio'?'selected':''}>🟡 Tibio (Explorando)</option>
-                    <option value="inactivo" ${nuevoLead.etiqueta==='inactivo'?'selected':''}>⚫ Inactivo (No responde)</option>
-                  </select>
+                <div class="form-row-2col" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; grid-column:1/-1;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Estado Inicial</label>
+                    <select class="form-input" onchange="nuevoLead.estado=this.value">
+                      <option value="enviando" ${nuevoLead.estado==='enviando'?'selected':''}>🟠 Enviando propuestas</option>
+                      <option value="proceso"  ${nuevoLead.estado==='proceso'?'selected':''}>🔵 Proceso de venta</option>
+                      <option value="visita"   ${nuevoLead.estado==='visita'?'selected':''}>🟢 Pendiente visita</option>
+                      <option value="banco"    ${nuevoLead.estado==='banco'?'selected':''}>🟣 Referido al banco</option>
+                      <option value="inactivo" ${nuevoLead.estado==='inactivo'?'selected':''}>⚫ Inactivo</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Prioridad / Etiqueta</label>
+                    <select class="form-input" onchange="nuevoLead.etiqueta=this.value">
+                      <option value="activo"   ${nuevoLead.etiqueta==='activo'?'selected':''}>🟢 Activo (Interesado)</option>
+                      <option value="tibio"    ${nuevoLead.etiqueta==='tibio'?'selected':''}>🟡 Tibio (Explorando)</option>
+                      <option value="inactivo" ${nuevoLead.etiqueta==='inactivo'?'selected':''}>⚫ Inactivo (No responde)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
               <div id="inmobExtra" style="display:${nuevoLead.tipo==='inmobiliaria'?'block':'none'}">
