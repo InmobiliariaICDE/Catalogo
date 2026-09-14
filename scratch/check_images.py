@@ -1,15 +1,13 @@
-import urllib.request
-import json
+import re
 
-url = 'https://script.google.com/macros/s/AKfycbwH_gsvmcm3iTu1uYXjqNHOch_1d9B4inUxijX8RszlVxnaWK3VVhrbHdeQZVS0U72t/exec?tipo=infoBarrio&barrioName=Las%20Granjas'
-req = urllib.request.urlopen(url)
-data = req.read().decode('utf-8')
-if data.startswith('handleInfoBarrio('):
-    data = data[len('handleInfoBarrio('):-1]
-obj = json.loads(data)
-for item in obj.get('inmuebles', []):
-    code = item.get('Codigo')
-    pub = item.get('Publicar')
-    img = item.get('Image')
-    imgs = item.get('Imagenes')
-    print(f"Codigo: {code} | Publicar: {pub} | Image: {img}")
+with open('admin.html', encoding='utf-8') as f:
+    admin_text = f.read()
+
+with open('admin_backup.html', encoding='utf-8') as f:
+    backup_text = f.read()
+
+print("--- ADMIN.HTML IMAGES ---")
+for line_no, line in enumerate(admin_text.splitlines(), 1):
+    if '<img' in line or 'favicon' in line or 'icon' in line.lower() and '<link' in line:
+        print(f"{line_no}: {line.strip()}")
+
