@@ -12283,12 +12283,25 @@ function ensureUniqueIds(data) {
 
 function mergeLocalAdminData(freshData) {
   if (!freshData || !Array.isArray(freshData.properties)) return freshData || { properties: [], silvia_ledger: {} };
+  // Preservar owner_notes, improvements, quotes del caché local si el backend aún no los devuelve
+  const localCached = JSON.parse(localStorage.getItem('icde_admin_data') || '{}');
+  const localProps  = Array.isArray((localCached||{}).properties) ? localCached.properties : [];
   freshData.properties.forEach(p => {
     p.name = p.name ? String(p.name).trim() : 'Propiedad Sin Nombre';
     p.owner = p.owner ? String(p.owner).trim() : '';
     p.tenant_name = p.tenant_name ? String(p.tenant_name).trim() : '';
     p.monthly_rent = parseFloat(p.monthly_rent) || 0;
     p.payments = p.payments || {};
+    // Preservar campos de propietario desde local si el backend no los trae
+    const localP = localProps.find(lp => String(lp.id) === String(p.id));
+    if (localP) {
+      if (!Array.isArray(p.owner_notes)  && Array.isArray(localP.owner_notes))  p.owner_notes  = localP.owner_notes;
+      if (!Array.isArray(p.improvements) && Array.isArray(localP.improvements)) p.improvements = localP.improvements;
+      if (!Array.isArray(p.quotes)       && Array.isArray(localP.quotes))       p.quotes       = localP.quotes;
+    }
+    if (!Array.isArray(p.owner_notes))  p.owner_notes  = [];
+    if (!Array.isArray(p.improvements)) p.improvements = [];
+    if (!Array.isArray(p.quotes))       p.quotes       = [];
   });
   return freshData;
 }
@@ -12487,6 +12500,7 @@ function renderAdministracion() {
           <button class="chip-filtro ${currentAdminFilter==='pendientes'?'sel':''}" data-filter="pendientes" onclick="setAdminFilter('pendientes')">🔴 Pendientes</button>
           <button class="chip-filtro ${currentAdminFilter==='disponibles'?'sel':''}" data-filter="disponibles" onclick="setAdminFilter('disponibles')">⚪ Desocupados</button>
           <button class="chip-filtro ${currentAdminFilter==='silvia'?'sel':''}" data-filter="silvia" onclick="setAdminFilter('silvia')">🏢 Silvia</button>
+          <button class="chip-filtro ${currentAdminFilter==='testimonios'?'sel':''}" data-filter="testimonios" onclick="setAdminFilter('testimonios')">📋 Testimonios</button>
         </div>
 
         <!-- ACCIONES Y FILTROS (DERECHA) -->
@@ -12566,6 +12580,12 @@ function renderAdministracionContent() {
   const tabContent = document.getElementById('adminTabContent');
   const kpisContainer = document.getElementById('adminKpisContainer');
   if (!tabContent || !kpisContainer) return;
+
+  // ── Vista especial: Testimonios ──────────────────────────────────────
+  if (currentAdminFilter === 'testimonios') {
+    renderAdminTestimonios(tabContent);
+    return;
+  }
 
   const isOccupied = (p) => {
     const paymentsYear = p.payments[currentAdminYear] || [];
@@ -13144,8 +13164,9 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab = 'cobro') {
   const rentInfo = calculateAdminRentInfo(p);
 
   const tabs = [
-    { id: 'cobro',    icon: '💵', label: 'Cobro y Contrato' },
-    { id: 'inmueble', icon: '🏠', label: 'Inmueble' }
+    { id: 'cobro',       icon: '💵', label: 'Cobro y Contrato' },
+    { id: 'inmueble',    icon: '🏠', label: 'Inmueble'         },
+    { id: 'propietario', icon: '👤', label: 'Propietario'      }
   ];
 
   const tabsHTML = tabs.map(t => `
@@ -13402,6 +13423,95 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab = 'cobro') {
       </div>
     </div>`;
 
+  /* ── TAB 3: PARA EL PROPIETARIO ─────────────────────────────────── */
+  const ownerNotes   = Array.isArray(p.owner_notes)  ? p.owner_notes  : [];
+  const improvements = Array.isArray(p.improvements) ? p.improvements : [];
+  const quotes       = Array.isArray(p.quotes)       ? p.quotes       : [];
+
+  const notesListHTML = ownerNotes.length
+    ? ownerNotes.map((n,i) => `
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px 12px;margin-bottom:6px;position:relative;">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">${n.date||''}</div>
+        <div style="font-size:13px;color:#fff;line-height:1.5;">${(n.text||''}.replace(/\n/g,'<br>')}</div>
+        <button onclick="ownerRemoveNote('${p.id}',${i})" style="position:absolute;top:6px;right:8px;background:none;border:none;color:rgba(239,68,68,0.6);cursor:pointer;font-size:15px;" title="Eliminar">&times;</button>
+      </div>`).join('')
+    : '<div style="font-size:12px;color:var(--muted);padding:6px 0;">Sin notas aún.</div>';
+
+  const improvListHTML = improvements.length
+    ? improvements.map((imp,i) => `
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px;margin-bottom:8px;position:relative;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+          <div style="font-size:13px;font-weight:700;color:#fff;">${imp.title||'Sin título'}</div>
+          <select onchange="ownerChangeImprovStatus('${p.id}',${i},this.value)" style="font-size:10px;background:#121212;color:var(--gold);border:1px solid rgba(212,168,75,0.3);border-radius:6px;padding:2px 6px;cursor:pointer;">
+            <option value="sugerida"   ${imp.status==='sugerida'   ?'selected':''}>💡 Sugerida</option>
+            <option value="en_proceso" ${imp.status==='en_proceso' ?'selected':''}>🔧 En Proceso</option>
+            <option value="terminada"  ${imp.status==='terminada'  ?'selected':''}>✅ Terminada</option>
+          </select>
+        </div>
+        ${imp.description?`<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">${imp.description}</div>`:''}
+        ${imp.price?`<div style="font-size:12px;color:#22c55e;font-weight:700;margin-bottom:6px;">💲 $${Number(imp.price).toLocaleString('es-CO')}</div>`:''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+          <div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">📷 ANTES</div>
+            ${imp.photo_before_url
+              ?`<img src="${imp.photo_before_url}" style="width:100%;height:72px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open('${imp.photo_before_url}','_blank')" />`
+              :`<label style="display:flex;align-items:center;justify-content:center;height:72px;background:rgba(255,255,255,0.03);border:1px dashed rgba(255,255,255,0.15);border-radius:6px;cursor:pointer;font-size:11px;color:var(--muted);">+ Foto<input type="file" accept="image/*" style="display:none" onchange="ownerUploadImprovPhoto('${p.id}',${i},'before',this)"></label>`
+            }
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">📷 DESPUÉS</div>
+            ${imp.photo_after_url
+              ?`<img src="${imp.photo_after_url}" style="width:100%;height:72px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open('${imp.photo_after_url}','_blank')" />`
+              :`<label style="display:flex;align-items:center;justify-content:center;height:72px;background:rgba(255,255,255,0.03);border:1px dashed rgba(255,255,255,0.15);border-radius:6px;cursor:pointer;font-size:11px;color:var(--muted);">+ Foto<input type="file" accept="image/*" style="display:none" onchange="ownerUploadImprovPhoto('${p.id}',${i},'after',this)"></label>`
+            }
+          </div>
+        </div>
+        <button onclick="ownerRemoveImprovement('${p.id}',${i})" style="position:absolute;top:8px;right:8px;background:none;border:none;color:rgba(239,68,68,0.6);cursor:pointer;font-size:13px;" title="Eliminar">🗑</button>
+      </div>`).join('')
+    : '<div style="font-size:12px;color:var(--muted);padding:6px 0;">Sin mejoras registradas.</div>';
+
+  const quotesListHTML = quotes.length
+    ? `<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px;">
+        <thead><tr>
+          <th style="text-align:left;color:var(--muted);padding:4px 6px;font-size:10px;text-transform:uppercase;">Ítem</th>
+          <th style="text-align:left;color:var(--muted);padding:4px 6px;font-size:10px;text-transform:uppercase;">Descripción</th>
+          <th style="text-align:right;color:var(--muted);padding:4px 6px;font-size:10px;text-transform:uppercase;">Valor</th>
+          <th style="width:24px;"></th>
+        </tr></thead>
+        <tbody>${quotes.map((q,i)=>`
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <td style="padding:7px 6px;color:#fff;font-weight:600;">${q.item||''}</td>
+            <td style="padding:7px 6px;color:var(--muted);">${q.description||''}</td>
+            <td style="padding:7px 6px;color:#22c55e;font-weight:700;text-align:right;">$${Number(q.value||0).toLocaleString('es-CO')}</td>
+            <td><button onclick="ownerRemoveQuote('${p.id}',${i})" style="background:none;border:none;color:rgba(239,68,68,0.6);cursor:pointer;font-size:14px;">&times;</button></td>
+          </tr>`).join('')}
+        </tbody></table>`
+    : '<div style="font-size:12px;color:var(--muted);padding:6px 0;">Sin cotizaciones.</div>';
+
+  const tabPropietario = `
+    <div style="display:flex;flex-direction:column;gap:0;">
+      <div style="font-size:11px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">📝 Notas para el Propietario</div>
+      <div id="ownerNotesList">${notesListHTML}</div>
+      <div style="display:flex;gap:6px;margin-bottom:16px;">
+        <textarea id="newOwnerNoteText" class="u-inp" rows="2" style="flex:1;resize:none;" placeholder="Escribe una nota..."></textarea>
+        <button onclick="ownerAddNote('${p.id}')" class="btn btn-gold btn-sm" style="height:auto;align-self:stretch;white-space:nowrap;padding:0 12px;">+ Nota</button>
+      </div>
+      <div style="font-size:11px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">🔧 Mejoras / Antes y Después</div>
+      <div id="improvementsList">${improvListHTML}</div>
+      <button onclick="ownerAddImprovement('${p.id}')" class="btn btn-secondary btn-sm" style="width:100%;margin-bottom:16px;justify-content:center;">+ Nueva Mejora</button>
+      <div style="font-size:11px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">🛒 Cotizaciones / Tienda</div>
+      <div id="quotesList" style="margin-bottom:8px;">${quotesListHTML}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 90px;gap:6px;margin-bottom:6px;">
+        <input type="text" id="newQuoteItem" class="u-inp" placeholder="Ítem" />
+        <input type="text" id="newQuoteDesc" class="u-inp" placeholder="Descripción" />
+        <input type="number" id="newQuoteValue" class="u-inp" placeholder="$" />
+      </div>
+      <button onclick="ownerAddQuote('${p.id}')" class="btn btn-secondary btn-sm" style="width:100%;margin-bottom:16px;justify-content:center;">+ Añadir Cotización</button>
+      <button id="btnSaveOwnerContent" onclick="saveOwnerContent('${p.id}')" class="btn btn-primary" style="width:100%;justify-content:center;font-weight:700;">
+        💾 Guardar y Sincronizar
+      </button>
+    </div>`;
+
   return `
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; flex-shrink:0;">
       <div style="font-size:15px; font-weight:800; color:var(--gold); display:flex; align-items:center; gap:8px; letter-spacing:-0.01em;">
@@ -13413,9 +13523,263 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab = 'cobro') {
 
     <div class="u-modal-tabs">${tabsHTML}</div>
 
-    <div id="uTab-cobro"    class="u-tab-content ${currentActiveTab==='cobro'    ? 'active' : ''}">${tabCobro}</div>
-    <div id="uTab-inmueble" class="u-tab-content ${currentActiveTab==='inmueble' ? 'active' : ''}">${tabInmueble}</div>
+    <div id="uTab-cobro"       class="u-tab-content ${currentActiveTab==='cobro'       ? 'active' : ''}">${tabCobro}</div>
+    <div id="uTab-inmueble"    class="u-tab-content ${currentActiveTab==='inmueble'    ? 'active' : ''}">${tabInmueble}</div>
+    <div id="uTab-propietario" class="u-tab-content ${currentActiveTab==='propietario' ? 'active' : ''}">${tabPropietario}</div>
   `;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   GESTIÓN CONTENIDO PROPIETARIO — helper functions (Parte A)
+═══════════════════════════════════════════════════════════════════ */
+function _getOwnerProp(propId) {
+  const p = adminData.properties.find(x => x.id === propId);
+  if (!p) { if(typeof toast==='function') toast('Propiedad no encontrada','error'); return null; }
+  if (!Array.isArray(p.owner_notes))  p.owner_notes  = [];
+  if (!Array.isArray(p.improvements)) p.improvements = [];
+  if (!Array.isArray(p.quotes))       p.quotes       = [];
+  return p;
+}
+function _refreshOwnerTab(propId) {
+  const modal = document.getElementById('adminUnifiedModal');
+  if (!modal || !modal.dataset.propId) return;
+  const p = adminData.properties.find(x => x.id === propId);
+  if (!p) return;
+  modal.innerHTML = _buildUnifiedModalHTML(p, modal.dataset.monthName, modal.dataset.year, 'propietario');
+}
+function ownerAddNote(propId) {
+  const p = _getOwnerProp(propId); if (!p) return;
+  const ta = document.getElementById('newOwnerNoteText');
+  const txt = ta ? ta.value.trim() : '';
+  if (!txt) { if(typeof toast==='function') toast('Escribe un texto antes de agregar','error'); return; }
+  const today = new Date().toLocaleDateString('es-CO',{year:'numeric',month:'short',day:'numeric'});
+  p.owner_notes.push({ date: today, text: txt });
+  _refreshOwnerTab(propId);
+}
+function ownerRemoveNote(propId, idx) {
+  const p = _getOwnerProp(propId); if (!p) return;
+  p.owner_notes.splice(idx, 1);
+  _refreshOwnerTab(propId);
+}
+function ownerAddImprovement(propId) {
+  const p = _getOwnerProp(propId); if (!p) return;
+  const title = prompt('Título de la mejora:');
+  if (!title || !title.trim()) return;
+  const description = prompt('Descripción (opcional):') || '';
+  const price = prompt('Precio en pesos (opcional):') || '';
+  p.improvements.push({ title: title.trim(), description, price, status: 'sugerida', photo_before_url: '', photo_after_url: '' });
+  _refreshOwnerTab(propId);
+}
+function ownerRemoveImprovement(propId, idx) {
+  const p = _getOwnerProp(propId); if (!p) return;
+  if (!confirm('¿Eliminar esta mejora?')) return;
+  p.improvements.splice(idx, 1);
+  _refreshOwnerTab(propId);
+}
+function ownerChangeImprovStatus(propId, idx, newStatus) {
+  const p = _getOwnerProp(propId); if (!p) return;
+  if (p.improvements[idx]) p.improvements[idx].status = newStatus;
+}
+function ownerUploadImprovPhoto(propId, idx, side, input) {
+  const p = _getOwnerProp(propId); if (!p) return;
+  const file = input.files[0]; if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { if(typeof toast==='function') toast('Imagen demasiado grande (máx 5MB)','error'); return; }
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const base64 = e.target.result.split(',')[1];
+    const mimeType = file.type;
+    const btn = document.getElementById('btnSaveOwnerContent');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Subiendo foto...'; }
+    try {
+      const res = await fetch(ADMIN_SCRIPT_URL, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'uploadOwnerPhoto', propertyId:propId, base64, mimeType, filename:file.name })
+      });
+      const data = await res.json();
+      const url = data.fileUrl || e.target.result;
+      if (side==='before') p.improvements[idx].photo_before_url = url;
+      else                 p.improvements[idx].photo_after_url  = url;
+      if(typeof toast==='function') toast(data.fileUrl?'Foto subida ✓':'Foto local (guarda para persistir)','success');
+      _refreshOwnerTab(propId);
+    } catch(err) {
+      if (side==='before') p.improvements[idx].photo_before_url = e.target.result;
+      else                 p.improvements[idx].photo_after_url  = e.target.result;
+      if(typeof toast==='function') toast('Foto guardada localmente','info');
+      _refreshOwnerTab(propId);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar y Sincronizar'; }
+    }
+  };
+  reader.readAsDataURL(file);
+}
+function ownerAddQuote(propId) {
+  const p = _getOwnerProp(propId); if (!p) return;
+  const item  = (document.getElementById('newQuoteItem')  ||{}).value||'';
+  const desc  = (document.getElementById('newQuoteDesc')  ||{}).value||'';
+  const val   = (document.getElementById('newQuoteValue') ||{}).value||'0';
+  if (!item.trim()) { if(typeof toast==='function') toast('El campo Ítem es obligatorio','error'); return; }
+  p.quotes.push({ item: item.trim(), description: desc.trim(), value: parseFloat(val)||0 });
+  _refreshOwnerTab(propId);
+}
+function ownerRemoveQuote(propId, idx) {
+  const p = _getOwnerProp(propId); if (!p) return;
+  p.quotes.splice(idx, 1);
+  _refreshOwnerTab(propId);
+}
+async function saveOwnerContent(propId) {
+  const p = _getOwnerProp(propId); if (!p) return;
+  const btn = document.getElementById('btnSaveOwnerContent');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+  try {
+    const res = await fetch(ADMIN_SCRIPT_URL, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'saveOwnerContent', propertyId:propId,
+        owner_notes: p.owner_notes, improvements: p.improvements, quotes: p.quotes })
+    });
+    const data = await res.json();
+    if (data.success) {
+      if(typeof toast==='function') toast('✓ Contenido del propietario guardado','success');
+      localStorage.setItem('icde_admin_data', JSON.stringify(adminData));
+    } else {
+      if(typeof toast==='function') toast('Error: '+(data.error||'desconocido'),'error');
+    }
+  } catch(e) {
+    if(typeof toast==='function') toast('Error de red: '+e.message,'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar y Sincronizar'; }
+  }
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   TESTIMONIOS — Panel de Administración (Parte A)
+═══════════════════════════════════════════════════════════════════ */
+let _adminTestimonials = [];   // cache local
+
+async function renderAdminTestimonios(container) {
+  container.innerHTML = `<div style="text-align:center;padding:40px;"><div class="spinner" style="margin:0 auto 16px;"></div><p style="color:var(--muted);">Cargando testimonios...</p></div>`;
+  try {
+    const res = await fetch(ADMIN_SCRIPT_URL + '?action=getTestimonials&t=' + Date.now());
+    const data = await res.json();
+    _adminTestimonials = Array.isArray(data.testimonials) ? data.testimonials : [];
+  } catch(e) {
+    _adminTestimonials = [];
+  }
+  _renderTestimonialsUI(container);
+}
+
+function _renderTestimonialsUI(container) {
+  const listHTML = _adminTestimonials.length
+    ? _adminTestimonials.map((t, i) => `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;gap:14px;align-items:flex-start;position:relative;">
+        <div style="width:44px;height:44px;border-radius:50%;background:rgba(212,168,75,0.15);border:1px solid rgba(212,168,75,0.3);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--gold);flex-shrink:0;">
+          ${t.photo_url ? `<img src="${t.photo_url}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" />` : (t.display_name||'?').substring(0,2).toUpperCase()}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#fff;">${t.display_name||'Propietario'}</div>
+              ${t.property_context ? `<div style="font-size:11px;color:var(--muted);">${t.property_context}</div>` : ''}
+            </div>
+            <button onclick="deleteAdminTestimonial(${i})" style="background:none;border:none;color:rgba(239,68,68,0.5);cursor:pointer;font-size:13px;" title="Eliminar">&times;</button>
+          </div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:6px;border-left:2px solid rgba(239,68,68,0.4);padding-left:8px;"><strong style="color:#ef4444;">Problema:</strong> ${t.problem||''}</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.7);border-left:2px solid rgba(34,197,94,0.4);padding-left:8px;"><strong style="color:#22c55e;">Solución:</strong> ${t.solution||''}</div>
+        </div>
+      </div>`).join('')
+    : `<div style="text-align:center;padding:60px 20px;color:var(--muted);">
+        <div style="font-size:40px;margin-bottom:12px;">💬</div>
+        <p>No hay testimonios aún.</p>
+        <p style="font-size:12px;margin-top:4px;">Agrega el primero usando el formulario de abajo.</p>
+       </div>`;
+
+  container.innerHTML = `
+    <div style="max-width:780px;margin:0 auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <div style="font-size:16px;font-weight:800;color:var(--gold);">📋 Testimonios de Propietarios</div>
+        <span style="font-size:12px;color:var(--muted);">${_adminTestimonials.length} registro(s)</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;">${listHTML}</div>
+
+      <div style="background:var(--bg2);border:1px solid rgba(212,168,75,0.2);border-radius:16px;padding:22px;">
+        <div style="font-size:12px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">+ Agregar Testimonio</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <label class="u-inp-label">Nombre / Iniciales (privacidad)</label>
+            <input type="text" id="tsDisplayName" class="u-inp" placeholder="Ej: J.P.M o Juan P." />
+          </div>
+          <div>
+            <label class="u-inp-label">Contexto inmueble (genérico)</label>
+            <input type="text" id="tsContext" class="u-inp" placeholder="Ej: Apto norte de Neiva" />
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label class="u-inp-label">Foto / URL de imagen (opcional)</label>
+          <input type="text" id="tsPhotoUrl" class="u-inp" placeholder="https://... (dejar vacío para usar iniciales)" />
+        </div>
+        <div style="margin-bottom:12px;">
+          <label class="u-inp-label">Problema / Situación</label>
+          <textarea id="tsProblem" class="u-inp" rows="2" style="resize:vertical;" placeholder="Describe el problema o situación que tenía el propietario..."></textarea>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label class="u-inp-label">Solución / Resultado</label>
+          <textarea id="tsSolution" class="u-inp" rows="2" style="resize:vertical;" placeholder="Cómo lo resolvió ICDE y el resultado obtenido..."></textarea>
+        </div>
+        <button id="btnSaveTestimonial" onclick="saveAdminTestimonial()" class="btn btn-primary" style="width:100%;justify-content:center;font-weight:700;">
+          💾 Guardar Testimonio
+        </button>
+      </div>
+    </div>`;
+}
+
+async function saveAdminTestimonial() {
+  const display_name    = (document.getElementById('tsDisplayName') ||{}).value||'';
+  const property_context= (document.getElementById('tsContext')      ||{}).value||'';
+  const photo_url       = (document.getElementById('tsPhotoUrl')     ||{}).value||'';
+  const problem         = (document.getElementById('tsProblem')      ||{}).value||'';
+  const solution        = (document.getElementById('tsSolution')     ||{}).value||'';
+  if (!problem.trim() || !solution.trim()) {
+    if(typeof toast==='function') toast('Completa al menos el Problema y la Solución','error');
+    return;
+  }
+  const btn = document.getElementById('btnSaveTestimonial');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+  try {
+    const res = await fetch(ADMIN_SCRIPT_URL, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'saveTestimonial', display_name, property_context, photo_url, problem, solution })
+    });
+    const data = await res.json();
+    if (data.success) {
+      if(typeof toast==='function') toast('✓ Testimonio guardado','success');
+      _adminTestimonials.push({ display_name, property_context, photo_url, problem, solution });
+      const container = document.getElementById('adminTabContent');
+      if (container) _renderTestimonialsUI(container);
+    } else {
+      if(typeof toast==='function') toast('Error: '+(data.error||'desconocido'),'error');
+    }
+  } catch(e) {
+    if(typeof toast==='function') toast('Error de red: '+e.message,'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Testimonio'; }
+  }
+}
+
+async function deleteAdminTestimonial(idx) {
+  if (!confirm('¿Eliminar este testimonio?')) return;
+  const t = _adminTestimonials[idx];
+  if (!t) return;
+  try {
+    await fetch(ADMIN_SCRIPT_URL, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'deleteTestimonial', id: t.id })
+    });
+  } catch(e) {}
+  _adminTestimonials.splice(idx, 1);
+  const container = document.getElementById('adminTabContent');
+  if (container) _renderTestimonialsUI(container);
 }
 
 function openMatrixCellDetails(propId, monthName, year) {

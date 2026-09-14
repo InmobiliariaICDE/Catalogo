@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="theme-color" content="#d4a84b">
+  <title>Mis Inmuebles ICDE</title>
+  <link rel="manifest" href="/misinmuebles/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #d4a84b;
+      --gold-dark: #a47b2a;
+      --gold-light: #eac576;
+      --bg: #09090b;
+      --bg2: #18181b;
+      --bg3: #09090b;
+      --border: rgba(255, 255, 255, 0.08);
+      --glass-bg: rgba(24, 24, 27, 0.65);
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --green: #22c55e;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --orange: #f97316;
+      --purple: #a855f7;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+
+    /* Common */
+    .hidden { display: none !important; }
+    .btn {
+      display: inline-block;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      text-decoration: none;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(212, 168, 75, 0.3);
+    }
+    .btn-gold:hover {
+      box-shadow: 0 6px 20px rgba(212, 168, 75, 0.5);
+      transform: translateY(-2px);
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+    }
+    .btn-outline:hover {
+      background: rgba(212, 168, 75, 0.1);
+    }
+
+    /* Input */
+    .input-group {
+      margin-bottom: 1rem;
+      text-align: left;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--gold);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    
+    /* Login Section */
+    #section-login {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #09090b 0%, #18181b 100%);
+      padding: 20px;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      background: rgba(24, 24, 27, 0.9);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(212, 168, 75, 0.2);
+      border-radius: 20px;
+      padding: 40px 32px;
+      text-align: center;
+      animation: fadeIn 0.8s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .login-logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      background: var(--bg);
+      padding: 10px;
+      border: 1px solid var(--gold);
+      box-shadow: 0 0 20px rgba(212, 168, 75, 0.2);
+    }
+    .login-title {
+      color: var(--gold);
+      font-size: 1.8rem;
+      margin-bottom: 30px;
+      font-weight: 700;
+    }
+    #login-error {
+      color: var(--red);
+      font-size: 0.9rem;
+      margin-bottom: 15px;
+      min-height: 20px;
+    }
+
+    /* Home Section */
+    #section-home {
+      padding-bottom: 80px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .topbar-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+    .topbar-greeting {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--muted);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .page-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      padding: 24px 20px 16px;
+    }
+    
+    .properties-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      padding: 0 20px;
+    }
+    @media (min-width: 768px) {
+      .properties-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    .property-card {
+      background: var(--bg2);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .property-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+      border-color: rgba(212, 168, 75, 0.3);
+    }
+    .property-image {
+      height: 160px;
+      background-size: cover;
+      background-position: center;
+      background-color: var(--bg3);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+    }
+    .property-image::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      background: linear-gradient(to top, var(--bg2), transparent);
+    }
+    .property-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #fff;
+      z-index: 2;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+    .property-info {
+      padding: 16px;
+    }
+    .property-name {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .property-rent {
+      color: var(--green);
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    /* Property Detail Section */
+    #section-property {
+      padding-bottom: 100px;
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--gold);
+      background: transparent;
+      border: none;
+      font-size: 1rem;
+      padding: 16px 20px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .detail-header {
+      padding: 0 20px 20px;
+    }
+    .detail-title {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    /* Tabs */
+    .tabs-wrapper {
+      position: sticky;
+      top: 0;
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 10;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs-wrapper::-webkit-scrollbar { display: none; }
+    .tabs-list {
+      display: flex;
+      padding: 0 20px;
+      min-width: max-content;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 16px 12px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+    
+    .tab-content {
+      padding: 24px 20px;
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Historial Tab */
+    .year-selector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      scrollbar-width: none;
+    }
+    .year-selector::-webkit-scrollbar { display: none; }
+    .year-btn {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+    .year-btn.active {
+      background: rgba(212, 168, 75, 0.1);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .months-grid {
+      display: grid;
+      gap: 12px;
+    }
+    .month-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .month-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    .month-value {
+      font-weight: 700;
+      margin-top: 4px;
+      font-size: 0.95rem;
+    }
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Before/After Tab */
+    .improvement-card {
+      background: var(--bg2);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .improvement-info {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .improvement-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--gold);
+    }
+    .improvement-date {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .improvement-desc {
+      margin-top: 12px;
+      font-size: 0.95rem;
+    }
+    .improvement-photos {
+      display: flex;
+      flex-direction: column;
+    }
+    @media (min-width: 600px) {
+      .improvement-photos {
+        flex-direction: row;
+      }
+    }
+    .photo-container {
+      flex: 1;
+      position: relative;
+      min-height: 200px;
+    }
+    .photo-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .photo-label {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(0,0,0,0.7);
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* Store Tab */
+    .store-header {
+      margin-bottom: 20px;
+    }
+    .store-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 600px) {
+      .store-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    .product-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .product-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .product-desc {
+      color: var(--muted);
+      font-size: 0.9rem;
+      flex-grow: 1;
+      margin-bottom: 16px;
+    }
+    .product-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+    }
+    .product-price {
+      font-weight: 700;
+      color: var(--gold);
+      font-size: 1.1rem;
+    }
+    .add-btn {
+      background: rgba(212, 168, 75, 0.1);
+      color: var(--gold);
+      border: 1px solid var(--gold);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .add-btn:hover {
+      background: var(--gold);
+      color: #fff;
+    }
+
+    /* Testimonials Tab */
+    .testimonial-card {
+      background: var(--bg2);
+      border-left: 4px solid var(--gold);
+      border-radius: 0 16px 16px 0;
+      padding: 20px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .testimonial-quote-icon {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 2rem;
+      color: rgba(212, 168, 75, 0.2);
+    }
+    .testimonial-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .testimonial-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+    .testimonial-context {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .testimonial-problem {
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+    .testimonial-solution {
+      font-weight: 500;
+      color: var(--gold-light);
+    }
+
+    /* Floating Cart & Modal */
+    .floating-cart {
+      position: fixed;
+      bottom: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+      border-radius: 50px;
+      padding: 12px 24px;
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 8px 30px rgba(212, 168, 75, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 100;
+      white-space: nowrap;
+    }
+    .floating-cart.visible {
+      bottom: 20px;
+    }
+    .cart-bounce {
+      animation: bounce 0.5s;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50% { transform: translateX(-50%) scale(1.1); }
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-content {
+      background: var(--bg2);
+      width: 100%;
+      max-width: 500px;
+      border-radius: 24px 24px 0 0;
+      padding: 24px;
+      max-height: 85vh;
+      overflow-y: auto;
+      animation: slideUp 0.4s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px dashed var(--border);
+    }
+    .cart-item-name { font-weight: 500; }
+    .cart-item-price { color: var(--gold); }
+    .cart-remove {
+      color: var(--red);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      margin-left: 10px;
+    }
+    .cart-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--gold);
+      margin: 20px 0;
+    }
+    .checkout-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .btn-wa {
+      background: #25D366;
+      color: #fff;
+    }
+    .nequi-box {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px dashed var(--muted);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      margin-top: 10px;
+    }
+    .nequi-number {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--purple);
+      margin: 8px 0;
+    }
+    
+    .loading-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(9, 9, 11, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      display: none;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(212, 168, 75, 0.3);
+      border-radius: 50%;
+      border-top-color: var(--gold);
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-msg {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading Overlay -->
+  <div id="loading" class="loading-overlay">
+    <div class="spinner"></div>
+    <div style="color: var(--gold)">Cargando...</div>
+  </div>
+
+  <!-- SECTION: LOGIN -->
+  <section id="section-login">
+    <div class="login-card">
+      <div class="login-logo">
+        <img src="/android-chrome-192x192.png" alt="ICDE" style="width: 100%; height: 100%; object-fit: contain;">
+      </div>
+      <h1 class="login-title">Mis Inmuebles</h1>
+      
+      <div id="login-error"></div>
+      
+      <div class="input-group">
+        <input type="text" id="login-user" placeholder="Teléfono o cédula">
+      </div>
+      <div class="input-group">
+        <input type="password" id="login-pass" placeholder="Contraseña">
+      </div>
+      <button class="btn btn-gold" style="width: 100%; margin-top: 10px;" onclick="loginOwner()">Ingresar</button>
+    </div>
+  </section>
+
+  <!-- SECTION: HOME -->
+  <section id="section-home" class="hidden">
+    <div class="topbar">
+      <div class="topbar-left">
+        <img src="/android-chrome-192x192.png" class="topbar-logo" alt="ICDE">
+        <span class="topbar-greeting">Hola <span id="owner-name-display"></span></span>
+      </div>
+      <button class="logout-btn" onclick="logout()">Salir</button>
+    </div>
+    
+    <h2 class="page-title">Tus inmuebles</h2>
+    
+    <div class="properties-grid" id="properties-container">
+      <!-- Inyectado por JS -->
+    </div>
+
+    <div style="text-align: center; margin-top: 40px; padding: 0 20px;">
+      <button class="btn btn-outline" onclick="loadAndShowTestimonials()" style="width: 100%; max-width: 300px;">
+        ⭐ Ver testimonios de éxito
+      </button>
+    </div>
+  </section>
+
+  <!-- SECTION: PROPERTY DETAIL -->
+  <section id="section-property" class="hidden">
+    <button class="back-btn" onclick="showSection('home')">
+      ← Volver a Mis Inmuebles
+    </button>
+    
+    <div class="detail-header">
+      <h2 class="detail-title" id="detail-prop-name">Nombre Inmueble</h2>
+    </div>
+    
+    <div class="tabs-wrapper">
+      <div class="tabs-list">
+        <button class="tab-btn active" onclick="switchTab('historial')">📋 Historial</button>
+        <button class="tab-btn" onclick="switchTab('beforeafter')">🔨 Antes/Después</button>
+        <button class="tab-btn" onclick="switchTab('store')">🛒 Tienda</button>
+        <button class="tab-btn" onclick="switchTab('testimonials')">💬 Testimonios</button>
+      </div>
+    </div>
+    
+    <!-- Tab: Historial -->
+    <div id="tab-historial" class="tab-content active">
+      <div class="year-selector" id="year-selector-container">
+        <!-- JS -->
+      </div>
+      <div class="months-grid" id="months-container">
+        <!-- JS -->
+      </div>
+    </div>
+    
+    <!-- Tab: Antes / Después -->
+    <div id="tab-beforeafter" class="tab-content">
+      <div id="beforeafter-container"></div>
+    </div>
+    
+    <!-- Tab: Tienda -->
+    <div id="tab-store" class="tab-content">
+      <div class="store-header">
+        <h3>Arreglos y Mejoras para tu inmueble</h3>
+        <p style="color: var(--muted); font-size: 0.9rem; margin-top: 4px;">Cotizaciones y sugerencias de mantenimiento.</p>
+      </div>
+      <div class="store-grid" id="store-container"></div>
+    </div>
+
+    <!-- Tab: Testimonios -->
+    <div id="tab-testimonials" class="tab-content">
+      <div id="testimonials-container"></div>
+    </div>
+  </section>
+
+  <!-- Floating Cart -->
+  <div id="floating-cart" class="floating-cart" onclick="openCart()">
+    🛒 <span id="cart-count">0</span> ítems | <span id="cart-total-float">$0</span>
+  </div>
+
+  <!-- Cart Modal -->
+  <div class="modal-overlay" id="cart-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 1.4rem;">Confirmar pedido</h3>
+        <button class="modal-close" onclick="closeCart()">×</button>
+      </div>
+      <div id="cart-items-list"></div>
+      
+      <div class="cart-total">
+        <span>Total:</span>
+        <span id="cart-total-modal">$0</span>
+      </div>
+      
+      <div class="checkout-actions">
+        <button class="btn btn-wa" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="checkoutWhatsApp()">
+          <span style="font-size: 1.2rem;">📱</span> Coordinar por WhatsApp
+        </button>
+        
+        <div class="nequi-box">
+          <p style="font-size: 0.9rem; color: var(--muted);">O realiza el pago por Nequi a nombre de ICDE:</p>
+          <div class="nequi-number">320 876 2117</div>
+          <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem;" onclick="copyNequi()">Copiar Número</button>
+        </div>
+        <p style="text-align: center; font-size: 0.8rem; color: var(--muted); margin-top: 10px;">
+          El pago se coordina directamente con el equipo ICDE.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // CONFIG
+    const OWNER_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAUUSYRhDX6Eik4KA-B6luk74YjCNRanwv13CmmZg4La8NzVuNyBC0T5GH6f4-ke-Xig/exec';
+    const WA_NUMBER = '573208762117';
+    const NEQUI_NUMBER = '3208762117';
+    
+    // STATE
+    let currentOwner = null;
+    let ownerProperties = [];
+    let testimonials = [];
+    let currentPropertyId = null;
+    let cart = [];
+    let currentYear = new Date().getFullYear().toString();
+    const availableYears = ['2023', '2024', '2025', '2026', '2027'];
+    
+    // UTILS
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function formatCOP(n) {
+      return '$' + Math.round(Number(n) || 0).toLocaleString('es-CO');
+    }
+
+    function getStatusColor(status) {
+      const map = {
+        PAID: '#22c55e', PENDING: '#ef4444', AL_DIA: '#f97316',
+        VACANT: '#888', PREAVISO: '#a855f7', NEW_CONTRACT: '#3b82f6',
+        DELIVERY: '#f97316', FUTURE: '#555', UNSTARTED: '#444'
+      };
+      return map[status] || '#888';
+    }
+    
+    function getStatusLabel(status) {
+      const map = {
+        PAID: 'Pagado', PENDING: 'Pendiente', AL_DIA: 'Al Día',
+        VACANT: 'Desocupado', PREAVISO: 'Preaviso', NEW_CONTRACT: 'Nuevo Contrato',
+        DELIVERY: 'Entrega', FUTURE: 'Futuro', UNSTARTED: '-'
+      };
+      return map[status] || status;
+    }
+
+    function showLoading(show) {
+      document.getElementById('loading').style.display = show ? 'flex' : 'none';
+    }
+
+    function showSection(sectionId) {
+      document.getElementById('section-login').classList.add('hidden');
+      document.getElementById('section-home').classList.add('hidden');
+      document.getElementById('section-property').classList.add('hidden');
+      document.getElementById(`section-${sectionId}`).classList.remove('hidden');
+      window.scrollTo(0,0);
+    }
+
+    // INIT
+    window.onload = () => {
+      const saved = sessionStorage.getItem('icde_owner_session');
+      if (saved) {
+        currentOwner = JSON.parse(saved);
+        loadOwnerDataFromAPI();
+      }
+      
+      // Register SW
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/misinmuebles/sw.js').catch(console.warn);
+      }
+    };
+
+    // LOGIN
+    async function loginOwner() {
+      const user = document.getElementById('login-user').value.trim();
+      const pass = document.getElementById('login-pass').value.trim();
+      const errEl = document.getElementById('login-error');
+      
+      if (!user || !pass) {
+        errEl.innerText = 'Por favor ingresa usuario y contraseña.';
+        return;
+      }
+      
+      errEl.innerText = '';
+      showLoading(true);
+      
+      try {
+        const hash = await sha256(pass);
+        const url = `${OWNER_SCRIPT_URL}?action=ownerLogin&username=${encodeURIComponent(user)}&passwordHash=${encodeURIComponent(hash)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (data.status === 'success') {
+          currentOwner = {
+            owner_name: data.owner_name,
+            property_ids: data.property_ids,
+            token: data.token
+          };
+          sessionStorage.setItem('icde_owner_session', JSON.stringify(currentOwner));
+          await loadOwnerDataFromAPI();
+        } else {
+          errEl.innerText = 'Usuario o contraseña incorrectos.';
+        }
+      } catch (e) {
+        errEl.innerText = 'Error de conexión. Intenta de nuevo.';
+        console.error(e);
+      }
+      showLoading(false);
+    }
+
+    function logout() {
+      sessionStorage.removeItem('icde_owner_session');
+      currentOwner = null;
+      ownerProperties = [];
+      cart = [];
+      updateCartUI();
+      showSection('login');
+      document.getElementById('login-user').value = '';
+      document.getElementById('login-pass').value = '';
+    }
+
+    // LOAD DATA
+    async function loadOwnerDataFromAPI() {
+      showLoading(true);
+      try {
+        const ids = currentOwner.property_ids.join(',');
+        const res = await fetch(`${OWNER_SCRIPT_URL}?action=getOwnerData&property_ids=${ids}&t=${Date.now()}`);
+        const data = await res.json();
+        if (data.status === 'success') {
+          ownerProperties = data.properties || [];
+          document.getElementById('owner-name-display').innerText = currentOwner.owner_name.split(' ')[0];
+          renderProperties();
+          showSection('home');
+        } else {
+          logout();
+        }
+      } catch (e) {
+        console.error(e);
+        alert('Error cargando propiedades.');
+      }
+      showLoading(false);
+    }
+
+    // HOME: RENDER
+    function renderProperties() {
+      const container = document.getElementById('properties-container');
+      container.innerHTML = '';
+      
+      const currentMonthIndex = new Date().getMonth();
+      
+      if (ownerProperties.length === 0) {
+        container.innerHTML = '<div class="empty-msg">No se encontraron propiedades vinculadas.</div>';
+        return;
+      }
+
+      ownerProperties.forEach(prop => {
+        let currentStatus = 'VACANT';
+        if (prop.history && prop.history[new Date().getFullYear()]) {
+          const mData = prop.history[new Date().getFullYear()][currentMonthIndex];
+          if (mData && mData.status) currentStatus = mData.status;
+        }
+
+        // Find cover photo (from improvements if available)
+        let coverUrl = '';
+        if (prop.improvements && prop.improvements.length > 0) {
+          const finished = prop.improvements.find(i => i.foto_after_url);
+          if (finished) coverUrl = finished.foto_after_url;
+        }
+
+        const div = document.createElement('div');
+        div.className = 'property-card';
+        div.onclick = () => openProperty(prop.id);
+        
+        let bgStyle = coverUrl ? `background-image: url('${coverUrl}')` : '';
+        let iconHtml = coverUrl ? '' : '🏠';
+
+        div.innerHTML = `
+          <div class="property-image" style="${bgStyle}">
+            ${iconHtml}
+            <div class="property-badge" style="background: ${getStatusColor(currentStatus)}">
+              ${getStatusLabel(currentStatus)}
+            </div>
+          </div>
+          <div class="property-info">
+            <div class="property-name">${prop.name}</div>
+            <div class="property-rent">${formatCOP(prop.canon || 0)} <span style="font-size:0.8rem; color:var(--muted); font-weight:400;">/mes</span></div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // PROPERTY DETAIL
+    function openProperty(propId) {
+      currentPropertyId = propId;
+      const prop = ownerProperties.find(p => p.id === propId);
+      if (!prop) return;
+      
+      document.getElementById('detail-prop-name').innerText = prop.name;
+      
+      renderHistorial(prop);
+      renderBeforeAfter(prop);
+      renderStore(prop);
+      
+      // Default tab
+      switchTab('historial');
+      showSection('property');
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      event.currentTarget.classList.add('active');
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+      
+      if (tabId === 'testimonials' && testimonials.length === 0) {
+        loadAndShowTestimonials();
+      }
+    }
+
+    // TAB: HISTORIAL
+    function renderHistorial(prop) {
+      const yc = document.getElementById('year-selector-container');
+      yc.innerHTML = '';
+      availableYears.forEach(y => {
+        const b = document.createElement('button');
+        b.className = `year-btn ${y === currentYear ? 'active' : ''}`;
+        b.innerText = y;
+        b.onclick = () => {
+          currentYear = y;
+          renderHistorial(prop);
+        };
+        yc.appendChild(b);
+      });
+
+      const mc = document.getElementById('months-container');
+      mc.innerHTML = '';
+      const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      
+      const yearData = prop.history ? prop.history[currentYear] : null;
+      
+      monthNames.forEach((m, idx) => {
+        const mData = yearData && yearData[idx] ? yearData[idx] : { status: 'UNSTARTED', paidValue: 0 };
+        const status = mData.status || 'UNSTARTED';
+        const color = getStatusColor(status);
+        
+        let valueHtml = '';
+        if (status === 'PAID') {
+          valueHtml = `<div class="month-value" style="color: ${color}">${formatCOP(mData.paidValue)}</div>`;
+        }
+
+        const div = document.createElement('div');
+        div.className = 'month-card';
+        div.innerHTML = `
+          <div>
+            <div class="month-name">${m} ${currentYear}</div>
+            ${valueHtml}
+          </div>
+          <div class="status-badge" style="background: ${color}">${getStatusLabel(status)}</div>
+        `;
+        mc.appendChild(div);
+      });
+    }
+
+    // TAB: ANTES / DESPUÉS
+    function renderBeforeAfter(prop) {
+      const c = document.getElementById('beforeafter-container');
+      c.innerHTML = '';
+      
+      const items = (prop.improvements || []).filter(i => i.status === 'en_proceso' || i.status === 'terminada');
+      
+      if (items.length === 0) {
+        c.innerHTML = '<div class="empty-msg">No hay registros de mejoras para este inmueble aún.</div>';
+        return;
+      }
+
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'improvement-card';
+        
+        let photosHtml = '';
+        if (item.foto_before_url && item.foto_after_url) {
+          photosHtml = `
+            <div class="photo-container"><img src="${item.foto_before_url}" loading="lazy"><span class="photo-label">Antes</span></div>
+            <div class="photo-container"><img src="${item.foto_after_url}" loading="lazy"><span class="photo-label">Después</span></div>
+          `;
+        } else if (item.foto_after_url) {
+          photosHtml = `<div class="photo-container"><img src="${item.foto_after_url}" loading="lazy"><span class="photo-label">Actual</span></div>`;
+        } else if (item.foto_before_url) {
+          photosHtml = `<div class="photo-container"><img src="${item.foto_before_url}" loading="lazy"><span class="photo-label">Antes</span></div>`;
+        }
+
+        div.innerHTML = `
+          <div class="improvement-info">
+            <div class="improvement-title">${item.title}</div>
+            <div class="improvement-date">${item.date || ''} - ${item.status === 'terminada' ? '✅ Terminada' : '⏳ En proceso'}</div>
+            <div class="improvement-desc">${item.description || ''}</div>
+          </div>
+          <div class="improvement-photos">
+            ${photosHtml}
+          </div>
+        `;
+        c.appendChild(div);
+      });
+    }
+
+    // TAB: TIENDA
+    function renderStore(prop) {
+      const c = document.getElementById('store-container');
+      c.innerHTML = '';
+      
+      let products = [];
+      
+      // Quotes
+      if (prop.quotes) {
+        prop.quotes.forEach(q => {
+          if (q.status !== 'rechazada' && q.status !== 'aprobada') {
+            products.push({ id: 'Q_'+q.id, type: 'Cotización', title: q.concept, price: q.total, desc: 'Cotización pendiente de aprobación.' });
+          }
+        });
+      }
+      // Suggestions (Improvements with status sugerida)
+      if (prop.improvements) {
+        prop.improvements.forEach(i => {
+          if (i.status === 'sugerida') {
+            products.push({ id: 'I_'+i.id, type: 'Sugerencia', title: i.title, price: i.estimated_cost, desc: i.description });
+          }
+        });
+      }
+
+      if (products.length === 0) {
+        c.innerHTML = '<div class="empty-msg" style="grid-column: 1/-1">No hay sugerencias o cotizaciones pendientes en este momento.</div>';
+        return;
+      }
+
+      products.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'product-card';
+        div.innerHTML = `
+          <div style="font-size: 0.8rem; color: var(--gold); margin-bottom: 4px;">${p.type}</div>
+          <div class="product-title">${p.title}</div>
+          <div class="product-desc">${p.desc || ''}</div>
+          <div class="product-bottom">
+            <div class="product-price">${formatCOP(p.price)}</div>
+            <button class="add-btn" onclick="addToCart('${p.id}', '${p.title}', ${p.price || 0})">+ Agregar</button>
+          </div>
+        `;
+        c.appendChild(div);
+      });
+    }
+
+    // CART LOGIC
+    function addToCart(id, name, price) {
+      cart.push({ id, name, price });
+      updateCartUI();
+      
+      const fc = document.getElementById('floating-cart');
+      fc.classList.remove('cart-bounce');
+      void fc.offsetWidth; // trigger reflow
+      fc.classList.add('cart-bounce');
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      updateCartUI();
+      renderCartItems();
+    }
+
+    function updateCartUI() {
+      const fc = document.getElementById('floating-cart');
+      if (cart.length > 0) {
+        fc.classList.add('visible');
+        document.getElementById('cart-count').innerText = cart.length;
+        const total = cart.reduce((sum, item) => sum + item.price, 0);
+        document.getElementById('cart-total-float').innerText = formatCOP(total);
+      } else {
+        fc.classList.remove('visible');
+        closeCart();
+      }
+    }
+
+    function openCart() {
+      document.getElementById('cart-modal').classList.add('active');
+      renderCartItems();
+    }
+
+    function closeCart() {
+      document.getElementById('cart-modal').classList.remove('active');
+    }
+
+    function renderCartItems() {
+      const list = document.getElementById('cart-items-list');
+      list.innerHTML = '';
+      let total = 0;
+      
+      cart.forEach((item, idx) => {
+        total += item.price;
+        const div = document.createElement('div');
+        div.className = 'cart-item';
+        div.innerHTML = `
+          <div>
+            <div class="cart-item-name">${item.name}</div>
+            <div class="cart-item-price">${formatCOP(item.price)}</div>
+          </div>
+          <button class="cart-remove" onclick="removeFromCart(${idx})">🗑️</button>
+        `;
+        list.appendChild(div);
+      });
+      
+      document.getElementById('cart-total-modal').innerText = formatCOP(total);
+    }
+
+    function checkoutWhatsApp() {
+      if (cart.length === 0) return;
+      const prop = ownerProperties.find(p => p.id === currentPropertyId);
+      const propName = prop ? prop.name : '';
+      
+      let msg = `Hola ICDE, soy ${currentOwner.owner_name}.\nQuiero aprobar las siguientes intervenciones para el inmueble *${propName}*:\n\n`;
+      let total = 0;
+      cart.forEach(item => {
+        msg += `- ${item.name} (${formatCOP(item.price)})\n`;
+        total += item.price;
+      });
+      msg += `\n*Total a coordinar: ${formatCOP(total)}*\nQuedo atento para el pago y agendamiento.`;
+      
+      const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
+      
+      cart = [];
+      updateCartUI();
+      closeCart();
+    }
+
+    function copyNequi() {
+      navigator.clipboard.writeText(NEQUI_NUMBER).then(() => {
+        alert('Número Nequi copiado: ' + NEQUI_NUMBER);
+      });
+    }
+
+    // TESTIMONIALS
+    async function loadAndShowTestimonials() {
+      // If we are in home, jump to a fake property section or handle differently.
+      // We will show it by switching to the tab if in property, or navigate to property if in home (mocked).
+      
+      const c = document.getElementById('testimonials-container');
+      
+      if (testimonials.length === 0) {
+        showLoading(true);
+        try {
+          const res = await fetch(`${OWNER_SCRIPT_URL}?action=getTestimonials&t=${Date.now()}`);
+          const data = await res.json();
+          if (data.status === 'success') {
+            testimonials = data.data || [];
+          }
+        } catch(e) { console.error(e); }
+        showLoading(false);
+      }
+
+      c.innerHTML = '';
+      if (testimonials.length === 0) {
+        c.innerHTML = '<div class="empty-msg">No hay testimonios disponibles por el momento.</div>';
+      } else {
+        testimonials.forEach(t => {
+          const div = document.createElement('div');
+          div.className = 'testimonial-card';
+          
+          const initial = t.owner_name ? t.owner_name.charAt(0).toUpperCase() : '👤';
+          
+          div.innerHTML = `
+            <div class="testimonial-quote-icon">"</div>
+            <div class="testimonial-header">
+              <div class="testimonial-avatar">${initial}</div>
+              <div>
+                <div style="font-weight: 600;">${t.owner_name}</div>
+                <div class="testimonial-context">${t.property_context || 'Propietario ICDE'}</div>
+              </div>
+            </div>
+            <div class="testimonial-problem"><strong>Situación:</strong> ${t.problem}</div>
+            <div class="testimonial-solution"><strong>Solución ICDE:</strong> ${t.solution}</div>
+          `;
+          c.appendChild(div);
+        });
+      }
+
+      // If called from home, switch UI context (we hide back button or change logic, but for simplicity we reuse section property)
+      if (document.getElementById('section-home').classList.contains('hidden') === false) {
+        document.getElementById('detail-prop-name').innerText = 'Casos de Éxito';
+        document.getElementById('tab-historial').classList.remove('active');
+        document.getElementById('tab-beforeafter').classList.remove('active');
+        document.getElementById('tab-store').classList.remove('active');
+        document.getElementById('tab-testimonials').classList.add('active');
+        
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          if (b.innerText.includes('Testimonios')) b.classList.add('active');
+          else b.classList.remove('active');
+        });
+
+        showSection('property');
+      }
+    }
+
+  </script>
+</body>
+</html>
