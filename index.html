@@ -9661,7 +9661,17 @@ document.head.appendChild(schemaScript);
                         // Si navegamos a /propiedad/slug, abrir ese modal
                         const match = path.match(/^\/propiedad\/(.+)/);
                         if (match && datos.length) {
-                            const encontrada = datos.find(d => generarSlugPropiedad(d) === match[1]);
+                            let targetSlug = match[1];
+                            if (targetSlug.endsWith('.html')) targetSlug = targetSlug.slice(0, -5);
+                            let encontrada = datos.find(d => generarSlugPropiedad(d) === targetSlug);
+                            if (!encontrada) {
+                                const codeMatch = targetSlug.match(/-?([a-zA-Z0-9]+)$/);
+                                const extractedCode = codeMatch ? codeMatch[1] : targetSlug;
+                                encontrada = datos.find(d => 
+                                    String(d["Código"]).trim().toLowerCase() === String(extractedCode).trim().toLowerCase() ||
+                                    String(d["Código"]).trim().toLowerCase() === String(targetSlug).trim().toLowerCase()
+                                );
+                            }
                             if (encontrada) {
                                 abrirModal(encontrada["Código"]);
                                 return;
@@ -9936,24 +9946,53 @@ document.head.appendChild(schemaScript);
                     // SEO: slug único por propiedad + apertura por URL
                     // ─────────────────────────────────────────────────
                     function generarSlugPropiedad(inmueble) {
-                        const nombre = (inmueble["Nombre"] || '').toLowerCase()
+                        if (!inmueble) return '';
+                        const rawNombre = inmueble["Nombre"] || inmueble["TITULO"] || inmueble["Título"] || '';
+                        const nombre = rawNombre.toLowerCase()
                             .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                            .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').substring(0, 60);
+                            .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-+|-+$/g, '').substring(0, 60);
                         const codigo = String(inmueble["Código"] || '').toLowerCase().replace(/[^a-z0-9]/g, '');
                         return nombre ? nombre + '-' + codigo : 'propiedad-' + codigo;
                     }
 
-                    // Si el usuario llega directamente a /propiedad/slug (desde Google o un link compartido)
+                    // Si el usuario llega directamente a /propiedad/slug o por parámetros URL (desde Google o un link compartido)
                     function abrirDesdeURL() {
                         const path = window.location.pathname;
+                        const searchParams = new URLSearchParams(window.location.search);
+                        const hash = window.location.hash;
+
+                        let targetSlug = null;
+
                         const match = path.match(/^\/propiedad\/(.+)/);
-                        if (!match) return;
-                        let slugURL = match[1];
-                        if (slugURL.endsWith('.html')) {
-                            slugURL = slugURL.slice(0, -5);
+                        if (match) {
+                            targetSlug = match[1];
+                            if (targetSlug.endsWith('.html')) {
+                                targetSlug = targetSlug.slice(0, -5);
+                            }
+                        } else {
+                            const paramCod = searchParams.get('propiedad') || searchParams.get('codigo') || searchParams.get('c') || searchParams.get('id');
+                            if (paramCod) {
+                                targetSlug = paramCod;
+                            } else if (hash.startsWith('#prop-') || hash.startsWith('#propiedad-')) {
+                                targetSlug = hash.replace(/^#(prop|propiedad)-/, '');
+                            }
                         }
-                        // Buscar la propiedad cuyo slug coincida
-                        const encontrada = datos.find(d => generarSlugPropiedad(d) === slugURL);
+
+                        if (!targetSlug || !Array.isArray(datos) || !datos.length) return;
+
+                        // 1) Coincidencia directa por slug
+                        let encontrada = datos.find(d => generarSlugPropiedad(d) === targetSlug);
+
+                        // 2) Fallback: coincidencia por código extraído del final del slug o directo
+                        if (!encontrada) {
+                            const codeMatch = targetSlug.match(/-?([a-zA-Z0-9]+)$/);
+                            const extractedCode = codeMatch ? codeMatch[1] : targetSlug;
+                            encontrada = datos.find(d => 
+                                String(d["Código"]).trim().toLowerCase() === String(extractedCode).trim().toLowerCase() ||
+                                String(d["Código"]).trim().toLowerCase() === String(targetSlug).trim().toLowerCase()
+                            );
+                        }
+
                         if (encontrada) {
                             abrirModal(encontrada["Código"]);
                         }

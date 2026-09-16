@@ -16173,20 +16173,46 @@ document.addEventListener('keydown', e => {
 });
 
 function generarSlugPropiedad(inmueble) {
-  const nombre = (inmueble["Nombre"] || '').toLowerCase()
+  if (!inmueble) return '';
+  const rawNombre = inmueble["Nombre"] || inmueble["TITULO"] || inmueble["Título"] || '';
+  const nombre = rawNombre.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').substring(0, 60);
+    .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-+|-+$/g, '').substring(0, 60);
   const codigo = String(inmueble["Código"] || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   return nombre ? nombre + '-' + codigo : 'propiedad-' + codigo;
 }
 
 function compartirPropiedad(codigo, btn){
-  const p = allProps.find(x=>x['Código']===codigo);
+  const p = typeof codigo === 'object' ? codigo : (allProps.find(x=>x['Código']===codigo) || (window.allProps ? window.allProps.find(x=>x['Código']===codigo) : null));
   if(!p) return;
-  const url = 'https://icdeinmobiliaria.com/propiedad/' + generarSlugPropiedad(p) + '.html';
   
+  const baseUrl = (window.location.origin && !window.location.origin.includes('file:')) 
+    ? window.location.origin 
+    : 'https://icdeinmobiliaria.com';
+  const url = baseUrl + '/propiedad/' + generarSlugPropiedad(p) + '.html';
+  const title = p['Nombre'] || 'Propiedad ICDE';
+  const text = `${p['Nombre'] || 'Propiedad'} - Cód. ${p['Código']}`;
+
+  if (navigator.share) {
+    navigator.share({
+      title: title,
+      text: text,
+      url: url
+    }).then(() => {
+      if (typeof toast === 'function') toast('Compartido con éxito ✓');
+    }).catch(err => {
+      if (err.name !== 'AbortError') {
+        copiarEnlaceAccion(url, btn);
+      }
+    });
+  } else {
+    copiarEnlaceAccion(url, btn);
+  }
+}
+
+function copiarEnlaceAccion(url, btn) {
   navigator.clipboard.writeText(url).then(() => {
-    toast('Enlace copiado ✓');
+    if (typeof toast === 'function') toast('Enlace copiado ✓');
     if(btn){
       const original = btn.innerHTML;
       btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Enlace copiado';
@@ -16196,8 +16222,17 @@ function compartirPropiedad(codigo, btn){
         btn.style.color = '';
       }, 2000);
     }
+  }).catch(() => {
+    const input = document.createElement('input');
+    input.value = url;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+    if (typeof toast === 'function') toast('Enlace copiado ✓');
   });
 }
+
 
 let mpCarruselFotos = [];
 let mpCarruselIdx = 0;
