@@ -612,20 +612,15 @@ body{{
 
 .carrusel-counter{{
   position: absolute;
-  top: 12px;
-  left: 12px;
-  bottom: auto;
-  right: auto;
-  background: rgba(0,0,0,0.6);
-  padding: 3px 10px;
-  border-radius: 12px;
-  color: #fff;
-  font-size: 11px;
+  top: 15px;
+  left: 15px;
+  background: rgba(7, 6, 5, 0.8);
+  border: 1px solid var(--border);
+  color: var(--gold);
+  font-size: 12.5px;
   font-weight: 600;
-  z-index: 10;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.18);
+  padding: 4px 12px;
+  border-radius: 20px;
 }}
 
 .galeria-nav{{
@@ -671,34 +666,21 @@ body{{
 }}
 
 .miniaturas-wrap{{
-  padding: 0px 0px !important;
-  margin: 0px !important;
-  overflow-x: auto !important;
-  background: transparent;
-  width: 100%;
-  scrollbar-width: none;
-}}
-
-.miniaturas-wrap::-webkit-scrollbar{{
-  display: none;
+  padding: 10px;
+  overflow-x: auto;
+  background: rgba(0,0,0,0.2);
 }}
 
 .miniaturas{{
-  display: flex !important;
-  flex-wrap: nowrap !important;
-  gap: 4px !important;
-  padding: 0px 0px !important;
-  margin: 0px !important;
-  width: max-content !important;
-  min-width: 100% !important;
+  display: flex;
+  gap: 8px;
 }}
 
 .miniatura{{
-  flex: 0 0 calc(25% - 3px) !important;
-  width: calc(25% - 3px) !important;
-  height: 55px;
+  width: 60px;
+  height: 45px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   opacity: 0.5;
   transition: all 0.3s;
@@ -1144,13 +1126,6 @@ function irImg(i) {{
   minis.forEach(function(m,j){{ m.classList.toggle('activa', j===imgIndex); }});
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
-  var activa = minis[imgIndex];
-  if (activa) {{
-    var wrap = activa.closest('.miniaturas-wrap');
-    if (wrap) {{
-      wrap.scrollTo({{ left: activa.offsetLeft - (wrap.offsetWidth/2) + (activa.offsetWidth/2), behavior:'smooth' }});
-    }}
-  }}
 }}
 
 function cambiarImg(dir) {{ irImg(imgIndex + dir); }}
