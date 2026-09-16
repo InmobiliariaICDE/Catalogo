@@ -217,15 +217,16 @@ html.is-logged-in #app { display: flex !important; flex-direction: column !impor
 .modal-tabla-caracteristicas td:first-child { color:rgba(192,192,192,0.5); width:45%; font-size:13px; }
 .modal-tabla-caracteristicas td:last-child { color:#ffffff; font-weight:500; font-size:13px; }
 .modal-texto { color:rgba(192,192,192,0.65); font-size:13px; line-height:1.5; margin-bottom:2px; }
-.modal-prop-info{display:flex;flex-direction:column;gap:4px;padding:16px 20px;}
-.modal-prop-title{font-size:18px;font-weight:700;color:#fff;line-height:1.3;margin:0 0 4px 0;}
-.modal-prop-type{font-size:13px;color:#C0C0C0;font-weight:600;margin:0;}
-.modal-prop-code{font-size:13px;color:#C0C0C0;margin:0 0 6px 0;}
-.modal-prop-price{font-size:22px;font-weight:800;color:#22c55e;margin:8px 0 2px 0;text-shadow:0 0 20px rgba(34,197,94,0.15);}
-.modal-prop-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;margin-bottom:12px;}
-.modal-prop-tag{display:inline-flex;align-items:center;gap:5px;background:rgb(151 151 151 / 8%);border:1px solid rgb(145 145 145 / 20%);color:rgba(255,255,255,0.85);font-size:12px;font-weight:500;padding:4px 10px;border-radius:20px;white-space:nowrap;font-family:"Outfit",-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.25;}
-.modal-prop-tag img{width:13px;height:13px;object-fit:contain;margin:0;border-radius:0;flex-shrink:0;filter:brightness(0) invert(0.9);}
-.modal-prop-tag strong{color:#fff;font-weight:700;}
+.modal-prop-info{display:flex;flex-direction:column;gap:2px;padding:16px 20px;}
+.modal-prop-title{font-size:20px;font-weight:700;color:#fff;line-height:1.3;margin:0 0 4px 0;font-family:'Outfit',sans-serif;}
+.modal-prop-type{font-size:13.5px;color:var(--gold);font-weight:600;margin:0 0 2px 0;}
+.modal-prop-code{font-size:13px;color:#aaa;margin:0 0 8px 0;}
+.modal-prop-code strong{color:#fff;font-weight:700;}
+.modal-prop-price{font-size:26px;font-weight:800;color:#22c55e;margin:8px 0 10px 0;text-shadow:0 0 20px rgba(34,197,94,0.15);font-family:'Outfit',sans-serif;}
+.modal-prop-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;margin-bottom:14px;}
+.modal-prop-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.9);font-size:12.5px;font-weight:500;padding:5px 12px;border-radius:20px;white-space:nowrap;font-family:"Outfit",-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.3;}
+.modal-prop-tag img{width:14px;height:14px;object-fit:contain;margin:0;border-radius:0;flex-shrink:0;filter:brightness(0) invert(0.95);}
+.modal-prop-tag strong{color:#fff;font-weight:600;}
 .modal-prop-footer{padding:12px 20px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:12px;background:#09090b;z-index:10;flex-shrink:0;}
 .modal-btn-whatsapp-nuevo { display:inline-flex; align-items:center; gap:9px; background:#d4a84b; color:#fff; font-size:13px; font-weight:700; padding:11px 22px; border-radius:50px; text-decoration:none; border:none; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 18px rgba(212,168,75,0.25); flex:none; }
 .modal-btn-whatsapp-nuevo:hover { background:#c49940; transform:translateY(-1px); }
@@ -16250,7 +16251,7 @@ function abrirModalProp(codigoOrProp){
   
   document.getElementById('mpTitle').textContent = p['Nombre'];
   document.getElementById('mpType').textContent = p['Tipo de inmueble'] || 'Inmueble';
-  document.getElementById('mpCode').textContent = `Código: ${p['Código']}`;
+  document.getElementById('mpCode').innerHTML = `Código: <strong>${p['Código']}</strong>`;
   document.getElementById('mpPrice').textContent = formatFullPrice(p['Precio']);
   document.getElementById('mpDesc').textContent = p['Descripción'] || 'Sin descripción';
   document.getElementById('mpKeyPoints').textContent = p['Puntos Clave'] || 'No especificados';
@@ -16263,13 +16264,19 @@ function abrirModalProp(codigoOrProp){
   
   const tags = document.getElementById('mpTags');
   tags.innerHTML = '';
-  if(p['Habitaciones']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/ykKdGwE.png" width="13"/> Habitaciones <strong>${p['Habitaciones']}</strong></div>`;
-  if(p['Baños']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/h9NqA32.png" width="13"/> Baños <strong>${p['Baños']}</strong></div>`;
-  if(p['Garaje'] && p['Garaje']!=='No') tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/4Yixa77.png" width="13"/> Garaje <strong>${p['Garaje']}</strong></div>`;
-  if(p['Cocina'] && p['Cocina']!=='No') tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/rH6cXMa.png" width="13"/> Cocina <strong>${p['Cocina']}</strong></div>`;
-  if(p['Pisos']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://img.icons8.com/ios-filled/50/ffffff/stairs.png" width="13"/> Pisos <strong>${p['Pisos']}</strong></div>`;
+  if(p['Habitaciones']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/ykKdGwE.png" width="14" height="14"/> Habitaciones ${p['Habitaciones']}</div>`;
+  if(p['Baños']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/h9NqA32.png" width="14" height="14"/> Baños ${p['Baños']}</div>`;
+  if(p['Garaje'] && String(p['Garaje']).toLowerCase() !== 'no') tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/4Yixa77.png" width="14" height="14"/> Garaje ${p['Garaje']}</div>`;
+  if(p['Cocina'] && String(p['Cocina']).toLowerCase() !== 'no') {
+    const cocVal = String(p['Cocina']).toLowerCase().includes('cocina') ? p['Cocina'] : `Cocina ${p['Cocina']}`;
+    tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/rH6cXMa.png" width="14" height="14"/> ${cocVal}</div>`;
+  }
+  if(p['Pisos']) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://img.icons8.com/ios-filled/50/ffffff/stairs.png" width="14" height="14"/> Pisos ${p['Pisos']}</div>`;
   const areaLote = p['Área lote'] || p['Área Lote'] || p['Area lote'];
-  if(areaLote) tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/rz72lGC.png" width="13"/> Lote <strong>${areaLote}${String(areaLote).toLowerCase().includes('m²') ? '' : ' m²'}</strong></div>`;
+  if(areaLote && String(areaLote).trim() !== '' && String(areaLote).trim() !== '-') {
+    const loteStr = String(areaLote).toLowerCase().includes('m²') ? areaLote : `${areaLote} m²`;
+    tags.innerHTML += `<div class="modal-prop-tag"><img src="https://i.imgur.com/rz72lGC.png" width="14" height="14"/> Lote ${loteStr}</div>`;
+  }
   
   const specsTable = document.getElementById('mpSpecsTable');
   const items = [
