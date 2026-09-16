@@ -362,10 +362,10 @@ def build_html(p: dict, slug: str) -> str:
             nav = '<button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>'
             expand = '<button class="galeria-expand" onclick="abrirLightbox(imgIndex)" title="Expandir">&#x26F6;</button>'
             miniaturas = "".join(
-                f'<img src="{esc(u)}" alt="{alt_img} foto {i+1}" class="miniatura{" activa" if i==0 else ""}" onclick="irImg({i})" loading="lazy"/>'
+                f'<img src="{esc(u)}" alt="{alt_img} foto {i+1}" class="miniatura carrusel-min{" activa" if i==0 else ""}" onclick="irImg({i})" loading="lazy"/>'
                 for i, u in enumerate(imagenes)
             )
-            miniaturas_html = f'<div class="miniaturas-wrap"><div class="miniaturas">{miniaturas}</div></div>'
+            miniaturas_html = f'<div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas">{miniaturas}</div></div>'
             galeria_html = f'{contador}{nav}{expand}{galeria_html}'
         else:
             galeria_html = f'<button class="galeria-expand" onclick="abrirLightbox(0)" title="Expandir">&#x26F6;</button>{galeria_html}'
@@ -665,31 +665,40 @@ body{{
   justify-content: center;
 }}
 
-.miniaturas-wrap{{
-  padding: 10px;
-  overflow-x: auto;
-  background: rgba(0,0,0,0.2);
+.miniaturas-wrap, .carrusel-miniaturas-wrap{{
+  padding: 0px !important;
+  margin: 0px !important;
+  overflow-x: auto !important;
+  background: transparent;
+  width: 100%;
+  scrollbar-width: none;
 }}
-
-.miniaturas{{
-  display: flex;
-  gap: 8px;
+.miniaturas-wrap::-webkit-scrollbar, .carrusel-miniaturas-wrap::-webkit-scrollbar{{
+  display: none;
 }}
-
-.miniatura{{
-  width: 60px;
-  height: 45px;
-  object-fit: cover;
-  border-radius: 4px;
+.miniaturas, .carrusel-miniaturas{{
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 2px !important;
+  margin-top: 2px !important;
+  padding: 0px !important;
+  width: 100% !important;
+}}
+.miniatura, .carrusel-min{{
+  flex: 0 0 calc(25% - 2px) !important;
+  width: calc(25% - 2px) !important;
+  height: 52px !important;
+  object-fit: cover !important;
+  border-radius: 0px !important;
   cursor: pointer;
-  opacity: 0.5;
-  transition: all 0.3s;
-  border: 2px solid transparent;
+  opacity: 0.4;
+  transition: opacity 0.3s, border-color 0.3s;
+  border: 2px solid transparent !important;
+  box-sizing: border-box !important;
 }}
-
-.miniatura.activa, .miniatura:hover{{
+.miniatura.activa, .miniatura:hover, .carrusel-min.activa, .carrusel-min:hover{{
   opacity: 1;
-  border-color: var(--gold);
+  border-color: var(--gold) !important;
 }}
 
 /* ── BLOQUE INFO ── */
