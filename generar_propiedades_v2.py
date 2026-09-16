@@ -612,13 +612,12 @@ body{{
 
 .carrusel-counter{{
   position: absolute;
-  top: 12px;
-  left: 12px;
-  background: #070605CC;
+  top: 15px;
+  left: 15px;
+  background: rgba(7, 6, 5, 0.8);
   border: 1px solid var(--border);
-  color: #D4A84B;
+  color: var(--gold);
   font-size: 12.5px;
-  font-family: 'Outfit', sans-serif;
   font-weight: 600;
   padding: 4px 12px;
   border-radius: 20px;
@@ -667,7 +666,7 @@ body{{
 }}
 
 .miniaturas-wrap{{
-  padding: 0px !important;
+  padding: 0px 0px !important;
   margin: 0px !important;
   overflow-x: auto;
   background: transparent;
@@ -681,26 +680,27 @@ body{{
 
 .miniaturas{{
   display: flex;
-  gap: 0px !important;
-  padding: 0px !important;
+  gap: 4px;
+  padding: 0px 0px !important;
   margin: 0px !important;
   width: 100%;
 }}
 
 .miniatura{{
-  flex: 0 0 25%;
-  width: 25%;
+  flex: 0 0 calc(25% - 3px);
+  width: calc(25% - 3px);
   height: 55px;
   object-fit: cover;
-  border-radius: 0px;
+  border-radius: 6px;
   cursor: pointer;
   opacity: 0.5;
   transition: all 0.3s;
-  border: none;
+  border: 2px solid transparent;
 }}
 
 .miniatura.activa, .miniatura:hover{{
   opacity: 1;
+  border-color: var(--gold);
 }}
 
 /* ── BLOQUE INFO ── */
