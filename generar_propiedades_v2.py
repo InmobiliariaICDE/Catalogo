@@ -612,12 +612,13 @@ body{{
 
 .carrusel-counter{{
   position: absolute;
-  top: 15px;
-  left: 15px;
-  background: rgba(7, 6, 5, 0.8);
+  top: 12px;
+  left: 12px;
+  background: #070605CC;
   border: 1px solid var(--border);
-  color: var(--gold);
+  color: #D4A84B;
   font-size: 12.5px;
+  font-family: 'Outfit', sans-serif;
   font-weight: 600;
   padding: 4px 12px;
   border-radius: 20px;
