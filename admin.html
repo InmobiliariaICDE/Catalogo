@@ -16190,24 +16190,8 @@ function compartirPropiedad(codigo, btn){
     ? window.location.origin 
     : 'https://icdeinmobiliaria.com';
   const url = baseUrl + '/propiedad/' + generarSlugPropiedad(p) + '.html';
-  const title = p['Nombre'] || 'Propiedad ICDE';
-  const text = `${p['Nombre'] || 'Propiedad'} - Cód. ${p['Código']}`;
 
-  if (navigator.share) {
-    navigator.share({
-      title: title,
-      text: text,
-      url: url
-    }).then(() => {
-      if (typeof toast === 'function') toast('Compartido con éxito ✓');
-    }).catch(err => {
-      if (err.name !== 'AbortError') {
-        copiarEnlaceAccion(url, btn);
-      }
-    });
-  } else {
-    copiarEnlaceAccion(url, btn);
-  }
+  copiarEnlaceAccion(url, btn);
 }
 
 function copiarEnlaceAccion(url, btn) {
@@ -16230,6 +16214,15 @@ function copiarEnlaceAccion(url, btn) {
     document.execCommand('copy');
     document.body.removeChild(input);
     if (typeof toast === 'function') toast('Enlace copiado ✓');
+    if(btn){
+      const original = btn.innerHTML;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Enlace copiado';
+      btn.style.color = '#22c55e';
+      setTimeout(() => {
+        btn.innerHTML = original;
+        btn.style.color = '';
+      }, 2000);
+    }
   });
 }
 
