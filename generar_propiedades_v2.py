@@ -668,7 +668,7 @@ body{{
 .miniaturas-wrap{{
   padding: 0px 0px !important;
   margin: 0px !important;
-  overflow-x: auto;
+  overflow-x: auto !important;
   background: transparent;
   width: 100%;
   scrollbar-width: none;
@@ -679,16 +679,18 @@ body{{
 }}
 
 .miniaturas{{
-  display: flex;
-  gap: 4px;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 4px !important;
   padding: 0px 0px !important;
   margin: 0px !important;
-  width: 100%;
+  width: max-content !important;
+  min-width: 100% !important;
 }}
 
 .miniatura{{
-  flex: 0 0 calc(25% - 3px);
-  width: calc(25% - 3px);
+  flex: 0 0 calc(25% - 3px) !important;
+  width: calc(25% - 3px) !important;
   height: 55px;
   object-fit: cover;
   border-radius: 6px;
