@@ -16173,47 +16173,20 @@ document.addEventListener('keydown', e => {
 });
 
 function generarSlugPropiedad(inmueble) {
-  if (!inmueble) return '';
-  const rawNombre = inmueble["Nombre"] || inmueble["TITULO"] || inmueble["Título"] || '';
-  const nombre = rawNombre.toLowerCase()
+  const nombre = (inmueble["Nombre"] || '').toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-+|-+$/g, '').substring(0, 60);
+    .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').substring(0, 60);
   const codigo = String(inmueble["Código"] || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   return nombre ? nombre + '-' + codigo : 'propiedad-' + codigo;
 }
 
 function compartirPropiedad(codigo, btn){
-  const p = typeof codigo === 'object' ? codigo : (allProps.find(x=>x['Código']===codigo) || (window.allProps ? window.allProps.find(x=>x['Código']===codigo) : null));
+  const p = allProps.find(x=>x['Código']===codigo);
   if(!p) return;
+  const url = 'https://icdeinmobiliaria.com/propiedad/' + generarSlugPropiedad(p) + '.html';
   
-  const baseUrl = (window.location.origin && !window.location.origin.includes('file:')) 
-    ? window.location.origin 
-    : 'https://icdeinmobiliaria.com';
-  const url = baseUrl + '/propiedad/' + generarSlugPropiedad(p) + '.html';
-
-  copiarEnlaceAccion(url, btn);
-}
-
-function copiarEnlaceAccion(url, btn) {
   navigator.clipboard.writeText(url).then(() => {
-    if (typeof toast === 'function') toast('Enlace copiado ✓');
-    if(btn){
-      const original = btn.innerHTML;
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Enlace copiado';
-      btn.style.color = '#22c55e';
-      setTimeout(() => {
-        btn.innerHTML = original;
-        btn.style.color = '';
-      }, 2000);
-    }
-  }).catch(() => {
-    const input = document.createElement('input');
-    input.value = url;
-    document.body.appendChild(input);
-    input.select();
-    document.execCommand('copy');
-    document.body.removeChild(input);
-    if (typeof toast === 'function') toast('Enlace copiado ✓');
+    toast('Enlace copiado ✓');
     if(btn){
       const original = btn.innerHTML;
       btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Enlace copiado';
@@ -16225,7 +16198,6 @@ function copiarEnlaceAccion(url, btn) {
     }
   });
 }
-
 
 let mpCarruselFotos = [];
 let mpCarruselIdx = 0;
