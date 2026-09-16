@@ -370,27 +370,39 @@ def build_html(p: dict, slug: str) -> str:
         else:
             galeria_html = f'<button class="galeria-expand" onclick="abrirLightbox(0)" title="Expandir">&#x26F6;</button>{galeria_html}'
 
-    # ── CHIPS (iconos rápidos) ──
-    chips = []
-    campos_chip = [
-        ("Habitaciones", ICONOS["hab"],    "hab."),
-        ("Baños",        ICONOS["bano"],   "baños"),
-        ("Garaje",       ICONOS["garaje"], "garaje"),
-        ("Pisos",        ICONOS["pisos"],  "pisos"),
-        ("Cocina",       ICONOS["cocina"], ""),
-        ("Área lote",    ICONOS["lote"],   "m²"),
-    ]
-    for campo, ico, sufijo in campos_chip:
-        val = p.get(campo, "").strip()
-        if val and val not in ("0", "No aplica", "No tiene"):
-            if campo == "Cocina":
-                label = ("Cocina " + val).strip() if val.lower() not in ("si","sí","yes","1") else "Cocina integral"
-            elif sufijo:
-                label = f"{val} {sufijo}".strip()
-            else:
-                label = val
-            chips.append(f'<span class="chip">{ico}{label}</span>')
-    chips_html = f'<div class="chips">{"".join(chips)}</div>' if chips else ""
+    # ── ETIQUETAS (columna izq - idéntico a index.html) ──
+    etiquetas = []
+    
+    hab = p.get("Habitaciones", "").strip()
+    if hab and hab != "0":
+        etiquetas.append(f'<span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/ykKdGwE.png" alt="Habitaciones" class="icono-etiqueta"/> Habitaciones {esc(hab)}</span>')
+
+    bano = p.get("Baños", "").strip()
+    if bano and bano != "0":
+        etiquetas.append(f'<span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/h9NqA32.png" alt="Baños" class="icono-etiqueta"/> Baños {esc(bano)}</span>')
+
+    garaje = p.get("Garaje", "").strip()
+    if garaje and garaje not in ("0", "No", "No aplica"):
+        etiquetas.append(f'<span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/4Yixa77.png" alt="Garaje" class="icono-etiqueta"/> Garaje {esc(garaje)}</span>')
+
+    cocina = p.get("Cocina", "").strip()
+    if cocina and cocina not in ("0", "No", "No aplica"):
+        cocina_label = ("Cocina " + cocina).strip() if cocina.lower() not in ("si","sí","yes","1") else "Cocina integral"
+        etiquetas.append(f'<span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/rH6cXMa.png" alt="Cocina" class="icono-etiqueta"/> {esc(cocina_label)}</span>')
+
+    pisos = p.get("Pisos", "").strip()
+    if pisos and pisos != "0":
+        etiquetas.append(f'<span class="modal-etiqueta"><img loading="lazy" src="https://img.icons8.com/ios-filled/50/ffffff/stairs.png" alt="Pisos" class="icono-etiqueta"/> Pisos {esc(pisos)}</span>')
+
+    lote = p.get("Área lote", "").strip()
+    if lote and lote not in ("0", "No aplica"):
+        etiquetas.append(f'<span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/rz72lGC.png" alt="Área lote" class="icono-etiqueta"/> Lote {esc(lote)} m²</span>')
+
+    rentabilidad = p.get("Rentabilidad", "").strip()
+    if rentabilidad and rentabilidad not in ("0", "No aplica"):
+        etiquetas.append(f'<span class="modal-etiqueta">{esc(rentabilidad)}</span>')
+
+    chips_html = f'<div class="modal-etiquetas" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">{"".join(etiquetas)}</div>' if etiquetas else ""
 
     # ── TABLA CARACTERÍSTICAS ──
     char_campos = [
@@ -550,9 +562,9 @@ body{{
 }}
 
 .modal-close:hover{{
-  background: var(--gold);
-  color: #000;
-  border-color: var(--gold);
+  background: rgb(151 151 151 / 15%);
+  color: #fff;
+  border-color: rgb(145 145 145 / 40%);
 }}
 
 .modal-contenido{{
@@ -612,57 +624,75 @@ body{{
 
 .carrusel-counter{{
   position: absolute;
-  top: 15px;
-  left: 15px;
-  background: rgba(7, 6, 5, 0.8);
-  border: 1px solid var(--border);
-  color: var(--gold);
-  font-size: 12.5px;
-  font-weight: 600;
-  padding: 4px 12px;
+  top: 12px;
+  left: 10px;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 11px;
+  font-family: "Outfit", sans-serif;
+  padding: 3px 10px;
   border-radius: 20px;
+  z-index: 5;
+  letter-spacing: 0.5px;
 }}
 
-.galeria-nav{{
+.carrusel-btn, .galeria-nav{{
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(7, 6, 5, 0.7);
-  border: 1px solid var(--border);
+  top: 0;
+  background: none;
+  border: none;
   color: #fff;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  font-size: 36px;
+  line-height: 1;
+  width: 20%;
+  height: 100%;
+  border-radius: 0;
   cursor: pointer;
-  font-size: 24px;
+  z-index: 10;
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: all 0.3s;
+  transition: opacity 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+  opacity: 0.85;
 }}
 
-.galeria-nav:hover{{
-  background: var(--gold);
-  color: #000;
+.carrusel-btn:hover, .galeria-nav:hover{{
+  opacity: 1;
+  background: none;
+  color: #fff;
 }}
 
-.galeria-nav.prev{{ left: 15px; }}
-.galeria-nav.next{{ right: 15px; }}
+.carrusel-btn.prev, .galeria-nav.prev{{ left: 0; justify-content: flex-start; padding-left: 8px; transform: none; }}
+.carrusel-btn.next, .galeria-nav.next{{ right: 0; justify-content: flex-end; padding-right: 8px; transform: none; }}
 
 .carrusel-expand{{
   position: absolute;
-  bottom: 15px;
-  right: 15px;
-  background: rgba(7, 6, 5, 0.7);
-  border: 1px solid var(--border);
-  color: #fff;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  cursor: pointer;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  color: #fff;
+  transition: all 0.2s;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}}
+
+.carrusel-expand:hover{{
+  background: rgba(0,0,0,0.85);
+}}
+
+.carrusel-expand svg{{
+  width: 16px;
+  height: 16px;
 }}
 
 .miniaturas-wrap, .carrusel-miniaturas-wrap{{
@@ -706,95 +736,135 @@ body{{
 
 /* ── BLOQUE INFO ── */
 .modal-bloque-info{{
-  padding: 20px;
+  padding: 16px 18px 14px;
 }}
 
-.modal-bloque-info h1{{
+.modal-bloque-info h1, .modal-bloque-info h2{{
+  margin-top: -7px !important;
+  margin-bottom: 3px !important;
   color: #fff;
   font-size: 17px;
   font-weight: 600;
   line-height: 1.3;
-  margin-bottom: 4px;
 }}
 
 .modal-bloque-info .tipo{{
-  color: var(--gold);
+  color: #c0c0c0;
   font-size: 13px;
   font-weight: 500;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }}
 
 .modal-bloque-info .modalCodigo{{
   color: #c0c0c0;
   font-size: 12px;
+  margin: 0;
 }}
 
 .modal-bloque-info .precio{{
-  font-size: 20px;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  color: #22c55e;
   font-weight: 700;
-  color: var(--green);
-  margin: 8px 0;
+  font-size: 22px;
+  text-shadow: 0 0 30px rgba(34,197,94,0.2);
 }}
 
 .chips, .modal-etiquetas{{
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 4px;
+  margin-top: 10px;
 }}
 
-.chip, .modal-etiqueta-pill{{
-  background: rgba(212,168,75,0.05);
-  border: 1px solid rgba(212,168,75,0.15);
-  color: #fff;
+.chip, .modal-etiqueta, .modal-etiqueta-pill{{
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgb(151 151 151 / 8%);
+  border: 1px solid rgb(145 145 145 / 20%);
+  color: rgba(255,255,255,0.75);
   font-size: 11px;
   padding: 4px 10px;
   border-radius: 20px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  font-family: "Outfit", sans-serif;
+}}
+
+.icono-etiqueta{{
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  border-radius: 0;
+  filter: brightness(0) invert(1);
 }}
 
 .chip svg, .modal-etiqueta-pill svg{{
-  color: var(--gold);
+  color: #d4a84b;
+  flex-shrink: 0;
 }}
 
 /* ── COLUMNA DERECHA ── */
 .modal-subtitulo-nuevo{{
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  margin: 16px 0 8px;
-  border-left: 3px solid var(--gold);
-  padding-left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #d4a84b;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Outfit", sans-serif;
 }}
+
+.modal-subtitulo-nuevo::after{{
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(212,168,75,0.2);
+}}
+
+.modal-subtitulo-nuevo:first-child{{ margin-top: 0; }}
 
 .modal-tabla-caracteristicas{{
   width: 100%;
   border-collapse: collapse;
+  margin-bottom: 8px;
   font-size: 13px;
-  border: 1px solid rgba(212, 168, 75, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}}
+
+.modal-tabla-caracteristicas tr{{
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }}
 
 .modal-tabla-caracteristicas td{{
-  padding: 8px;
-  border: 1px solid rgba(212, 168, 75, 0.15);
+  padding: 7px 10px;
+  vertical-align: middle;
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }}
 
-.char-label{{
-  color: #a0a0a0;
+.modal-tabla-caracteristicas td:first-child, .char-label{{
+  color: rgba(192, 192, 192, 0.65);
+  width: 45%;
+  font-size: 13px;
+  text-align: left;
 }}
 
-.char-val{{
-  color: #fff;
-  text-align: right;
-  font-weight: 500;
+.modal-tabla-caracteristicas td:last-child, .char-val{{
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: left;
 }}
 
 .modal-texto{{
-  color: #d0d0d0;
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #c0c0c0;
+  margin-top: 0px;
+  margin-bottom: 10px;
 }}
 
 /* ── ACCIONES ── */
@@ -815,36 +885,44 @@ body{{
   gap: 9px;
   background-color: #d4a84b;
   color: #fff;
+  font-family: "Outfit", sans-serif;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  padding: 11px 22px;
+  border-radius: 50px;
   text-decoration: none;
-  padding: 10px 16px;
-  border-radius: 4px;
-  transition: all 0.3s;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 18px rgba(212,168,75,0.25);
 }}
 
 .modal-btn-whatsapp-nuevo:hover{{
-  background-color: var(--gold-hover);
+  background-color: #c49940;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(212,168,75,0.35);
 }}
 
-.cta-share{{
+.modal-btn-compartir, .cta-share{{
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  border: 1px solid rgba(212,168,75,0.3);
-  color: #fff;
+  gap: 7px;
+  background: rgb(151 151 151 / 8%);
+  border: 1px solid rgb(145 145 145 / 20%);
+  color: rgb(241 241 241 / 70%);
+  font-family: "Outfit", sans-serif;
   font-size: 13px;
-  font-weight: 600;
-  padding: 10px 16px;
-  border-radius: 4px;
+  font-weight: 500;
+  padding: 11px 18px;
+  border-radius: 50px;
   cursor: pointer;
-  background: transparent;
-  transition: all 0.3s;
+  transition: all 0.2s;
 }}
 
-.cta-share:hover{{
-  border-color: var(--gold);
-  background: var(--gold-dim);
+.modal-btn-compartir:hover, .cta-share:hover{{
+  background: rgb(151 151 151 / 15%);
+  color: #fff;
+  border-color: rgb(145 145 145 / 40%);
 }}
 
 .share-confirm{{
@@ -1011,7 +1089,7 @@ body{{
         <div class="carrusel-principal">
           {'<img id="imgPrincipal" src="' + esc(imagenes[0]) + '" alt="' + alt_img + '" class="galeria-img" loading="eager"/>' if imagenes else ''}
           {f'<div class="carrusel-counter"><span id="imgActual">1</span> / {len(imagenes)}</div>' if len(imagenes) > 1 else ''}
-          {f'<button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>' if len(imagenes) > 1 else ''}
+          {f'<button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>' if len(imagenes) > 1 else ''}
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -1023,9 +1101,9 @@ body{{
       </div>
       
       <div class="modal-bloque-info">
-        <h1>{nombre}</h1>
+        <h2 id="modalTitle" style="margin-top:4px;margin-bottom:4px;color:#fff;font-size:17px;font-weight:600;line-height:1.3;">{nombre}</h2>
         <p class="tipo">{tipo}</p>
-        <p class="modalCodigo"><strong>Código:</strong> {esc(str(p.get("Código","")))}</p>
+        <p class="modalCodigo" style="color:#c0c0c0;font-size:12px;margin:0;"><strong style="font-weight:500;">Código:</strong> {esc(str(p.get("Código","")))}</p>
         <p class="precio">{precio}</p>
         {chips_html}
       </div>
@@ -1059,7 +1137,7 @@ body{{
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.846.497 3.576 1.362 5.065L2 22l5.07-1.33A9.953 9.953 0 0012 22c5.522 0 10-4.477 10-10S17.521 2 11.999 2zm.001 18a7.963 7.963 0 01-4.184-1.188l-.3-.178-3.012.79.803-2.93-.196-.31A7.944 7.944 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/></svg>
       Agendar visita por WhatsApp
     </a>
-    <button class="cta-share" onclick="compartir()">
+    <button class="modal-btn-compartir" onclick="compartir()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       Compartir
     </button>

@@ -157,9 +157,9 @@ body{
 }
 
 .modal-close:hover{
-  background: var(--gold);
-  color: #000;
-  border-color: var(--gold);
+  background: rgb(151 151 151 / 15%);
+  color: #fff;
+  border-color: rgb(145 145 145 / 40%);
 }
 
 .modal-contenido{
@@ -220,61 +220,74 @@ body{
 .carrusel-counter{
   position: absolute;
   top: 12px;
-  left: 12px;
-  bottom: auto;
-  right: auto;
-  background: rgba(0,0,0,0.6);
-  padding: 3px 10px;
-  border-radius: 12px;
+  left: 10px;
+  background: rgba(0,0,0,0.55);
   color: #fff;
   font-size: 11px;
-  font-weight: 600;
-  z-index: 10;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.18);
+  font-family: "Outfit", sans-serif;
+  padding: 3px 10px;
+  border-radius: 20px;
+  z-index: 5;
+  letter-spacing: 0.5px;
 }
 
-.galeria-nav{
+.carrusel-btn, .galeria-nav{
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(7, 6, 5, 0.7);
-  border: 1px solid var(--border);
+  top: 0;
+  background: none;
+  border: none;
   color: #fff;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  font-size: 36px;
+  line-height: 1;
+  width: 20%;
+  height: 100%;
+  border-radius: 0;
   cursor: pointer;
-  font-size: 24px;
+  z-index: 10;
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: all 0.3s;
+  transition: opacity 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+  opacity: 0.85;
 }
 
-.galeria-nav:hover{
-  background: var(--gold);
-  color: #000;
+.carrusel-btn:hover, .galeria-nav:hover{
+  opacity: 1;
+  background: none;
+  color: #fff;
 }
 
-.galeria-nav.prev{ left: 15px; }
-.galeria-nav.next{ right: 15px; }
+.carrusel-btn.prev, .galeria-nav.prev{ left: 0; justify-content: flex-start; padding-left: 8px; transform: none; }
+.carrusel-btn.next, .galeria-nav.next{ right: 0; justify-content: flex-end; padding-right: 8px; transform: none; }
 
 .carrusel-expand{
   position: absolute;
-  bottom: 15px;
-  right: 15px;
-  background: rgba(7, 6, 5, 0.7);
-  border: 1px solid var(--border);
-  color: #fff;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  cursor: pointer;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  color: #fff;
+  transition: all 0.2s;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.carrusel-expand:hover{
+  background: rgba(0,0,0,0.85);
+}
+
+.carrusel-expand svg{
+  width: 16px;
+  height: 16px;
 }
 
 .miniaturas-wrap, .carrusel-miniaturas-wrap{
@@ -318,95 +331,135 @@ body{
 
 /* ── BLOQUE INFO ── */
 .modal-bloque-info{
-  padding: 20px;
+  padding: 16px 18px 14px;
 }
 
-.modal-bloque-info h1{
+.modal-bloque-info h1, .modal-bloque-info h2{
+  margin-top: -7px !important;
+  margin-bottom: 3px !important;
   color: #fff;
   font-size: 17px;
   font-weight: 600;
   line-height: 1.3;
-  margin-bottom: 4px;
 }
 
 .modal-bloque-info .tipo{
-  color: var(--gold);
+  color: #c0c0c0;
   font-size: 13px;
   font-weight: 500;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .modal-bloque-info .modalCodigo{
   color: #c0c0c0;
   font-size: 12px;
+  margin: 0;
 }
 
 .modal-bloque-info .precio{
-  font-size: 20px;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  color: #22c55e;
   font-weight: 700;
-  color: var(--green);
-  margin: 8px 0;
+  font-size: 22px;
+  text-shadow: 0 0 30px rgba(34,197,94,0.2);
 }
 
 .chips, .modal-etiquetas{
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 4px;
+  margin-top: 10px;
 }
 
-.chip, .modal-etiqueta-pill{
-  background: rgba(212,168,75,0.05);
-  border: 1px solid rgba(212,168,75,0.15);
-  color: #fff;
+.chip, .modal-etiqueta, .modal-etiqueta-pill{
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgb(151 151 151 / 8%);
+  border: 1px solid rgb(145 145 145 / 20%);
+  color: rgba(255,255,255,0.75);
   font-size: 11px;
   padding: 4px 10px;
   border-radius: 20px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  font-family: "Outfit", sans-serif;
+}
+
+.icono-etiqueta{
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  border-radius: 0;
+  filter: brightness(0) invert(1);
 }
 
 .chip svg, .modal-etiqueta-pill svg{
-  color: var(--gold);
+  color: #d4a84b;
+  flex-shrink: 0;
 }
 
 /* ── COLUMNA DERECHA ── */
 .modal-subtitulo-nuevo{
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  margin: 16px 0 8px;
-  border-left: 3px solid var(--gold);
-  padding-left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #d4a84b;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Outfit", sans-serif;
 }
+
+.modal-subtitulo-nuevo::after{
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(212,168,75,0.2);
+}
+
+.modal-subtitulo-nuevo:first-child{ margin-top: 0; }
 
 .modal-tabla-caracteristicas{
   width: 100%;
   border-collapse: collapse;
+  margin-bottom: 8px;
   font-size: 13px;
-  border: 1px solid rgba(212, 168, 75, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.modal-tabla-caracteristicas tr{
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .modal-tabla-caracteristicas td{
-  padding: 8px;
-  border: 1px solid rgba(212, 168, 75, 0.15);
+  padding: 7px 10px;
+  vertical-align: middle;
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-.char-label{
-  color: #a0a0a0;
+.modal-tabla-caracteristicas td:first-child, .char-label{
+  color: rgba(192, 192, 192, 0.65);
+  width: 45%;
+  font-size: 13px;
+  text-align: left;
 }
 
-.char-val{
-  color: #fff;
-  text-align: right;
-  font-weight: 500;
+.modal-tabla-caracteristicas td:last-child, .char-val{
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: left;
 }
 
 .modal-texto{
-  color: #d0d0d0;
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #c0c0c0;
+  margin-top: 0px;
+  margin-bottom: 10px;
 }
 
 /* ── ACCIONES ── */
@@ -427,36 +480,44 @@ body{
   gap: 9px;
   background-color: #d4a84b;
   color: #fff;
+  font-family: "Outfit", sans-serif;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  padding: 11px 22px;
+  border-radius: 50px;
   text-decoration: none;
-  padding: 10px 16px;
-  border-radius: 4px;
-  transition: all 0.3s;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 18px rgba(212,168,75,0.25);
 }
 
 .modal-btn-whatsapp-nuevo:hover{
-  background-color: var(--gold-hover);
+  background-color: #c49940;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(212,168,75,0.35);
 }
 
-.cta-share{
+.modal-btn-compartir, .cta-share{
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  border: 1px solid rgba(212,168,75,0.3);
-  color: #fff;
+  gap: 7px;
+  background: rgb(151 151 151 / 8%);
+  border: 1px solid rgb(145 145 145 / 20%);
+  color: rgb(241 241 241 / 70%);
+  font-family: "Outfit", sans-serif;
   font-size: 13px;
-  font-weight: 600;
-  padding: 10px 16px;
-  border-radius: 4px;
+  font-weight: 500;
+  padding: 11px 18px;
+  border-radius: 50px;
   cursor: pointer;
-  background: transparent;
-  transition: all 0.3s;
+  transition: all 0.2s;
 }
 
-.cta-share:hover{
-  border-color: var(--gold);
-  background: var(--gold-dim);
+.modal-btn-compartir:hover, .cta-share:hover{
+  background: rgb(151 151 151 / 15%);
+  color: #fff;
+  border-color: rgb(145 145 145 / 40%);
 }
 
 .share-confirm{
@@ -623,7 +684,7 @@ body{
         <div class="carrusel-principal">
           <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczNOorq7AvXoQGoLz1BHQXBEsmhR5qilcJEiK_wXbh9MbyLpvrKBK58qRe_88M5pXWieNVPuUV0XIse6LCdItZe6UC145jdrkPFeWa89BgxRuhWFEdu2=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
           <div class="carrusel-counter"><span id="imgActual">1</span> / 36</div>
-          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
+          <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -631,15 +692,15 @@ body{
             </svg>
           </button>
         </div>
-        <div class="miniaturas-wrap"><div class="miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczNOorq7AvXoQGoLz1BHQXBEsmhR5qilcJEiK_wXbh9MbyLpvrKBK58qRe_88M5pXWieNVPuUV0XIse6LCdItZe6UC145jdrkPFeWa89BgxRuhWFEdu2=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 1" class="miniatura activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOhy4yimKRhS3aPwqBf0bJvw-oCvoks3AabpUfyRtzsaPp3iUJ994Kbbw_hh7NXUgQbKpyrZk8XFx6Tfp76bVOkwiW3XW7Fuh8BVV5Yv5r6v9VLzISJ=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 2" class="miniatura" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOjEkZFV4RcoiIaGmaGLnMPaC3XqzEXxMl-QT41zwOVQiIPh0X-Kwdra541sIxNjIIL5fDIsqWIhNLdvyQcRAjXXRA50zHUTSCOSTTKN1O01gN63GUy=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 3" class="miniatura" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOBMRevI7WYAvVapk16dGfMuUMBkL7AyM4DWLogm-gZZOT3_PMr5AFZpglaOJI1BcQcUG4BdTsNeSFHFjcpiM3cFyBemh1hVNfunMyFNYUbzfPeq-04=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 4" class="miniatura" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO5qWtH4hVs7ZmdcYgf9fHu6Uak-KR7miNGRV-GFUD1iFMwRnQKbK2IWL81l9aoqUUXl3Sp6vyonxtu1VI--jGntwoTxCdVlDBrekxCPCdPaB_fNk0S=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 5" class="miniatura" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPjdKL4dzSGNqY8HDPlFBvMKvLIHCjspjoEUJ4YSybI1GHVf688d-IOsi-GR1d_2NMVhPmVw-I2weKjfNnmn8EntnCl7MRQgc1801OczKHb0Y8BT_k8=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 6" class="miniatura" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP5MhJdt_1Xnl_reg_M_Dbr-6ngCKP1YLkgBLm8t9ADbjDtwcNklKPGu4uLV1Jvh8j8VHotuLHexGtRNKQ7oJi9JANOx70wc_okY-iva7-Dlx_BPvnR=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 7" class="miniatura" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPK5KGtYq9RnA6JGkpWLy2PqIxtASd5v1lrLXdMauphTzCNBAzNV7jTp1Ca5_Zr3fFqbFkoz2lQOMzLVFLPxs-Wn0sT0x29HKxv8niVZW5YIsWvQiU7=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 8" class="miniatura" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOI6-mur2LL5_65l62wL0TaKwpVfM6sjXSBjOoQo-fRMFFL0Hfzm5NxWG_f2mG9nK1IPQvedInd6OPjn8ZoJVMvgUZcJh5nXWTL_0n4AX1yz3HyFDng=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 9" class="miniatura" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczORPxWL4_IjIn4OA9Q2tojgVuE-WlKsTAJEkj6TLiTQoF7roVpLzNriStgoDDCPFbGMzW73-8HMSY26OP79ErJ2p4YdGmkBz30o84har1FApOdC4nHQ=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 10" class="miniatura" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOxKmmouL2dYrpwEUPiYyC4ZHFxD7w75qAm4H-j5EdT3P_TIg99nVv4ewEdjfycYSjW2Cj4-Zf2peCsNinITOiOdaj76dj3IRG_QwJ_59r29Q30AQ4d=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 11" class="miniatura" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOmxLhFjgezoFMlrRjl9Mm4Cm-3xWBnIO_d5wZXdZY0nS5czkbAgw3umStkAcmAkRHFl5EFWkCkfeVK6iHin_wQa0LEjcQn2bngAjuIcPGnK4PojJJM=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 12" class="miniatura" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNgqHddbnpGvGVrGU6d5KGczX3roY-kKGZrhfcXsb5uOlQhGbY_N7y4H8xFne9L4Jh-PPQI6QN-jUbpHqC-Ldm7LYL8Zov5McTqqc1fV--Xl5xquiTl=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 13" class="miniatura" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOD9VJ5p82-CBvXSrefOPz-pEXWa1RpxHIuuzwzSPdy5Eojm23ANKnyEs6y9Qi5pmTvSrTDRQBjm-_8-evKrzyOnMjR5p3Tz4R290dgYzkacGUZX47w=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 14" class="miniatura" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMCuikIayISs_e1LrV5Tb4m_Xp1a_bO4sRRRKlApVtaehNEd-FMRPpUiX3-bd9WKUdMCx3KOZDnpxAuBNCMnSWLJ2ih_ZJ7b6-CpUEtQlCnT-tYBf45=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 15" class="miniatura" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMHroG-__tV8INzfVOkcaF06PpJHwnrefLJd16z_l5NQZC-AiXXZsu3wIC26OuKmah6GAQ3euDUT2Idseyggyg4ZfI4yOtPZYgk9k4J5XSIq65bSDiD=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 16" class="miniatura" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMyagI-XDNhFe19LZgm1gfPgRVPcqiJvPd6-YXNd_NLfBSG982-AmQN00p0Ukbn1hcYPFFl5UJEfx3zYLxC4XcrPbl7pESm27v8eOnt--X7BlSKHJh0=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 17" class="miniatura" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO4ZU-rVqf24n31nxWLlSPzBCw0PMmg9mr2kuTXtNmYUmaKDuyCeR38uEyWAVImanCuqbxvmAOZPMP8BpqODnYpTJtymj93bmU22xvXtXmzPiBg6HjZ=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 18" class="miniatura" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPE8vmMuN45QvwMZEq6R9oUKSlcHXIPEP20r30uAPDsFjTX4yPoAiLWI6Jv9PrdwTANobWhv8LmpbNKSTVAGJXDm1-l4Z6Tr4-SWEWSRlJ6uIYwWagr=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 19" class="miniatura" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOOM0B2suIi_-kSvbIpHsh-ncI2OJRYsxiKp1_NRkM9PQYM9E5TbLNK84x1Ir9db7ITHmj2Heo0Wp2QGy6HrTBXSy4zL4pUx7lPOgtRCv9JEtp1gC3w=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 20" class="miniatura" onclick="irImg(19)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMQ6VUFmJXw-HUE9vmvRwvtlncpd_BqnvFUpgxRnvQE1C8lisIhxUK91NHaz4T4phGi8dXTaUwgbnyFGZYznoHQ4pztCnAS-wL2Q15YEuu98y_JAtLT=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 21" class="miniatura" onclick="irImg(20)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOmKYXghA5bdNdLUVBy-F7I3fj5j6GMoiGnDNB9nUZZM8w5i6D4kigHGG05J2fvAP8vYd9SAJ03ZIEWmRv22XbzgQpYjB9UMm5zxS8RhOp3XJMRaACi=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 22" class="miniatura" onclick="irImg(21)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPo1YG6EyVQhDS2l3-jxQx8q34zaefL6YKfyC7k2BccBqP44MU0fX6kNhREp5kgl1DEnqYa0ISdOzLos23MIyzpe0cbops8bWCMJrQEaGUnBFqFH6jL=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 23" class="miniatura" onclick="irImg(22)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNWl2H4AqLxTdobU4cNdquy2KfJeEk8noer84YkKwg9T6KJGMZTQYs2NvfJCDjjgzPRMeEiTB65pdrP2Aql9LR_XGRGpxCpwqftu-nALMHo378I5DRb=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 24" class="miniatura" onclick="irImg(23)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPOMdoSyi_0Ad3mci5VFFs9xcFIbtqcjuxAR4Hm4NoD9OVbgOJXU0QuVqVQNHnybu-uBfuALvmnU8KlxrktKZWIRxrU4SbKUarDVjQcKXUo3XLlYqmB=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 25" class="miniatura" onclick="irImg(24)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO1Q3ZlrZuaBoyK9LlAIxruHTyL62eJMYYMS1QtC1y7Hx75WNvhvz5d4wQcyZ2hHYswAivMS1alpUBfKXZOsGx32wwZmg1NxKoJ6nBR_ZWuvPFpLl34=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 26" class="miniatura" onclick="irImg(25)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMZ36WClX-b_nQH-vBCVl5DhK6mDkFiEODYfjcysWZJhBZnlSdBeIUx4MgUTE0EwByuO-lxXMzn12vLSwKhj04XPYyNYVbV7VkE69UrQgAmKJ7yMsTd=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 27" class="miniatura" onclick="irImg(26)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMfq0U1UHCfPZg_z5vAl-afZahZbTlKuU0n41jnbn_gs0tIt7ZpxF7Dh8x4C39LcXuINBXJbWAIO8k8Vji9zGOX4InBI0nmBEW_LvZwDypU9E3iHqly=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 28" class="miniatura" onclick="irImg(27)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNDCT5chxMYxzB_HS4XL7Ap8WCD9DQb_uIoIeEU_7yJJ2n9iQPC8QovQddsdqJ7XPsRzqRaCTnr-8R0P78M7zBCxvBs3EJJpr4xhDeVhRraovxdYyXU=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 29" class="miniatura" onclick="irImg(28)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPnJqi2VdzTLTXaaZAgvZ_2OXz4jgc6HHSoQJzv3_tCNG2LXET_hSegrCHVs0aceqmFwRU08JZXwGted7IUdBYQw8p7nrMxw_qgfwVgeVmhRB5jCdTp=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 30" class="miniatura" onclick="irImg(29)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNhkwqh0Tht9QMQjd1Y8y17dFphb4y5O7jk9zlq57MRZyJZm26WpzxfyrGIkK_Zf9c7KjgTYNiio5QeJ6BGz4_SDPsH8UfXVD4Tzpp0cqh8UKZzcu7x=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 31" class="miniatura" onclick="irImg(30)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNypBZOUNsFHP5Vc0YfD-q5-38ughNUudqNgbPtUFuNGwptc071jDMVMPElheheqqYSNwUIJ3WXpy5KeZMcp8iN1RYNnCB3dNqEBW_tTj954iZMAauQ=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 32" class="miniatura" onclick="irImg(31)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNs03AmZDafIys28GbgVMovZVgNrkrH1V_VSWvSIqhOVfN5hiKa1BPpgjiHHngEmwdWsMM23Z5luGRalbyAt0hY-VKfni5YxO-xGZEehsgR_f7J_xGt=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 33" class="miniatura" onclick="irImg(32)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPPCXWxd9p86zs_4XLLBF1A5TwuDY43WJetjmGyCIUiZbNOO6GdIayrigCYquWDVtFtGZBJp5jbEIq4A9PJZ1wDoyze9GwkClMv6aMuBMFCIVcu4WeH=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 34" class="miniatura" onclick="irImg(33)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNRU1XBxtPhqX2x0inT2F1vFV4s5DHhPJRdRKqmlMlTo4mrEVgVgEglKn_g7cg_vMIIaWZiXrBLlWRFBZtCPiGrmyUivrLNedjABde8wljphCVgI8g7=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 35" class="miniatura" onclick="irImg(34)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOBrCLz0bNN8z4KatyJrHlXQq_E7uQ8qB-2jH_u9lWshRXZgXItnNcWWJgSQW14ROtmRyESQnXBDuu0FG-eYRhqrUvGnRKyJrRP-kw6UaeXYKiNYQ8t=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 36" class="miniatura" onclick="irImg(35)" loading="lazy"/></div></div>
+        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczNOorq7AvXoQGoLz1BHQXBEsmhR5qilcJEiK_wXbh9MbyLpvrKBK58qRe_88M5pXWieNVPuUV0XIse6LCdItZe6UC145jdrkPFeWa89BgxRuhWFEdu2=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOhy4yimKRhS3aPwqBf0bJvw-oCvoks3AabpUfyRtzsaPp3iUJ994Kbbw_hh7NXUgQbKpyrZk8XFx6Tfp76bVOkwiW3XW7Fuh8BVV5Yv5r6v9VLzISJ=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOjEkZFV4RcoiIaGmaGLnMPaC3XqzEXxMl-QT41zwOVQiIPh0X-Kwdra541sIxNjIIL5fDIsqWIhNLdvyQcRAjXXRA50zHUTSCOSTTKN1O01gN63GUy=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOBMRevI7WYAvVapk16dGfMuUMBkL7AyM4DWLogm-gZZOT3_PMr5AFZpglaOJI1BcQcUG4BdTsNeSFHFjcpiM3cFyBemh1hVNfunMyFNYUbzfPeq-04=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO5qWtH4hVs7ZmdcYgf9fHu6Uak-KR7miNGRV-GFUD1iFMwRnQKbK2IWL81l9aoqUUXl3Sp6vyonxtu1VI--jGntwoTxCdVlDBrekxCPCdPaB_fNk0S=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPjdKL4dzSGNqY8HDPlFBvMKvLIHCjspjoEUJ4YSybI1GHVf688d-IOsi-GR1d_2NMVhPmVw-I2weKjfNnmn8EntnCl7MRQgc1801OczKHb0Y8BT_k8=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP5MhJdt_1Xnl_reg_M_Dbr-6ngCKP1YLkgBLm8t9ADbjDtwcNklKPGu4uLV1Jvh8j8VHotuLHexGtRNKQ7oJi9JANOx70wc_okY-iva7-Dlx_BPvnR=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPK5KGtYq9RnA6JGkpWLy2PqIxtASd5v1lrLXdMauphTzCNBAzNV7jTp1Ca5_Zr3fFqbFkoz2lQOMzLVFLPxs-Wn0sT0x29HKxv8niVZW5YIsWvQiU7=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOI6-mur2LL5_65l62wL0TaKwpVfM6sjXSBjOoQo-fRMFFL0Hfzm5NxWG_f2mG9nK1IPQvedInd6OPjn8ZoJVMvgUZcJh5nXWTL_0n4AX1yz3HyFDng=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczORPxWL4_IjIn4OA9Q2tojgVuE-WlKsTAJEkj6TLiTQoF7roVpLzNriStgoDDCPFbGMzW73-8HMSY26OP79ErJ2p4YdGmkBz30o84har1FApOdC4nHQ=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOxKmmouL2dYrpwEUPiYyC4ZHFxD7w75qAm4H-j5EdT3P_TIg99nVv4ewEdjfycYSjW2Cj4-Zf2peCsNinITOiOdaj76dj3IRG_QwJ_59r29Q30AQ4d=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOmxLhFjgezoFMlrRjl9Mm4Cm-3xWBnIO_d5wZXdZY0nS5czkbAgw3umStkAcmAkRHFl5EFWkCkfeVK6iHin_wQa0LEjcQn2bngAjuIcPGnK4PojJJM=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNgqHddbnpGvGVrGU6d5KGczX3roY-kKGZrhfcXsb5uOlQhGbY_N7y4H8xFne9L4Jh-PPQI6QN-jUbpHqC-Ldm7LYL8Zov5McTqqc1fV--Xl5xquiTl=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOD9VJ5p82-CBvXSrefOPz-pEXWa1RpxHIuuzwzSPdy5Eojm23ANKnyEs6y9Qi5pmTvSrTDRQBjm-_8-evKrzyOnMjR5p3Tz4R290dgYzkacGUZX47w=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMCuikIayISs_e1LrV5Tb4m_Xp1a_bO4sRRRKlApVtaehNEd-FMRPpUiX3-bd9WKUdMCx3KOZDnpxAuBNCMnSWLJ2ih_ZJ7b6-CpUEtQlCnT-tYBf45=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMHroG-__tV8INzfVOkcaF06PpJHwnrefLJd16z_l5NQZC-AiXXZsu3wIC26OuKmah6GAQ3euDUT2Idseyggyg4ZfI4yOtPZYgk9k4J5XSIq65bSDiD=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMyagI-XDNhFe19LZgm1gfPgRVPcqiJvPd6-YXNd_NLfBSG982-AmQN00p0Ukbn1hcYPFFl5UJEfx3zYLxC4XcrPbl7pESm27v8eOnt--X7BlSKHJh0=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO4ZU-rVqf24n31nxWLlSPzBCw0PMmg9mr2kuTXtNmYUmaKDuyCeR38uEyWAVImanCuqbxvmAOZPMP8BpqODnYpTJtymj93bmU22xvXtXmzPiBg6HjZ=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPE8vmMuN45QvwMZEq6R9oUKSlcHXIPEP20r30uAPDsFjTX4yPoAiLWI6Jv9PrdwTANobWhv8LmpbNKSTVAGJXDm1-l4Z6Tr4-SWEWSRlJ6uIYwWagr=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOOM0B2suIi_-kSvbIpHsh-ncI2OJRYsxiKp1_NRkM9PQYM9E5TbLNK84x1Ir9db7ITHmj2Heo0Wp2QGy6HrTBXSy4zL4pUx7lPOgtRCv9JEtp1gC3w=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="irImg(19)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMQ6VUFmJXw-HUE9vmvRwvtlncpd_BqnvFUpgxRnvQE1C8lisIhxUK91NHaz4T4phGi8dXTaUwgbnyFGZYznoHQ4pztCnAS-wL2Q15YEuu98y_JAtLT=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="irImg(20)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOmKYXghA5bdNdLUVBy-F7I3fj5j6GMoiGnDNB9nUZZM8w5i6D4kigHGG05J2fvAP8vYd9SAJ03ZIEWmRv22XbzgQpYjB9UMm5zxS8RhOp3XJMRaACi=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="irImg(21)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPo1YG6EyVQhDS2l3-jxQx8q34zaefL6YKfyC7k2BccBqP44MU0fX6kNhREp5kgl1DEnqYa0ISdOzLos23MIyzpe0cbops8bWCMJrQEaGUnBFqFH6jL=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="irImg(22)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNWl2H4AqLxTdobU4cNdquy2KfJeEk8noer84YkKwg9T6KJGMZTQYs2NvfJCDjjgzPRMeEiTB65pdrP2Aql9LR_XGRGpxCpwqftu-nALMHo378I5DRb=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 24" class="miniatura carrusel-min" onclick="irImg(23)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPOMdoSyi_0Ad3mci5VFFs9xcFIbtqcjuxAR4Hm4NoD9OVbgOJXU0QuVqVQNHnybu-uBfuALvmnU8KlxrktKZWIRxrU4SbKUarDVjQcKXUo3XLlYqmB=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 25" class="miniatura carrusel-min" onclick="irImg(24)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO1Q3ZlrZuaBoyK9LlAIxruHTyL62eJMYYMS1QtC1y7Hx75WNvhvz5d4wQcyZ2hHYswAivMS1alpUBfKXZOsGx32wwZmg1NxKoJ6nBR_ZWuvPFpLl34=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 26" class="miniatura carrusel-min" onclick="irImg(25)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMZ36WClX-b_nQH-vBCVl5DhK6mDkFiEODYfjcysWZJhBZnlSdBeIUx4MgUTE0EwByuO-lxXMzn12vLSwKhj04XPYyNYVbV7VkE69UrQgAmKJ7yMsTd=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 27" class="miniatura carrusel-min" onclick="irImg(26)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMfq0U1UHCfPZg_z5vAl-afZahZbTlKuU0n41jnbn_gs0tIt7ZpxF7Dh8x4C39LcXuINBXJbWAIO8k8Vji9zGOX4InBI0nmBEW_LvZwDypU9E3iHqly=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 28" class="miniatura carrusel-min" onclick="irImg(27)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNDCT5chxMYxzB_HS4XL7Ap8WCD9DQb_uIoIeEU_7yJJ2n9iQPC8QovQddsdqJ7XPsRzqRaCTnr-8R0P78M7zBCxvBs3EJJpr4xhDeVhRraovxdYyXU=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 29" class="miniatura carrusel-min" onclick="irImg(28)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPnJqi2VdzTLTXaaZAgvZ_2OXz4jgc6HHSoQJzv3_tCNG2LXET_hSegrCHVs0aceqmFwRU08JZXwGted7IUdBYQw8p7nrMxw_qgfwVgeVmhRB5jCdTp=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 30" class="miniatura carrusel-min" onclick="irImg(29)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNhkwqh0Tht9QMQjd1Y8y17dFphb4y5O7jk9zlq57MRZyJZm26WpzxfyrGIkK_Zf9c7KjgTYNiio5QeJ6BGz4_SDPsH8UfXVD4Tzpp0cqh8UKZzcu7x=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 31" class="miniatura carrusel-min" onclick="irImg(30)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNypBZOUNsFHP5Vc0YfD-q5-38ughNUudqNgbPtUFuNGwptc071jDMVMPElheheqqYSNwUIJ3WXpy5KeZMcp8iN1RYNnCB3dNqEBW_tTj954iZMAauQ=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 32" class="miniatura carrusel-min" onclick="irImg(31)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNs03AmZDafIys28GbgVMovZVgNrkrH1V_VSWvSIqhOVfN5hiKa1BPpgjiHHngEmwdWsMM23Z5luGRalbyAt0hY-VKfni5YxO-xGZEehsgR_f7J_xGt=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 33" class="miniatura carrusel-min" onclick="irImg(32)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPPCXWxd9p86zs_4XLLBF1A5TwuDY43WJetjmGyCIUiZbNOO6GdIayrigCYquWDVtFtGZBJp5jbEIq4A9PJZ1wDoyze9GwkClMv6aMuBMFCIVcu4WeH=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 34" class="miniatura carrusel-min" onclick="irImg(33)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNRU1XBxtPhqX2x0inT2F1vFV4s5DHhPJRdRKqmlMlTo4mrEVgVgEglKn_g7cg_vMIIaWZiXrBLlWRFBZtCPiGrmyUivrLNedjABde8wljphCVgI8g7=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 35" class="miniatura carrusel-min" onclick="irImg(34)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOBrCLz0bNN8z4KatyJrHlXQq_E7uQ8qB-2jH_u9lWshRXZgXItnNcWWJgSQW14ROtmRyESQnXBDuu0FG-eYRhqrUvGnRKyJrRP-kw6UaeXYKiNYQ8t=w1200" alt="Apartamento en conjunto en venta Andaquíe Neiva – ICDE Inmobiliaria foto 36" class="miniatura carrusel-min" onclick="irImg(35)" loading="lazy"/></div></div>
       </div>
       
       <div class="modal-bloque-info">
-        <h1>Apartamento en Conjunto Condominio Mediterraneo - Norte - Andaquíes</h1>
+        <h2 id="modalTitle" style="margin-top:4px;margin-bottom:4px;color:#fff;font-size:17px;font-weight:600;line-height:1.3;">Apartamento en Conjunto Condominio Mediterraneo - Norte - Andaquíes</h2>
         <p class="tipo">Apartamento en conjunto</p>
-        <p class="modalCodigo"><strong>Código:</strong> 906</p>
+        <p class="modalCodigo" style="color:#c0c0c0;font-size:12px;margin:0;"><strong style="font-weight:500;">Código:</strong> 906</p>
         <p class="precio">$410.000.000</p>
-        <div class="chips"><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12V7a1 1 0 011-1h4a1 1 0 011 1v5M3 12h18M3 12v5h18v-5"/><path d="M13 6h4a1 1 0 011 1v5"/></svg>3 hab.</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16v4a4 4 0 01-4 4H8a4 4 0 01-4-4v-4z"/><path d="M6 12V5a2 2 0 012-2h1"/><circle cx="8" cy="3" r="1"/></svg>2 baños</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20M16 7l-1-4H9L8 7"/></svg>1 garaje</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 7l9-4 9 4M4 11v10M20 11v10M8 11v10M16 11v10M12 11v10"/></svg>6 pisos</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M6 7V5a2 2 0 014 0v2M14 7V5a2 2 0 014 0v2"/><circle cx="8" cy="14" r="2"/><circle cx="16" cy="14" r="2"/></svg>Cocina integral</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>112 m²</span></div>
+        <div class="modal-etiquetas" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/ykKdGwE.png" alt="Habitaciones" class="icono-etiqueta"/> Habitaciones 3</span><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/h9NqA32.png" alt="Baños" class="icono-etiqueta"/> Baños 2</span><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/4Yixa77.png" alt="Garaje" class="icono-etiqueta"/> Garaje 1</span><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/rH6cXMa.png" alt="Cocina" class="icono-etiqueta"/> Cocina integral</span><span class="modal-etiqueta"><img loading="lazy" src="https://img.icons8.com/ios-filled/50/ffffff/stairs.png" alt="Pisos" class="icono-etiqueta"/> Pisos 6</span><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/rz72lGC.png" alt="Área lote" class="icono-etiqueta"/> Lote 112 m²</span></div>
       </div>
     </div>
 
@@ -671,7 +732,7 @@ body{
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.846.497 3.576 1.362 5.065L2 22l5.07-1.33A9.953 9.953 0 0012 22c5.522 0 10-4.477 10-10S17.521 2 11.999 2zm.001 18a7.963 7.963 0 01-4.184-1.188l-.3-.178-3.012.79.803-2.93-.196-.31A7.944 7.944 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/></svg>
       Agendar visita por WhatsApp
     </a>
-    <button class="cta-share" onclick="compartir()">
+    <button class="modal-btn-compartir" onclick="compartir()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       Compartir
     </button>
@@ -750,13 +811,6 @@ function irImg(i) {
   minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
-  var activa = minis[imgIndex];
-  if (activa) {
-    var wrap = activa.closest('.miniaturas-wrap');
-    if (wrap) {
-      wrap.scrollTo({ left: activa.offsetLeft - (wrap.offsetWidth/2) + (activa.offsetWidth/2), behavior:'smooth' });
-    }
-  }
 }
 
 function cambiarImg(dir) { irImg(imgIndex + dir); }
