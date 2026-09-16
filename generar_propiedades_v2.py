@@ -679,26 +679,29 @@ body{{
 .miniaturas, .carrusel-miniaturas{{
   display: flex !important;
   flex-wrap: nowrap !important;
-  gap: 2px !important;
-  margin-top: 2px !important;
+  gap: 4px !important;
+  margin-top: 4px !important;
   padding: 0px !important;
   width: 100% !important;
 }}
 .miniatura, .carrusel-min{{
-  flex: 0 0 calc(25% - 2px) !important;
-  width: calc(25% - 2px) !important;
+  flex: 0 0 calc(25% - 3px) !important;
+  width: calc(25% - 3px) !important;
   height: 52px !important;
   object-fit: cover !important;
-  border-radius: 0px !important;
+  border-radius: 4px !important;
   cursor: pointer;
   opacity: 0.4;
-  transition: opacity 0.3s, border-color 0.3s;
-  border: 2px solid transparent !important;
+  transition: opacity 0.3s;
+  border: none !important;
   box-sizing: border-box !important;
 }}
-.miniatura.activa, .miniatura:hover, .carrusel-min.activa, .carrusel-min:hover{{
-  opacity: 1;
-  border-color: var(--gold) !important;
+.miniatura.activa, .carrusel-min.activa{{
+  opacity: 1 !important;
+  border: none !important;
+}}
+.miniatura:hover, .carrusel-min:hover{{
+  opacity: 0.75;
 }}
 
 /* ── BLOQUE INFO ── */
