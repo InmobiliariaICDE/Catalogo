@@ -270,21 +270,32 @@ body{
 }
 
 .miniaturas-wrap{
-  padding: 0px;
+  padding: 0px 0px !important;
+  margin: 0px !important;
   overflow-x: auto;
-  background: rgba(0,0,0,0.2);
+  background: transparent;
+  width: 100%;
+  scrollbar-width: none;
+}
+
+.miniaturas-wrap::-webkit-scrollbar{
+  display: none;
 }
 
 .miniaturas{
   display: flex;
-  gap: 8px;
+  gap: 4px;
+  padding: 0px 0px !important;
+  margin: 0px !important;
+  width: 100%;
 }
 
 .miniatura{
-  width: 60px;
-  height: 45px;
+  flex: 0 0 calc(25% - 3px);
+  width: calc(25% - 3px);
+  height: 55px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   opacity: 0.5;
   transition: all 0.3s;
@@ -730,6 +741,13 @@ function irImg(i) {
   minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
+  var activa = minis[imgIndex];
+  if (activa) {
+    var wrap = activa.closest('.miniaturas-wrap');
+    if (wrap) {
+      wrap.scrollTo({ left: activa.offsetLeft - (wrap.offsetWidth/2) + (activa.offsetWidth/2), behavior:'smooth' });
+    }
+  }
 }
 
 function cambiarImg(dir) { irImg(imgIndex + dir); }
