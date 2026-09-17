@@ -788,13 +788,25 @@ body{{
 
 /* ── COLUMNA DERECHA ── */
 .modal-subtitulo-nuevo{{
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  margin: 16px 0 8px;
-  border-left: 3px solid var(--gold);
-  padding-left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #d4a84b;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Outfit", sans-serif;
 }}
+.modal-subtitulo-nuevo::after{{
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(212,168,75,0.2);
+}}
+.modal-subtitulo-nuevo:first-child{{ margin-top: 0; }}
 
 .modal-tabla-caracteristicas{{
   width: 100%;
