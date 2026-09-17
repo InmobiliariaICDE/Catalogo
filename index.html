@@ -5429,15 +5429,29 @@ font-weight: 500;
         }
 
         .carrusel-miniaturas {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
             gap: 2px;
             margin-top: 2px;
             background: transparent;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-x;
+            cursor: grab;
+            user-select: none;
+        }
+        .carrusel-miniaturas::-webkit-scrollbar {
+            display: none;
+        }
+        .carrusel-miniaturas.grabbing {
+            cursor: grabbing;
         }
 
         .carrusel-min {
-            width: 100%;
+            flex: 1 0 calc(25% - 1.5px);
+            min-width: 70px;
             height: 62px;
             object-fit: cover;
             border-radius: 0;
@@ -5445,6 +5459,8 @@ font-weight: 500;
             opacity: 0.4;
             display: block;
             transition: opacity 0.3s;
+            user-select: none;
+            -webkit-user-drag: none;
         }
         .carrusel-min.activa { opacity: 1; }
         .carrusel-min:hover { opacity: 0.75; }
@@ -9311,23 +9327,43 @@ font-weight: 500;
                         if (reiniciarTimer) carruselReiniciarProgreso();
                     }
 
-                    function carruselActualizarMiniaturas() {
-                        const n = window.carruselFotos.length;
-                        if (n <= 1) return;
+                    function carruselConstruirMiniaturas() {
                         const minDiv = document.getElementById('carruselMiniaturas');
-                        // Calcular ventana de 4 fotos centrada en actual
-                        let start = Math.max(0, window.carruselIdx - 1);
-                        if (start + 4 > n) start = Math.max(0, n - 4);
-                        const ventana = [];
-                        for (let i = start; i < start + 4 && i < n; i++) ventana.push(i);
+                        if (!minDiv) return;
+                        const fotos = window.carruselFotos || [];
+                        if (fotos.length <= 1) {
+                            minDiv.style.display = 'none';
+                            minDiv.innerHTML = '';
+                            return;
+                        }
+                        minDiv.style.display = 'flex';
                         minDiv.innerHTML = '';
-                        ventana.forEach(i => {
+                        fotos.forEach((url, i) => {
                             const img = document.createElement('img');
-                            img.src = window.carruselFotos[i];
+                            img.src = url;
                             img.className = 'carrusel-min' + (i === window.carruselIdx ? ' activa' : '');
                             img.loading = 'lazy';
-                            img.addEventListener('click', () => carruselIr(i));
+                            img.draggable = false;
+                            img.alt = 'Foto miniatura ' + (i + 1);
+                            img.addEventListener('click', () => {
+                                if (minDiv._wasDragging) return;
+                                carruselIr(i);
+                            });
                             minDiv.appendChild(img);
+                        });
+                    }
+
+                    function carruselActualizarMiniaturas() {
+                        const minDiv = document.getElementById('carruselMiniaturas');
+                        if (!minDiv) return;
+                        const minis = minDiv.querySelectorAll('.carrusel-min');
+                        minis.forEach((img, i) => {
+                            if (i === window.carruselIdx) {
+                                img.classList.add('activa');
+                                img.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                            } else {
+                                img.classList.remove('activa');
+                            }
                         });
                     }
 
@@ -9360,9 +9396,7 @@ font-weight: 500;
                             principal.insertBefore(slide, principal.querySelector('.carrusel-prev'));
                         });
                         // Construir miniaturas iniciales
-                        const minDiv = document.getElementById('carruselMiniaturas');
-                        minDiv.style.display = fotos.length > 1 ? 'grid' : 'none';
-                        carruselActualizarMiniaturas();
+                        carruselConstruirMiniaturas();
                         document.getElementById('carruselCounter').textContent = '1 / ' + fotos.length;
                         if (fotos.length > 1) carruselReiniciarProgreso();
 
@@ -11062,23 +11096,73 @@ sizePct: 70
                     (function(){
                         function initMinDrag() {
                             var el = document.getElementById('carruselMiniaturas');
-                            if (!el || el._minDrag) return;
-                            el._minDrag = true;
-                            var down=false, startX=0, scrollLeft=0;
+                            if (!el || el._minDragInited) return;
+                            el._minDragInited = true;
+                            var down = false, startX = 0, scrollLeft = 0, moved = false;
+
                             el.addEventListener('mousedown', function(e){
-                                down=true; startX=e.pageX; scrollLeft=el.scrollLeft;
-                                el.classList.add('grabbing'); e.preventDefault();
+                                down = true;
+                                moved = false;
+                                el._wasDragging = false;
+                                startX = e.pageX - el.offsetLeft;
+                                scrollLeft = el.scrollLeft;
+                                el.classList.add('grabbing');
                             });
-                            document.addEventListener('mouseup', function(){ down=false; el.classList.remove('grabbing'); });
+
+                            document.addEventListener('mouseup', function(){
+                                if (down) {
+                                    down = false;
+                                    el.classList.remove('grabbing');
+                                    if (moved) {
+                                        el._wasDragging = true;
+                                        setTimeout(function(){ el._wasDragging = false; }, 80);
+                                    }
+                                }
+                            });
+
                             document.addEventListener('mousemove', function(e){
-                                if(!down) return;
-                                el.scrollLeft = scrollLeft - (e.pageX - startX);
+                                if (!down) return;
+                                e.preventDefault();
+                                var x = e.pageX - el.offsetLeft;
+                                var walk = (x - startX) * 1.5;
+                                if (Math.abs(walk) > 5) moved = true;
+                                el.scrollLeft = scrollLeft - walk;
                             });
+
+                            var touchStartX = 0, touchMoved = false;
+                            el.addEventListener('touchstart', function(e){
+                                if (e.touches.length === 1) {
+                                    touchStartX = e.touches[0].clientX;
+                                    touchMoved = false;
+                                    el._wasDragging = false;
+                                }
+                            }, {passive: true});
+
+                            el.addEventListener('touchmove', function(e){
+                                if (e.touches.length === 1) {
+                                    if (Math.abs(e.touches[0].clientX - touchStartX) > 8) {
+                                        touchMoved = true;
+                                        el._wasDragging = true;
+                                    }
+                                }
+                            }, {passive: true});
+
+                            el.addEventListener('touchend', function(){
+                                if (touchMoved) {
+                                    setTimeout(function(){ el._wasDragging = false; }, 80);
+                                }
+                            }, {passive: true});
                         }
-                        // Init al abrir modal
+
                         var ov = document.getElementById('modalOverlay');
                         if (ov) new MutationObserver(function(){ initMinDrag(); })
                             .observe(ov, {attributes:true, attributeFilter:['style','class']});
+
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', initMinDrag);
+                        } else {
+                            initMinDrag();
+                        }
                     })();
 
                     // ─────────────────────────────────────────────────
