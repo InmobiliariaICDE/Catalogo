@@ -157,9 +157,9 @@ body{
 }
 
 .modal-close:hover{
-  background: rgb(151 151 151 / 15%);
-  color: #fff;
-  border-color: rgb(145 145 145 / 40%);
+  background: var(--gold);
+  color: #000;
+  border-color: var(--gold);
 }
 
 .modal-contenido{
@@ -205,115 +205,86 @@ body{
 }
 
 .carrusel-principal{
-  position: relative;
   width: 100%;
-  overflow: hidden;
-  border-radius: 0;
   height: 300px;
-  background: transparent;
-  user-select: none;
+  position: relative;
+  background: #000;
 }
 
-.carrusel-slide{
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-  pointer-events: none;
-}
-
-.carrusel-slide.activa{
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.carrusel-slide img, .galeria-img{
+.galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .carrusel-counter{
   position: absolute;
-  top: 12px;
-  left: 10px;
-  background: rgba(0,0,0,0.55);
-  color: #fff;
-  font-size: 11px;
-  font-family: "Outfit", sans-serif;
-  padding: 3px 10px;
+  top: 15px;
+  left: 15px;
+  background: rgba(7, 6, 5, 0.8);
+  border: 1px solid var(--border);
+  color: var(--gold);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 4px 12px;
   border-radius: 20px;
-  z-index: 5;
-  letter-spacing: 0.5px;
 }
 
-.carrusel-btn, .galeria-nav{
+.galeria-nav{
   position: absolute;
-  top: 0;
-  background: none;
-  border: none;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(7, 6, 5, 0.7);
+  border: 1px solid var(--border);
   color: #fff;
-  font-size: 36px;
-  line-height: 1;
-  width: 20%;
-  height: 100%;
-  border-radius: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   cursor: pointer;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  transition: opacity 0.2s;
-  -webkit-tap-highlight-color: transparent;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
-  opacity: 0.85;
-}
-
-.carrusel-btn:hover, .galeria-nav:hover{
-  opacity: 1;
-  background: none;
-  color: #fff;
-}
-
-.carrusel-btn.prev, .galeria-nav.prev{ left: 0; justify-content: flex-start; padding-left: 8px; transform: none; }
-.carrusel-btn.next, .galeria-nav.next{ right: 0; justify-content: flex-end; padding-right: 8px; transform: none; }
-
-.carrusel-expand{
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  background: rgba(0,0,0,0.6);
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 8px;
-  width: 36px;
-  height: 36px;
+  font-size: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  z-index: 10;
+  transition: all 0.3s;
+}
+
+.galeria-nav:hover{
+  background: var(--gold);
+  color: #000;
+}
+
+.galeria-nav.prev{ left: 15px; }
+.galeria-nav.next{ right: 15px; }
+
+.carrusel-expand{
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  background: rgba(7, 6, 5, 0.7);
+  border: 1px solid var(--border);
   color: #fff;
-  transition: all 0.2s;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.carrusel-expand:hover{
-  background: rgba(0,0,0,0.85);
-}
-
-.carrusel-expand svg{
-  width: 16px;
-  height: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .miniaturas-wrap, .carrusel-miniaturas-wrap{
   padding: 0px !important;
   margin: 0px !important;
   overflow-x: auto !important;
+  overflow-y: hidden !important;
   background: transparent;
   width: 100%;
   scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  cursor: grab;
+  user-select: none;
 }
 .miniaturas-wrap::-webkit-scrollbar, .carrusel-miniaturas-wrap::-webkit-scrollbar{
   display: none;
@@ -321,123 +292,112 @@ body{
 .miniaturas, .carrusel-miniaturas{
   display: flex !important;
   flex-wrap: nowrap !important;
-  gap: 4px !important;
-  margin-top: 4px !important;
+  gap: 2px !important;
+  margin-top: 2px !important;
   padding: 0px !important;
   width: 100% !important;
+  background: transparent !important;
 }
 .miniatura, .carrusel-min{
-  flex: 0 0 calc(25% - 3px) !important;
-  width: calc(25% - 3px) !important;
-  height: 52px !important;
+  flex: 0 0 calc((100% - 6px) / 4) !important;
+  width: calc((100% - 6px) / 4) !important;
+  min-width: calc((100% - 6px) / 4) !important;
+  max-width: calc((100% - 6px) / 4) !important;
+  height: 62px !important;
   object-fit: cover !important;
-  border-radius: 4px !important;
+  border-radius: 6px !important;
   cursor: pointer;
   opacity: 0.4;
   transition: opacity 0.3s;
   border: none !important;
   box-sizing: border-box !important;
+  margin: 0px 0px 0px 0px !important;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .miniatura.activa, .carrusel-min.activa{
   opacity: 1 !important;
   border: none !important;
+  margin: 0px 0px 0px 0px !important;
 }
 .miniatura:hover, .carrusel-min:hover{
   opacity: 0.75;
 }
+@media (max-width: 600px) {
+  .miniatura, .carrusel-min{
+    height: 52px !important;
+    flex: 0 0 calc((100% - 6px) / 4) !important;
+    width: calc((100% - 6px) / 4) !important;
+    min-width: calc((100% - 6px) / 4) !important;
+    max-width: calc((100% - 6px) / 4) !important;
+    margin: 0px 0px 0px 0px !important;
+  }
+}
 
 /* ── BLOQUE INFO ── */
 .modal-bloque-info{
-  padding: 16px 18px 14px;
+  padding: 20px;
 }
 
-.modal-bloque-info h1, .modal-bloque-info h2{
-  margin-top: -7px !important;
-  margin-bottom: 3px !important;
+.modal-bloque-info h1{
   color: #fff;
   font-size: 17px;
   font-weight: 600;
   line-height: 1.3;
+  margin-bottom: 4px;
 }
 
 .modal-bloque-info .tipo{
-  color: #c0c0c0;
+  color: var(--gold);
   font-size: 13px;
   font-weight: 500;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 
 .modal-bloque-info .modalCodigo{
   color: #c0c0c0;
   font-size: 12px;
-  margin: 0;
 }
 
 .modal-bloque-info .precio{
-  margin-top: 10px;
-  margin-bottom: 4px;
-  color: #22c55e;
+  font-size: 20px;
   font-weight: 700;
-  font-size: 22px;
-  text-shadow: 0 0 30px rgba(34,197,94,0.2);
+  color: var(--green);
+  margin: 8px 0;
 }
 
 .chips, .modal-etiquetas{
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 10px;
+  margin-top: 4px;
 }
 
-.chip, .modal-etiqueta, .modal-etiqueta-pill{
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgb(151 151 151 / 8%);
-  border: 1px solid rgb(145 145 145 / 20%);
-  color: rgba(255,255,255,0.75);
+.chip, .modal-etiqueta-pill{
+  background: rgba(212,168,75,0.05);
+  border: 1px solid rgba(212,168,75,0.15);
+  color: #fff;
   font-size: 11px;
   padding: 4px 10px;
   border-radius: 20px;
-  font-family: "Outfit", sans-serif;
-}
-
-.icono-etiqueta{
-  width: 12px;
-  height: 12px;
-  margin: 0;
-  border-radius: 0;
-  filter: brightness(0) invert(1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .chip svg, .modal-etiqueta-pill svg{
-  color: #d4a84b;
-  flex-shrink: 0;
+  color: var(--gold);
 }
 
 /* ── COLUMNA DERECHA ── */
 .modal-subtitulo-nuevo{
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: #d4a84b;
-  text-transform: uppercase;
-  margin-bottom: 14px;
-  margin-top: 18px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: "Outfit", sans-serif;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+  border-left: 3px solid var(--gold);
+  padding-left: 8px;
 }
-
-.modal-subtitulo-nuevo::after{
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: rgba(212,168,75,0.2);
-}
-
-.modal-subtitulo-nuevo:first-child{ margin-top: 0; }
 
 .modal-tabla-caracteristicas{
   width: 100%;
@@ -472,11 +432,9 @@ body{
 }
 
 .modal-texto{
-  font-size: 14px;
-  line-height: 1.4;
-  color: #c0c0c0;
-  margin-top: 0px;
-  margin-bottom: 10px;
+  color: #d0d0d0;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 /* ── ACCIONES ── */
@@ -497,44 +455,36 @@ body{
   gap: 9px;
   background-color: #d4a84b;
   color: #fff;
-  font-family: "Outfit", sans-serif;
   font-size: 13px;
-  font-weight: 700;
-  padding: 11px 22px;
-  border-radius: 50px;
+  font-weight: 600;
   text-decoration: none;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 18px rgba(212,168,75,0.25);
+  padding: 10px 16px;
+  border-radius: 4px;
+  transition: all 0.3s;
 }
 
 .modal-btn-whatsapp-nuevo:hover{
-  background-color: #c49940;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(212,168,75,0.35);
+  background-color: var(--gold-hover);
 }
 
-.modal-btn-compartir, .cta-share{
+.cta-share{
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  background: rgb(151 151 151 / 8%);
-  border: 1px solid rgb(145 145 145 / 20%);
-  color: rgb(241 241 241 / 70%);
-  font-family: "Outfit", sans-serif;
+  gap: 8px;
+  border: 1px solid rgba(212,168,75,0.3);
+  color: #fff;
   font-size: 13px;
-  font-weight: 500;
-  padding: 11px 18px;
-  border-radius: 50px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s;
+  background: transparent;
+  transition: all 0.3s;
 }
 
-.modal-btn-compartir:hover, .cta-share:hover{
-  background: rgb(151 151 151 / 15%);
-  color: #fff;
-  border-color: rgb(145 145 145 / 40%);
+.cta-share:hover{
+  border-color: var(--gold);
+  background: var(--gold-dim);
 }
 
 .share-confirm{
@@ -698,10 +648,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal" id="carruselPrincipal">
-          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczOP7kTIcdcFaQxX6K84eL0qI2zx4lA2O2Grdr-3sjzrxHRGax7nlwujHi1KX6RpK97fIgOpNgg9tvsneaomLokgkRZthMAzpnwuuXtt5TiED7qhK03S=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPPKJLYJAV7DzvuluJuEnlsDkzwvvjn2JRi8nS9kCYxLWbYFDCWKSeGwIzuf5mZoACQzQQOd5WuLPJCoka0KmaiJKfTrBvj2B4ymFoRnNIUcKuQvAE1=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOorgtJyiSzZB1PoyDl-Dd_TPuVntSg-A-SQorF2lrZBey75xYJ8ws91hgyIlTyp-cWG0UewMxYpBuEEIGxqAjfLBnsMrLbI71XczvsnjczgSwHrLaM=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNkR1Irx2yaf2TITrlYPAEBQpbLwOdBCMPcsqAZ_78wFJhA3gfpCo-wFaYIJjMZeO2MinbJzx6wqLd3-s-c7Dngaa_NAxLCXmHfRn6Qx6yFrdi7BeQ7=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMcvP8L1Nx5tKB9z7GYrZ7Alu37LkClLCTMZBTJdwGH0uF3Bjg4sizhF3ygvbCcPwTU3rD_QSB5xCC1Ec2TDEsmqdDtli8RnhHLAcgJjiEFUMaTiusX=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNSXMLd8UZ2k2cwU3Li_gGt6wiCUS4ToL3CIINDbdHzxpijd0a3rt-YGHuxGwbMjR9qGdBiCWZHhRPBBoszIvXf_XD_aTWirixH0Hwm5MX1aXTIFbxP=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNlPxd70fo2J7pFPlv8SBcSjB_35bWvssSvV_VKfkOOqIjN6JVWwBigBSmWS4fbbQmUbhex22jBuvKTQw1NgO9fQr539na5tZYXA4lc-d9tAboOSNKJ=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMBzDonRbpS6JU3byBU2uh1FdtbxyBUE3OGjICsfiGhlaZI7GQibc18uXr_lxeULhaxjGdsTXKKQ9Z0QArVW8ZiijCu654iju5viWut6FVPLGSelvNt=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 8" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM6Vr5MdzgyFr-eXEX60BP61iGDFS30WsiH6tm-CyIe1Ijb6vePjeq0eszYHxF50bisjqkJjGsWBKWNYoM7lBhFGNopiQKSwqY1Wokl1Ubsy32AnuJB=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 9" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPyPucm40YC6mbqpjH51Fo8kN0NSchiCSsZ9O468AvEDotbvPDxxlBhYpSd7aRT5F2BX0-p8shpP6FrmwbPoakAmsvT4ujcTFIsL515CsoGhHeiDUTi=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 10" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPJ7TGYyTlcMo5ZXCayIlbgRij7iptYVlGn547kubEGEDTudYCxiQH1CuTKMenXCQb8T4nQh2MaCRaA-jYp1GV6Ff-VeISdy1-6YYiaq2OMX9Fw3Z6w=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 11" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPANsDfjaG44iCnfaSSAuMaPRPlMWgEoniMr-3Gtz7eGfxwz9VzCby7-oQGQCHyd2Bv595OVOoOEjXUJV5xqx8l8_Nk6Z0edrW73yEj6KTICg6xXdTu=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 12" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOjmamjRq35sn7y4JTy0c3UESDuKPXeUcU0WUcK8r8P8B1Y3UFLNVDFNezxMeZf2kuF0XgHNKKnprSZCIiSv0UVQosO5jHVGOTi3zZn88Pyci3WK_uv=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 13" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM3OYUOKuq3GaS0hynWWztN_MpJHIxtwZSEH6sBX2wJjnb8PJ6uAEN2FZmMAYLgmsO3QcSxRDNmKD1q_5Z82t68Iumt6pChZr1Of9GtlF6JbhIkQb-Q=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 14" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMG8ESV9llBx_adN0v-xQS3dnIomtQ_d-OIRrSMZa8lkg3CEsSB4mJzzj05cgdMJ-nUfeiugYChgpGXNElzrVlGWj4NVOMVwdcKJHkMtHtUUyjw0g_e=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 15" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNuSYsUUAE_RMSKs6040I0tpQ9NOq1zP3pEo6hewIwc_XwAtw6NL38P22UlcfBHhoYrHc0ckv3Fvz9aq-Zp_zJSW60c9A5zAvZBBISf5WoBxPgOJs0K=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 16" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMz9OwbgBf9ocesXO5RWRUAnAXku_US6qQxXCc8jxGYteRmIlxYSI5fMUs4OKLhNvGqHUuv4bCdnSMALB33gIhRpuPoaP5fpXjTmTSIv607izRc5S1U=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 17" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNe_2odF9vwHfeN88hP-ylvHfkDiD2WYrfHpyxyMb50igYYJ-CJgXJDOTo0BZeAXvmWhHHfmit3rYioW0h67urcFf7SXbhJb7PVx0Zk1N-OBbd_b09o=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 18" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNvQ9W_2iIYieCzg6R_msHuUiEK5xdvR6qbsOhdD9CjY1Q_jN0GHEtAXZOGF_sDv6-FI_imJMfNajWRWI0lJf4GnYaAd5b6yg74wVh0TODAvUuhMvou=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 19" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPXZquWAZf7f4SX2is6CTedzAHFaj1FMTZSOfGAh4T0PdzaiA_UrlfnUCnyNCIpyh548JU-1ZmznGKbM--Hts9ecS-veUZ0mCyUJBvdOpJN8k36TIRE=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 20" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPmPL0mqPKcLyqsshgVyzoWLyASV7ySI1sH_N-A0u6wuvIYI3Yzr_XUmEvq3OoqIv3m3qthdJHsRe_eOvwijtSiOxZ8ifZ5ZLsFHuQ91wX3gJF0iLHE=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 21" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPwwkza3__tbUYHLYrzhmrFZWq-5UsZ2Cs7kqs6nCFxD-w3vSQkLRZo_O0QArmr34W2o9K4jlRcsUFFxpwWHuZHWAoW_Gu4gTsjHx8gZ6sviwxxN9tW=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 22" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNJlg52UqB5Qnb-7Asv3odB2MGOIeGhBcnN9nBJhefV0KjWh6MZMzazT1lRWI_CAFEcLYHKi9mf3nuZ_UIkc6dceX66_eZleSnRXt2Q2orBzWES-AZy=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 23" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM6MGUJgEmfnT9DIp0Ro9dSPVkXJodk-bcmjpn786lN7iKl6eDCPxJQWvqy3YyOmqCQ7g7_sqpgNTInh3fVnt29BVXr4ERa5DlOMmwro6b3ijdxg5w0=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 24" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMwuVIIktIERiz_D11CW76gopnbRaD-KSUtsabYk5859o2UyJfm8yLhRcGbg15eQ0E2lvm1lGYyx4fCC8a1En2nVnDGaYx9YgzZEFYaZfdBBPHx0KbW=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 25" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOQ42bdCnKiGDFMQBHsg5FdJo8_vIBOfOn6D9zeCUd86nGEkSyDhxvg6DVmtMJiYulzE-xcanZGlWXNfOgDTmRD1iGjPzXlOIOJy8UAordas2ikF8iX=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 26" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPQOsozASWuXT1id6BahPmI-OR8IU2pHc58irb2ala1JxkgM-diotn74OJVEG3ZkwAwSdkR7jcjytwWO6brolgRiVtSqy6LESOpOrsa2U4JfLIQdMz7=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 27" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOVIlvJ02vHI6067WKfZEAjEOFT7MGp9lc8gqvWKHDIAkzIg1nsAJ2hpIG43Sy8GVcVQjy_FKDSspl1N7krn5LrSMh1wNxvIQreOF_WQBXeJLlxjA3F=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 28" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPurJ_E_qNGJC7eQ6CeZn7xpKahw12n_wVxsxJcE25txp4lOIuQJEJG3lCjAyQG_kGR5ubHPUp9TFCu-DVnQz5aLVXU49xJq46P7IWEzfNkTqZO4rO8=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 29" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMBrDEOhAavjlckAaEQexf2wNxZ1-P4pDPl5F5-js9RblyUIK69gLGt3k35rpTaPLBu4ud9J0SXtgJh8TuawwzlciyQxP1KE0Mx7H4-8RyTTeSEJb3v=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 30" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNW9WBa7hweo6Wfc3RO7spKW7mZC2JS_2D15kkfSAIGEoNr9RPxv9fIHnvmkzK12QM00ZTczuCgXdB3jLEhkptmZGLjSSFtmKltKG0CmtOVFDaC3ZI3=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 31" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOrGi7JKuwhxaF8Sprjj44ZaYH9_XDteFK4-SVqPCXBQe-k-BW0Lto3RMLmJPddKgewVOsTjgi181LI0bzFS8zXeyf8f2v2xjW6GmJ-sv_5-RVpQakX=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 32" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOqezXuJVze4EbKyFwCEuGNxG7aFMEO0qp2-Jm6NBDd8jbHg9SPT_RU5mSNKcXgRvPzho8XhaP-l7dfMHG74tUtdJDE_Wi-CDt1oeRFgchbXnSzh-19=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 33" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNKeilvB985jwZwHwy9vyfoULYcpGWEuKhQVBzN2boE5ZtXvIADiu1VyoXKJq-eB12UeMd64GkhnPUmdWJKRceybJLy4Z5740yiEgJvMhM2Ix-hmJ0G=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 34" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP4OcaTz8ow56HyFTkYg1nZ60DEuaUJ66upIv1v_FVZKyO6vCB8GqgIKwEGsnVLnh9EjBb1fg-6qy3L1nTBWGx055ZT6cOVIyz2bnknqNcW74yff6DZ=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 35" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMAcnQz9ArOsyfOK2xqI-HIDZ6R9ZUhBYP2A_E53TAG0RltP6qHxYJvr51WXm4shSH5JSQTixslxLjNvAH8Fgzrt0bHPqpxx60ga79ogQ6zo71U0iX2=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 36" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN27kYOIm2Wk_yDkRlkAma2ZjoJ2H4dZEYHPMa52P5VabPivn-3_GZlnK9CHEG9GEuZqgrW-W5yFdQVt5pOEgOZzyZ4Jw9NpMKtUObOd_xxG3vGApVu=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 37" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPNC1Z3NXoo3yHfKEtav6fff4rkY9_Wbwr53pe8CZQ9iXG-0rR4MI5ehPoHFylgfFtdwLCp_fXeG6CYSS3lTZ38E0GKnHjtvIlQ-RqWTiy5DXpZs-dF=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 38" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPp81qNIZwqzxnRdW8MK5liOJ768giHAp71hm-5f7YJXDS5GKtay1YwKGu4VTYijOTKPf5aj4SQvGHFfw-HWVNCOQ6WT00TOQ0zS3xf1GTDPp8lj4T3=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 39" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOGQSh_ioIiZH-P0R5aNjyFRvTlN2G_XxoBS_9oWucn053FbWDzqALi6RgoAuRQCyiHTvyD41iH116aVYy2HFwF1iJXQrqJ3QHzUFfIrfmBkdgdhLAj=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 40" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPdW5bTnz4WcRbu2NGyRWtjN77xLqYZMLGvY5Qu-DkR7hCGXKoGVmlpviquXLhFUuGBlln5e1SRq_UJNjb6vhhLOeCFHjMntu0C9f1UEnSJGDfDTATY=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 41" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNs1LyluWpyIYYwvqW-AEEnksdXCtL4fz0b0R544blMGfeXBc30Tb5t1FqkuaVePsuTfOMTUXp4_tbx-K8APeIN9hWXUrQSG0wd4hoEXMhKoDF3IB4w=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 42" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPmeY4e9l0l3Ia0_MIY_OeqIGkdzbc-OFwR-J8OrY9XrcgpYD93jS-oDL3WX5fMxALYhBJcvB2UDGHhWrVavgjmUIVhCqj9qfRNuC-qJoMTlp5RKLlO=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria foto 43" loading="lazy"/></div>
-          <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+        <div class="carrusel-principal">
+          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczOP7kTIcdcFaQxX6K84eL0qI2zx4lA2O2Grdr-3sjzrxHRGax7nlwujHi1KX6RpK97fIgOpNgg9tvsneaomLokgkRZthMAzpnwuuXtt5TiED7qhK03S=w1200" alt="Casa en venta Quirinal Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
           <div class="carrusel-counter"><span id="imgActual">1</span> / 43</div>
+          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -713,11 +663,11 @@ body{
       </div>
       
       <div class="modal-bloque-info">
-        <h2 id="modalTitle" style="margin-top:4px;margin-bottom:4px;color:#fff;font-size:17px;font-weight:600;line-height:1.3;">Casa tipo IPS en barrio Quirinal</h2>
+        <h1>Casa tipo IPS en barrio Quirinal</h1>
         <p class="tipo">Casa</p>
-        <p class="modalCodigo" style="color:#c0c0c0;font-size:12px;margin:0;"><strong style="font-weight:500;">Código:</strong> 667</p>
+        <p class="modalCodigo"><strong>Código:</strong> 667</p>
         <p class="precio">$650.000.000</p>
-        <div class="modal-etiquetas" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/ykKdGwE.png" alt="Habitaciones" class="icono-etiqueta"/> Habitaciones 4</span><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/h9NqA32.png" alt="Baños" class="icono-etiqueta"/> Baños 4</span><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/rH6cXMa.png" alt="Cocina" class="icono-etiqueta"/> Cocina integral</span><span class="modal-etiqueta"><img loading="lazy" src="https://img.icons8.com/ios-filled/50/ffffff/stairs.png" alt="Pisos" class="icono-etiqueta"/> Pisos 2</span><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/rz72lGC.png" alt="Área lote" class="icono-etiqueta"/> Lote 143 m²</span></div>
+        <div class="chips"><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12V7a1 1 0 011-1h4a1 1 0 011 1v5M3 12h18M3 12v5h18v-5"/><path d="M13 6h4a1 1 0 011 1v5"/></svg>4 hab.</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16v4a4 4 0 01-4 4H8a4 4 0 01-4-4v-4z"/><path d="M6 12V5a2 2 0 012-2h1"/><circle cx="8" cy="3" r="1"/></svg>4 baños</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 7l9-4 9 4M4 11v10M20 11v10M8 11v10M16 11v10M12 11v10"/></svg>2 pisos</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M6 7V5a2 2 0 014 0v2M14 7V5a2 2 0 014 0v2"/><circle cx="8" cy="14" r="2"/><circle cx="16" cy="14" r="2"/></svg>Cocina integral</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>143 m²</span></div>
       </div>
     </div>
 
@@ -749,7 +699,7 @@ body{
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.846.497 3.576 1.362 5.065L2 22l5.07-1.33A9.953 9.953 0 0012 22c5.522 0 10-4.477 10-10S17.521 2 11.999 2zm.001 18a7.963 7.963 0 01-4.184-1.188l-.3-.178-3.012.79.803-2.93-.196-.31A7.944 7.944 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/></svg>
       Agendar visita por WhatsApp
     </a>
-    <button class="modal-btn-compartir" onclick="compartir()">
+    <button class="cta-share" onclick="compartir()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       Compartir
     </button>
@@ -823,15 +773,9 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
-  if (slides.length) {
-    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
-  } else {
-    var main = document.getElementById('imgPrincipal');
-    if (main) main.src = IMGS[imgIndex];
-  }
-  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
-  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
+  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
+  var minis = document.querySelectorAll('.miniatura');
+  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

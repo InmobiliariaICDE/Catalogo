@@ -669,9 +669,15 @@ body{{
   padding: 0px !important;
   margin: 0px !important;
   overflow-x: auto !important;
+  overflow-y: hidden !important;
   background: transparent;
   width: 100%;
   scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  cursor: grab;
+  user-select: none;
 }}
 .miniaturas-wrap::-webkit-scrollbar, .carrusel-miniaturas-wrap::-webkit-scrollbar{{
   display: none;
@@ -679,29 +685,46 @@ body{{
 .miniaturas, .carrusel-miniaturas{{
   display: flex !important;
   flex-wrap: nowrap !important;
-  gap: 4px !important;
-  margin-top: 4px !important;
+  gap: 2px !important;
+  margin-top: 2px !important;
   padding: 0px !important;
   width: 100% !important;
+  background: transparent !important;
 }}
 .miniatura, .carrusel-min{{
-  flex: 0 0 calc(25% - 3px) !important;
-  width: calc(25% - 3px) !important;
-  height: 52px !important;
+  flex: 0 0 calc((100% - 6px) / 4) !important;
+  width: calc((100% - 6px) / 4) !important;
+  min-width: calc((100% - 6px) / 4) !important;
+  max-width: calc((100% - 6px) / 4) !important;
+  height: 62px !important;
   object-fit: cover !important;
-  border-radius: 4px !important;
+  border-radius: 6px !important;
   cursor: pointer;
   opacity: 0.4;
   transition: opacity 0.3s;
   border: none !important;
   box-sizing: border-box !important;
+  margin: 0px 0px 0px 0px !important;
+  user-select: none;
+  -webkit-user-drag: none;
 }}
 .miniatura.activa, .carrusel-min.activa{{
   opacity: 1 !important;
   border: none !important;
+  margin: 0px 0px 0px 0px !important;
 }}
 .miniatura:hover, .carrusel-min:hover{{
   opacity: 0.75;
+}}
+@media (max-width: 600px) {{
+  .miniatura, .carrusel-min{{
+    height: 52px !important;
+    flex: 0 0 calc((100% - 6px) / 4) !important;
+    width: calc((100% - 6px) / 4) !important;
+    min-width: calc((100% - 6px) / 4) !important;
+    max-width: calc((100% - 6px) / 4) !important;
+    margin: 0px 0px 0px 0px !important;
+  }}
 }}
 
 /* ── BLOQUE INFO ── */

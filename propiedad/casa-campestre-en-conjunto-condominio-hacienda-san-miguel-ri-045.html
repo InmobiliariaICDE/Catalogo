@@ -157,9 +157,9 @@ body{
 }
 
 .modal-close:hover{
-  background: rgb(151 151 151 / 15%);
-  color: #fff;
-  border-color: rgb(145 145 145 / 40%);
+  background: var(--gold);
+  color: #000;
+  border-color: var(--gold);
 }
 
 .modal-contenido{
@@ -205,115 +205,86 @@ body{
 }
 
 .carrusel-principal{
-  position: relative;
   width: 100%;
-  overflow: hidden;
-  border-radius: 0;
   height: 300px;
-  background: transparent;
-  user-select: none;
+  position: relative;
+  background: #000;
 }
 
-.carrusel-slide{
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-  pointer-events: none;
-}
-
-.carrusel-slide.activa{
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.carrusel-slide img, .galeria-img{
+.galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .carrusel-counter{
   position: absolute;
-  top: 12px;
-  left: 10px;
-  background: rgba(0,0,0,0.55);
-  color: #fff;
-  font-size: 11px;
-  font-family: "Outfit", sans-serif;
-  padding: 3px 10px;
+  top: 15px;
+  left: 15px;
+  background: rgba(7, 6, 5, 0.8);
+  border: 1px solid var(--border);
+  color: var(--gold);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 4px 12px;
   border-radius: 20px;
-  z-index: 5;
-  letter-spacing: 0.5px;
 }
 
-.carrusel-btn, .galeria-nav{
+.galeria-nav{
   position: absolute;
-  top: 0;
-  background: none;
-  border: none;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(7, 6, 5, 0.7);
+  border: 1px solid var(--border);
   color: #fff;
-  font-size: 36px;
-  line-height: 1;
-  width: 20%;
-  height: 100%;
-  border-radius: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   cursor: pointer;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  transition: opacity 0.2s;
-  -webkit-tap-highlight-color: transparent;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
-  opacity: 0.85;
-}
-
-.carrusel-btn:hover, .galeria-nav:hover{
-  opacity: 1;
-  background: none;
-  color: #fff;
-}
-
-.carrusel-btn.prev, .galeria-nav.prev{ left: 0; justify-content: flex-start; padding-left: 8px; transform: none; }
-.carrusel-btn.next, .galeria-nav.next{ right: 0; justify-content: flex-end; padding-right: 8px; transform: none; }
-
-.carrusel-expand{
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  background: rgba(0,0,0,0.6);
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 8px;
-  width: 36px;
-  height: 36px;
+  font-size: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  z-index: 10;
+  transition: all 0.3s;
+}
+
+.galeria-nav:hover{
+  background: var(--gold);
+  color: #000;
+}
+
+.galeria-nav.prev{ left: 15px; }
+.galeria-nav.next{ right: 15px; }
+
+.carrusel-expand{
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  background: rgba(7, 6, 5, 0.7);
+  border: 1px solid var(--border);
   color: #fff;
-  transition: all 0.2s;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.carrusel-expand:hover{
-  background: rgba(0,0,0,0.85);
-}
-
-.carrusel-expand svg{
-  width: 16px;
-  height: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .miniaturas-wrap, .carrusel-miniaturas-wrap{
   padding: 0px !important;
   margin: 0px !important;
   overflow-x: auto !important;
+  overflow-y: hidden !important;
   background: transparent;
   width: 100%;
   scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  cursor: grab;
+  user-select: none;
 }
 .miniaturas-wrap::-webkit-scrollbar, .carrusel-miniaturas-wrap::-webkit-scrollbar{
   display: none;
@@ -321,123 +292,112 @@ body{
 .miniaturas, .carrusel-miniaturas{
   display: flex !important;
   flex-wrap: nowrap !important;
-  gap: 4px !important;
-  margin-top: 4px !important;
+  gap: 2px !important;
+  margin-top: 2px !important;
   padding: 0px !important;
   width: 100% !important;
+  background: transparent !important;
 }
 .miniatura, .carrusel-min{
-  flex: 0 0 calc(25% - 3px) !important;
-  width: calc(25% - 3px) !important;
-  height: 52px !important;
+  flex: 0 0 calc((100% - 6px) / 4) !important;
+  width: calc((100% - 6px) / 4) !important;
+  min-width: calc((100% - 6px) / 4) !important;
+  max-width: calc((100% - 6px) / 4) !important;
+  height: 62px !important;
   object-fit: cover !important;
-  border-radius: 4px !important;
+  border-radius: 6px !important;
   cursor: pointer;
   opacity: 0.4;
   transition: opacity 0.3s;
   border: none !important;
   box-sizing: border-box !important;
+  margin: 0px 0px 0px 0px !important;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .miniatura.activa, .carrusel-min.activa{
   opacity: 1 !important;
   border: none !important;
+  margin: 0px 0px 0px 0px !important;
 }
 .miniatura:hover, .carrusel-min:hover{
   opacity: 0.75;
 }
+@media (max-width: 600px) {
+  .miniatura, .carrusel-min{
+    height: 52px !important;
+    flex: 0 0 calc((100% - 6px) / 4) !important;
+    width: calc((100% - 6px) / 4) !important;
+    min-width: calc((100% - 6px) / 4) !important;
+    max-width: calc((100% - 6px) / 4) !important;
+    margin: 0px 0px 0px 0px !important;
+  }
+}
 
 /* ── BLOQUE INFO ── */
 .modal-bloque-info{
-  padding: 16px 18px 14px;
+  padding: 20px;
 }
 
-.modal-bloque-info h1, .modal-bloque-info h2{
-  margin-top: -7px !important;
-  margin-bottom: 3px !important;
+.modal-bloque-info h1{
   color: #fff;
   font-size: 17px;
   font-weight: 600;
   line-height: 1.3;
+  margin-bottom: 4px;
 }
 
 .modal-bloque-info .tipo{
-  color: #c0c0c0;
+  color: var(--gold);
   font-size: 13px;
   font-weight: 500;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 
 .modal-bloque-info .modalCodigo{
   color: #c0c0c0;
   font-size: 12px;
-  margin: 0;
 }
 
 .modal-bloque-info .precio{
-  margin-top: 10px;
-  margin-bottom: 4px;
-  color: #22c55e;
+  font-size: 20px;
   font-weight: 700;
-  font-size: 22px;
-  text-shadow: 0 0 30px rgba(34,197,94,0.2);
+  color: var(--green);
+  margin: 8px 0;
 }
 
 .chips, .modal-etiquetas{
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 10px;
+  margin-top: 4px;
 }
 
-.chip, .modal-etiqueta, .modal-etiqueta-pill{
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgb(151 151 151 / 8%);
-  border: 1px solid rgb(145 145 145 / 20%);
-  color: rgba(255,255,255,0.75);
+.chip, .modal-etiqueta-pill{
+  background: rgba(212,168,75,0.05);
+  border: 1px solid rgba(212,168,75,0.15);
+  color: #fff;
   font-size: 11px;
   padding: 4px 10px;
   border-radius: 20px;
-  font-family: "Outfit", sans-serif;
-}
-
-.icono-etiqueta{
-  width: 12px;
-  height: 12px;
-  margin: 0;
-  border-radius: 0;
-  filter: brightness(0) invert(1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .chip svg, .modal-etiqueta-pill svg{
-  color: #d4a84b;
-  flex-shrink: 0;
+  color: var(--gold);
 }
 
 /* ── COLUMNA DERECHA ── */
 .modal-subtitulo-nuevo{
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: #d4a84b;
-  text-transform: uppercase;
-  margin-bottom: 14px;
-  margin-top: 18px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: "Outfit", sans-serif;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+  border-left: 3px solid var(--gold);
+  padding-left: 8px;
 }
-
-.modal-subtitulo-nuevo::after{
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: rgba(212,168,75,0.2);
-}
-
-.modal-subtitulo-nuevo:first-child{ margin-top: 0; }
 
 .modal-tabla-caracteristicas{
   width: 100%;
@@ -472,11 +432,9 @@ body{
 }
 
 .modal-texto{
-  font-size: 14px;
-  line-height: 1.4;
-  color: #c0c0c0;
-  margin-top: 0px;
-  margin-bottom: 10px;
+  color: #d0d0d0;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 /* ── ACCIONES ── */
@@ -497,44 +455,36 @@ body{
   gap: 9px;
   background-color: #d4a84b;
   color: #fff;
-  font-family: "Outfit", sans-serif;
   font-size: 13px;
-  font-weight: 700;
-  padding: 11px 22px;
-  border-radius: 50px;
+  font-weight: 600;
   text-decoration: none;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 18px rgba(212,168,75,0.25);
+  padding: 10px 16px;
+  border-radius: 4px;
+  transition: all 0.3s;
 }
 
 .modal-btn-whatsapp-nuevo:hover{
-  background-color: #c49940;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(212,168,75,0.35);
+  background-color: var(--gold-hover);
 }
 
-.modal-btn-compartir, .cta-share{
+.cta-share{
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  background: rgb(151 151 151 / 8%);
-  border: 1px solid rgb(145 145 145 / 20%);
-  color: rgb(241 241 241 / 70%);
-  font-family: "Outfit", sans-serif;
+  gap: 8px;
+  border: 1px solid rgba(212,168,75,0.3);
+  color: #fff;
   font-size: 13px;
-  font-weight: 500;
-  padding: 11px 18px;
-  border-radius: 50px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s;
+  background: transparent;
+  transition: all 0.3s;
 }
 
-.modal-btn-compartir:hover, .cta-share:hover{
-  background: rgb(151 151 151 / 15%);
-  color: #fff;
-  border-color: rgb(145 145 145 / 40%);
+.cta-share:hover{
+  border-color: var(--gold);
+  background: var(--gold-dim);
 }
 
 .share-confirm{
@@ -698,10 +648,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal" id="carruselPrincipal">
-          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczMtBMKQgvejSmdUqZV8FJ6nCetdVBbOqeHSpjew2phrcs2Pj8zYsGvWf_RdxbXF4q7Am_Xx4B8vhZPdiArrIlHDc60J9adotL_mhXeBiGL_TEN4RI6f=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNiQzZwUYCj43bRzA2Hsym1VzLqxiv5bu-z5N_yWHGMlpSfeTeDz6xeppj4han8Qhc3bHitngzNzKHHL7uVNjBVp8bV7-gpU7rfnr_7zgW4HkW4pXSw=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPLg9B6kVTkjdPj5SdVk878rk85MsaNO7xOoFWSjaQny5areVpgXSyWXCYK6_iDMK7z-SWR9wvzWe-_QN9f3lrsINZcbJUetcYKQzmRBS0hDAI2g4po=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMPZCkoKeasn3QanL_Y3zNWL4zDx5NUbbVJU9s8Taa6g8yTIXErV5qfGQ8eZHvGTDT24Z0UuHuj0nRryEwiw8MKbg1xL341Msi6TANzxSQXqaDLKK62=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOXraUVEQD3h9OodbJzSXSu20RaLKAZ-1cnt6yTC5iI5dsZN7KMAOhA-vR6sRKs7dcTrIM62giltisKermigABpYiY4za47YrzbuJ3LZW1ljtauZvwC=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMgUolUEzOSLMyKu8dETTxSSdl4tjIkpMHt8KTymbWBEhk43sZBPJumucoQMh-E9mbRmBwZWTqbCM1vnyqP9XlOm9jxG6NJAGt5JjKMR_KWBy-BeZaq=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPQ8OY-478UtYGJvCZvrIfmEKqTnL25317oh6ijcTRdAiLgdBHTn1TBOHR8ceXcVB3Buy-QvFBQqlmxKnbb8lElXv9TcUT7eJ2rl64KsuTAXHmfTI3Q=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOlmtf3LpYfOipq16DgO4WzPdIR4Aov1S2CtHna2ic_HHT7SYzZSo0ecPBtXS_jIp2MgGJU-mehv9HZstFMGFXeDWrpFGPQmofUFsoO5wKw_9t32oi-=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 8" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMV5bLEmYxK5ft1cJBFX-cZHV7NCEqSQkkQrKlqhx-65u4wFoOp2wQpQaqQi7ee-waxTzCFmqWU5_q2pjC7yrPxYc8oR5R5obVzb29tzGIEmcE-YMKa=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 9" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOIZzstC1BLN80PdPgfxQkNcC1qVDmuoaj-cDwLhswN1FSZrot15jTUPWM8b9POh1oj6aHaKPRlY2dLhhNqmt6KTj4rtRFdBdGpqBpr6VFO5b-8RM7Z=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 10" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPirJArKmW3rzEMCdy0lw6lTO8g4CvVzyi4WwUDykeCgVD21cHj0YYplBDgwMXg2GR8yYeSW4qROELsYpDgtYgF6n1pOoT_m7-QdTuGl-lpdmRqIyWP=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 11" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNqO7aOEDYE_4rNJdZXM67F_kzWAGudGlkaDR22nkpa_Go6jAAH98V0vR6zWgOiukMI-eXsXuCzb28GMG9-YUekAMp6BxWrDqY0RRIkQ2gv5xtYba2G=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 12" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMGlx1A95ZbRaSwsGCNFG2r-gbxmfzcWnn7YJuUk-4_tYIAG67RxCEY0_MHNCf8BJLVWxiJDqgts4nuR26y26bWmBkvLzIAFH9k6bFLVDQ8OUOnQa74=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 13" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOaQyvMHbAnhel1GzSyDvpq3cQ2wsV5vazrE1XnaE-Lu_pK6bdStApUjYMrJehh8eqGsox4RjhIfNCk5AEKLBJrl2o-9ioSWBGtjhIe89Guwp9jAlaQ=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 14" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMrTkv4qrRS3jjEl3NcOEoaH9CPK6AWyk0xjcLOSg5FUpMErLQ3wfQlmW57-Ol_d4guUTQIZD5v9Xrv0zrCMiMok8hcOCMo4xIL3dVAdZYWJpSfrGoq=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 15" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM6q5d68RdIWZx6RiiWDinD_9UDDjxWZv8-S8bc6ioGzzJfHpZc6Kk3ClPIpsGG83SMY1NmPmUBbbwqLZBcN062t8A2dRCduQ2z3pK6n1UuciYahDOc=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 16" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPNFeux599U3zeuiShF43Mu0ug99pDHJgSei-YiP0H_Mhf0UHXmtmI87yP5boEs5pEZYQ2NXHVoRm-WAOOwaa4LPMQAojCgd-DAkAUDPhHI9PkmWrx5=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 17" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM_-Whk3aLzIAOnWIGCBF25lcycZTpjpCJWxu-ySKhovzA56iUT0RAl3y_ibHQ_kZugWwvjzlGS5Ei_Plfy5QwinvM8uQBKK2CHz4lqjY_2ripWt-Cw=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 18" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNeOq2vWGlQJ2mDaL1wfI3HvL2Uv3s6dU_CPc24zdFM3AbnE4YVxIsavvRN5A3n8k7nTXYRAhaPbpWNxg2bZIOCHMfJ6p1EBljc9Ot0c4b648sW9aYf=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 19" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPp6YfeN6Spr-oUsqpE8Htfh3xS4FWIAyoQWcMWA3Y2UxWgmdIRXkcAJi9pacd8X5-pCqo_MiAMeOaNmhOeMT3kYeG37tbErK6SvsU6bF_Nc7dBxzzW=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 20" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOIRYdx5X1bQdKi29E_ZALDvlUUSMW7sOs68BAH37mZU6dLjF8xNSQI3bviQYm6CaSV10sFRfbqWJn_TO5e-T_rHfcMfkj3MbZ2aWpg2a_5MWrMnWbD=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 21" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOKMtxxxHDBZwvV74Tub7nmAb3czvGgfMZ3W6c4ydGoEyqIPY5VGF-0w9uq_X6AQVUNQU0G1JroxGTAHaYWEQgg1rJqTjSZShEkM7BjUBHzqzmI-YMt=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 22" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMPbt4obUuyliy5VmTI2FOwysNEy1oDPXKzAbLeQh1X0IuSMAJ59pB4njMDdkNO-3PcsYIqMhknS-bqzRT_JLsINIOYhgQajHLXhpW6_yc8Ezupjnwe=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 23" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPeHsi-sTCMom3mYybCUuwnusflmHNV3EhB3iw8zw6skkvqUv4n_bnHwOThYuGvJ-IjyUMw7g1dUv-M2ENjdyyM8K_M-94ezapkMQ9G3Um3mggHQWg5=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 24" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNiOjU2edfGhHgH5Uo5yiDt9hRrYYgalA_JVhDfjY3CBpBxBdAXhiX2qtO3pnYWsQyEbz_tGKd1rviXMzFZwHtuTVIZIfWZCs2NM92qLma7mvrvhOs9=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 25" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO22SnxEpycEg84DXGFbP2WF9NvEutUr7RprTeMunoGFhPM59EWUZwpTmxhV6E_gmljdTVM-Klsdt21DuiQFjnXzSh9mM9JQZqS80nrFLJQhiPbiy01=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 26" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNrVjkJ8ZWU9Z4Xxl12nYDlP38FcwLGHgctcfK_1bgQa8gB6HF1oeFNVcEjHXHEF10n8GMgbOJqWHALitnVxByYQ98Fo4Gt6SpkdM0s1ACJ2AnZKnc2=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 27" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPzdCQ1Zmv5jKl5wBTGq14qbsruKK528FIximf686tzQtftVheRp1cgKkd6m0IrETQG0u2MwqyH00nZWbFtaWzRYBHzesSDjRgAA8tXJ4lOegOyjjPj=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 28" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMbhVa0Ftuf94_nLpJUI_ai2rpWPaNVDEBPrafxdrm30tyTC_p4AX9ReMg0BYhz0S0Qyi0yrD5WgvLc8Tar_JXgcenZK7L45PuUcDuUIYaiuegXgeWc=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 29" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNrhphBlsQkN3incpvbVZO-0dHQnpIwpDBoeUeBrNeirs8Y4T0UCJTQYMeqvAE7tKLXzyVNS7Qc7BlXRB_mW-phj3xrr1bHERwXfZFPFFrJtaussxuG=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 30" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM9QDLx9wU1r5boU6PLcwZkWyvSVdkhV5-Jkqjd8s2bWsgwcnr_9nPgX4yjFlrlx0BYH4r_PDCQtXP20-IuemZeKGBJF6deazHXXSwQ35PfE8MyirDM=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 31" loading="lazy"/></div>
-          <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+        <div class="carrusel-principal">
+          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczMtBMKQgvejSmdUqZV8FJ6nCetdVBbOqeHSpjew2phrcs2Pj8zYsGvWf_RdxbXF4q7Am_Xx4B8vhZPdiArrIlHDc60J9adotL_mhXeBiGL_TEN4RI6f=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
           <div class="carrusel-counter"><span id="imgActual">1</span> / 31</div>
+          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -713,11 +663,11 @@ body{
       </div>
       
       <div class="modal-bloque-info">
-        <h2 id="modalTitle" style="margin-top:4px;margin-bottom:4px;color:#fff;font-size:17px;font-weight:600;line-height:1.3;">Casa campestre en conjunto Condominio Hacienda San Miguel - Rivera</h2>
+        <h1>Casa campestre en conjunto Condominio Hacienda San Miguel - Rivera</h1>
         <p class="tipo">Casa campestre en conjunto</p>
-        <p class="modalCodigo" style="color:#c0c0c0;font-size:12px;margin:0;"><strong style="font-weight:500;">Código:</strong> 045</p>
+        <p class="modalCodigo"><strong>Código:</strong> 045</p>
         <p class="precio">$1.200.000.000</p>
-        <div class="modal-etiquetas" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/ykKdGwE.png" alt="Habitaciones" class="icono-etiqueta"/> Habitaciones 4</span><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/h9NqA32.png" alt="Baños" class="icono-etiqueta"/> Baños 4</span><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/4Yixa77.png" alt="Garaje" class="icono-etiqueta"/> Garaje 2</span><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/rH6cXMa.png" alt="Cocina" class="icono-etiqueta"/> Cocina integral</span><span class="modal-etiqueta"><img loading="lazy" src="https://img.icons8.com/ios-filled/50/ffffff/stairs.png" alt="Pisos" class="icono-etiqueta"/> Pisos 1</span><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/rz72lGC.png" alt="Área lote" class="icono-etiqueta"/> Lote 1600 m²</span></div>
+        <div class="chips"><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12V7a1 1 0 011-1h4a1 1 0 011 1v5M3 12h18M3 12v5h18v-5"/><path d="M13 6h4a1 1 0 011 1v5"/></svg>4 hab.</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16v4a4 4 0 01-4 4H8a4 4 0 01-4-4v-4z"/><path d="M6 12V5a2 2 0 012-2h1"/><circle cx="8" cy="3" r="1"/></svg>4 baños</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20M16 7l-1-4H9L8 7"/></svg>2 garaje</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 7l9-4 9 4M4 11v10M20 11v10M8 11v10M16 11v10M12 11v10"/></svg>1 pisos</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M6 7V5a2 2 0 014 0v2M14 7V5a2 2 0 014 0v2"/><circle cx="8" cy="14" r="2"/><circle cx="16" cy="14" r="2"/></svg>Cocina integral</span><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>1600 m²</span></div>
       </div>
     </div>
 
@@ -749,7 +699,7 @@ body{
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.846.497 3.576 1.362 5.065L2 22l5.07-1.33A9.953 9.953 0 0012 22c5.522 0 10-4.477 10-10S17.521 2 11.999 2zm.001 18a7.963 7.963 0 01-4.184-1.188l-.3-.178-3.012.79.803-2.93-.196-.31A7.944 7.944 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/></svg>
       Agendar visita por WhatsApp
     </a>
-    <button class="modal-btn-compartir" onclick="compartir()">
+    <button class="cta-share" onclick="compartir()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       Compartir
     </button>
@@ -823,15 +773,9 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
-  if (slides.length) {
-    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
-  } else {
-    var main = document.getElementById('imgPrincipal');
-    if (main) main.src = IMGS[imgIndex];
-  }
-  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
-  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
+  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
+  var minis = document.querySelectorAll('.miniatura');
+  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

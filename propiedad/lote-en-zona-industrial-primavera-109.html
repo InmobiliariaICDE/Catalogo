@@ -154,9 +154,9 @@ body{
 }
 
 .modal-close:hover{
-  background: rgb(151 151 151 / 15%);
-  color: #fff;
-  border-color: rgb(145 145 145 / 40%);
+  background: var(--gold);
+  color: #000;
+  border-color: var(--gold);
 }
 
 .modal-contenido{
@@ -202,115 +202,86 @@ body{
 }
 
 .carrusel-principal{
-  position: relative;
   width: 100%;
-  overflow: hidden;
-  border-radius: 0;
   height: 300px;
-  background: transparent;
-  user-select: none;
+  position: relative;
+  background: #000;
 }
 
-.carrusel-slide{
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-  pointer-events: none;
-}
-
-.carrusel-slide.activa{
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.carrusel-slide img, .galeria-img{
+.galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .carrusel-counter{
   position: absolute;
-  top: 12px;
-  left: 10px;
-  background: rgba(0,0,0,0.55);
-  color: #fff;
-  font-size: 11px;
-  font-family: "Outfit", sans-serif;
-  padding: 3px 10px;
+  top: 15px;
+  left: 15px;
+  background: rgba(7, 6, 5, 0.8);
+  border: 1px solid var(--border);
+  color: var(--gold);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 4px 12px;
   border-radius: 20px;
-  z-index: 5;
-  letter-spacing: 0.5px;
 }
 
-.carrusel-btn, .galeria-nav{
+.galeria-nav{
   position: absolute;
-  top: 0;
-  background: none;
-  border: none;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(7, 6, 5, 0.7);
+  border: 1px solid var(--border);
   color: #fff;
-  font-size: 36px;
-  line-height: 1;
-  width: 20%;
-  height: 100%;
-  border-radius: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   cursor: pointer;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  transition: opacity 0.2s;
-  -webkit-tap-highlight-color: transparent;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
-  opacity: 0.85;
-}
-
-.carrusel-btn:hover, .galeria-nav:hover{
-  opacity: 1;
-  background: none;
-  color: #fff;
-}
-
-.carrusel-btn.prev, .galeria-nav.prev{ left: 0; justify-content: flex-start; padding-left: 8px; transform: none; }
-.carrusel-btn.next, .galeria-nav.next{ right: 0; justify-content: flex-end; padding-right: 8px; transform: none; }
-
-.carrusel-expand{
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  background: rgba(0,0,0,0.6);
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 8px;
-  width: 36px;
-  height: 36px;
+  font-size: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  z-index: 10;
+  transition: all 0.3s;
+}
+
+.galeria-nav:hover{
+  background: var(--gold);
+  color: #000;
+}
+
+.galeria-nav.prev{ left: 15px; }
+.galeria-nav.next{ right: 15px; }
+
+.carrusel-expand{
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  background: rgba(7, 6, 5, 0.7);
+  border: 1px solid var(--border);
   color: #fff;
-  transition: all 0.2s;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.carrusel-expand:hover{
-  background: rgba(0,0,0,0.85);
-}
-
-.carrusel-expand svg{
-  width: 16px;
-  height: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .miniaturas-wrap, .carrusel-miniaturas-wrap{
   padding: 0px !important;
   margin: 0px !important;
   overflow-x: auto !important;
+  overflow-y: hidden !important;
   background: transparent;
   width: 100%;
   scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  cursor: grab;
+  user-select: none;
 }
 .miniaturas-wrap::-webkit-scrollbar, .carrusel-miniaturas-wrap::-webkit-scrollbar{
   display: none;
@@ -318,123 +289,112 @@ body{
 .miniaturas, .carrusel-miniaturas{
   display: flex !important;
   flex-wrap: nowrap !important;
-  gap: 4px !important;
-  margin-top: 4px !important;
+  gap: 2px !important;
+  margin-top: 2px !important;
   padding: 0px !important;
   width: 100% !important;
+  background: transparent !important;
 }
 .miniatura, .carrusel-min{
-  flex: 0 0 calc(25% - 3px) !important;
-  width: calc(25% - 3px) !important;
-  height: 52px !important;
+  flex: 0 0 calc((100% - 6px) / 4) !important;
+  width: calc((100% - 6px) / 4) !important;
+  min-width: calc((100% - 6px) / 4) !important;
+  max-width: calc((100% - 6px) / 4) !important;
+  height: 62px !important;
   object-fit: cover !important;
-  border-radius: 4px !important;
+  border-radius: 6px !important;
   cursor: pointer;
   opacity: 0.4;
   transition: opacity 0.3s;
   border: none !important;
   box-sizing: border-box !important;
+  margin: 0px 0px 0px 0px !important;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .miniatura.activa, .carrusel-min.activa{
   opacity: 1 !important;
   border: none !important;
+  margin: 0px 0px 0px 0px !important;
 }
 .miniatura:hover, .carrusel-min:hover{
   opacity: 0.75;
 }
+@media (max-width: 600px) {
+  .miniatura, .carrusel-min{
+    height: 52px !important;
+    flex: 0 0 calc((100% - 6px) / 4) !important;
+    width: calc((100% - 6px) / 4) !important;
+    min-width: calc((100% - 6px) / 4) !important;
+    max-width: calc((100% - 6px) / 4) !important;
+    margin: 0px 0px 0px 0px !important;
+  }
+}
 
 /* ── BLOQUE INFO ── */
 .modal-bloque-info{
-  padding: 16px 18px 14px;
+  padding: 20px;
 }
 
-.modal-bloque-info h1, .modal-bloque-info h2{
-  margin-top: -7px !important;
-  margin-bottom: 3px !important;
+.modal-bloque-info h1{
   color: #fff;
   font-size: 17px;
   font-weight: 600;
   line-height: 1.3;
+  margin-bottom: 4px;
 }
 
 .modal-bloque-info .tipo{
-  color: #c0c0c0;
+  color: var(--gold);
   font-size: 13px;
   font-weight: 500;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 
 .modal-bloque-info .modalCodigo{
   color: #c0c0c0;
   font-size: 12px;
-  margin: 0;
 }
 
 .modal-bloque-info .precio{
-  margin-top: 10px;
-  margin-bottom: 4px;
-  color: #22c55e;
+  font-size: 20px;
   font-weight: 700;
-  font-size: 22px;
-  text-shadow: 0 0 30px rgba(34,197,94,0.2);
+  color: var(--green);
+  margin: 8px 0;
 }
 
 .chips, .modal-etiquetas{
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 10px;
+  margin-top: 4px;
 }
 
-.chip, .modal-etiqueta, .modal-etiqueta-pill{
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgb(151 151 151 / 8%);
-  border: 1px solid rgb(145 145 145 / 20%);
-  color: rgba(255,255,255,0.75);
+.chip, .modal-etiqueta-pill{
+  background: rgba(212,168,75,0.05);
+  border: 1px solid rgba(212,168,75,0.15);
+  color: #fff;
   font-size: 11px;
   padding: 4px 10px;
   border-radius: 20px;
-  font-family: "Outfit", sans-serif;
-}
-
-.icono-etiqueta{
-  width: 12px;
-  height: 12px;
-  margin: 0;
-  border-radius: 0;
-  filter: brightness(0) invert(1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .chip svg, .modal-etiqueta-pill svg{
-  color: #d4a84b;
-  flex-shrink: 0;
+  color: var(--gold);
 }
 
 /* ── COLUMNA DERECHA ── */
 .modal-subtitulo-nuevo{
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: #d4a84b;
-  text-transform: uppercase;
-  margin-bottom: 14px;
-  margin-top: 18px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: "Outfit", sans-serif;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+  border-left: 3px solid var(--gold);
+  padding-left: 8px;
 }
-
-.modal-subtitulo-nuevo::after{
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: rgba(212,168,75,0.2);
-}
-
-.modal-subtitulo-nuevo:first-child{ margin-top: 0; }
 
 .modal-tabla-caracteristicas{
   width: 100%;
@@ -469,11 +429,9 @@ body{
 }
 
 .modal-texto{
-  font-size: 14px;
-  line-height: 1.4;
-  color: #c0c0c0;
-  margin-top: 0px;
-  margin-bottom: 10px;
+  color: #d0d0d0;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 /* ── ACCIONES ── */
@@ -494,44 +452,36 @@ body{
   gap: 9px;
   background-color: #d4a84b;
   color: #fff;
-  font-family: "Outfit", sans-serif;
   font-size: 13px;
-  font-weight: 700;
-  padding: 11px 22px;
-  border-radius: 50px;
+  font-weight: 600;
   text-decoration: none;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 18px rgba(212,168,75,0.25);
+  padding: 10px 16px;
+  border-radius: 4px;
+  transition: all 0.3s;
 }
 
 .modal-btn-whatsapp-nuevo:hover{
-  background-color: #c49940;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(212,168,75,0.35);
+  background-color: var(--gold-hover);
 }
 
-.modal-btn-compartir, .cta-share{
+.cta-share{
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  background: rgb(151 151 151 / 8%);
-  border: 1px solid rgb(145 145 145 / 20%);
-  color: rgb(241 241 241 / 70%);
-  font-family: "Outfit", sans-serif;
+  gap: 8px;
+  border: 1px solid rgba(212,168,75,0.3);
+  color: #fff;
   font-size: 13px;
-  font-weight: 500;
-  padding: 11px 18px;
-  border-radius: 50px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s;
+  background: transparent;
+  transition: all 0.3s;
 }
 
-.modal-btn-compartir:hover, .cta-share:hover{
-  background: rgb(151 151 151 / 15%);
-  color: #fff;
-  border-color: rgb(145 145 145 / 40%);
+.cta-share:hover{
+  border-color: var(--gold);
+  background: var(--gold-dim);
 }
 
 .share-confirm{
@@ -695,10 +645,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal" id="carruselPrincipal">
-          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczNJdtgnaF2sxhbhWl0XYgCygDQ82wdma3qKZfHD5Vc-byXsxdz3pkVv2gfZYxtuuMNYVaWpjZjiD_NqKyuhBe4DmYq5S5aMHF5hkfLE0hGeSY4lHOZ-=w1200" alt="Lote en venta Neiva Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPqwe3k_PUDHhxDh711O3eh4tdnOvk13BduLrNPlq8Yi0eBjb3IZ0xdbVMqCxSU5q-_zb9hfJVyCrTICN2o1X9mk7P5uMTLidXphV1ikwiei3Bb6Rl-=w1200" alt="Lote en venta Neiva Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO40T-JzcUna1xVRRg-KyNcpo-d7vLAc4R4PJcvop0TBpLm2jvE8-aRFIh4KyHCHVJih5p7E59yRHQENeHubBecYBJPqjgeOHaDekGSL2f6cucxul4h=w1200" alt="Lote en venta Neiva Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM0M7f2moQTyQklbwpwuNM44ABKDHqluSZBh5K1mu2Ibp-do6Rsv0K1ajMVXSUOJiKZygDp-e6oaB3No82mVZfGl3D00gkaHeOd_YoKddfF7tGlkblN=w1200" alt="Lote en venta Neiva Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM67gF602Oul9HwUKBdBLDnB67_GJN0OaW1HD_-duUEKhs_Ogv7-B1baXda2qVLSbH2HamjRg-wp1-b6fASMnq3aMfwDf8q0p90nEQQz2-4Afs3v6-O=w1200" alt="Lote en venta Neiva Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div>
-          <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+        <div class="carrusel-principal">
+          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczNJdtgnaF2sxhbhWl0XYgCygDQ82wdma3qKZfHD5Vc-byXsxdz3pkVv2gfZYxtuuMNYVaWpjZjiD_NqKyuhBe4DmYq5S5aMHF5hkfLE0hGeSY4lHOZ-=w1200" alt="Lote en venta Neiva Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
           <div class="carrusel-counter"><span id="imgActual">1</span> / 5</div>
+          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -710,11 +660,11 @@ body{
       </div>
       
       <div class="modal-bloque-info">
-        <h2 id="modalTitle" style="margin-top:4px;margin-bottom:4px;color:#fff;font-size:17px;font-weight:600;line-height:1.3;">Lote en Zona Industrial - Primavera</h2>
+        <h1>Lote en Zona Industrial - Primavera</h1>
         <p class="tipo">Lote</p>
-        <p class="modalCodigo" style="color:#c0c0c0;font-size:12px;margin:0;"><strong style="font-weight:500;">Código:</strong> 109</p>
+        <p class="modalCodigo"><strong>Código:</strong> 109</p>
         <p class="precio">$220.000.000</p>
-        <div class="modal-etiquetas" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"><span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/rz72lGC.png" alt="Área lote" class="icono-etiqueta"/> Lote 258 m²</span></div>
+        <div class="chips"><span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>258 m²</span></div>
       </div>
     </div>
 
@@ -746,7 +696,7 @@ body{
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.846.497 3.576 1.362 5.065L2 22l5.07-1.33A9.953 9.953 0 0012 22c5.522 0 10-4.477 10-10S17.521 2 11.999 2zm.001 18a7.963 7.963 0 01-4.184-1.188l-.3-.178-3.012.79.803-2.93-.196-.31A7.944 7.944 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/></svg>
       Agendar visita por WhatsApp
     </a>
-    <button class="modal-btn-compartir" onclick="compartir()">
+    <button class="cta-share" onclick="compartir()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       Compartir
     </button>
@@ -820,15 +770,9 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
-  if (slides.length) {
-    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
-  } else {
-    var main = document.getElementById('imgPrincipal');
-    if (main) main.src = IMGS[imgIndex];
-  }
-  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
-  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
+  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
+  var minis = document.querySelectorAll('.miniatura');
+  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }
