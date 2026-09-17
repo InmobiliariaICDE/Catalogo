@@ -244,10 +244,11 @@ html.is-logged-in #app { display: flex !important; flex-direction: column !impor
 .carrusel-prev { left:10px; }
 .carrusel-next { right:10px; }
 .carrusel-counter { position:absolute; top:12px; left:12px; bottom:auto; right:auto; background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; color:#fff; font-size:11px; font-weight:600; z-index:10; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.18); }
-.carrusel-miniaturas { display:flex; flex-wrap:nowrap; overflow-x:auto; gap:2px; margin-top:2px; background:transparent; padding:0; width:100%; scrollbar-width:none; }
+.carrusel-miniaturas { display:flex; flex-wrap:nowrap; overflow-x:auto; overflow-y:hidden; gap:2px; margin-top:2px; background:transparent; padding:0; width:100%; scrollbar-width:none; -ms-overflow-style:none; -webkit-overflow-scrolling:touch; touch-action:pan-x; cursor:grab; user-select:none; }
 .carrusel-miniaturas::-webkit-scrollbar { display:none; }
-.carrusel-min { flex:0 0 calc(25% - 2px); width:calc(25% - 2px); height:52px; object-fit:cover; border-radius:4px; cursor:pointer; opacity:0.4; display:block; transition:opacity 0.3s; border:none; box-sizing:border-box; }
-.carrusel-min.activa { opacity:1; border:none; }
+.carrusel-miniaturas.grabbing { cursor:grabbing; }
+.carrusel-min { flex:1 0 calc(25% - 1.5px); min-width:70px; height:52px; object-fit:cover; border-radius:4px; cursor:pointer; opacity:0.4; display:block; transition:opacity 0.3s; border:none; box-sizing:border-box; user-select:none; -webkit-user-drag:none; margin:0px 0px 0px 0px !important; }
+.carrusel-min.activa { opacity:1; border:none; margin:0px 0px 0px 0px !important; }
 .carrusel-min:hover { opacity:0.75; }
 .carrusel-expand { position:absolute; bottom:12px; right:12px; top:auto; left:auto; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.18); border-radius:8px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; color:#fff; transition:all 0.2s; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
 .carrusel-expand:hover { background:var(--gold); color:#000; }
@@ -287,8 +288,8 @@ html.is-logged-in #app { display: flex !important; flex-direction: column !impor
   .modal-col-izq::-webkit-scrollbar { display:none !important; }
   .modal-col-der{ border-left:none !important; border-top:none !important; padding:6px 0px 6px 6px !important; overflow-y:visible; } 
   .carrusel-principal { height:220px !important; border-radius:0 !important; width:100% !important; }
-  .carrusel-miniaturas { display:flex !important; flex-wrap:nowrap !important; overflow-x:auto !important; gap:2px !important; margin-top:2px !important; padding:0 !important; width:100% !important; background:transparent !important; scrollbar-width:none !important; }
-  .carrusel-min { flex:0 0 calc(25% - 2px) !important; width:calc(25% - 2px) !important; height:52px !important; border-radius:4px !important; border:none !important; }
+  .carrusel-miniaturas { display:flex !important; flex-wrap:nowrap !important; overflow-x:auto !important; overflow-y:hidden !important; gap:2px !important; margin-top:2px !important; padding:0 !important; width:100% !important; background:transparent !important; scrollbar-width:none !important; -ms-overflow-style:none !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-x !important; cursor:grab; user-select:none; }
+  .carrusel-min { flex:1 0 calc(25% - 1.5px) !important; min-width:70px !important; height:52px !important; border-radius:4px !important; border:none !important; user-select:none; -webkit-user-drag:none; margin:0px 0px 0px 0px !important; }
   .modal-prop-info { padding:6px 0px 6px 6px !important; }
   .modal-prop-footer { padding:6px 0px 6px 6px !important; gap:8px !important; justify-content:space-between !important; position:sticky; bottom:0; background:#09090b; }
   .modal-box { padding:6px 0px 6px 6px !important; }
@@ -16219,25 +16220,45 @@ function mpCarruselDetener() {
   clearTimeout(mpCarruselTimer);
 }
 
-function mpCarruselActualizarMiniaturas() {
-  const n = mpCarruselFotos.length;
-  if (!n) return;
+function mpCarruselConstruirMiniaturas() {
   const minDiv = document.getElementById('mpCarruselMiniaturas');
   if (!minDiv) return;
-
-  if (n <= 4) {
-    minDiv.innerHTML = mpCarruselFotos.map((u, i) => 
-      `<img src="${u}" class="carrusel-min ${i === mpCarruselIdx ? 'activa' : ''}" onclick="mpCarruselIrA(${i})"/>`
-    ).join('');
-  } else {
-    let start = Math.max(0, mpCarruselIdx - 1);
-    if (start + 4 > n) start = Math.max(0, n - 4);
-    const ventana = [];
-    for (let i = start; i < start + 4 && i < n; i++) ventana.push(i);
-    minDiv.innerHTML = ventana.map(i => 
-      `<img src="${mpCarruselFotos[i]}" class="carrusel-min ${i === mpCarruselIdx ? 'activa' : ''}" onclick="mpCarruselIrA(${i})"/>`
-    ).join('');
+  const n = mpCarruselFotos.length;
+  if (n <= 1) {
+    minDiv.style.display = 'none';
+    minDiv.innerHTML = '';
+    return;
   }
+  minDiv.style.display = 'flex';
+  minDiv.innerHTML = '';
+  mpCarruselFotos.forEach((u, i) => {
+    const img = document.createElement('img');
+    img.src = u;
+    img.className = 'carrusel-min' + (i === mpCarruselIdx ? ' activa' : '');
+    img.loading = 'lazy';
+    img.draggable = false;
+    img.alt = 'Foto miniatura ' + (i + 1);
+    img.onerror = function() { this.src = 'https://i.imgur.com/Pc9M3I8.png'; };
+    img.addEventListener('click', () => {
+      if (minDiv._wasDragging) return;
+      mpCarruselIrA(i);
+    });
+    minDiv.appendChild(img);
+  });
+}
+
+function mpCarruselActualizarMiniaturas() {
+  const minDiv = document.getElementById('mpCarruselMiniaturas');
+  if (!minDiv) return;
+  const minis = minDiv.querySelectorAll('.carrusel-min');
+  minis.forEach((img, i) => {
+    if (i === mpCarruselIdx) {
+      img.classList.add('activa');
+      img.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    } else {
+      img.classList.remove('activa');
+    }
+  });
 }
 
 function abrirModalProp(codigoOrProp){
@@ -16448,7 +16469,7 @@ function mpCarruselInit(){
     principal.addEventListener('pointercancel', () => { pDown = false; });
   }
   
-  mpCarruselActualizarMiniaturas();
+  mpCarruselConstruirMiniaturas();
   document.getElementById('mpCarruselCounter').textContent = `1 / ${mpCarruselFotos.length}`;
   mpCarruselReiniciarProgreso();
 }
@@ -16474,6 +16495,79 @@ function cerrarModalProp(){
   mpCarruselDetener();
   document.getElementById('modalPropOverlay').classList.remove('active');
 }
+
+// ── DRAG SCROLL MINIATURAS ADMIN ──
+(function(){
+  function initMpMinDrag() {
+    var el = document.getElementById('mpCarruselMiniaturas');
+    if (!el || el._minDragInited) return;
+    el._minDragInited = true;
+    var down = false, startX = 0, scrollLeft = 0, moved = false;
+
+    el.addEventListener('mousedown', function(e){
+      down = true;
+      moved = false;
+      el._wasDragging = false;
+      startX = e.pageX - el.offsetLeft;
+      scrollLeft = el.scrollLeft;
+      el.classList.add('grabbing');
+    });
+
+    document.addEventListener('mouseup', function(){
+      if (down) {
+        down = false;
+        el.classList.remove('grabbing');
+        if (moved) {
+          el._wasDragging = true;
+          setTimeout(function(){ el._wasDragging = false; }, 80);
+        }
+      }
+    });
+
+    document.addEventListener('mousemove', function(e){
+      if (!down) return;
+      e.preventDefault();
+      var x = e.pageX - el.offsetLeft;
+      var walk = (x - startX) * 1.5;
+      if (Math.abs(walk) > 5) moved = true;
+      el.scrollLeft = scrollLeft - walk;
+    });
+
+    var touchStartX = 0, touchMoved = false;
+    el.addEventListener('touchstart', function(e){
+      if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchMoved = false;
+        el._wasDragging = false;
+      }
+    }, {passive: true});
+
+    el.addEventListener('touchmove', function(e){
+      if (e.touches.length === 1) {
+        if (Math.abs(e.touches[0].clientX - touchStartX) > 8) {
+          touchMoved = true;
+          el._wasDragging = true;
+        }
+      }
+    }, {passive: true});
+
+    el.addEventListener('touchend', function(){
+      if (touchMoved) {
+        setTimeout(function(){ el._wasDragging = false; }, 80);
+      }
+    }, {passive: true});
+  }
+
+  var ov = document.getElementById('modalPropOverlay');
+  if (ov) new MutationObserver(function(){ initMpMinDrag(); })
+    .observe(ov, {attributes:true, attributeFilter:['style','class']});
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMpMinDrag);
+  } else {
+    initMpMinDrag();
+  }
+})();
 function updTimelineNota(leadId, idx, val) {
   const l = leads.find(x => String(x.id) === String(leadId));
   if (!l || !l.historialEnvios || !l.historialEnvios[idx]) return;
