@@ -353,22 +353,20 @@ def build_html(p: dict, slug: str) -> str:
     alt_img    = esc(f"{p.get('Tipo de inmueble','Propiedad')} en venta {zona_corta} Neiva – ICDE Inmobiliaria")
 
     # ── GALERÍA ──
-    galeria_html = ""
+    slides = []
+    for i, u in enumerate(imagenes):
+        activa = " activa" if i == 0 else ""
+        loading = "eager" if i == 0 else "lazy"
+        slides.append(f'<div class="carrusel-slide{activa}"><img src="{esc(u)}" alt="{alt_img} foto {i+1}" loading="{loading}" draggable="false" /></div>')
+    slides_html = "".join(slides)
+
     miniaturas_html = ""
-    if imagenes:
-        galeria_html = f'<img id="imgPrincipal" src="{esc(imagenes[0])}" alt="{alt_img}" class="galeria-img" loading="eager" fetchpriority="high"/>'
-        if len(imagenes) > 1:
-            contador = f'<div class="img-contador"><span id="imgActual">1</span> / {len(imagenes)}</div>'
-            nav = '<button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>'
-            expand = '<button class="galeria-expand" onclick="abrirLightbox(imgIndex)" title="Expandir">&#x26F6;</button>'
-            miniaturas = "".join(
-                f'<img src="{esc(u)}" alt="{alt_img} foto {i+1}" class="miniatura carrusel-min{" activa" if i==0 else ""}" onclick="irImg({i})" loading="lazy"/>'
-                for i, u in enumerate(imagenes)
-            )
-            miniaturas_html = f'<div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas">{miniaturas}</div></div>'
-            galeria_html = f'{contador}{nav}{expand}{galeria_html}'
-        else:
-            galeria_html = f'<button class="galeria-expand" onclick="abrirLightbox(0)" title="Expandir">&#x26F6;</button>{galeria_html}'
+    if len(imagenes) > 1:
+        miniaturas = "".join(
+            f'<img src="{esc(u)}" alt="{alt_img} foto {i+1}" class="miniatura carrusel-min{" activa" if i==0 else ""}" onclick="carruselIr({i})" loading="lazy" draggable="false"/>'
+            for i, u in enumerate(imagenes)
+        )
+        miniaturas_html = f'<div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas">{miniaturas}</div></div>'
 
     # ── ETIQUETAS (modal-etiqueta idénticas al index.html) ──
     etiquetas = [
@@ -597,12 +595,35 @@ body{{
   height: 300px;
   position: relative;
   background: #000;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
 }}
 
-.galeria-img{{
+.carrusel-principal img{{
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}}
+
+.carrusel-slide{{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}}
+
+.carrusel-slide.activa{{
+  opacity: 1;
+  pointer-events: auto;
+}}
+
+.carrusel-slide img{{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }}
 
 .carrusel-counter{{
@@ -1053,10 +1074,10 @@ body{{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          {'<img id="imgPrincipal" src="' + esc(imagenes[0]) + '" alt="' + alt_img + '" class="galeria-img" loading="eager"/>' if imagenes else ''}
-          {f'<div class="carrusel-counter"><span id="imgActual">1</span> / {len(imagenes)}</div>' if len(imagenes) > 1 else ''}
-          {f'<button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>' if len(imagenes) > 1 else ''}
+        <div class="carrusel-principal" id="carruselPrincipal">
+          {slides_html}
+          {f'<div class="carrusel-counter" id="carruselCounter">1 / {len(imagenes)}</div>' if len(imagenes) > 1 else ''}
+          {f'<button class="galeria-nav prev" onclick="carruselIr(imgIndex-1)">&#8249;</button><button class="galeria-nav next" onclick="carruselIr(imgIndex+1)">&#8250;</button>' if len(imagenes) > 1 else ''}
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -1126,74 +1147,146 @@ body{{
 <script>
 var IMGS = {imgs_js};
 var imgIndex = 0;
+var carruselTimer = null;
+var CARRUSEL_DELAY = 5000;
 
-// Soporte para swipe (deslizar) en móviles
-var startX = 0;
-var endX = 0;
-document.addEventListener('DOMContentLoaded', function() {{
-  // Swipe en carrusel principal
-  var carrusel = document.querySelector('.carrusel-principal');
-  if (carrusel) {{
-    carrusel.addEventListener('touchstart', function(e) {{
-      startX = e.touches[0].clientX;
-    }}, {{passive: true}});
-    carrusel.addEventListener('touchend', function(e) {{
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {{
-        cambiarImg(1); // Deslizar izquierda -> siguiente
-      }} else if (endX - startX > 50) {{
-        cambiarImg(-1); // Deslizar derecha -> anterior
-      }}
-    }}, {{passive: true}});
+function carruselIr(idx, reiniciarTimer) {{
+  if (reiniciarTimer === undefined) reiniciarTimer = true;
+  if (!IMGS.length) return;
+  imgIndex = ((idx % IMGS.length) + IMGS.length) % IMGS.length;
+  
+  var principal = document.getElementById('carruselPrincipal');
+  if (principal) {{
+    var slides = principal.querySelectorAll('.carrusel-slide');
+    slides.forEach(function(s, i) {{
+      s.classList.toggle('activa', i === imgIndex);
+    }});
   }}
+  
+  var counter = document.getElementById('carruselCounter');
+  if (counter) counter.textContent = (imgIndex + 1) + ' / ' + IMGS.length;
+  
+  var minis = document.querySelectorAll('.carrusel-min');
+  minis.forEach(function(m, i) {{
+    m.classList.toggle('activa', i === imgIndex);
+  }});
+  
+  if (reiniciarTimer) carruselReiniciarProgreso();
+}}
+
+function carruselReiniciarProgreso() {{
+  if (IMGS.length <= 1) return;
+  clearTimeout(carruselTimer);
+  carruselTimer = setTimeout(function() {{
+    carruselIr(imgIndex + 1);
+  }}, CARRUSEL_DELAY);
+}}
+
+function carruselDetener() {{
+  clearTimeout(carruselTimer);
+}}
+
+function irImg(i) {{ carruselIr(i); }}
+function cambiarImg(dir) {{ carruselIr(imgIndex + dir); }}
+
+var _dragSx = 0, _dragPid = null, _dragMoved = false;
+function initCarruselDrag() {{
+  var el = document.getElementById('carruselPrincipal');
+  if (!el) return;
+  
+  el.addEventListener('dragstart', function(e) {{ e.preventDefault(); }});
+  
+  el.addEventListener('pointerdown', function(e) {{
+    if (e.target.closest('button')) return;
+    _dragSx = e.clientX;
+    _dragPid = e.pointerId;
+    _dragMoved = false;
+    try {{ el.setPointerCapture(e.pointerId); }} catch(err) {{}}
+  }});
+  
+  el.addEventListener('pointermove', function(e) {{
+    if (e.pointerId !== _dragPid) return;
+    if (Math.abs(e.clientX - _dragSx) > 8) _dragMoved = true;
+  }});
+  
+  el.addEventListener('pointerup', function(e) {{
+    if (e.pointerId !== _dragPid) return;
+    var d = _dragSx - e.clientX;
+    _dragPid = null;
+    if (Math.abs(d) >= 30) {{
+      if (d > 0) carruselIr(imgIndex + 1);
+      else carruselIr(imgIndex - 1);
+    }}
+  }});
+  
+  el.addEventListener('pointercancel', function() {{ _dragPid = null; }});
+  
+  el.addEventListener('click', function(e) {{
+    if (_dragMoved && !e.target.closest('button')) {{
+      e.stopPropagation();
+      e.preventDefault();
+      _dragMoved = false;
+    }}
+  }}, true);
+  
+  var _tSx = 0, _tSy = 0, _tMoved = false;
+  el.addEventListener('touchstart', function(e) {{
+    if (e.touches.length !== 1) return;
+    _tSx = e.touches[0].clientX;
+    _tSy = e.touches[0].clientY;
+    _tMoved = false;
+  }}, {{passive: true}});
+  
+  el.addEventListener('touchmove', function(e) {{
+    if (Math.abs(e.touches[0].clientX - _tSx) > 10) _tMoved = true;
+  }}, {{passive: true}});
+  
+  el.addEventListener('touchend', function(e) {{
+    if (!_tMoved) return;
+    var dx = e.changedTouches[0].clientX - _tSx;
+    var dy = e.changedTouches[0].clientY - _tSy;
+    _tMoved = false;
+    if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) carruselIr(imgIndex + 1);
+    else carruselIr(imgIndex - 1);
+  }}, {{passive: true}});
+}}
+
+document.addEventListener('DOMContentLoaded', function() {{
+  initCarruselDrag();
+  if (IMGS.length > 1) carruselReiniciarProgreso();
   
   // Swipe en lightbox (pantalla completa)
   var lightbox = document.getElementById('lightbox');
   if (lightbox) {{
+    var lSx = 0, lEndX = 0;
     lightbox.addEventListener('touchstart', function(e) {{
-      startX = e.touches[0].clientX;
+      lSx = e.touches[0].clientX;
     }}, {{passive: true}});
     lightbox.addEventListener('touchend', function(e) {{
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {{
-        lightboxNav(1); // Deslizar izquierda -> siguiente
-      }} else if (endX - startX > 50) {{
-        lightboxNav(-1); // Deslizar derecha -> anterior
+      lEndX = e.changedTouches[0].clientX;
+      if (lSx - lEndX > 50) {{
+        lightboxNav(1);
+      }} else if (lEndX - lSx > 50) {{
+        lightboxNav(-1);
       }}
     }}, {{passive: true}});
     
-    // Evitar que el swipe en las miniaturas cambie la foto principal
     var wrapMinis = lightbox.querySelector('.lightbox-miniaturas-wrap');
     if (wrapMinis) {{
-      wrapMinis.addEventListener('touchstart', function(e) {{
-        e.stopPropagation();
-      }}, {{passive: true}});
-      wrapMinis.addEventListener('touchend', function(e) {{
-        e.stopPropagation();
-      }}, {{passive: true}});
+      wrapMinis.addEventListener('touchstart', function(e) {{ e.stopPropagation(); }}, {{passive: true}});
+      wrapMinis.addEventListener('touchend', function(e) {{ e.stopPropagation(); }}, {{passive: true}});
     }}
   }}
 }});
 
-function irImg(i) {{
-  if (!IMGS.length) return;
-  imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){{ m.classList.toggle('activa', j===imgIndex); }});
-  var cont = document.getElementById('imgActual');
-  if (cont) cont.textContent = imgIndex + 1;
-}}
-
-function cambiarImg(dir) {{ irImg(imgIndex + dir); }}
-
 function abrirLightbox(i) {{
-  irImg(i);
+  carruselDetener();
+  carruselIr(i, false);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   
-  // Generar miniaturas en el lightbox si no existen
   var minisDiv = document.getElementById('lightboxMiniaturas');
   if (minisDiv && !minisDiv.innerHTML) {{
     minisDiv.innerHTML = IMGS.map(function(url, index) {{
@@ -1210,14 +1303,14 @@ function cerrarLightbox(e) {{
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
+  carruselReiniciarProgreso();
 }}
 
 function lightboxNav(dir) {{
-  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
+  carruselIr(imgIndex + dir, false);
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   updateLightboxMiniaturas();
-  irImg(imgIndex); // Actualizar también el carrusel principal
 }}
 
 function updateLightboxMiniaturas() {{
@@ -1225,7 +1318,6 @@ function updateLightboxMiniaturas() {{
   minis.forEach(function(m, j) {{
     m.classList.toggle('activa', j === imgIndex);
   }});
-  // Hacer scroll a la miniatura activa
   var activa = minis[imgIndex];
   if (activa) {{
     var wrap = activa.closest('.lightbox-miniaturas');

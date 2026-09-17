@@ -209,12 +209,35 @@ body{
   height: 300px;
   position: relative;
   background: #000;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
 }
 
-.galeria-img{
+.carrusel-principal img{
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -665,10 +688,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczM1If7vI1bnKDI3bLbnvyYES4Tj41QEgTF-0hHdI-88-MA5sfM_FwJLu5Vux7wbVLMRT091o19Cw2PMrbQaV4o9e_T5jeCNyarIbGVVIexgfKhsm4GN=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 20</div>
-          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczM1If7vI1bnKDI3bLbnvyYES4Tj41QEgTF-0hHdI-88-MA5sfM_FwJLu5Vux7wbVLMRT091o19Cw2PMrbQaV4o9e_T5jeCNyarIbGVVIexgfKhsm4GN=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 1" loading="eager" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMbdoWSCn7-sVLmT3_uZlZBUHOycx7x0Y4sd-iLcu5s6NzEzlJrZ1eTQnf1WpIl_8lJGrUl5wbinG6H2M9wGKcAl98S7NAmVaGfCwRVaNDrmnSF71zl=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 2" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNwFywUkzve7vdOyRIjhobE5BDL5lkXAxAhTJyjBonu5VXvUHQEqaHvhCc3xwxy31UVsH-q6rIKliQt-tYEhwZZkLs4L9mqNSp0TXb0r2N2lm74xIoS=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 3" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPf-86dVq8fatCRs3VaZ972Qcv0WvO1GsCNFJguQc2CgF98WTy-luShYvPBtljNOAZNVyKIFUoZgZ9NAEq0xmwq_CTAP8nuout6oWfnkCEorG6KBONX=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 4" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN8j9pWIYs7CC0jet1cj5VSuwO3VgM6bYLc5_00Mnq12WG9u4xNljvOMehK5pCf3RZorT36MBhdf5nnSQ3dQ-4Bl8S4OCIqzX6PD7SET8bo288T4Isp=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 5" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOOiUsHFFvdCcH5aQNpUOmQQ5qHWXUUDLNOrt_X3CxoGCxJCFftajV_Gr2u5hs0s-nO48dy96WLdy-BQoBanTIguagNNHPiN6_LTpo_WZJKMoF__GJI=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 6" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN_guE1pRupQO-iW6MdqsJIvgMzgwN3vZTbDwCSOPwVOy6ZwPIMox2YAsaIQAlmSw-kZVa64kHCpFyc46y8OQXrpiEeF-0nluUBkz1IvWOHnOvdXqeI=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 7" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOTTbzQChQX-64cawpPMxKSBn0N37BCzkA9RkuNSI3Oqw0iBupXAkkjbjjxVWyzgK-fCA-mVkSoRsWRUs2sRTQNmph4JOF78y71Rsaz5-u_CB_xF3m9=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 8" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN24UHtPvtNWcjwlZUuFfQStuDAmRXuquVCJ_FrlCuGu-Y7EpntOBpzYWgM45syjVKgJ_Na4p9D94G4eEw2QfdB0QH8EnaOFQup16qYGKqx64IQ2etF=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 9" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP7FZ43GntmsgF_0KoJTJvmHcLEXmYTJzHrx7S4SdkX5_7Selswsl0Kjbi5Yg_A2b_5o0cXz755hYrKlGDjzTS5MUj8loU3PTtrCbDftTSVv6x-aYBm=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 10" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOaT-0nO6JRnpgVdwXhdI5q46auj9kCvFVOjogZH0-PPx_mwkiYWIuSATLBX8PEnCFgPB_Z8d4wLXlZZdMrcWWhhgVi8NjcXdfqykMeBf1PFPxkJXWG=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 11" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOzbToACJbaTBH2wu3F-F0Pkf3-ajmhwsk2p-DNtbF-7WyRKiPVRrpTBiRADqMOTzHxx9d-i8WqOTMceDrxI-RIR7hWs0wtzQaU0vpeDGt-QbKoCB62=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 12" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO6AQ_9KGiaeXVM4wCF6f7e9VeXcT8QXqkF5xiyoVWeA9p6m_935lUy_Y58sB7fJOyYsEwHV1P3-SAV-Y5eD6r4Wkkg9ZgoHHNkySR_yVLQq2zpQUuI=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 13" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNFmS5wPd4HG8cEyd6c5anj4DmlWiuzZZLwOsZQVz6a1W76XkDMAo10V_x6FPYb4shnvqUuqfTvQ_VTjktlDdBmB2uKOrs7F5nWLVpMmX0se7KW6LZE=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 14" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMgLSQix1W3YXqopvkOmhwzuEE6dPt6F-IjHhAVwuwWITWVu5KAITDoAapCnfKPqQeALzwoQQQU7NJ-2elBUWW7dHAcWtR_4eDcx8gIVTnzU9pu5xhF=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 15" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMx_3LYLRCl-BwJvarIqLnldChOjxgUaaTBpEOxKQ8RL18WDScuLILtNkf_AGBg2vuTqsfzeK1g24eXik5GMp5yOaKw9YCsWdwgcUav-ANno0_yY2e8=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 16" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMznyCgMVMkRA9e9Pezu45jz8OKwoT6Hv6It_U0jOxZEn5GrUJQzLHzg-svmjxs12-M4a8mmVvOLp7HvMlJCX8tOhwD3JuCj6e5QUWVBk8jvj45vmaz=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 17" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP9KIH-GqnsGYRfdil8lMD_H9cLa9Rr6Qg_A8wfgy9DZ4bwRHwbV2qFkdCzbJjlJH3PgT2iD3ZckCotFXXVnz116dvDipI3gmJ5Q9ZqOgLU6R-qD6Pw=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 18" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPFT5KdrqMq7kpnzWZBUe0bhMQu56R2onLPh7NG8pFFAabWjJH_RVY_op_qwl-I2PefIzXgXUi9vecmkLMulQgYqAxdNhHa7waBPo9aG_H6ba6wjewC=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 19" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMMRUaWSYheKSU8co77aqHkM6-lSmWktEOHYW0ZY_RBjltrwVccT1SuPslSjTKGZV-ID8XxS2N_il9pGGr4Notikh63s3mfUOZID2mrufx2TrhiLmcr=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 20" loading="lazy" draggable="false" /></div>
+          <div class="carrusel-counter" id="carruselCounter">1 / 20</div>
+          <button class="galeria-nav prev" onclick="carruselIr(imgIndex-1)">&#8249;</button><button class="galeria-nav next" onclick="carruselIr(imgIndex+1)">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -676,7 +699,7 @@ body{
             </svg>
           </button>
         </div>
-        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczM1If7vI1bnKDI3bLbnvyYES4Tj41QEgTF-0hHdI-88-MA5sfM_FwJLu5Vux7wbVLMRT091o19Cw2PMrbQaV4o9e_T5jeCNyarIbGVVIexgfKhsm4GN=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMbdoWSCn7-sVLmT3_uZlZBUHOycx7x0Y4sd-iLcu5s6NzEzlJrZ1eTQnf1WpIl_8lJGrUl5wbinG6H2M9wGKcAl98S7NAmVaGfCwRVaNDrmnSF71zl=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNwFywUkzve7vdOyRIjhobE5BDL5lkXAxAhTJyjBonu5VXvUHQEqaHvhCc3xwxy31UVsH-q6rIKliQt-tYEhwZZkLs4L9mqNSp0TXb0r2N2lm74xIoS=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPf-86dVq8fatCRs3VaZ972Qcv0WvO1GsCNFJguQc2CgF98WTy-luShYvPBtljNOAZNVyKIFUoZgZ9NAEq0xmwq_CTAP8nuout6oWfnkCEorG6KBONX=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN8j9pWIYs7CC0jet1cj5VSuwO3VgM6bYLc5_00Mnq12WG9u4xNljvOMehK5pCf3RZorT36MBhdf5nnSQ3dQ-4Bl8S4OCIqzX6PD7SET8bo288T4Isp=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOOiUsHFFvdCcH5aQNpUOmQQ5qHWXUUDLNOrt_X3CxoGCxJCFftajV_Gr2u5hs0s-nO48dy96WLdy-BQoBanTIguagNNHPiN6_LTpo_WZJKMoF__GJI=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN_guE1pRupQO-iW6MdqsJIvgMzgwN3vZTbDwCSOPwVOy6ZwPIMox2YAsaIQAlmSw-kZVa64kHCpFyc46y8OQXrpiEeF-0nluUBkz1IvWOHnOvdXqeI=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOTTbzQChQX-64cawpPMxKSBn0N37BCzkA9RkuNSI3Oqw0iBupXAkkjbjjxVWyzgK-fCA-mVkSoRsWRUs2sRTQNmph4JOF78y71Rsaz5-u_CB_xF3m9=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN24UHtPvtNWcjwlZUuFfQStuDAmRXuquVCJ_FrlCuGu-Y7EpntOBpzYWgM45syjVKgJ_Na4p9D94G4eEw2QfdB0QH8EnaOFQup16qYGKqx64IQ2etF=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP7FZ43GntmsgF_0KoJTJvmHcLEXmYTJzHrx7S4SdkX5_7Selswsl0Kjbi5Yg_A2b_5o0cXz755hYrKlGDjzTS5MUj8loU3PTtrCbDftTSVv6x-aYBm=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOaT-0nO6JRnpgVdwXhdI5q46auj9kCvFVOjogZH0-PPx_mwkiYWIuSATLBX8PEnCFgPB_Z8d4wLXlZZdMrcWWhhgVi8NjcXdfqykMeBf1PFPxkJXWG=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOzbToACJbaTBH2wu3F-F0Pkf3-ajmhwsk2p-DNtbF-7WyRKiPVRrpTBiRADqMOTzHxx9d-i8WqOTMceDrxI-RIR7hWs0wtzQaU0vpeDGt-QbKoCB62=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO6AQ_9KGiaeXVM4wCF6f7e9VeXcT8QXqkF5xiyoVWeA9p6m_935lUy_Y58sB7fJOyYsEwHV1P3-SAV-Y5eD6r4Wkkg9ZgoHHNkySR_yVLQq2zpQUuI=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNFmS5wPd4HG8cEyd6c5anj4DmlWiuzZZLwOsZQVz6a1W76XkDMAo10V_x6FPYb4shnvqUuqfTvQ_VTjktlDdBmB2uKOrs7F5nWLVpMmX0se7KW6LZE=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMgLSQix1W3YXqopvkOmhwzuEE6dPt6F-IjHhAVwuwWITWVu5KAITDoAapCnfKPqQeALzwoQQQU7NJ-2elBUWW7dHAcWtR_4eDcx8gIVTnzU9pu5xhF=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMx_3LYLRCl-BwJvarIqLnldChOjxgUaaTBpEOxKQ8RL18WDScuLILtNkf_AGBg2vuTqsfzeK1g24eXik5GMp5yOaKw9YCsWdwgcUav-ANno0_yY2e8=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMznyCgMVMkRA9e9Pezu45jz8OKwoT6Hv6It_U0jOxZEn5GrUJQzLHzg-svmjxs12-M4a8mmVvOLp7HvMlJCX8tOhwD3JuCj6e5QUWVBk8jvj45vmaz=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP9KIH-GqnsGYRfdil8lMD_H9cLa9Rr6Qg_A8wfgy9DZ4bwRHwbV2qFkdCzbJjlJH3PgT2iD3ZckCotFXXVnz116dvDipI3gmJ5Q9ZqOgLU6R-qD6Pw=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPFT5KdrqMq7kpnzWZBUe0bhMQu56R2onLPh7NG8pFFAabWjJH_RVY_op_qwl-I2PefIzXgXUi9vecmkLMulQgYqAxdNhHa7waBPo9aG_H6ba6wjewC=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMMRUaWSYheKSU8co77aqHkM6-lSmWktEOHYW0ZY_RBjltrwVccT1SuPslSjTKGZV-ID8XxS2N_il9pGGr4Notikh63s3mfUOZID2mrufx2TrhiLmcr=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="irImg(19)" loading="lazy"/></div></div>
+        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczM1If7vI1bnKDI3bLbnvyYES4Tj41QEgTF-0hHdI-88-MA5sfM_FwJLu5Vux7wbVLMRT091o19Cw2PMrbQaV4o9e_T5jeCNyarIbGVVIexgfKhsm4GN=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="carruselIr(0)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMbdoWSCn7-sVLmT3_uZlZBUHOycx7x0Y4sd-iLcu5s6NzEzlJrZ1eTQnf1WpIl_8lJGrUl5wbinG6H2M9wGKcAl98S7NAmVaGfCwRVaNDrmnSF71zl=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="carruselIr(1)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNwFywUkzve7vdOyRIjhobE5BDL5lkXAxAhTJyjBonu5VXvUHQEqaHvhCc3xwxy31UVsH-q6rIKliQt-tYEhwZZkLs4L9mqNSp0TXb0r2N2lm74xIoS=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="carruselIr(2)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPf-86dVq8fatCRs3VaZ972Qcv0WvO1GsCNFJguQc2CgF98WTy-luShYvPBtljNOAZNVyKIFUoZgZ9NAEq0xmwq_CTAP8nuout6oWfnkCEorG6KBONX=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="carruselIr(3)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN8j9pWIYs7CC0jet1cj5VSuwO3VgM6bYLc5_00Mnq12WG9u4xNljvOMehK5pCf3RZorT36MBhdf5nnSQ3dQ-4Bl8S4OCIqzX6PD7SET8bo288T4Isp=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="carruselIr(4)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOOiUsHFFvdCcH5aQNpUOmQQ5qHWXUUDLNOrt_X3CxoGCxJCFftajV_Gr2u5hs0s-nO48dy96WLdy-BQoBanTIguagNNHPiN6_LTpo_WZJKMoF__GJI=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="carruselIr(5)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN_guE1pRupQO-iW6MdqsJIvgMzgwN3vZTbDwCSOPwVOy6ZwPIMox2YAsaIQAlmSw-kZVa64kHCpFyc46y8OQXrpiEeF-0nluUBkz1IvWOHnOvdXqeI=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="carruselIr(6)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOTTbzQChQX-64cawpPMxKSBn0N37BCzkA9RkuNSI3Oqw0iBupXAkkjbjjxVWyzgK-fCA-mVkSoRsWRUs2sRTQNmph4JOF78y71Rsaz5-u_CB_xF3m9=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="carruselIr(7)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN24UHtPvtNWcjwlZUuFfQStuDAmRXuquVCJ_FrlCuGu-Y7EpntOBpzYWgM45syjVKgJ_Na4p9D94G4eEw2QfdB0QH8EnaOFQup16qYGKqx64IQ2etF=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="carruselIr(8)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP7FZ43GntmsgF_0KoJTJvmHcLEXmYTJzHrx7S4SdkX5_7Selswsl0Kjbi5Yg_A2b_5o0cXz755hYrKlGDjzTS5MUj8loU3PTtrCbDftTSVv6x-aYBm=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="carruselIr(9)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOaT-0nO6JRnpgVdwXhdI5q46auj9kCvFVOjogZH0-PPx_mwkiYWIuSATLBX8PEnCFgPB_Z8d4wLXlZZdMrcWWhhgVi8NjcXdfqykMeBf1PFPxkJXWG=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="carruselIr(10)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOzbToACJbaTBH2wu3F-F0Pkf3-ajmhwsk2p-DNtbF-7WyRKiPVRrpTBiRADqMOTzHxx9d-i8WqOTMceDrxI-RIR7hWs0wtzQaU0vpeDGt-QbKoCB62=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="carruselIr(11)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO6AQ_9KGiaeXVM4wCF6f7e9VeXcT8QXqkF5xiyoVWeA9p6m_935lUy_Y58sB7fJOyYsEwHV1P3-SAV-Y5eD6r4Wkkg9ZgoHHNkySR_yVLQq2zpQUuI=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="carruselIr(12)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNFmS5wPd4HG8cEyd6c5anj4DmlWiuzZZLwOsZQVz6a1W76XkDMAo10V_x6FPYb4shnvqUuqfTvQ_VTjktlDdBmB2uKOrs7F5nWLVpMmX0se7KW6LZE=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="carruselIr(13)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMgLSQix1W3YXqopvkOmhwzuEE6dPt6F-IjHhAVwuwWITWVu5KAITDoAapCnfKPqQeALzwoQQQU7NJ-2elBUWW7dHAcWtR_4eDcx8gIVTnzU9pu5xhF=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="carruselIr(14)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMx_3LYLRCl-BwJvarIqLnldChOjxgUaaTBpEOxKQ8RL18WDScuLILtNkf_AGBg2vuTqsfzeK1g24eXik5GMp5yOaKw9YCsWdwgcUav-ANno0_yY2e8=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="carruselIr(15)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMznyCgMVMkRA9e9Pezu45jz8OKwoT6Hv6It_U0jOxZEn5GrUJQzLHzg-svmjxs12-M4a8mmVvOLp7HvMlJCX8tOhwD3JuCj6e5QUWVBk8jvj45vmaz=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="carruselIr(16)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP9KIH-GqnsGYRfdil8lMD_H9cLa9Rr6Qg_A8wfgy9DZ4bwRHwbV2qFkdCzbJjlJH3PgT2iD3ZckCotFXXVnz116dvDipI3gmJ5Q9ZqOgLU6R-qD6Pw=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="carruselIr(17)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPFT5KdrqMq7kpnzWZBUe0bhMQu56R2onLPh7NG8pFFAabWjJH_RVY_op_qwl-I2PefIzXgXUi9vecmkLMulQgYqAxdNhHa7waBPo9aG_H6ba6wjewC=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="carruselIr(18)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMMRUaWSYheKSU8co77aqHkM6-lSmWktEOHYW0ZY_RBjltrwVccT1SuPslSjTKGZV-ID8XxS2N_il9pGGr4Notikh63s3mfUOZID2mrufx2TrhiLmcr=w1200" alt="Apartamento en venta Centro Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="carruselIr(19)" loading="lazy" draggable="false"/></div></div>
       </div>
       
       <div class="modal-bloque-info">
@@ -738,74 +761,146 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczM1If7vI1bnKDI3bLbnvyYES4Tj41QEgTF-0hHdI-88-MA5sfM_FwJLu5Vux7wbVLMRT091o19Cw2PMrbQaV4o9e_T5jeCNyarIbGVVIexgfKhsm4GN=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMbdoWSCn7-sVLmT3_uZlZBUHOycx7x0Y4sd-iLcu5s6NzEzlJrZ1eTQnf1WpIl_8lJGrUl5wbinG6H2M9wGKcAl98S7NAmVaGfCwRVaNDrmnSF71zl=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNwFywUkzve7vdOyRIjhobE5BDL5lkXAxAhTJyjBonu5VXvUHQEqaHvhCc3xwxy31UVsH-q6rIKliQt-tYEhwZZkLs4L9mqNSp0TXb0r2N2lm74xIoS=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPf-86dVq8fatCRs3VaZ972Qcv0WvO1GsCNFJguQc2CgF98WTy-luShYvPBtljNOAZNVyKIFUoZgZ9NAEq0xmwq_CTAP8nuout6oWfnkCEorG6KBONX=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN8j9pWIYs7CC0jet1cj5VSuwO3VgM6bYLc5_00Mnq12WG9u4xNljvOMehK5pCf3RZorT36MBhdf5nnSQ3dQ-4Bl8S4OCIqzX6PD7SET8bo288T4Isp=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOOiUsHFFvdCcH5aQNpUOmQQ5qHWXUUDLNOrt_X3CxoGCxJCFftajV_Gr2u5hs0s-nO48dy96WLdy-BQoBanTIguagNNHPiN6_LTpo_WZJKMoF__GJI=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN_guE1pRupQO-iW6MdqsJIvgMzgwN3vZTbDwCSOPwVOy6ZwPIMox2YAsaIQAlmSw-kZVa64kHCpFyc46y8OQXrpiEeF-0nluUBkz1IvWOHnOvdXqeI=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOTTbzQChQX-64cawpPMxKSBn0N37BCzkA9RkuNSI3Oqw0iBupXAkkjbjjxVWyzgK-fCA-mVkSoRsWRUs2sRTQNmph4JOF78y71Rsaz5-u_CB_xF3m9=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN24UHtPvtNWcjwlZUuFfQStuDAmRXuquVCJ_FrlCuGu-Y7EpntOBpzYWgM45syjVKgJ_Na4p9D94G4eEw2QfdB0QH8EnaOFQup16qYGKqx64IQ2etF=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP7FZ43GntmsgF_0KoJTJvmHcLEXmYTJzHrx7S4SdkX5_7Selswsl0Kjbi5Yg_A2b_5o0cXz755hYrKlGDjzTS5MUj8loU3PTtrCbDftTSVv6x-aYBm=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOaT-0nO6JRnpgVdwXhdI5q46auj9kCvFVOjogZH0-PPx_mwkiYWIuSATLBX8PEnCFgPB_Z8d4wLXlZZdMrcWWhhgVi8NjcXdfqykMeBf1PFPxkJXWG=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOzbToACJbaTBH2wu3F-F0Pkf3-ajmhwsk2p-DNtbF-7WyRKiPVRrpTBiRADqMOTzHxx9d-i8WqOTMceDrxI-RIR7hWs0wtzQaU0vpeDGt-QbKoCB62=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO6AQ_9KGiaeXVM4wCF6f7e9VeXcT8QXqkF5xiyoVWeA9p6m_935lUy_Y58sB7fJOyYsEwHV1P3-SAV-Y5eD6r4Wkkg9ZgoHHNkySR_yVLQq2zpQUuI=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNFmS5wPd4HG8cEyd6c5anj4DmlWiuzZZLwOsZQVz6a1W76XkDMAo10V_x6FPYb4shnvqUuqfTvQ_VTjktlDdBmB2uKOrs7F5nWLVpMmX0se7KW6LZE=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMgLSQix1W3YXqopvkOmhwzuEE6dPt6F-IjHhAVwuwWITWVu5KAITDoAapCnfKPqQeALzwoQQQU7NJ-2elBUWW7dHAcWtR_4eDcx8gIVTnzU9pu5xhF=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMx_3LYLRCl-BwJvarIqLnldChOjxgUaaTBpEOxKQ8RL18WDScuLILtNkf_AGBg2vuTqsfzeK1g24eXik5GMp5yOaKw9YCsWdwgcUav-ANno0_yY2e8=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMznyCgMVMkRA9e9Pezu45jz8OKwoT6Hv6It_U0jOxZEn5GrUJQzLHzg-svmjxs12-M4a8mmVvOLp7HvMlJCX8tOhwD3JuCj6e5QUWVBk8jvj45vmaz=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP9KIH-GqnsGYRfdil8lMD_H9cLa9Rr6Qg_A8wfgy9DZ4bwRHwbV2qFkdCzbJjlJH3PgT2iD3ZckCotFXXVnz116dvDipI3gmJ5Q9ZqOgLU6R-qD6Pw=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPFT5KdrqMq7kpnzWZBUe0bhMQu56R2onLPh7NG8pFFAabWjJH_RVY_op_qwl-I2PefIzXgXUi9vecmkLMulQgYqAxdNhHa7waBPo9aG_H6ba6wjewC=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMMRUaWSYheKSU8co77aqHkM6-lSmWktEOHYW0ZY_RBjltrwVccT1SuPslSjTKGZV-ID8XxS2N_il9pGGr4Notikh63s3mfUOZID2mrufx2TrhiLmcr=w1200"];
 var imgIndex = 0;
+var carruselTimer = null;
+var CARRUSEL_DELAY = 5000;
 
-// Soporte para swipe (deslizar) en móviles
-var startX = 0;
-var endX = 0;
-document.addEventListener('DOMContentLoaded', function() {
-  // Swipe en carrusel principal
-  var carrusel = document.querySelector('.carrusel-principal');
-  if (carrusel) {
-    carrusel.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
-    }, {passive: true});
-    carrusel.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        cambiarImg(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        cambiarImg(-1); // Deslizar derecha -> anterior
-      }
-    }, {passive: true});
+function carruselIr(idx, reiniciarTimer) {
+  if (reiniciarTimer === undefined) reiniciarTimer = true;
+  if (!IMGS.length) return;
+  imgIndex = ((idx % IMGS.length) + IMGS.length) % IMGS.length;
+  
+  var principal = document.getElementById('carruselPrincipal');
+  if (principal) {
+    var slides = principal.querySelectorAll('.carrusel-slide');
+    slides.forEach(function(s, i) {
+      s.classList.toggle('activa', i === imgIndex);
+    });
   }
+  
+  var counter = document.getElementById('carruselCounter');
+  if (counter) counter.textContent = (imgIndex + 1) + ' / ' + IMGS.length;
+  
+  var minis = document.querySelectorAll('.carrusel-min');
+  minis.forEach(function(m, i) {
+    m.classList.toggle('activa', i === imgIndex);
+  });
+  
+  if (reiniciarTimer) carruselReiniciarProgreso();
+}
+
+function carruselReiniciarProgreso() {
+  if (IMGS.length <= 1) return;
+  clearTimeout(carruselTimer);
+  carruselTimer = setTimeout(function() {
+    carruselIr(imgIndex + 1);
+  }, CARRUSEL_DELAY);
+}
+
+function carruselDetener() {
+  clearTimeout(carruselTimer);
+}
+
+function irImg(i) { carruselIr(i); }
+function cambiarImg(dir) { carruselIr(imgIndex + dir); }
+
+var _dragSx = 0, _dragPid = null, _dragMoved = false;
+function initCarruselDrag() {
+  var el = document.getElementById('carruselPrincipal');
+  if (!el) return;
+  
+  el.addEventListener('dragstart', function(e) { e.preventDefault(); });
+  
+  el.addEventListener('pointerdown', function(e) {
+    if (e.target.closest('button')) return;
+    _dragSx = e.clientX;
+    _dragPid = e.pointerId;
+    _dragMoved = false;
+    try { el.setPointerCapture(e.pointerId); } catch(err) {}
+  });
+  
+  el.addEventListener('pointermove', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    if (Math.abs(e.clientX - _dragSx) > 8) _dragMoved = true;
+  });
+  
+  el.addEventListener('pointerup', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    var d = _dragSx - e.clientX;
+    _dragPid = null;
+    if (Math.abs(d) >= 30) {
+      if (d > 0) carruselIr(imgIndex + 1);
+      else carruselIr(imgIndex - 1);
+    }
+  });
+  
+  el.addEventListener('pointercancel', function() { _dragPid = null; });
+  
+  el.addEventListener('click', function(e) {
+    if (_dragMoved && !e.target.closest('button')) {
+      e.stopPropagation();
+      e.preventDefault();
+      _dragMoved = false;
+    }
+  }, true);
+  
+  var _tSx = 0, _tSy = 0, _tMoved = false;
+  el.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    _tSx = e.touches[0].clientX;
+    _tSy = e.touches[0].clientY;
+    _tMoved = false;
+  }, {passive: true});
+  
+  el.addEventListener('touchmove', function(e) {
+    if (Math.abs(e.touches[0].clientX - _tSx) > 10) _tMoved = true;
+  }, {passive: true});
+  
+  el.addEventListener('touchend', function(e) {
+    if (!_tMoved) return;
+    var dx = e.changedTouches[0].clientX - _tSx;
+    var dy = e.changedTouches[0].clientY - _tSy;
+    _tMoved = false;
+    if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) carruselIr(imgIndex + 1);
+    else carruselIr(imgIndex - 1);
+  }, {passive: true});
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initCarruselDrag();
+  if (IMGS.length > 1) carruselReiniciarProgreso();
   
   // Swipe en lightbox (pantalla completa)
   var lightbox = document.getElementById('lightbox');
   if (lightbox) {
+    var lSx = 0, lEndX = 0;
     lightbox.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
+      lSx = e.touches[0].clientX;
     }, {passive: true});
     lightbox.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        lightboxNav(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        lightboxNav(-1); // Deslizar derecha -> anterior
+      lEndX = e.changedTouches[0].clientX;
+      if (lSx - lEndX > 50) {
+        lightboxNav(1);
+      } else if (lEndX - lSx > 50) {
+        lightboxNav(-1);
       }
     }, {passive: true});
     
-    // Evitar que el swipe en las miniaturas cambie la foto principal
     var wrapMinis = lightbox.querySelector('.lightbox-miniaturas-wrap');
     if (wrapMinis) {
-      wrapMinis.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
-      wrapMinis.addEventListener('touchend', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
+      wrapMinis.addEventListener('touchstart', function(e) { e.stopPropagation(); }, {passive: true});
+      wrapMinis.addEventListener('touchend', function(e) { e.stopPropagation(); }, {passive: true});
     }
   }
 });
 
-function irImg(i) {
-  if (!IMGS.length) return;
-  imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
-  var cont = document.getElementById('imgActual');
-  if (cont) cont.textContent = imgIndex + 1;
-}
-
-function cambiarImg(dir) { irImg(imgIndex + dir); }
-
 function abrirLightbox(i) {
-  irImg(i);
+  carruselDetener();
+  carruselIr(i, false);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   
-  // Generar miniaturas en el lightbox si no existen
   var minisDiv = document.getElementById('lightboxMiniaturas');
   if (minisDiv && !minisDiv.innerHTML) {
     minisDiv.innerHTML = IMGS.map(function(url, index) {
@@ -822,14 +917,14 @@ function cerrarLightbox(e) {
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
+  carruselReiniciarProgreso();
 }
 
 function lightboxNav(dir) {
-  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
+  carruselIr(imgIndex + dir, false);
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   updateLightboxMiniaturas();
-  irImg(imgIndex); // Actualizar también el carrusel principal
 }
 
 function updateLightboxMiniaturas() {
@@ -837,7 +932,6 @@ function updateLightboxMiniaturas() {
   minis.forEach(function(m, j) {
     m.classList.toggle('activa', j === imgIndex);
   });
-  // Hacer scroll a la miniatura activa
   var activa = minis[imgIndex];
   if (activa) {
     var wrap = activa.closest('.lightbox-miniaturas');

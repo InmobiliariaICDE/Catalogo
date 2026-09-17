@@ -209,12 +209,35 @@ body{
   height: 300px;
   position: relative;
   background: #000;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
 }
 
-.galeria-img{
+.carrusel-principal img{
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -665,10 +688,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczOjsArIc3rblaqPnFUVRwcaz8R8_FwDp-tGGqVLS0vZnGAqSydF35fhx7vKqhBw63pWSn2TuVezUSCaNKoyQI_kpe4seatlLlhG1M7RWg0oE6EvIJDU=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 32</div>
-          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczOjsArIc3rblaqPnFUVRwcaz8R8_FwDp-tGGqVLS0vZnGAqSydF35fhx7vKqhBw63pWSn2TuVezUSCaNKoyQI_kpe4seatlLlhG1M7RWg0oE6EvIJDU=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 1" loading="eager" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMpOBtCGdBr3z3Wfg0b3UbFDDd-SeIlYGLdQRYKb4f7TbJz1xtt6SkFWOe-5x_NV0EXb8ES8_toe4jv94YXF_8p2-AOkOzA9Zux1AO17GIScXyG3VoA=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 2" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM0XBLF9sPQhzPws0VQHZquTYlVPQiFp-ykpreO1YY4HLc3qHkGZVz1hIVa-zuljwesqHLc-3Wp1ytj5Nd-buplbex5x221zmnO0es5lnlyS9rx4tC7=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 3" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP1QDhQ4gm2cU4VqOM6pysexGFfTKtjuMCqDDr48L-FkywH60OmA9K9BaJJj2e7YXKMKounp-Z86z6-v897MrlxF6LjhJwRch68oI4q4w-_emr1kluC=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 4" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNQdXy-Bn_XeXBWPArCAldgFXURvIJyEMEJH6GF5R5dntkntnctE97T27Lp4-y8d9VW4OWbKneiPwF7MiVZ4GSN6iZpgEQGMmmLdIRqJXDtQ2RZj8-s=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 5" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMy3qg3DwTYbceH6dNTFKIvAUJ3Bz2bB2oNQh1ppveVmLCZCPR8wyOclQMnVTw4N4hezYag8TDLKSPhI-Q1bxogniFMMJ9jMGV-H-RYqMWJIzUIpAPA=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 6" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM1elTDhDTyRLtFONuRvZXPTUTUQjtf7hE_YBr-kmvX3Lhz7dwVc7EkKiwwPkORVNrvEO0M_Gf4wVUyZLotZhJt2ra9WGPgWNu0XeL0wppimfJWQdBo=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 7" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO4Iu2E-Wj29AzAU6ld20F0n1lMiF1ZtDoF6-qcsX925K9XtpwQz8lIHlXem4lQG5-726a1i3CaIgIgq4yUJXRNUafl2BCMnkx9_MKRtSC0SbpGCwwV=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 8" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOZ6qP6t-RKG29uL4mws6hR4WdCGLrAy2VfuU7RBimPjRJ1ohx_bksxA8INsQ8QNWSEXTmDwfaI3XwNmejarFJf5Pz4D3z_j9r9iCgilZir3E86OwBb=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 9" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOi4Bgi2jTAA0YQ0kHhnF-8cINEY1dnhv8gAxOEgoHVTF3nT7oYhKcbPkNmCD1lG0rYbAY_oWAXb-3OFYe53BvEeJf-EEqdp2pzcOGVNNC7_BN_p3Je=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 10" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMrt88uaS27KeboMnpxE2zQ4hYgAl5xG23e8nTFvXFABrdIvjq8IbZKhg1fJhVkNnv9v0tCzHi37x9K_mITGvwEvjUXasMmdhgurcRu3I9KpNpvNmBR=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 11" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNLkt_xA1-FEIvPUdoCDftk2RRtzobwirf95amwLUhehvzfGnBURYlxbQYS4JYPA3pl86t-nxFrInhj6kyyQGL3vuCi1WTSVcj48Y6sSmj6i8ZLF9Fi=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 12" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPmhka-NtMbdf1AatSqADWgrL_AX9HdW1OT5ImG5v6Yue5--ivckyIbo99LgOJOdxW1UUbTGWLUa-lckhj-yF8C_CbRhIBVkR5b52fbOUp1JWkDPG5N=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 13" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPVDtsnwFyzzskM5OJUkLkbz6Z3nMT5-dOUquxPH_fZ-l26GB1MQDbkB2_SpggPkxlrLw2Rh3bN-5f8p77bZmhbnz7Hd3aVZw32mCT9jD_7KNDDsiST=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 14" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMNOf3EXfnQnLMiytZyvvJPjMhPp81QynW5-CQBlIY2Zq6NfbkJdncQ2bWXYl0aX17HCT_oqKPxihb7KR7UY2sCw9DnI1ncwoufhOAXG_fi0EpTQXTB=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 15" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOuBqlZCAH2MhWPeWxSZr5T-MVZiuAz3QoLGPPql_vPj8gUbXFjm8wq2KDTz0DY4mRFt4HilBpCSw30F4n28vkur6jHRtHPdijoHLVvpTfMQ4wI1Rwi=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 16" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPKyZl5rwC8-PQxCQ_he70LA6oJiqU1tu__aAyYeI2g2SLRSm0R7BtGcyL0zOo6zvhCTDGS0atHkc-snYNDw5a7R6hwmN7aR2gOHAS-HEdg1HNASP7B=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 17" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPFQ955fQsfvqmKeFfvbZqNz--R0twRXuvX2bzlcjsvE3TC_qR1l1ZBPf4rbQisRRQ6t-aES6EIdsk3xwoGs5Fw45C655YotVdIc6E4cM-GIMI1iYrF=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 18" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNHrRNHC3PylzGexIgVOqg2vZ-XvD5u_XgjJ30vNEvgekIOAhHNKVZr563zxVF77BjuORpPA_YakcAcRE7p3v_Y-0D_FnpnTpm8rSNrwIvlVn_QBLYX=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 19" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO36kgDaNzho6WCJmS0iMTJNA58SAZX19OSmufS37PhExfXoKLUJSpJPI7eOuJbdOop-CSM9u2pAQ8yhdsMeAd5pb5mGHwu7EuQ3BQP_9vyo8mySyV8=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 20" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNk6JMaZvGQdJvscySevf-sEl6cqivi1mHW9vI2N17Tu75QVVNcKHVUhePpDgqZlyglf5Tek5eYCJdjbmWdwj2Ek8ilct55XdGaWId_GA7bo4DN0Oxs=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 21" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPVYcXXprbUPk4uzdwFJs1ETm1ua16v0XWGiRexh3E3urW3OWm6J2a4r-ME7Wzy9lVvGuUQDRs0q_Q9s2242zRl8TmFklPjE8Fgy3IPp9LSFLZgFYA9=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 22" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO1c6FnMMmsIpxWK4NYtSan2X7SwtUQSHOMM0VKxu13llOEWYVb6Vuzsj6ytJQdotoLjRXovaX3RO8aMPNyjVsVRWkl5LquTH4cLqkLtn5BJagJsvol=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 23" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPUJWZFxqaB5K8R2GQ8_jan6vjQxcXXl-NCWiDQ8MDsq4EwmgEg1RJJ6ArV9PSoBZdokI-KnKwwZE3bUDz_wOdyCMH6w2xLumtCnAdNt8sv3uWMZmOw=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 24" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP6NKi2r1Bhv3LL91tFUx6GqLX7-82ZG43GgRnY6F5wsoHA5J8Lwkxi1JEOf0wGhAzn2wdm9gQd8jech3CfpAUFqznR4YQbP971kbvjkOEcLyUhbLtG=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 25" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNtA-DpkzhkGeH0ZzQNHbzrIGtng1-YUqeIGv5j0BqGZSmTaTTp0oQdBFb8Nnx0lvCXuVu8Wie484BxVv0oFdA7Z_rYA4DFAubjVshI-zBIbIdl6oEF=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 26" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPH-AeEHpdnvzHndk5dA33kmWakOUlfA5em9AI6xev2VCKDO5HvfzIMLrgK1vF5rCvc59pC3XrZRowP_weUVvCM1VKGy3vgErUNvb39K-LMhUnphRP3=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 27" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNiOemRic9CFjCseuvD-7vk_q07WLJgOgCBQuQxtRmbdbL08Y-wFEk89kSF0KCk88OcW-ituG3LwXkLNT5JShg8qZ6Frv8f6SgX1QuIT4Uc9Lyi3wvg=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 28" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOsS27O9KVDbdDFWC1AJ7tf00IUwzcZBNLLA4Y440hzz_eDQ5ZRh-BgFqkiLuItWC6iUKYiC9YOQNn2JmgugAQrmDZv96RZzB84BQDVxnM-Th0TCMmI=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 29" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOfr8t-GXAB1tZI1ZM3mFu7BrZ6HqKRRi6Zg1aQV1Saw4h5MmX_4LxrDJZ1UpaLZLdf9frWqvUarCjUlaIwjDba90hFbwPHVONYIPbNK_8d_xKB-VC9=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 30" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPs3b2u_DA77aLyVvBB33Zlm23Elv3vV8V3FQ43mVJa9YE9XOy5sLcQwX2DYuhBznOfwM6u_Fwh2Do0BFJQHC46iL3EcbsJ7HKCnerkYG_VnCmihid7=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 31" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMfHKHK4RAQk5jsth_l7ktyoC27KqmNhasOhIH9h-J9OY8jY_-gRmrWP6EPdD9_rJ3Br4625hVqSjII4-erQkwRcwVRi7NSUDebhFY5vY-_hG5jSmeG=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 32" loading="lazy" draggable="false" /></div>
+          <div class="carrusel-counter" id="carruselCounter">1 / 32</div>
+          <button class="galeria-nav prev" onclick="carruselIr(imgIndex-1)">&#8249;</button><button class="galeria-nav next" onclick="carruselIr(imgIndex+1)">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -676,7 +699,7 @@ body{
             </svg>
           </button>
         </div>
-        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczOjsArIc3rblaqPnFUVRwcaz8R8_FwDp-tGGqVLS0vZnGAqSydF35fhx7vKqhBw63pWSn2TuVezUSCaNKoyQI_kpe4seatlLlhG1M7RWg0oE6EvIJDU=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMpOBtCGdBr3z3Wfg0b3UbFDDd-SeIlYGLdQRYKb4f7TbJz1xtt6SkFWOe-5x_NV0EXb8ES8_toe4jv94YXF_8p2-AOkOzA9Zux1AO17GIScXyG3VoA=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM0XBLF9sPQhzPws0VQHZquTYlVPQiFp-ykpreO1YY4HLc3qHkGZVz1hIVa-zuljwesqHLc-3Wp1ytj5Nd-buplbex5x221zmnO0es5lnlyS9rx4tC7=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP1QDhQ4gm2cU4VqOM6pysexGFfTKtjuMCqDDr48L-FkywH60OmA9K9BaJJj2e7YXKMKounp-Z86z6-v897MrlxF6LjhJwRch68oI4q4w-_emr1kluC=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNQdXy-Bn_XeXBWPArCAldgFXURvIJyEMEJH6GF5R5dntkntnctE97T27Lp4-y8d9VW4OWbKneiPwF7MiVZ4GSN6iZpgEQGMmmLdIRqJXDtQ2RZj8-s=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMy3qg3DwTYbceH6dNTFKIvAUJ3Bz2bB2oNQh1ppveVmLCZCPR8wyOclQMnVTw4N4hezYag8TDLKSPhI-Q1bxogniFMMJ9jMGV-H-RYqMWJIzUIpAPA=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM1elTDhDTyRLtFONuRvZXPTUTUQjtf7hE_YBr-kmvX3Lhz7dwVc7EkKiwwPkORVNrvEO0M_Gf4wVUyZLotZhJt2ra9WGPgWNu0XeL0wppimfJWQdBo=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO4Iu2E-Wj29AzAU6ld20F0n1lMiF1ZtDoF6-qcsX925K9XtpwQz8lIHlXem4lQG5-726a1i3CaIgIgq4yUJXRNUafl2BCMnkx9_MKRtSC0SbpGCwwV=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOZ6qP6t-RKG29uL4mws6hR4WdCGLrAy2VfuU7RBimPjRJ1ohx_bksxA8INsQ8QNWSEXTmDwfaI3XwNmejarFJf5Pz4D3z_j9r9iCgilZir3E86OwBb=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOi4Bgi2jTAA0YQ0kHhnF-8cINEY1dnhv8gAxOEgoHVTF3nT7oYhKcbPkNmCD1lG0rYbAY_oWAXb-3OFYe53BvEeJf-EEqdp2pzcOGVNNC7_BN_p3Je=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMrt88uaS27KeboMnpxE2zQ4hYgAl5xG23e8nTFvXFABrdIvjq8IbZKhg1fJhVkNnv9v0tCzHi37x9K_mITGvwEvjUXasMmdhgurcRu3I9KpNpvNmBR=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNLkt_xA1-FEIvPUdoCDftk2RRtzobwirf95amwLUhehvzfGnBURYlxbQYS4JYPA3pl86t-nxFrInhj6kyyQGL3vuCi1WTSVcj48Y6sSmj6i8ZLF9Fi=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPmhka-NtMbdf1AatSqADWgrL_AX9HdW1OT5ImG5v6Yue5--ivckyIbo99LgOJOdxW1UUbTGWLUa-lckhj-yF8C_CbRhIBVkR5b52fbOUp1JWkDPG5N=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPVDtsnwFyzzskM5OJUkLkbz6Z3nMT5-dOUquxPH_fZ-l26GB1MQDbkB2_SpggPkxlrLw2Rh3bN-5f8p77bZmhbnz7Hd3aVZw32mCT9jD_7KNDDsiST=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMNOf3EXfnQnLMiytZyvvJPjMhPp81QynW5-CQBlIY2Zq6NfbkJdncQ2bWXYl0aX17HCT_oqKPxihb7KR7UY2sCw9DnI1ncwoufhOAXG_fi0EpTQXTB=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOuBqlZCAH2MhWPeWxSZr5T-MVZiuAz3QoLGPPql_vPj8gUbXFjm8wq2KDTz0DY4mRFt4HilBpCSw30F4n28vkur6jHRtHPdijoHLVvpTfMQ4wI1Rwi=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPKyZl5rwC8-PQxCQ_he70LA6oJiqU1tu__aAyYeI2g2SLRSm0R7BtGcyL0zOo6zvhCTDGS0atHkc-snYNDw5a7R6hwmN7aR2gOHAS-HEdg1HNASP7B=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPFQ955fQsfvqmKeFfvbZqNz--R0twRXuvX2bzlcjsvE3TC_qR1l1ZBPf4rbQisRRQ6t-aES6EIdsk3xwoGs5Fw45C655YotVdIc6E4cM-GIMI1iYrF=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNHrRNHC3PylzGexIgVOqg2vZ-XvD5u_XgjJ30vNEvgekIOAhHNKVZr563zxVF77BjuORpPA_YakcAcRE7p3v_Y-0D_FnpnTpm8rSNrwIvlVn_QBLYX=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO36kgDaNzho6WCJmS0iMTJNA58SAZX19OSmufS37PhExfXoKLUJSpJPI7eOuJbdOop-CSM9u2pAQ8yhdsMeAd5pb5mGHwu7EuQ3BQP_9vyo8mySyV8=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="irImg(19)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNk6JMaZvGQdJvscySevf-sEl6cqivi1mHW9vI2N17Tu75QVVNcKHVUhePpDgqZlyglf5Tek5eYCJdjbmWdwj2Ek8ilct55XdGaWId_GA7bo4DN0Oxs=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="irImg(20)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPVYcXXprbUPk4uzdwFJs1ETm1ua16v0XWGiRexh3E3urW3OWm6J2a4r-ME7Wzy9lVvGuUQDRs0q_Q9s2242zRl8TmFklPjE8Fgy3IPp9LSFLZgFYA9=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="irImg(21)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO1c6FnMMmsIpxWK4NYtSan2X7SwtUQSHOMM0VKxu13llOEWYVb6Vuzsj6ytJQdotoLjRXovaX3RO8aMPNyjVsVRWkl5LquTH4cLqkLtn5BJagJsvol=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="irImg(22)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPUJWZFxqaB5K8R2GQ8_jan6vjQxcXXl-NCWiDQ8MDsq4EwmgEg1RJJ6ArV9PSoBZdokI-KnKwwZE3bUDz_wOdyCMH6w2xLumtCnAdNt8sv3uWMZmOw=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 24" class="miniatura carrusel-min" onclick="irImg(23)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP6NKi2r1Bhv3LL91tFUx6GqLX7-82ZG43GgRnY6F5wsoHA5J8Lwkxi1JEOf0wGhAzn2wdm9gQd8jech3CfpAUFqznR4YQbP971kbvjkOEcLyUhbLtG=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 25" class="miniatura carrusel-min" onclick="irImg(24)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNtA-DpkzhkGeH0ZzQNHbzrIGtng1-YUqeIGv5j0BqGZSmTaTTp0oQdBFb8Nnx0lvCXuVu8Wie484BxVv0oFdA7Z_rYA4DFAubjVshI-zBIbIdl6oEF=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 26" class="miniatura carrusel-min" onclick="irImg(25)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPH-AeEHpdnvzHndk5dA33kmWakOUlfA5em9AI6xev2VCKDO5HvfzIMLrgK1vF5rCvc59pC3XrZRowP_weUVvCM1VKGy3vgErUNvb39K-LMhUnphRP3=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 27" class="miniatura carrusel-min" onclick="irImg(26)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNiOemRic9CFjCseuvD-7vk_q07WLJgOgCBQuQxtRmbdbL08Y-wFEk89kSF0KCk88OcW-ituG3LwXkLNT5JShg8qZ6Frv8f6SgX1QuIT4Uc9Lyi3wvg=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 28" class="miniatura carrusel-min" onclick="irImg(27)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOsS27O9KVDbdDFWC1AJ7tf00IUwzcZBNLLA4Y440hzz_eDQ5ZRh-BgFqkiLuItWC6iUKYiC9YOQNn2JmgugAQrmDZv96RZzB84BQDVxnM-Th0TCMmI=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 29" class="miniatura carrusel-min" onclick="irImg(28)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOfr8t-GXAB1tZI1ZM3mFu7BrZ6HqKRRi6Zg1aQV1Saw4h5MmX_4LxrDJZ1UpaLZLdf9frWqvUarCjUlaIwjDba90hFbwPHVONYIPbNK_8d_xKB-VC9=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 30" class="miniatura carrusel-min" onclick="irImg(29)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPs3b2u_DA77aLyVvBB33Zlm23Elv3vV8V3FQ43mVJa9YE9XOy5sLcQwX2DYuhBznOfwM6u_Fwh2Do0BFJQHC46iL3EcbsJ7HKCnerkYG_VnCmihid7=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 31" class="miniatura carrusel-min" onclick="irImg(30)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMfHKHK4RAQk5jsth_l7ktyoC27KqmNhasOhIH9h-J9OY8jY_-gRmrWP6EPdD9_rJ3Br4625hVqSjII4-erQkwRcwVRi7NSUDebhFY5vY-_hG5jSmeG=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 32" class="miniatura carrusel-min" onclick="irImg(31)" loading="lazy"/></div></div>
+        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczOjsArIc3rblaqPnFUVRwcaz8R8_FwDp-tGGqVLS0vZnGAqSydF35fhx7vKqhBw63pWSn2TuVezUSCaNKoyQI_kpe4seatlLlhG1M7RWg0oE6EvIJDU=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="carruselIr(0)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMpOBtCGdBr3z3Wfg0b3UbFDDd-SeIlYGLdQRYKb4f7TbJz1xtt6SkFWOe-5x_NV0EXb8ES8_toe4jv94YXF_8p2-AOkOzA9Zux1AO17GIScXyG3VoA=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="carruselIr(1)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM0XBLF9sPQhzPws0VQHZquTYlVPQiFp-ykpreO1YY4HLc3qHkGZVz1hIVa-zuljwesqHLc-3Wp1ytj5Nd-buplbex5x221zmnO0es5lnlyS9rx4tC7=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="carruselIr(2)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP1QDhQ4gm2cU4VqOM6pysexGFfTKtjuMCqDDr48L-FkywH60OmA9K9BaJJj2e7YXKMKounp-Z86z6-v897MrlxF6LjhJwRch68oI4q4w-_emr1kluC=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="carruselIr(3)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNQdXy-Bn_XeXBWPArCAldgFXURvIJyEMEJH6GF5R5dntkntnctE97T27Lp4-y8d9VW4OWbKneiPwF7MiVZ4GSN6iZpgEQGMmmLdIRqJXDtQ2RZj8-s=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="carruselIr(4)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMy3qg3DwTYbceH6dNTFKIvAUJ3Bz2bB2oNQh1ppveVmLCZCPR8wyOclQMnVTw4N4hezYag8TDLKSPhI-Q1bxogniFMMJ9jMGV-H-RYqMWJIzUIpAPA=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="carruselIr(5)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM1elTDhDTyRLtFONuRvZXPTUTUQjtf7hE_YBr-kmvX3Lhz7dwVc7EkKiwwPkORVNrvEO0M_Gf4wVUyZLotZhJt2ra9WGPgWNu0XeL0wppimfJWQdBo=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="carruselIr(6)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO4Iu2E-Wj29AzAU6ld20F0n1lMiF1ZtDoF6-qcsX925K9XtpwQz8lIHlXem4lQG5-726a1i3CaIgIgq4yUJXRNUafl2BCMnkx9_MKRtSC0SbpGCwwV=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="carruselIr(7)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOZ6qP6t-RKG29uL4mws6hR4WdCGLrAy2VfuU7RBimPjRJ1ohx_bksxA8INsQ8QNWSEXTmDwfaI3XwNmejarFJf5Pz4D3z_j9r9iCgilZir3E86OwBb=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="carruselIr(8)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOi4Bgi2jTAA0YQ0kHhnF-8cINEY1dnhv8gAxOEgoHVTF3nT7oYhKcbPkNmCD1lG0rYbAY_oWAXb-3OFYe53BvEeJf-EEqdp2pzcOGVNNC7_BN_p3Je=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="carruselIr(9)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMrt88uaS27KeboMnpxE2zQ4hYgAl5xG23e8nTFvXFABrdIvjq8IbZKhg1fJhVkNnv9v0tCzHi37x9K_mITGvwEvjUXasMmdhgurcRu3I9KpNpvNmBR=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="carruselIr(10)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNLkt_xA1-FEIvPUdoCDftk2RRtzobwirf95amwLUhehvzfGnBURYlxbQYS4JYPA3pl86t-nxFrInhj6kyyQGL3vuCi1WTSVcj48Y6sSmj6i8ZLF9Fi=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="carruselIr(11)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPmhka-NtMbdf1AatSqADWgrL_AX9HdW1OT5ImG5v6Yue5--ivckyIbo99LgOJOdxW1UUbTGWLUa-lckhj-yF8C_CbRhIBVkR5b52fbOUp1JWkDPG5N=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="carruselIr(12)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPVDtsnwFyzzskM5OJUkLkbz6Z3nMT5-dOUquxPH_fZ-l26GB1MQDbkB2_SpggPkxlrLw2Rh3bN-5f8p77bZmhbnz7Hd3aVZw32mCT9jD_7KNDDsiST=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="carruselIr(13)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMNOf3EXfnQnLMiytZyvvJPjMhPp81QynW5-CQBlIY2Zq6NfbkJdncQ2bWXYl0aX17HCT_oqKPxihb7KR7UY2sCw9DnI1ncwoufhOAXG_fi0EpTQXTB=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="carruselIr(14)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOuBqlZCAH2MhWPeWxSZr5T-MVZiuAz3QoLGPPql_vPj8gUbXFjm8wq2KDTz0DY4mRFt4HilBpCSw30F4n28vkur6jHRtHPdijoHLVvpTfMQ4wI1Rwi=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="carruselIr(15)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPKyZl5rwC8-PQxCQ_he70LA6oJiqU1tu__aAyYeI2g2SLRSm0R7BtGcyL0zOo6zvhCTDGS0atHkc-snYNDw5a7R6hwmN7aR2gOHAS-HEdg1HNASP7B=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="carruselIr(16)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPFQ955fQsfvqmKeFfvbZqNz--R0twRXuvX2bzlcjsvE3TC_qR1l1ZBPf4rbQisRRQ6t-aES6EIdsk3xwoGs5Fw45C655YotVdIc6E4cM-GIMI1iYrF=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="carruselIr(17)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNHrRNHC3PylzGexIgVOqg2vZ-XvD5u_XgjJ30vNEvgekIOAhHNKVZr563zxVF77BjuORpPA_YakcAcRE7p3v_Y-0D_FnpnTpm8rSNrwIvlVn_QBLYX=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="carruselIr(18)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO36kgDaNzho6WCJmS0iMTJNA58SAZX19OSmufS37PhExfXoKLUJSpJPI7eOuJbdOop-CSM9u2pAQ8yhdsMeAd5pb5mGHwu7EuQ3BQP_9vyo8mySyV8=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="carruselIr(19)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNk6JMaZvGQdJvscySevf-sEl6cqivi1mHW9vI2N17Tu75QVVNcKHVUhePpDgqZlyglf5Tek5eYCJdjbmWdwj2Ek8ilct55XdGaWId_GA7bo4DN0Oxs=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="carruselIr(20)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPVYcXXprbUPk4uzdwFJs1ETm1ua16v0XWGiRexh3E3urW3OWm6J2a4r-ME7Wzy9lVvGuUQDRs0q_Q9s2242zRl8TmFklPjE8Fgy3IPp9LSFLZgFYA9=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="carruselIr(21)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO1c6FnMMmsIpxWK4NYtSan2X7SwtUQSHOMM0VKxu13llOEWYVb6Vuzsj6ytJQdotoLjRXovaX3RO8aMPNyjVsVRWkl5LquTH4cLqkLtn5BJagJsvol=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="carruselIr(22)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPUJWZFxqaB5K8R2GQ8_jan6vjQxcXXl-NCWiDQ8MDsq4EwmgEg1RJJ6ArV9PSoBZdokI-KnKwwZE3bUDz_wOdyCMH6w2xLumtCnAdNt8sv3uWMZmOw=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 24" class="miniatura carrusel-min" onclick="carruselIr(23)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP6NKi2r1Bhv3LL91tFUx6GqLX7-82ZG43GgRnY6F5wsoHA5J8Lwkxi1JEOf0wGhAzn2wdm9gQd8jech3CfpAUFqznR4YQbP971kbvjkOEcLyUhbLtG=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 25" class="miniatura carrusel-min" onclick="carruselIr(24)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNtA-DpkzhkGeH0ZzQNHbzrIGtng1-YUqeIGv5j0BqGZSmTaTTp0oQdBFb8Nnx0lvCXuVu8Wie484BxVv0oFdA7Z_rYA4DFAubjVshI-zBIbIdl6oEF=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 26" class="miniatura carrusel-min" onclick="carruselIr(25)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPH-AeEHpdnvzHndk5dA33kmWakOUlfA5em9AI6xev2VCKDO5HvfzIMLrgK1vF5rCvc59pC3XrZRowP_weUVvCM1VKGy3vgErUNvb39K-LMhUnphRP3=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 27" class="miniatura carrusel-min" onclick="carruselIr(26)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNiOemRic9CFjCseuvD-7vk_q07WLJgOgCBQuQxtRmbdbL08Y-wFEk89kSF0KCk88OcW-ituG3LwXkLNT5JShg8qZ6Frv8f6SgX1QuIT4Uc9Lyi3wvg=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 28" class="miniatura carrusel-min" onclick="carruselIr(27)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOsS27O9KVDbdDFWC1AJ7tf00IUwzcZBNLLA4Y440hzz_eDQ5ZRh-BgFqkiLuItWC6iUKYiC9YOQNn2JmgugAQrmDZv96RZzB84BQDVxnM-Th0TCMmI=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 29" class="miniatura carrusel-min" onclick="carruselIr(28)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOfr8t-GXAB1tZI1ZM3mFu7BrZ6HqKRRi6Zg1aQV1Saw4h5MmX_4LxrDJZ1UpaLZLdf9frWqvUarCjUlaIwjDba90hFbwPHVONYIPbNK_8d_xKB-VC9=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 30" class="miniatura carrusel-min" onclick="carruselIr(29)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPs3b2u_DA77aLyVvBB33Zlm23Elv3vV8V3FQ43mVJa9YE9XOy5sLcQwX2DYuhBznOfwM6u_Fwh2Do0BFJQHC46iL3EcbsJ7HKCnerkYG_VnCmihid7=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 31" class="miniatura carrusel-min" onclick="carruselIr(30)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMfHKHK4RAQk5jsth_l7ktyoC27KqmNhasOhIH9h-J9OY8jY_-gRmrWP6EPdD9_rJ3Br4625hVqSjII4-erQkwRcwVRi7NSUDebhFY5vY-_hG5jSmeG=w1200" alt="Casa campestre en venta Neiva Neiva – ICDE Inmobiliaria foto 32" class="miniatura carrusel-min" onclick="carruselIr(31)" loading="lazy" draggable="false"/></div></div>
       </div>
       
       <div class="modal-bloque-info">
@@ -738,74 +761,146 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczOjsArIc3rblaqPnFUVRwcaz8R8_FwDp-tGGqVLS0vZnGAqSydF35fhx7vKqhBw63pWSn2TuVezUSCaNKoyQI_kpe4seatlLlhG1M7RWg0oE6EvIJDU=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMpOBtCGdBr3z3Wfg0b3UbFDDd-SeIlYGLdQRYKb4f7TbJz1xtt6SkFWOe-5x_NV0EXb8ES8_toe4jv94YXF_8p2-AOkOzA9Zux1AO17GIScXyG3VoA=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM0XBLF9sPQhzPws0VQHZquTYlVPQiFp-ykpreO1YY4HLc3qHkGZVz1hIVa-zuljwesqHLc-3Wp1ytj5Nd-buplbex5x221zmnO0es5lnlyS9rx4tC7=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP1QDhQ4gm2cU4VqOM6pysexGFfTKtjuMCqDDr48L-FkywH60OmA9K9BaJJj2e7YXKMKounp-Z86z6-v897MrlxF6LjhJwRch68oI4q4w-_emr1kluC=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNQdXy-Bn_XeXBWPArCAldgFXURvIJyEMEJH6GF5R5dntkntnctE97T27Lp4-y8d9VW4OWbKneiPwF7MiVZ4GSN6iZpgEQGMmmLdIRqJXDtQ2RZj8-s=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMy3qg3DwTYbceH6dNTFKIvAUJ3Bz2bB2oNQh1ppveVmLCZCPR8wyOclQMnVTw4N4hezYag8TDLKSPhI-Q1bxogniFMMJ9jMGV-H-RYqMWJIzUIpAPA=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM1elTDhDTyRLtFONuRvZXPTUTUQjtf7hE_YBr-kmvX3Lhz7dwVc7EkKiwwPkORVNrvEO0M_Gf4wVUyZLotZhJt2ra9WGPgWNu0XeL0wppimfJWQdBo=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO4Iu2E-Wj29AzAU6ld20F0n1lMiF1ZtDoF6-qcsX925K9XtpwQz8lIHlXem4lQG5-726a1i3CaIgIgq4yUJXRNUafl2BCMnkx9_MKRtSC0SbpGCwwV=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOZ6qP6t-RKG29uL4mws6hR4WdCGLrAy2VfuU7RBimPjRJ1ohx_bksxA8INsQ8QNWSEXTmDwfaI3XwNmejarFJf5Pz4D3z_j9r9iCgilZir3E86OwBb=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOi4Bgi2jTAA0YQ0kHhnF-8cINEY1dnhv8gAxOEgoHVTF3nT7oYhKcbPkNmCD1lG0rYbAY_oWAXb-3OFYe53BvEeJf-EEqdp2pzcOGVNNC7_BN_p3Je=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMrt88uaS27KeboMnpxE2zQ4hYgAl5xG23e8nTFvXFABrdIvjq8IbZKhg1fJhVkNnv9v0tCzHi37x9K_mITGvwEvjUXasMmdhgurcRu3I9KpNpvNmBR=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNLkt_xA1-FEIvPUdoCDftk2RRtzobwirf95amwLUhehvzfGnBURYlxbQYS4JYPA3pl86t-nxFrInhj6kyyQGL3vuCi1WTSVcj48Y6sSmj6i8ZLF9Fi=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPmhka-NtMbdf1AatSqADWgrL_AX9HdW1OT5ImG5v6Yue5--ivckyIbo99LgOJOdxW1UUbTGWLUa-lckhj-yF8C_CbRhIBVkR5b52fbOUp1JWkDPG5N=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPVDtsnwFyzzskM5OJUkLkbz6Z3nMT5-dOUquxPH_fZ-l26GB1MQDbkB2_SpggPkxlrLw2Rh3bN-5f8p77bZmhbnz7Hd3aVZw32mCT9jD_7KNDDsiST=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMNOf3EXfnQnLMiytZyvvJPjMhPp81QynW5-CQBlIY2Zq6NfbkJdncQ2bWXYl0aX17HCT_oqKPxihb7KR7UY2sCw9DnI1ncwoufhOAXG_fi0EpTQXTB=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOuBqlZCAH2MhWPeWxSZr5T-MVZiuAz3QoLGPPql_vPj8gUbXFjm8wq2KDTz0DY4mRFt4HilBpCSw30F4n28vkur6jHRtHPdijoHLVvpTfMQ4wI1Rwi=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPKyZl5rwC8-PQxCQ_he70LA6oJiqU1tu__aAyYeI2g2SLRSm0R7BtGcyL0zOo6zvhCTDGS0atHkc-snYNDw5a7R6hwmN7aR2gOHAS-HEdg1HNASP7B=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPFQ955fQsfvqmKeFfvbZqNz--R0twRXuvX2bzlcjsvE3TC_qR1l1ZBPf4rbQisRRQ6t-aES6EIdsk3xwoGs5Fw45C655YotVdIc6E4cM-GIMI1iYrF=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNHrRNHC3PylzGexIgVOqg2vZ-XvD5u_XgjJ30vNEvgekIOAhHNKVZr563zxVF77BjuORpPA_YakcAcRE7p3v_Y-0D_FnpnTpm8rSNrwIvlVn_QBLYX=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO36kgDaNzho6WCJmS0iMTJNA58SAZX19OSmufS37PhExfXoKLUJSpJPI7eOuJbdOop-CSM9u2pAQ8yhdsMeAd5pb5mGHwu7EuQ3BQP_9vyo8mySyV8=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNk6JMaZvGQdJvscySevf-sEl6cqivi1mHW9vI2N17Tu75QVVNcKHVUhePpDgqZlyglf5Tek5eYCJdjbmWdwj2Ek8ilct55XdGaWId_GA7bo4DN0Oxs=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPVYcXXprbUPk4uzdwFJs1ETm1ua16v0XWGiRexh3E3urW3OWm6J2a4r-ME7Wzy9lVvGuUQDRs0q_Q9s2242zRl8TmFklPjE8Fgy3IPp9LSFLZgFYA9=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO1c6FnMMmsIpxWK4NYtSan2X7SwtUQSHOMM0VKxu13llOEWYVb6Vuzsj6ytJQdotoLjRXovaX3RO8aMPNyjVsVRWkl5LquTH4cLqkLtn5BJagJsvol=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPUJWZFxqaB5K8R2GQ8_jan6vjQxcXXl-NCWiDQ8MDsq4EwmgEg1RJJ6ArV9PSoBZdokI-KnKwwZE3bUDz_wOdyCMH6w2xLumtCnAdNt8sv3uWMZmOw=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP6NKi2r1Bhv3LL91tFUx6GqLX7-82ZG43GgRnY6F5wsoHA5J8Lwkxi1JEOf0wGhAzn2wdm9gQd8jech3CfpAUFqznR4YQbP971kbvjkOEcLyUhbLtG=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNtA-DpkzhkGeH0ZzQNHbzrIGtng1-YUqeIGv5j0BqGZSmTaTTp0oQdBFb8Nnx0lvCXuVu8Wie484BxVv0oFdA7Z_rYA4DFAubjVshI-zBIbIdl6oEF=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPH-AeEHpdnvzHndk5dA33kmWakOUlfA5em9AI6xev2VCKDO5HvfzIMLrgK1vF5rCvc59pC3XrZRowP_weUVvCM1VKGy3vgErUNvb39K-LMhUnphRP3=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNiOemRic9CFjCseuvD-7vk_q07WLJgOgCBQuQxtRmbdbL08Y-wFEk89kSF0KCk88OcW-ituG3LwXkLNT5JShg8qZ6Frv8f6SgX1QuIT4Uc9Lyi3wvg=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOsS27O9KVDbdDFWC1AJ7tf00IUwzcZBNLLA4Y440hzz_eDQ5ZRh-BgFqkiLuItWC6iUKYiC9YOQNn2JmgugAQrmDZv96RZzB84BQDVxnM-Th0TCMmI=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOfr8t-GXAB1tZI1ZM3mFu7BrZ6HqKRRi6Zg1aQV1Saw4h5MmX_4LxrDJZ1UpaLZLdf9frWqvUarCjUlaIwjDba90hFbwPHVONYIPbNK_8d_xKB-VC9=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPs3b2u_DA77aLyVvBB33Zlm23Elv3vV8V3FQ43mVJa9YE9XOy5sLcQwX2DYuhBznOfwM6u_Fwh2Do0BFJQHC46iL3EcbsJ7HKCnerkYG_VnCmihid7=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMfHKHK4RAQk5jsth_l7ktyoC27KqmNhasOhIH9h-J9OY8jY_-gRmrWP6EPdD9_rJ3Br4625hVqSjII4-erQkwRcwVRi7NSUDebhFY5vY-_hG5jSmeG=w1200"];
 var imgIndex = 0;
+var carruselTimer = null;
+var CARRUSEL_DELAY = 5000;
 
-// Soporte para swipe (deslizar) en móviles
-var startX = 0;
-var endX = 0;
-document.addEventListener('DOMContentLoaded', function() {
-  // Swipe en carrusel principal
-  var carrusel = document.querySelector('.carrusel-principal');
-  if (carrusel) {
-    carrusel.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
-    }, {passive: true});
-    carrusel.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        cambiarImg(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        cambiarImg(-1); // Deslizar derecha -> anterior
-      }
-    }, {passive: true});
+function carruselIr(idx, reiniciarTimer) {
+  if (reiniciarTimer === undefined) reiniciarTimer = true;
+  if (!IMGS.length) return;
+  imgIndex = ((idx % IMGS.length) + IMGS.length) % IMGS.length;
+  
+  var principal = document.getElementById('carruselPrincipal');
+  if (principal) {
+    var slides = principal.querySelectorAll('.carrusel-slide');
+    slides.forEach(function(s, i) {
+      s.classList.toggle('activa', i === imgIndex);
+    });
   }
+  
+  var counter = document.getElementById('carruselCounter');
+  if (counter) counter.textContent = (imgIndex + 1) + ' / ' + IMGS.length;
+  
+  var minis = document.querySelectorAll('.carrusel-min');
+  minis.forEach(function(m, i) {
+    m.classList.toggle('activa', i === imgIndex);
+  });
+  
+  if (reiniciarTimer) carruselReiniciarProgreso();
+}
+
+function carruselReiniciarProgreso() {
+  if (IMGS.length <= 1) return;
+  clearTimeout(carruselTimer);
+  carruselTimer = setTimeout(function() {
+    carruselIr(imgIndex + 1);
+  }, CARRUSEL_DELAY);
+}
+
+function carruselDetener() {
+  clearTimeout(carruselTimer);
+}
+
+function irImg(i) { carruselIr(i); }
+function cambiarImg(dir) { carruselIr(imgIndex + dir); }
+
+var _dragSx = 0, _dragPid = null, _dragMoved = false;
+function initCarruselDrag() {
+  var el = document.getElementById('carruselPrincipal');
+  if (!el) return;
+  
+  el.addEventListener('dragstart', function(e) { e.preventDefault(); });
+  
+  el.addEventListener('pointerdown', function(e) {
+    if (e.target.closest('button')) return;
+    _dragSx = e.clientX;
+    _dragPid = e.pointerId;
+    _dragMoved = false;
+    try { el.setPointerCapture(e.pointerId); } catch(err) {}
+  });
+  
+  el.addEventListener('pointermove', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    if (Math.abs(e.clientX - _dragSx) > 8) _dragMoved = true;
+  });
+  
+  el.addEventListener('pointerup', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    var d = _dragSx - e.clientX;
+    _dragPid = null;
+    if (Math.abs(d) >= 30) {
+      if (d > 0) carruselIr(imgIndex + 1);
+      else carruselIr(imgIndex - 1);
+    }
+  });
+  
+  el.addEventListener('pointercancel', function() { _dragPid = null; });
+  
+  el.addEventListener('click', function(e) {
+    if (_dragMoved && !e.target.closest('button')) {
+      e.stopPropagation();
+      e.preventDefault();
+      _dragMoved = false;
+    }
+  }, true);
+  
+  var _tSx = 0, _tSy = 0, _tMoved = false;
+  el.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    _tSx = e.touches[0].clientX;
+    _tSy = e.touches[0].clientY;
+    _tMoved = false;
+  }, {passive: true});
+  
+  el.addEventListener('touchmove', function(e) {
+    if (Math.abs(e.touches[0].clientX - _tSx) > 10) _tMoved = true;
+  }, {passive: true});
+  
+  el.addEventListener('touchend', function(e) {
+    if (!_tMoved) return;
+    var dx = e.changedTouches[0].clientX - _tSx;
+    var dy = e.changedTouches[0].clientY - _tSy;
+    _tMoved = false;
+    if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) carruselIr(imgIndex + 1);
+    else carruselIr(imgIndex - 1);
+  }, {passive: true});
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initCarruselDrag();
+  if (IMGS.length > 1) carruselReiniciarProgreso();
   
   // Swipe en lightbox (pantalla completa)
   var lightbox = document.getElementById('lightbox');
   if (lightbox) {
+    var lSx = 0, lEndX = 0;
     lightbox.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
+      lSx = e.touches[0].clientX;
     }, {passive: true});
     lightbox.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        lightboxNav(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        lightboxNav(-1); // Deslizar derecha -> anterior
+      lEndX = e.changedTouches[0].clientX;
+      if (lSx - lEndX > 50) {
+        lightboxNav(1);
+      } else if (lEndX - lSx > 50) {
+        lightboxNav(-1);
       }
     }, {passive: true});
     
-    // Evitar que el swipe en las miniaturas cambie la foto principal
     var wrapMinis = lightbox.querySelector('.lightbox-miniaturas-wrap');
     if (wrapMinis) {
-      wrapMinis.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
-      wrapMinis.addEventListener('touchend', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
+      wrapMinis.addEventListener('touchstart', function(e) { e.stopPropagation(); }, {passive: true});
+      wrapMinis.addEventListener('touchend', function(e) { e.stopPropagation(); }, {passive: true});
     }
   }
 });
 
-function irImg(i) {
-  if (!IMGS.length) return;
-  imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
-  var cont = document.getElementById('imgActual');
-  if (cont) cont.textContent = imgIndex + 1;
-}
-
-function cambiarImg(dir) { irImg(imgIndex + dir); }
-
 function abrirLightbox(i) {
-  irImg(i);
+  carruselDetener();
+  carruselIr(i, false);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   
-  // Generar miniaturas en el lightbox si no existen
   var minisDiv = document.getElementById('lightboxMiniaturas');
   if (minisDiv && !minisDiv.innerHTML) {
     minisDiv.innerHTML = IMGS.map(function(url, index) {
@@ -822,14 +917,14 @@ function cerrarLightbox(e) {
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
+  carruselReiniciarProgreso();
 }
 
 function lightboxNav(dir) {
-  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
+  carruselIr(imgIndex + dir, false);
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   updateLightboxMiniaturas();
-  irImg(imgIndex); // Actualizar también el carrusel principal
 }
 
 function updateLightboxMiniaturas() {
@@ -837,7 +932,6 @@ function updateLightboxMiniaturas() {
   minis.forEach(function(m, j) {
     m.classList.toggle('activa', j === imgIndex);
   });
-  // Hacer scroll a la miniatura activa
   var activa = minis[imgIndex];
   if (activa) {
     var wrap = activa.closest('.lightbox-miniaturas');

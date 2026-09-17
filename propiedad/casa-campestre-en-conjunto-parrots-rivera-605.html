@@ -208,12 +208,35 @@ body{
   height: 300px;
   position: relative;
   background: #000;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
 }
 
-.galeria-img{
+.carrusel-principal img{
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -664,10 +687,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczOKk_PDP3sBXFjpBzk3rAoaOSBEKyl4wEr_kGmIdyAaVtGcmI28WxzYzeBdNqlA0O9bHbPaHKmWwDDDpWm3aFC_cxMOR547lopN4yqOkX0pc7yAMPq7=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 36</div>
-          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczOKk_PDP3sBXFjpBzk3rAoaOSBEKyl4wEr_kGmIdyAaVtGcmI28WxzYzeBdNqlA0O9bHbPaHKmWwDDDpWm3aFC_cxMOR547lopN4yqOkX0pc7yAMPq7=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 1" loading="eager" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP2cJvFu57aosq-lN-0987wR5_DIEXZvVVwd4btdBDoj7-UaLGVqAh2taDabXRlZhFrISd_UFuNilD7KcWIRjlyol_W6RZfdeeiknVvFl8DtBWj5GQV=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 2" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMUPqVKo-TdY35Yq00QZgbZYk3qfJQRCiQYa7lTby9hFFH86nShb-JJhE4uNttxsYgP8SvcukToZLC97vkXe_6qxMgeECQ8Eumvj8KbpKlSuZc_vwZm=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 3" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM7BDGbMO1JLVybhF7zzEbTmAHma2usXbSwXPZCsKtYPB1fCsFY6was4D9QrlNcmKlviqioN0nCgNAFCRKa5xE9tA6KbUxZSU_6yzX2t9ijwJoBvxpu=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 4" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNJTFisjLQyi6BQBpl92zMoxqm7UqcoDBcNkhheXsRiNVomV08vyaQo2pY-rj-ialZp8B34ynKW5NxKZBGpOCKjUa66AKctL3ypZ5nuJc1YoZc_TEem=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 5" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNqqbo_ugOo45FXi3jUu6WbxmDd4xje0z6H9883aus7fd_Xcpchlzkh6-5Ch6Ubow64oxnHMpyXBrPGxpBKKemJalfbm7sPakU47VLeqacltob6yn-t=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 6" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNy8p4JAomImjkKi5vi8lLNdmCzzVFWK8ekIFixdtc2fBUrd6HIIs-Y90p_SleQRJ8OTa2OZYsgXGeECDX4poAsojdwplMp1z3L123tL6PZWc8Cwgi-=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 7" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNxuDUf0fYQDauZSkOkMJmTSGhBjnGi89_OfJdt-da6OCoXJceRlcD9lUgtvHiSozHRA8HQjPgB54XZLEPU0JQAWtVvz3CwbYqgUGscLely5N1hQhP0=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 8" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMBnEe0TNVpgcclTsKuK-8RFWUjS-k1gPfo_sSZD-u2d0WjsXFQTdRb_oKy6hba2EGQg4-tOlrkKnGAYuDvp7qACe_i30DnKMNkbqBnszlZ0AFgFuhD=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 9" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPiTN532H8OFvyp4CXMH5a5AkrDzAArA6n7J-BzTd8aTFCsMqw-keLyzZpGGj-QXMjRU6iDpGkanGvFzZLqphYPxxxBsdoQ2I-PAxQn5qehQug9wTib=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 10" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNAR7173bTIf-IDrlLBOnC4a4SXgNjNyNqfkf5yLyzauvgy-T_gEomuuVoYu7d5wb_tCjEApVyP1BviYWo-oQVIMs9FfMFg3Qr-QkQjXSrPIH3xZkDy=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 11" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNpdNFmwXLBXYrVfEPKoHpZFuhbI5W1ZzWipPzAg7LMJ5LnpBd6Iah7oxuVUvlonE2JwhCHwiLNCpG4iAORvkuBtHpT6x6YVSPfpFzJSvto6RvIzwc3=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 12" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPL2NOhod4HJJ7-vkpmOAhk0E_Fb_v7c2f6_zGyfjRAQXBdXPkqPzUuT4YJPsILMwep_r-_0GVE5tXgplp-d7CpBgLip-PKX9z52u0YdfOeEyyd66Gl=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 13" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO449eQAITLhj6ohVR60F-TkLXwV-gaM0slkXjcjk7ouDdT8u-wNn8kWhF08r4g-vcF53pdcpZyrN2ieedU5DxoBnotDLjxDSuozTUOYsnXfPT3ARsA=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 14" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNocwS39v0MIVlRidNzXwEx4hweS7P-lkNtIObqbhvfU8ZC8z9nRR_9zUHv1E8ybGJMb14u3DL9uSLjYWsBFKSva9SdpPMwyOPIiBJgPadmDbtqS46l=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 15" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMqAzm-oymTkntWknqtK4GVA7-jTkDgqHqb3WylWVYrh8n-a2MuDKVlyI8zH4GFTOJjO0nQ9cuxAVkAr0iK6kAtyL2oOT_MuZDTjusl-n4wXwf4c34H=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 16" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNGwgaaQvxtQoCGlAb_fpxDsvVLZ6pWJozpPqCq9lMmaEO-uWCyV_LdKDe6svKqiKi-wCTu8OvbHIun6EFQnAeIdH71-oBt3tKki-0qtlsct38sHYVD=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 17" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN3xZ7f3-eIf6DIPVn9tsry8EZGwWQ39M2OA8fzLV40XnseKCYsMUvBdbppW5rHJe06F8A-pHGb8KIYIYdSV1B02V3nUbd7yW6XzzuZzH4ipDKSpzGh=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 18" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMp75_y82fvJ1X2q2coCOPAkg2a2JwDpOqnQmQU52ZfIbvj5YiKz3B779QqEGFNBsRl56tnYCG_Y_7JLHdBNiVcSSM5cjpC-J_5TysgTCOEe6TXLQhI=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 19" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPOHZlbGvhadlfGQUO8bXJIFH6fkxgTD2RVDUaljon__FteYwCH1BSejRco9RFpyw-o8E6aTZ5RQr3THi5cADm4h4w3bkDRlJMwzCNWfimU6fbga4Pk=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 20" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMZA2L7Rq_jamHXR6booMqe6Ikf0_ITVG9BVQ6rEGfRkQSA8GWM9CGtNSMXLQiK2DAK4Kq_Dkm5LrHnfBdX-VfVicssqOYax9MG1XmPgSnC1pb4zSc-=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 21" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP45QdAbm914no__SdnxEBf2es06zxKTpfTlYDer-6yIE76A8I_4YdrH_6yGHddmJA6GJsj0aV-1snR1ByR0qs3872Ub4vo2ULbzm0ELYsccxzvpCDN=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 22" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP4XeAsybbM5Zd2a-tnEWZGR1cpncs3kot_-_TvpzaZwzErVLo8FUTomDPupV10TZDbgtg2zTQJIFX3saL5E6epF73WifpE6b1XSe1zNS1nHbdj4UpR=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 23" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNcz3AtmjDT1cKyKDT3sWBciL8D1FHW3XwK9OXIXk4rHawD7q8TxmZHW_sTfwEM9ZjvhwMxmQCcthXCR53k4WGXUuKEKX4nfrLVwQLqCL5ZTWQncYg1=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 24" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOhwxJD0sOuKj2MNgLkUZEEgsUyPrVVn4KSh0J2Eh1HXiFSxD0vRpsPBH_JZyuwb8iRqwfTwpbcFM2b5LzuoI0NU1hEv8RLgAuLmjy0u2_WmqcA17ck=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 25" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNgWZGyR9Y9DBA_FtzO-sxtIIE3npqJSWVXhpXf8mTCqMtj-yhALXHojKtQg3iZpAWvIpPA1Q55jh2PGR1emfkhxSlt_mCCjxbavshkR1nc1PmTtIYH=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 26" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPnQCPIEefcxCIuxyZVDqfrW9uerqfj5MAdlKceEHN2lmTLld4eSX3UuUYibpd89-x2jH5ls8c3UEQkSqqZjLoy_fnyGddLIwb1bCLT5aswJml-ZOOR=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 27" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM4POmXTJu53YZ1zKH8pNrlDM_Xl8xN8Mk73QU6JBjho02FPEexTYKziQC-a9dy-zkcMW15W2GpLG4CgMFLyNbsprojdfBnQN_DPGlRljE1ZXOV-bu9=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 28" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNfkSxq9t0wWMq2ulY-ak3aS5YkRqFghTf7ndjB89QviNIapOUPJVCvi1o6_wmOLPplJToZuHQuMmVSQeNc8xeIZpkBXlmnqsea-cSde8-n2Ut12QXw=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 29" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPhs9eA3HwWix3lUu72t9TYSiq82n0H9TCcgbyiTeZ9O9mT_NL323Bqtav2-sNDV_fQ5-HVw4RUpAfRSD3_ejqNky2fA31YbYkKM7muXLTpJcw3d3TM=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 30" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM4DK17TPP4oO-vEa8k6pYLdqFmEuKlSIEfYlQFw1UGNMwIWRdo66lO8gr9W7HJ8Y0yFW_t33o33rK_qFNiTwcRuZmu6Qg3LBuPHQMx1wheMcYdS5U2=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 31" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMnaXoxpm6uKCBKxHeIjoTMR0hpPRsJwFx5Po3Aapl7930gufJr8yxhskgKr86CYQ06L5i7b_Bgpk4iEexnFeSYzsth2GtVsXyVycR84jFMbXtvx9sO=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 32" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO3HQxSw7ruF8Jsm3oxwJFBqZZxyeXwoLHheKsmA6C0bLzS7OQeEviWL10tmq9MdFD71_xSP1BVzjH5RbCGFBbzLR2M2piLXePy6aH6SFQj_ffIpMQp=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 33" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOaMOZb72Hgx3z8LYtj5vTZghP3e5aHI9hS8qtfFDPz-VIwkyfq-4Cr3k2tQnoQdkejhCPVVu9tSqqeP3Xd5yza_MQY3DIu8rsnyn7AjuIgYuajO1ad=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 34" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP7R_XmWngDs9UpSQ3Sz6szy-q_xzZ-FF0abggfEUCYlUSW2aoXzQp9LKTgJPC0HUazQnIC9bylk2U7RDYDoPQQ3Zz7iIqkuiXt2IybVzDZJ0Shw_nz=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 35" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMVI6h3rFQERUlZentH5kGQHuogajfhXfRIBB9IKQa-5fEfy3fplwA6gn3IwO9-c9dmh43Gm0Fq3wCKeBv5SW6xkboWbU7IsuT9FwXJ5JTZ4EJrkKIG=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 36" loading="lazy" draggable="false" /></div>
+          <div class="carrusel-counter" id="carruselCounter">1 / 36</div>
+          <button class="galeria-nav prev" onclick="carruselIr(imgIndex-1)">&#8249;</button><button class="galeria-nav next" onclick="carruselIr(imgIndex+1)">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -675,7 +698,7 @@ body{
             </svg>
           </button>
         </div>
-        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczOKk_PDP3sBXFjpBzk3rAoaOSBEKyl4wEr_kGmIdyAaVtGcmI28WxzYzeBdNqlA0O9bHbPaHKmWwDDDpWm3aFC_cxMOR547lopN4yqOkX0pc7yAMPq7=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP2cJvFu57aosq-lN-0987wR5_DIEXZvVVwd4btdBDoj7-UaLGVqAh2taDabXRlZhFrISd_UFuNilD7KcWIRjlyol_W6RZfdeeiknVvFl8DtBWj5GQV=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMUPqVKo-TdY35Yq00QZgbZYk3qfJQRCiQYa7lTby9hFFH86nShb-JJhE4uNttxsYgP8SvcukToZLC97vkXe_6qxMgeECQ8Eumvj8KbpKlSuZc_vwZm=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM7BDGbMO1JLVybhF7zzEbTmAHma2usXbSwXPZCsKtYPB1fCsFY6was4D9QrlNcmKlviqioN0nCgNAFCRKa5xE9tA6KbUxZSU_6yzX2t9ijwJoBvxpu=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNJTFisjLQyi6BQBpl92zMoxqm7UqcoDBcNkhheXsRiNVomV08vyaQo2pY-rj-ialZp8B34ynKW5NxKZBGpOCKjUa66AKctL3ypZ5nuJc1YoZc_TEem=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNqqbo_ugOo45FXi3jUu6WbxmDd4xje0z6H9883aus7fd_Xcpchlzkh6-5Ch6Ubow64oxnHMpyXBrPGxpBKKemJalfbm7sPakU47VLeqacltob6yn-t=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNy8p4JAomImjkKi5vi8lLNdmCzzVFWK8ekIFixdtc2fBUrd6HIIs-Y90p_SleQRJ8OTa2OZYsgXGeECDX4poAsojdwplMp1z3L123tL6PZWc8Cwgi-=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNxuDUf0fYQDauZSkOkMJmTSGhBjnGi89_OfJdt-da6OCoXJceRlcD9lUgtvHiSozHRA8HQjPgB54XZLEPU0JQAWtVvz3CwbYqgUGscLely5N1hQhP0=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMBnEe0TNVpgcclTsKuK-8RFWUjS-k1gPfo_sSZD-u2d0WjsXFQTdRb_oKy6hba2EGQg4-tOlrkKnGAYuDvp7qACe_i30DnKMNkbqBnszlZ0AFgFuhD=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPiTN532H8OFvyp4CXMH5a5AkrDzAArA6n7J-BzTd8aTFCsMqw-keLyzZpGGj-QXMjRU6iDpGkanGvFzZLqphYPxxxBsdoQ2I-PAxQn5qehQug9wTib=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNAR7173bTIf-IDrlLBOnC4a4SXgNjNyNqfkf5yLyzauvgy-T_gEomuuVoYu7d5wb_tCjEApVyP1BviYWo-oQVIMs9FfMFg3Qr-QkQjXSrPIH3xZkDy=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNpdNFmwXLBXYrVfEPKoHpZFuhbI5W1ZzWipPzAg7LMJ5LnpBd6Iah7oxuVUvlonE2JwhCHwiLNCpG4iAORvkuBtHpT6x6YVSPfpFzJSvto6RvIzwc3=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPL2NOhod4HJJ7-vkpmOAhk0E_Fb_v7c2f6_zGyfjRAQXBdXPkqPzUuT4YJPsILMwep_r-_0GVE5tXgplp-d7CpBgLip-PKX9z52u0YdfOeEyyd66Gl=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO449eQAITLhj6ohVR60F-TkLXwV-gaM0slkXjcjk7ouDdT8u-wNn8kWhF08r4g-vcF53pdcpZyrN2ieedU5DxoBnotDLjxDSuozTUOYsnXfPT3ARsA=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNocwS39v0MIVlRidNzXwEx4hweS7P-lkNtIObqbhvfU8ZC8z9nRR_9zUHv1E8ybGJMb14u3DL9uSLjYWsBFKSva9SdpPMwyOPIiBJgPadmDbtqS46l=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMqAzm-oymTkntWknqtK4GVA7-jTkDgqHqb3WylWVYrh8n-a2MuDKVlyI8zH4GFTOJjO0nQ9cuxAVkAr0iK6kAtyL2oOT_MuZDTjusl-n4wXwf4c34H=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNGwgaaQvxtQoCGlAb_fpxDsvVLZ6pWJozpPqCq9lMmaEO-uWCyV_LdKDe6svKqiKi-wCTu8OvbHIun6EFQnAeIdH71-oBt3tKki-0qtlsct38sHYVD=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN3xZ7f3-eIf6DIPVn9tsry8EZGwWQ39M2OA8fzLV40XnseKCYsMUvBdbppW5rHJe06F8A-pHGb8KIYIYdSV1B02V3nUbd7yW6XzzuZzH4ipDKSpzGh=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMp75_y82fvJ1X2q2coCOPAkg2a2JwDpOqnQmQU52ZfIbvj5YiKz3B779QqEGFNBsRl56tnYCG_Y_7JLHdBNiVcSSM5cjpC-J_5TysgTCOEe6TXLQhI=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPOHZlbGvhadlfGQUO8bXJIFH6fkxgTD2RVDUaljon__FteYwCH1BSejRco9RFpyw-o8E6aTZ5RQr3THi5cADm4h4w3bkDRlJMwzCNWfimU6fbga4Pk=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="irImg(19)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMZA2L7Rq_jamHXR6booMqe6Ikf0_ITVG9BVQ6rEGfRkQSA8GWM9CGtNSMXLQiK2DAK4Kq_Dkm5LrHnfBdX-VfVicssqOYax9MG1XmPgSnC1pb4zSc-=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="irImg(20)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP45QdAbm914no__SdnxEBf2es06zxKTpfTlYDer-6yIE76A8I_4YdrH_6yGHddmJA6GJsj0aV-1snR1ByR0qs3872Ub4vo2ULbzm0ELYsccxzvpCDN=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="irImg(21)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP4XeAsybbM5Zd2a-tnEWZGR1cpncs3kot_-_TvpzaZwzErVLo8FUTomDPupV10TZDbgtg2zTQJIFX3saL5E6epF73WifpE6b1XSe1zNS1nHbdj4UpR=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="irImg(22)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNcz3AtmjDT1cKyKDT3sWBciL8D1FHW3XwK9OXIXk4rHawD7q8TxmZHW_sTfwEM9ZjvhwMxmQCcthXCR53k4WGXUuKEKX4nfrLVwQLqCL5ZTWQncYg1=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 24" class="miniatura carrusel-min" onclick="irImg(23)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOhwxJD0sOuKj2MNgLkUZEEgsUyPrVVn4KSh0J2Eh1HXiFSxD0vRpsPBH_JZyuwb8iRqwfTwpbcFM2b5LzuoI0NU1hEv8RLgAuLmjy0u2_WmqcA17ck=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 25" class="miniatura carrusel-min" onclick="irImg(24)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNgWZGyR9Y9DBA_FtzO-sxtIIE3npqJSWVXhpXf8mTCqMtj-yhALXHojKtQg3iZpAWvIpPA1Q55jh2PGR1emfkhxSlt_mCCjxbavshkR1nc1PmTtIYH=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 26" class="miniatura carrusel-min" onclick="irImg(25)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPnQCPIEefcxCIuxyZVDqfrW9uerqfj5MAdlKceEHN2lmTLld4eSX3UuUYibpd89-x2jH5ls8c3UEQkSqqZjLoy_fnyGddLIwb1bCLT5aswJml-ZOOR=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 27" class="miniatura carrusel-min" onclick="irImg(26)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM4POmXTJu53YZ1zKH8pNrlDM_Xl8xN8Mk73QU6JBjho02FPEexTYKziQC-a9dy-zkcMW15W2GpLG4CgMFLyNbsprojdfBnQN_DPGlRljE1ZXOV-bu9=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 28" class="miniatura carrusel-min" onclick="irImg(27)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNfkSxq9t0wWMq2ulY-ak3aS5YkRqFghTf7ndjB89QviNIapOUPJVCvi1o6_wmOLPplJToZuHQuMmVSQeNc8xeIZpkBXlmnqsea-cSde8-n2Ut12QXw=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 29" class="miniatura carrusel-min" onclick="irImg(28)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPhs9eA3HwWix3lUu72t9TYSiq82n0H9TCcgbyiTeZ9O9mT_NL323Bqtav2-sNDV_fQ5-HVw4RUpAfRSD3_ejqNky2fA31YbYkKM7muXLTpJcw3d3TM=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 30" class="miniatura carrusel-min" onclick="irImg(29)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM4DK17TPP4oO-vEa8k6pYLdqFmEuKlSIEfYlQFw1UGNMwIWRdo66lO8gr9W7HJ8Y0yFW_t33o33rK_qFNiTwcRuZmu6Qg3LBuPHQMx1wheMcYdS5U2=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 31" class="miniatura carrusel-min" onclick="irImg(30)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMnaXoxpm6uKCBKxHeIjoTMR0hpPRsJwFx5Po3Aapl7930gufJr8yxhskgKr86CYQ06L5i7b_Bgpk4iEexnFeSYzsth2GtVsXyVycR84jFMbXtvx9sO=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 32" class="miniatura carrusel-min" onclick="irImg(31)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO3HQxSw7ruF8Jsm3oxwJFBqZZxyeXwoLHheKsmA6C0bLzS7OQeEviWL10tmq9MdFD71_xSP1BVzjH5RbCGFBbzLR2M2piLXePy6aH6SFQj_ffIpMQp=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 33" class="miniatura carrusel-min" onclick="irImg(32)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOaMOZb72Hgx3z8LYtj5vTZghP3e5aHI9hS8qtfFDPz-VIwkyfq-4Cr3k2tQnoQdkejhCPVVu9tSqqeP3Xd5yza_MQY3DIu8rsnyn7AjuIgYuajO1ad=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 34" class="miniatura carrusel-min" onclick="irImg(33)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP7R_XmWngDs9UpSQ3Sz6szy-q_xzZ-FF0abggfEUCYlUSW2aoXzQp9LKTgJPC0HUazQnIC9bylk2U7RDYDoPQQ3Zz7iIqkuiXt2IybVzDZJ0Shw_nz=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 35" class="miniatura carrusel-min" onclick="irImg(34)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMVI6h3rFQERUlZentH5kGQHuogajfhXfRIBB9IKQa-5fEfy3fplwA6gn3IwO9-c9dmh43Gm0Fq3wCKeBv5SW6xkboWbU7IsuT9FwXJ5JTZ4EJrkKIG=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 36" class="miniatura carrusel-min" onclick="irImg(35)" loading="lazy"/></div></div>
+        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczOKk_PDP3sBXFjpBzk3rAoaOSBEKyl4wEr_kGmIdyAaVtGcmI28WxzYzeBdNqlA0O9bHbPaHKmWwDDDpWm3aFC_cxMOR547lopN4yqOkX0pc7yAMPq7=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="carruselIr(0)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP2cJvFu57aosq-lN-0987wR5_DIEXZvVVwd4btdBDoj7-UaLGVqAh2taDabXRlZhFrISd_UFuNilD7KcWIRjlyol_W6RZfdeeiknVvFl8DtBWj5GQV=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="carruselIr(1)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMUPqVKo-TdY35Yq00QZgbZYk3qfJQRCiQYa7lTby9hFFH86nShb-JJhE4uNttxsYgP8SvcukToZLC97vkXe_6qxMgeECQ8Eumvj8KbpKlSuZc_vwZm=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="carruselIr(2)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM7BDGbMO1JLVybhF7zzEbTmAHma2usXbSwXPZCsKtYPB1fCsFY6was4D9QrlNcmKlviqioN0nCgNAFCRKa5xE9tA6KbUxZSU_6yzX2t9ijwJoBvxpu=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="carruselIr(3)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNJTFisjLQyi6BQBpl92zMoxqm7UqcoDBcNkhheXsRiNVomV08vyaQo2pY-rj-ialZp8B34ynKW5NxKZBGpOCKjUa66AKctL3ypZ5nuJc1YoZc_TEem=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="carruselIr(4)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNqqbo_ugOo45FXi3jUu6WbxmDd4xje0z6H9883aus7fd_Xcpchlzkh6-5Ch6Ubow64oxnHMpyXBrPGxpBKKemJalfbm7sPakU47VLeqacltob6yn-t=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="carruselIr(5)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNy8p4JAomImjkKi5vi8lLNdmCzzVFWK8ekIFixdtc2fBUrd6HIIs-Y90p_SleQRJ8OTa2OZYsgXGeECDX4poAsojdwplMp1z3L123tL6PZWc8Cwgi-=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="carruselIr(6)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNxuDUf0fYQDauZSkOkMJmTSGhBjnGi89_OfJdt-da6OCoXJceRlcD9lUgtvHiSozHRA8HQjPgB54XZLEPU0JQAWtVvz3CwbYqgUGscLely5N1hQhP0=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="carruselIr(7)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMBnEe0TNVpgcclTsKuK-8RFWUjS-k1gPfo_sSZD-u2d0WjsXFQTdRb_oKy6hba2EGQg4-tOlrkKnGAYuDvp7qACe_i30DnKMNkbqBnszlZ0AFgFuhD=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="carruselIr(8)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPiTN532H8OFvyp4CXMH5a5AkrDzAArA6n7J-BzTd8aTFCsMqw-keLyzZpGGj-QXMjRU6iDpGkanGvFzZLqphYPxxxBsdoQ2I-PAxQn5qehQug9wTib=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="carruselIr(9)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNAR7173bTIf-IDrlLBOnC4a4SXgNjNyNqfkf5yLyzauvgy-T_gEomuuVoYu7d5wb_tCjEApVyP1BviYWo-oQVIMs9FfMFg3Qr-QkQjXSrPIH3xZkDy=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="carruselIr(10)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNpdNFmwXLBXYrVfEPKoHpZFuhbI5W1ZzWipPzAg7LMJ5LnpBd6Iah7oxuVUvlonE2JwhCHwiLNCpG4iAORvkuBtHpT6x6YVSPfpFzJSvto6RvIzwc3=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="carruselIr(11)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPL2NOhod4HJJ7-vkpmOAhk0E_Fb_v7c2f6_zGyfjRAQXBdXPkqPzUuT4YJPsILMwep_r-_0GVE5tXgplp-d7CpBgLip-PKX9z52u0YdfOeEyyd66Gl=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="carruselIr(12)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO449eQAITLhj6ohVR60F-TkLXwV-gaM0slkXjcjk7ouDdT8u-wNn8kWhF08r4g-vcF53pdcpZyrN2ieedU5DxoBnotDLjxDSuozTUOYsnXfPT3ARsA=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="carruselIr(13)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNocwS39v0MIVlRidNzXwEx4hweS7P-lkNtIObqbhvfU8ZC8z9nRR_9zUHv1E8ybGJMb14u3DL9uSLjYWsBFKSva9SdpPMwyOPIiBJgPadmDbtqS46l=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="carruselIr(14)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMqAzm-oymTkntWknqtK4GVA7-jTkDgqHqb3WylWVYrh8n-a2MuDKVlyI8zH4GFTOJjO0nQ9cuxAVkAr0iK6kAtyL2oOT_MuZDTjusl-n4wXwf4c34H=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="carruselIr(15)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNGwgaaQvxtQoCGlAb_fpxDsvVLZ6pWJozpPqCq9lMmaEO-uWCyV_LdKDe6svKqiKi-wCTu8OvbHIun6EFQnAeIdH71-oBt3tKki-0qtlsct38sHYVD=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="carruselIr(16)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN3xZ7f3-eIf6DIPVn9tsry8EZGwWQ39M2OA8fzLV40XnseKCYsMUvBdbppW5rHJe06F8A-pHGb8KIYIYdSV1B02V3nUbd7yW6XzzuZzH4ipDKSpzGh=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="carruselIr(17)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMp75_y82fvJ1X2q2coCOPAkg2a2JwDpOqnQmQU52ZfIbvj5YiKz3B779QqEGFNBsRl56tnYCG_Y_7JLHdBNiVcSSM5cjpC-J_5TysgTCOEe6TXLQhI=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="carruselIr(18)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPOHZlbGvhadlfGQUO8bXJIFH6fkxgTD2RVDUaljon__FteYwCH1BSejRco9RFpyw-o8E6aTZ5RQr3THi5cADm4h4w3bkDRlJMwzCNWfimU6fbga4Pk=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="carruselIr(19)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMZA2L7Rq_jamHXR6booMqe6Ikf0_ITVG9BVQ6rEGfRkQSA8GWM9CGtNSMXLQiK2DAK4Kq_Dkm5LrHnfBdX-VfVicssqOYax9MG1XmPgSnC1pb4zSc-=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="carruselIr(20)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP45QdAbm914no__SdnxEBf2es06zxKTpfTlYDer-6yIE76A8I_4YdrH_6yGHddmJA6GJsj0aV-1snR1ByR0qs3872Ub4vo2ULbzm0ELYsccxzvpCDN=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="carruselIr(21)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP4XeAsybbM5Zd2a-tnEWZGR1cpncs3kot_-_TvpzaZwzErVLo8FUTomDPupV10TZDbgtg2zTQJIFX3saL5E6epF73WifpE6b1XSe1zNS1nHbdj4UpR=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="carruselIr(22)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNcz3AtmjDT1cKyKDT3sWBciL8D1FHW3XwK9OXIXk4rHawD7q8TxmZHW_sTfwEM9ZjvhwMxmQCcthXCR53k4WGXUuKEKX4nfrLVwQLqCL5ZTWQncYg1=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 24" class="miniatura carrusel-min" onclick="carruselIr(23)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOhwxJD0sOuKj2MNgLkUZEEgsUyPrVVn4KSh0J2Eh1HXiFSxD0vRpsPBH_JZyuwb8iRqwfTwpbcFM2b5LzuoI0NU1hEv8RLgAuLmjy0u2_WmqcA17ck=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 25" class="miniatura carrusel-min" onclick="carruselIr(24)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNgWZGyR9Y9DBA_FtzO-sxtIIE3npqJSWVXhpXf8mTCqMtj-yhALXHojKtQg3iZpAWvIpPA1Q55jh2PGR1emfkhxSlt_mCCjxbavshkR1nc1PmTtIYH=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 26" class="miniatura carrusel-min" onclick="carruselIr(25)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPnQCPIEefcxCIuxyZVDqfrW9uerqfj5MAdlKceEHN2lmTLld4eSX3UuUYibpd89-x2jH5ls8c3UEQkSqqZjLoy_fnyGddLIwb1bCLT5aswJml-ZOOR=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 27" class="miniatura carrusel-min" onclick="carruselIr(26)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM4POmXTJu53YZ1zKH8pNrlDM_Xl8xN8Mk73QU6JBjho02FPEexTYKziQC-a9dy-zkcMW15W2GpLG4CgMFLyNbsprojdfBnQN_DPGlRljE1ZXOV-bu9=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 28" class="miniatura carrusel-min" onclick="carruselIr(27)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNfkSxq9t0wWMq2ulY-ak3aS5YkRqFghTf7ndjB89QviNIapOUPJVCvi1o6_wmOLPplJToZuHQuMmVSQeNc8xeIZpkBXlmnqsea-cSde8-n2Ut12QXw=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 29" class="miniatura carrusel-min" onclick="carruselIr(28)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPhs9eA3HwWix3lUu72t9TYSiq82n0H9TCcgbyiTeZ9O9mT_NL323Bqtav2-sNDV_fQ5-HVw4RUpAfRSD3_ejqNky2fA31YbYkKM7muXLTpJcw3d3TM=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 30" class="miniatura carrusel-min" onclick="carruselIr(29)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM4DK17TPP4oO-vEa8k6pYLdqFmEuKlSIEfYlQFw1UGNMwIWRdo66lO8gr9W7HJ8Y0yFW_t33o33rK_qFNiTwcRuZmu6Qg3LBuPHQMx1wheMcYdS5U2=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 31" class="miniatura carrusel-min" onclick="carruselIr(30)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMnaXoxpm6uKCBKxHeIjoTMR0hpPRsJwFx5Po3Aapl7930gufJr8yxhskgKr86CYQ06L5i7b_Bgpk4iEexnFeSYzsth2GtVsXyVycR84jFMbXtvx9sO=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 32" class="miniatura carrusel-min" onclick="carruselIr(31)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO3HQxSw7ruF8Jsm3oxwJFBqZZxyeXwoLHheKsmA6C0bLzS7OQeEviWL10tmq9MdFD71_xSP1BVzjH5RbCGFBbzLR2M2piLXePy6aH6SFQj_ffIpMQp=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 33" class="miniatura carrusel-min" onclick="carruselIr(32)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOaMOZb72Hgx3z8LYtj5vTZghP3e5aHI9hS8qtfFDPz-VIwkyfq-4Cr3k2tQnoQdkejhCPVVu9tSqqeP3Xd5yza_MQY3DIu8rsnyn7AjuIgYuajO1ad=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 34" class="miniatura carrusel-min" onclick="carruselIr(33)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP7R_XmWngDs9UpSQ3Sz6szy-q_xzZ-FF0abggfEUCYlUSW2aoXzQp9LKTgJPC0HUazQnIC9bylk2U7RDYDoPQQ3Zz7iIqkuiXt2IybVzDZJ0Shw_nz=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 35" class="miniatura carrusel-min" onclick="carruselIr(34)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMVI6h3rFQERUlZentH5kGQHuogajfhXfRIBB9IKQa-5fEfy3fplwA6gn3IwO9-c9dmh43Gm0Fq3wCKeBv5SW6xkboWbU7IsuT9FwXJ5JTZ4EJrkKIG=w1200" alt="Casa campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 36" class="miniatura carrusel-min" onclick="carruselIr(35)" loading="lazy" draggable="false"/></div></div>
       </div>
       
       <div class="modal-bloque-info">
@@ -737,74 +760,146 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczOKk_PDP3sBXFjpBzk3rAoaOSBEKyl4wEr_kGmIdyAaVtGcmI28WxzYzeBdNqlA0O9bHbPaHKmWwDDDpWm3aFC_cxMOR547lopN4yqOkX0pc7yAMPq7=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP2cJvFu57aosq-lN-0987wR5_DIEXZvVVwd4btdBDoj7-UaLGVqAh2taDabXRlZhFrISd_UFuNilD7KcWIRjlyol_W6RZfdeeiknVvFl8DtBWj5GQV=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMUPqVKo-TdY35Yq00QZgbZYk3qfJQRCiQYa7lTby9hFFH86nShb-JJhE4uNttxsYgP8SvcukToZLC97vkXe_6qxMgeECQ8Eumvj8KbpKlSuZc_vwZm=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM7BDGbMO1JLVybhF7zzEbTmAHma2usXbSwXPZCsKtYPB1fCsFY6was4D9QrlNcmKlviqioN0nCgNAFCRKa5xE9tA6KbUxZSU_6yzX2t9ijwJoBvxpu=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNJTFisjLQyi6BQBpl92zMoxqm7UqcoDBcNkhheXsRiNVomV08vyaQo2pY-rj-ialZp8B34ynKW5NxKZBGpOCKjUa66AKctL3ypZ5nuJc1YoZc_TEem=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNqqbo_ugOo45FXi3jUu6WbxmDd4xje0z6H9883aus7fd_Xcpchlzkh6-5Ch6Ubow64oxnHMpyXBrPGxpBKKemJalfbm7sPakU47VLeqacltob6yn-t=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNy8p4JAomImjkKi5vi8lLNdmCzzVFWK8ekIFixdtc2fBUrd6HIIs-Y90p_SleQRJ8OTa2OZYsgXGeECDX4poAsojdwplMp1z3L123tL6PZWc8Cwgi-=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNxuDUf0fYQDauZSkOkMJmTSGhBjnGi89_OfJdt-da6OCoXJceRlcD9lUgtvHiSozHRA8HQjPgB54XZLEPU0JQAWtVvz3CwbYqgUGscLely5N1hQhP0=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMBnEe0TNVpgcclTsKuK-8RFWUjS-k1gPfo_sSZD-u2d0WjsXFQTdRb_oKy6hba2EGQg4-tOlrkKnGAYuDvp7qACe_i30DnKMNkbqBnszlZ0AFgFuhD=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPiTN532H8OFvyp4CXMH5a5AkrDzAArA6n7J-BzTd8aTFCsMqw-keLyzZpGGj-QXMjRU6iDpGkanGvFzZLqphYPxxxBsdoQ2I-PAxQn5qehQug9wTib=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNAR7173bTIf-IDrlLBOnC4a4SXgNjNyNqfkf5yLyzauvgy-T_gEomuuVoYu7d5wb_tCjEApVyP1BviYWo-oQVIMs9FfMFg3Qr-QkQjXSrPIH3xZkDy=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNpdNFmwXLBXYrVfEPKoHpZFuhbI5W1ZzWipPzAg7LMJ5LnpBd6Iah7oxuVUvlonE2JwhCHwiLNCpG4iAORvkuBtHpT6x6YVSPfpFzJSvto6RvIzwc3=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPL2NOhod4HJJ7-vkpmOAhk0E_Fb_v7c2f6_zGyfjRAQXBdXPkqPzUuT4YJPsILMwep_r-_0GVE5tXgplp-d7CpBgLip-PKX9z52u0YdfOeEyyd66Gl=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO449eQAITLhj6ohVR60F-TkLXwV-gaM0slkXjcjk7ouDdT8u-wNn8kWhF08r4g-vcF53pdcpZyrN2ieedU5DxoBnotDLjxDSuozTUOYsnXfPT3ARsA=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNocwS39v0MIVlRidNzXwEx4hweS7P-lkNtIObqbhvfU8ZC8z9nRR_9zUHv1E8ybGJMb14u3DL9uSLjYWsBFKSva9SdpPMwyOPIiBJgPadmDbtqS46l=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMqAzm-oymTkntWknqtK4GVA7-jTkDgqHqb3WylWVYrh8n-a2MuDKVlyI8zH4GFTOJjO0nQ9cuxAVkAr0iK6kAtyL2oOT_MuZDTjusl-n4wXwf4c34H=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNGwgaaQvxtQoCGlAb_fpxDsvVLZ6pWJozpPqCq9lMmaEO-uWCyV_LdKDe6svKqiKi-wCTu8OvbHIun6EFQnAeIdH71-oBt3tKki-0qtlsct38sHYVD=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN3xZ7f3-eIf6DIPVn9tsry8EZGwWQ39M2OA8fzLV40XnseKCYsMUvBdbppW5rHJe06F8A-pHGb8KIYIYdSV1B02V3nUbd7yW6XzzuZzH4ipDKSpzGh=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMp75_y82fvJ1X2q2coCOPAkg2a2JwDpOqnQmQU52ZfIbvj5YiKz3B779QqEGFNBsRl56tnYCG_Y_7JLHdBNiVcSSM5cjpC-J_5TysgTCOEe6TXLQhI=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPOHZlbGvhadlfGQUO8bXJIFH6fkxgTD2RVDUaljon__FteYwCH1BSejRco9RFpyw-o8E6aTZ5RQr3THi5cADm4h4w3bkDRlJMwzCNWfimU6fbga4Pk=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMZA2L7Rq_jamHXR6booMqe6Ikf0_ITVG9BVQ6rEGfRkQSA8GWM9CGtNSMXLQiK2DAK4Kq_Dkm5LrHnfBdX-VfVicssqOYax9MG1XmPgSnC1pb4zSc-=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP45QdAbm914no__SdnxEBf2es06zxKTpfTlYDer-6yIE76A8I_4YdrH_6yGHddmJA6GJsj0aV-1snR1ByR0qs3872Ub4vo2ULbzm0ELYsccxzvpCDN=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP4XeAsybbM5Zd2a-tnEWZGR1cpncs3kot_-_TvpzaZwzErVLo8FUTomDPupV10TZDbgtg2zTQJIFX3saL5E6epF73WifpE6b1XSe1zNS1nHbdj4UpR=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNcz3AtmjDT1cKyKDT3sWBciL8D1FHW3XwK9OXIXk4rHawD7q8TxmZHW_sTfwEM9ZjvhwMxmQCcthXCR53k4WGXUuKEKX4nfrLVwQLqCL5ZTWQncYg1=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOhwxJD0sOuKj2MNgLkUZEEgsUyPrVVn4KSh0J2Eh1HXiFSxD0vRpsPBH_JZyuwb8iRqwfTwpbcFM2b5LzuoI0NU1hEv8RLgAuLmjy0u2_WmqcA17ck=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNgWZGyR9Y9DBA_FtzO-sxtIIE3npqJSWVXhpXf8mTCqMtj-yhALXHojKtQg3iZpAWvIpPA1Q55jh2PGR1emfkhxSlt_mCCjxbavshkR1nc1PmTtIYH=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPnQCPIEefcxCIuxyZVDqfrW9uerqfj5MAdlKceEHN2lmTLld4eSX3UuUYibpd89-x2jH5ls8c3UEQkSqqZjLoy_fnyGddLIwb1bCLT5aswJml-ZOOR=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM4POmXTJu53YZ1zKH8pNrlDM_Xl8xN8Mk73QU6JBjho02FPEexTYKziQC-a9dy-zkcMW15W2GpLG4CgMFLyNbsprojdfBnQN_DPGlRljE1ZXOV-bu9=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNfkSxq9t0wWMq2ulY-ak3aS5YkRqFghTf7ndjB89QviNIapOUPJVCvi1o6_wmOLPplJToZuHQuMmVSQeNc8xeIZpkBXlmnqsea-cSde8-n2Ut12QXw=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPhs9eA3HwWix3lUu72t9TYSiq82n0H9TCcgbyiTeZ9O9mT_NL323Bqtav2-sNDV_fQ5-HVw4RUpAfRSD3_ejqNky2fA31YbYkKM7muXLTpJcw3d3TM=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM4DK17TPP4oO-vEa8k6pYLdqFmEuKlSIEfYlQFw1UGNMwIWRdo66lO8gr9W7HJ8Y0yFW_t33o33rK_qFNiTwcRuZmu6Qg3LBuPHQMx1wheMcYdS5U2=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMnaXoxpm6uKCBKxHeIjoTMR0hpPRsJwFx5Po3Aapl7930gufJr8yxhskgKr86CYQ06L5i7b_Bgpk4iEexnFeSYzsth2GtVsXyVycR84jFMbXtvx9sO=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO3HQxSw7ruF8Jsm3oxwJFBqZZxyeXwoLHheKsmA6C0bLzS7OQeEviWL10tmq9MdFD71_xSP1BVzjH5RbCGFBbzLR2M2piLXePy6aH6SFQj_ffIpMQp=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOaMOZb72Hgx3z8LYtj5vTZghP3e5aHI9hS8qtfFDPz-VIwkyfq-4Cr3k2tQnoQdkejhCPVVu9tSqqeP3Xd5yza_MQY3DIu8rsnyn7AjuIgYuajO1ad=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP7R_XmWngDs9UpSQ3Sz6szy-q_xzZ-FF0abggfEUCYlUSW2aoXzQp9LKTgJPC0HUazQnIC9bylk2U7RDYDoPQQ3Zz7iIqkuiXt2IybVzDZJ0Shw_nz=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMVI6h3rFQERUlZentH5kGQHuogajfhXfRIBB9IKQa-5fEfy3fplwA6gn3IwO9-c9dmh43Gm0Fq3wCKeBv5SW6xkboWbU7IsuT9FwXJ5JTZ4EJrkKIG=w1200"];
 var imgIndex = 0;
+var carruselTimer = null;
+var CARRUSEL_DELAY = 5000;
 
-// Soporte para swipe (deslizar) en móviles
-var startX = 0;
-var endX = 0;
-document.addEventListener('DOMContentLoaded', function() {
-  // Swipe en carrusel principal
-  var carrusel = document.querySelector('.carrusel-principal');
-  if (carrusel) {
-    carrusel.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
-    }, {passive: true});
-    carrusel.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        cambiarImg(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        cambiarImg(-1); // Deslizar derecha -> anterior
-      }
-    }, {passive: true});
+function carruselIr(idx, reiniciarTimer) {
+  if (reiniciarTimer === undefined) reiniciarTimer = true;
+  if (!IMGS.length) return;
+  imgIndex = ((idx % IMGS.length) + IMGS.length) % IMGS.length;
+  
+  var principal = document.getElementById('carruselPrincipal');
+  if (principal) {
+    var slides = principal.querySelectorAll('.carrusel-slide');
+    slides.forEach(function(s, i) {
+      s.classList.toggle('activa', i === imgIndex);
+    });
   }
+  
+  var counter = document.getElementById('carruselCounter');
+  if (counter) counter.textContent = (imgIndex + 1) + ' / ' + IMGS.length;
+  
+  var minis = document.querySelectorAll('.carrusel-min');
+  minis.forEach(function(m, i) {
+    m.classList.toggle('activa', i === imgIndex);
+  });
+  
+  if (reiniciarTimer) carruselReiniciarProgreso();
+}
+
+function carruselReiniciarProgreso() {
+  if (IMGS.length <= 1) return;
+  clearTimeout(carruselTimer);
+  carruselTimer = setTimeout(function() {
+    carruselIr(imgIndex + 1);
+  }, CARRUSEL_DELAY);
+}
+
+function carruselDetener() {
+  clearTimeout(carruselTimer);
+}
+
+function irImg(i) { carruselIr(i); }
+function cambiarImg(dir) { carruselIr(imgIndex + dir); }
+
+var _dragSx = 0, _dragPid = null, _dragMoved = false;
+function initCarruselDrag() {
+  var el = document.getElementById('carruselPrincipal');
+  if (!el) return;
+  
+  el.addEventListener('dragstart', function(e) { e.preventDefault(); });
+  
+  el.addEventListener('pointerdown', function(e) {
+    if (e.target.closest('button')) return;
+    _dragSx = e.clientX;
+    _dragPid = e.pointerId;
+    _dragMoved = false;
+    try { el.setPointerCapture(e.pointerId); } catch(err) {}
+  });
+  
+  el.addEventListener('pointermove', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    if (Math.abs(e.clientX - _dragSx) > 8) _dragMoved = true;
+  });
+  
+  el.addEventListener('pointerup', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    var d = _dragSx - e.clientX;
+    _dragPid = null;
+    if (Math.abs(d) >= 30) {
+      if (d > 0) carruselIr(imgIndex + 1);
+      else carruselIr(imgIndex - 1);
+    }
+  });
+  
+  el.addEventListener('pointercancel', function() { _dragPid = null; });
+  
+  el.addEventListener('click', function(e) {
+    if (_dragMoved && !e.target.closest('button')) {
+      e.stopPropagation();
+      e.preventDefault();
+      _dragMoved = false;
+    }
+  }, true);
+  
+  var _tSx = 0, _tSy = 0, _tMoved = false;
+  el.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    _tSx = e.touches[0].clientX;
+    _tSy = e.touches[0].clientY;
+    _tMoved = false;
+  }, {passive: true});
+  
+  el.addEventListener('touchmove', function(e) {
+    if (Math.abs(e.touches[0].clientX - _tSx) > 10) _tMoved = true;
+  }, {passive: true});
+  
+  el.addEventListener('touchend', function(e) {
+    if (!_tMoved) return;
+    var dx = e.changedTouches[0].clientX - _tSx;
+    var dy = e.changedTouches[0].clientY - _tSy;
+    _tMoved = false;
+    if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) carruselIr(imgIndex + 1);
+    else carruselIr(imgIndex - 1);
+  }, {passive: true});
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initCarruselDrag();
+  if (IMGS.length > 1) carruselReiniciarProgreso();
   
   // Swipe en lightbox (pantalla completa)
   var lightbox = document.getElementById('lightbox');
   if (lightbox) {
+    var lSx = 0, lEndX = 0;
     lightbox.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
+      lSx = e.touches[0].clientX;
     }, {passive: true});
     lightbox.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        lightboxNav(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        lightboxNav(-1); // Deslizar derecha -> anterior
+      lEndX = e.changedTouches[0].clientX;
+      if (lSx - lEndX > 50) {
+        lightboxNav(1);
+      } else if (lEndX - lSx > 50) {
+        lightboxNav(-1);
       }
     }, {passive: true});
     
-    // Evitar que el swipe en las miniaturas cambie la foto principal
     var wrapMinis = lightbox.querySelector('.lightbox-miniaturas-wrap');
     if (wrapMinis) {
-      wrapMinis.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
-      wrapMinis.addEventListener('touchend', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
+      wrapMinis.addEventListener('touchstart', function(e) { e.stopPropagation(); }, {passive: true});
+      wrapMinis.addEventListener('touchend', function(e) { e.stopPropagation(); }, {passive: true});
     }
   }
 });
 
-function irImg(i) {
-  if (!IMGS.length) return;
-  imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
-  var cont = document.getElementById('imgActual');
-  if (cont) cont.textContent = imgIndex + 1;
-}
-
-function cambiarImg(dir) { irImg(imgIndex + dir); }
-
 function abrirLightbox(i) {
-  irImg(i);
+  carruselDetener();
+  carruselIr(i, false);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   
-  // Generar miniaturas en el lightbox si no existen
   var minisDiv = document.getElementById('lightboxMiniaturas');
   if (minisDiv && !minisDiv.innerHTML) {
     minisDiv.innerHTML = IMGS.map(function(url, index) {
@@ -821,14 +916,14 @@ function cerrarLightbox(e) {
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
+  carruselReiniciarProgreso();
 }
 
 function lightboxNav(dir) {
-  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
+  carruselIr(imgIndex + dir, false);
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   updateLightboxMiniaturas();
-  irImg(imgIndex); // Actualizar también el carrusel principal
 }
 
 function updateLightboxMiniaturas() {
@@ -836,7 +931,6 @@ function updateLightboxMiniaturas() {
   minis.forEach(function(m, j) {
     m.classList.toggle('activa', j === imgIndex);
   });
-  // Hacer scroll a la miniatura activa
   var activa = minis[imgIndex];
   if (activa) {
     var wrap = activa.closest('.lightbox-miniaturas');

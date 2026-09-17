@@ -208,12 +208,35 @@ body{
   height: 300px;
   position: relative;
   background: #000;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
 }
 
-.galeria-img{
+.carrusel-principal img{
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -664,10 +687,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczPKkBxNDMTr573CkHBWscvZLZuQwQSpA-gr1zlZR37uJXyTUFu8djiGaCd_gU9iGkzfQyDqMh3viNX0KbdhCWp9ERGTjC3bgozwMfEZRTIPyMCq0XO1=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 20</div>
-          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczPKkBxNDMTr573CkHBWscvZLZuQwQSpA-gr1zlZR37uJXyTUFu8djiGaCd_gU9iGkzfQyDqMh3viNX0KbdhCWp9ERGTjC3bgozwMfEZRTIPyMCq0XO1=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 1" loading="eager" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMdqWv2fR5O8NT86DQI73BGJkpMsq4Py2jM8zTRhJG85lRRqz-i9ekKbbb-aHM-F8IUnqsY7uTfyvpvpiVKwHj02wmrbPjRHLAzkXZGQubVS7dk-1Pb=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 2" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNhLT5YRIUw46VEiIjG8KkrizGp8r0pO0ErZ8r03AFWFhgu2aUPgz_a2ax5b6lLwJFLQQDz1uNv0yvA-uNZ-P7WGLzmOzk7QC8c_XAhHgQSIP8D_sBd=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 3" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNs6jAkzX43hBkWVjhn8OHTSjxbcQ1DpAF9qEIC2DoW00Zm4WDglWwe0J3w0eQvfosq6K4ZfIb3Z5F9O_ZIj6zcVV2VgenM9IZioT_i01ebwlWOlINF=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 4" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPta5BYsmJ6W9Yk88ytmPj9qH1BRjm332wPJNJhfxB9l_j1VZB5wb8WMT0Zd1BqDCZxAngT3XN3EvcgyMHM6QCJahVK10BBfjW_pFVVgk_gqvKxoZna=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 5" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNXoHarsZKOngupxanjZj5GEiCIVss_Ms-15g9NL1cLIuRT7nqbEMNNeqWDi3hwNEKhfx9in4QDhiRlYakOC-byYAD-UtZqRGbCUURLcre5YEGVltPJ=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 6" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNUhS2qPcSpWl39LwcZB0JJMR_3RguFOJgX6aLZjwoVKNSaShqVJnrDwTUObSS5EHuTC2skMXGsVKcSSQ4IT-YVvhOb-7wsJDL49IlAjIHjSV6pJlCI=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 7" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMpE33KgUHzFRM5_MkmCL36ftAMrPQxK0JAQxD5013idAJv0_NCWdM3pQyIHQkaBvaUM-ClYRcKehTf8vrfH-20kUXR8BV2c2bNWB_ZvQPnFImWXRP7=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 8" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM1DnLEfGjPB1q17HE6Ne8QgUI8_Yd1gIB8kTXfK8vcOQplI-GyR0ve1gCLB5rv6pnO9z2DwlfWTykZGnvtRTJIm1C_cVjsqtAxA33s26LBULFWIxLI=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 9" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOpRJt4h4ilEUSebABPGoBtJlGlM42ckBJZEiyzZW1RkN6UD-pLOR2k7bQq68Zte561kOMh9f6sVjQ2OxdT8-68l8FicFeTznU7WAhMnC9OP0ye0j5_=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 10" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP6YbMqQbIUPSg3TM-ZDx09qrzZSIP1SpLHWJI0kOPWYlNNzlKTaeEKzxMbzDDmNwmBRHsRdJKND-jTuK2DTDg1UbBw1QenRyxO4pPYJcA3L8lpejka=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 11" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOXm2-gDj5t6O_QJgyQYCVthe7FK_l_JrIAid5GGpzwcO638WBLbKMsscWVWUzA6vKlUYwGvwBq1Eooh87Jw_RxDoywVMBpiYiZoZ3JP9FJCHMwFZPt=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 12" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOFKl3o867tVe3cX9gvy7ORhA-9HTklUeIXE-WlPXa6S7_STeEEIPY-Dq1z7RYkPpG8IePuRmstN81DfU0eioh7-1RQNxEkoM_pTjJGmgar2Q1EjaRX=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 13" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPQMLZ3xq8UaQcsH0jAYgjHPTidpS--41mVA0NMh4pvfeTQa0uMUVB-DNSt6L6aVHbq0qqu5zs8IUrLCXvAeM2_nf6Td8raGnXjtl-1NODovob6TDOA=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 14" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP9131Azv6oPgXvV0r4hTT5IZlkt-Az8hVKaKDtCSnDqIqKcANE6pPbpO--XYmDpSx2Dek2WPmVnauNTPy8M0ioKw8KTgppnir3YclV6S_amrEfI_r3=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 15" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO3PahawNYdRkD9H3_FX0zTwmZWpFE9abOGnB4uwuvZGrpPoCtyQKftDvFEI-CFVOyyK25YT32R9xSVO82ZuIO6m9tSBOFooxRzVv8lY-VVxvHpdudk=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 16" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP6e4MwWdkt20iNV0DYLyg942RpU07bcOFSbUXyGRLr9mb2heCSxxs_GaQwjVFsFT9VjKD45nCyUzvoss03IXy9YLdeqcOe5_7JqWB5B3stQknKBYH1=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 17" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOL5o5u4Ie3TJN9B0mblzccFnwbdyi3k5Q-GaSPUhgLvStFCAs7Z15Cll8pKl1EN18Ar05q8LiQA97J7qDcJSavScK36mUQq4fBYAn-vbIEpDkKYrBc=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 18" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN2TgdTzCCeHsI2txnM_q5ee4JsOsLAXM-KKzWJ3w9wGpcjIBoC30w6BKxAy8K8kEG5zcJXevFsl_Lo9UZqVA2OcJwlmlqQVwkOmczYV2P8Ki2DaGBf=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 19" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPJqj83dAdi_CTPB2GdpFZZscKG1dXRQJoK29IndJpDGu4oUwgEPqtwgP9yXq_z4Ho89lLHuCrPy9y8eVPY3xq6fd2XwNuXr6v5WD1NRSXvnDxLlZwZ=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 20" loading="lazy" draggable="false" /></div>
+          <div class="carrusel-counter" id="carruselCounter">1 / 20</div>
+          <button class="galeria-nav prev" onclick="carruselIr(imgIndex-1)">&#8249;</button><button class="galeria-nav next" onclick="carruselIr(imgIndex+1)">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -675,7 +698,7 @@ body{
             </svg>
           </button>
         </div>
-        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczPKkBxNDMTr573CkHBWscvZLZuQwQSpA-gr1zlZR37uJXyTUFu8djiGaCd_gU9iGkzfQyDqMh3viNX0KbdhCWp9ERGTjC3bgozwMfEZRTIPyMCq0XO1=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMdqWv2fR5O8NT86DQI73BGJkpMsq4Py2jM8zTRhJG85lRRqz-i9ekKbbb-aHM-F8IUnqsY7uTfyvpvpiVKwHj02wmrbPjRHLAzkXZGQubVS7dk-1Pb=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNhLT5YRIUw46VEiIjG8KkrizGp8r0pO0ErZ8r03AFWFhgu2aUPgz_a2ax5b6lLwJFLQQDz1uNv0yvA-uNZ-P7WGLzmOzk7QC8c_XAhHgQSIP8D_sBd=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNs6jAkzX43hBkWVjhn8OHTSjxbcQ1DpAF9qEIC2DoW00Zm4WDglWwe0J3w0eQvfosq6K4ZfIb3Z5F9O_ZIj6zcVV2VgenM9IZioT_i01ebwlWOlINF=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPta5BYsmJ6W9Yk88ytmPj9qH1BRjm332wPJNJhfxB9l_j1VZB5wb8WMT0Zd1BqDCZxAngT3XN3EvcgyMHM6QCJahVK10BBfjW_pFVVgk_gqvKxoZna=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNXoHarsZKOngupxanjZj5GEiCIVss_Ms-15g9NL1cLIuRT7nqbEMNNeqWDi3hwNEKhfx9in4QDhiRlYakOC-byYAD-UtZqRGbCUURLcre5YEGVltPJ=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNUhS2qPcSpWl39LwcZB0JJMR_3RguFOJgX6aLZjwoVKNSaShqVJnrDwTUObSS5EHuTC2skMXGsVKcSSQ4IT-YVvhOb-7wsJDL49IlAjIHjSV6pJlCI=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMpE33KgUHzFRM5_MkmCL36ftAMrPQxK0JAQxD5013idAJv0_NCWdM3pQyIHQkaBvaUM-ClYRcKehTf8vrfH-20kUXR8BV2c2bNWB_ZvQPnFImWXRP7=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM1DnLEfGjPB1q17HE6Ne8QgUI8_Yd1gIB8kTXfK8vcOQplI-GyR0ve1gCLB5rv6pnO9z2DwlfWTykZGnvtRTJIm1C_cVjsqtAxA33s26LBULFWIxLI=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOpRJt4h4ilEUSebABPGoBtJlGlM42ckBJZEiyzZW1RkN6UD-pLOR2k7bQq68Zte561kOMh9f6sVjQ2OxdT8-68l8FicFeTznU7WAhMnC9OP0ye0j5_=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP6YbMqQbIUPSg3TM-ZDx09qrzZSIP1SpLHWJI0kOPWYlNNzlKTaeEKzxMbzDDmNwmBRHsRdJKND-jTuK2DTDg1UbBw1QenRyxO4pPYJcA3L8lpejka=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOXm2-gDj5t6O_QJgyQYCVthe7FK_l_JrIAid5GGpzwcO638WBLbKMsscWVWUzA6vKlUYwGvwBq1Eooh87Jw_RxDoywVMBpiYiZoZ3JP9FJCHMwFZPt=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOFKl3o867tVe3cX9gvy7ORhA-9HTklUeIXE-WlPXa6S7_STeEEIPY-Dq1z7RYkPpG8IePuRmstN81DfU0eioh7-1RQNxEkoM_pTjJGmgar2Q1EjaRX=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPQMLZ3xq8UaQcsH0jAYgjHPTidpS--41mVA0NMh4pvfeTQa0uMUVB-DNSt6L6aVHbq0qqu5zs8IUrLCXvAeM2_nf6Td8raGnXjtl-1NODovob6TDOA=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP9131Azv6oPgXvV0r4hTT5IZlkt-Az8hVKaKDtCSnDqIqKcANE6pPbpO--XYmDpSx2Dek2WPmVnauNTPy8M0ioKw8KTgppnir3YclV6S_amrEfI_r3=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO3PahawNYdRkD9H3_FX0zTwmZWpFE9abOGnB4uwuvZGrpPoCtyQKftDvFEI-CFVOyyK25YT32R9xSVO82ZuIO6m9tSBOFooxRzVv8lY-VVxvHpdudk=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP6e4MwWdkt20iNV0DYLyg942RpU07bcOFSbUXyGRLr9mb2heCSxxs_GaQwjVFsFT9VjKD45nCyUzvoss03IXy9YLdeqcOe5_7JqWB5B3stQknKBYH1=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOL5o5u4Ie3TJN9B0mblzccFnwbdyi3k5Q-GaSPUhgLvStFCAs7Z15Cll8pKl1EN18Ar05q8LiQA97J7qDcJSavScK36mUQq4fBYAn-vbIEpDkKYrBc=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN2TgdTzCCeHsI2txnM_q5ee4JsOsLAXM-KKzWJ3w9wGpcjIBoC30w6BKxAy8K8kEG5zcJXevFsl_Lo9UZqVA2OcJwlmlqQVwkOmczYV2P8Ki2DaGBf=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPJqj83dAdi_CTPB2GdpFZZscKG1dXRQJoK29IndJpDGu4oUwgEPqtwgP9yXq_z4Ho89lLHuCrPy9y8eVPY3xq6fd2XwNuXr6v5WD1NRSXvnDxLlZwZ=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="irImg(19)" loading="lazy"/></div></div>
+        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczPKkBxNDMTr573CkHBWscvZLZuQwQSpA-gr1zlZR37uJXyTUFu8djiGaCd_gU9iGkzfQyDqMh3viNX0KbdhCWp9ERGTjC3bgozwMfEZRTIPyMCq0XO1=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="carruselIr(0)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMdqWv2fR5O8NT86DQI73BGJkpMsq4Py2jM8zTRhJG85lRRqz-i9ekKbbb-aHM-F8IUnqsY7uTfyvpvpiVKwHj02wmrbPjRHLAzkXZGQubVS7dk-1Pb=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="carruselIr(1)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNhLT5YRIUw46VEiIjG8KkrizGp8r0pO0ErZ8r03AFWFhgu2aUPgz_a2ax5b6lLwJFLQQDz1uNv0yvA-uNZ-P7WGLzmOzk7QC8c_XAhHgQSIP8D_sBd=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="carruselIr(2)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNs6jAkzX43hBkWVjhn8OHTSjxbcQ1DpAF9qEIC2DoW00Zm4WDglWwe0J3w0eQvfosq6K4ZfIb3Z5F9O_ZIj6zcVV2VgenM9IZioT_i01ebwlWOlINF=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="carruselIr(3)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPta5BYsmJ6W9Yk88ytmPj9qH1BRjm332wPJNJhfxB9l_j1VZB5wb8WMT0Zd1BqDCZxAngT3XN3EvcgyMHM6QCJahVK10BBfjW_pFVVgk_gqvKxoZna=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="carruselIr(4)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNXoHarsZKOngupxanjZj5GEiCIVss_Ms-15g9NL1cLIuRT7nqbEMNNeqWDi3hwNEKhfx9in4QDhiRlYakOC-byYAD-UtZqRGbCUURLcre5YEGVltPJ=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="carruselIr(5)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNUhS2qPcSpWl39LwcZB0JJMR_3RguFOJgX6aLZjwoVKNSaShqVJnrDwTUObSS5EHuTC2skMXGsVKcSSQ4IT-YVvhOb-7wsJDL49IlAjIHjSV6pJlCI=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="carruselIr(6)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMpE33KgUHzFRM5_MkmCL36ftAMrPQxK0JAQxD5013idAJv0_NCWdM3pQyIHQkaBvaUM-ClYRcKehTf8vrfH-20kUXR8BV2c2bNWB_ZvQPnFImWXRP7=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="carruselIr(7)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM1DnLEfGjPB1q17HE6Ne8QgUI8_Yd1gIB8kTXfK8vcOQplI-GyR0ve1gCLB5rv6pnO9z2DwlfWTykZGnvtRTJIm1C_cVjsqtAxA33s26LBULFWIxLI=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="carruselIr(8)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOpRJt4h4ilEUSebABPGoBtJlGlM42ckBJZEiyzZW1RkN6UD-pLOR2k7bQq68Zte561kOMh9f6sVjQ2OxdT8-68l8FicFeTznU7WAhMnC9OP0ye0j5_=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="carruselIr(9)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP6YbMqQbIUPSg3TM-ZDx09qrzZSIP1SpLHWJI0kOPWYlNNzlKTaeEKzxMbzDDmNwmBRHsRdJKND-jTuK2DTDg1UbBw1QenRyxO4pPYJcA3L8lpejka=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="carruselIr(10)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOXm2-gDj5t6O_QJgyQYCVthe7FK_l_JrIAid5GGpzwcO638WBLbKMsscWVWUzA6vKlUYwGvwBq1Eooh87Jw_RxDoywVMBpiYiZoZ3JP9FJCHMwFZPt=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="carruselIr(11)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOFKl3o867tVe3cX9gvy7ORhA-9HTklUeIXE-WlPXa6S7_STeEEIPY-Dq1z7RYkPpG8IePuRmstN81DfU0eioh7-1RQNxEkoM_pTjJGmgar2Q1EjaRX=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="carruselIr(12)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPQMLZ3xq8UaQcsH0jAYgjHPTidpS--41mVA0NMh4pvfeTQa0uMUVB-DNSt6L6aVHbq0qqu5zs8IUrLCXvAeM2_nf6Td8raGnXjtl-1NODovob6TDOA=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="carruselIr(13)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP9131Azv6oPgXvV0r4hTT5IZlkt-Az8hVKaKDtCSnDqIqKcANE6pPbpO--XYmDpSx2Dek2WPmVnauNTPy8M0ioKw8KTgppnir3YclV6S_amrEfI_r3=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="carruselIr(14)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO3PahawNYdRkD9H3_FX0zTwmZWpFE9abOGnB4uwuvZGrpPoCtyQKftDvFEI-CFVOyyK25YT32R9xSVO82ZuIO6m9tSBOFooxRzVv8lY-VVxvHpdudk=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="carruselIr(15)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP6e4MwWdkt20iNV0DYLyg942RpU07bcOFSbUXyGRLr9mb2heCSxxs_GaQwjVFsFT9VjKD45nCyUzvoss03IXy9YLdeqcOe5_7JqWB5B3stQknKBYH1=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="carruselIr(16)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOL5o5u4Ie3TJN9B0mblzccFnwbdyi3k5Q-GaSPUhgLvStFCAs7Z15Cll8pKl1EN18Ar05q8LiQA97J7qDcJSavScK36mUQq4fBYAn-vbIEpDkKYrBc=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="carruselIr(17)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN2TgdTzCCeHsI2txnM_q5ee4JsOsLAXM-KKzWJ3w9wGpcjIBoC30w6BKxAy8K8kEG5zcJXevFsl_Lo9UZqVA2OcJwlmlqQVwkOmczYV2P8Ki2DaGBf=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="carruselIr(18)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPJqj83dAdi_CTPB2GdpFZZscKG1dXRQJoK29IndJpDGu4oUwgEPqtwgP9yXq_z4Ho89lLHuCrPy9y8eVPY3xq6fd2XwNuXr6v5WD1NRSXvnDxLlZwZ=w1200" alt="Casa en venta Prado Alto Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="carruselIr(19)" loading="lazy" draggable="false"/></div></div>
       </div>
       
       <div class="modal-bloque-info">
@@ -737,74 +760,146 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczPKkBxNDMTr573CkHBWscvZLZuQwQSpA-gr1zlZR37uJXyTUFu8djiGaCd_gU9iGkzfQyDqMh3viNX0KbdhCWp9ERGTjC3bgozwMfEZRTIPyMCq0XO1=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMdqWv2fR5O8NT86DQI73BGJkpMsq4Py2jM8zTRhJG85lRRqz-i9ekKbbb-aHM-F8IUnqsY7uTfyvpvpiVKwHj02wmrbPjRHLAzkXZGQubVS7dk-1Pb=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNhLT5YRIUw46VEiIjG8KkrizGp8r0pO0ErZ8r03AFWFhgu2aUPgz_a2ax5b6lLwJFLQQDz1uNv0yvA-uNZ-P7WGLzmOzk7QC8c_XAhHgQSIP8D_sBd=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNs6jAkzX43hBkWVjhn8OHTSjxbcQ1DpAF9qEIC2DoW00Zm4WDglWwe0J3w0eQvfosq6K4ZfIb3Z5F9O_ZIj6zcVV2VgenM9IZioT_i01ebwlWOlINF=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPta5BYsmJ6W9Yk88ytmPj9qH1BRjm332wPJNJhfxB9l_j1VZB5wb8WMT0Zd1BqDCZxAngT3XN3EvcgyMHM6QCJahVK10BBfjW_pFVVgk_gqvKxoZna=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNXoHarsZKOngupxanjZj5GEiCIVss_Ms-15g9NL1cLIuRT7nqbEMNNeqWDi3hwNEKhfx9in4QDhiRlYakOC-byYAD-UtZqRGbCUURLcre5YEGVltPJ=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNUhS2qPcSpWl39LwcZB0JJMR_3RguFOJgX6aLZjwoVKNSaShqVJnrDwTUObSS5EHuTC2skMXGsVKcSSQ4IT-YVvhOb-7wsJDL49IlAjIHjSV6pJlCI=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMpE33KgUHzFRM5_MkmCL36ftAMrPQxK0JAQxD5013idAJv0_NCWdM3pQyIHQkaBvaUM-ClYRcKehTf8vrfH-20kUXR8BV2c2bNWB_ZvQPnFImWXRP7=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM1DnLEfGjPB1q17HE6Ne8QgUI8_Yd1gIB8kTXfK8vcOQplI-GyR0ve1gCLB5rv6pnO9z2DwlfWTykZGnvtRTJIm1C_cVjsqtAxA33s26LBULFWIxLI=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOpRJt4h4ilEUSebABPGoBtJlGlM42ckBJZEiyzZW1RkN6UD-pLOR2k7bQq68Zte561kOMh9f6sVjQ2OxdT8-68l8FicFeTznU7WAhMnC9OP0ye0j5_=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP6YbMqQbIUPSg3TM-ZDx09qrzZSIP1SpLHWJI0kOPWYlNNzlKTaeEKzxMbzDDmNwmBRHsRdJKND-jTuK2DTDg1UbBw1QenRyxO4pPYJcA3L8lpejka=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOXm2-gDj5t6O_QJgyQYCVthe7FK_l_JrIAid5GGpzwcO638WBLbKMsscWVWUzA6vKlUYwGvwBq1Eooh87Jw_RxDoywVMBpiYiZoZ3JP9FJCHMwFZPt=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOFKl3o867tVe3cX9gvy7ORhA-9HTklUeIXE-WlPXa6S7_STeEEIPY-Dq1z7RYkPpG8IePuRmstN81DfU0eioh7-1RQNxEkoM_pTjJGmgar2Q1EjaRX=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPQMLZ3xq8UaQcsH0jAYgjHPTidpS--41mVA0NMh4pvfeTQa0uMUVB-DNSt6L6aVHbq0qqu5zs8IUrLCXvAeM2_nf6Td8raGnXjtl-1NODovob6TDOA=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP9131Azv6oPgXvV0r4hTT5IZlkt-Az8hVKaKDtCSnDqIqKcANE6pPbpO--XYmDpSx2Dek2WPmVnauNTPy8M0ioKw8KTgppnir3YclV6S_amrEfI_r3=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO3PahawNYdRkD9H3_FX0zTwmZWpFE9abOGnB4uwuvZGrpPoCtyQKftDvFEI-CFVOyyK25YT32R9xSVO82ZuIO6m9tSBOFooxRzVv8lY-VVxvHpdudk=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP6e4MwWdkt20iNV0DYLyg942RpU07bcOFSbUXyGRLr9mb2heCSxxs_GaQwjVFsFT9VjKD45nCyUzvoss03IXy9YLdeqcOe5_7JqWB5B3stQknKBYH1=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOL5o5u4Ie3TJN9B0mblzccFnwbdyi3k5Q-GaSPUhgLvStFCAs7Z15Cll8pKl1EN18Ar05q8LiQA97J7qDcJSavScK36mUQq4fBYAn-vbIEpDkKYrBc=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN2TgdTzCCeHsI2txnM_q5ee4JsOsLAXM-KKzWJ3w9wGpcjIBoC30w6BKxAy8K8kEG5zcJXevFsl_Lo9UZqVA2OcJwlmlqQVwkOmczYV2P8Ki2DaGBf=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPJqj83dAdi_CTPB2GdpFZZscKG1dXRQJoK29IndJpDGu4oUwgEPqtwgP9yXq_z4Ho89lLHuCrPy9y8eVPY3xq6fd2XwNuXr6v5WD1NRSXvnDxLlZwZ=w1200"];
 var imgIndex = 0;
+var carruselTimer = null;
+var CARRUSEL_DELAY = 5000;
 
-// Soporte para swipe (deslizar) en móviles
-var startX = 0;
-var endX = 0;
-document.addEventListener('DOMContentLoaded', function() {
-  // Swipe en carrusel principal
-  var carrusel = document.querySelector('.carrusel-principal');
-  if (carrusel) {
-    carrusel.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
-    }, {passive: true});
-    carrusel.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        cambiarImg(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        cambiarImg(-1); // Deslizar derecha -> anterior
-      }
-    }, {passive: true});
+function carruselIr(idx, reiniciarTimer) {
+  if (reiniciarTimer === undefined) reiniciarTimer = true;
+  if (!IMGS.length) return;
+  imgIndex = ((idx % IMGS.length) + IMGS.length) % IMGS.length;
+  
+  var principal = document.getElementById('carruselPrincipal');
+  if (principal) {
+    var slides = principal.querySelectorAll('.carrusel-slide');
+    slides.forEach(function(s, i) {
+      s.classList.toggle('activa', i === imgIndex);
+    });
   }
+  
+  var counter = document.getElementById('carruselCounter');
+  if (counter) counter.textContent = (imgIndex + 1) + ' / ' + IMGS.length;
+  
+  var minis = document.querySelectorAll('.carrusel-min');
+  minis.forEach(function(m, i) {
+    m.classList.toggle('activa', i === imgIndex);
+  });
+  
+  if (reiniciarTimer) carruselReiniciarProgreso();
+}
+
+function carruselReiniciarProgreso() {
+  if (IMGS.length <= 1) return;
+  clearTimeout(carruselTimer);
+  carruselTimer = setTimeout(function() {
+    carruselIr(imgIndex + 1);
+  }, CARRUSEL_DELAY);
+}
+
+function carruselDetener() {
+  clearTimeout(carruselTimer);
+}
+
+function irImg(i) { carruselIr(i); }
+function cambiarImg(dir) { carruselIr(imgIndex + dir); }
+
+var _dragSx = 0, _dragPid = null, _dragMoved = false;
+function initCarruselDrag() {
+  var el = document.getElementById('carruselPrincipal');
+  if (!el) return;
+  
+  el.addEventListener('dragstart', function(e) { e.preventDefault(); });
+  
+  el.addEventListener('pointerdown', function(e) {
+    if (e.target.closest('button')) return;
+    _dragSx = e.clientX;
+    _dragPid = e.pointerId;
+    _dragMoved = false;
+    try { el.setPointerCapture(e.pointerId); } catch(err) {}
+  });
+  
+  el.addEventListener('pointermove', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    if (Math.abs(e.clientX - _dragSx) > 8) _dragMoved = true;
+  });
+  
+  el.addEventListener('pointerup', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    var d = _dragSx - e.clientX;
+    _dragPid = null;
+    if (Math.abs(d) >= 30) {
+      if (d > 0) carruselIr(imgIndex + 1);
+      else carruselIr(imgIndex - 1);
+    }
+  });
+  
+  el.addEventListener('pointercancel', function() { _dragPid = null; });
+  
+  el.addEventListener('click', function(e) {
+    if (_dragMoved && !e.target.closest('button')) {
+      e.stopPropagation();
+      e.preventDefault();
+      _dragMoved = false;
+    }
+  }, true);
+  
+  var _tSx = 0, _tSy = 0, _tMoved = false;
+  el.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    _tSx = e.touches[0].clientX;
+    _tSy = e.touches[0].clientY;
+    _tMoved = false;
+  }, {passive: true});
+  
+  el.addEventListener('touchmove', function(e) {
+    if (Math.abs(e.touches[0].clientX - _tSx) > 10) _tMoved = true;
+  }, {passive: true});
+  
+  el.addEventListener('touchend', function(e) {
+    if (!_tMoved) return;
+    var dx = e.changedTouches[0].clientX - _tSx;
+    var dy = e.changedTouches[0].clientY - _tSy;
+    _tMoved = false;
+    if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) carruselIr(imgIndex + 1);
+    else carruselIr(imgIndex - 1);
+  }, {passive: true});
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initCarruselDrag();
+  if (IMGS.length > 1) carruselReiniciarProgreso();
   
   // Swipe en lightbox (pantalla completa)
   var lightbox = document.getElementById('lightbox');
   if (lightbox) {
+    var lSx = 0, lEndX = 0;
     lightbox.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
+      lSx = e.touches[0].clientX;
     }, {passive: true});
     lightbox.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        lightboxNav(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        lightboxNav(-1); // Deslizar derecha -> anterior
+      lEndX = e.changedTouches[0].clientX;
+      if (lSx - lEndX > 50) {
+        lightboxNav(1);
+      } else if (lEndX - lSx > 50) {
+        lightboxNav(-1);
       }
     }, {passive: true});
     
-    // Evitar que el swipe en las miniaturas cambie la foto principal
     var wrapMinis = lightbox.querySelector('.lightbox-miniaturas-wrap');
     if (wrapMinis) {
-      wrapMinis.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
-      wrapMinis.addEventListener('touchend', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
+      wrapMinis.addEventListener('touchstart', function(e) { e.stopPropagation(); }, {passive: true});
+      wrapMinis.addEventListener('touchend', function(e) { e.stopPropagation(); }, {passive: true});
     }
   }
 });
 
-function irImg(i) {
-  if (!IMGS.length) return;
-  imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
-  var cont = document.getElementById('imgActual');
-  if (cont) cont.textContent = imgIndex + 1;
-}
-
-function cambiarImg(dir) { irImg(imgIndex + dir); }
-
 function abrirLightbox(i) {
-  irImg(i);
+  carruselDetener();
+  carruselIr(i, false);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   
-  // Generar miniaturas en el lightbox si no existen
   var minisDiv = document.getElementById('lightboxMiniaturas');
   if (minisDiv && !minisDiv.innerHTML) {
     minisDiv.innerHTML = IMGS.map(function(url, index) {
@@ -821,14 +916,14 @@ function cerrarLightbox(e) {
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
+  carruselReiniciarProgreso();
 }
 
 function lightboxNav(dir) {
-  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
+  carruselIr(imgIndex + dir, false);
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   updateLightboxMiniaturas();
-  irImg(imgIndex); // Actualizar también el carrusel principal
 }
 
 function updateLightboxMiniaturas() {
@@ -836,7 +931,6 @@ function updateLightboxMiniaturas() {
   minis.forEach(function(m, j) {
     m.classList.toggle('activa', j === imgIndex);
   });
-  // Hacer scroll a la miniatura activa
   var activa = minis[imgIndex];
   if (activa) {
     var wrap = activa.closest('.lightbox-miniaturas');

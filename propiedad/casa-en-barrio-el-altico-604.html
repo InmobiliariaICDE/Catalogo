@@ -208,12 +208,35 @@ body{
   height: 300px;
   position: relative;
   background: #000;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
 }
 
-.galeria-img{
+.carrusel-principal img{
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -664,10 +687,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczMKs1yHuPhO46_KIoGwqLwV1KMEWuG3xilK4QzXAX1eB7CiU3RkCoW0qVzCkxd-tQic16MEKb4sokWrHgx12Jt8_wgWrwMWhuR0WsKdHEKg0TviiR9p=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 25</div>
-          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczMKs1yHuPhO46_KIoGwqLwV1KMEWuG3xilK4QzXAX1eB7CiU3RkCoW0qVzCkxd-tQic16MEKb4sokWrHgx12Jt8_wgWrwMWhuR0WsKdHEKg0TviiR9p=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 1" loading="eager" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPuY160fPEtD8MmSa3e9D42XhmYj4KxtrcASZF7i-5mTkUl_RZpaXn5eU34IVb9ylhCQxEswmPP_sT1pUlN7wKQ63oSBEIl9ploF7rTKTw_wm_0QOMl=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 2" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMPKsVwstlDiiEMJJtOOiiT1S8ggDN37mxafqi0f4DD7mwg1vszNLgX2O2WqgZafQDS4hqZK6CNadBR1657qMXBq2Ix3q4Bx_FokQs5V7f6TSN40PR7=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 3" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMGB3F8bVToZi5WIB-H_V8Cur2S9Ljna_HFvNP62XWw5X6YTDfVFx9ujlIGIntuUFtLnWvtGrVjUfc9D9to0mztV6M02QF6s7514-sUatq4hm1fSLdw=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 4" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN_tN-N_LaPQLuUpD62auTTM9RAQnCb8JC-4fbIA1YICt3NSU-xESRBE5w3ptxHoMcTdLVmYK9mRklcwzRnRvko0Ke3frq8tgQlBtRnc1aN8NMNTfDz=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 5" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO6qgXQ70HzigwzMoJP-LBodnX_naicmpBdZfoHdth0FZZTslDCh7QcKTe07lDdaYBibkYSqKussPkLNbLBW3alML9fZ7d5J7AiLoMwYRctWtLoHJSx=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 6" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP2Z4KNcvL1PUEBec2f3c20JeRvktmLc-AJLk6HQnlG5P0NGnttbduR5ZSDCbaF1x2_hkIkGcC8u82-c5e6BrK8Ubf04P0hEYwOpnH875MMHw5LLHzI=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 7" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMWzdZQJkdPXNSDWJ90MHnNoYdWQkvsXCR__ovXeOcyXWm_yghp6h-oh9jRWFoG-nUMXeXuHFYzWz1oNEtn9T47PITYFKArcFp9zxBTNw14yzW9Fl4B=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 8" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMEKnE8FHzPW6hydtcCPY4nt100suiwXR-QGWUOqTHV6LlWT-sLsMqRRAqAnNEGnMG-tb5G1Q6B_ECoq3RzPcu23NQ-e4ABPd4GB_2eA-eVzO11FIlL=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 9" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPN9DRgKHiSCC3iJkm6-auhHuX14fwbxx-DBTPff9VqWshcQwlpuBeyvgG-SZhjWAsg0f-I012-2EZBfcJI_wPecxGvfDr59NlbD7rSVSUiNa2CHu6j=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 10" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOxothOkWVgJVGJjdUuqX2BgXdD553C4H3GJmNaQPmNRIbFKfPmpmuUsIAVVPhDLrjqZVY2faxF_8_R7kjckz1zUYrBWg216VyIEC1EfR8Mzwm9qpjU=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 11" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPVGiL-H1ykItZtAPuFJVw9W0hMvWx1vi2bbWL5PuGPA7h4z6N5W7evzEwSfG2NROKJC9ClXmkDaAbNtYyphjRG1iNe3aL111N4Y90I1jhlmqgpZbis=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 12" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNXvAOeTWO-T92uNqgg23TKzwisesMgyfL1N56KXqciEDEG4v4TiNfXXqswLdULDk5fyFKpynJcM3KvZh48tS1UpVciAMFrZ78UQZ7HhHeO9JnquEey=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 13" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMm24oZ9NLV7DWmWYvTCnKnD1LtVzs3tEFkSiovOXCD73uZvOQMDyNkCcR4eOmafkB1rZmGH5t4OCI_DWqluXI8uetgmq4aI4z0qW05mJP6H9IBBaln=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 14" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOg3Yn1Cf8S5Cat2baxkWZPCEfuyZ1k5cp8lV0MWhQPsKoeMyhuKLaZKB8CYvyGRaKiWkGRAefsDplMTOot00v-DL8KYii7Zu1kTgKOgj4nvwtNFowt=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 15" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNbLVbW92fJOpvUSXwnCIsVTeSox9j0soPaak4STfEx75P0FegR6yPpMk8ag4c6SnQ3SmYh3_6LgXXtSQeLyxbQ9s8EBxyF16a_RyTJlsR5sKzVqzVR=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 16" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOHo5OZI_RSX2Q8_0bjQ8PGMQYnQ3o7-MchLSNBUihphXwAvoBPGsDjkvbVyc0or3I994IOQauCf4pa9dm6ThyZXrmvmNby1dExLh5uDrfISrHoi8BH=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 17" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMfcHzhjdRFQFDUOWJOp1Az0jsy6rxxH_Wh78L93kjREjtKY4wwdtYA5-0PZO_4I2gLcOxzH-ptjGShBZoogaC16CB-x-Xz8g2i2HkaZmuT2CdWunGg=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 18" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPed2AXmzmXHzC2Qw2_HpjW3jV4atRMLgulBV3JRehjfxJOAqL7h9WgZRlpLY0TbgWGT673yNGi4vaMSCytDunfNzbS6vjjvw0jnKrh5oKDTQmgBdv3=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 19" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM0d431wtXmGsA1WFdJMN8r3rwRlgktp1Ms0GRoA2eCnk4cuDMsScIw2_2tUQMITRkmueC1dMQvjbe58kPOQ6q7sZbKaO94O3t-qopk825Y6o6qljbT=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 20" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMZTDIFLKHLDlOdz4OpOS-23ptAwr_7snjLNP_weWS3JFgSrtV6dbfaOIVEn14BRDuKY2HqWS8En6jYdu8o3lSJ_ApD7XaAtSJs5JY9qN4HtHMKTls-=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 21" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMTkv6RE-L18yMMoaQPRtAU0CQvTQ3TkGYGpNMRexDrT1iditEdQ91gIFQ9ieKWhSM4kEaKOOdrv0eoh1_Eiz9Gj_tcRt45QbHt1XeHmvQ53fVVFhJr=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 22" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMDZ5OhXTwsJqVGpxpp1ety1aMCyaG9VirCR6Ht3yn9xCqCo0SDzx2loWdJ-dKKPqLxWdkotiZWJWDB5xVmJHUbkJsSWsuyn5LPYwcFINjDmXjI5owY=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 23" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMIM5FK1AQsz1PoQJbDwZxC1u_nB-cDDp8WB3YLL4RadNpF5Ry-fA6LC0u-VECwRqTeDq_9OErOt62lTy8CtUflkLvHw49W45DQ126TdnEtVYz00t9y=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 24" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO7UzgGZzyCl1CvJLdUtm7tvSHBPuURqDCFkfqPGrRCYOTMmOdfL8xpCcDws8FV5uLkX_r7W-oYOy-5KKvMIkUVC6188W8BqZEQFdXLp_tkC4J_oq8L=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 25" loading="lazy" draggable="false" /></div>
+          <div class="carrusel-counter" id="carruselCounter">1 / 25</div>
+          <button class="galeria-nav prev" onclick="carruselIr(imgIndex-1)">&#8249;</button><button class="galeria-nav next" onclick="carruselIr(imgIndex+1)">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -675,7 +698,7 @@ body{
             </svg>
           </button>
         </div>
-        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczMKs1yHuPhO46_KIoGwqLwV1KMEWuG3xilK4QzXAX1eB7CiU3RkCoW0qVzCkxd-tQic16MEKb4sokWrHgx12Jt8_wgWrwMWhuR0WsKdHEKg0TviiR9p=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPuY160fPEtD8MmSa3e9D42XhmYj4KxtrcASZF7i-5mTkUl_RZpaXn5eU34IVb9ylhCQxEswmPP_sT1pUlN7wKQ63oSBEIl9ploF7rTKTw_wm_0QOMl=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMPKsVwstlDiiEMJJtOOiiT1S8ggDN37mxafqi0f4DD7mwg1vszNLgX2O2WqgZafQDS4hqZK6CNadBR1657qMXBq2Ix3q4Bx_FokQs5V7f6TSN40PR7=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMGB3F8bVToZi5WIB-H_V8Cur2S9Ljna_HFvNP62XWw5X6YTDfVFx9ujlIGIntuUFtLnWvtGrVjUfc9D9to0mztV6M02QF6s7514-sUatq4hm1fSLdw=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN_tN-N_LaPQLuUpD62auTTM9RAQnCb8JC-4fbIA1YICt3NSU-xESRBE5w3ptxHoMcTdLVmYK9mRklcwzRnRvko0Ke3frq8tgQlBtRnc1aN8NMNTfDz=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO6qgXQ70HzigwzMoJP-LBodnX_naicmpBdZfoHdth0FZZTslDCh7QcKTe07lDdaYBibkYSqKussPkLNbLBW3alML9fZ7d5J7AiLoMwYRctWtLoHJSx=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP2Z4KNcvL1PUEBec2f3c20JeRvktmLc-AJLk6HQnlG5P0NGnttbduR5ZSDCbaF1x2_hkIkGcC8u82-c5e6BrK8Ubf04P0hEYwOpnH875MMHw5LLHzI=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMWzdZQJkdPXNSDWJ90MHnNoYdWQkvsXCR__ovXeOcyXWm_yghp6h-oh9jRWFoG-nUMXeXuHFYzWz1oNEtn9T47PITYFKArcFp9zxBTNw14yzW9Fl4B=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMEKnE8FHzPW6hydtcCPY4nt100suiwXR-QGWUOqTHV6LlWT-sLsMqRRAqAnNEGnMG-tb5G1Q6B_ECoq3RzPcu23NQ-e4ABPd4GB_2eA-eVzO11FIlL=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPN9DRgKHiSCC3iJkm6-auhHuX14fwbxx-DBTPff9VqWshcQwlpuBeyvgG-SZhjWAsg0f-I012-2EZBfcJI_wPecxGvfDr59NlbD7rSVSUiNa2CHu6j=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOxothOkWVgJVGJjdUuqX2BgXdD553C4H3GJmNaQPmNRIbFKfPmpmuUsIAVVPhDLrjqZVY2faxF_8_R7kjckz1zUYrBWg216VyIEC1EfR8Mzwm9qpjU=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPVGiL-H1ykItZtAPuFJVw9W0hMvWx1vi2bbWL5PuGPA7h4z6N5W7evzEwSfG2NROKJC9ClXmkDaAbNtYyphjRG1iNe3aL111N4Y90I1jhlmqgpZbis=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNXvAOeTWO-T92uNqgg23TKzwisesMgyfL1N56KXqciEDEG4v4TiNfXXqswLdULDk5fyFKpynJcM3KvZh48tS1UpVciAMFrZ78UQZ7HhHeO9JnquEey=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMm24oZ9NLV7DWmWYvTCnKnD1LtVzs3tEFkSiovOXCD73uZvOQMDyNkCcR4eOmafkB1rZmGH5t4OCI_DWqluXI8uetgmq4aI4z0qW05mJP6H9IBBaln=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOg3Yn1Cf8S5Cat2baxkWZPCEfuyZ1k5cp8lV0MWhQPsKoeMyhuKLaZKB8CYvyGRaKiWkGRAefsDplMTOot00v-DL8KYii7Zu1kTgKOgj4nvwtNFowt=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNbLVbW92fJOpvUSXwnCIsVTeSox9j0soPaak4STfEx75P0FegR6yPpMk8ag4c6SnQ3SmYh3_6LgXXtSQeLyxbQ9s8EBxyF16a_RyTJlsR5sKzVqzVR=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOHo5OZI_RSX2Q8_0bjQ8PGMQYnQ3o7-MchLSNBUihphXwAvoBPGsDjkvbVyc0or3I994IOQauCf4pa9dm6ThyZXrmvmNby1dExLh5uDrfISrHoi8BH=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMfcHzhjdRFQFDUOWJOp1Az0jsy6rxxH_Wh78L93kjREjtKY4wwdtYA5-0PZO_4I2gLcOxzH-ptjGShBZoogaC16CB-x-Xz8g2i2HkaZmuT2CdWunGg=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPed2AXmzmXHzC2Qw2_HpjW3jV4atRMLgulBV3JRehjfxJOAqL7h9WgZRlpLY0TbgWGT673yNGi4vaMSCytDunfNzbS6vjjvw0jnKrh5oKDTQmgBdv3=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM0d431wtXmGsA1WFdJMN8r3rwRlgktp1Ms0GRoA2eCnk4cuDMsScIw2_2tUQMITRkmueC1dMQvjbe58kPOQ6q7sZbKaO94O3t-qopk825Y6o6qljbT=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="irImg(19)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMZTDIFLKHLDlOdz4OpOS-23ptAwr_7snjLNP_weWS3JFgSrtV6dbfaOIVEn14BRDuKY2HqWS8En6jYdu8o3lSJ_ApD7XaAtSJs5JY9qN4HtHMKTls-=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="irImg(20)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMTkv6RE-L18yMMoaQPRtAU0CQvTQ3TkGYGpNMRexDrT1iditEdQ91gIFQ9ieKWhSM4kEaKOOdrv0eoh1_Eiz9Gj_tcRt45QbHt1XeHmvQ53fVVFhJr=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="irImg(21)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMDZ5OhXTwsJqVGpxpp1ety1aMCyaG9VirCR6Ht3yn9xCqCo0SDzx2loWdJ-dKKPqLxWdkotiZWJWDB5xVmJHUbkJsSWsuyn5LPYwcFINjDmXjI5owY=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="irImg(22)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMIM5FK1AQsz1PoQJbDwZxC1u_nB-cDDp8WB3YLL4RadNpF5Ry-fA6LC0u-VECwRqTeDq_9OErOt62lTy8CtUflkLvHw49W45DQ126TdnEtVYz00t9y=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 24" class="miniatura carrusel-min" onclick="irImg(23)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO7UzgGZzyCl1CvJLdUtm7tvSHBPuURqDCFkfqPGrRCYOTMmOdfL8xpCcDws8FV5uLkX_r7W-oYOy-5KKvMIkUVC6188W8BqZEQFdXLp_tkC4J_oq8L=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 25" class="miniatura carrusel-min" onclick="irImg(24)" loading="lazy"/></div></div>
+        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczMKs1yHuPhO46_KIoGwqLwV1KMEWuG3xilK4QzXAX1eB7CiU3RkCoW0qVzCkxd-tQic16MEKb4sokWrHgx12Jt8_wgWrwMWhuR0WsKdHEKg0TviiR9p=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="carruselIr(0)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPuY160fPEtD8MmSa3e9D42XhmYj4KxtrcASZF7i-5mTkUl_RZpaXn5eU34IVb9ylhCQxEswmPP_sT1pUlN7wKQ63oSBEIl9ploF7rTKTw_wm_0QOMl=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="carruselIr(1)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMPKsVwstlDiiEMJJtOOiiT1S8ggDN37mxafqi0f4DD7mwg1vszNLgX2O2WqgZafQDS4hqZK6CNadBR1657qMXBq2Ix3q4Bx_FokQs5V7f6TSN40PR7=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="carruselIr(2)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMGB3F8bVToZi5WIB-H_V8Cur2S9Ljna_HFvNP62XWw5X6YTDfVFx9ujlIGIntuUFtLnWvtGrVjUfc9D9to0mztV6M02QF6s7514-sUatq4hm1fSLdw=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="carruselIr(3)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN_tN-N_LaPQLuUpD62auTTM9RAQnCb8JC-4fbIA1YICt3NSU-xESRBE5w3ptxHoMcTdLVmYK9mRklcwzRnRvko0Ke3frq8tgQlBtRnc1aN8NMNTfDz=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="carruselIr(4)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO6qgXQ70HzigwzMoJP-LBodnX_naicmpBdZfoHdth0FZZTslDCh7QcKTe07lDdaYBibkYSqKussPkLNbLBW3alML9fZ7d5J7AiLoMwYRctWtLoHJSx=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="carruselIr(5)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP2Z4KNcvL1PUEBec2f3c20JeRvktmLc-AJLk6HQnlG5P0NGnttbduR5ZSDCbaF1x2_hkIkGcC8u82-c5e6BrK8Ubf04P0hEYwOpnH875MMHw5LLHzI=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="carruselIr(6)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMWzdZQJkdPXNSDWJ90MHnNoYdWQkvsXCR__ovXeOcyXWm_yghp6h-oh9jRWFoG-nUMXeXuHFYzWz1oNEtn9T47PITYFKArcFp9zxBTNw14yzW9Fl4B=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="carruselIr(7)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMEKnE8FHzPW6hydtcCPY4nt100suiwXR-QGWUOqTHV6LlWT-sLsMqRRAqAnNEGnMG-tb5G1Q6B_ECoq3RzPcu23NQ-e4ABPd4GB_2eA-eVzO11FIlL=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="carruselIr(8)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPN9DRgKHiSCC3iJkm6-auhHuX14fwbxx-DBTPff9VqWshcQwlpuBeyvgG-SZhjWAsg0f-I012-2EZBfcJI_wPecxGvfDr59NlbD7rSVSUiNa2CHu6j=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="carruselIr(9)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOxothOkWVgJVGJjdUuqX2BgXdD553C4H3GJmNaQPmNRIbFKfPmpmuUsIAVVPhDLrjqZVY2faxF_8_R7kjckz1zUYrBWg216VyIEC1EfR8Mzwm9qpjU=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="carruselIr(10)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPVGiL-H1ykItZtAPuFJVw9W0hMvWx1vi2bbWL5PuGPA7h4z6N5W7evzEwSfG2NROKJC9ClXmkDaAbNtYyphjRG1iNe3aL111N4Y90I1jhlmqgpZbis=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="carruselIr(11)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNXvAOeTWO-T92uNqgg23TKzwisesMgyfL1N56KXqciEDEG4v4TiNfXXqswLdULDk5fyFKpynJcM3KvZh48tS1UpVciAMFrZ78UQZ7HhHeO9JnquEey=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="carruselIr(12)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMm24oZ9NLV7DWmWYvTCnKnD1LtVzs3tEFkSiovOXCD73uZvOQMDyNkCcR4eOmafkB1rZmGH5t4OCI_DWqluXI8uetgmq4aI4z0qW05mJP6H9IBBaln=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="carruselIr(13)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOg3Yn1Cf8S5Cat2baxkWZPCEfuyZ1k5cp8lV0MWhQPsKoeMyhuKLaZKB8CYvyGRaKiWkGRAefsDplMTOot00v-DL8KYii7Zu1kTgKOgj4nvwtNFowt=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="carruselIr(14)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNbLVbW92fJOpvUSXwnCIsVTeSox9j0soPaak4STfEx75P0FegR6yPpMk8ag4c6SnQ3SmYh3_6LgXXtSQeLyxbQ9s8EBxyF16a_RyTJlsR5sKzVqzVR=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="carruselIr(15)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOHo5OZI_RSX2Q8_0bjQ8PGMQYnQ3o7-MchLSNBUihphXwAvoBPGsDjkvbVyc0or3I994IOQauCf4pa9dm6ThyZXrmvmNby1dExLh5uDrfISrHoi8BH=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="carruselIr(16)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMfcHzhjdRFQFDUOWJOp1Az0jsy6rxxH_Wh78L93kjREjtKY4wwdtYA5-0PZO_4I2gLcOxzH-ptjGShBZoogaC16CB-x-Xz8g2i2HkaZmuT2CdWunGg=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="carruselIr(17)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPed2AXmzmXHzC2Qw2_HpjW3jV4atRMLgulBV3JRehjfxJOAqL7h9WgZRlpLY0TbgWGT673yNGi4vaMSCytDunfNzbS6vjjvw0jnKrh5oKDTQmgBdv3=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="carruselIr(18)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM0d431wtXmGsA1WFdJMN8r3rwRlgktp1Ms0GRoA2eCnk4cuDMsScIw2_2tUQMITRkmueC1dMQvjbe58kPOQ6q7sZbKaO94O3t-qopk825Y6o6qljbT=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="carruselIr(19)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMZTDIFLKHLDlOdz4OpOS-23ptAwr_7snjLNP_weWS3JFgSrtV6dbfaOIVEn14BRDuKY2HqWS8En6jYdu8o3lSJ_ApD7XaAtSJs5JY9qN4HtHMKTls-=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="carruselIr(20)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMTkv6RE-L18yMMoaQPRtAU0CQvTQ3TkGYGpNMRexDrT1iditEdQ91gIFQ9ieKWhSM4kEaKOOdrv0eoh1_Eiz9Gj_tcRt45QbHt1XeHmvQ53fVVFhJr=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="carruselIr(21)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMDZ5OhXTwsJqVGpxpp1ety1aMCyaG9VirCR6Ht3yn9xCqCo0SDzx2loWdJ-dKKPqLxWdkotiZWJWDB5xVmJHUbkJsSWsuyn5LPYwcFINjDmXjI5owY=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="carruselIr(22)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMIM5FK1AQsz1PoQJbDwZxC1u_nB-cDDp8WB3YLL4RadNpF5Ry-fA6LC0u-VECwRqTeDq_9OErOt62lTy8CtUflkLvHw49W45DQ126TdnEtVYz00t9y=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 24" class="miniatura carrusel-min" onclick="carruselIr(23)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO7UzgGZzyCl1CvJLdUtm7tvSHBPuURqDCFkfqPGrRCYOTMmOdfL8xpCcDws8FV5uLkX_r7W-oYOy-5KKvMIkUVC6188W8BqZEQFdXLp_tkC4J_oq8L=w1200" alt="Casa en venta El Altico Neiva – ICDE Inmobiliaria foto 25" class="miniatura carrusel-min" onclick="carruselIr(24)" loading="lazy" draggable="false"/></div></div>
       </div>
       
       <div class="modal-bloque-info">
@@ -737,74 +760,146 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczMKs1yHuPhO46_KIoGwqLwV1KMEWuG3xilK4QzXAX1eB7CiU3RkCoW0qVzCkxd-tQic16MEKb4sokWrHgx12Jt8_wgWrwMWhuR0WsKdHEKg0TviiR9p=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPuY160fPEtD8MmSa3e9D42XhmYj4KxtrcASZF7i-5mTkUl_RZpaXn5eU34IVb9ylhCQxEswmPP_sT1pUlN7wKQ63oSBEIl9ploF7rTKTw_wm_0QOMl=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMPKsVwstlDiiEMJJtOOiiT1S8ggDN37mxafqi0f4DD7mwg1vszNLgX2O2WqgZafQDS4hqZK6CNadBR1657qMXBq2Ix3q4Bx_FokQs5V7f6TSN40PR7=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMGB3F8bVToZi5WIB-H_V8Cur2S9Ljna_HFvNP62XWw5X6YTDfVFx9ujlIGIntuUFtLnWvtGrVjUfc9D9to0mztV6M02QF6s7514-sUatq4hm1fSLdw=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN_tN-N_LaPQLuUpD62auTTM9RAQnCb8JC-4fbIA1YICt3NSU-xESRBE5w3ptxHoMcTdLVmYK9mRklcwzRnRvko0Ke3frq8tgQlBtRnc1aN8NMNTfDz=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO6qgXQ70HzigwzMoJP-LBodnX_naicmpBdZfoHdth0FZZTslDCh7QcKTe07lDdaYBibkYSqKussPkLNbLBW3alML9fZ7d5J7AiLoMwYRctWtLoHJSx=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP2Z4KNcvL1PUEBec2f3c20JeRvktmLc-AJLk6HQnlG5P0NGnttbduR5ZSDCbaF1x2_hkIkGcC8u82-c5e6BrK8Ubf04P0hEYwOpnH875MMHw5LLHzI=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMWzdZQJkdPXNSDWJ90MHnNoYdWQkvsXCR__ovXeOcyXWm_yghp6h-oh9jRWFoG-nUMXeXuHFYzWz1oNEtn9T47PITYFKArcFp9zxBTNw14yzW9Fl4B=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMEKnE8FHzPW6hydtcCPY4nt100suiwXR-QGWUOqTHV6LlWT-sLsMqRRAqAnNEGnMG-tb5G1Q6B_ECoq3RzPcu23NQ-e4ABPd4GB_2eA-eVzO11FIlL=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPN9DRgKHiSCC3iJkm6-auhHuX14fwbxx-DBTPff9VqWshcQwlpuBeyvgG-SZhjWAsg0f-I012-2EZBfcJI_wPecxGvfDr59NlbD7rSVSUiNa2CHu6j=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOxothOkWVgJVGJjdUuqX2BgXdD553C4H3GJmNaQPmNRIbFKfPmpmuUsIAVVPhDLrjqZVY2faxF_8_R7kjckz1zUYrBWg216VyIEC1EfR8Mzwm9qpjU=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPVGiL-H1ykItZtAPuFJVw9W0hMvWx1vi2bbWL5PuGPA7h4z6N5W7evzEwSfG2NROKJC9ClXmkDaAbNtYyphjRG1iNe3aL111N4Y90I1jhlmqgpZbis=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNXvAOeTWO-T92uNqgg23TKzwisesMgyfL1N56KXqciEDEG4v4TiNfXXqswLdULDk5fyFKpynJcM3KvZh48tS1UpVciAMFrZ78UQZ7HhHeO9JnquEey=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMm24oZ9NLV7DWmWYvTCnKnD1LtVzs3tEFkSiovOXCD73uZvOQMDyNkCcR4eOmafkB1rZmGH5t4OCI_DWqluXI8uetgmq4aI4z0qW05mJP6H9IBBaln=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOg3Yn1Cf8S5Cat2baxkWZPCEfuyZ1k5cp8lV0MWhQPsKoeMyhuKLaZKB8CYvyGRaKiWkGRAefsDplMTOot00v-DL8KYii7Zu1kTgKOgj4nvwtNFowt=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNbLVbW92fJOpvUSXwnCIsVTeSox9j0soPaak4STfEx75P0FegR6yPpMk8ag4c6SnQ3SmYh3_6LgXXtSQeLyxbQ9s8EBxyF16a_RyTJlsR5sKzVqzVR=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOHo5OZI_RSX2Q8_0bjQ8PGMQYnQ3o7-MchLSNBUihphXwAvoBPGsDjkvbVyc0or3I994IOQauCf4pa9dm6ThyZXrmvmNby1dExLh5uDrfISrHoi8BH=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMfcHzhjdRFQFDUOWJOp1Az0jsy6rxxH_Wh78L93kjREjtKY4wwdtYA5-0PZO_4I2gLcOxzH-ptjGShBZoogaC16CB-x-Xz8g2i2HkaZmuT2CdWunGg=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPed2AXmzmXHzC2Qw2_HpjW3jV4atRMLgulBV3JRehjfxJOAqL7h9WgZRlpLY0TbgWGT673yNGi4vaMSCytDunfNzbS6vjjvw0jnKrh5oKDTQmgBdv3=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM0d431wtXmGsA1WFdJMN8r3rwRlgktp1Ms0GRoA2eCnk4cuDMsScIw2_2tUQMITRkmueC1dMQvjbe58kPOQ6q7sZbKaO94O3t-qopk825Y6o6qljbT=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMZTDIFLKHLDlOdz4OpOS-23ptAwr_7snjLNP_weWS3JFgSrtV6dbfaOIVEn14BRDuKY2HqWS8En6jYdu8o3lSJ_ApD7XaAtSJs5JY9qN4HtHMKTls-=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMTkv6RE-L18yMMoaQPRtAU0CQvTQ3TkGYGpNMRexDrT1iditEdQ91gIFQ9ieKWhSM4kEaKOOdrv0eoh1_Eiz9Gj_tcRt45QbHt1XeHmvQ53fVVFhJr=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMDZ5OhXTwsJqVGpxpp1ety1aMCyaG9VirCR6Ht3yn9xCqCo0SDzx2loWdJ-dKKPqLxWdkotiZWJWDB5xVmJHUbkJsSWsuyn5LPYwcFINjDmXjI5owY=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMIM5FK1AQsz1PoQJbDwZxC1u_nB-cDDp8WB3YLL4RadNpF5Ry-fA6LC0u-VECwRqTeDq_9OErOt62lTy8CtUflkLvHw49W45DQ126TdnEtVYz00t9y=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO7UzgGZzyCl1CvJLdUtm7tvSHBPuURqDCFkfqPGrRCYOTMmOdfL8xpCcDws8FV5uLkX_r7W-oYOy-5KKvMIkUVC6188W8BqZEQFdXLp_tkC4J_oq8L=w1200"];
 var imgIndex = 0;
+var carruselTimer = null;
+var CARRUSEL_DELAY = 5000;
 
-// Soporte para swipe (deslizar) en móviles
-var startX = 0;
-var endX = 0;
-document.addEventListener('DOMContentLoaded', function() {
-  // Swipe en carrusel principal
-  var carrusel = document.querySelector('.carrusel-principal');
-  if (carrusel) {
-    carrusel.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
-    }, {passive: true});
-    carrusel.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        cambiarImg(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        cambiarImg(-1); // Deslizar derecha -> anterior
-      }
-    }, {passive: true});
+function carruselIr(idx, reiniciarTimer) {
+  if (reiniciarTimer === undefined) reiniciarTimer = true;
+  if (!IMGS.length) return;
+  imgIndex = ((idx % IMGS.length) + IMGS.length) % IMGS.length;
+  
+  var principal = document.getElementById('carruselPrincipal');
+  if (principal) {
+    var slides = principal.querySelectorAll('.carrusel-slide');
+    slides.forEach(function(s, i) {
+      s.classList.toggle('activa', i === imgIndex);
+    });
   }
+  
+  var counter = document.getElementById('carruselCounter');
+  if (counter) counter.textContent = (imgIndex + 1) + ' / ' + IMGS.length;
+  
+  var minis = document.querySelectorAll('.carrusel-min');
+  minis.forEach(function(m, i) {
+    m.classList.toggle('activa', i === imgIndex);
+  });
+  
+  if (reiniciarTimer) carruselReiniciarProgreso();
+}
+
+function carruselReiniciarProgreso() {
+  if (IMGS.length <= 1) return;
+  clearTimeout(carruselTimer);
+  carruselTimer = setTimeout(function() {
+    carruselIr(imgIndex + 1);
+  }, CARRUSEL_DELAY);
+}
+
+function carruselDetener() {
+  clearTimeout(carruselTimer);
+}
+
+function irImg(i) { carruselIr(i); }
+function cambiarImg(dir) { carruselIr(imgIndex + dir); }
+
+var _dragSx = 0, _dragPid = null, _dragMoved = false;
+function initCarruselDrag() {
+  var el = document.getElementById('carruselPrincipal');
+  if (!el) return;
+  
+  el.addEventListener('dragstart', function(e) { e.preventDefault(); });
+  
+  el.addEventListener('pointerdown', function(e) {
+    if (e.target.closest('button')) return;
+    _dragSx = e.clientX;
+    _dragPid = e.pointerId;
+    _dragMoved = false;
+    try { el.setPointerCapture(e.pointerId); } catch(err) {}
+  });
+  
+  el.addEventListener('pointermove', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    if (Math.abs(e.clientX - _dragSx) > 8) _dragMoved = true;
+  });
+  
+  el.addEventListener('pointerup', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    var d = _dragSx - e.clientX;
+    _dragPid = null;
+    if (Math.abs(d) >= 30) {
+      if (d > 0) carruselIr(imgIndex + 1);
+      else carruselIr(imgIndex - 1);
+    }
+  });
+  
+  el.addEventListener('pointercancel', function() { _dragPid = null; });
+  
+  el.addEventListener('click', function(e) {
+    if (_dragMoved && !e.target.closest('button')) {
+      e.stopPropagation();
+      e.preventDefault();
+      _dragMoved = false;
+    }
+  }, true);
+  
+  var _tSx = 0, _tSy = 0, _tMoved = false;
+  el.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    _tSx = e.touches[0].clientX;
+    _tSy = e.touches[0].clientY;
+    _tMoved = false;
+  }, {passive: true});
+  
+  el.addEventListener('touchmove', function(e) {
+    if (Math.abs(e.touches[0].clientX - _tSx) > 10) _tMoved = true;
+  }, {passive: true});
+  
+  el.addEventListener('touchend', function(e) {
+    if (!_tMoved) return;
+    var dx = e.changedTouches[0].clientX - _tSx;
+    var dy = e.changedTouches[0].clientY - _tSy;
+    _tMoved = false;
+    if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) carruselIr(imgIndex + 1);
+    else carruselIr(imgIndex - 1);
+  }, {passive: true});
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initCarruselDrag();
+  if (IMGS.length > 1) carruselReiniciarProgreso();
   
   // Swipe en lightbox (pantalla completa)
   var lightbox = document.getElementById('lightbox');
   if (lightbox) {
+    var lSx = 0, lEndX = 0;
     lightbox.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
+      lSx = e.touches[0].clientX;
     }, {passive: true});
     lightbox.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        lightboxNav(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        lightboxNav(-1); // Deslizar derecha -> anterior
+      lEndX = e.changedTouches[0].clientX;
+      if (lSx - lEndX > 50) {
+        lightboxNav(1);
+      } else if (lEndX - lSx > 50) {
+        lightboxNav(-1);
       }
     }, {passive: true});
     
-    // Evitar que el swipe en las miniaturas cambie la foto principal
     var wrapMinis = lightbox.querySelector('.lightbox-miniaturas-wrap');
     if (wrapMinis) {
-      wrapMinis.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
-      wrapMinis.addEventListener('touchend', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
+      wrapMinis.addEventListener('touchstart', function(e) { e.stopPropagation(); }, {passive: true});
+      wrapMinis.addEventListener('touchend', function(e) { e.stopPropagation(); }, {passive: true});
     }
   }
 });
 
-function irImg(i) {
-  if (!IMGS.length) return;
-  imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
-  var cont = document.getElementById('imgActual');
-  if (cont) cont.textContent = imgIndex + 1;
-}
-
-function cambiarImg(dir) { irImg(imgIndex + dir); }
-
 function abrirLightbox(i) {
-  irImg(i);
+  carruselDetener();
+  carruselIr(i, false);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   
-  // Generar miniaturas en el lightbox si no existen
   var minisDiv = document.getElementById('lightboxMiniaturas');
   if (minisDiv && !minisDiv.innerHTML) {
     minisDiv.innerHTML = IMGS.map(function(url, index) {
@@ -821,14 +916,14 @@ function cerrarLightbox(e) {
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
+  carruselReiniciarProgreso();
 }
 
 function lightboxNav(dir) {
-  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
+  carruselIr(imgIndex + dir, false);
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   updateLightboxMiniaturas();
-  irImg(imgIndex); // Actualizar también el carrusel principal
 }
 
 function updateLightboxMiniaturas() {
@@ -836,7 +931,6 @@ function updateLightboxMiniaturas() {
   minis.forEach(function(m, j) {
     m.classList.toggle('activa', j === imgIndex);
   });
-  // Hacer scroll a la miniatura activa
   var activa = minis[imgIndex];
   if (activa) {
     var wrap = activa.closest('.lightbox-miniaturas');

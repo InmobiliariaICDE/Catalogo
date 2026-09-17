@@ -209,12 +209,35 @@ body{
   height: 300px;
   position: relative;
   background: #000;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
 }
 
-.galeria-img{
+.carrusel-principal img{
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -665,10 +688,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczNf_FjrbU0jyKJ688-VR4hSUAKyjTkDQnhHsRBXD4NDuwok56ZHiCGIv4oMbuM6v-o9kFFLsnHV0zxyYNHcHaoiy949trpTG6s_LRvGH6b5IxKWcl3m=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 29</div>
-          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczNf_FjrbU0jyKJ688-VR4hSUAKyjTkDQnhHsRBXD4NDuwok56ZHiCGIv4oMbuM6v-o9kFFLsnHV0zxyYNHcHaoiy949trpTG6s_LRvGH6b5IxKWcl3m=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 1" loading="eager" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP72jjjAaMhzfnWBipsrFChLI32trni5IKvO0WZM7j3gRPqemF3exPQ6rWBBsMhZs1xp1Hu1X86GhFDM5rHmbXch29GO-NOyP-puDQR_E8SAdNA3jxF=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 2" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNIEC_UH4OkM0ujmHXN9OpuPFXmpO_iCTWUIKjkRR9nkcFHhMdqgezFy8oruxPZfn8GBEB2UulwaSzmRzMvE66D60LONtB3e7pHpzCBfSrIXy-wEPp4=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 3" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMaQW4-992eTD6LJc6D0QBql4EuuQDBUiGK0lUrBgetV8hXvMgatM31w9YCGYtziakQ-jMhMlI7tR0VLeGrh0vcjs4xqaFwj88c6oYHOksHf4BkL9Js=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 4" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMskwSMvGx0PLoTM1K_LsVXBmPKFmoJfuFNG3c7HQ_mb8wHPCxe_7UurA95pC3q5htnNkrJ3UWFGEKMCb_oUfcR5o24C3msAmv8HQWkvrSaQrc-CNQL=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 5" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMs9m40Ugp3ZofI37o1lzXDBwe0ko7DFbumUvVvz4SS0NgToku5rOTcv5XaGV751csOMNVGMMnZHPWXGbCUiSYOoVTRW-j3jDfPsKA0IsvdupcdFAES=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 6" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPK-s0sg1isrh8mkS0rkIlDOXX40zcvRCjebz7JBOUvCA9vZ75AVV8usHQS25qAfs3J-yYZmdruT-0VRTef7yP9EOr-qMjfd8MNRAqsSX5uAMToYIg1=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 7" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNtZnlJ7DlB5dPMQJMUHLg6pDlEdti4jU3Yn8J2hgheoDEZ1vhTh84aT8Op8rJ48D32QATozQdxne-TySyuBtkDJd_UGkWQf3TAzou_vYcsU_cD8Wb_=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 8" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM2Fqlr_1omNxN6YA9DoVUIt4vGebbd8VmXKPNQJoW7vqL5jIy5I5WZFM5TwG1Si0oMvtN5vYgias4bfUnXjQhTVrr1E13p00180J53UrdkqkRFCYQo=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 9" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOJK6y1DEvkHh5JUc-3lZv9hb6JlqLQRYnyK-0g8rKbDIfJE1q5O1p9qb9AwdykpA73TyihpJ5GIPVF8eegalA1uLhc2Tp35bHz9czSkDf6Z_L_SBZt=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 10" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNolnsUyurGNJF2jVTkPp1RpmPIghuOT55K5zN7uLsAhM9xg0J5nevlYoRjAI-cS-MvvsasHiNm5NNB6BmgxIXVTpGCmgj8IihfeQ3jHecnJ7r4D8Y_=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 11" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNDcUCdUmsUuPF30WQF29LyUDrz9DD19zQJaqi2ZBcdMyv0HdsxpNvCgG7x4FD7MEBXJ1mpJN7362AKggGg68WGBy6Tr3sy2aCwF7MjQolTvFbPgiCT=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 12" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMIgu7MyfUlC_DSxfxiAUq2E0jwD2CUCz9BdFEBmSikK4GvrZ3vo77_4Gn2HfB0wlmIucltUX_1XSFUJ6v4J1DRVyeW_tUMqxMiRxaeZDX-ugwNc60t=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 13" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMYqjZU-6W3M2xds5o4bchjw8FLW0pJa0p36P4p4F5KkB9qhBxJFIccmDjvp08SDwAmJvq7W6llKSfVJ6cWFwqrHZogjOt7AZf7XaUOa3ZTPsLOfHeZ=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 14" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOgRu9n_zd_rE8Ot1GhHK9bbsfaljcaGnEFkNtaFDZR5NAbZgxOvYTe1oCTgL0dp1TzHdqpkDfDE-mb6Ew_uxJ1GhepIcm0us7P9Fe5Zh8IFPpLYmqN=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 15" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOBd9qqVq_9X6WXJeA3Q3llk82q4CNo5UO209DC_d0N-DGH0kk1oAIQlioOmPU1Jj4UEj6QjtebRGuwh-CY-wvTTXrPlnIUt7XsdpEuL6r5gNyH3_eO=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 16" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOU_VftAFkuGPfJ4A2QmcpZN3wVqfYWzYgE1gkyY-fBaiavxGpkbbxR2GL-pCtcYom2kXse8B_bI70PUS4VH9eMI24ujrakyafMwW3QrGnIW3gZ3l47=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 17" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNDV2xEXy12edDtQ13sZVu3Y3J4Y0XbYoD2_YVKpWNdtgWANGf85-k2MupwaoADgycPfdEW3IU39iH4CpxjndT-JNTKCy8ydD91MORyqPBmXdPL5Anu=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 18" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNq9GfE0AZMoO2Q_zOCn1uxoH6pN8cIY5DnVR_aZ6Qp5CQD-_nbpi9zwGtXsWBD6o9AeI6UASR6yzfhzo45N4Hl8d6Phinbth4InTqPxA_OEnQKTfQG=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 19" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOnlMnZVXiV7MqAWlfgdf-CKIatywXr1X9iW7KDQiMRE2qX2c-oUAw6FDgwZmBlTPW-mj6j9BjPQgRZUVAac7VglWBNEmgwDb39tBvrzxqkaRg4O8cD=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 20" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM-oLvfmXIyAzzXbPOkFFrIb1ZUQ_zVw6mqs7FUV6Bl92ZvaPkv_ij4Y6xc4EkR73O2VwpZhqbRMa19J6QdtDSCXPDQd9-1zvjoEga-slQ4psbqCU5U=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 21" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOI5YVVEiTEmeu7Y-5Qcvef2f-fGYLMYdxnw58Q--amqwm_rOixLKJi5K1yOUvQuPQZJcPsd8dnss-AyHGKBBO3ZD3aSZEJwRJTmmQRdSOJPMpSE6Np=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 22" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNTLjpKZfXf9ef18JPfUirlWpr8onhww569Zjmab5V59BjONhzEXWqH03dQtx-lD_3MEj7Gd8nUtoONAC7jlkbC02DRf71vf-W67yiKhJ0shQ3u2piG=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 23" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNX20DKhiLA_--RSz-g7ZFw2tPqWaFlzJ9fyE612k0vEmSgRkaGs9Yde21T_WdbSQcv397itgJROgfgbUDiZAk4fHEtKVaLvZeMue47k20JZRENn6gc=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 24" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOumZTrwV8t2DqqpPxu44JFt6VK-y1CHX_xdgL3RnlKLEJTP7BE5xwGc0DSCaFP-CGTtzd_50s8_zGWMoQq4XJ75zbTBjfBxCYcMz8pCt8Vpggj9YdH=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 25" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPGwYeH2GgcFgmJoALQiflb-IgSRqzurNROAL36UvTwHW22-6MYIvgC-DzMXdzPRY4LXtSGmEvcJhtMkOMvd61E3S43OdtjZUs0Cod__eN4u5i9VLKn=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 26" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMs18W3YnEaoeTthQ-kvPYI3YI92Es9aP1Re7ojpDX01Vwpe_BcclZ_cfg-ZeJYIfDttvYOlQ6dEJ9zF7M2fW_pae9REES-j_LQtV3tQbqLvqM8XREP=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 27" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNgW-RwrdGH5JMPE2mY6yKhBJKXDjYTi92AERiYEJUwSbzKc20goXeNCf4Ts99oxqgseStZaOOO1x1wXiZXhpunEE4CrzMrNJCuHWl7Bi8JN4UPTFJ9=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 28" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMXwSY8K3q95jjzZfTInUezYQN4yoevKMZWuqY54OrghKHHapoRqAO831lA1KJS47gxaeiZg4RXLrlXcqSkLJThPRd-YzNDYn-9mLeFq1dSZ5GBaZiA=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 29" loading="lazy" draggable="false" /></div>
+          <div class="carrusel-counter" id="carruselCounter">1 / 29</div>
+          <button class="galeria-nav prev" onclick="carruselIr(imgIndex-1)">&#8249;</button><button class="galeria-nav next" onclick="carruselIr(imgIndex+1)">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -676,7 +699,7 @@ body{
             </svg>
           </button>
         </div>
-        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczNf_FjrbU0jyKJ688-VR4hSUAKyjTkDQnhHsRBXD4NDuwok56ZHiCGIv4oMbuM6v-o9kFFLsnHV0zxyYNHcHaoiy949trpTG6s_LRvGH6b5IxKWcl3m=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP72jjjAaMhzfnWBipsrFChLI32trni5IKvO0WZM7j3gRPqemF3exPQ6rWBBsMhZs1xp1Hu1X86GhFDM5rHmbXch29GO-NOyP-puDQR_E8SAdNA3jxF=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNIEC_UH4OkM0ujmHXN9OpuPFXmpO_iCTWUIKjkRR9nkcFHhMdqgezFy8oruxPZfn8GBEB2UulwaSzmRzMvE66D60LONtB3e7pHpzCBfSrIXy-wEPp4=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMaQW4-992eTD6LJc6D0QBql4EuuQDBUiGK0lUrBgetV8hXvMgatM31w9YCGYtziakQ-jMhMlI7tR0VLeGrh0vcjs4xqaFwj88c6oYHOksHf4BkL9Js=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMskwSMvGx0PLoTM1K_LsVXBmPKFmoJfuFNG3c7HQ_mb8wHPCxe_7UurA95pC3q5htnNkrJ3UWFGEKMCb_oUfcR5o24C3msAmv8HQWkvrSaQrc-CNQL=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMs9m40Ugp3ZofI37o1lzXDBwe0ko7DFbumUvVvz4SS0NgToku5rOTcv5XaGV751csOMNVGMMnZHPWXGbCUiSYOoVTRW-j3jDfPsKA0IsvdupcdFAES=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPK-s0sg1isrh8mkS0rkIlDOXX40zcvRCjebz7JBOUvCA9vZ75AVV8usHQS25qAfs3J-yYZmdruT-0VRTef7yP9EOr-qMjfd8MNRAqsSX5uAMToYIg1=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNtZnlJ7DlB5dPMQJMUHLg6pDlEdti4jU3Yn8J2hgheoDEZ1vhTh84aT8Op8rJ48D32QATozQdxne-TySyuBtkDJd_UGkWQf3TAzou_vYcsU_cD8Wb_=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM2Fqlr_1omNxN6YA9DoVUIt4vGebbd8VmXKPNQJoW7vqL5jIy5I5WZFM5TwG1Si0oMvtN5vYgias4bfUnXjQhTVrr1E13p00180J53UrdkqkRFCYQo=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOJK6y1DEvkHh5JUc-3lZv9hb6JlqLQRYnyK-0g8rKbDIfJE1q5O1p9qb9AwdykpA73TyihpJ5GIPVF8eegalA1uLhc2Tp35bHz9czSkDf6Z_L_SBZt=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNolnsUyurGNJF2jVTkPp1RpmPIghuOT55K5zN7uLsAhM9xg0J5nevlYoRjAI-cS-MvvsasHiNm5NNB6BmgxIXVTpGCmgj8IihfeQ3jHecnJ7r4D8Y_=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNDcUCdUmsUuPF30WQF29LyUDrz9DD19zQJaqi2ZBcdMyv0HdsxpNvCgG7x4FD7MEBXJ1mpJN7362AKggGg68WGBy6Tr3sy2aCwF7MjQolTvFbPgiCT=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMIgu7MyfUlC_DSxfxiAUq2E0jwD2CUCz9BdFEBmSikK4GvrZ3vo77_4Gn2HfB0wlmIucltUX_1XSFUJ6v4J1DRVyeW_tUMqxMiRxaeZDX-ugwNc60t=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMYqjZU-6W3M2xds5o4bchjw8FLW0pJa0p36P4p4F5KkB9qhBxJFIccmDjvp08SDwAmJvq7W6llKSfVJ6cWFwqrHZogjOt7AZf7XaUOa3ZTPsLOfHeZ=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOgRu9n_zd_rE8Ot1GhHK9bbsfaljcaGnEFkNtaFDZR5NAbZgxOvYTe1oCTgL0dp1TzHdqpkDfDE-mb6Ew_uxJ1GhepIcm0us7P9Fe5Zh8IFPpLYmqN=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOBd9qqVq_9X6WXJeA3Q3llk82q4CNo5UO209DC_d0N-DGH0kk1oAIQlioOmPU1Jj4UEj6QjtebRGuwh-CY-wvTTXrPlnIUt7XsdpEuL6r5gNyH3_eO=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOU_VftAFkuGPfJ4A2QmcpZN3wVqfYWzYgE1gkyY-fBaiavxGpkbbxR2GL-pCtcYom2kXse8B_bI70PUS4VH9eMI24ujrakyafMwW3QrGnIW3gZ3l47=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNDV2xEXy12edDtQ13sZVu3Y3J4Y0XbYoD2_YVKpWNdtgWANGf85-k2MupwaoADgycPfdEW3IU39iH4CpxjndT-JNTKCy8ydD91MORyqPBmXdPL5Anu=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNq9GfE0AZMoO2Q_zOCn1uxoH6pN8cIY5DnVR_aZ6Qp5CQD-_nbpi9zwGtXsWBD6o9AeI6UASR6yzfhzo45N4Hl8d6Phinbth4InTqPxA_OEnQKTfQG=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOnlMnZVXiV7MqAWlfgdf-CKIatywXr1X9iW7KDQiMRE2qX2c-oUAw6FDgwZmBlTPW-mj6j9BjPQgRZUVAac7VglWBNEmgwDb39tBvrzxqkaRg4O8cD=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="irImg(19)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM-oLvfmXIyAzzXbPOkFFrIb1ZUQ_zVw6mqs7FUV6Bl92ZvaPkv_ij4Y6xc4EkR73O2VwpZhqbRMa19J6QdtDSCXPDQd9-1zvjoEga-slQ4psbqCU5U=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="irImg(20)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOI5YVVEiTEmeu7Y-5Qcvef2f-fGYLMYdxnw58Q--amqwm_rOixLKJi5K1yOUvQuPQZJcPsd8dnss-AyHGKBBO3ZD3aSZEJwRJTmmQRdSOJPMpSE6Np=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="irImg(21)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNTLjpKZfXf9ef18JPfUirlWpr8onhww569Zjmab5V59BjONhzEXWqH03dQtx-lD_3MEj7Gd8nUtoONAC7jlkbC02DRf71vf-W67yiKhJ0shQ3u2piG=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="irImg(22)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNX20DKhiLA_--RSz-g7ZFw2tPqWaFlzJ9fyE612k0vEmSgRkaGs9Yde21T_WdbSQcv397itgJROgfgbUDiZAk4fHEtKVaLvZeMue47k20JZRENn6gc=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 24" class="miniatura carrusel-min" onclick="irImg(23)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOumZTrwV8t2DqqpPxu44JFt6VK-y1CHX_xdgL3RnlKLEJTP7BE5xwGc0DSCaFP-CGTtzd_50s8_zGWMoQq4XJ75zbTBjfBxCYcMz8pCt8Vpggj9YdH=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 25" class="miniatura carrusel-min" onclick="irImg(24)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPGwYeH2GgcFgmJoALQiflb-IgSRqzurNROAL36UvTwHW22-6MYIvgC-DzMXdzPRY4LXtSGmEvcJhtMkOMvd61E3S43OdtjZUs0Cod__eN4u5i9VLKn=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 26" class="miniatura carrusel-min" onclick="irImg(25)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMs18W3YnEaoeTthQ-kvPYI3YI92Es9aP1Re7ojpDX01Vwpe_BcclZ_cfg-ZeJYIfDttvYOlQ6dEJ9zF7M2fW_pae9REES-j_LQtV3tQbqLvqM8XREP=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 27" class="miniatura carrusel-min" onclick="irImg(26)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNgW-RwrdGH5JMPE2mY6yKhBJKXDjYTi92AERiYEJUwSbzKc20goXeNCf4Ts99oxqgseStZaOOO1x1wXiZXhpunEE4CrzMrNJCuHWl7Bi8JN4UPTFJ9=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 28" class="miniatura carrusel-min" onclick="irImg(27)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMXwSY8K3q95jjzZfTInUezYQN4yoevKMZWuqY54OrghKHHapoRqAO831lA1KJS47gxaeiZg4RXLrlXcqSkLJThPRd-YzNDYn-9mLeFq1dSZ5GBaZiA=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 29" class="miniatura carrusel-min" onclick="irImg(28)" loading="lazy"/></div></div>
+        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczNf_FjrbU0jyKJ688-VR4hSUAKyjTkDQnhHsRBXD4NDuwok56ZHiCGIv4oMbuM6v-o9kFFLsnHV0zxyYNHcHaoiy949trpTG6s_LRvGH6b5IxKWcl3m=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="carruselIr(0)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP72jjjAaMhzfnWBipsrFChLI32trni5IKvO0WZM7j3gRPqemF3exPQ6rWBBsMhZs1xp1Hu1X86GhFDM5rHmbXch29GO-NOyP-puDQR_E8SAdNA3jxF=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="carruselIr(1)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNIEC_UH4OkM0ujmHXN9OpuPFXmpO_iCTWUIKjkRR9nkcFHhMdqgezFy8oruxPZfn8GBEB2UulwaSzmRzMvE66D60LONtB3e7pHpzCBfSrIXy-wEPp4=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="carruselIr(2)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMaQW4-992eTD6LJc6D0QBql4EuuQDBUiGK0lUrBgetV8hXvMgatM31w9YCGYtziakQ-jMhMlI7tR0VLeGrh0vcjs4xqaFwj88c6oYHOksHf4BkL9Js=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="carruselIr(3)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMskwSMvGx0PLoTM1K_LsVXBmPKFmoJfuFNG3c7HQ_mb8wHPCxe_7UurA95pC3q5htnNkrJ3UWFGEKMCb_oUfcR5o24C3msAmv8HQWkvrSaQrc-CNQL=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="carruselIr(4)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMs9m40Ugp3ZofI37o1lzXDBwe0ko7DFbumUvVvz4SS0NgToku5rOTcv5XaGV751csOMNVGMMnZHPWXGbCUiSYOoVTRW-j3jDfPsKA0IsvdupcdFAES=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="carruselIr(5)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPK-s0sg1isrh8mkS0rkIlDOXX40zcvRCjebz7JBOUvCA9vZ75AVV8usHQS25qAfs3J-yYZmdruT-0VRTef7yP9EOr-qMjfd8MNRAqsSX5uAMToYIg1=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="carruselIr(6)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNtZnlJ7DlB5dPMQJMUHLg6pDlEdti4jU3Yn8J2hgheoDEZ1vhTh84aT8Op8rJ48D32QATozQdxne-TySyuBtkDJd_UGkWQf3TAzou_vYcsU_cD8Wb_=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="carruselIr(7)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM2Fqlr_1omNxN6YA9DoVUIt4vGebbd8VmXKPNQJoW7vqL5jIy5I5WZFM5TwG1Si0oMvtN5vYgias4bfUnXjQhTVrr1E13p00180J53UrdkqkRFCYQo=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="carruselIr(8)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOJK6y1DEvkHh5JUc-3lZv9hb6JlqLQRYnyK-0g8rKbDIfJE1q5O1p9qb9AwdykpA73TyihpJ5GIPVF8eegalA1uLhc2Tp35bHz9czSkDf6Z_L_SBZt=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="carruselIr(9)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNolnsUyurGNJF2jVTkPp1RpmPIghuOT55K5zN7uLsAhM9xg0J5nevlYoRjAI-cS-MvvsasHiNm5NNB6BmgxIXVTpGCmgj8IihfeQ3jHecnJ7r4D8Y_=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="carruselIr(10)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNDcUCdUmsUuPF30WQF29LyUDrz9DD19zQJaqi2ZBcdMyv0HdsxpNvCgG7x4FD7MEBXJ1mpJN7362AKggGg68WGBy6Tr3sy2aCwF7MjQolTvFbPgiCT=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="carruselIr(11)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMIgu7MyfUlC_DSxfxiAUq2E0jwD2CUCz9BdFEBmSikK4GvrZ3vo77_4Gn2HfB0wlmIucltUX_1XSFUJ6v4J1DRVyeW_tUMqxMiRxaeZDX-ugwNc60t=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="carruselIr(12)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMYqjZU-6W3M2xds5o4bchjw8FLW0pJa0p36P4p4F5KkB9qhBxJFIccmDjvp08SDwAmJvq7W6llKSfVJ6cWFwqrHZogjOt7AZf7XaUOa3ZTPsLOfHeZ=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="carruselIr(13)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOgRu9n_zd_rE8Ot1GhHK9bbsfaljcaGnEFkNtaFDZR5NAbZgxOvYTe1oCTgL0dp1TzHdqpkDfDE-mb6Ew_uxJ1GhepIcm0us7P9Fe5Zh8IFPpLYmqN=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="carruselIr(14)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOBd9qqVq_9X6WXJeA3Q3llk82q4CNo5UO209DC_d0N-DGH0kk1oAIQlioOmPU1Jj4UEj6QjtebRGuwh-CY-wvTTXrPlnIUt7XsdpEuL6r5gNyH3_eO=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="carruselIr(15)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOU_VftAFkuGPfJ4A2QmcpZN3wVqfYWzYgE1gkyY-fBaiavxGpkbbxR2GL-pCtcYom2kXse8B_bI70PUS4VH9eMI24ujrakyafMwW3QrGnIW3gZ3l47=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="carruselIr(16)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNDV2xEXy12edDtQ13sZVu3Y3J4Y0XbYoD2_YVKpWNdtgWANGf85-k2MupwaoADgycPfdEW3IU39iH4CpxjndT-JNTKCy8ydD91MORyqPBmXdPL5Anu=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="carruselIr(17)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNq9GfE0AZMoO2Q_zOCn1uxoH6pN8cIY5DnVR_aZ6Qp5CQD-_nbpi9zwGtXsWBD6o9AeI6UASR6yzfhzo45N4Hl8d6Phinbth4InTqPxA_OEnQKTfQG=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="carruselIr(18)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOnlMnZVXiV7MqAWlfgdf-CKIatywXr1X9iW7KDQiMRE2qX2c-oUAw6FDgwZmBlTPW-mj6j9BjPQgRZUVAac7VglWBNEmgwDb39tBvrzxqkaRg4O8cD=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="carruselIr(19)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM-oLvfmXIyAzzXbPOkFFrIb1ZUQ_zVw6mqs7FUV6Bl92ZvaPkv_ij4Y6xc4EkR73O2VwpZhqbRMa19J6QdtDSCXPDQd9-1zvjoEga-slQ4psbqCU5U=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="carruselIr(20)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOI5YVVEiTEmeu7Y-5Qcvef2f-fGYLMYdxnw58Q--amqwm_rOixLKJi5K1yOUvQuPQZJcPsd8dnss-AyHGKBBO3ZD3aSZEJwRJTmmQRdSOJPMpSE6Np=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="carruselIr(21)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNTLjpKZfXf9ef18JPfUirlWpr8onhww569Zjmab5V59BjONhzEXWqH03dQtx-lD_3MEj7Gd8nUtoONAC7jlkbC02DRf71vf-W67yiKhJ0shQ3u2piG=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="carruselIr(22)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNX20DKhiLA_--RSz-g7ZFw2tPqWaFlzJ9fyE612k0vEmSgRkaGs9Yde21T_WdbSQcv397itgJROgfgbUDiZAk4fHEtKVaLvZeMue47k20JZRENn6gc=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 24" class="miniatura carrusel-min" onclick="carruselIr(23)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOumZTrwV8t2DqqpPxu44JFt6VK-y1CHX_xdgL3RnlKLEJTP7BE5xwGc0DSCaFP-CGTtzd_50s8_zGWMoQq4XJ75zbTBjfBxCYcMz8pCt8Vpggj9YdH=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 25" class="miniatura carrusel-min" onclick="carruselIr(24)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPGwYeH2GgcFgmJoALQiflb-IgSRqzurNROAL36UvTwHW22-6MYIvgC-DzMXdzPRY4LXtSGmEvcJhtMkOMvd61E3S43OdtjZUs0Cod__eN4u5i9VLKn=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 26" class="miniatura carrusel-min" onclick="carruselIr(25)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMs18W3YnEaoeTthQ-kvPYI3YI92Es9aP1Re7ojpDX01Vwpe_BcclZ_cfg-ZeJYIfDttvYOlQ6dEJ9zF7M2fW_pae9REES-j_LQtV3tQbqLvqM8XREP=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 27" class="miniatura carrusel-min" onclick="carruselIr(26)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNgW-RwrdGH5JMPE2mY6yKhBJKXDjYTi92AERiYEJUwSbzKc20goXeNCf4Ts99oxqgseStZaOOO1x1wXiZXhpunEE4CrzMrNJCuHWl7Bi8JN4UPTFJ9=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 28" class="miniatura carrusel-min" onclick="carruselIr(27)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMXwSY8K3q95jjzZfTInUezYQN4yoevKMZWuqY54OrghKHHapoRqAO831lA1KJS47gxaeiZg4RXLrlXcqSkLJThPRd-YzNDYn-9mLeFq1dSZ5GBaZiA=w1200" alt="Casa en venta Los Andes Neiva – ICDE Inmobiliaria foto 29" class="miniatura carrusel-min" onclick="carruselIr(28)" loading="lazy" draggable="false"/></div></div>
       </div>
       
       <div class="modal-bloque-info">
@@ -738,74 +761,146 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczNf_FjrbU0jyKJ688-VR4hSUAKyjTkDQnhHsRBXD4NDuwok56ZHiCGIv4oMbuM6v-o9kFFLsnHV0zxyYNHcHaoiy949trpTG6s_LRvGH6b5IxKWcl3m=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP72jjjAaMhzfnWBipsrFChLI32trni5IKvO0WZM7j3gRPqemF3exPQ6rWBBsMhZs1xp1Hu1X86GhFDM5rHmbXch29GO-NOyP-puDQR_E8SAdNA3jxF=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNIEC_UH4OkM0ujmHXN9OpuPFXmpO_iCTWUIKjkRR9nkcFHhMdqgezFy8oruxPZfn8GBEB2UulwaSzmRzMvE66D60LONtB3e7pHpzCBfSrIXy-wEPp4=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMaQW4-992eTD6LJc6D0QBql4EuuQDBUiGK0lUrBgetV8hXvMgatM31w9YCGYtziakQ-jMhMlI7tR0VLeGrh0vcjs4xqaFwj88c6oYHOksHf4BkL9Js=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMskwSMvGx0PLoTM1K_LsVXBmPKFmoJfuFNG3c7HQ_mb8wHPCxe_7UurA95pC3q5htnNkrJ3UWFGEKMCb_oUfcR5o24C3msAmv8HQWkvrSaQrc-CNQL=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMs9m40Ugp3ZofI37o1lzXDBwe0ko7DFbumUvVvz4SS0NgToku5rOTcv5XaGV751csOMNVGMMnZHPWXGbCUiSYOoVTRW-j3jDfPsKA0IsvdupcdFAES=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPK-s0sg1isrh8mkS0rkIlDOXX40zcvRCjebz7JBOUvCA9vZ75AVV8usHQS25qAfs3J-yYZmdruT-0VRTef7yP9EOr-qMjfd8MNRAqsSX5uAMToYIg1=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNtZnlJ7DlB5dPMQJMUHLg6pDlEdti4jU3Yn8J2hgheoDEZ1vhTh84aT8Op8rJ48D32QATozQdxne-TySyuBtkDJd_UGkWQf3TAzou_vYcsU_cD8Wb_=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM2Fqlr_1omNxN6YA9DoVUIt4vGebbd8VmXKPNQJoW7vqL5jIy5I5WZFM5TwG1Si0oMvtN5vYgias4bfUnXjQhTVrr1E13p00180J53UrdkqkRFCYQo=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOJK6y1DEvkHh5JUc-3lZv9hb6JlqLQRYnyK-0g8rKbDIfJE1q5O1p9qb9AwdykpA73TyihpJ5GIPVF8eegalA1uLhc2Tp35bHz9czSkDf6Z_L_SBZt=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNolnsUyurGNJF2jVTkPp1RpmPIghuOT55K5zN7uLsAhM9xg0J5nevlYoRjAI-cS-MvvsasHiNm5NNB6BmgxIXVTpGCmgj8IihfeQ3jHecnJ7r4D8Y_=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNDcUCdUmsUuPF30WQF29LyUDrz9DD19zQJaqi2ZBcdMyv0HdsxpNvCgG7x4FD7MEBXJ1mpJN7362AKggGg68WGBy6Tr3sy2aCwF7MjQolTvFbPgiCT=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMIgu7MyfUlC_DSxfxiAUq2E0jwD2CUCz9BdFEBmSikK4GvrZ3vo77_4Gn2HfB0wlmIucltUX_1XSFUJ6v4J1DRVyeW_tUMqxMiRxaeZDX-ugwNc60t=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMYqjZU-6W3M2xds5o4bchjw8FLW0pJa0p36P4p4F5KkB9qhBxJFIccmDjvp08SDwAmJvq7W6llKSfVJ6cWFwqrHZogjOt7AZf7XaUOa3ZTPsLOfHeZ=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOgRu9n_zd_rE8Ot1GhHK9bbsfaljcaGnEFkNtaFDZR5NAbZgxOvYTe1oCTgL0dp1TzHdqpkDfDE-mb6Ew_uxJ1GhepIcm0us7P9Fe5Zh8IFPpLYmqN=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOBd9qqVq_9X6WXJeA3Q3llk82q4CNo5UO209DC_d0N-DGH0kk1oAIQlioOmPU1Jj4UEj6QjtebRGuwh-CY-wvTTXrPlnIUt7XsdpEuL6r5gNyH3_eO=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOU_VftAFkuGPfJ4A2QmcpZN3wVqfYWzYgE1gkyY-fBaiavxGpkbbxR2GL-pCtcYom2kXse8B_bI70PUS4VH9eMI24ujrakyafMwW3QrGnIW3gZ3l47=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNDV2xEXy12edDtQ13sZVu3Y3J4Y0XbYoD2_YVKpWNdtgWANGf85-k2MupwaoADgycPfdEW3IU39iH4CpxjndT-JNTKCy8ydD91MORyqPBmXdPL5Anu=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNq9GfE0AZMoO2Q_zOCn1uxoH6pN8cIY5DnVR_aZ6Qp5CQD-_nbpi9zwGtXsWBD6o9AeI6UASR6yzfhzo45N4Hl8d6Phinbth4InTqPxA_OEnQKTfQG=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOnlMnZVXiV7MqAWlfgdf-CKIatywXr1X9iW7KDQiMRE2qX2c-oUAw6FDgwZmBlTPW-mj6j9BjPQgRZUVAac7VglWBNEmgwDb39tBvrzxqkaRg4O8cD=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM-oLvfmXIyAzzXbPOkFFrIb1ZUQ_zVw6mqs7FUV6Bl92ZvaPkv_ij4Y6xc4EkR73O2VwpZhqbRMa19J6QdtDSCXPDQd9-1zvjoEga-slQ4psbqCU5U=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOI5YVVEiTEmeu7Y-5Qcvef2f-fGYLMYdxnw58Q--amqwm_rOixLKJi5K1yOUvQuPQZJcPsd8dnss-AyHGKBBO3ZD3aSZEJwRJTmmQRdSOJPMpSE6Np=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNTLjpKZfXf9ef18JPfUirlWpr8onhww569Zjmab5V59BjONhzEXWqH03dQtx-lD_3MEj7Gd8nUtoONAC7jlkbC02DRf71vf-W67yiKhJ0shQ3u2piG=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNX20DKhiLA_--RSz-g7ZFw2tPqWaFlzJ9fyE612k0vEmSgRkaGs9Yde21T_WdbSQcv397itgJROgfgbUDiZAk4fHEtKVaLvZeMue47k20JZRENn6gc=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOumZTrwV8t2DqqpPxu44JFt6VK-y1CHX_xdgL3RnlKLEJTP7BE5xwGc0DSCaFP-CGTtzd_50s8_zGWMoQq4XJ75zbTBjfBxCYcMz8pCt8Vpggj9YdH=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPGwYeH2GgcFgmJoALQiflb-IgSRqzurNROAL36UvTwHW22-6MYIvgC-DzMXdzPRY4LXtSGmEvcJhtMkOMvd61E3S43OdtjZUs0Cod__eN4u5i9VLKn=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMs18W3YnEaoeTthQ-kvPYI3YI92Es9aP1Re7ojpDX01Vwpe_BcclZ_cfg-ZeJYIfDttvYOlQ6dEJ9zF7M2fW_pae9REES-j_LQtV3tQbqLvqM8XREP=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNgW-RwrdGH5JMPE2mY6yKhBJKXDjYTi92AERiYEJUwSbzKc20goXeNCf4Ts99oxqgseStZaOOO1x1wXiZXhpunEE4CrzMrNJCuHWl7Bi8JN4UPTFJ9=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMXwSY8K3q95jjzZfTInUezYQN4yoevKMZWuqY54OrghKHHapoRqAO831lA1KJS47gxaeiZg4RXLrlXcqSkLJThPRd-YzNDYn-9mLeFq1dSZ5GBaZiA=w1200"];
 var imgIndex = 0;
+var carruselTimer = null;
+var CARRUSEL_DELAY = 5000;
 
-// Soporte para swipe (deslizar) en móviles
-var startX = 0;
-var endX = 0;
-document.addEventListener('DOMContentLoaded', function() {
-  // Swipe en carrusel principal
-  var carrusel = document.querySelector('.carrusel-principal');
-  if (carrusel) {
-    carrusel.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
-    }, {passive: true});
-    carrusel.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        cambiarImg(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        cambiarImg(-1); // Deslizar derecha -> anterior
-      }
-    }, {passive: true});
+function carruselIr(idx, reiniciarTimer) {
+  if (reiniciarTimer === undefined) reiniciarTimer = true;
+  if (!IMGS.length) return;
+  imgIndex = ((idx % IMGS.length) + IMGS.length) % IMGS.length;
+  
+  var principal = document.getElementById('carruselPrincipal');
+  if (principal) {
+    var slides = principal.querySelectorAll('.carrusel-slide');
+    slides.forEach(function(s, i) {
+      s.classList.toggle('activa', i === imgIndex);
+    });
   }
+  
+  var counter = document.getElementById('carruselCounter');
+  if (counter) counter.textContent = (imgIndex + 1) + ' / ' + IMGS.length;
+  
+  var minis = document.querySelectorAll('.carrusel-min');
+  minis.forEach(function(m, i) {
+    m.classList.toggle('activa', i === imgIndex);
+  });
+  
+  if (reiniciarTimer) carruselReiniciarProgreso();
+}
+
+function carruselReiniciarProgreso() {
+  if (IMGS.length <= 1) return;
+  clearTimeout(carruselTimer);
+  carruselTimer = setTimeout(function() {
+    carruselIr(imgIndex + 1);
+  }, CARRUSEL_DELAY);
+}
+
+function carruselDetener() {
+  clearTimeout(carruselTimer);
+}
+
+function irImg(i) { carruselIr(i); }
+function cambiarImg(dir) { carruselIr(imgIndex + dir); }
+
+var _dragSx = 0, _dragPid = null, _dragMoved = false;
+function initCarruselDrag() {
+  var el = document.getElementById('carruselPrincipal');
+  if (!el) return;
+  
+  el.addEventListener('dragstart', function(e) { e.preventDefault(); });
+  
+  el.addEventListener('pointerdown', function(e) {
+    if (e.target.closest('button')) return;
+    _dragSx = e.clientX;
+    _dragPid = e.pointerId;
+    _dragMoved = false;
+    try { el.setPointerCapture(e.pointerId); } catch(err) {}
+  });
+  
+  el.addEventListener('pointermove', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    if (Math.abs(e.clientX - _dragSx) > 8) _dragMoved = true;
+  });
+  
+  el.addEventListener('pointerup', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    var d = _dragSx - e.clientX;
+    _dragPid = null;
+    if (Math.abs(d) >= 30) {
+      if (d > 0) carruselIr(imgIndex + 1);
+      else carruselIr(imgIndex - 1);
+    }
+  });
+  
+  el.addEventListener('pointercancel', function() { _dragPid = null; });
+  
+  el.addEventListener('click', function(e) {
+    if (_dragMoved && !e.target.closest('button')) {
+      e.stopPropagation();
+      e.preventDefault();
+      _dragMoved = false;
+    }
+  }, true);
+  
+  var _tSx = 0, _tSy = 0, _tMoved = false;
+  el.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    _tSx = e.touches[0].clientX;
+    _tSy = e.touches[0].clientY;
+    _tMoved = false;
+  }, {passive: true});
+  
+  el.addEventListener('touchmove', function(e) {
+    if (Math.abs(e.touches[0].clientX - _tSx) > 10) _tMoved = true;
+  }, {passive: true});
+  
+  el.addEventListener('touchend', function(e) {
+    if (!_tMoved) return;
+    var dx = e.changedTouches[0].clientX - _tSx;
+    var dy = e.changedTouches[0].clientY - _tSy;
+    _tMoved = false;
+    if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) carruselIr(imgIndex + 1);
+    else carruselIr(imgIndex - 1);
+  }, {passive: true});
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initCarruselDrag();
+  if (IMGS.length > 1) carruselReiniciarProgreso();
   
   // Swipe en lightbox (pantalla completa)
   var lightbox = document.getElementById('lightbox');
   if (lightbox) {
+    var lSx = 0, lEndX = 0;
     lightbox.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
+      lSx = e.touches[0].clientX;
     }, {passive: true});
     lightbox.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        lightboxNav(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        lightboxNav(-1); // Deslizar derecha -> anterior
+      lEndX = e.changedTouches[0].clientX;
+      if (lSx - lEndX > 50) {
+        lightboxNav(1);
+      } else if (lEndX - lSx > 50) {
+        lightboxNav(-1);
       }
     }, {passive: true});
     
-    // Evitar que el swipe en las miniaturas cambie la foto principal
     var wrapMinis = lightbox.querySelector('.lightbox-miniaturas-wrap');
     if (wrapMinis) {
-      wrapMinis.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
-      wrapMinis.addEventListener('touchend', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
+      wrapMinis.addEventListener('touchstart', function(e) { e.stopPropagation(); }, {passive: true});
+      wrapMinis.addEventListener('touchend', function(e) { e.stopPropagation(); }, {passive: true});
     }
   }
 });
 
-function irImg(i) {
-  if (!IMGS.length) return;
-  imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
-  var cont = document.getElementById('imgActual');
-  if (cont) cont.textContent = imgIndex + 1;
-}
-
-function cambiarImg(dir) { irImg(imgIndex + dir); }
-
 function abrirLightbox(i) {
-  irImg(i);
+  carruselDetener();
+  carruselIr(i, false);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   
-  // Generar miniaturas en el lightbox si no existen
   var minisDiv = document.getElementById('lightboxMiniaturas');
   if (minisDiv && !minisDiv.innerHTML) {
     minisDiv.innerHTML = IMGS.map(function(url, index) {
@@ -822,14 +917,14 @@ function cerrarLightbox(e) {
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
+  carruselReiniciarProgreso();
 }
 
 function lightboxNav(dir) {
-  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
+  carruselIr(imgIndex + dir, false);
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   updateLightboxMiniaturas();
-  irImg(imgIndex); // Actualizar también el carrusel principal
 }
 
 function updateLightboxMiniaturas() {
@@ -837,7 +932,6 @@ function updateLightboxMiniaturas() {
   minis.forEach(function(m, j) {
     m.classList.toggle('activa', j === imgIndex);
   });
-  // Hacer scroll a la miniatura activa
   var activa = minis[imgIndex];
   if (activa) {
     var wrap = activa.closest('.lightbox-miniaturas');

@@ -209,12 +209,35 @@ body{
   height: 300px;
   position: relative;
   background: #000;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
 }
 
-.galeria-img{
+.carrusel-principal img{
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -665,10 +688,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczOPRKNXz50DM-59UFkXaB5tbio1WJV1ek4-RuMEFm426_zsHxvY0gB5IBTGabnNKV1PwA_cpFg_nzS1goBqobXffiQ4xmH4AcL1aZme57f8c44DtwTF=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 24</div>
-          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczOPRKNXz50DM-59UFkXaB5tbio1WJV1ek4-RuMEFm426_zsHxvY0gB5IBTGabnNKV1PwA_cpFg_nzS1goBqobXffiQ4xmH4AcL1aZme57f8c44DtwTF=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 1" loading="eager" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNPHAf--cfomfKpkwpSJfAa8cGhT7fBFJ4xxIYRoShL1EknhL76X3u0kCx0Uh66bvXD5rDtfvZhumh21e4z2nyF4yalP3uXiFcgJN-XKEHPvxBDtMdH=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 2" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOz-5oIlsZVV2Q-1F2ibs7pj6SvDtneFkGkduwlf-9CkseneDjXs_3DsW80-sfvNLN9zwNUUgVJzeLkYRG2WP-Yl88_qoWApceCmSSWzkDozyts22nz=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 3" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPFV0e-ocLrwvfAtrpo8oRfUMQJOXaY5Dv6rGbyTMiw7FAUfgDQDyM6Y5HKAAxpQqZvpgNHkgkIaCPPWhceLv1IlVvsFDTpFqXqqxDrnoDb7LbiG7vl=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 4" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN1gwOZEPhkUSNHGDiWoaleN-jkxeusCGsaFSIw6-cMvs3-jh8CoR43xz_FVYzZljFq-zq-44ZTeJTsttoqjr8xqWy9m7qaGCzNjIold4dRHnTdLZyu=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 5" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNT5gzIzkHdDll7HGePN3qCM87HJbSpJ4W2lvIvTctr4Da1ClYq7q4QatgY12uJKimk3KOLYYWnnHZwiD_Nd0oBpk1cUgDv7GzXHQJfOiLed2fmQ__K=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 6" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOJaTT8eeL4OCCsIFbo5Zh-fZE864cmtOMwKi3Ff52z5B0-uOrFok7HUOp6GP5Lj6hMJaf_6t7mWi-Nayoe4Wllw7szPhnspCEaXm5HhzF61Nt5Odfo=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 7" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO-2P6b4L7C1Mf1GC-xA9a6-1_dnmdWSiy3A6W0pdmpc9E6dWTNmeoQq0RCgIomDFKBp1OUAq_7x_vkOHR0AGTmp-BBXmodTyKCKe6v_b-SrST6FLFN=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 8" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMJxI4IbhJsO3tZf7Ws7sT0j2ARa6xDTWnoq-BQ5rCWfdO3c4uDCmGImErYtGysq86iGLEXuCcQffOWc8l7-gRoNIuZKVH7xgtbgx3zRPo0P3k16apo=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 9" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM0ITXN40AKHasPkzvot8Y8wgp935ks1nwWg7tGoHti6zco2hq_JVMwX4xUVMhUyzLIaEkzrqYBlTIuSvUsQYAg5rnwkc8MunxN64Ugu-59nVKy7i--=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 10" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNU6h9FPcz9N9EmW1AGasdmbn_uPh7RSgptgbdPreCfdEiQwLP9dVgqjb25Qwg2hTwc8hp5NkYAyMDlOcGPz9PLUH5LWTq7o5B6jw8tFroIbLwioJYd=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 11" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNYp8GkSa6mEA-RKkp-svl9COHNnbNNYw9lncQObqSevbkLk8_iBEPezhZ-y3DdxWjyZFl3de9uH3hinjbamgMNBvcp-ln1drOil1DhBCz4PuGSW29n=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 12" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMjXmjZ8MsuIn5R8SVc1-bKtrDr2FifSrtmxmF_n02Sbsh4PntoO8eBWsKc5KONURuCPplb_Grz5p-Du-swHI4dleHc2Ns1cn4q2reIN10AivaBYYwT=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 13" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNERNIEWCQ0RGSa9fLwD2ThBqEBx-rvdk8DrAWWvO1Q91v20qNqXLSK66ud51n7LcP6xwgjfaR_5nR5xOeAEv0qyVkZI4XcbSuiT5FXXNd7yj-FScyk=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 14" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOTe3W-f2V2urF-OlNbY1Mja2eIfiBWpaiUafLLiqCLIZOVs1znz_mz7Q0hMrRvFz0wSdvCP4_epS0w0M4tqFzUCHJFv2nHgHF1i8K5iHgi4V4jippP=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 15" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOqiywDjpwQhcHdASFl4xmqg_5NfgNbAErz5vtWZ5XcbNyfBidN1ehbqdL67aMaLMyMNbkrV-tOqjhvlj_HT4n7JfGT09k0VhJUZsk8nOujGNc7Cur_=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 16" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMbYPIZOiBwr0RrpXkb6IxZe_G__UlAgb3GlXh_PFyw7iu2Te5ArsferVrfVFdNad_WEtBy3eP8-hmSbs3BXtKfzoh-0FzS3cJrCtFkYIPRUnkKkMnO=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 17" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPNr-Cs0cJuCRtOIynCHjn9ApAOduNCcMo6HCKyfcAUQIv3BKBkMq0BODu1aJJjCVh8E3-AvOyPNjGS1bwdrTY925cKnAw-7w34NnJnNc2bLQG2ObVS=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 18" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPD3lKfttbx-rJrO0EXzOqgQM4yIJSX7QizIsqJMhSGITopuW4jlCVRJWy8tvEN7enzIllxY5_7Z6gbr9LKnVpKjT8anuEg3uUatiHPz7h5veAGdZjp=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 19" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN1VcvKDdl3HICDTOmn4vQlUKbKZGBT5a7f4d-chivzwU40zNpy0RkB5MR5FtQhIJItEcMxWMOID3jkguzhhKR719XjKXxGNsWAG1XZnaRIFS75yBMd=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 20" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMDNPC9NvDtfhuOPOs81gCJGsRIFRrNPU5jPwcHyXMzUGdsKv-oUcpJbMhGiJtM5yfoGaWs_D_rP8du1lXFz5eGBtl02ThLDuAF-fiacWruZs-4ys54=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 21" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM8XvnRWVyLcxGxhVSJKGQVRU8yQV_OdQZZSPylLhFEAlxvxAQJppSMrCIvLqKXZIclHP_OO0BPTJBIWPLyxjFkHZcbswx0pfLW7NeHrOXkYp1xfpzE=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 22" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPFRA_Wz1jpJmgQOyxtjDhdGqtOJlA4Ve-0TlQ348DnWg_Ydt2f6bSQL6msGmfTUXI46Dl25sVD5F6mD9M-olAXnItogO01EAd_Vdb5hWuGgg-8d_g4=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 23" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPe8ZzkbRp2keGdtEJvMS_nc19hMY4Y6y7t6Ti5mEY8iL7ufBElvX0vnTAigiqocL9guhrAg_LJzmQtBiWS9BZE7mK8pg6UXCpdN3m-lmipgGLLeLoV=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 24" loading="lazy" draggable="false" /></div>
+          <div class="carrusel-counter" id="carruselCounter">1 / 24</div>
+          <button class="galeria-nav prev" onclick="carruselIr(imgIndex-1)">&#8249;</button><button class="galeria-nav next" onclick="carruselIr(imgIndex+1)">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -676,7 +699,7 @@ body{
             </svg>
           </button>
         </div>
-        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczOPRKNXz50DM-59UFkXaB5tbio1WJV1ek4-RuMEFm426_zsHxvY0gB5IBTGabnNKV1PwA_cpFg_nzS1goBqobXffiQ4xmH4AcL1aZme57f8c44DtwTF=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNPHAf--cfomfKpkwpSJfAa8cGhT7fBFJ4xxIYRoShL1EknhL76X3u0kCx0Uh66bvXD5rDtfvZhumh21e4z2nyF4yalP3uXiFcgJN-XKEHPvxBDtMdH=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOz-5oIlsZVV2Q-1F2ibs7pj6SvDtneFkGkduwlf-9CkseneDjXs_3DsW80-sfvNLN9zwNUUgVJzeLkYRG2WP-Yl88_qoWApceCmSSWzkDozyts22nz=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPFV0e-ocLrwvfAtrpo8oRfUMQJOXaY5Dv6rGbyTMiw7FAUfgDQDyM6Y5HKAAxpQqZvpgNHkgkIaCPPWhceLv1IlVvsFDTpFqXqqxDrnoDb7LbiG7vl=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN1gwOZEPhkUSNHGDiWoaleN-jkxeusCGsaFSIw6-cMvs3-jh8CoR43xz_FVYzZljFq-zq-44ZTeJTsttoqjr8xqWy9m7qaGCzNjIold4dRHnTdLZyu=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNT5gzIzkHdDll7HGePN3qCM87HJbSpJ4W2lvIvTctr4Da1ClYq7q4QatgY12uJKimk3KOLYYWnnHZwiD_Nd0oBpk1cUgDv7GzXHQJfOiLed2fmQ__K=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOJaTT8eeL4OCCsIFbo5Zh-fZE864cmtOMwKi3Ff52z5B0-uOrFok7HUOp6GP5Lj6hMJaf_6t7mWi-Nayoe4Wllw7szPhnspCEaXm5HhzF61Nt5Odfo=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO-2P6b4L7C1Mf1GC-xA9a6-1_dnmdWSiy3A6W0pdmpc9E6dWTNmeoQq0RCgIomDFKBp1OUAq_7x_vkOHR0AGTmp-BBXmodTyKCKe6v_b-SrST6FLFN=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMJxI4IbhJsO3tZf7Ws7sT0j2ARa6xDTWnoq-BQ5rCWfdO3c4uDCmGImErYtGysq86iGLEXuCcQffOWc8l7-gRoNIuZKVH7xgtbgx3zRPo0P3k16apo=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM0ITXN40AKHasPkzvot8Y8wgp935ks1nwWg7tGoHti6zco2hq_JVMwX4xUVMhUyzLIaEkzrqYBlTIuSvUsQYAg5rnwkc8MunxN64Ugu-59nVKy7i--=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNU6h9FPcz9N9EmW1AGasdmbn_uPh7RSgptgbdPreCfdEiQwLP9dVgqjb25Qwg2hTwc8hp5NkYAyMDlOcGPz9PLUH5LWTq7o5B6jw8tFroIbLwioJYd=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNYp8GkSa6mEA-RKkp-svl9COHNnbNNYw9lncQObqSevbkLk8_iBEPezhZ-y3DdxWjyZFl3de9uH3hinjbamgMNBvcp-ln1drOil1DhBCz4PuGSW29n=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMjXmjZ8MsuIn5R8SVc1-bKtrDr2FifSrtmxmF_n02Sbsh4PntoO8eBWsKc5KONURuCPplb_Grz5p-Du-swHI4dleHc2Ns1cn4q2reIN10AivaBYYwT=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNERNIEWCQ0RGSa9fLwD2ThBqEBx-rvdk8DrAWWvO1Q91v20qNqXLSK66ud51n7LcP6xwgjfaR_5nR5xOeAEv0qyVkZI4XcbSuiT5FXXNd7yj-FScyk=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOTe3W-f2V2urF-OlNbY1Mja2eIfiBWpaiUafLLiqCLIZOVs1znz_mz7Q0hMrRvFz0wSdvCP4_epS0w0M4tqFzUCHJFv2nHgHF1i8K5iHgi4V4jippP=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOqiywDjpwQhcHdASFl4xmqg_5NfgNbAErz5vtWZ5XcbNyfBidN1ehbqdL67aMaLMyMNbkrV-tOqjhvlj_HT4n7JfGT09k0VhJUZsk8nOujGNc7Cur_=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMbYPIZOiBwr0RrpXkb6IxZe_G__UlAgb3GlXh_PFyw7iu2Te5ArsferVrfVFdNad_WEtBy3eP8-hmSbs3BXtKfzoh-0FzS3cJrCtFkYIPRUnkKkMnO=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPNr-Cs0cJuCRtOIynCHjn9ApAOduNCcMo6HCKyfcAUQIv3BKBkMq0BODu1aJJjCVh8E3-AvOyPNjGS1bwdrTY925cKnAw-7w34NnJnNc2bLQG2ObVS=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPD3lKfttbx-rJrO0EXzOqgQM4yIJSX7QizIsqJMhSGITopuW4jlCVRJWy8tvEN7enzIllxY5_7Z6gbr9LKnVpKjT8anuEg3uUatiHPz7h5veAGdZjp=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN1VcvKDdl3HICDTOmn4vQlUKbKZGBT5a7f4d-chivzwU40zNpy0RkB5MR5FtQhIJItEcMxWMOID3jkguzhhKR719XjKXxGNsWAG1XZnaRIFS75yBMd=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="irImg(19)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMDNPC9NvDtfhuOPOs81gCJGsRIFRrNPU5jPwcHyXMzUGdsKv-oUcpJbMhGiJtM5yfoGaWs_D_rP8du1lXFz5eGBtl02ThLDuAF-fiacWruZs-4ys54=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="irImg(20)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM8XvnRWVyLcxGxhVSJKGQVRU8yQV_OdQZZSPylLhFEAlxvxAQJppSMrCIvLqKXZIclHP_OO0BPTJBIWPLyxjFkHZcbswx0pfLW7NeHrOXkYp1xfpzE=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="irImg(21)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPFRA_Wz1jpJmgQOyxtjDhdGqtOJlA4Ve-0TlQ348DnWg_Ydt2f6bSQL6msGmfTUXI46Dl25sVD5F6mD9M-olAXnItogO01EAd_Vdb5hWuGgg-8d_g4=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="irImg(22)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPe8ZzkbRp2keGdtEJvMS_nc19hMY4Y6y7t6Ti5mEY8iL7ufBElvX0vnTAigiqocL9guhrAg_LJzmQtBiWS9BZE7mK8pg6UXCpdN3m-lmipgGLLeLoV=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 24" class="miniatura carrusel-min" onclick="irImg(23)" loading="lazy"/></div></div>
+        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczOPRKNXz50DM-59UFkXaB5tbio1WJV1ek4-RuMEFm426_zsHxvY0gB5IBTGabnNKV1PwA_cpFg_nzS1goBqobXffiQ4xmH4AcL1aZme57f8c44DtwTF=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="carruselIr(0)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNPHAf--cfomfKpkwpSJfAa8cGhT7fBFJ4xxIYRoShL1EknhL76X3u0kCx0Uh66bvXD5rDtfvZhumh21e4z2nyF4yalP3uXiFcgJN-XKEHPvxBDtMdH=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="carruselIr(1)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOz-5oIlsZVV2Q-1F2ibs7pj6SvDtneFkGkduwlf-9CkseneDjXs_3DsW80-sfvNLN9zwNUUgVJzeLkYRG2WP-Yl88_qoWApceCmSSWzkDozyts22nz=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="carruselIr(2)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPFV0e-ocLrwvfAtrpo8oRfUMQJOXaY5Dv6rGbyTMiw7FAUfgDQDyM6Y5HKAAxpQqZvpgNHkgkIaCPPWhceLv1IlVvsFDTpFqXqqxDrnoDb7LbiG7vl=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="carruselIr(3)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN1gwOZEPhkUSNHGDiWoaleN-jkxeusCGsaFSIw6-cMvs3-jh8CoR43xz_FVYzZljFq-zq-44ZTeJTsttoqjr8xqWy9m7qaGCzNjIold4dRHnTdLZyu=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="carruselIr(4)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNT5gzIzkHdDll7HGePN3qCM87HJbSpJ4W2lvIvTctr4Da1ClYq7q4QatgY12uJKimk3KOLYYWnnHZwiD_Nd0oBpk1cUgDv7GzXHQJfOiLed2fmQ__K=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="carruselIr(5)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOJaTT8eeL4OCCsIFbo5Zh-fZE864cmtOMwKi3Ff52z5B0-uOrFok7HUOp6GP5Lj6hMJaf_6t7mWi-Nayoe4Wllw7szPhnspCEaXm5HhzF61Nt5Odfo=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="carruselIr(6)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO-2P6b4L7C1Mf1GC-xA9a6-1_dnmdWSiy3A6W0pdmpc9E6dWTNmeoQq0RCgIomDFKBp1OUAq_7x_vkOHR0AGTmp-BBXmodTyKCKe6v_b-SrST6FLFN=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="carruselIr(7)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMJxI4IbhJsO3tZf7Ws7sT0j2ARa6xDTWnoq-BQ5rCWfdO3c4uDCmGImErYtGysq86iGLEXuCcQffOWc8l7-gRoNIuZKVH7xgtbgx3zRPo0P3k16apo=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="carruselIr(8)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM0ITXN40AKHasPkzvot8Y8wgp935ks1nwWg7tGoHti6zco2hq_JVMwX4xUVMhUyzLIaEkzrqYBlTIuSvUsQYAg5rnwkc8MunxN64Ugu-59nVKy7i--=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="carruselIr(9)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNU6h9FPcz9N9EmW1AGasdmbn_uPh7RSgptgbdPreCfdEiQwLP9dVgqjb25Qwg2hTwc8hp5NkYAyMDlOcGPz9PLUH5LWTq7o5B6jw8tFroIbLwioJYd=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="carruselIr(10)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNYp8GkSa6mEA-RKkp-svl9COHNnbNNYw9lncQObqSevbkLk8_iBEPezhZ-y3DdxWjyZFl3de9uH3hinjbamgMNBvcp-ln1drOil1DhBCz4PuGSW29n=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="carruselIr(11)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMjXmjZ8MsuIn5R8SVc1-bKtrDr2FifSrtmxmF_n02Sbsh4PntoO8eBWsKc5KONURuCPplb_Grz5p-Du-swHI4dleHc2Ns1cn4q2reIN10AivaBYYwT=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="carruselIr(12)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNERNIEWCQ0RGSa9fLwD2ThBqEBx-rvdk8DrAWWvO1Q91v20qNqXLSK66ud51n7LcP6xwgjfaR_5nR5xOeAEv0qyVkZI4XcbSuiT5FXXNd7yj-FScyk=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="carruselIr(13)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOTe3W-f2V2urF-OlNbY1Mja2eIfiBWpaiUafLLiqCLIZOVs1znz_mz7Q0hMrRvFz0wSdvCP4_epS0w0M4tqFzUCHJFv2nHgHF1i8K5iHgi4V4jippP=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="carruselIr(14)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOqiywDjpwQhcHdASFl4xmqg_5NfgNbAErz5vtWZ5XcbNyfBidN1ehbqdL67aMaLMyMNbkrV-tOqjhvlj_HT4n7JfGT09k0VhJUZsk8nOujGNc7Cur_=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="carruselIr(15)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMbYPIZOiBwr0RrpXkb6IxZe_G__UlAgb3GlXh_PFyw7iu2Te5ArsferVrfVFdNad_WEtBy3eP8-hmSbs3BXtKfzoh-0FzS3cJrCtFkYIPRUnkKkMnO=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="carruselIr(16)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPNr-Cs0cJuCRtOIynCHjn9ApAOduNCcMo6HCKyfcAUQIv3BKBkMq0BODu1aJJjCVh8E3-AvOyPNjGS1bwdrTY925cKnAw-7w34NnJnNc2bLQG2ObVS=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="carruselIr(17)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPD3lKfttbx-rJrO0EXzOqgQM4yIJSX7QizIsqJMhSGITopuW4jlCVRJWy8tvEN7enzIllxY5_7Z6gbr9LKnVpKjT8anuEg3uUatiHPz7h5veAGdZjp=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="carruselIr(18)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN1VcvKDdl3HICDTOmn4vQlUKbKZGBT5a7f4d-chivzwU40zNpy0RkB5MR5FtQhIJItEcMxWMOID3jkguzhhKR719XjKXxGNsWAG1XZnaRIFS75yBMd=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="carruselIr(19)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMDNPC9NvDtfhuOPOs81gCJGsRIFRrNPU5jPwcHyXMzUGdsKv-oUcpJbMhGiJtM5yfoGaWs_D_rP8du1lXFz5eGBtl02ThLDuAF-fiacWruZs-4ys54=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="carruselIr(20)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM8XvnRWVyLcxGxhVSJKGQVRU8yQV_OdQZZSPylLhFEAlxvxAQJppSMrCIvLqKXZIclHP_OO0BPTJBIWPLyxjFkHZcbswx0pfLW7NeHrOXkYp1xfpzE=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="carruselIr(21)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPFRA_Wz1jpJmgQOyxtjDhdGqtOJlA4Ve-0TlQ348DnWg_Ydt2f6bSQL6msGmfTUXI46Dl25sVD5F6mD9M-olAXnItogO01EAd_Vdb5hWuGgg-8d_g4=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="carruselIr(22)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPe8ZzkbRp2keGdtEJvMS_nc19hMY4Y6y7t6Ti5mEY8iL7ufBElvX0vnTAigiqocL9guhrAg_LJzmQtBiWS9BZE7mK8pg6UXCpdN3m-lmipgGLLeLoV=w1200" alt="Casa en venta Santander Neiva – ICDE Inmobiliaria foto 24" class="miniatura carrusel-min" onclick="carruselIr(23)" loading="lazy" draggable="false"/></div></div>
       </div>
       
       <div class="modal-bloque-info">
@@ -738,74 +761,146 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczOPRKNXz50DM-59UFkXaB5tbio1WJV1ek4-RuMEFm426_zsHxvY0gB5IBTGabnNKV1PwA_cpFg_nzS1goBqobXffiQ4xmH4AcL1aZme57f8c44DtwTF=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNPHAf--cfomfKpkwpSJfAa8cGhT7fBFJ4xxIYRoShL1EknhL76X3u0kCx0Uh66bvXD5rDtfvZhumh21e4z2nyF4yalP3uXiFcgJN-XKEHPvxBDtMdH=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOz-5oIlsZVV2Q-1F2ibs7pj6SvDtneFkGkduwlf-9CkseneDjXs_3DsW80-sfvNLN9zwNUUgVJzeLkYRG2WP-Yl88_qoWApceCmSSWzkDozyts22nz=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPFV0e-ocLrwvfAtrpo8oRfUMQJOXaY5Dv6rGbyTMiw7FAUfgDQDyM6Y5HKAAxpQqZvpgNHkgkIaCPPWhceLv1IlVvsFDTpFqXqqxDrnoDb7LbiG7vl=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN1gwOZEPhkUSNHGDiWoaleN-jkxeusCGsaFSIw6-cMvs3-jh8CoR43xz_FVYzZljFq-zq-44ZTeJTsttoqjr8xqWy9m7qaGCzNjIold4dRHnTdLZyu=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNT5gzIzkHdDll7HGePN3qCM87HJbSpJ4W2lvIvTctr4Da1ClYq7q4QatgY12uJKimk3KOLYYWnnHZwiD_Nd0oBpk1cUgDv7GzXHQJfOiLed2fmQ__K=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOJaTT8eeL4OCCsIFbo5Zh-fZE864cmtOMwKi3Ff52z5B0-uOrFok7HUOp6GP5Lj6hMJaf_6t7mWi-Nayoe4Wllw7szPhnspCEaXm5HhzF61Nt5Odfo=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO-2P6b4L7C1Mf1GC-xA9a6-1_dnmdWSiy3A6W0pdmpc9E6dWTNmeoQq0RCgIomDFKBp1OUAq_7x_vkOHR0AGTmp-BBXmodTyKCKe6v_b-SrST6FLFN=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMJxI4IbhJsO3tZf7Ws7sT0j2ARa6xDTWnoq-BQ5rCWfdO3c4uDCmGImErYtGysq86iGLEXuCcQffOWc8l7-gRoNIuZKVH7xgtbgx3zRPo0P3k16apo=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM0ITXN40AKHasPkzvot8Y8wgp935ks1nwWg7tGoHti6zco2hq_JVMwX4xUVMhUyzLIaEkzrqYBlTIuSvUsQYAg5rnwkc8MunxN64Ugu-59nVKy7i--=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNU6h9FPcz9N9EmW1AGasdmbn_uPh7RSgptgbdPreCfdEiQwLP9dVgqjb25Qwg2hTwc8hp5NkYAyMDlOcGPz9PLUH5LWTq7o5B6jw8tFroIbLwioJYd=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNYp8GkSa6mEA-RKkp-svl9COHNnbNNYw9lncQObqSevbkLk8_iBEPezhZ-y3DdxWjyZFl3de9uH3hinjbamgMNBvcp-ln1drOil1DhBCz4PuGSW29n=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMjXmjZ8MsuIn5R8SVc1-bKtrDr2FifSrtmxmF_n02Sbsh4PntoO8eBWsKc5KONURuCPplb_Grz5p-Du-swHI4dleHc2Ns1cn4q2reIN10AivaBYYwT=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNERNIEWCQ0RGSa9fLwD2ThBqEBx-rvdk8DrAWWvO1Q91v20qNqXLSK66ud51n7LcP6xwgjfaR_5nR5xOeAEv0qyVkZI4XcbSuiT5FXXNd7yj-FScyk=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOTe3W-f2V2urF-OlNbY1Mja2eIfiBWpaiUafLLiqCLIZOVs1znz_mz7Q0hMrRvFz0wSdvCP4_epS0w0M4tqFzUCHJFv2nHgHF1i8K5iHgi4V4jippP=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOqiywDjpwQhcHdASFl4xmqg_5NfgNbAErz5vtWZ5XcbNyfBidN1ehbqdL67aMaLMyMNbkrV-tOqjhvlj_HT4n7JfGT09k0VhJUZsk8nOujGNc7Cur_=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMbYPIZOiBwr0RrpXkb6IxZe_G__UlAgb3GlXh_PFyw7iu2Te5ArsferVrfVFdNad_WEtBy3eP8-hmSbs3BXtKfzoh-0FzS3cJrCtFkYIPRUnkKkMnO=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPNr-Cs0cJuCRtOIynCHjn9ApAOduNCcMo6HCKyfcAUQIv3BKBkMq0BODu1aJJjCVh8E3-AvOyPNjGS1bwdrTY925cKnAw-7w34NnJnNc2bLQG2ObVS=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPD3lKfttbx-rJrO0EXzOqgQM4yIJSX7QizIsqJMhSGITopuW4jlCVRJWy8tvEN7enzIllxY5_7Z6gbr9LKnVpKjT8anuEg3uUatiHPz7h5veAGdZjp=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN1VcvKDdl3HICDTOmn4vQlUKbKZGBT5a7f4d-chivzwU40zNpy0RkB5MR5FtQhIJItEcMxWMOID3jkguzhhKR719XjKXxGNsWAG1XZnaRIFS75yBMd=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMDNPC9NvDtfhuOPOs81gCJGsRIFRrNPU5jPwcHyXMzUGdsKv-oUcpJbMhGiJtM5yfoGaWs_D_rP8du1lXFz5eGBtl02ThLDuAF-fiacWruZs-4ys54=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM8XvnRWVyLcxGxhVSJKGQVRU8yQV_OdQZZSPylLhFEAlxvxAQJppSMrCIvLqKXZIclHP_OO0BPTJBIWPLyxjFkHZcbswx0pfLW7NeHrOXkYp1xfpzE=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPFRA_Wz1jpJmgQOyxtjDhdGqtOJlA4Ve-0TlQ348DnWg_Ydt2f6bSQL6msGmfTUXI46Dl25sVD5F6mD9M-olAXnItogO01EAd_Vdb5hWuGgg-8d_g4=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPe8ZzkbRp2keGdtEJvMS_nc19hMY4Y6y7t6Ti5mEY8iL7ufBElvX0vnTAigiqocL9guhrAg_LJzmQtBiWS9BZE7mK8pg6UXCpdN3m-lmipgGLLeLoV=w1200"];
 var imgIndex = 0;
+var carruselTimer = null;
+var CARRUSEL_DELAY = 5000;
 
-// Soporte para swipe (deslizar) en móviles
-var startX = 0;
-var endX = 0;
-document.addEventListener('DOMContentLoaded', function() {
-  // Swipe en carrusel principal
-  var carrusel = document.querySelector('.carrusel-principal');
-  if (carrusel) {
-    carrusel.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
-    }, {passive: true});
-    carrusel.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        cambiarImg(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        cambiarImg(-1); // Deslizar derecha -> anterior
-      }
-    }, {passive: true});
+function carruselIr(idx, reiniciarTimer) {
+  if (reiniciarTimer === undefined) reiniciarTimer = true;
+  if (!IMGS.length) return;
+  imgIndex = ((idx % IMGS.length) + IMGS.length) % IMGS.length;
+  
+  var principal = document.getElementById('carruselPrincipal');
+  if (principal) {
+    var slides = principal.querySelectorAll('.carrusel-slide');
+    slides.forEach(function(s, i) {
+      s.classList.toggle('activa', i === imgIndex);
+    });
   }
+  
+  var counter = document.getElementById('carruselCounter');
+  if (counter) counter.textContent = (imgIndex + 1) + ' / ' + IMGS.length;
+  
+  var minis = document.querySelectorAll('.carrusel-min');
+  minis.forEach(function(m, i) {
+    m.classList.toggle('activa', i === imgIndex);
+  });
+  
+  if (reiniciarTimer) carruselReiniciarProgreso();
+}
+
+function carruselReiniciarProgreso() {
+  if (IMGS.length <= 1) return;
+  clearTimeout(carruselTimer);
+  carruselTimer = setTimeout(function() {
+    carruselIr(imgIndex + 1);
+  }, CARRUSEL_DELAY);
+}
+
+function carruselDetener() {
+  clearTimeout(carruselTimer);
+}
+
+function irImg(i) { carruselIr(i); }
+function cambiarImg(dir) { carruselIr(imgIndex + dir); }
+
+var _dragSx = 0, _dragPid = null, _dragMoved = false;
+function initCarruselDrag() {
+  var el = document.getElementById('carruselPrincipal');
+  if (!el) return;
+  
+  el.addEventListener('dragstart', function(e) { e.preventDefault(); });
+  
+  el.addEventListener('pointerdown', function(e) {
+    if (e.target.closest('button')) return;
+    _dragSx = e.clientX;
+    _dragPid = e.pointerId;
+    _dragMoved = false;
+    try { el.setPointerCapture(e.pointerId); } catch(err) {}
+  });
+  
+  el.addEventListener('pointermove', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    if (Math.abs(e.clientX - _dragSx) > 8) _dragMoved = true;
+  });
+  
+  el.addEventListener('pointerup', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    var d = _dragSx - e.clientX;
+    _dragPid = null;
+    if (Math.abs(d) >= 30) {
+      if (d > 0) carruselIr(imgIndex + 1);
+      else carruselIr(imgIndex - 1);
+    }
+  });
+  
+  el.addEventListener('pointercancel', function() { _dragPid = null; });
+  
+  el.addEventListener('click', function(e) {
+    if (_dragMoved && !e.target.closest('button')) {
+      e.stopPropagation();
+      e.preventDefault();
+      _dragMoved = false;
+    }
+  }, true);
+  
+  var _tSx = 0, _tSy = 0, _tMoved = false;
+  el.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    _tSx = e.touches[0].clientX;
+    _tSy = e.touches[0].clientY;
+    _tMoved = false;
+  }, {passive: true});
+  
+  el.addEventListener('touchmove', function(e) {
+    if (Math.abs(e.touches[0].clientX - _tSx) > 10) _tMoved = true;
+  }, {passive: true});
+  
+  el.addEventListener('touchend', function(e) {
+    if (!_tMoved) return;
+    var dx = e.changedTouches[0].clientX - _tSx;
+    var dy = e.changedTouches[0].clientY - _tSy;
+    _tMoved = false;
+    if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) carruselIr(imgIndex + 1);
+    else carruselIr(imgIndex - 1);
+  }, {passive: true});
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initCarruselDrag();
+  if (IMGS.length > 1) carruselReiniciarProgreso();
   
   // Swipe en lightbox (pantalla completa)
   var lightbox = document.getElementById('lightbox');
   if (lightbox) {
+    var lSx = 0, lEndX = 0;
     lightbox.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
+      lSx = e.touches[0].clientX;
     }, {passive: true});
     lightbox.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        lightboxNav(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        lightboxNav(-1); // Deslizar derecha -> anterior
+      lEndX = e.changedTouches[0].clientX;
+      if (lSx - lEndX > 50) {
+        lightboxNav(1);
+      } else if (lEndX - lSx > 50) {
+        lightboxNav(-1);
       }
     }, {passive: true});
     
-    // Evitar que el swipe en las miniaturas cambie la foto principal
     var wrapMinis = lightbox.querySelector('.lightbox-miniaturas-wrap');
     if (wrapMinis) {
-      wrapMinis.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
-      wrapMinis.addEventListener('touchend', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
+      wrapMinis.addEventListener('touchstart', function(e) { e.stopPropagation(); }, {passive: true});
+      wrapMinis.addEventListener('touchend', function(e) { e.stopPropagation(); }, {passive: true});
     }
   }
 });
 
-function irImg(i) {
-  if (!IMGS.length) return;
-  imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
-  var cont = document.getElementById('imgActual');
-  if (cont) cont.textContent = imgIndex + 1;
-}
-
-function cambiarImg(dir) { irImg(imgIndex + dir); }
-
 function abrirLightbox(i) {
-  irImg(i);
+  carruselDetener();
+  carruselIr(i, false);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   
-  // Generar miniaturas en el lightbox si no existen
   var minisDiv = document.getElementById('lightboxMiniaturas');
   if (minisDiv && !minisDiv.innerHTML) {
     minisDiv.innerHTML = IMGS.map(function(url, index) {
@@ -822,14 +917,14 @@ function cerrarLightbox(e) {
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
+  carruselReiniciarProgreso();
 }
 
 function lightboxNav(dir) {
-  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
+  carruselIr(imgIndex + dir, false);
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   updateLightboxMiniaturas();
-  irImg(imgIndex); // Actualizar también el carrusel principal
 }
 
 function updateLightboxMiniaturas() {
@@ -837,7 +932,6 @@ function updateLightboxMiniaturas() {
   minis.forEach(function(m, j) {
     m.classList.toggle('activa', j === imgIndex);
   });
-  // Hacer scroll a la miniatura activa
   var activa = minis[imgIndex];
   if (activa) {
     var wrap = activa.closest('.lightbox-miniaturas');

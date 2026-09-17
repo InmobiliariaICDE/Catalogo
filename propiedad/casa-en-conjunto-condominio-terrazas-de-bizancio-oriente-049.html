@@ -208,12 +208,35 @@ body{
   height: 300px;
   position: relative;
   background: #000;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
 }
 
-.galeria-img{
+.carrusel-principal img{
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -664,10 +687,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczM67fB8AkBlCBPFSvmV7dRnxB-51MJa0jsjpDzvJW2Lb1Efc6pm2NHA5RSj99GCT5gPjNjNgeYZGMqnQasjrsSecS2Nja6QIBfEWnOcMIdPpUToPIfG=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 23</div>
-          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczM67fB8AkBlCBPFSvmV7dRnxB-51MJa0jsjpDzvJW2Lb1Efc6pm2NHA5RSj99GCT5gPjNjNgeYZGMqnQasjrsSecS2Nja6QIBfEWnOcMIdPpUToPIfG=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 1" loading="eager" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPpKJlSkMvOWCzomEjxNSzoDUv71_EEaq1DuFN1DrSidpG3DoQQOHulFBDKBeQjFFr1AXWZYt0NGAOwQbWLU4FZGEJPrHstFGLHL65OF4A5S05ZrE8v=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 2" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPY9qh6ySpPore2fdF3dsqOjkCtbtmqvEUhnF98E3EK0dkaAP5fpmsDQEIG1XG9QIcfsI4_mux7PsfKYJezBkca-nENuVnm6JwrIObCuTB2O_EljtJc=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 3" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPDOUlR-AlHYMvcxaU9hP2tXgCL_ijp0XetaBW7tXoQVzeIVhD1KJwg0G3ldGUFhYKH1zEgdKaeCWrldmPCE3WAOEYGMFQvdkPI9Npq0_6_vT38dG9I=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 4" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNqGK5J1jSbrK6iZgLk-2gMJvhwKU--LSV4-NkD8P6bTStxt66CqyQe9_AJp-TLDEmBfjqZGFrUrUQkFFmiJW_oxUZhflQ35dGYxLx9l9ND0bCJqPn8=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 5" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMllXJLN_oo7lyH-rGtorVrOBszKBKFMKcHhV674yyDCCN8OJnIhmZ1DFkm0E_5uK7FIaFCABVSWHXAKjY55er6A7-bxkKlzfIryYlXi3Yve9J0is42=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 6" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM2gbw8lrfDHf2NxrVVkxh7fUrnIbQkiEfsbzKA6V-kfxE3ELBymBxehXbg-f0J3nMGRiL5BBaYfbsNX67mvE18taL1Zov7heV549BiqpmU31lrBx_u=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 7" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMSE-pHvbE70H_V-jjVcUD3DnS9-V-eKlFdvmmzw48I-cQny-aqPgyeVATTLHvg_UwNbhDTjFyImK0OyXs6eCJNHvYG9tZfOE9A3X3ziWmuXyzOybeW=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 8" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMdv9TwBSIeYPkMkfveRVMVNkBZbMANh5eF0jOLEXP6g5J6KY686mYQKDezfNGhuhMEizDSQ2X7P5i0AGZSCU53E1GHIaE9kMWaJuoYJU1B9nHJGW8Z=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 9" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPRjtrrNPiBv5yhSLK99mitL8D7W4PnKgXoD0kK2a9Kexmx3QDsSgix29123YmMvgrbFj67pEaa3obvAC16riQhhKDRfenvTtGKtDZKW6Cte5EYTvoY=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 10" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNEcSoFIlJ3mwmlfiFM4ZZ_hraxc3hT0EVKYp9X_BFsjZGaKGPMea0P3X8w0E0xXDwaZ9pljgvbqI0r0sikVzAoHNhy-yBDjBtXNc2Uqg0NfwloWsra=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 11" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNKrYEK3395sv89ZvYk-ibBpL16wGd6ppSXtOYCdvm8lJdrq5A2NEm2o_Hz7WHnG-Vow7s3dLW4L7Rp5zbTuW73W2nIUa-fB49aQgnXH49DHZt7d9GI=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 12" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOyowpq3ILd5kJf0lMXlRFlzLoLMdx-rfsGbfqvopD-yBsnT_t2xhSPjqmVSMvTA9QvYw6TxerE2IEEn_Zmn--LLPkvNz_2kgtrRx1pM8sRhRXfNmMZ=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 13" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN4rcOY2WFzNNaMsBQPSXxF8h2Bs1-sTBsfvKnKoYxOoEUEMdSPnC0IQR8_JjIA60F8wZqIbRxTk9JOEW2chn1D2CwY4CV9O_kiEaR7kmrbVbBIS5QH=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 14" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOo8e7VXt79VlNxS_TTdAtcWq0jEBpqDk6ywDpR_dFDO1iNCpTdDUH2AxJgZLIjBZxLyoXsSfLrMsq1dowFfQKxF4iayLiyU7wH4C1h9nprXF2_1_XX=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 15" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOob4rC3areJzOVJmDp0zInYeWjiJJ0r1dT2CcuX92BhcmpbKNS-xhobraJFSV5W2S9EMP1PTkn0kXxLhB2X2J-oKk7DF9n4A2EMg_wHIdf4VDJtBxM=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 16" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOqbPOBuGH5RLQk8ojoRAc_rob7kFnx78h2tA4sP-j-XDEZ1LJwofwXq13xFBmdp7SguSPGkLrOufN5jCy1X7Omf4xqpDlIQoqyae1HUgwMffqxfCuG=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 17" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM9bDZV4yOapwHNdAAJhw_xCw6vSc-cdzsU46xmP4tsWXA_Blh7HtkKentg-ohjzPOGkW331kcp2IvvEUQKpDvYiU2hdicKufQiH2qWjOeJs3KuZvyH=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 18" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPHn8BC_VNW324UlyzHOII13dEpjokRHgSyN5-t2l6qclCLyGMN3xIvrW5as_GxEHNk9GC4Pj-O_VKi2wkfzEE-6qZW5I_2z8QNDRsogSGQOPtvPMcL=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 19" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNZ_efDcEf3Gjn1OTlqLd2rlgTz_CYg2BSTnYFPJxXKk99Phs9HjYDEFzGlbewvyq3VKPhqzPNwKRXHV-ydlETjguZj_In2DT64qSFEHtrjB54l-vy2=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 20" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNMfRovRa46opsoydtB5c2ObYqgyqouii0WfdN3p1_Fk_YvyLIf3-5lYufScH8ydUn6HKq4iryKrGeS672MsdKMuHrAmbVq0S1ZyGwmgMNXlqGOKLZ4=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 21" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN2vrOgH-wRUbQD6i6ZTl8qV2SQY-zeKqhmME3rASelRhyYoh9R8JeK303uTZ1mg2mRC3QO4KwbavXPY-RSTThdPOC7hSqbPAUeCsnXCd5AAe9Z5Qzo=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 22" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNNztER0RGCfV3HBuhgAxVWiRJSSJD3i3tzaAufESk_sUiSPAQxL9hB9WqKU8FuIckt8fO7tkWGR2Fb3W-d4QrzPP31Moj2UftRsBBPc9t6ANvcJONu=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 23" loading="lazy" draggable="false" /></div>
+          <div class="carrusel-counter" id="carruselCounter">1 / 23</div>
+          <button class="galeria-nav prev" onclick="carruselIr(imgIndex-1)">&#8249;</button><button class="galeria-nav next" onclick="carruselIr(imgIndex+1)">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -675,7 +698,7 @@ body{
             </svg>
           </button>
         </div>
-        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczM67fB8AkBlCBPFSvmV7dRnxB-51MJa0jsjpDzvJW2Lb1Efc6pm2NHA5RSj99GCT5gPjNjNgeYZGMqnQasjrsSecS2Nja6QIBfEWnOcMIdPpUToPIfG=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPpKJlSkMvOWCzomEjxNSzoDUv71_EEaq1DuFN1DrSidpG3DoQQOHulFBDKBeQjFFr1AXWZYt0NGAOwQbWLU4FZGEJPrHstFGLHL65OF4A5S05ZrE8v=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPY9qh6ySpPore2fdF3dsqOjkCtbtmqvEUhnF98E3EK0dkaAP5fpmsDQEIG1XG9QIcfsI4_mux7PsfKYJezBkca-nENuVnm6JwrIObCuTB2O_EljtJc=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPDOUlR-AlHYMvcxaU9hP2tXgCL_ijp0XetaBW7tXoQVzeIVhD1KJwg0G3ldGUFhYKH1zEgdKaeCWrldmPCE3WAOEYGMFQvdkPI9Npq0_6_vT38dG9I=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNqGK5J1jSbrK6iZgLk-2gMJvhwKU--LSV4-NkD8P6bTStxt66CqyQe9_AJp-TLDEmBfjqZGFrUrUQkFFmiJW_oxUZhflQ35dGYxLx9l9ND0bCJqPn8=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMllXJLN_oo7lyH-rGtorVrOBszKBKFMKcHhV674yyDCCN8OJnIhmZ1DFkm0E_5uK7FIaFCABVSWHXAKjY55er6A7-bxkKlzfIryYlXi3Yve9J0is42=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM2gbw8lrfDHf2NxrVVkxh7fUrnIbQkiEfsbzKA6V-kfxE3ELBymBxehXbg-f0J3nMGRiL5BBaYfbsNX67mvE18taL1Zov7heV549BiqpmU31lrBx_u=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMSE-pHvbE70H_V-jjVcUD3DnS9-V-eKlFdvmmzw48I-cQny-aqPgyeVATTLHvg_UwNbhDTjFyImK0OyXs6eCJNHvYG9tZfOE9A3X3ziWmuXyzOybeW=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMdv9TwBSIeYPkMkfveRVMVNkBZbMANh5eF0jOLEXP6g5J6KY686mYQKDezfNGhuhMEizDSQ2X7P5i0AGZSCU53E1GHIaE9kMWaJuoYJU1B9nHJGW8Z=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPRjtrrNPiBv5yhSLK99mitL8D7W4PnKgXoD0kK2a9Kexmx3QDsSgix29123YmMvgrbFj67pEaa3obvAC16riQhhKDRfenvTtGKtDZKW6Cte5EYTvoY=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNEcSoFIlJ3mwmlfiFM4ZZ_hraxc3hT0EVKYp9X_BFsjZGaKGPMea0P3X8w0E0xXDwaZ9pljgvbqI0r0sikVzAoHNhy-yBDjBtXNc2Uqg0NfwloWsra=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNKrYEK3395sv89ZvYk-ibBpL16wGd6ppSXtOYCdvm8lJdrq5A2NEm2o_Hz7WHnG-Vow7s3dLW4L7Rp5zbTuW73W2nIUa-fB49aQgnXH49DHZt7d9GI=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOyowpq3ILd5kJf0lMXlRFlzLoLMdx-rfsGbfqvopD-yBsnT_t2xhSPjqmVSMvTA9QvYw6TxerE2IEEn_Zmn--LLPkvNz_2kgtrRx1pM8sRhRXfNmMZ=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN4rcOY2WFzNNaMsBQPSXxF8h2Bs1-sTBsfvKnKoYxOoEUEMdSPnC0IQR8_JjIA60F8wZqIbRxTk9JOEW2chn1D2CwY4CV9O_kiEaR7kmrbVbBIS5QH=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOo8e7VXt79VlNxS_TTdAtcWq0jEBpqDk6ywDpR_dFDO1iNCpTdDUH2AxJgZLIjBZxLyoXsSfLrMsq1dowFfQKxF4iayLiyU7wH4C1h9nprXF2_1_XX=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOob4rC3areJzOVJmDp0zInYeWjiJJ0r1dT2CcuX92BhcmpbKNS-xhobraJFSV5W2S9EMP1PTkn0kXxLhB2X2J-oKk7DF9n4A2EMg_wHIdf4VDJtBxM=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOqbPOBuGH5RLQk8ojoRAc_rob7kFnx78h2tA4sP-j-XDEZ1LJwofwXq13xFBmdp7SguSPGkLrOufN5jCy1X7Omf4xqpDlIQoqyae1HUgwMffqxfCuG=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM9bDZV4yOapwHNdAAJhw_xCw6vSc-cdzsU46xmP4tsWXA_Blh7HtkKentg-ohjzPOGkW331kcp2IvvEUQKpDvYiU2hdicKufQiH2qWjOeJs3KuZvyH=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPHn8BC_VNW324UlyzHOII13dEpjokRHgSyN5-t2l6qclCLyGMN3xIvrW5as_GxEHNk9GC4Pj-O_VKi2wkfzEE-6qZW5I_2z8QNDRsogSGQOPtvPMcL=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNZ_efDcEf3Gjn1OTlqLd2rlgTz_CYg2BSTnYFPJxXKk99Phs9HjYDEFzGlbewvyq3VKPhqzPNwKRXHV-ydlETjguZj_In2DT64qSFEHtrjB54l-vy2=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="irImg(19)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNMfRovRa46opsoydtB5c2ObYqgyqouii0WfdN3p1_Fk_YvyLIf3-5lYufScH8ydUn6HKq4iryKrGeS672MsdKMuHrAmbVq0S1ZyGwmgMNXlqGOKLZ4=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="irImg(20)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN2vrOgH-wRUbQD6i6ZTl8qV2SQY-zeKqhmME3rASelRhyYoh9R8JeK303uTZ1mg2mRC3QO4KwbavXPY-RSTThdPOC7hSqbPAUeCsnXCd5AAe9Z5Qzo=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="irImg(21)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNNztER0RGCfV3HBuhgAxVWiRJSSJD3i3tzaAufESk_sUiSPAQxL9hB9WqKU8FuIckt8fO7tkWGR2Fb3W-d4QrzPP31Moj2UftRsBBPc9t6ANvcJONu=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="irImg(22)" loading="lazy"/></div></div>
+        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczM67fB8AkBlCBPFSvmV7dRnxB-51MJa0jsjpDzvJW2Lb1Efc6pm2NHA5RSj99GCT5gPjNjNgeYZGMqnQasjrsSecS2Nja6QIBfEWnOcMIdPpUToPIfG=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="carruselIr(0)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPpKJlSkMvOWCzomEjxNSzoDUv71_EEaq1DuFN1DrSidpG3DoQQOHulFBDKBeQjFFr1AXWZYt0NGAOwQbWLU4FZGEJPrHstFGLHL65OF4A5S05ZrE8v=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="carruselIr(1)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPY9qh6ySpPore2fdF3dsqOjkCtbtmqvEUhnF98E3EK0dkaAP5fpmsDQEIG1XG9QIcfsI4_mux7PsfKYJezBkca-nENuVnm6JwrIObCuTB2O_EljtJc=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="carruselIr(2)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPDOUlR-AlHYMvcxaU9hP2tXgCL_ijp0XetaBW7tXoQVzeIVhD1KJwg0G3ldGUFhYKH1zEgdKaeCWrldmPCE3WAOEYGMFQvdkPI9Npq0_6_vT38dG9I=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="carruselIr(3)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNqGK5J1jSbrK6iZgLk-2gMJvhwKU--LSV4-NkD8P6bTStxt66CqyQe9_AJp-TLDEmBfjqZGFrUrUQkFFmiJW_oxUZhflQ35dGYxLx9l9ND0bCJqPn8=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="carruselIr(4)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMllXJLN_oo7lyH-rGtorVrOBszKBKFMKcHhV674yyDCCN8OJnIhmZ1DFkm0E_5uK7FIaFCABVSWHXAKjY55er6A7-bxkKlzfIryYlXi3Yve9J0is42=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="carruselIr(5)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM2gbw8lrfDHf2NxrVVkxh7fUrnIbQkiEfsbzKA6V-kfxE3ELBymBxehXbg-f0J3nMGRiL5BBaYfbsNX67mvE18taL1Zov7heV549BiqpmU31lrBx_u=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="carruselIr(6)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMSE-pHvbE70H_V-jjVcUD3DnS9-V-eKlFdvmmzw48I-cQny-aqPgyeVATTLHvg_UwNbhDTjFyImK0OyXs6eCJNHvYG9tZfOE9A3X3ziWmuXyzOybeW=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="carruselIr(7)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMdv9TwBSIeYPkMkfveRVMVNkBZbMANh5eF0jOLEXP6g5J6KY686mYQKDezfNGhuhMEizDSQ2X7P5i0AGZSCU53E1GHIaE9kMWaJuoYJU1B9nHJGW8Z=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="carruselIr(8)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPRjtrrNPiBv5yhSLK99mitL8D7W4PnKgXoD0kK2a9Kexmx3QDsSgix29123YmMvgrbFj67pEaa3obvAC16riQhhKDRfenvTtGKtDZKW6Cte5EYTvoY=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="carruselIr(9)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNEcSoFIlJ3mwmlfiFM4ZZ_hraxc3hT0EVKYp9X_BFsjZGaKGPMea0P3X8w0E0xXDwaZ9pljgvbqI0r0sikVzAoHNhy-yBDjBtXNc2Uqg0NfwloWsra=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="carruselIr(10)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNKrYEK3395sv89ZvYk-ibBpL16wGd6ppSXtOYCdvm8lJdrq5A2NEm2o_Hz7WHnG-Vow7s3dLW4L7Rp5zbTuW73W2nIUa-fB49aQgnXH49DHZt7d9GI=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="carruselIr(11)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOyowpq3ILd5kJf0lMXlRFlzLoLMdx-rfsGbfqvopD-yBsnT_t2xhSPjqmVSMvTA9QvYw6TxerE2IEEn_Zmn--LLPkvNz_2kgtrRx1pM8sRhRXfNmMZ=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="carruselIr(12)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN4rcOY2WFzNNaMsBQPSXxF8h2Bs1-sTBsfvKnKoYxOoEUEMdSPnC0IQR8_JjIA60F8wZqIbRxTk9JOEW2chn1D2CwY4CV9O_kiEaR7kmrbVbBIS5QH=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="carruselIr(13)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOo8e7VXt79VlNxS_TTdAtcWq0jEBpqDk6ywDpR_dFDO1iNCpTdDUH2AxJgZLIjBZxLyoXsSfLrMsq1dowFfQKxF4iayLiyU7wH4C1h9nprXF2_1_XX=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="carruselIr(14)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOob4rC3areJzOVJmDp0zInYeWjiJJ0r1dT2CcuX92BhcmpbKNS-xhobraJFSV5W2S9EMP1PTkn0kXxLhB2X2J-oKk7DF9n4A2EMg_wHIdf4VDJtBxM=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="carruselIr(15)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOqbPOBuGH5RLQk8ojoRAc_rob7kFnx78h2tA4sP-j-XDEZ1LJwofwXq13xFBmdp7SguSPGkLrOufN5jCy1X7Omf4xqpDlIQoqyae1HUgwMffqxfCuG=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="carruselIr(16)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczM9bDZV4yOapwHNdAAJhw_xCw6vSc-cdzsU46xmP4tsWXA_Blh7HtkKentg-ohjzPOGkW331kcp2IvvEUQKpDvYiU2hdicKufQiH2qWjOeJs3KuZvyH=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="carruselIr(17)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPHn8BC_VNW324UlyzHOII13dEpjokRHgSyN5-t2l6qclCLyGMN3xIvrW5as_GxEHNk9GC4Pj-O_VKi2wkfzEE-6qZW5I_2z8QNDRsogSGQOPtvPMcL=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="carruselIr(18)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNZ_efDcEf3Gjn1OTlqLd2rlgTz_CYg2BSTnYFPJxXKk99Phs9HjYDEFzGlbewvyq3VKPhqzPNwKRXHV-ydlETjguZj_In2DT64qSFEHtrjB54l-vy2=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="carruselIr(19)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNMfRovRa46opsoydtB5c2ObYqgyqouii0WfdN3p1_Fk_YvyLIf3-5lYufScH8ydUn6HKq4iryKrGeS672MsdKMuHrAmbVq0S1ZyGwmgMNXlqGOKLZ4=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="carruselIr(20)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN2vrOgH-wRUbQD6i6ZTl8qV2SQY-zeKqhmME3rASelRhyYoh9R8JeK303uTZ1mg2mRC3QO4KwbavXPY-RSTThdPOC7hSqbPAUeCsnXCd5AAe9Z5Qzo=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="carruselIr(21)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNNztER0RGCfV3HBuhgAxVWiRJSSJD3i3tzaAufESk_sUiSPAQxL9hB9WqKU8FuIckt8fO7tkWGR2Fb3W-d4QrzPP31Moj2UftRsBBPc9t6ANvcJONu=w1200" alt="Casa en conjunto en venta Neiva Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="carruselIr(22)" loading="lazy" draggable="false"/></div></div>
       </div>
       
       <div class="modal-bloque-info">
@@ -737,74 +760,146 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczM67fB8AkBlCBPFSvmV7dRnxB-51MJa0jsjpDzvJW2Lb1Efc6pm2NHA5RSj99GCT5gPjNjNgeYZGMqnQasjrsSecS2Nja6QIBfEWnOcMIdPpUToPIfG=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPpKJlSkMvOWCzomEjxNSzoDUv71_EEaq1DuFN1DrSidpG3DoQQOHulFBDKBeQjFFr1AXWZYt0NGAOwQbWLU4FZGEJPrHstFGLHL65OF4A5S05ZrE8v=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPY9qh6ySpPore2fdF3dsqOjkCtbtmqvEUhnF98E3EK0dkaAP5fpmsDQEIG1XG9QIcfsI4_mux7PsfKYJezBkca-nENuVnm6JwrIObCuTB2O_EljtJc=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPDOUlR-AlHYMvcxaU9hP2tXgCL_ijp0XetaBW7tXoQVzeIVhD1KJwg0G3ldGUFhYKH1zEgdKaeCWrldmPCE3WAOEYGMFQvdkPI9Npq0_6_vT38dG9I=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNqGK5J1jSbrK6iZgLk-2gMJvhwKU--LSV4-NkD8P6bTStxt66CqyQe9_AJp-TLDEmBfjqZGFrUrUQkFFmiJW_oxUZhflQ35dGYxLx9l9ND0bCJqPn8=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMllXJLN_oo7lyH-rGtorVrOBszKBKFMKcHhV674yyDCCN8OJnIhmZ1DFkm0E_5uK7FIaFCABVSWHXAKjY55er6A7-bxkKlzfIryYlXi3Yve9J0is42=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM2gbw8lrfDHf2NxrVVkxh7fUrnIbQkiEfsbzKA6V-kfxE3ELBymBxehXbg-f0J3nMGRiL5BBaYfbsNX67mvE18taL1Zov7heV549BiqpmU31lrBx_u=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMSE-pHvbE70H_V-jjVcUD3DnS9-V-eKlFdvmmzw48I-cQny-aqPgyeVATTLHvg_UwNbhDTjFyImK0OyXs6eCJNHvYG9tZfOE9A3X3ziWmuXyzOybeW=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMdv9TwBSIeYPkMkfveRVMVNkBZbMANh5eF0jOLEXP6g5J6KY686mYQKDezfNGhuhMEizDSQ2X7P5i0AGZSCU53E1GHIaE9kMWaJuoYJU1B9nHJGW8Z=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPRjtrrNPiBv5yhSLK99mitL8D7W4PnKgXoD0kK2a9Kexmx3QDsSgix29123YmMvgrbFj67pEaa3obvAC16riQhhKDRfenvTtGKtDZKW6Cte5EYTvoY=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNEcSoFIlJ3mwmlfiFM4ZZ_hraxc3hT0EVKYp9X_BFsjZGaKGPMea0P3X8w0E0xXDwaZ9pljgvbqI0r0sikVzAoHNhy-yBDjBtXNc2Uqg0NfwloWsra=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNKrYEK3395sv89ZvYk-ibBpL16wGd6ppSXtOYCdvm8lJdrq5A2NEm2o_Hz7WHnG-Vow7s3dLW4L7Rp5zbTuW73W2nIUa-fB49aQgnXH49DHZt7d9GI=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOyowpq3ILd5kJf0lMXlRFlzLoLMdx-rfsGbfqvopD-yBsnT_t2xhSPjqmVSMvTA9QvYw6TxerE2IEEn_Zmn--LLPkvNz_2kgtrRx1pM8sRhRXfNmMZ=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN4rcOY2WFzNNaMsBQPSXxF8h2Bs1-sTBsfvKnKoYxOoEUEMdSPnC0IQR8_JjIA60F8wZqIbRxTk9JOEW2chn1D2CwY4CV9O_kiEaR7kmrbVbBIS5QH=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOo8e7VXt79VlNxS_TTdAtcWq0jEBpqDk6ywDpR_dFDO1iNCpTdDUH2AxJgZLIjBZxLyoXsSfLrMsq1dowFfQKxF4iayLiyU7wH4C1h9nprXF2_1_XX=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOob4rC3areJzOVJmDp0zInYeWjiJJ0r1dT2CcuX92BhcmpbKNS-xhobraJFSV5W2S9EMP1PTkn0kXxLhB2X2J-oKk7DF9n4A2EMg_wHIdf4VDJtBxM=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOqbPOBuGH5RLQk8ojoRAc_rob7kFnx78h2tA4sP-j-XDEZ1LJwofwXq13xFBmdp7SguSPGkLrOufN5jCy1X7Omf4xqpDlIQoqyae1HUgwMffqxfCuG=w1200", "https://lh3.googleusercontent.com/pw/AP1GczM9bDZV4yOapwHNdAAJhw_xCw6vSc-cdzsU46xmP4tsWXA_Blh7HtkKentg-ohjzPOGkW331kcp2IvvEUQKpDvYiU2hdicKufQiH2qWjOeJs3KuZvyH=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPHn8BC_VNW324UlyzHOII13dEpjokRHgSyN5-t2l6qclCLyGMN3xIvrW5as_GxEHNk9GC4Pj-O_VKi2wkfzEE-6qZW5I_2z8QNDRsogSGQOPtvPMcL=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNZ_efDcEf3Gjn1OTlqLd2rlgTz_CYg2BSTnYFPJxXKk99Phs9HjYDEFzGlbewvyq3VKPhqzPNwKRXHV-ydlETjguZj_In2DT64qSFEHtrjB54l-vy2=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNMfRovRa46opsoydtB5c2ObYqgyqouii0WfdN3p1_Fk_YvyLIf3-5lYufScH8ydUn6HKq4iryKrGeS672MsdKMuHrAmbVq0S1ZyGwmgMNXlqGOKLZ4=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN2vrOgH-wRUbQD6i6ZTl8qV2SQY-zeKqhmME3rASelRhyYoh9R8JeK303uTZ1mg2mRC3QO4KwbavXPY-RSTThdPOC7hSqbPAUeCsnXCd5AAe9Z5Qzo=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNNztER0RGCfV3HBuhgAxVWiRJSSJD3i3tzaAufESk_sUiSPAQxL9hB9WqKU8FuIckt8fO7tkWGR2Fb3W-d4QrzPP31Moj2UftRsBBPc9t6ANvcJONu=w1200"];
 var imgIndex = 0;
+var carruselTimer = null;
+var CARRUSEL_DELAY = 5000;
 
-// Soporte para swipe (deslizar) en móviles
-var startX = 0;
-var endX = 0;
-document.addEventListener('DOMContentLoaded', function() {
-  // Swipe en carrusel principal
-  var carrusel = document.querySelector('.carrusel-principal');
-  if (carrusel) {
-    carrusel.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
-    }, {passive: true});
-    carrusel.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        cambiarImg(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        cambiarImg(-1); // Deslizar derecha -> anterior
-      }
-    }, {passive: true});
+function carruselIr(idx, reiniciarTimer) {
+  if (reiniciarTimer === undefined) reiniciarTimer = true;
+  if (!IMGS.length) return;
+  imgIndex = ((idx % IMGS.length) + IMGS.length) % IMGS.length;
+  
+  var principal = document.getElementById('carruselPrincipal');
+  if (principal) {
+    var slides = principal.querySelectorAll('.carrusel-slide');
+    slides.forEach(function(s, i) {
+      s.classList.toggle('activa', i === imgIndex);
+    });
   }
+  
+  var counter = document.getElementById('carruselCounter');
+  if (counter) counter.textContent = (imgIndex + 1) + ' / ' + IMGS.length;
+  
+  var minis = document.querySelectorAll('.carrusel-min');
+  minis.forEach(function(m, i) {
+    m.classList.toggle('activa', i === imgIndex);
+  });
+  
+  if (reiniciarTimer) carruselReiniciarProgreso();
+}
+
+function carruselReiniciarProgreso() {
+  if (IMGS.length <= 1) return;
+  clearTimeout(carruselTimer);
+  carruselTimer = setTimeout(function() {
+    carruselIr(imgIndex + 1);
+  }, CARRUSEL_DELAY);
+}
+
+function carruselDetener() {
+  clearTimeout(carruselTimer);
+}
+
+function irImg(i) { carruselIr(i); }
+function cambiarImg(dir) { carruselIr(imgIndex + dir); }
+
+var _dragSx = 0, _dragPid = null, _dragMoved = false;
+function initCarruselDrag() {
+  var el = document.getElementById('carruselPrincipal');
+  if (!el) return;
+  
+  el.addEventListener('dragstart', function(e) { e.preventDefault(); });
+  
+  el.addEventListener('pointerdown', function(e) {
+    if (e.target.closest('button')) return;
+    _dragSx = e.clientX;
+    _dragPid = e.pointerId;
+    _dragMoved = false;
+    try { el.setPointerCapture(e.pointerId); } catch(err) {}
+  });
+  
+  el.addEventListener('pointermove', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    if (Math.abs(e.clientX - _dragSx) > 8) _dragMoved = true;
+  });
+  
+  el.addEventListener('pointerup', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    var d = _dragSx - e.clientX;
+    _dragPid = null;
+    if (Math.abs(d) >= 30) {
+      if (d > 0) carruselIr(imgIndex + 1);
+      else carruselIr(imgIndex - 1);
+    }
+  });
+  
+  el.addEventListener('pointercancel', function() { _dragPid = null; });
+  
+  el.addEventListener('click', function(e) {
+    if (_dragMoved && !e.target.closest('button')) {
+      e.stopPropagation();
+      e.preventDefault();
+      _dragMoved = false;
+    }
+  }, true);
+  
+  var _tSx = 0, _tSy = 0, _tMoved = false;
+  el.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    _tSx = e.touches[0].clientX;
+    _tSy = e.touches[0].clientY;
+    _tMoved = false;
+  }, {passive: true});
+  
+  el.addEventListener('touchmove', function(e) {
+    if (Math.abs(e.touches[0].clientX - _tSx) > 10) _tMoved = true;
+  }, {passive: true});
+  
+  el.addEventListener('touchend', function(e) {
+    if (!_tMoved) return;
+    var dx = e.changedTouches[0].clientX - _tSx;
+    var dy = e.changedTouches[0].clientY - _tSy;
+    _tMoved = false;
+    if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) carruselIr(imgIndex + 1);
+    else carruselIr(imgIndex - 1);
+  }, {passive: true});
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initCarruselDrag();
+  if (IMGS.length > 1) carruselReiniciarProgreso();
   
   // Swipe en lightbox (pantalla completa)
   var lightbox = document.getElementById('lightbox');
   if (lightbox) {
+    var lSx = 0, lEndX = 0;
     lightbox.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
+      lSx = e.touches[0].clientX;
     }, {passive: true});
     lightbox.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        lightboxNav(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        lightboxNav(-1); // Deslizar derecha -> anterior
+      lEndX = e.changedTouches[0].clientX;
+      if (lSx - lEndX > 50) {
+        lightboxNav(1);
+      } else if (lEndX - lSx > 50) {
+        lightboxNav(-1);
       }
     }, {passive: true});
     
-    // Evitar que el swipe en las miniaturas cambie la foto principal
     var wrapMinis = lightbox.querySelector('.lightbox-miniaturas-wrap');
     if (wrapMinis) {
-      wrapMinis.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
-      wrapMinis.addEventListener('touchend', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
+      wrapMinis.addEventListener('touchstart', function(e) { e.stopPropagation(); }, {passive: true});
+      wrapMinis.addEventListener('touchend', function(e) { e.stopPropagation(); }, {passive: true});
     }
   }
 });
 
-function irImg(i) {
-  if (!IMGS.length) return;
-  imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
-  var cont = document.getElementById('imgActual');
-  if (cont) cont.textContent = imgIndex + 1;
-}
-
-function cambiarImg(dir) { irImg(imgIndex + dir); }
-
 function abrirLightbox(i) {
-  irImg(i);
+  carruselDetener();
+  carruselIr(i, false);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   
-  // Generar miniaturas en el lightbox si no existen
   var minisDiv = document.getElementById('lightboxMiniaturas');
   if (minisDiv && !minisDiv.innerHTML) {
     minisDiv.innerHTML = IMGS.map(function(url, index) {
@@ -821,14 +916,14 @@ function cerrarLightbox(e) {
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
+  carruselReiniciarProgreso();
 }
 
 function lightboxNav(dir) {
-  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
+  carruselIr(imgIndex + dir, false);
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   updateLightboxMiniaturas();
-  irImg(imgIndex); // Actualizar también el carrusel principal
 }
 
 function updateLightboxMiniaturas() {
@@ -836,7 +931,6 @@ function updateLightboxMiniaturas() {
   minis.forEach(function(m, j) {
     m.classList.toggle('activa', j === imgIndex);
   });
-  // Hacer scroll a la miniatura activa
   var activa = minis[imgIndex];
   if (activa) {
     var wrap = activa.closest('.lightbox-miniaturas');

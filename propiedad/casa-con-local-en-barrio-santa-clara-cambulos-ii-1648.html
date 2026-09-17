@@ -208,12 +208,35 @@ body{
   height: 300px;
   position: relative;
   background: #000;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
 }
 
-.galeria-img{
+.carrusel-principal img{
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -664,10 +687,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczPi4K_xNvS8GWiFu_kSPaJ4uusK1Q00n13ZP4BsfOTeGeQgjJVDdLegQBRUYBTLT3nlHNXH80rzOePhtJDLnTSapxfU94JNTshhl1vAgnm4GATAfXHq=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 19</div>
-          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczPi4K_xNvS8GWiFu_kSPaJ4uusK1Q00n13ZP4BsfOTeGeQgjJVDdLegQBRUYBTLT3nlHNXH80rzOePhtJDLnTSapxfU94JNTshhl1vAgnm4GATAfXHq=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 1" loading="eager" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNKwHJ3NxA0XB1NcB9V1OSgc7lgaKZerxpKf_czyEoTc4qAtTLXDkW88GM3q-Lb2wLcpJ8K_e59q2Tfx9EpBQ8ANdSJQ2vJCbX5Pm2HOjYxp22mPB9X=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 2" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP6pbccvz7xrQrLQFFmnAJSNIebMNR7ssrdB8FEioB1HqvWHKBAMdgCz-gxjvtKtV7PXiV8sPhc1APElF1RId92WGjwLDFeppXje7eFlY4_kP3h6a76=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 3" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNZrFKe3QROQlxsPKYgFkhCs0YuVdMADTH2eHtgIc_kwnNW5n8lT7QvghnAEQSi2tKtYYhx04atglUF7C4ROznN5bfNG2_wpHwsJ6tNMcSIJ5yqnb9T=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 4" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNxvONgYW_XGpnzwZcYnTCj5cqCziri_XsgtAjhOVXEVVRwU2ymq6Nn2-fPrZ0YLacmc-2bY8CX8j9-LYs1iUZEArtlHpzDda5u6Hge4WoJAa6XbBCB=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 5" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPtlwqN6-1u5eWyQihKnFEf23fe81dvqeJ-ST_rTENddWTQ1dBpry8qOQz9JNDil9lTLIbpc8twVJnBmXL_MCOFj7R46A89Xv6rl22WJJqSvTmo0XeF=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 6" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPQCoNnAL0aDTvfAmyRYbq2FLkK0fbMHexl4yuj2LZjc8HOJpqKE-qumRQlVV0n-G0LRYP24pNlek2cSuzSBylqI6H2siUIbscBqmBrrYwpokPRBst3=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 7" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOp-h0e6boiu6ufq7r27Rf89lv_QWKET7duqZWkVHNchD3OZY62hGCDkfIBkxB-3dTgMU-7p0QFUNuj9ubE556QSPnbWtCyem6D5ry-WMzmOpiQlWOs=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 8" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPJKOXx-z9Lncw-Tx0nKeL0GpYk0aJF2AZqqeA_I3CS69anqH2dWD4W5qYoQuED3mStl3EGxTS0qnJnNHca2Dp6k0p6UgOjwqS88Asb9DzY4O7X7Z7f=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 9" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPc8mmtgLq2oXYKnbdCuHlQMHHblvHeAhNfFlPQuQ-ewcxR9eXzDXhIKsIU9FC3Lib2Gd1ABp1Ch4PrHdUZoaap8-iLtrhrV1dQf6bMZAq_XYyDiWOI=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 10" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOjHifDb_xrUs9Vl7HBMk_ilfuI4d7IKQaT2QmXfTg2MrS5KXLSQX8_ZpSMCsY4xg8IHEQvCeYLxSFavtRqOzERd6eCKaQeGZiqgQRCXRxd2lKOVFT3=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 11" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP2qeNunU-A6rw8EH_YNjn_E6itU1_drnZefEsbfstltzOlTx0E_AzNUH4Qi31jFYa2K4pYyYwRi2Vav1Qn-DUXUYlOP5C2NLfr_i9Sj3h7ZdN1XO7k=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 12" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMQ2-ZOS4BzHOtOzyy-hYwKgEOJ0aeVr_PqFV0kWevqi9nkDTs6lzbo2cp6BGmg9-MLBOcnA55JSrqbnKKIeomUVIxM7tqfADIOW8zbdJ6gZxAhXfsF=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 13" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMMUMvEGWhdxD5gZlx52JjJF3MmVrP_xpmJ3Gm95rmZ60cZKdLgWSaluePKeY1TI1qzFpzGF5t3gZj-1tJQ_aTH8ucpjxw3iH87BgpILbBZLY_02z5F=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 14" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP0vKvyTlxkt6PjgbcpbYvSZD60XuLfGQgRgai9Q4Fv72L7m1xWkIiaATTHmWuhH7MT7dXzIBS7aYPIv7z1koI3jAfWIBtxFTYRIHYvNxopWjryg5Ly=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 15" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOm3tO6sFBZP7Mzm7pcnorpLtYZYEalT5Uowr1cy7--bogu3OdtfuO_rOmQxkqocsPA7UQ2pp8JyNn2seJTtXClAAESip6Sjwlld-v1syDHLyx_8auy=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 16" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPBLhVqZQH4an7SCigjBmioQGN2IljzChPa4fZQnDoXa-r2i5OP1YNJ8VANCD8byVB9iNYbOmtcxxtBcQvf3QCTnt7R4BwTQkxDNQh2RGVSYUEQ3jQA=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 17" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOqAvHUtmoVc5_X_WbVT2ETCeSIDMrd-I9zIYY7oWNqFLz8gOY8-M4auHw9ytoh0MjQGRMDgeRe2Q-o52WZ76KEyIHJvQaoUwyLQpcEwga8D6ji6y72=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 18" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNc-pBFpuIygrNGzKojepQVZv7lEyHa5miQGCIqsySJ8yDeYqPixGX-ms2VwUPIbjzM8BZy0bVG60uhMY0D2hY0VKcmHBnbCTRCs9VoMTHOoYaojYat=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 19" loading="lazy" draggable="false" /></div>
+          <div class="carrusel-counter" id="carruselCounter">1 / 19</div>
+          <button class="galeria-nav prev" onclick="carruselIr(imgIndex-1)">&#8249;</button><button class="galeria-nav next" onclick="carruselIr(imgIndex+1)">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -675,7 +698,7 @@ body{
             </svg>
           </button>
         </div>
-        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczPi4K_xNvS8GWiFu_kSPaJ4uusK1Q00n13ZP4BsfOTeGeQgjJVDdLegQBRUYBTLT3nlHNXH80rzOePhtJDLnTSapxfU94JNTshhl1vAgnm4GATAfXHq=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNKwHJ3NxA0XB1NcB9V1OSgc7lgaKZerxpKf_czyEoTc4qAtTLXDkW88GM3q-Lb2wLcpJ8K_e59q2Tfx9EpBQ8ANdSJQ2vJCbX5Pm2HOjYxp22mPB9X=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP6pbccvz7xrQrLQFFmnAJSNIebMNR7ssrdB8FEioB1HqvWHKBAMdgCz-gxjvtKtV7PXiV8sPhc1APElF1RId92WGjwLDFeppXje7eFlY4_kP3h6a76=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNZrFKe3QROQlxsPKYgFkhCs0YuVdMADTH2eHtgIc_kwnNW5n8lT7QvghnAEQSi2tKtYYhx04atglUF7C4ROznN5bfNG2_wpHwsJ6tNMcSIJ5yqnb9T=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNxvONgYW_XGpnzwZcYnTCj5cqCziri_XsgtAjhOVXEVVRwU2ymq6Nn2-fPrZ0YLacmc-2bY8CX8j9-LYs1iUZEArtlHpzDda5u6Hge4WoJAa6XbBCB=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPtlwqN6-1u5eWyQihKnFEf23fe81dvqeJ-ST_rTENddWTQ1dBpry8qOQz9JNDil9lTLIbpc8twVJnBmXL_MCOFj7R46A89Xv6rl22WJJqSvTmo0XeF=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPQCoNnAL0aDTvfAmyRYbq2FLkK0fbMHexl4yuj2LZjc8HOJpqKE-qumRQlVV0n-G0LRYP24pNlek2cSuzSBylqI6H2siUIbscBqmBrrYwpokPRBst3=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOp-h0e6boiu6ufq7r27Rf89lv_QWKET7duqZWkVHNchD3OZY62hGCDkfIBkxB-3dTgMU-7p0QFUNuj9ubE556QSPnbWtCyem6D5ry-WMzmOpiQlWOs=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPJKOXx-z9Lncw-Tx0nKeL0GpYk0aJF2AZqqeA_I3CS69anqH2dWD4W5qYoQuED3mStl3EGxTS0qnJnNHca2Dp6k0p6UgOjwqS88Asb9DzY4O7X7Z7f=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPc8mmtgLq2oXYKnbdCuHlQMHHblvHeAhNfFlPQuQ-ewcxR9eXzDXhIKsIU9FC3Lib2Gd1ABp1Ch4PrHdUZoaap8-iLtrhrV1dQf6bMZAq_XYyDiWOI=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOjHifDb_xrUs9Vl7HBMk_ilfuI4d7IKQaT2QmXfTg2MrS5KXLSQX8_ZpSMCsY4xg8IHEQvCeYLxSFavtRqOzERd6eCKaQeGZiqgQRCXRxd2lKOVFT3=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP2qeNunU-A6rw8EH_YNjn_E6itU1_drnZefEsbfstltzOlTx0E_AzNUH4Qi31jFYa2K4pYyYwRi2Vav1Qn-DUXUYlOP5C2NLfr_i9Sj3h7ZdN1XO7k=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMQ2-ZOS4BzHOtOzyy-hYwKgEOJ0aeVr_PqFV0kWevqi9nkDTs6lzbo2cp6BGmg9-MLBOcnA55JSrqbnKKIeomUVIxM7tqfADIOW8zbdJ6gZxAhXfsF=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMMUMvEGWhdxD5gZlx52JjJF3MmVrP_xpmJ3Gm95rmZ60cZKdLgWSaluePKeY1TI1qzFpzGF5t3gZj-1tJQ_aTH8ucpjxw3iH87BgpILbBZLY_02z5F=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP0vKvyTlxkt6PjgbcpbYvSZD60XuLfGQgRgai9Q4Fv72L7m1xWkIiaATTHmWuhH7MT7dXzIBS7aYPIv7z1koI3jAfWIBtxFTYRIHYvNxopWjryg5Ly=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOm3tO6sFBZP7Mzm7pcnorpLtYZYEalT5Uowr1cy7--bogu3OdtfuO_rOmQxkqocsPA7UQ2pp8JyNn2seJTtXClAAESip6Sjwlld-v1syDHLyx_8auy=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPBLhVqZQH4an7SCigjBmioQGN2IljzChPa4fZQnDoXa-r2i5OP1YNJ8VANCD8byVB9iNYbOmtcxxtBcQvf3QCTnt7R4BwTQkxDNQh2RGVSYUEQ3jQA=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOqAvHUtmoVc5_X_WbVT2ETCeSIDMrd-I9zIYY7oWNqFLz8gOY8-M4auHw9ytoh0MjQGRMDgeRe2Q-o52WZ76KEyIHJvQaoUwyLQpcEwga8D6ji6y72=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNc-pBFpuIygrNGzKojepQVZv7lEyHa5miQGCIqsySJ8yDeYqPixGX-ms2VwUPIbjzM8BZy0bVG60uhMY0D2hY0VKcmHBnbCTRCs9VoMTHOoYaojYat=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="irImg(18)" loading="lazy"/></div></div>
+        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczPi4K_xNvS8GWiFu_kSPaJ4uusK1Q00n13ZP4BsfOTeGeQgjJVDdLegQBRUYBTLT3nlHNXH80rzOePhtJDLnTSapxfU94JNTshhl1vAgnm4GATAfXHq=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="carruselIr(0)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNKwHJ3NxA0XB1NcB9V1OSgc7lgaKZerxpKf_czyEoTc4qAtTLXDkW88GM3q-Lb2wLcpJ8K_e59q2Tfx9EpBQ8ANdSJQ2vJCbX5Pm2HOjYxp22mPB9X=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="carruselIr(1)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP6pbccvz7xrQrLQFFmnAJSNIebMNR7ssrdB8FEioB1HqvWHKBAMdgCz-gxjvtKtV7PXiV8sPhc1APElF1RId92WGjwLDFeppXje7eFlY4_kP3h6a76=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="carruselIr(2)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNZrFKe3QROQlxsPKYgFkhCs0YuVdMADTH2eHtgIc_kwnNW5n8lT7QvghnAEQSi2tKtYYhx04atglUF7C4ROznN5bfNG2_wpHwsJ6tNMcSIJ5yqnb9T=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="carruselIr(3)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNxvONgYW_XGpnzwZcYnTCj5cqCziri_XsgtAjhOVXEVVRwU2ymq6Nn2-fPrZ0YLacmc-2bY8CX8j9-LYs1iUZEArtlHpzDda5u6Hge4WoJAa6XbBCB=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="carruselIr(4)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPtlwqN6-1u5eWyQihKnFEf23fe81dvqeJ-ST_rTENddWTQ1dBpry8qOQz9JNDil9lTLIbpc8twVJnBmXL_MCOFj7R46A89Xv6rl22WJJqSvTmo0XeF=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="carruselIr(5)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPQCoNnAL0aDTvfAmyRYbq2FLkK0fbMHexl4yuj2LZjc8HOJpqKE-qumRQlVV0n-G0LRYP24pNlek2cSuzSBylqI6H2siUIbscBqmBrrYwpokPRBst3=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="carruselIr(6)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOp-h0e6boiu6ufq7r27Rf89lv_QWKET7duqZWkVHNchD3OZY62hGCDkfIBkxB-3dTgMU-7p0QFUNuj9ubE556QSPnbWtCyem6D5ry-WMzmOpiQlWOs=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="carruselIr(7)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPJKOXx-z9Lncw-Tx0nKeL0GpYk0aJF2AZqqeA_I3CS69anqH2dWD4W5qYoQuED3mStl3EGxTS0qnJnNHca2Dp6k0p6UgOjwqS88Asb9DzY4O7X7Z7f=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="carruselIr(8)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPc8mmtgLq2oXYKnbdCuHlQMHHblvHeAhNfFlPQuQ-ewcxR9eXzDXhIKsIU9FC3Lib2Gd1ABp1Ch4PrHdUZoaap8-iLtrhrV1dQf6bMZAq_XYyDiWOI=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="carruselIr(9)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOjHifDb_xrUs9Vl7HBMk_ilfuI4d7IKQaT2QmXfTg2MrS5KXLSQX8_ZpSMCsY4xg8IHEQvCeYLxSFavtRqOzERd6eCKaQeGZiqgQRCXRxd2lKOVFT3=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="carruselIr(10)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP2qeNunU-A6rw8EH_YNjn_E6itU1_drnZefEsbfstltzOlTx0E_AzNUH4Qi31jFYa2K4pYyYwRi2Vav1Qn-DUXUYlOP5C2NLfr_i9Sj3h7ZdN1XO7k=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="carruselIr(11)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMQ2-ZOS4BzHOtOzyy-hYwKgEOJ0aeVr_PqFV0kWevqi9nkDTs6lzbo2cp6BGmg9-MLBOcnA55JSrqbnKKIeomUVIxM7tqfADIOW8zbdJ6gZxAhXfsF=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="carruselIr(12)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMMUMvEGWhdxD5gZlx52JjJF3MmVrP_xpmJ3Gm95rmZ60cZKdLgWSaluePKeY1TI1qzFpzGF5t3gZj-1tJQ_aTH8ucpjxw3iH87BgpILbBZLY_02z5F=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="carruselIr(13)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP0vKvyTlxkt6PjgbcpbYvSZD60XuLfGQgRgai9Q4Fv72L7m1xWkIiaATTHmWuhH7MT7dXzIBS7aYPIv7z1koI3jAfWIBtxFTYRIHYvNxopWjryg5Ly=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="carruselIr(14)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOm3tO6sFBZP7Mzm7pcnorpLtYZYEalT5Uowr1cy7--bogu3OdtfuO_rOmQxkqocsPA7UQ2pp8JyNn2seJTtXClAAESip6Sjwlld-v1syDHLyx_8auy=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="carruselIr(15)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPBLhVqZQH4an7SCigjBmioQGN2IljzChPa4fZQnDoXa-r2i5OP1YNJ8VANCD8byVB9iNYbOmtcxxtBcQvf3QCTnt7R4BwTQkxDNQh2RGVSYUEQ3jQA=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="carruselIr(16)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOqAvHUtmoVc5_X_WbVT2ETCeSIDMrd-I9zIYY7oWNqFLz8gOY8-M4auHw9ytoh0MjQGRMDgeRe2Q-o52WZ76KEyIHJvQaoUwyLQpcEwga8D6ji6y72=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="carruselIr(17)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNc-pBFpuIygrNGzKojepQVZv7lEyHa5miQGCIqsySJ8yDeYqPixGX-ms2VwUPIbjzM8BZy0bVG60uhMY0D2hY0VKcmHBnbCTRCs9VoMTHOoYaojYat=w1200" alt="Casa rentable en venta Santa Clara Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="carruselIr(18)" loading="lazy" draggable="false"/></div></div>
       </div>
       
       <div class="modal-bloque-info">
@@ -737,74 +760,146 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczPi4K_xNvS8GWiFu_kSPaJ4uusK1Q00n13ZP4BsfOTeGeQgjJVDdLegQBRUYBTLT3nlHNXH80rzOePhtJDLnTSapxfU94JNTshhl1vAgnm4GATAfXHq=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNKwHJ3NxA0XB1NcB9V1OSgc7lgaKZerxpKf_czyEoTc4qAtTLXDkW88GM3q-Lb2wLcpJ8K_e59q2Tfx9EpBQ8ANdSJQ2vJCbX5Pm2HOjYxp22mPB9X=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP6pbccvz7xrQrLQFFmnAJSNIebMNR7ssrdB8FEioB1HqvWHKBAMdgCz-gxjvtKtV7PXiV8sPhc1APElF1RId92WGjwLDFeppXje7eFlY4_kP3h6a76=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNZrFKe3QROQlxsPKYgFkhCs0YuVdMADTH2eHtgIc_kwnNW5n8lT7QvghnAEQSi2tKtYYhx04atglUF7C4ROznN5bfNG2_wpHwsJ6tNMcSIJ5yqnb9T=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNxvONgYW_XGpnzwZcYnTCj5cqCziri_XsgtAjhOVXEVVRwU2ymq6Nn2-fPrZ0YLacmc-2bY8CX8j9-LYs1iUZEArtlHpzDda5u6Hge4WoJAa6XbBCB=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPtlwqN6-1u5eWyQihKnFEf23fe81dvqeJ-ST_rTENddWTQ1dBpry8qOQz9JNDil9lTLIbpc8twVJnBmXL_MCOFj7R46A89Xv6rl22WJJqSvTmo0XeF=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPQCoNnAL0aDTvfAmyRYbq2FLkK0fbMHexl4yuj2LZjc8HOJpqKE-qumRQlVV0n-G0LRYP24pNlek2cSuzSBylqI6H2siUIbscBqmBrrYwpokPRBst3=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOp-h0e6boiu6ufq7r27Rf89lv_QWKET7duqZWkVHNchD3OZY62hGCDkfIBkxB-3dTgMU-7p0QFUNuj9ubE556QSPnbWtCyem6D5ry-WMzmOpiQlWOs=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPJKOXx-z9Lncw-Tx0nKeL0GpYk0aJF2AZqqeA_I3CS69anqH2dWD4W5qYoQuED3mStl3EGxTS0qnJnNHca2Dp6k0p6UgOjwqS88Asb9DzY4O7X7Z7f=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPc8mmtgLq2oXYKnbdCuHlQMHHblvHeAhNfFlPQuQ-ewcxR9eXzDXhIKsIU9FC3Lib2Gd1ABp1Ch4PrHdUZoaap8-iLtrhrV1dQf6bMZAq_XYyDiWOI=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOjHifDb_xrUs9Vl7HBMk_ilfuI4d7IKQaT2QmXfTg2MrS5KXLSQX8_ZpSMCsY4xg8IHEQvCeYLxSFavtRqOzERd6eCKaQeGZiqgQRCXRxd2lKOVFT3=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP2qeNunU-A6rw8EH_YNjn_E6itU1_drnZefEsbfstltzOlTx0E_AzNUH4Qi31jFYa2K4pYyYwRi2Vav1Qn-DUXUYlOP5C2NLfr_i9Sj3h7ZdN1XO7k=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMQ2-ZOS4BzHOtOzyy-hYwKgEOJ0aeVr_PqFV0kWevqi9nkDTs6lzbo2cp6BGmg9-MLBOcnA55JSrqbnKKIeomUVIxM7tqfADIOW8zbdJ6gZxAhXfsF=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMMUMvEGWhdxD5gZlx52JjJF3MmVrP_xpmJ3Gm95rmZ60cZKdLgWSaluePKeY1TI1qzFpzGF5t3gZj-1tJQ_aTH8ucpjxw3iH87BgpILbBZLY_02z5F=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP0vKvyTlxkt6PjgbcpbYvSZD60XuLfGQgRgai9Q4Fv72L7m1xWkIiaATTHmWuhH7MT7dXzIBS7aYPIv7z1koI3jAfWIBtxFTYRIHYvNxopWjryg5Ly=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOm3tO6sFBZP7Mzm7pcnorpLtYZYEalT5Uowr1cy7--bogu3OdtfuO_rOmQxkqocsPA7UQ2pp8JyNn2seJTtXClAAESip6Sjwlld-v1syDHLyx_8auy=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPBLhVqZQH4an7SCigjBmioQGN2IljzChPa4fZQnDoXa-r2i5OP1YNJ8VANCD8byVB9iNYbOmtcxxtBcQvf3QCTnt7R4BwTQkxDNQh2RGVSYUEQ3jQA=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOqAvHUtmoVc5_X_WbVT2ETCeSIDMrd-I9zIYY7oWNqFLz8gOY8-M4auHw9ytoh0MjQGRMDgeRe2Q-o52WZ76KEyIHJvQaoUwyLQpcEwga8D6ji6y72=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNc-pBFpuIygrNGzKojepQVZv7lEyHa5miQGCIqsySJ8yDeYqPixGX-ms2VwUPIbjzM8BZy0bVG60uhMY0D2hY0VKcmHBnbCTRCs9VoMTHOoYaojYat=w1200"];
 var imgIndex = 0;
+var carruselTimer = null;
+var CARRUSEL_DELAY = 5000;
 
-// Soporte para swipe (deslizar) en móviles
-var startX = 0;
-var endX = 0;
-document.addEventListener('DOMContentLoaded', function() {
-  // Swipe en carrusel principal
-  var carrusel = document.querySelector('.carrusel-principal');
-  if (carrusel) {
-    carrusel.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
-    }, {passive: true});
-    carrusel.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        cambiarImg(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        cambiarImg(-1); // Deslizar derecha -> anterior
-      }
-    }, {passive: true});
+function carruselIr(idx, reiniciarTimer) {
+  if (reiniciarTimer === undefined) reiniciarTimer = true;
+  if (!IMGS.length) return;
+  imgIndex = ((idx % IMGS.length) + IMGS.length) % IMGS.length;
+  
+  var principal = document.getElementById('carruselPrincipal');
+  if (principal) {
+    var slides = principal.querySelectorAll('.carrusel-slide');
+    slides.forEach(function(s, i) {
+      s.classList.toggle('activa', i === imgIndex);
+    });
   }
+  
+  var counter = document.getElementById('carruselCounter');
+  if (counter) counter.textContent = (imgIndex + 1) + ' / ' + IMGS.length;
+  
+  var minis = document.querySelectorAll('.carrusel-min');
+  minis.forEach(function(m, i) {
+    m.classList.toggle('activa', i === imgIndex);
+  });
+  
+  if (reiniciarTimer) carruselReiniciarProgreso();
+}
+
+function carruselReiniciarProgreso() {
+  if (IMGS.length <= 1) return;
+  clearTimeout(carruselTimer);
+  carruselTimer = setTimeout(function() {
+    carruselIr(imgIndex + 1);
+  }, CARRUSEL_DELAY);
+}
+
+function carruselDetener() {
+  clearTimeout(carruselTimer);
+}
+
+function irImg(i) { carruselIr(i); }
+function cambiarImg(dir) { carruselIr(imgIndex + dir); }
+
+var _dragSx = 0, _dragPid = null, _dragMoved = false;
+function initCarruselDrag() {
+  var el = document.getElementById('carruselPrincipal');
+  if (!el) return;
+  
+  el.addEventListener('dragstart', function(e) { e.preventDefault(); });
+  
+  el.addEventListener('pointerdown', function(e) {
+    if (e.target.closest('button')) return;
+    _dragSx = e.clientX;
+    _dragPid = e.pointerId;
+    _dragMoved = false;
+    try { el.setPointerCapture(e.pointerId); } catch(err) {}
+  });
+  
+  el.addEventListener('pointermove', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    if (Math.abs(e.clientX - _dragSx) > 8) _dragMoved = true;
+  });
+  
+  el.addEventListener('pointerup', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    var d = _dragSx - e.clientX;
+    _dragPid = null;
+    if (Math.abs(d) >= 30) {
+      if (d > 0) carruselIr(imgIndex + 1);
+      else carruselIr(imgIndex - 1);
+    }
+  });
+  
+  el.addEventListener('pointercancel', function() { _dragPid = null; });
+  
+  el.addEventListener('click', function(e) {
+    if (_dragMoved && !e.target.closest('button')) {
+      e.stopPropagation();
+      e.preventDefault();
+      _dragMoved = false;
+    }
+  }, true);
+  
+  var _tSx = 0, _tSy = 0, _tMoved = false;
+  el.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    _tSx = e.touches[0].clientX;
+    _tSy = e.touches[0].clientY;
+    _tMoved = false;
+  }, {passive: true});
+  
+  el.addEventListener('touchmove', function(e) {
+    if (Math.abs(e.touches[0].clientX - _tSx) > 10) _tMoved = true;
+  }, {passive: true});
+  
+  el.addEventListener('touchend', function(e) {
+    if (!_tMoved) return;
+    var dx = e.changedTouches[0].clientX - _tSx;
+    var dy = e.changedTouches[0].clientY - _tSy;
+    _tMoved = false;
+    if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) carruselIr(imgIndex + 1);
+    else carruselIr(imgIndex - 1);
+  }, {passive: true});
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initCarruselDrag();
+  if (IMGS.length > 1) carruselReiniciarProgreso();
   
   // Swipe en lightbox (pantalla completa)
   var lightbox = document.getElementById('lightbox');
   if (lightbox) {
+    var lSx = 0, lEndX = 0;
     lightbox.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
+      lSx = e.touches[0].clientX;
     }, {passive: true});
     lightbox.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        lightboxNav(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        lightboxNav(-1); // Deslizar derecha -> anterior
+      lEndX = e.changedTouches[0].clientX;
+      if (lSx - lEndX > 50) {
+        lightboxNav(1);
+      } else if (lEndX - lSx > 50) {
+        lightboxNav(-1);
       }
     }, {passive: true});
     
-    // Evitar que el swipe en las miniaturas cambie la foto principal
     var wrapMinis = lightbox.querySelector('.lightbox-miniaturas-wrap');
     if (wrapMinis) {
-      wrapMinis.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
-      wrapMinis.addEventListener('touchend', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
+      wrapMinis.addEventListener('touchstart', function(e) { e.stopPropagation(); }, {passive: true});
+      wrapMinis.addEventListener('touchend', function(e) { e.stopPropagation(); }, {passive: true});
     }
   }
 });
 
-function irImg(i) {
-  if (!IMGS.length) return;
-  imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
-  var cont = document.getElementById('imgActual');
-  if (cont) cont.textContent = imgIndex + 1;
-}
-
-function cambiarImg(dir) { irImg(imgIndex + dir); }
-
 function abrirLightbox(i) {
-  irImg(i);
+  carruselDetener();
+  carruselIr(i, false);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   
-  // Generar miniaturas en el lightbox si no existen
   var minisDiv = document.getElementById('lightboxMiniaturas');
   if (minisDiv && !minisDiv.innerHTML) {
     minisDiv.innerHTML = IMGS.map(function(url, index) {
@@ -821,14 +916,14 @@ function cerrarLightbox(e) {
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
+  carruselReiniciarProgreso();
 }
 
 function lightboxNav(dir) {
-  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
+  carruselIr(imgIndex + dir, false);
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   updateLightboxMiniaturas();
-  irImg(imgIndex); // Actualizar también el carrusel principal
 }
 
 function updateLightboxMiniaturas() {
@@ -836,7 +931,6 @@ function updateLightboxMiniaturas() {
   minis.forEach(function(m, j) {
     m.classList.toggle('activa', j === imgIndex);
   });
-  // Hacer scroll a la miniatura activa
   var activa = minis[imgIndex];
   if (activa) {
     var wrap = activa.closest('.lightbox-miniaturas');

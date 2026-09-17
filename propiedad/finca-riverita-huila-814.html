@@ -208,12 +208,35 @@ body{
   height: 300px;
   position: relative;
   background: #000;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
 }
 
-.galeria-img{
+.carrusel-principal img{
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -664,10 +687,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczN5PnxNa_nsDycZGb5oK8vKoWq2X7Fj-5Gb9aWZOphhggOxMQ5xU8i-b9u86bLYMxd8X9wVjdWVytXlIEvgVeXawLTGRhyu6rntBfFQa6MDaUjO7WKG=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 14</div>
-          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczN5PnxNa_nsDycZGb5oK8vKoWq2X7Fj-5Gb9aWZOphhggOxMQ5xU8i-b9u86bLYMxd8X9wVjdWVytXlIEvgVeXawLTGRhyu6rntBfFQa6MDaUjO7WKG=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 1" loading="eager" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO-SuAkmoi_6ZEOY3hDiaAoaKeS2C5vjtm1BczNUxRLe_7GGERg81GTY4PNRbt37Q0AbnSzbLNa7MEZwN-Ip9se4hEDNFEj-BFNCd3C7JbRUJpC5_Jc=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 2" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMw42fr7l_bN4o3-uWDlQBySbG4t5hWiLba8qzjMcsHsnCbubHxhcTG8j7e2nZlkkjB9xYUqp4WmMRapb6eF7KFblVjzJa1ewxsqZlDy6oHByZX6AnK=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 3" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOtMIA71vXbsZdzm7Z1Y83IAh0lai9w5J7Ft_CaZckrJTzTjU_4sRvaOBEhgVgZM4TJsmFWAWCmgPF2CAH_YhFI8PuZg-nGq9VBH3zFGutm3s385sEc=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 4" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPO16GVeJyoAsebkcqgTX8UIeRQH4lIz-YOPWzMClDSfRI6m6asUdKTI-kmaB9tRoq1K29EimI-MUORCGU61r4LHccp7y5NdXM9Zeekv2yPfKBo0JYW=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 5" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOtxTtRbQZl1gKxLiIaKXlTuipq7xphgDG4m56MVMu5B3iNEmM4H5FHU1jPV5C5GPnrwnuYIEfk0fwPHn5FZOVSjYcSTDk9PQCkRxjpOF4WOURPMh30=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 6" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPYucPNR98JFMKIZWQRbL0PNyGgOBR13Hxvc2FtXLc4ls_XtikgsivRWcFkcBLPKtIViUeFq0JRoPiCelkAEiFnWwwis60cpjYdp5wuVTHP2nUhCCpA=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 7" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNmW7shRVqI5xrVa7gzcgWUlA9U55M3ocwlL6alnyfdrerjagRnOhs4SB2mOMNYEWu6bWMwi2PSZS8H_7szkKndZbdz4N_JAmAGq0HPl2eVY62kUsUT=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 8" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNISX4roNb6LSpDj2nS9nGxnADDhbWTOVGZ0I_kSVkNTtZRX2Job6HRapurvKVK2o9QytActHpImTic9qeclPKXkByChQIS6Pn1RwIRKkhwUUdBXi4m=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 9" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOXr-C4W9oPuaSpdPR8IST_gZ-A8GgZ_r6DXoc7fgXWNQqZeafm5l6YcLUDrxohi_1W-jnTt3zpIPyEzRRYFncYhiyMoXCkhal6Y90k6vvr9Srddf0W=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 10" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNjplu5CB06AiAnxv-r_5TK6cJK_9J5m7gjss9zXxZqe9b74Ta7VEwlacg6FmwglzDzYizgqeh2mYFJSRaE0gsdA5-A-aseJH-3aLoLtwQRd5CNHQyH=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 11" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMZjctCQqKI8U51z3f-cSgpjQzFAeCfL2FScZ5zMd__-DngVCTQV_8x3eXR2T9MpO3Vt25_D9H2qLFIGbhRiAn1yS71_lNudpxbT3vgvHU9xIYXgpVS=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 12" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPXy4bsByOdmBEpG0xSCmorLMkgEmI3BXSUICpY0vwu32FH6vDeUqGGpGwGFpfPBSVjeoC2wqR4eHauwOB5IZ15MhvodlRIFEuT7gFEgaFU0kvh4LiN=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 13" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMuTTN2_a6IqBfNbct6L3IvbPzoS3Xg9GCRL_C73gdBnryrvpPgy_gaUmtPkRRRy7gGqhMy45IqtTz4l-rSxbnHCkdEpS2huQLNKx6GuSrhVtvYb3AT=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 14" loading="lazy" draggable="false" /></div>
+          <div class="carrusel-counter" id="carruselCounter">1 / 14</div>
+          <button class="galeria-nav prev" onclick="carruselIr(imgIndex-1)">&#8249;</button><button class="galeria-nav next" onclick="carruselIr(imgIndex+1)">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -675,7 +698,7 @@ body{
             </svg>
           </button>
         </div>
-        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczN5PnxNa_nsDycZGb5oK8vKoWq2X7Fj-5Gb9aWZOphhggOxMQ5xU8i-b9u86bLYMxd8X9wVjdWVytXlIEvgVeXawLTGRhyu6rntBfFQa6MDaUjO7WKG=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO-SuAkmoi_6ZEOY3hDiaAoaKeS2C5vjtm1BczNUxRLe_7GGERg81GTY4PNRbt37Q0AbnSzbLNa7MEZwN-Ip9se4hEDNFEj-BFNCd3C7JbRUJpC5_Jc=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMw42fr7l_bN4o3-uWDlQBySbG4t5hWiLba8qzjMcsHsnCbubHxhcTG8j7e2nZlkkjB9xYUqp4WmMRapb6eF7KFblVjzJa1ewxsqZlDy6oHByZX6AnK=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOtMIA71vXbsZdzm7Z1Y83IAh0lai9w5J7Ft_CaZckrJTzTjU_4sRvaOBEhgVgZM4TJsmFWAWCmgPF2CAH_YhFI8PuZg-nGq9VBH3zFGutm3s385sEc=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPO16GVeJyoAsebkcqgTX8UIeRQH4lIz-YOPWzMClDSfRI6m6asUdKTI-kmaB9tRoq1K29EimI-MUORCGU61r4LHccp7y5NdXM9Zeekv2yPfKBo0JYW=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOtxTtRbQZl1gKxLiIaKXlTuipq7xphgDG4m56MVMu5B3iNEmM4H5FHU1jPV5C5GPnrwnuYIEfk0fwPHn5FZOVSjYcSTDk9PQCkRxjpOF4WOURPMh30=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPYucPNR98JFMKIZWQRbL0PNyGgOBR13Hxvc2FtXLc4ls_XtikgsivRWcFkcBLPKtIViUeFq0JRoPiCelkAEiFnWwwis60cpjYdp5wuVTHP2nUhCCpA=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNmW7shRVqI5xrVa7gzcgWUlA9U55M3ocwlL6alnyfdrerjagRnOhs4SB2mOMNYEWu6bWMwi2PSZS8H_7szkKndZbdz4N_JAmAGq0HPl2eVY62kUsUT=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNISX4roNb6LSpDj2nS9nGxnADDhbWTOVGZ0I_kSVkNTtZRX2Job6HRapurvKVK2o9QytActHpImTic9qeclPKXkByChQIS6Pn1RwIRKkhwUUdBXi4m=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOXr-C4W9oPuaSpdPR8IST_gZ-A8GgZ_r6DXoc7fgXWNQqZeafm5l6YcLUDrxohi_1W-jnTt3zpIPyEzRRYFncYhiyMoXCkhal6Y90k6vvr9Srddf0W=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNjplu5CB06AiAnxv-r_5TK6cJK_9J5m7gjss9zXxZqe9b74Ta7VEwlacg6FmwglzDzYizgqeh2mYFJSRaE0gsdA5-A-aseJH-3aLoLtwQRd5CNHQyH=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMZjctCQqKI8U51z3f-cSgpjQzFAeCfL2FScZ5zMd__-DngVCTQV_8x3eXR2T9MpO3Vt25_D9H2qLFIGbhRiAn1yS71_lNudpxbT3vgvHU9xIYXgpVS=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPXy4bsByOdmBEpG0xSCmorLMkgEmI3BXSUICpY0vwu32FH6vDeUqGGpGwGFpfPBSVjeoC2wqR4eHauwOB5IZ15MhvodlRIFEuT7gFEgaFU0kvh4LiN=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMuTTN2_a6IqBfNbct6L3IvbPzoS3Xg9GCRL_C73gdBnryrvpPgy_gaUmtPkRRRy7gGqhMy45IqtTz4l-rSxbnHCkdEpS2huQLNKx6GuSrhVtvYb3AT=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="irImg(13)" loading="lazy"/></div></div>
+        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczN5PnxNa_nsDycZGb5oK8vKoWq2X7Fj-5Gb9aWZOphhggOxMQ5xU8i-b9u86bLYMxd8X9wVjdWVytXlIEvgVeXawLTGRhyu6rntBfFQa6MDaUjO7WKG=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="carruselIr(0)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO-SuAkmoi_6ZEOY3hDiaAoaKeS2C5vjtm1BczNUxRLe_7GGERg81GTY4PNRbt37Q0AbnSzbLNa7MEZwN-Ip9se4hEDNFEj-BFNCd3C7JbRUJpC5_Jc=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="carruselIr(1)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMw42fr7l_bN4o3-uWDlQBySbG4t5hWiLba8qzjMcsHsnCbubHxhcTG8j7e2nZlkkjB9xYUqp4WmMRapb6eF7KFblVjzJa1ewxsqZlDy6oHByZX6AnK=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="carruselIr(2)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOtMIA71vXbsZdzm7Z1Y83IAh0lai9w5J7Ft_CaZckrJTzTjU_4sRvaOBEhgVgZM4TJsmFWAWCmgPF2CAH_YhFI8PuZg-nGq9VBH3zFGutm3s385sEc=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="carruselIr(3)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPO16GVeJyoAsebkcqgTX8UIeRQH4lIz-YOPWzMClDSfRI6m6asUdKTI-kmaB9tRoq1K29EimI-MUORCGU61r4LHccp7y5NdXM9Zeekv2yPfKBo0JYW=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="carruselIr(4)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOtxTtRbQZl1gKxLiIaKXlTuipq7xphgDG4m56MVMu5B3iNEmM4H5FHU1jPV5C5GPnrwnuYIEfk0fwPHn5FZOVSjYcSTDk9PQCkRxjpOF4WOURPMh30=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="carruselIr(5)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPYucPNR98JFMKIZWQRbL0PNyGgOBR13Hxvc2FtXLc4ls_XtikgsivRWcFkcBLPKtIViUeFq0JRoPiCelkAEiFnWwwis60cpjYdp5wuVTHP2nUhCCpA=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="carruselIr(6)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNmW7shRVqI5xrVa7gzcgWUlA9U55M3ocwlL6alnyfdrerjagRnOhs4SB2mOMNYEWu6bWMwi2PSZS8H_7szkKndZbdz4N_JAmAGq0HPl2eVY62kUsUT=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="carruselIr(7)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNISX4roNb6LSpDj2nS9nGxnADDhbWTOVGZ0I_kSVkNTtZRX2Job6HRapurvKVK2o9QytActHpImTic9qeclPKXkByChQIS6Pn1RwIRKkhwUUdBXi4m=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="carruselIr(8)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOXr-C4W9oPuaSpdPR8IST_gZ-A8GgZ_r6DXoc7fgXWNQqZeafm5l6YcLUDrxohi_1W-jnTt3zpIPyEzRRYFncYhiyMoXCkhal6Y90k6vvr9Srddf0W=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="carruselIr(9)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNjplu5CB06AiAnxv-r_5TK6cJK_9J5m7gjss9zXxZqe9b74Ta7VEwlacg6FmwglzDzYizgqeh2mYFJSRaE0gsdA5-A-aseJH-3aLoLtwQRd5CNHQyH=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="carruselIr(10)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMZjctCQqKI8U51z3f-cSgpjQzFAeCfL2FScZ5zMd__-DngVCTQV_8x3eXR2T9MpO3Vt25_D9H2qLFIGbhRiAn1yS71_lNudpxbT3vgvHU9xIYXgpVS=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="carruselIr(11)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPXy4bsByOdmBEpG0xSCmorLMkgEmI3BXSUICpY0vwu32FH6vDeUqGGpGwGFpfPBSVjeoC2wqR4eHauwOB5IZ15MhvodlRIFEuT7gFEgaFU0kvh4LiN=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="carruselIr(12)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMuTTN2_a6IqBfNbct6L3IvbPzoS3Xg9GCRL_C73gdBnryrvpPgy_gaUmtPkRRRy7gGqhMy45IqtTz4l-rSxbnHCkdEpS2huQLNKx6GuSrhVtvYb3AT=w1200" alt="Finca en venta Riverita Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="carruselIr(13)" loading="lazy" draggable="false"/></div></div>
       </div>
       
       <div class="modal-bloque-info">
@@ -737,74 +760,146 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczN5PnxNa_nsDycZGb5oK8vKoWq2X7Fj-5Gb9aWZOphhggOxMQ5xU8i-b9u86bLYMxd8X9wVjdWVytXlIEvgVeXawLTGRhyu6rntBfFQa6MDaUjO7WKG=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO-SuAkmoi_6ZEOY3hDiaAoaKeS2C5vjtm1BczNUxRLe_7GGERg81GTY4PNRbt37Q0AbnSzbLNa7MEZwN-Ip9se4hEDNFEj-BFNCd3C7JbRUJpC5_Jc=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMw42fr7l_bN4o3-uWDlQBySbG4t5hWiLba8qzjMcsHsnCbubHxhcTG8j7e2nZlkkjB9xYUqp4WmMRapb6eF7KFblVjzJa1ewxsqZlDy6oHByZX6AnK=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOtMIA71vXbsZdzm7Z1Y83IAh0lai9w5J7Ft_CaZckrJTzTjU_4sRvaOBEhgVgZM4TJsmFWAWCmgPF2CAH_YhFI8PuZg-nGq9VBH3zFGutm3s385sEc=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPO16GVeJyoAsebkcqgTX8UIeRQH4lIz-YOPWzMClDSfRI6m6asUdKTI-kmaB9tRoq1K29EimI-MUORCGU61r4LHccp7y5NdXM9Zeekv2yPfKBo0JYW=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOtxTtRbQZl1gKxLiIaKXlTuipq7xphgDG4m56MVMu5B3iNEmM4H5FHU1jPV5C5GPnrwnuYIEfk0fwPHn5FZOVSjYcSTDk9PQCkRxjpOF4WOURPMh30=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPYucPNR98JFMKIZWQRbL0PNyGgOBR13Hxvc2FtXLc4ls_XtikgsivRWcFkcBLPKtIViUeFq0JRoPiCelkAEiFnWwwis60cpjYdp5wuVTHP2nUhCCpA=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNmW7shRVqI5xrVa7gzcgWUlA9U55M3ocwlL6alnyfdrerjagRnOhs4SB2mOMNYEWu6bWMwi2PSZS8H_7szkKndZbdz4N_JAmAGq0HPl2eVY62kUsUT=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNISX4roNb6LSpDj2nS9nGxnADDhbWTOVGZ0I_kSVkNTtZRX2Job6HRapurvKVK2o9QytActHpImTic9qeclPKXkByChQIS6Pn1RwIRKkhwUUdBXi4m=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOXr-C4W9oPuaSpdPR8IST_gZ-A8GgZ_r6DXoc7fgXWNQqZeafm5l6YcLUDrxohi_1W-jnTt3zpIPyEzRRYFncYhiyMoXCkhal6Y90k6vvr9Srddf0W=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNjplu5CB06AiAnxv-r_5TK6cJK_9J5m7gjss9zXxZqe9b74Ta7VEwlacg6FmwglzDzYizgqeh2mYFJSRaE0gsdA5-A-aseJH-3aLoLtwQRd5CNHQyH=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMZjctCQqKI8U51z3f-cSgpjQzFAeCfL2FScZ5zMd__-DngVCTQV_8x3eXR2T9MpO3Vt25_D9H2qLFIGbhRiAn1yS71_lNudpxbT3vgvHU9xIYXgpVS=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPXy4bsByOdmBEpG0xSCmorLMkgEmI3BXSUICpY0vwu32FH6vDeUqGGpGwGFpfPBSVjeoC2wqR4eHauwOB5IZ15MhvodlRIFEuT7gFEgaFU0kvh4LiN=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMuTTN2_a6IqBfNbct6L3IvbPzoS3Xg9GCRL_C73gdBnryrvpPgy_gaUmtPkRRRy7gGqhMy45IqtTz4l-rSxbnHCkdEpS2huQLNKx6GuSrhVtvYb3AT=w1200"];
 var imgIndex = 0;
+var carruselTimer = null;
+var CARRUSEL_DELAY = 5000;
 
-// Soporte para swipe (deslizar) en móviles
-var startX = 0;
-var endX = 0;
-document.addEventListener('DOMContentLoaded', function() {
-  // Swipe en carrusel principal
-  var carrusel = document.querySelector('.carrusel-principal');
-  if (carrusel) {
-    carrusel.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
-    }, {passive: true});
-    carrusel.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        cambiarImg(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        cambiarImg(-1); // Deslizar derecha -> anterior
-      }
-    }, {passive: true});
+function carruselIr(idx, reiniciarTimer) {
+  if (reiniciarTimer === undefined) reiniciarTimer = true;
+  if (!IMGS.length) return;
+  imgIndex = ((idx % IMGS.length) + IMGS.length) % IMGS.length;
+  
+  var principal = document.getElementById('carruselPrincipal');
+  if (principal) {
+    var slides = principal.querySelectorAll('.carrusel-slide');
+    slides.forEach(function(s, i) {
+      s.classList.toggle('activa', i === imgIndex);
+    });
   }
+  
+  var counter = document.getElementById('carruselCounter');
+  if (counter) counter.textContent = (imgIndex + 1) + ' / ' + IMGS.length;
+  
+  var minis = document.querySelectorAll('.carrusel-min');
+  minis.forEach(function(m, i) {
+    m.classList.toggle('activa', i === imgIndex);
+  });
+  
+  if (reiniciarTimer) carruselReiniciarProgreso();
+}
+
+function carruselReiniciarProgreso() {
+  if (IMGS.length <= 1) return;
+  clearTimeout(carruselTimer);
+  carruselTimer = setTimeout(function() {
+    carruselIr(imgIndex + 1);
+  }, CARRUSEL_DELAY);
+}
+
+function carruselDetener() {
+  clearTimeout(carruselTimer);
+}
+
+function irImg(i) { carruselIr(i); }
+function cambiarImg(dir) { carruselIr(imgIndex + dir); }
+
+var _dragSx = 0, _dragPid = null, _dragMoved = false;
+function initCarruselDrag() {
+  var el = document.getElementById('carruselPrincipal');
+  if (!el) return;
+  
+  el.addEventListener('dragstart', function(e) { e.preventDefault(); });
+  
+  el.addEventListener('pointerdown', function(e) {
+    if (e.target.closest('button')) return;
+    _dragSx = e.clientX;
+    _dragPid = e.pointerId;
+    _dragMoved = false;
+    try { el.setPointerCapture(e.pointerId); } catch(err) {}
+  });
+  
+  el.addEventListener('pointermove', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    if (Math.abs(e.clientX - _dragSx) > 8) _dragMoved = true;
+  });
+  
+  el.addEventListener('pointerup', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    var d = _dragSx - e.clientX;
+    _dragPid = null;
+    if (Math.abs(d) >= 30) {
+      if (d > 0) carruselIr(imgIndex + 1);
+      else carruselIr(imgIndex - 1);
+    }
+  });
+  
+  el.addEventListener('pointercancel', function() { _dragPid = null; });
+  
+  el.addEventListener('click', function(e) {
+    if (_dragMoved && !e.target.closest('button')) {
+      e.stopPropagation();
+      e.preventDefault();
+      _dragMoved = false;
+    }
+  }, true);
+  
+  var _tSx = 0, _tSy = 0, _tMoved = false;
+  el.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    _tSx = e.touches[0].clientX;
+    _tSy = e.touches[0].clientY;
+    _tMoved = false;
+  }, {passive: true});
+  
+  el.addEventListener('touchmove', function(e) {
+    if (Math.abs(e.touches[0].clientX - _tSx) > 10) _tMoved = true;
+  }, {passive: true});
+  
+  el.addEventListener('touchend', function(e) {
+    if (!_tMoved) return;
+    var dx = e.changedTouches[0].clientX - _tSx;
+    var dy = e.changedTouches[0].clientY - _tSy;
+    _tMoved = false;
+    if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) carruselIr(imgIndex + 1);
+    else carruselIr(imgIndex - 1);
+  }, {passive: true});
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initCarruselDrag();
+  if (IMGS.length > 1) carruselReiniciarProgreso();
   
   // Swipe en lightbox (pantalla completa)
   var lightbox = document.getElementById('lightbox');
   if (lightbox) {
+    var lSx = 0, lEndX = 0;
     lightbox.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
+      lSx = e.touches[0].clientX;
     }, {passive: true});
     lightbox.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        lightboxNav(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        lightboxNav(-1); // Deslizar derecha -> anterior
+      lEndX = e.changedTouches[0].clientX;
+      if (lSx - lEndX > 50) {
+        lightboxNav(1);
+      } else if (lEndX - lSx > 50) {
+        lightboxNav(-1);
       }
     }, {passive: true});
     
-    // Evitar que el swipe en las miniaturas cambie la foto principal
     var wrapMinis = lightbox.querySelector('.lightbox-miniaturas-wrap');
     if (wrapMinis) {
-      wrapMinis.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
-      wrapMinis.addEventListener('touchend', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
+      wrapMinis.addEventListener('touchstart', function(e) { e.stopPropagation(); }, {passive: true});
+      wrapMinis.addEventListener('touchend', function(e) { e.stopPropagation(); }, {passive: true});
     }
   }
 });
 
-function irImg(i) {
-  if (!IMGS.length) return;
-  imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
-  var cont = document.getElementById('imgActual');
-  if (cont) cont.textContent = imgIndex + 1;
-}
-
-function cambiarImg(dir) { irImg(imgIndex + dir); }
-
 function abrirLightbox(i) {
-  irImg(i);
+  carruselDetener();
+  carruselIr(i, false);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   
-  // Generar miniaturas en el lightbox si no existen
   var minisDiv = document.getElementById('lightboxMiniaturas');
   if (minisDiv && !minisDiv.innerHTML) {
     minisDiv.innerHTML = IMGS.map(function(url, index) {
@@ -821,14 +916,14 @@ function cerrarLightbox(e) {
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
+  carruselReiniciarProgreso();
 }
 
 function lightboxNav(dir) {
-  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
+  carruselIr(imgIndex + dir, false);
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   updateLightboxMiniaturas();
-  irImg(imgIndex); // Actualizar también el carrusel principal
 }
 
 function updateLightboxMiniaturas() {
@@ -836,7 +931,6 @@ function updateLightboxMiniaturas() {
   minis.forEach(function(m, j) {
     m.classList.toggle('activa', j === imgIndex);
   });
-  // Hacer scroll a la miniatura activa
   var activa = minis[imgIndex];
   if (activa) {
     var wrap = activa.closest('.lightbox-miniaturas');

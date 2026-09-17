@@ -209,12 +209,35 @@ body{
   height: 300px;
   position: relative;
   background: #000;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
 }
 
-.galeria-img{
+.carrusel-principal img{
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -665,10 +688,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczPUpQG7JeW8BvgrTT_wviubJ8BQ0NIzTleiTsMOaHqpn4KOnEvZq_ZGWsB6-HPsBUVp87C8Gjf9-7H5IBCKXDG1SuPtbMJUlxeT5PIEGlGS1TGsWvJF=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 23</div>
-          <button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczPUpQG7JeW8BvgrTT_wviubJ8BQ0NIzTleiTsMOaHqpn4KOnEvZq_ZGWsB6-HPsBUVp87C8Gjf9-7H5IBCKXDG1SuPtbMJUlxeT5PIEGlGS1TGsWvJF=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 1" loading="eager" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP256iKFu_1PqgPYwAdeCilNhYCMph851Bnl7WefSL3pKY3TFx-BgnXm1uPqIv7j1qvyEGcinuKsk6RfO2fqYRy-WSSvPHngFXxNSJzb_HewH5XQv7E=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 2" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPYmjs69nwKrDmvY1U0q4te4qutWSG6opdUIvxiLtOAzF4mjqKJ9Qtf28FL_kumw3sx88-FTLHMuuaytk_CfOTcgsiJ3mPh0QZ_SV-bxCfpBTSFwNs-=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 3" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN92seEjJojOpftolkMkyHisbYniDlyDj6W19bnh_PldbTFrReYvY9sKEfk-tJAj2GxwdV_B7g8UB39MY7cPtNHpU7lm9WH5WYS453-ewql6-Xb_mzO=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 4" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMGRVMR9mW5GAJvi4B9-0rTNPibuJe_eRo_YhMvytaVGf8oQ_QbPquBuIbqCSeRVJYMkL6Tju7Rc2EceXO4bdpzcb0s1PWxhC4JO1chW6KybLFPIE3N=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 5" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOXOh9eI3GVgceUHuARRanX_BA5_boYYnHLi53DQXJZCn3ewNUkvwSpUU56Lum8JK09G17Gs7eOHg0WpV6CQK9qFSHYzI7zrJL5_6KzSfwDzPAbZ-xG=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 6" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPOJatq3XpYvTOsK6pgaMGy8xfUR2d2yhLEErRBlNyGYm9cZyjZWsLn0onwRsxR0EE5AAYw5DAzJxBErMsv0uxdQqE27sgXhsWN_QCfnXYXlIgvYn84=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 7" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPhxq4LEJccn8BkIDp3j6KJZH9n9eZNsC6qEFstu8EANrrH7R9pOlJs9Au2vgjTkit5TAFtPuuD7y5Xv4bb1egR_-n3lC6_H-K1CS9BbHZIHZqz48jq=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 8" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPBPPZfdxr05zNpJ7bdxw3g82-GTfdTgCCXJE4tv0DgDp3AjhhfBEMWFremnQVIKsIyptiXlcsMpv5i_S5O53lUyPbnYpUGW0VTFHGWoQMe75NQBCH6=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 9" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPPK-f3MGT2W1SUoHvDZ6jvv_7SDQgZy0AfzAIUYQhLFbKtyiyL4WHG7wSeI5oLMp8laCD6SQuotQxiF0Jea63A8YY33i87iU6Y_WJxel_KW1bBsIyn=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 10" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPI69qIudv-RdIfy2-oykOaAjCGxFAamWjIeUNP5wSX80wUS644adPM1IyyuwY6xLIqTmITh8LA6eQNPTwRMpXr0c8sgaIaUyPy7GeDF8V3wd9l-XVC=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 11" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMsuDt_GcOt2bcIWjrJ5LWGyMiwGEGVIbTVPi0uIe-jHLfnuL2QNMsg5Y3l3WLuISKM-pNGVdTW8ZuTmJkRlTqBBY-uYV8edf_jBkgwHkPESFWKpfz8=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 12" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOLOPEcsKxpSDTRfCnZeNnf3helP9OpO_vhvpmBnqFFpJ41Xp9m2UX-CENPvf5jpUtAd6ACIuNc7nScYVmN-QH70wZg_o8g1iPNfXL_N8peKUdyS0pv=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 13" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOU3-AdWk4PQoU3sKW3ANXNsdVSCCfAiKjenAeER1tBfUlHedXfqhVwC-nI1_SwZrbp0zN1BnChfER_dA69sqN5FT-Zu_BvYNnnMBmZZ9YV4vpFcRDI=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 14" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOhTVTzBM7eiyn2bXsbYb61156swggp0FIa0A8Q8kVw1I75TDXbw_H2ke4rH9mkATphOdW1rldY1Le6sVvrcORZmntEDh-qTE006yiLZvwer_sUas6F=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 15" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMy_JgZUF5qCJ8odHsIW4NVbm30yD9kHwJ4uTJSh_ZIboIYulusf-KCTiLCOvXNFm7pas9x8RtaxbMIxO5U9r2vquXGbbtfuu8Zk4z-s21tXIMgIycz=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 16" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNlJstT2pFw-eD61CKrTNj8OnshmmNSnLPB98cB2hH-U2oWmBOwvyvOgy0JvkXcnftS9w8pIkwyijPqze8KJ0ihT_7m2Jf0z97vH8k-QKehQahR8AmE=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 17" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO4rP9TAruVkP4esMDvTQNYtLLj04SiX-1zTb4Yk8pJL9Y6UHRhGpVo71Zxaw0mIafY1NReZoqltm4HN6ickPeLr_e4dVGb18aBs2vvDYgXxwAaMtGk=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 18" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN9sP3yF0_BEdS_NTd4c5HmFkN59JbxGvUHPvOw94txvsw8MmTiylRXSU7vK_B0bLP92laLMxvmGqRLhd7LMryv7CqeMF90Zs3ubLqHdJy_gkTHtH7u=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 19" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNwS3qHTMT1DK5A9VDRJH18XSJ54Hou9DRZgi1IJFbZC0PxOxj6U8yLzLBj60YChLP7u152ipxrvTu-BwTIAG8_hGTJbkH9zonWRG9Ra3A1LHbfV7wz=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 20" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNxasPKP0LrKZmkmPZ_nRVe9vMHIY0Cs0y2dgpV640mKY4z10Sdu1qYFSYe3Q8nJkKywKN80SmwFHg96mByr16o-WbJ-nqmoQEGZYdCbm86PGWDmo2O=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 21" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPMuVsgE4m4XH18yNCq7RM7ndkPsVFEGrSzicMEqcHMUPfnqca6FK1padSpC2yODfMJBdIdalcGsQFOwqDLV7tJ9yHgm24GXzi0Vzkfgbmp3XrP0SIf=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 22" loading="lazy" draggable="false" /></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMLmZI-7VZ_WyyI38OzV4mYr8hmvgXZ7AF0bbtCmicYNo9xZhT4w-0zTTHDlhzZs8a3XfEQKtFCHLez5Us15Gjkh0L49SvKXOEq7_b6MPMQ2h0oRCSH=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 23" loading="lazy" draggable="false" /></div>
+          <div class="carrusel-counter" id="carruselCounter">1 / 23</div>
+          <button class="galeria-nav prev" onclick="carruselIr(imgIndex-1)">&#8249;</button><button class="galeria-nav next" onclick="carruselIr(imgIndex+1)">&#8250;</button>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -676,7 +699,7 @@ body{
             </svg>
           </button>
         </div>
-        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczPUpQG7JeW8BvgrTT_wviubJ8BQ0NIzTleiTsMOaHqpn4KOnEvZq_ZGWsB6-HPsBUVp87C8Gjf9-7H5IBCKXDG1SuPtbMJUlxeT5PIEGlGS1TGsWvJF=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="irImg(0)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP256iKFu_1PqgPYwAdeCilNhYCMph851Bnl7WefSL3pKY3TFx-BgnXm1uPqIv7j1qvyEGcinuKsk6RfO2fqYRy-WSSvPHngFXxNSJzb_HewH5XQv7E=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="irImg(1)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPYmjs69nwKrDmvY1U0q4te4qutWSG6opdUIvxiLtOAzF4mjqKJ9Qtf28FL_kumw3sx88-FTLHMuuaytk_CfOTcgsiJ3mPh0QZ_SV-bxCfpBTSFwNs-=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="irImg(2)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN92seEjJojOpftolkMkyHisbYniDlyDj6W19bnh_PldbTFrReYvY9sKEfk-tJAj2GxwdV_B7g8UB39MY7cPtNHpU7lm9WH5WYS453-ewql6-Xb_mzO=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="irImg(3)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMGRVMR9mW5GAJvi4B9-0rTNPibuJe_eRo_YhMvytaVGf8oQ_QbPquBuIbqCSeRVJYMkL6Tju7Rc2EceXO4bdpzcb0s1PWxhC4JO1chW6KybLFPIE3N=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="irImg(4)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOXOh9eI3GVgceUHuARRanX_BA5_boYYnHLi53DQXJZCn3ewNUkvwSpUU56Lum8JK09G17Gs7eOHg0WpV6CQK9qFSHYzI7zrJL5_6KzSfwDzPAbZ-xG=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="irImg(5)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPOJatq3XpYvTOsK6pgaMGy8xfUR2d2yhLEErRBlNyGYm9cZyjZWsLn0onwRsxR0EE5AAYw5DAzJxBErMsv0uxdQqE27sgXhsWN_QCfnXYXlIgvYn84=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="irImg(6)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPhxq4LEJccn8BkIDp3j6KJZH9n9eZNsC6qEFstu8EANrrH7R9pOlJs9Au2vgjTkit5TAFtPuuD7y5Xv4bb1egR_-n3lC6_H-K1CS9BbHZIHZqz48jq=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="irImg(7)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPBPPZfdxr05zNpJ7bdxw3g82-GTfdTgCCXJE4tv0DgDp3AjhhfBEMWFremnQVIKsIyptiXlcsMpv5i_S5O53lUyPbnYpUGW0VTFHGWoQMe75NQBCH6=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="irImg(8)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPPK-f3MGT2W1SUoHvDZ6jvv_7SDQgZy0AfzAIUYQhLFbKtyiyL4WHG7wSeI5oLMp8laCD6SQuotQxiF0Jea63A8YY33i87iU6Y_WJxel_KW1bBsIyn=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="irImg(9)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPI69qIudv-RdIfy2-oykOaAjCGxFAamWjIeUNP5wSX80wUS644adPM1IyyuwY6xLIqTmITh8LA6eQNPTwRMpXr0c8sgaIaUyPy7GeDF8V3wd9l-XVC=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="irImg(10)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMsuDt_GcOt2bcIWjrJ5LWGyMiwGEGVIbTVPi0uIe-jHLfnuL2QNMsg5Y3l3WLuISKM-pNGVdTW8ZuTmJkRlTqBBY-uYV8edf_jBkgwHkPESFWKpfz8=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="irImg(11)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOLOPEcsKxpSDTRfCnZeNnf3helP9OpO_vhvpmBnqFFpJ41Xp9m2UX-CENPvf5jpUtAd6ACIuNc7nScYVmN-QH70wZg_o8g1iPNfXL_N8peKUdyS0pv=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="irImg(12)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOU3-AdWk4PQoU3sKW3ANXNsdVSCCfAiKjenAeER1tBfUlHedXfqhVwC-nI1_SwZrbp0zN1BnChfER_dA69sqN5FT-Zu_BvYNnnMBmZZ9YV4vpFcRDI=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="irImg(13)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOhTVTzBM7eiyn2bXsbYb61156swggp0FIa0A8Q8kVw1I75TDXbw_H2ke4rH9mkATphOdW1rldY1Le6sVvrcORZmntEDh-qTE006yiLZvwer_sUas6F=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="irImg(14)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMy_JgZUF5qCJ8odHsIW4NVbm30yD9kHwJ4uTJSh_ZIboIYulusf-KCTiLCOvXNFm7pas9x8RtaxbMIxO5U9r2vquXGbbtfuu8Zk4z-s21tXIMgIycz=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="irImg(15)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNlJstT2pFw-eD61CKrTNj8OnshmmNSnLPB98cB2hH-U2oWmBOwvyvOgy0JvkXcnftS9w8pIkwyijPqze8KJ0ihT_7m2Jf0z97vH8k-QKehQahR8AmE=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="irImg(16)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO4rP9TAruVkP4esMDvTQNYtLLj04SiX-1zTb4Yk8pJL9Y6UHRhGpVo71Zxaw0mIafY1NReZoqltm4HN6ickPeLr_e4dVGb18aBs2vvDYgXxwAaMtGk=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="irImg(17)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN9sP3yF0_BEdS_NTd4c5HmFkN59JbxGvUHPvOw94txvsw8MmTiylRXSU7vK_B0bLP92laLMxvmGqRLhd7LMryv7CqeMF90Zs3ubLqHdJy_gkTHtH7u=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="irImg(18)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNwS3qHTMT1DK5A9VDRJH18XSJ54Hou9DRZgi1IJFbZC0PxOxj6U8yLzLBj60YChLP7u152ipxrvTu-BwTIAG8_hGTJbkH9zonWRG9Ra3A1LHbfV7wz=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="irImg(19)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNxasPKP0LrKZmkmPZ_nRVe9vMHIY0Cs0y2dgpV640mKY4z10Sdu1qYFSYe3Q8nJkKywKN80SmwFHg96mByr16o-WbJ-nqmoQEGZYdCbm86PGWDmo2O=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="irImg(20)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPMuVsgE4m4XH18yNCq7RM7ndkPsVFEGrSzicMEqcHMUPfnqca6FK1padSpC2yODfMJBdIdalcGsQFOwqDLV7tJ9yHgm24GXzi0Vzkfgbmp3XrP0SIf=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="irImg(21)" loading="lazy"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMLmZI-7VZ_WyyI38OzV4mYr8hmvgXZ7AF0bbtCmicYNo9xZhT4w-0zTTHDlhzZs8a3XfEQKtFCHLez5Us15Gjkh0L49SvKXOEq7_b6MPMQ2h0oRCSH=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="irImg(22)" loading="lazy"/></div></div>
+        <div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas"><img src="https://lh3.googleusercontent.com/pw/AP1GczPUpQG7JeW8BvgrTT_wviubJ8BQ0NIzTleiTsMOaHqpn4KOnEvZq_ZGWsB6-HPsBUVp87C8Gjf9-7H5IBCKXDG1SuPtbMJUlxeT5PIEGlGS1TGsWvJF=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 1" class="miniatura carrusel-min activa" onclick="carruselIr(0)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczP256iKFu_1PqgPYwAdeCilNhYCMph851Bnl7WefSL3pKY3TFx-BgnXm1uPqIv7j1qvyEGcinuKsk6RfO2fqYRy-WSSvPHngFXxNSJzb_HewH5XQv7E=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 2" class="miniatura carrusel-min" onclick="carruselIr(1)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPYmjs69nwKrDmvY1U0q4te4qutWSG6opdUIvxiLtOAzF4mjqKJ9Qtf28FL_kumw3sx88-FTLHMuuaytk_CfOTcgsiJ3mPh0QZ_SV-bxCfpBTSFwNs-=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 3" class="miniatura carrusel-min" onclick="carruselIr(2)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN92seEjJojOpftolkMkyHisbYniDlyDj6W19bnh_PldbTFrReYvY9sKEfk-tJAj2GxwdV_B7g8UB39MY7cPtNHpU7lm9WH5WYS453-ewql6-Xb_mzO=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 4" class="miniatura carrusel-min" onclick="carruselIr(3)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMGRVMR9mW5GAJvi4B9-0rTNPibuJe_eRo_YhMvytaVGf8oQ_QbPquBuIbqCSeRVJYMkL6Tju7Rc2EceXO4bdpzcb0s1PWxhC4JO1chW6KybLFPIE3N=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 5" class="miniatura carrusel-min" onclick="carruselIr(4)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOXOh9eI3GVgceUHuARRanX_BA5_boYYnHLi53DQXJZCn3ewNUkvwSpUU56Lum8JK09G17Gs7eOHg0WpV6CQK9qFSHYzI7zrJL5_6KzSfwDzPAbZ-xG=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 6" class="miniatura carrusel-min" onclick="carruselIr(5)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPOJatq3XpYvTOsK6pgaMGy8xfUR2d2yhLEErRBlNyGYm9cZyjZWsLn0onwRsxR0EE5AAYw5DAzJxBErMsv0uxdQqE27sgXhsWN_QCfnXYXlIgvYn84=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 7" class="miniatura carrusel-min" onclick="carruselIr(6)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPhxq4LEJccn8BkIDp3j6KJZH9n9eZNsC6qEFstu8EANrrH7R9pOlJs9Au2vgjTkit5TAFtPuuD7y5Xv4bb1egR_-n3lC6_H-K1CS9BbHZIHZqz48jq=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 8" class="miniatura carrusel-min" onclick="carruselIr(7)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPBPPZfdxr05zNpJ7bdxw3g82-GTfdTgCCXJE4tv0DgDp3AjhhfBEMWFremnQVIKsIyptiXlcsMpv5i_S5O53lUyPbnYpUGW0VTFHGWoQMe75NQBCH6=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 9" class="miniatura carrusel-min" onclick="carruselIr(8)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPPK-f3MGT2W1SUoHvDZ6jvv_7SDQgZy0AfzAIUYQhLFbKtyiyL4WHG7wSeI5oLMp8laCD6SQuotQxiF0Jea63A8YY33i87iU6Y_WJxel_KW1bBsIyn=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 10" class="miniatura carrusel-min" onclick="carruselIr(9)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPI69qIudv-RdIfy2-oykOaAjCGxFAamWjIeUNP5wSX80wUS644adPM1IyyuwY6xLIqTmITh8LA6eQNPTwRMpXr0c8sgaIaUyPy7GeDF8V3wd9l-XVC=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 11" class="miniatura carrusel-min" onclick="carruselIr(10)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMsuDt_GcOt2bcIWjrJ5LWGyMiwGEGVIbTVPi0uIe-jHLfnuL2QNMsg5Y3l3WLuISKM-pNGVdTW8ZuTmJkRlTqBBY-uYV8edf_jBkgwHkPESFWKpfz8=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 12" class="miniatura carrusel-min" onclick="carruselIr(11)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOLOPEcsKxpSDTRfCnZeNnf3helP9OpO_vhvpmBnqFFpJ41Xp9m2UX-CENPvf5jpUtAd6ACIuNc7nScYVmN-QH70wZg_o8g1iPNfXL_N8peKUdyS0pv=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 13" class="miniatura carrusel-min" onclick="carruselIr(12)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOU3-AdWk4PQoU3sKW3ANXNsdVSCCfAiKjenAeER1tBfUlHedXfqhVwC-nI1_SwZrbp0zN1BnChfER_dA69sqN5FT-Zu_BvYNnnMBmZZ9YV4vpFcRDI=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 14" class="miniatura carrusel-min" onclick="carruselIr(13)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczOhTVTzBM7eiyn2bXsbYb61156swggp0FIa0A8Q8kVw1I75TDXbw_H2ke4rH9mkATphOdW1rldY1Le6sVvrcORZmntEDh-qTE006yiLZvwer_sUas6F=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 15" class="miniatura carrusel-min" onclick="carruselIr(14)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMy_JgZUF5qCJ8odHsIW4NVbm30yD9kHwJ4uTJSh_ZIboIYulusf-KCTiLCOvXNFm7pas9x8RtaxbMIxO5U9r2vquXGbbtfuu8Zk4z-s21tXIMgIycz=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 16" class="miniatura carrusel-min" onclick="carruselIr(15)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNlJstT2pFw-eD61CKrTNj8OnshmmNSnLPB98cB2hH-U2oWmBOwvyvOgy0JvkXcnftS9w8pIkwyijPqze8KJ0ihT_7m2Jf0z97vH8k-QKehQahR8AmE=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 17" class="miniatura carrusel-min" onclick="carruselIr(16)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczO4rP9TAruVkP4esMDvTQNYtLLj04SiX-1zTb4Yk8pJL9Y6UHRhGpVo71Zxaw0mIafY1NReZoqltm4HN6ickPeLr_e4dVGb18aBs2vvDYgXxwAaMtGk=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 18" class="miniatura carrusel-min" onclick="carruselIr(17)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczN9sP3yF0_BEdS_NTd4c5HmFkN59JbxGvUHPvOw94txvsw8MmTiylRXSU7vK_B0bLP92laLMxvmGqRLhd7LMryv7CqeMF90Zs3ubLqHdJy_gkTHtH7u=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 19" class="miniatura carrusel-min" onclick="carruselIr(18)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNwS3qHTMT1DK5A9VDRJH18XSJ54Hou9DRZgi1IJFbZC0PxOxj6U8yLzLBj60YChLP7u152ipxrvTu-BwTIAG8_hGTJbkH9zonWRG9Ra3A1LHbfV7wz=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 20" class="miniatura carrusel-min" onclick="carruselIr(19)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczNxasPKP0LrKZmkmPZ_nRVe9vMHIY0Cs0y2dgpV640mKY4z10Sdu1qYFSYe3Q8nJkKywKN80SmwFHg96mByr16o-WbJ-nqmoQEGZYdCbm86PGWDmo2O=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 21" class="miniatura carrusel-min" onclick="carruselIr(20)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczPMuVsgE4m4XH18yNCq7RM7ndkPsVFEGrSzicMEqcHMUPfnqca6FK1padSpC2yODfMJBdIdalcGsQFOwqDLV7tJ9yHgm24GXzi0Vzkfgbmp3XrP0SIf=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 22" class="miniatura carrusel-min" onclick="carruselIr(21)" loading="lazy" draggable="false"/><img src="https://lh3.googleusercontent.com/pw/AP1GczMLmZI-7VZ_WyyI38OzV4mYr8hmvgXZ7AF0bbtCmicYNo9xZhT4w-0zTTHDlhzZs8a3XfEQKtFCHLez5Us15Gjkh0L49SvKXOEq7_b6MPMQ2h0oRCSH=w1200" alt="Finca en venta La Ulloa Neiva – ICDE Inmobiliaria foto 23" class="miniatura carrusel-min" onclick="carruselIr(22)" loading="lazy" draggable="false"/></div></div>
       </div>
       
       <div class="modal-bloque-info">
@@ -738,74 +761,146 @@ body{
 <script>
 var IMGS = ["https://lh3.googleusercontent.com/pw/AP1GczPUpQG7JeW8BvgrTT_wviubJ8BQ0NIzTleiTsMOaHqpn4KOnEvZq_ZGWsB6-HPsBUVp87C8Gjf9-7H5IBCKXDG1SuPtbMJUlxeT5PIEGlGS1TGsWvJF=w1200", "https://lh3.googleusercontent.com/pw/AP1GczP256iKFu_1PqgPYwAdeCilNhYCMph851Bnl7WefSL3pKY3TFx-BgnXm1uPqIv7j1qvyEGcinuKsk6RfO2fqYRy-WSSvPHngFXxNSJzb_HewH5XQv7E=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPYmjs69nwKrDmvY1U0q4te4qutWSG6opdUIvxiLtOAzF4mjqKJ9Qtf28FL_kumw3sx88-FTLHMuuaytk_CfOTcgsiJ3mPh0QZ_SV-bxCfpBTSFwNs-=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN92seEjJojOpftolkMkyHisbYniDlyDj6W19bnh_PldbTFrReYvY9sKEfk-tJAj2GxwdV_B7g8UB39MY7cPtNHpU7lm9WH5WYS453-ewql6-Xb_mzO=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMGRVMR9mW5GAJvi4B9-0rTNPibuJe_eRo_YhMvytaVGf8oQ_QbPquBuIbqCSeRVJYMkL6Tju7Rc2EceXO4bdpzcb0s1PWxhC4JO1chW6KybLFPIE3N=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOXOh9eI3GVgceUHuARRanX_BA5_boYYnHLi53DQXJZCn3ewNUkvwSpUU56Lum8JK09G17Gs7eOHg0WpV6CQK9qFSHYzI7zrJL5_6KzSfwDzPAbZ-xG=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPOJatq3XpYvTOsK6pgaMGy8xfUR2d2yhLEErRBlNyGYm9cZyjZWsLn0onwRsxR0EE5AAYw5DAzJxBErMsv0uxdQqE27sgXhsWN_QCfnXYXlIgvYn84=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPhxq4LEJccn8BkIDp3j6KJZH9n9eZNsC6qEFstu8EANrrH7R9pOlJs9Au2vgjTkit5TAFtPuuD7y5Xv4bb1egR_-n3lC6_H-K1CS9BbHZIHZqz48jq=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPBPPZfdxr05zNpJ7bdxw3g82-GTfdTgCCXJE4tv0DgDp3AjhhfBEMWFremnQVIKsIyptiXlcsMpv5i_S5O53lUyPbnYpUGW0VTFHGWoQMe75NQBCH6=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPPK-f3MGT2W1SUoHvDZ6jvv_7SDQgZy0AfzAIUYQhLFbKtyiyL4WHG7wSeI5oLMp8laCD6SQuotQxiF0Jea63A8YY33i87iU6Y_WJxel_KW1bBsIyn=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPI69qIudv-RdIfy2-oykOaAjCGxFAamWjIeUNP5wSX80wUS644adPM1IyyuwY6xLIqTmITh8LA6eQNPTwRMpXr0c8sgaIaUyPy7GeDF8V3wd9l-XVC=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMsuDt_GcOt2bcIWjrJ5LWGyMiwGEGVIbTVPi0uIe-jHLfnuL2QNMsg5Y3l3WLuISKM-pNGVdTW8ZuTmJkRlTqBBY-uYV8edf_jBkgwHkPESFWKpfz8=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOLOPEcsKxpSDTRfCnZeNnf3helP9OpO_vhvpmBnqFFpJ41Xp9m2UX-CENPvf5jpUtAd6ACIuNc7nScYVmN-QH70wZg_o8g1iPNfXL_N8peKUdyS0pv=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOU3-AdWk4PQoU3sKW3ANXNsdVSCCfAiKjenAeER1tBfUlHedXfqhVwC-nI1_SwZrbp0zN1BnChfER_dA69sqN5FT-Zu_BvYNnnMBmZZ9YV4vpFcRDI=w1200", "https://lh3.googleusercontent.com/pw/AP1GczOhTVTzBM7eiyn2bXsbYb61156swggp0FIa0A8Q8kVw1I75TDXbw_H2ke4rH9mkATphOdW1rldY1Le6sVvrcORZmntEDh-qTE006yiLZvwer_sUas6F=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMy_JgZUF5qCJ8odHsIW4NVbm30yD9kHwJ4uTJSh_ZIboIYulusf-KCTiLCOvXNFm7pas9x8RtaxbMIxO5U9r2vquXGbbtfuu8Zk4z-s21tXIMgIycz=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNlJstT2pFw-eD61CKrTNj8OnshmmNSnLPB98cB2hH-U2oWmBOwvyvOgy0JvkXcnftS9w8pIkwyijPqze8KJ0ihT_7m2Jf0z97vH8k-QKehQahR8AmE=w1200", "https://lh3.googleusercontent.com/pw/AP1GczO4rP9TAruVkP4esMDvTQNYtLLj04SiX-1zTb4Yk8pJL9Y6UHRhGpVo71Zxaw0mIafY1NReZoqltm4HN6ickPeLr_e4dVGb18aBs2vvDYgXxwAaMtGk=w1200", "https://lh3.googleusercontent.com/pw/AP1GczN9sP3yF0_BEdS_NTd4c5HmFkN59JbxGvUHPvOw94txvsw8MmTiylRXSU7vK_B0bLP92laLMxvmGqRLhd7LMryv7CqeMF90Zs3ubLqHdJy_gkTHtH7u=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNwS3qHTMT1DK5A9VDRJH18XSJ54Hou9DRZgi1IJFbZC0PxOxj6U8yLzLBj60YChLP7u152ipxrvTu-BwTIAG8_hGTJbkH9zonWRG9Ra3A1LHbfV7wz=w1200", "https://lh3.googleusercontent.com/pw/AP1GczNxasPKP0LrKZmkmPZ_nRVe9vMHIY0Cs0y2dgpV640mKY4z10Sdu1qYFSYe3Q8nJkKywKN80SmwFHg96mByr16o-WbJ-nqmoQEGZYdCbm86PGWDmo2O=w1200", "https://lh3.googleusercontent.com/pw/AP1GczPMuVsgE4m4XH18yNCq7RM7ndkPsVFEGrSzicMEqcHMUPfnqca6FK1padSpC2yODfMJBdIdalcGsQFOwqDLV7tJ9yHgm24GXzi0Vzkfgbmp3XrP0SIf=w1200", "https://lh3.googleusercontent.com/pw/AP1GczMLmZI-7VZ_WyyI38OzV4mYr8hmvgXZ7AF0bbtCmicYNo9xZhT4w-0zTTHDlhzZs8a3XfEQKtFCHLez5Us15Gjkh0L49SvKXOEq7_b6MPMQ2h0oRCSH=w1200"];
 var imgIndex = 0;
+var carruselTimer = null;
+var CARRUSEL_DELAY = 5000;
 
-// Soporte para swipe (deslizar) en móviles
-var startX = 0;
-var endX = 0;
-document.addEventListener('DOMContentLoaded', function() {
-  // Swipe en carrusel principal
-  var carrusel = document.querySelector('.carrusel-principal');
-  if (carrusel) {
-    carrusel.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
-    }, {passive: true});
-    carrusel.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        cambiarImg(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        cambiarImg(-1); // Deslizar derecha -> anterior
-      }
-    }, {passive: true});
+function carruselIr(idx, reiniciarTimer) {
+  if (reiniciarTimer === undefined) reiniciarTimer = true;
+  if (!IMGS.length) return;
+  imgIndex = ((idx % IMGS.length) + IMGS.length) % IMGS.length;
+  
+  var principal = document.getElementById('carruselPrincipal');
+  if (principal) {
+    var slides = principal.querySelectorAll('.carrusel-slide');
+    slides.forEach(function(s, i) {
+      s.classList.toggle('activa', i === imgIndex);
+    });
   }
+  
+  var counter = document.getElementById('carruselCounter');
+  if (counter) counter.textContent = (imgIndex + 1) + ' / ' + IMGS.length;
+  
+  var minis = document.querySelectorAll('.carrusel-min');
+  minis.forEach(function(m, i) {
+    m.classList.toggle('activa', i === imgIndex);
+  });
+  
+  if (reiniciarTimer) carruselReiniciarProgreso();
+}
+
+function carruselReiniciarProgreso() {
+  if (IMGS.length <= 1) return;
+  clearTimeout(carruselTimer);
+  carruselTimer = setTimeout(function() {
+    carruselIr(imgIndex + 1);
+  }, CARRUSEL_DELAY);
+}
+
+function carruselDetener() {
+  clearTimeout(carruselTimer);
+}
+
+function irImg(i) { carruselIr(i); }
+function cambiarImg(dir) { carruselIr(imgIndex + dir); }
+
+var _dragSx = 0, _dragPid = null, _dragMoved = false;
+function initCarruselDrag() {
+  var el = document.getElementById('carruselPrincipal');
+  if (!el) return;
+  
+  el.addEventListener('dragstart', function(e) { e.preventDefault(); });
+  
+  el.addEventListener('pointerdown', function(e) {
+    if (e.target.closest('button')) return;
+    _dragSx = e.clientX;
+    _dragPid = e.pointerId;
+    _dragMoved = false;
+    try { el.setPointerCapture(e.pointerId); } catch(err) {}
+  });
+  
+  el.addEventListener('pointermove', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    if (Math.abs(e.clientX - _dragSx) > 8) _dragMoved = true;
+  });
+  
+  el.addEventListener('pointerup', function(e) {
+    if (e.pointerId !== _dragPid) return;
+    var d = _dragSx - e.clientX;
+    _dragPid = null;
+    if (Math.abs(d) >= 30) {
+      if (d > 0) carruselIr(imgIndex + 1);
+      else carruselIr(imgIndex - 1);
+    }
+  });
+  
+  el.addEventListener('pointercancel', function() { _dragPid = null; });
+  
+  el.addEventListener('click', function(e) {
+    if (_dragMoved && !e.target.closest('button')) {
+      e.stopPropagation();
+      e.preventDefault();
+      _dragMoved = false;
+    }
+  }, true);
+  
+  var _tSx = 0, _tSy = 0, _tMoved = false;
+  el.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    _tSx = e.touches[0].clientX;
+    _tSy = e.touches[0].clientY;
+    _tMoved = false;
+  }, {passive: true});
+  
+  el.addEventListener('touchmove', function(e) {
+    if (Math.abs(e.touches[0].clientX - _tSx) > 10) _tMoved = true;
+  }, {passive: true});
+  
+  el.addEventListener('touchend', function(e) {
+    if (!_tMoved) return;
+    var dx = e.changedTouches[0].clientX - _tSx;
+    var dy = e.changedTouches[0].clientY - _tSy;
+    _tMoved = false;
+    if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) carruselIr(imgIndex + 1);
+    else carruselIr(imgIndex - 1);
+  }, {passive: true});
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initCarruselDrag();
+  if (IMGS.length > 1) carruselReiniciarProgreso();
   
   // Swipe en lightbox (pantalla completa)
   var lightbox = document.getElementById('lightbox');
   if (lightbox) {
+    var lSx = 0, lEndX = 0;
     lightbox.addEventListener('touchstart', function(e) {
-      startX = e.touches[0].clientX;
+      lSx = e.touches[0].clientX;
     }, {passive: true});
     lightbox.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].clientX;
-      if (startX - endX > 50) {
-        lightboxNav(1); // Deslizar izquierda -> siguiente
-      } else if (endX - startX > 50) {
-        lightboxNav(-1); // Deslizar derecha -> anterior
+      lEndX = e.changedTouches[0].clientX;
+      if (lSx - lEndX > 50) {
+        lightboxNav(1);
+      } else if (lEndX - lSx > 50) {
+        lightboxNav(-1);
       }
     }, {passive: true});
     
-    // Evitar que el swipe en las miniaturas cambie la foto principal
     var wrapMinis = lightbox.querySelector('.lightbox-miniaturas-wrap');
     if (wrapMinis) {
-      wrapMinis.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
-      wrapMinis.addEventListener('touchend', function(e) {
-        e.stopPropagation();
-      }, {passive: true});
+      wrapMinis.addEventListener('touchstart', function(e) { e.stopPropagation(); }, {passive: true});
+      wrapMinis.addEventListener('touchend', function(e) { e.stopPropagation(); }, {passive: true});
     }
   }
 });
 
-function irImg(i) {
-  if (!IMGS.length) return;
-  imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
-  var cont = document.getElementById('imgActual');
-  if (cont) cont.textContent = imgIndex + 1;
-}
-
-function cambiarImg(dir) { irImg(imgIndex + dir); }
-
 function abrirLightbox(i) {
-  irImg(i);
+  carruselDetener();
+  carruselIr(i, false);
   var lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   
-  // Generar miniaturas en el lightbox si no existen
   var minisDiv = document.getElementById('lightboxMiniaturas');
   if (minisDiv && !minisDiv.innerHTML) {
     minisDiv.innerHTML = IMGS.map(function(url, index) {
@@ -822,14 +917,14 @@ function cerrarLightbox(e) {
   if (e && e.target !== document.getElementById('lightbox') && e.type !== 'click') return;
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
+  carruselReiniciarProgreso();
 }
 
 function lightboxNav(dir) {
-  imgIndex = (imgIndex + dir + IMGS.length) % IMGS.length;
+  carruselIr(imgIndex + dir, false);
   document.getElementById('lightboxImg').src = IMGS[imgIndex];
   document.getElementById('lightboxCounter').textContent = (imgIndex+1) + ' / ' + IMGS.length;
   updateLightboxMiniaturas();
-  irImg(imgIndex); // Actualizar también el carrusel principal
 }
 
 function updateLightboxMiniaturas() {
@@ -837,7 +932,6 @@ function updateLightboxMiniaturas() {
   minis.forEach(function(m, j) {
     m.classList.toggle('activa', j === imgIndex);
   });
-  // Hacer scroll a la miniatura activa
   var activa = minis[imgIndex];
   if (activa) {
     var wrap = activa.closest('.lightbox-miniaturas');
