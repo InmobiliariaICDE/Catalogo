@@ -536,7 +536,7 @@ let leadViewMode = localStorage.getItem('icde_lead_view') || 'table';
 
 function freshLead(){
   return {
-    tipo:'cliente', nombre:'', celular:'', notas:'', metodoPago:[], estado:'enviando', etiqueta:'activo',
+    tipo:'cliente', nombre:'', celular:'', notas:'', metodoPago:[], estado:'visita', etiqueta:'activo',
     buscar:'', filtros:{tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[]},
     frecuencia:'semanal', maxPorEnvio:4, nombreInmobiliaria:'', nombreAgente:'',
     propsFiltradas:[], propsEnviadas:[], proximosEnvios:[], historialEnvios:[], visitas:[]
@@ -969,6 +969,7 @@ function doLogout(){
           <div class="form-group">
             <label class="form-label">Estado Inicial</label>
             <select class="form-input" onchange="nuevoLead.estado=this.value">
+              <option value="visita"   ${nuevoLead.estado==='visita'?'selected':''}>Pendiente visita</option>
               <option value="enviando" ${nuevoLead.estado==='enviando'?'selected':''}>Enviando propuestas</option>
               <option value="proceso"  ${nuevoLead.estado==='proceso'?'selected':''}>Proceso de venta</option>
               <option value="visita"   ${nuevoLead.estado==='visita'?'selected':''}>Pendiente visita</option>
@@ -1327,9 +1328,9 @@ function renderSidePanel(lead){
       <div class="form-grid" style="margin-top:20px; padding-top:20px; border-top:1px solid var(--glass-border);">
         <div class="form-group"><label class="form-label">Estado</label>
           <select class="form-input" onchange="updLead('${lead.id}','estado',this.value)">
+            <option value="visita"   ${lead.estado==='visita'?'selected':''}>Pendiente visita</option>
             <option value="enviando" ${lead.estado==='enviando'?'selected':''}>Enviando propuestas</option>
             <option value="proceso"  ${lead.estado==='proceso'?'selected':''}>Proceso de venta</option>
-            <option value="visita"   ${lead.estado==='visita'?'selected':''}>Pendiente visita</option>
             <option value="banco"    ${lead.estado==='banco'?'selected':''}>Referido al banco</option>
             <option value="inactivo" ${lead.estado==='inactivo'?'selected':''}>Inactivo</option>
           </select>

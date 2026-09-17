@@ -4061,9 +4061,9 @@ html, body {
         <div class="form-group" style="margin-bottom:0;">
           <label class="form-label">Estado Inicial</label>
           <select class="form-input" id="mnlEstado">
+            <option value="visita">🟢 Pendiente visita</option>
             <option value="enviando">🟠 Enviando propuestas</option>
             <option value="proceso">🔵 Proceso de venta</option>
-            <option value="visita">🟢 Pendiente visita</option>
             <option value="banco">🟣 Referido al banco</option>
             <option value="inactivo">⚫ Inactivo</option>
           </select>
@@ -4730,7 +4730,7 @@ const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u030
 
 function freshLead(){
   return {
-    tipo:'cliente', nombre:'', celular:'', notas:'', metodoPago:[], estado:'enviando', etiqueta:'activo',
+    tipo:'cliente', nombre:'', celular:'', notas:'', metodoPago:[], estado:'visita', etiqueta:'activo',
     buscar:'', filtros:{tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[]},
     frecuencia:'semanal', maxPorEnvio:4, nombreInmobiliaria:'', nombreAgente:'',
     propsFiltradas:[], propsEnviadas:[], proximosEnvios:[], historialEnvios:[], visitas:[]
@@ -7600,7 +7600,7 @@ function guardarModalLead(irACatalogo, btn) {
   const cel = (document.getElementById('mnlC')?.value || '').trim();
   const nomInmob = (document.getElementById('mnlNI')?.value || '').trim();
   const nomAgente = (document.getElementById('mnlNA')?.value || '').trim();
-  const estado = document.getElementById('mnlEstado')?.value || 'enviando';
+  const estado = document.getElementById('mnlEstado')?.value || 'visita';
   const etiqueta = document.getElementById('mnlEtiqueta')?.value || 'activo';
   const frecuencia = document.getElementById('mnlFrecuencia')?.value || 'semanal';
   const notas = (document.getElementById('mnlNotas')?.value || '').trim();
@@ -7903,8 +7903,8 @@ function renderLeadsBody(lista){
                   onfocus="Array.from(this.options).forEach(o=>o.text=o.getAttribute('data-emoji')+' '+o.getAttribute('data-short'))"
                   onblur="Array.from(this.options).forEach(o=>o.text=o.getAttribute('data-short'))"
                   onchange="updLead('${String(l.id).trim()}','estado',this.value); this.blur();">
-                  <option value="enviando" data-emoji="🟠" data-short="Enviando" ${l.estado==='enviando'?'selected':''}>Enviando</option>
                   <option value="visita"   data-emoji="🟢" data-short="Pdte. visita" ${l.estado==='visita'?'selected':''}>Pdte. visita</option>
+                  <option value="enviando" data-emoji="🟠" data-short="Enviando" ${l.estado==='enviando'?'selected':''}>Enviando</option>
                   <option value="proceso"  data-emoji="🔵" data-short="Proceso venta" ${l.estado==='proceso'?'selected':''}>Proceso venta</option>
                   <option value="banco"    data-emoji="🟣" data-short="Banco" ${l.estado==='banco'?'selected':''}>Banco</option>
                   <option value="inactivo" data-emoji="⚫" data-short="Inactivo" ${l.estado==='inactivo'?'selected':''}>Inactivo</option>
@@ -8104,9 +8104,9 @@ function renderSidePanel(lead){
       <div class="form-grid" style="margin-top:20px; padding-top:20px; border-top:1px solid var(--glass-border);">
         <div class="form-group"><label class="form-label">Estado</label>
           <select class="form-input" onchange="updLead('${lead.id}','estado',this.value)">
+            <option value="visita"   ${lead.estado==='visita'?'selected':''}>🟢 Pendiente visita</option>
             <option value="enviando" ${lead.estado==='enviando'?'selected':''}>🟠 Enviando propuestas</option>
             <option value="proceso"  ${lead.estado==='proceso'?'selected':''}>🔵 Proceso de venta</option>
-            <option value="visita"   ${lead.estado==='visita'?'selected':''}>🟢 Pendiente visita</option>
             <option value="banco"    ${lead.estado==='banco'?'selected':''}>🟣 Referido al banco</option>
             <option value="inactivo" ${lead.estado==='inactivo'?'selected':''}>⚫ Inactivo</option>
           </select>
@@ -8714,12 +8714,8 @@ function confirmarEnvio(btn){
     const num = lead.celular.replace(/\D/g, '');
     const waBase = num.startsWith('57') ? num : '57' + num;
     
-    let waWindow = null;
+    const WA_WIN_NAME = 'whatsapp_icde';
     if (settings.waApi) {
-      waWindow = window.open('', '_blank');
-      if (waWindow) {
-        waWindow.document.write('<p style="font-family:sans-serif; text-align:center; margin-top:50px; color:#555;">Conectando con WhatsApp...</p>');
-      }
       fetch(`${settings.waApi}/send-message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -8727,25 +8723,16 @@ function confirmarEnvio(btn){
       }).then(r => {
         if (r.ok) {
           toast(`Enviado automáticamente ✓`, 'success');
-          if (waWindow) waWindow.close();
         } else {
-          if (waWindow) {
-            waWindow.location.href = `https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`;
-          } else {
-            window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
-          }
+          window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
         }
       }).catch(() => {
-        if (waWindow) {
-          waWindow.location.href = `https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`;
-        } else {
-          window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
-        }
+        window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
       }).finally(() => {
         if(btn) btn.disabled = false;
       });
     } else {
-      window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
+      window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
       if(btn) btn.disabled = false;
     }
 
@@ -9071,11 +9058,8 @@ function guardarFiltrosEditados(marcarComoEnviadas = false){
     const num = lead.celular.replace(/\D/g, '');
     const waBase = num.startsWith('57') ? num : '57' + num;
 
+    const WA_WIN_NAME = 'whatsapp_icde';
     if (settings.waApi) {
-      let waWindow = window.open('', '_blank');
-      if (waWindow) {
-        waWindow.document.write('<p style="font-family:sans-serif; text-align:center; margin-top:50px; color:#555;">Conectando con WhatsApp...</p>');
-      }
       fetch(`${settings.waApi}/send-message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -9083,23 +9067,14 @@ function guardarFiltrosEditados(marcarComoEnviadas = false){
       }).then(r => {
         if (r.ok) {
           toast(`Enviado automáticamente ✓`, 'success');
-          if (waWindow) waWindow.close();
         } else {
-          if (waWindow) {
-            waWindow.location.href = `https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`;
-          } else {
-            window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
-          }
+          window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
         }
       }).catch(() => {
-        if (waWindow) {
-          waWindow.location.href = `https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`;
-        } else {
-          window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
-        }
+        window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
       });
     } else {
-      window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, '_blank');
+      window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
     }
   }
 
