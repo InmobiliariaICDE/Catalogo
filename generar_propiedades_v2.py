@@ -425,7 +425,10 @@ def build_html(p: dict, slug: str) -> str:
 
     # ── WA TEXT ──
     from urllib.parse import quote as urlquote
-    wa_text = urlquote(f"Hola, me interesa la propiedad: {p.get('Nombre','')} (Código {p.get('Código','')})")
+    cod_str = str(p.get("Código", "")).strip()
+    nombre_str = str(p.get("Nombre", "Inmueble")).strip()
+    msg_wa = f"Hola ICDE Inmobiliaria 🏠, quiero agendar una visita para ver el inmueble\n\n{nombre_str} (Cód. {cod_str}) - {precio}\n\n🔗 Mi catálogo personalizado:\nhttps://icdeinmobiliaria.com/?ids={cod_str}\n\n¿Cuándo podríamos coordinar?"
+    wa_text = urlquote(msg_wa)
 
     # ── JS IMÁGENES ──
     imgs_js = json.dumps(imagenes)
@@ -1084,7 +1087,7 @@ body{{
 
   <!-- ACCIONES -->
   <div class="modal-acciones">
-    <a href="https://wa.me/{PHONE}?text={wa_text}"
+    <a href="https://api.whatsapp.com/send?phone={PHONE}&text={wa_text}"
        class="modal-btn-whatsapp-nuevo"
        target="_blank"
        rel="noopener noreferrer"
