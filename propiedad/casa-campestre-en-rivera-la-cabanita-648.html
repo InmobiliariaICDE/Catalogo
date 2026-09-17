@@ -205,16 +205,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -681,10 +698,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczNmkAYXDL2_4zSQspoS8S5goqc9rqW3asRvBpY6DG8-OswqMSxMsrgP-cJKhUe3RJQ8ScCOWECiVWm4m6WCbQnZIuz_6m-mNukNy8MLcrfpOcBg-LZS=w1200" alt="Casa campestre en venta Rivera Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczNmkAYXDL2_4zSQspoS8S5goqc9rqW3asRvBpY6DG8-OswqMSxMsrgP-cJKhUe3RJQ8ScCOWECiVWm4m6WCbQnZIuz_6m-mNukNy8MLcrfpOcBg-LZS=w1200" alt="Casa campestre en venta Rivera Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPt4b3El1WCep__KV72jYMuZPfvjrA_DmKpoyakS9dn-ZytWS6TpnoWFEgyppB2YtVXl4O4MpZsHvw5aWh_2FW_mmFdWSZs5tsnCdPWwX6-hdQTgXgM=w1200" alt="Casa campestre en venta Rivera Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPm4hToC0XfRQCUg19D8EbQi-_kqdynBmbBb3x8JBzflFJwA8iCKXSTwlJe4XcxFZWamwwUJunqJzFMyXJ5m2k2GkAv9q00HH_gM8AmLA0X-aWjfLoY=w1200" alt="Casa campestre en venta Rivera Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMAXmqa1iizptX5IIn_FFXRUpjXqKSAo-iVxlWco59HvP_YFXGP93RnE9PXl-6lUpT3lEIl6o1dnAt4bWh8ULe8Z8VOVe1qwbmDkR5B-Y_n5UqEA1vI=w1200" alt="Casa campestre en venta Rivera Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNwyYIu-qrOmeml-yeAsxIjg3aSagDbHGel-7IT4EVdYktGKZxyLYSSrIzCUCiFHGdBAz-9HNClHH7OgAJI75_r2yEC3YXIHVFUuSQSjhcO19Px4SkC=w1200" alt="Casa campestre en venta Rivera Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMI5e4hrqg_8ZMq_09dQJpvmrgWIR6eRpcGDTBlZ-7kaN7h1U9JhY0MDCsp68sypfESWrPTIWcwanyfa2zwIPlsbSvJqwcoYBO6hDQVzv0CsyDVEins=w1200" alt="Casa campestre en venta Rivera Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOqGoSIHqlLo28WnHyv-qH7m6ZT8aOJ8niuZklm7qbKgBJKomeXHzsHWfkVNlcchW3vAL2fSBgzqx0LHPzrdt6C6FWLm9w3kmOGbW4bWFUNqewEw5Re=w1200" alt="Casa campestre en venta Rivera Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNRuS1iOtTcY4LOUKN36nSUjePgCsVN4niD3ZGRSm5xDIWhBJArVFnqMnSybt5UDQz4HqPEM5u0UcWccHjQNOm9v027jgGud8dwdL3FnIzLUi_Triyq=w1200" alt="Casa campestre en venta Rivera Neiva – ICDE Inmobiliaria foto 8" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -806,9 +823,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

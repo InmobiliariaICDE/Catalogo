@@ -202,16 +202,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -678,10 +695,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczPB5RGW3jteRY0FsUoECEzVLY8oKOnc8hfYPcvSg9KNflvreNKqYixsr8_UKPjsrzelUOXV4cP_6UPdpbst4zricBFMtu2U2xxpYh9heoCXqJcI-1zV=w1200" alt="Lote campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczPB5RGW3jteRY0FsUoECEzVLY8oKOnc8hfYPcvSg9KNflvreNKqYixsr8_UKPjsrzelUOXV4cP_6UPdpbst4zricBFMtu2U2xxpYh9heoCXqJcI-1zV=w1200" alt="Lote campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOdoGn_AWupOquh_VHfoC8oW1NJF5AQR0PSstGDA6lN_Z6wX_yQA5Dch6i1M5yx_UiAmtY45i8M5APY1C8bpDrV0HoaIb4Q2WT3L_TdPLuXED3qsOAF=w1200" alt="Lote campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPkMP6iuiviglqGhR80-wJWmCPwigXg2-5qgNHfDBMuw76ivYPcms2PmXfEd0Fi21cT-wveiiij9aFqccjcumCAht-Qq8j2LrOzVgWvDRvgr0O7FVLm=w1200" alt="Lote campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP2Sq3tjnEBR8kfC-PNDnqIGUfgFBxmLtAtJaU0-W5ipMX9qCWXkFCTxAfMjs2rlgzKBp_h4NxcCNN58z70vMtdOJLcZbKFw13lcBBIirahZz5yPJiQ=w1200" alt="Lote campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNQmYUIPPCRK2wCM6INEtM9FP_pj5Fs7B-7dNCLrtrSGN8aT98ErZcgko6GJNDncwcyXTfj7sx4hhI3ppyUiVT_36l3tZwS4CkJiGekJgtwdgTfvutF=w1200" alt="Lote campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOKs95a4E4Oy_4LdRKQOiLwEyU2gX8U3dbl24eZRZiiTb-ayRO130TfykL54cS3xE6FFc7kCP1NLE78Zs9KDgSrwAnMq6JqekQTlKX8sKubPGMZ4go3=w1200" alt="Lote campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPoZAG86e-tKONveOJEFzJCNhWE6ENo9_NMrZF-SI0WVpg6EVEe_ScU7f9-3-CGDzSvNFEvyobc5m7OB7wLTUGO_iTHonFBoO_Uf7MtiUEaWWVOGcPH=w1200" alt="Lote campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOKG2gxHE254EEHJ5dK_Gb1eUbL_5SllQbtlJCH2CDOsQ1Ke-UcgQgdDMW3y3M-TarT38TjQ_TEEAh5uqsFD-j4ydah8FmznoBER-NVe9qlC7IoQ-t4=w1200" alt="Lote campestre en conjunto en venta Rivera Neiva – ICDE Inmobiliaria foto 8" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -803,9 +820,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

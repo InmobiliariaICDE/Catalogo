@@ -202,16 +202,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -678,10 +695,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczPAakgSUxrYjzNCd1gyriaKzZFrZKm4DGMhNVIjK4jpJfBWVxRk5PhvJBWb3QNxBWZgSywmu1kfjOyRQ6X_7-dztSQ4GYfyjmarD-e4UPkswprTH0iy=w1200" alt="Lote en venta La Arboleda II Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 3</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczPAakgSUxrYjzNCd1gyriaKzZFrZKm4DGMhNVIjK4jpJfBWVxRk5PhvJBWb3QNxBWZgSywmu1kfjOyRQ6X_7-dztSQ4GYfyjmarD-e4UPkswprTH0iy=w1200" alt="Lote en venta La Arboleda II Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOukd17YHc60ssZWRLHbQGuiBBa84v3JZlMIQWfgBMsOngAB8ELuc337J6JnFTyMKOQtkC3uIDk4Fhsc9o9CrGjpjflsyK7HQDruYuTg09qk6sfvY_J=w1200" alt="Lote en venta La Arboleda II Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNdQmj8lTZPicgObAyGqfP9m4EHl11JMreazOaqnk1bAaZswKTXoQnrGAz43SnHcByP9UFP0MRIn9GAy2PcIMhiFoJt-GQFJYw9Vr9LzuyiwL3zAX1T=w1200" alt="Lote en venta La Arboleda II Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 3</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -803,9 +820,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

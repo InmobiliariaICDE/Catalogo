@@ -202,16 +202,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -678,10 +695,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczOPjOhlKcLWNTFj0CjEV_8vRD50FTW2FVdraV-sFx2ej583YtQmxRTuF07djogT5u8pdyAulAX5MoMu8O1bHrHpPNMvh8gyeGA6At2qnIP7uxwnAWCS=w1200" alt="Lote en conjunto en venta Palermo Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 7</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczOPjOhlKcLWNTFj0CjEV_8vRD50FTW2FVdraV-sFx2ej583YtQmxRTuF07djogT5u8pdyAulAX5MoMu8O1bHrHpPNMvh8gyeGA6At2qnIP7uxwnAWCS=w1200" alt="Lote en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMwAy9zPVw2uC4gEbtQACix7RwrJm3lz4KhNXcw54-94L5u9uo-I6ASNd93cP2knCSKXGVUykBbcyEemj88GaGK_E6-BPzzzCvNawVVWzIuwcDDfZiL=w1200" alt="Lote en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPoeigt6WcPbYcVUDUfPYW4E0lPuifmuGBJuvBAZj8Pk7wBLZsHkE1OkTZhXKKGmL2Gg8J9CzQdSEbPiBZ91198kBWxzP-Fz1SarhVic7Gp9njLeXwY=w1200" alt="Lote en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMEAcxr1Ot7-UJJgryi0VLZ_bZ0emnPZ48M-2a2-bAn6-VFuC4WIjrQDLLuhKdPFTBIv_c2Z7c6oIL1dEvVl6jG6o35TyX1dUfJ0TvJBJKATimEt_s_=w1200" alt="Lote en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO5g4LbQvcZ65GZB1rm01T4VyhpB6eE9zQL0ZjMCbx5qTLTdc5U2ix-fM2-nnO77arZZqZ55JKBmEcRX_RhfA9gr1PU2deeegfPlndUw5OIyI-t5G-L=w1200" alt="Lote en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN9gP0rXUf7lvtrLc2YQhdi-3AW93Wdx1DrI9KkyROBYRrMvrpBQT2_L3g31YN8Nyz84oRVPrmVpU7MuE4nto6b25dE1G10QFST01cH3pJGh2EhF-KE=w1200" alt="Lote en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMxp-bLs3c3TUzgfQ1-y6ychOHSl_bmLKRnPCEJjyzaXm0yHptJsTulQNQ8w9kG8wj-j__FqKS5JZt4cS3fs1iFSWvW9jnUM0fCX1RMpLsHHDybRAr4=w1200" alt="Lote en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 7</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -803,9 +820,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

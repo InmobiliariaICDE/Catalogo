@@ -202,16 +202,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -678,10 +695,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczPmQAJXmB_J0DXc-Rt4vLtylaN_nmuF8P77U4QFSVB4jbBItS0eZdCiYrpomVxWFN10jonCjc_DLCvQ9fIvAd-uOsi-2LxJThh6Sz1VRktQe6PdR36b=w1200" alt="Lote en venta Pitalito Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 4</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczPmQAJXmB_J0DXc-Rt4vLtylaN_nmuF8P77U4QFSVB4jbBItS0eZdCiYrpomVxWFN10jonCjc_DLCvQ9fIvAd-uOsi-2LxJThh6Sz1VRktQe6PdR36b=w1200" alt="Lote en venta Pitalito Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPyDaKHx_mnmlGtEQ0w-8mzM4W7TuxcKOwdjsXeJjgH5xTzQ_wvWSqvyHPlbLtI2M9_2pIt5h9m483p0E13YyeR6_a1L92NOnbytb-BuBxnWHiET9MA=w1200" alt="Lote en venta Pitalito Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOoVBcSPkTQaAq36T_3tDWH1IJsrZqSvSYS-v8c3Te0zeVxiSBgNYvFbd1mL5io8-pQG2ytIvcF1_60Nw2u2t3DIe8tknVS9oOOMbij5HRaGP8sO-V5=w1200" alt="Lote en venta Pitalito Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPPyuLoQwmIV6uUlcePi4-Dd8Y8lJq_NIdEE7WnWzlsPETdXFeU1sjm2vham5aCFBa6bXETdXo8Ag4Eq3ojgsqi5DFQgn_1MyN439iypwZ5Gf_veI_C=w1200" alt="Lote en venta Pitalito Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 4</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -803,9 +820,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

@@ -202,16 +202,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -678,10 +695,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczNtPgeekBxFwiT3RuYz0_LhAMbj2UZ7KZmFJiwkA7fdWgmxOuBj5odwQOV83ct_ZLs4VkkhGdCj5YDrO-eRH3eSCaU18xz95hz_ZXosrDvI3iz76geo=w1200" alt="Lote en venta Centro Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 6</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczNtPgeekBxFwiT3RuYz0_LhAMbj2UZ7KZmFJiwkA7fdWgmxOuBj5odwQOV83ct_ZLs4VkkhGdCj5YDrO-eRH3eSCaU18xz95hz_ZXosrDvI3iz76geo=w1200" alt="Lote en venta Centro Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOqbu1qIAcIW4iMAh7zQJ5t7f_mpy5gIeIRlthcZlZUwshbhhct7tkXWFr4MHgs_j9m_VEovmoeLL2DYKa_GqvWkj9yzEh56xvFjjNYZir9LAWOUAN9=w1200" alt="Lote en venta Centro Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNFESLzU59ve0ocvQZJB0jb-S3ip2MdlPdIV8TTyCGvLVJ5TTanNnYqYUdwGt2StlhZ1hbfdmywgtNO5daGUsw2VxYaNWoKwLrCZncotz5O7tvGDQbj=w1200" alt="Lote en venta Centro Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOt2FiTXQUUf3JAF1dUE1nmAhPO9E_SV4YM7hiQ9qs4xu5j4Acy_k3iWvzFjh5KGuBGnVvZQDph5Uh6aGS_n1azWDR9d1z_j7-X7UvzthJm2Awyko5y=w1200" alt="Lote en venta Centro Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPfWqK7y-d57X8LHLWn25hz-ixZb2jKYf9vmqjrGQKOy6mF746owAN3C9T0DWiMV8UYxx7VP6ofnRKrZizVmzQPcAxuvLwIN42S8TmQvIr6WKXHjBGz=w1200" alt="Lote en venta Centro Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNk9vd1N3yEjwQEB01NuJdPbvxlBhYb5hzH5NSmWXtJBg8LSy6NcDYutAmLFLnk2veFGn55PXQ5rdXRdCHqX8cYc3kyHkn3tN-ms9nwWIWC4XorcoY_=w1200" alt="Lote en venta Centro Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 6</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -803,9 +820,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

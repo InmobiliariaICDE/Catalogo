@@ -205,16 +205,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -681,10 +698,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczPOzs3VUJOs8RG2JywHcRyixTQMt_NN4PWEQpFGL-6aBB-qjou1DRK5fXplw31puNUDYBTVSimE5qOEmnz6HeTcT6ojo4qyGvQE-nnvED1MvtyhWZE1=w1200" alt="Apartamento en venta Neiva Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczPOzs3VUJOs8RG2JywHcRyixTQMt_NN4PWEQpFGL-6aBB-qjou1DRK5fXplw31puNUDYBTVSimE5qOEmnz6HeTcT6ojo4qyGvQE-nnvED1MvtyhWZE1=w1200" alt="Apartamento en venta Neiva Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMelTJ-17ronFImOeKtendGMk0rLFOSBAa32a544QsF-2wDYIbvTFAd1haiDJYP5KnrFyJICdmoOCX2zq8Lx1kr55XgBFD1cKZWYnu9RB0E8ZqrdmGs=w1200" alt="Apartamento en venta Neiva Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOc8bmObP_aR07yRMwCf54UuyVhV7GK7N9ntIA2yFyRY6YW73dusOmVo2quWKsvVV-Ux_82O3Rk9q1oWAz-VdLcl_OPX70rZrEgavR4bzfTn4RlhESK=w1200" alt="Apartamento en venta Neiva Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNkZ_XzyQVxLhEoJpCQ5OCLCKui7K92yTORCgGutaiyzlNL04jMD6FeipiSxBeD1KreQH7eZ7q5SS9XFSq85J3zFM3qn_OOofOoJy8QC4UIn1XrJlr8=w1200" alt="Apartamento en venta Neiva Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPoYhbXiYkqmVSOVSEgReF1sy-_ovLwKKc8PKSB8anyyXH39WH7mCYgsfzei4YG2yH7AJCHv2djHWPGM71Ad2iMRH_hHBEevYt_oREJNpVEYSVrd1_U=w1200" alt="Apartamento en venta Neiva Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM6gZiyw6BJNoopwl_4L4XMnNL3MHdSmq2IBPlUPsiQ81HERXlsdv_eqDBsTCMgo1DgOjb1cpzpXP_JNtk71MjattTSsiHccNJ0G26UtcuO5gDCVxVd=w1200" alt="Apartamento en venta Neiva Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMwh34WhtRbAL-w59GW_CTr5QY9LVcpmGEdpqQgf9_DtTvKCbP7uLP9tqyE6Qvn4c6Wy5bqL3oa9xkTnvSAlqtyZVPBA0hBTS7TszBxuIAYyL8n3zi8=w1200" alt="Apartamento en venta Neiva Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMDcYRGtC_1F9rG97vTZ_Be3ZQUXxkWm3MI4DUUUn4TrcslNlgZq_JOcEdQ4hvttEQQcHs_S17NASWc3ZJi3t320a8hWVfRLD2ELookQttNT4_EDSjV=w1200" alt="Apartamento en venta Neiva Neiva – ICDE Inmobiliaria foto 8" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -806,9 +823,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

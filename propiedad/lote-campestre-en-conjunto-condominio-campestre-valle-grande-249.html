@@ -202,16 +202,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -678,10 +695,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczN0NLssHahfKpLHOQ2YgmlDCUzYkneYKWnBc--lSL9O02LQ4KxQ1vNlnx9dDiRpYgugeb-mNVYq0YgzS6_H_8EY0sKs-S7uW-R8it9N_wiASCN_wYGd=w1200" alt="Lote campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 6</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczN0NLssHahfKpLHOQ2YgmlDCUzYkneYKWnBc--lSL9O02LQ4KxQ1vNlnx9dDiRpYgugeb-mNVYq0YgzS6_H_8EY0sKs-S7uW-R8it9N_wiASCN_wYGd=w1200" alt="Lote campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP3ZGScpmgkQufx0PKTRZj3vKNpgF-gadqAK83LVblQ-pH_YIflqTJLfVzAMjh_PWJ58bYYCHo8mOeJY9pno09rrtbXpMssxxtv_5HuxEyzxKBlyyPF=w1200" alt="Lote campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNYj-hCuW_wUxFGIXBg__PxeZELIWmHNdnKm7FhtfCBt55DYyH-BETwVxmEIfI7d90nCeszNqXOH4TJBBymO-TwWgFULMrVUiuzpd8jGfirh_Bbv_hI=w1200" alt="Lote campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN05jaxyRy06vg5OjqqYxYe-kekOU6_2IXauS8BOVVUb62BXrX6QXlX_7xth4M6fZsHB4-5-h6ToB6pibQpcbSP5HZ5ZU4FDzfeIBWjBjp6DaZgpxBm=w1200" alt="Lote campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO5C_KvWnaenJlQ6A_gySsL0PfQHPAYUMwiXKciN2Xo6G-w91sKqHP9sEXdlJtJsUD-MLxX_IJmujVpvN90Hbv5zz1CDrct44FX6MlKANSgaGo2ByGq=w1200" alt="Lote campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN0EnRtQqj1J4SdDw44TdPMZ825i0F_h1CPwFJCxRzgd1IPtOkhJAn5HFw4YaH92n8f9TweBbPlAp3jWy0ENaIrICHJyPR0eht2L6LsC6YMGYFzJKUa=w1200" alt="Lote campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 6</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -803,9 +820,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

@@ -205,16 +205,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -681,10 +698,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczPuCN4BA2mBlZbcDIm2aXTi--hPRNygZ3kLfdqxP4yOF_w6oyVZLnv2SxUPuFmf9XciqmAtEZC3nOXB0i_Ev9SVaMk87zs-7qlrbV0avNJ9yD4eSYgz=w1200" alt="Casa en venta Mirador de la Victoria Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczPuCN4BA2mBlZbcDIm2aXTi--hPRNygZ3kLfdqxP4yOF_w6oyVZLnv2SxUPuFmf9XciqmAtEZC3nOXB0i_Ev9SVaMk87zs-7qlrbV0avNJ9yD4eSYgz=w1200" alt="Casa en venta Mirador de la Victoria Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMbu0cRoIZrtObruolassvVx_qARXZMrX22ZmAiW0NWFwFsmUPrRQkj7AU9rK6N2gjVILUFChNVab6WzsL9IRCeS7b2MDKoHSg6Y8uD15pFuL4mFhqS=w1200" alt="Casa en venta Mirador de la Victoria Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNLqdQp_lNBlgiDzjV73DQdChQIusb2wuXpjjaLdQdckGfLCHMaMePu1PZZSr8zu1CiXdGsVLyqD8QCwHd1gMvc1iqM30pJBFl6sHpJvkz_ZzC5VmyS=w1200" alt="Casa en venta Mirador de la Victoria Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNBFehjaS1uxRZI9l9axP221ldpBO6LAk0Oy2tU1RhWXUt3LWJYVsdyXqLJOhBGkjEBtUlVj-i-6eGBuX_RvRudg0C3qtn9vlLWDDlMwTFjEhopQPqj=w1200" alt="Casa en venta Mirador de la Victoria Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMjetDdiiFwG9HFFelD2MQKVxy39xFKMtwqSV13DPczUHJZqPsJODS9l9IT2IhTPPhwPYbgdL09SVrrNtyLKp7ZRongCnUfRnXoSocNyMLaTtodFjRt=w1200" alt="Casa en venta Mirador de la Victoria Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPwseSraeJ-gsmCDclVUQzpcTJK_mvyvpu6zQks5N38F6tWstaK5EgWU8AT2amemdMhHsumNXFt_prDzleWPJOClpQATQHtF4IaRso1ZZjbZe2zSqg1=w1200" alt="Casa en venta Mirador de la Victoria Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOlLvaPkWasGWNleUY0bfJjTqEAfvmWlnsxLxxj2EJnbmCtBA1Avvv3zC2bgdYdM_fpuwyCHmic_xVJRa644pPI69hRytJWWm6WBEDx5nFrfOCEUE8P=w1200" alt="Casa en venta Mirador de la Victoria Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNP78QKHF7MqJPMFrfiuvUrZO3QnkHIdppHV7mSe20dPK4Rz-l2kWPKZQHnZziH1V98Vio1jLyuzrMGa03iA_DbtMEwBgaC6h2kDp6O1xPazQNV-IrX=w1200" alt="Casa en venta Mirador de la Victoria Neiva – ICDE Inmobiliaria foto 8" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -806,9 +823,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

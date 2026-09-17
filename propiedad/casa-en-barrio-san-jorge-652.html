@@ -205,16 +205,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -681,10 +698,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczP8iu-5-D9NsdPAWJGDCt8iXSIHLaCXpaZLHt1y6wcgS4oiMs4tu62UX1vqIprZHEQbCq3UWdLThXHVWgEStvNUqRqjt0_wEcs7rui5H0Rc5_vxbuhB=w1200" alt="Casa en venta San Jorge Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 7</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczP8iu-5-D9NsdPAWJGDCt8iXSIHLaCXpaZLHt1y6wcgS4oiMs4tu62UX1vqIprZHEQbCq3UWdLThXHVWgEStvNUqRqjt0_wEcs7rui5H0Rc5_vxbuhB=w1200" alt="Casa en venta San Jorge Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP-__8Bf3UaVqp2hEUg65sL1vL6ISG4KpxE3YcUdVubykHR_Lg5SqU6HXww12elfTP_4kQ77YKwhoNAVSXTGGYp8ms-q98SPsWiLjD78-Tv2vKRkz_R=w1200" alt="Casa en venta San Jorge Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN_yZtYE_cIROiDKdvz8pK2uQbRw-D3sua6ciRF9UyvZRfSv_cneX3KFGa3KboiEmyuYENzJzWXbQ3ylHhP4NYRg0Z2HDyCqmsG8e0lwnSyZRuZM1rD=w1200" alt="Casa en venta San Jorge Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMa2C48fGT6m-JwtTpYS-sDPLlCTAaLrgmt3VbLM5H8xX8tnl14xuW1BUTTOWoe9PfINirj8HuXK4LKuCGk4vcGvC0LqTanTSBhp2gGGMSd62S7ZgRw=w1200" alt="Casa en venta San Jorge Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPf_G2_CuWQCIKNUnLxvDPS-mIU0XR0ht0bWFaTtyqG11ywdsgcMYNf3j4rSzu_cQ3XJEEGOsC1MLPjIcCXTUG4TI9iGv3SXglct4fXZXeERf_q6NQv=w1200" alt="Casa en venta San Jorge Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN0NPJzFIThrDqSp07eOmpFic940AHMb_x5Sp0Q-ZLF-IF1ras6pwtJ3DB2Izh7du5pUvfT5WgRLIPdQqKHzP5wJ3_21wjQ7r6n_hs5lc5qXHUzMdG-=w1200" alt="Casa en venta San Jorge Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMH2BIXXMDDryS1Rys05E2VgKae1z5EBV-VKbyYkoJFbLPEhJgMrm8iE7vPPh8ut2lDPhx-3_tHlP37pL1YkiAMhshVP2SCANUIHsGV2sGhDFc0Myv-=w1200" alt="Casa en venta San Jorge Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 7</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -806,9 +823,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

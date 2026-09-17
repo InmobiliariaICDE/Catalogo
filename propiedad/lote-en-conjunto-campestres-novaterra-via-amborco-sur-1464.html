@@ -203,16 +203,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -679,10 +696,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczP6Gs0N8TVFidd5DNkOax3twYVdHfXbmhUI6q-htx0Rw-1fdRNKz9YEmpnOiBL6dqd_4Dil-ipgnW5usiEHUx5uzmbQBdXDbasWm1hiCibXuaTZ7mod=w1200" alt="Lote en conjunto en venta Amborco Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczP6Gs0N8TVFidd5DNkOax3twYVdHfXbmhUI6q-htx0Rw-1fdRNKz9YEmpnOiBL6dqd_4Dil-ipgnW5usiEHUx5uzmbQBdXDbasWm1hiCibXuaTZ7mod=w1200" alt="Lote en conjunto en venta Amborco Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOxHYUpb9KVVeR4pO16zq_KqLf_HkuSVsgm44zopQK-4iaTVInl-Wv8iBKosI44dWUsNX3aawZFIW5AiDoRamkcVIm_QcYxKIhOlIF8PaT0XSee-J7T=w1200" alt="Lote en conjunto en venta Amborco Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOte3ekFm9m1svpA7cq9DS3lvxr3PRVaoZ2R3Q-ntFOhlX8vkbx5AnawrVSEtN0HcQx5bHrA8vmAeBH862cSxM0wGVAdC7ozAdtzAcUv0oSJFScQNPV=w1200" alt="Lote en conjunto en venta Amborco Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP7-nbTjH-qChu8KVa0ktuNAnJp4_Xnm1SNs2gGP9xrtLMdMMXmOPZubDn5Y92vj5_Moq4c0wrv71NKmjTV8wX4q_E-_07sThjCH_YERc7maBWsgNSy=w1200" alt="Lote en conjunto en venta Amborco Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMUBFzi0KDI6TaLFWhUjWq3prUIex0kgOwdgyUG3AqbTm1NP8H9oqG8nJfywIG8pI-tlE3FrmYnSkh2yxDOMZ3WhZjg3wQKHIQBdxajik9MRySIT94Q=w1200" alt="Lote en conjunto en venta Amborco Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNSkdgjc-vSkR-K0xsJJpabMY84gcSNqjujJYPShM5JiCUs3KhwuGj0pKkX7qfRUBoCnhPC3o219wuUL1lPbwN3yZowxi2ORKT0IfMtdZAs-mBGR067=w1200" alt="Lote en conjunto en venta Amborco Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNi3fvS6K3FLyjFQK9BHlhPp3btXmQNr7KSqZcZKtqxXXpnjdH4wehXZxCGOhp3YHJHGyufMZqXvkxQCW5PBNebAMAldbkMz5UaGiaN9Fh_7nhfrayu=w1200" alt="Lote en conjunto en venta Amborco Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOdASml4y8AfMqhg7o6H5bhDwIMGYoHY0YVAZ8pEij5iav3ABcseEmT28YXRDzd_4bvNvUplgr6-8DeQK1nqfX0rLwIZkP5KgqV8A74zgT3eXc9e5Lg=w1200" alt="Lote en conjunto en venta Amborco Neiva – ICDE Inmobiliaria foto 8" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -804,9 +821,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

@@ -205,16 +205,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -681,10 +698,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczMP3qj4hZ8KVSg4Ws-BpzxYCISd4EVpS4H9xn4NzAXjJ9YIVeqUBUZY5aIRYXJx_RWGyu373KuO5E3cZDfuDoyP7cP_SjU42NSJn8_IYK2nd8PScHTA=w1200" alt="Casa en venta Puerto Wilches Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczMP3qj4hZ8KVSg4Ws-BpzxYCISd4EVpS4H9xn4NzAXjJ9YIVeqUBUZY5aIRYXJx_RWGyu373KuO5E3cZDfuDoyP7cP_SjU42NSJn8_IYK2nd8PScHTA=w1200" alt="Casa en venta Puerto Wilches Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN_SVhLdfbNbwX2jAJjVtYpmXqyxnsXDyBBh88OiX1m5U8UG0F61ApHah6MTOp-h0LBVBDmz9-q9jdyFBvhbqGMTb5iMh01yitGOQA-5Pcgdbd1LYgQ=w1200" alt="Casa en venta Puerto Wilches Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNwq0hPjjJQ3ZLH3NfKrfgZG-uTj2oNYt9rmaye1zF_Nx0xU7__37EbuBDhV2i1-7NHd7edm80vYOGqN66-HhchcHFKP04QhudHXctBqqTNiGWYwqny=w1200" alt="Casa en venta Puerto Wilches Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPkE7j1Iw-ZELNS0qwrdZQrunUSSX3BPC7ECQ4tPohufwTOGN56CXA1KkaH8iJ19vcWMcSHUhYDtRFxFdVyij3gurZfjzPmp-Hrg5U43p1xNzSCTSBG=w1200" alt="Casa en venta Puerto Wilches Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNdLmBa0gNgDOT_aSCH3IZ6EPB9HhBz6jivnSYSJj_r5iZ1DYVigWngR9nEHBQM28ausjAI9Gf3Z_iRwsC7CIbvgfYua5IKNuAdDwR3Zd_yanAxXggT=w1200" alt="Casa en venta Puerto Wilches Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNhRznK7fGiOo7tio0W4TGkP3PchKHL-OsJYU0lhxDBD9xIoIKRlLrqG5wYxicVtcow_NnoWomJBnLC9JKuz9RB5m1yjEgFDinGqXjcteITyK5X2pLl=w1200" alt="Casa en venta Puerto Wilches Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP58Icap7Lxm2LNvEakWWYvtHx7N206EfScBLYgVG1QlYneakK6DF1_mszAGgiJASq7YdiAgBQPMXkbZbortN8NFndN9Nn3kG1S_hmK9_OGO-blUqM8=w1200" alt="Casa en venta Puerto Wilches Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMxYxau-0btrz1ABGHLFMR5MPD2vo8dVDokEeC3SGPQQEU-pyxRRB1VHFVAe1GNBG0LpVuO7ZXJITFJWs7B0aEkY01Ne4DlbHDH6_kVN3ZtCiDJFBnQ=w1200" alt="Casa en venta Puerto Wilches Neiva – ICDE Inmobiliaria foto 8" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -806,9 +823,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

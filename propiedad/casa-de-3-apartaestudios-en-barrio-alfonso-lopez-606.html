@@ -205,16 +205,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -681,10 +698,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczOMRbW_vdAMMDo7S5bWPObDchpeIpBYkUB1Xek-XvP1N27Ss2UX3-Mx0KYLhN1sZNib2fYgqU_O-ZtW0a1q3OzI1xXrr1pdwtiJHarFg2pbnvU75OMS=w1200" alt="Casa rentable en venta Alfonso López Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 7</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczOMRbW_vdAMMDo7S5bWPObDchpeIpBYkUB1Xek-XvP1N27Ss2UX3-Mx0KYLhN1sZNib2fYgqU_O-ZtW0a1q3OzI1xXrr1pdwtiJHarFg2pbnvU75OMS=w1200" alt="Casa rentable en venta Alfonso López Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMJTiU8aLeBeokR1U0uv9aK14J7Z3YMTTWbMsEFPm140ZCMJ9tCAcXQ5HuH6-nly4WkH8b741sc1_FDelA9iZ1a_sr-n2OdN50W9HEpXlfSdMnRDYlr=w1200" alt="Casa rentable en venta Alfonso López Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOevt-cj1tlSSOYYbv-BOpB9tYv9uR4IwFz4fYdIudGn1LraVcbl43ycEGfT8iKwu3xZ9f6kueo7cD2TRzVPzbaNjS3j6dA-vbXgdBHgbQN-mW7WptD=w1200" alt="Casa rentable en venta Alfonso López Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOJHli2RTvoaLs6G7Yw9t50cuidULyBFQs78CdfzJcdYPWyu7-c75fKj4460ldfqaMyAwSHxTzQulER7yBlQZrHnYVtjeywSQyo7552d9Jmb1IiQU_Q=w1200" alt="Casa rentable en venta Alfonso López Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN9obGyeweM80evqn2-b82VD_mqK9I-bkdIaa-XSP7HiMBuXt-pUjwiaaBdGggk-qO1IBvpjqGhb3vB676mFzyMddVNsbbgff9kuFrNPJ1gmFSDJIS2=w1200" alt="Casa rentable en venta Alfonso López Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMzJJ5JGkXfmGCp4X0UhCTvy3UOmSVWeITh5XKCF2gn4rRXUDFSCvagN2w6ni5YL0_CFkMn9BkdDJ8S0KMzSkGM9CE6Bq1cgEG2otvgkMQZckhx6ppf=w1200" alt="Casa rentable en venta Alfonso López Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOdp84A6PIkVPvBaw1SjycGQqlmqPuHx53rg9VVsfr52cVKl6XW5hXUq6E5_KnMYHqZ9id2T87i2tYbCcTVSJfpK63vwDvB8EjMAsTRgS1MNl4eyXep=w1200" alt="Casa rentable en venta Alfonso López Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 7</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -806,9 +823,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

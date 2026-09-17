@@ -205,16 +205,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -681,10 +698,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczOqImswYBIXP3UbUY-405fYhywKlrPvfKyoCNJub6Ohjt0csdA0HzMvm6o4rQKoSfHqgPuauPMDFeTVDC2l_fGa3PKDAW9TvlaKWPF8ArC0pc2Jq8HC=w1200" alt="Oficina en venta Altico Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 7</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczOqImswYBIXP3UbUY-405fYhywKlrPvfKyoCNJub6Ohjt0csdA0HzMvm6o4rQKoSfHqgPuauPMDFeTVDC2l_fGa3PKDAW9TvlaKWPF8ArC0pc2Jq8HC=w1200" alt="Oficina en venta Altico Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN7BqqqVYYgx4vQaplc_aF-qiY6YOkeLJibh726xbWwrcsSJTo600b39NJCTyNHYUDhnR3h11EKGxP4HQdWNU0IH3A00GvgU9c2OiXF6Z0nQ0pIANhj=w1200" alt="Oficina en venta Altico Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPBRdpl54mP-KHYBnh1xI4KScvOrw25L-YQXyzfKNLG9uINARDzwMlEi48QdXB0EvQTCsjFa3e0A6uHkTGLCvAgKMUQSIa3wawIeYggU34BdmBIwfCZ=w1200" alt="Oficina en venta Altico Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNh6GXm8_15J9MO3IknePsZjmZG7jOjLIPLVmOAhk0Y5gNOopFpgR-sH2CQWLewlEWNbENBMteqwP21lW1MNADWnJlRduHpcvNiSUz3sAA3UV_sCw6S=w1200" alt="Oficina en venta Altico Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNjNMNUcO8LKrQfUbX3IK3WQakisVsyTm1YfbzYp5VPRilAhuGFWmTvCSh1NIwrDnqvrLQ830rs7sU0FpwGHwNez9mTzg9W2NyN14hM0TNFrjIw3fjB=w1200" alt="Oficina en venta Altico Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOiJ2euOQBbgua3wh96Sc3958lbtR7lz_97orLYhQs8am_Mt0putCnF5F43KcGEdhf8il1wZ7MjfQ52m3AhWGImWjK0vIHhTjxwhTKBwhpbBqpSj1h9=w1200" alt="Oficina en venta Altico Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPRCk9iYGJfjrMgKelOPCsJBfrMY6dtWydQmD0ibESSNWLq76oDmiDmUsiS-IXyDNpiNyFf847A0q7V6bHzOi517EQ01pCbrVyHTaBAfl0RSnUnebii=w1200" alt="Oficina en venta Altico Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 7</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -806,9 +823,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

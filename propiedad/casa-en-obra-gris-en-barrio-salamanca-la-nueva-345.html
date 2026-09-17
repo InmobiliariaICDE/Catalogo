@@ -205,16 +205,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -681,10 +698,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczNEvWwHQrBJS7S_SMSYxwCDAGjsJ2l920f17zV78BlgzAweXfzC-DHgWVVvGNsrYoaQQUAslUUtVpFi2Ebb5DhgneExYhJvIkauV1J4I04uLjw-Rf26=w1200" alt="Casa en venta Slamanca la Nueva Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczNEvWwHQrBJS7S_SMSYxwCDAGjsJ2l920f17zV78BlgzAweXfzC-DHgWVVvGNsrYoaQQUAslUUtVpFi2Ebb5DhgneExYhJvIkauV1J4I04uLjw-Rf26=w1200" alt="Casa en venta Slamanca la Nueva Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMdyoaYlDkwWr_RS-MBvm2ElEnI6jWYP4TeXu06SVVlKewxTge9EU4Q0Mk4ZfWxRCh-qpryIJDfPLjLeRaZHE9dl6X9U9JJeKWa6vxhyFIhNiZ-S7F4=w1200" alt="Casa en venta Slamanca la Nueva Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMr9d7OpSOHJUmSPOeOcTwnCHhC8_e54CiIo6C7TLOzOd07boaNG6YijtZt75Xtd-XOLD2Ev1ESgnSMU-twvw4XfYhBtqYdHiusYb9e--WXM_R4w8Yi=w1200" alt="Casa en venta Slamanca la Nueva Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMyahD6u7F9vWvrdJ_SSxcW6xM2NUyAtEHUSQZwz7hWdB1anE29yGPwjhKezVDcKiZ9SNthZh0nbUz4_ICLMZF4RZQ7jo7gWGQ8de5Mna36KekQEaoG=w1200" alt="Casa en venta Slamanca la Nueva Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN9dasXHMm3sI9UjueWK748ou1_cEGM6lxksSNEOMWQAirQCxFYcR5TEPN6Fa8a4bCazKdIup15OehjJZ3I9QY7m95T6XTS0E4h1hxFnyg5WZ82U3IL=w1200" alt="Casa en venta Slamanca la Nueva Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOsgUxOr1VCxEHfbiamYOJyXleoofLo-DqusoRTL3VPGnsTjnAIKYlZytF1zQM4Yq_n8Z6G8RxIpFDR3zcMx4FyoxwPI0_ZWGDbo3MuLZCllDrk75ux=w1200" alt="Casa en venta Slamanca la Nueva Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMf3iKuwGFx_6NrJGAdRFerNv4NQaADWN8tEG9ecouvqq-Cx8vBvwV8d80cqffh7489ISzCn-Hp50Acaznt_TftoNsBbuYxz_NeLOa0gW0ZGOqlM6rQ=w1200" alt="Casa en venta Slamanca la Nueva Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPx-uOwzjuI0A2okamG5SBMm1mrffcYxxts_C6E8mXvg92y-8aJeeFF0k3fxDwnnHav3jGGfPWzkVTQCWzRQKEmp72W37Qv8r5QX3phnypJQKcYldmP=w1200" alt="Casa en venta Slamanca la Nueva Neiva – ICDE Inmobiliaria foto 8" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -806,9 +823,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

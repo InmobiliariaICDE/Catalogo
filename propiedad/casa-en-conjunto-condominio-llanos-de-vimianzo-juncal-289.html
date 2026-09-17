@@ -205,16 +205,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -681,10 +698,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczNC75JFbC5YMApKMAIW767RYKUPVB5bwM8YPy3klaS3kqekunCTb0onIAXbig8eLXmMMODjyDxi2GvEvlTYp7p3s-xgwGO6Bk-Fs6ts64pOsaTAsdNQ=w1200" alt="Casa en conjunto en venta Juncal Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 5</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczNC75JFbC5YMApKMAIW767RYKUPVB5bwM8YPy3klaS3kqekunCTb0onIAXbig8eLXmMMODjyDxi2GvEvlTYp7p3s-xgwGO6Bk-Fs6ts64pOsaTAsdNQ=w1200" alt="Casa en conjunto en venta Juncal Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP3n7-IaiHsekUtnqwXaYQ2o2VDlhp-Zqx248vr3x_cJpAUEUsiUNgV_w27hUeh6kzjpe1FOY5azuTX7rFu1PxR6oBsdZbiDn7ni9kxB5mCTBE0vFIf=w1200" alt="Casa en conjunto en venta Juncal Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM8-cSMcLNHAKa5vojFURMYpCSSNZKWuVPt4d_shdpr3BV43q4rQspHwzaanHTT9IWT3gL3SZ9io8xQTcuVEVz6OeFpVfoETrjCWUbgBmOSYyB9me7V=w1200" alt="Casa en conjunto en venta Juncal Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP5eZymJz8gB7j4M3saCIPERsh_Ztf8MyPzJc_Je6InQeBOaX7XNDWij2NhLrRVS-SPdKRNhjjjYEQ5Mt7ORBqTycTtweD15l3OGFhjOmKfZx6voYGq=w1200" alt="Casa en conjunto en venta Juncal Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOJEYY7Ly8Fm-RkE_strloTuFe0BhJvTaUslz5RbcrwKYOK8il28AWV-1f6l8ZlkGWBJxrZ_TH-n0aN48T9HroWZ3R002-6G9eXcvFcW4UrKipROc3j=w1200" alt="Casa en conjunto en venta Juncal Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 5</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -806,9 +823,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

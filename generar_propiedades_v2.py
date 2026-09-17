@@ -355,20 +355,18 @@ def build_html(p: dict, slug: str) -> str:
     # ── GALERÍA ──
     galeria_html = ""
     miniaturas_html = ""
+    slides_html = ""
     if imagenes:
-        galeria_html = f'<img id="imgPrincipal" src="{esc(imagenes[0])}" alt="{alt_img}" class="galeria-img" loading="eager" fetchpriority="high"/>'
+        slides_html = "".join(
+            f'<div class="carrusel-slide{" activa" if i==0 else ""}"><img src="{esc(u)}" alt="{alt_img} foto {i+1}" loading="{"eager" if i==0 else "lazy"}"/></div>'
+            for i, u in enumerate(imagenes)
+        )
         if len(imagenes) > 1:
-            contador = f'<div class="img-contador"><span id="imgActual">1</span> / {len(imagenes)}</div>'
-            nav = '<button class="galeria-nav prev" onclick="cambiarImg(-1)">&#8249;</button><button class="galeria-nav next" onclick="cambiarImg(1)">&#8250;</button>'
-            expand = '<button class="galeria-expand" onclick="abrirLightbox(imgIndex)" title="Expandir">&#x26F6;</button>'
             miniaturas = "".join(
                 f'<img src="{esc(u)}" alt="{alt_img} foto {i+1}" class="miniatura carrusel-min{" activa" if i==0 else ""}" onclick="irImg({i})" loading="lazy"/>'
                 for i, u in enumerate(imagenes)
             )
             miniaturas_html = f'<div class="miniaturas-wrap carrusel-miniaturas-wrap"><div class="miniaturas carrusel-miniaturas">{miniaturas}</div></div>'
-            galeria_html = f'{contador}{nav}{expand}{galeria_html}'
-        else:
-            galeria_html = f'<button class="galeria-expand" onclick="abrirLightbox(0)" title="Expandir">&#x26F6;</button>{galeria_html}'
 
     # ── ETIQUETAS (columna izq - idéntico a index.html) ──
     etiquetas = []
@@ -610,16 +608,33 @@ body{{
 }}
 
 .carrusel-principal{{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }}
 
-.galeria-img{{
+.carrusel-slide{{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}}
+
+.carrusel-slide.activa{{
+  opacity: 1;
+  pointer-events: auto;
+}}
+
+.carrusel-slide img, .galeria-img{{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }}
 
 .carrusel-counter{{
@@ -1086,10 +1101,10 @@ body{{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          {'<img id="imgPrincipal" src="' + esc(imagenes[0]) + '" alt="' + alt_img + '" class="galeria-img" loading="eager"/>' if imagenes else ''}
-          {f'<div class="carrusel-counter"><span id="imgActual">1</span> / {len(imagenes)}</div>' if len(imagenes) > 1 else ''}
+        <div class="carrusel-principal" id="carruselPrincipal">
+          {slides_html}
           {f'<button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>' if len(imagenes) > 1 else ''}
+          {f'<div class="carrusel-counter"><span id="imgActual">1</span> / {len(imagenes)}</div>' if len(imagenes) > 1 else ''}
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -1211,9 +1226,15 @@ document.addEventListener('DOMContentLoaded', function() {{
 function irImg(i) {{
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){{ m.classList.toggle('activa', j===imgIndex); }});
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {{
+    slides.forEach(function(s, j) {{ s.classList.toggle('activa', j === imgIndex); }});
+  }} else {{
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }}
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) {{ m.classList.toggle('activa', j === imgIndex); }});
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }}

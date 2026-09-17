@@ -205,16 +205,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -681,10 +698,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczNavVEqtyLE4pDcwgWkmTNseGDRdjwEI4yZhjH2ERjN-_e4QC2GPgIKIJTtWqnYV-3oL-8YDMTYT7nuy7b7w4fa8d56Bhsm_ucP1vp0MhpzNqKD5Jv-=w1200" alt="Casa campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczNavVEqtyLE4pDcwgWkmTNseGDRdjwEI4yZhjH2ERjN-_e4QC2GPgIKIJTtWqnYV-3oL-8YDMTYT7nuy7b7w4fa8d56Bhsm_ucP1vp0MhpzNqKD5Jv-=w1200" alt="Casa campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczNNdgNUziQ8Py2RaGbFt1fdITJZMoV5Uu6gulCkJaHa_vsHGVjjM_McGv_S18_v5Q_oXMySuSKbqAadindOSjy8_U2nzQ4E4noN8eUqsE_fUsS56Lje=w1200" alt="Casa campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczP_ncYqtY9acgh6X1evMD6eVt0LauqNHIxszk-TMu4xwFVQCHwZ2t_8a-9qoz_wgI7QmbFBHW9Am4SL0CA6rcFR6_6fe31sEfNPD5ZhaPlTwmgG87QZ=w1200" alt="Casa campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM8rrXetQTJe3kDk9cnfPE5f4DwLQsmHTrulm_Sl0a8MgCcnc1YjFr1QXBzw5j3R0i0xGTEACKGY7qywRpzvZOGH_4v5lcvAiLE4jDl8KLKtZ2go3vo=w1200" alt="Casa campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOkKDCegTU8Mn4QgiHQJLk1S98MlPuIAwsMcXFjaOebFWK7lITxQ-UNMHg4grGa-mJTK1HMLSLyRsRqXzKAnxAmCeSMVsSZwFhQ_dTk8zvH0AnxhOyQ=w1200" alt="Casa campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN8b-7Ok-AUhk-C0kIwCZEfVq4BajnSNulWvsEDYFxHSdEuUnQ4BvYEEVze4OuB5y3Ogp2848CqZKFZgXqXx6zVhAiA7b0eSfK3ecCEzld38BR-6Pus=w1200" alt="Casa campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPzcCulR4JSZsWFiL99YlSvrx4Pf613ZBnLUhb_2gzFpo1u9NxxKUFrjCzJtGo_rI-F33DTNO3VgsQkTv5PNIg8N2GrmWCjcsadf289Ovq5iG3LbU1_=w1200" alt="Casa campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOftc2ZVDL9pzZ4DRSAgUOUq31PuHk639mQwdxOL28dzXYn1NZeWxTVhEZ3xAsLaddQoK3SK9KXwr2UbwjSTdh1HL6EB216SwEFx5o6uVwNcrEQ1lQc=w1200" alt="Casa campestre en conjunto en venta Palermo Neiva – ICDE Inmobiliaria foto 8" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -806,9 +823,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

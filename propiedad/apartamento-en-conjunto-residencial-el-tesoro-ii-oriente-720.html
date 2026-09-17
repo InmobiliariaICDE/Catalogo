@@ -205,16 +205,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -681,10 +698,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczMUBqO0MAQ1KMZoXKBW4GwiPgayxS25Ypjhs-umz4Fq9hbxwHfP-wbXhkuz7Hp5WQQMCggYI0DUogJP_gv1G0SHy2S5xtt1wVS04WeF3KuA_Y1fQQKe=w1200" alt="Apartamento en conjunto en venta El Tesoro Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczMUBqO0MAQ1KMZoXKBW4GwiPgayxS25Ypjhs-umz4Fq9hbxwHfP-wbXhkuz7Hp5WQQMCggYI0DUogJP_gv1G0SHy2S5xtt1wVS04WeF3KuA_Y1fQQKe=w1200" alt="Apartamento en conjunto en venta El Tesoro Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO1ldM0k-2sHX4flx2H8YxCxYZoqiM8imbgfWShcgA_I6o4shP58gmkee2-PYwuubCKZiFmEt-qnk2cNKwz5TFDfOWEH5nLFjfihIfJVyIE-5OgDftf=w1200" alt="Apartamento en conjunto en venta El Tesoro Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMAFgwK_6vPellgmYsKGh5JSXJfBFisxkHCStscDMe2dHCW1pWQnr4ymTQYI6AfZzqCgqkT0seZnZxsQwdgJ4DO7TGbSucvd98AoOb12SWlThvkvk8P=w1200" alt="Apartamento en conjunto en venta El Tesoro Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPZ8ABDUHeb2abst5SIEInqKVMwaPIWn0tvJ032zr7loRWjjYoqY1PTTBC6XkSTS-ZJCh_Y2cYktX5oobaAksjvwtuM8wRNAcQshogaVcaZo5-Hd2lj=w1200" alt="Apartamento en conjunto en venta El Tesoro Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOA7MB-DmnWPlKLYVcJzeuixmM83hxNTQ9D91rzAhAHNO4emjaRqtUJZ_EzwL-h-2nrP8X7t2ZdT8IOmi5IqHeJ7VLoBCniVZRZBKnNCW7Wl0FrJI9V=w1200" alt="Apartamento en conjunto en venta El Tesoro Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczO3cwOy7NG3PDuAQsSQcfG1J3ZUmeBcSDh5Mjeze7r-T7NCfMjD3TEx0JIamdabipQr8yDdJ30fouHM-gXE7akoKSMRMGIzG_zhKkj1qynYHAeJcfTh=w1200" alt="Apartamento en conjunto en venta El Tesoro Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMEOYbAqudd_zMAFuTf8d4Wt5gmUSIuWU6IVEDkvRnhF8egchXGDs1A2tNDvE44BI9u8E1PdjBS4KMSXNzrRmrhVGiLj1u37fpe08F_0qM5-C3kL8yx=w1200" alt="Apartamento en conjunto en venta El Tesoro Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMXaU76low0mne3rW6aTpT6qXx1-_6Ux64FgGYAYuJuC2l7P-hza-23mF2TrXiDmMFEj845tvU-fzkkWUo8hfHibTPqvQ6PbJKM6rF4nhbYJTqcFwAg=w1200" alt="Apartamento en conjunto en venta El Tesoro Neiva – ICDE Inmobiliaria foto 8" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -806,9 +823,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

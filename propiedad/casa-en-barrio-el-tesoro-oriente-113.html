@@ -205,16 +205,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -681,10 +698,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczMcSLNPP1opnBYYdyYXhCzkw_89lDCq4PDM8J48uCzEu4aMLcFL4wzWNxuwkQhjEsx4jZK6ogWLPG_ockr_torCwA9GLe3nwFPlUv7Lbdv09odPPrms=w1200" alt="Casa en venta El Tesoro Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczMcSLNPP1opnBYYdyYXhCzkw_89lDCq4PDM8J48uCzEu4aMLcFL4wzWNxuwkQhjEsx4jZK6ogWLPG_ockr_torCwA9GLe3nwFPlUv7Lbdv09odPPrms=w1200" alt="Casa en venta El Tesoro Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOfo6-NkADw0La13KMOdYfsROW2PIMYQ6lLQUcKZbJzoz3mVSHubX3V8e15nwNL3f1lZzj7qU1ik8NkfO9nTX-EXksqCbfaZj93vN0gc2I5yGxGOzPR=w1200" alt="Casa en venta El Tesoro Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPo5FBfaZSg9riQEyZnlw7aiK5csetYFwC7IbrYxtXG4pFBk5bqFMt1KhEuB7Dik0LOqOhm0II1JBubyZ3sUEDRchUai43K4c3maWQTftmhhf1Gr5vW=w1200" alt="Casa en venta El Tesoro Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMoiBYyt73spjcULDf8w0bGYPnd6LrkpKCLWBN7d4yuiHYTiksvWtDYomh5LlV9bLUXtBQlQgQbQqt9gxHbU9c8hgEOCX98eUku6kzDsQiK9lMrQYV1=w1200" alt="Casa en venta El Tesoro Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM1ya1QvdGCLQ1mffCM2OjEXZrwjCrJAas9ISqp_YVbexsYx3RaUBQR1tYCr_N-VV9s3fBdoOtqRdZfuysHz_Dw6wlxujh9EYlotT-tea3zbwqJQXmz=w1200" alt="Casa en venta El Tesoro Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPJrqTthd4Km2aGdgkjkp1ycAHHfMv7Fts3k2Jz-WvN33XITmN5z7XUdxCL4wa1BHG7NnxJ2eEN0OyVaiJ2X5fBDnyAhuWYxGOvLO8IBf2OPcWO43fD=w1200" alt="Casa en venta El Tesoro Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMO4bFN9_4CeNqwFoU-EQSWRJVYKA2GIPvwF9HVbALNIDEbf3Weyx5nMb3JLLxxJ9Tr1YjiILU5IyTeypYM5Pd7bDbFR1Iz1Ih5E-9k1ALi7AecT92m=w1200" alt="Casa en venta El Tesoro Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPpGCGOgKqiBeA2u91p05KDsKmJvC40ToabEl7dK-q6mga01vGiwSCxfjj4l6Aa-G-wLKaB27x07QUpB2ga1_16bxF5nmeFhuAxEtP0BazU3QsVrx1Q=w1200" alt="Casa en venta El Tesoro Neiva – ICDE Inmobiliaria foto 8" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -806,9 +823,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

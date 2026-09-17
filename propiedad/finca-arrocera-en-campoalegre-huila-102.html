@@ -202,16 +202,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -678,10 +695,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczPVDts72LpxsqbaMkwoYE4IkRc7yhmAsIyfkS5oawwz4lk7chX8k7U8MXnudvrLkjJxbkCdxE7a18t-5jbCsZSZ2fwA0QvF5eZxqJBtFSi9k3blRLAD=w1200" alt="Finca en venta Campoalegre Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczPVDts72LpxsqbaMkwoYE4IkRc7yhmAsIyfkS5oawwz4lk7chX8k7U8MXnudvrLkjJxbkCdxE7a18t-5jbCsZSZ2fwA0QvF5eZxqJBtFSi9k3blRLAD=w1200" alt="Finca en venta Campoalegre Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOsRiv10Eh_u2R-bSVzPhsKToiWQO2_Sn88Lfp4sNylKvTcxXrxRqlyroPh4hFfauNrhr9mii61GnCTRRu2q1yG8-gUxSIjsHfK63RBJUJco3PjFvaW=w1200" alt="Finca en venta Campoalegre Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPF42_hIAy4WLc520UXQu9k8CflYSeiIBUH6CqaJlKGlJxgC2EHgC2PMYqBa5OqSkv0sRtjDu756rKoqSarq3dv5RmhmZXCXP-wonOMOkXg1N2OZejX=w1200" alt="Finca en venta Campoalegre Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczN-EepsNRrGZOmGl-G-9NFM3dfqZ_wwd5IWqQmHRxjnHhtoC-XO69cL8gxSchiJgWqgkKyLmsE-UsPBaVy7PfgAsTit6q68gpxohX9MPswWfKZH8BJS=w1200" alt="Finca en venta Campoalegre Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczPPq-d4bGrnpQhVj0Ut0cEDLMn7TJw-5cVZfwbzHcg1YG_1QbCXcFdYyUksPCm2ZBFYOQpzdeffz8nFhYlRVMrRbLeNzQ1uWoO8z6vwBJyrzunJCptX=w1200" alt="Finca en venta Campoalegre Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMKIf8H0vpM0N9ghtvBOlEn3rTfxIum4RUJal1RcZ6i2oSNqO_r-ls96vQahYz_I04eYe-D6uCABYDT80BmLJQmwtRmVnGoY2GwBSA1g4uZSoYWLfTF=w1200" alt="Finca en venta Campoalegre Neiva – ICDE Inmobiliaria foto 6" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMTB0oGkNrJBgCAoaAqofJdOF7Vrrwvt0BBVlMfYKk82McB4LRliNfRQYWxcsJASU9s_gmR_etk_Q2UTDn60V-7tfp285HL8Runv1f246xiiuOeEaoW=w1200" alt="Finca en venta Campoalegre Neiva – ICDE Inmobiliaria foto 7" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOeMTEtvdHpYnCKFeIs80eBe1sb_YopV76P_-5qNH6H_6XiNkkW4cmWJODVqQ7gX2OAC-nb8cwnEj92PSTG7dv7dkq-xlH-esUQovFugBrFM2TBqZac=w1200" alt="Finca en venta Campoalegre Neiva – ICDE Inmobiliaria foto 8" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 8</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -803,9 +820,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }

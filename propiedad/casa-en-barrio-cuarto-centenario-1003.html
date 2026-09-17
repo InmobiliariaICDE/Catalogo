@@ -205,16 +205,33 @@ body{
 }
 
 .carrusel-principal{
-  width: 100%;
-  height: 300px;
   position: relative;
-  background: #000;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  height: 300px;
+  background: transparent;
+  user-select: none;
 }
 
-.galeria-img{
+.carrusel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.carrusel-slide.activa{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.carrusel-slide img, .galeria-img{
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .carrusel-counter{
@@ -681,10 +698,10 @@ body{
     <!-- COLUMNA IZQUIERDA -->
     <div class="modal-columna-izq">
       <div class="carrusel-wrapper">
-        <div class="carrusel-principal">
-          <img id="imgPrincipal" src="https://lh3.googleusercontent.com/pw/AP1GczPvdEny__Mx3CxCIjLhpfjupH5NVE5_mYTXq9FwGGfluzbFqlO5IlxCyEWu5eeGh0jUi_6wvgNf2vyR_2AnUSKpo1-C9KEeXn_iLqrMjLzuE9-fi4C0=w1200" alt="Casa en venta Cuarto Centenario Neiva – ICDE Inmobiliaria" class="galeria-img" loading="eager"/>
-          <div class="carrusel-counter"><span id="imgActual">1</span> / 5</div>
+        <div class="carrusel-principal" id="carruselPrincipal">
+          <div class="carrusel-slide activa"><img src="https://lh3.googleusercontent.com/pw/AP1GczPvdEny__Mx3CxCIjLhpfjupH5NVE5_mYTXq9FwGGfluzbFqlO5IlxCyEWu5eeGh0jUi_6wvgNf2vyR_2AnUSKpo1-C9KEeXn_iLqrMjLzuE9-fi4C0=w1200" alt="Casa en venta Cuarto Centenario Neiva – ICDE Inmobiliaria foto 1" loading="eager"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczOUCq1f6q8swHYLpPp9U3QD6Y41D5FCni7G-i5HapiYmOxbdPOZ8RbxUYQ9BGpnhhcDWM1royk9KpM3V2W_AdJeuUVdzm33ipVvZ6fOmm4UgiONUS6Y=w1200" alt="Casa en venta Cuarto Centenario Neiva – ICDE Inmobiliaria foto 2" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMfh48xDQNf2O-xOXI4_zRNzbemSLyMl0d3bcSJAt3azzi0QmksSkPSLFAVBmDBCFzWHnpmpIRNKlOGWzWAs8nkNHQwDdqONyK-aF0Tl_3uJg7tOOPl=w1200" alt="Casa en venta Cuarto Centenario Neiva – ICDE Inmobiliaria foto 3" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczM6YjSsS-HQl14phRNyteqW7jKagOI75Cj49afqhT18l9pG0DKZUbHVi1Et4px999fEkLbQX0Hk38Jz2wYLNntXx2zKanQbRFAuJMt67YJhLGANI72o=w1200" alt="Casa en venta Cuarto Centenario Neiva – ICDE Inmobiliaria foto 4" loading="lazy"/></div><div class="carrusel-slide"><img src="https://lh3.googleusercontent.com/pw/AP1GczMhmUse9An4ZV9xj8_ErT4itz27aoGWThG4iKqEe0cVbcFkD1SWDYlMOBHZwvV6Q-ydxNf1we_684bDQyH9GTfIvT5pI7Dm5QqZi99PESp87f23SLd4=w1200" alt="Casa en venta Cuarto Centenario Neiva – ICDE Inmobiliaria foto 5" loading="lazy"/></div>
           <button class="carrusel-btn carrusel-prev" onclick="cambiarImg(-1)" aria-label="Anterior">&#8249;</button><button class="carrusel-btn carrusel-next" onclick="cambiarImg(1)" aria-label="Siguiente">&#8250;</button>
+          <div class="carrusel-counter"><span id="imgActual">1</span> / 5</div>
           <button class="carrusel-expand" onclick="abrirLightbox(imgIndex)" aria-label="Ver galería">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
               <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -806,9 +823,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function irImg(i) {
   if (!IMGS.length) return;
   imgIndex = (i + IMGS.length) % IMGS.length;
-  document.getElementById('imgPrincipal').src = IMGS[imgIndex];
-  var minis = document.querySelectorAll('.miniatura');
-  minis.forEach(function(m,j){ m.classList.toggle('activa', j===imgIndex); });
+  var slides = document.querySelectorAll('.carrusel-principal .carrusel-slide');
+  if (slides.length) {
+    slides.forEach(function(s, j) { s.classList.toggle('activa', j === imgIndex); });
+  } else {
+    var main = document.getElementById('imgPrincipal');
+    if (main) main.src = IMGS[imgIndex];
+  }
+  var minis = document.querySelectorAll('.carrusel-min, .miniatura');
+  minis.forEach(function(m, j) { m.classList.toggle('activa', j === imgIndex); });
   var cont = document.getElementById('imgActual');
   if (cont) cont.textContent = imgIndex + 1;
 }
