@@ -5516,7 +5516,7 @@ font-weight: 500;
             position: absolute;
             bottom: 6px;
             right: 8px;
-            background: rgba(0,0,0,0.55);
+            background: rgba(0,0,0,0.65);
             color: #fff;
             font-size: 10px;
             padding: 2px 7px;
@@ -5524,6 +5524,42 @@ font-weight: 500;
             font-family: "Outfit", sans-serif;
             letter-spacing: 0.3px;
             display: none;
+            z-index: 5;
+            pointer-events: none;
+            line-height: 1.3;
+        }
+        .tarjeta-foto-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.45);
+            color: #fff;
+            border: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            line-height: 1;
+            opacity: 0;
+            transition: opacity 0.2s ease, background 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .tarjeta-fotos:hover .tarjeta-foto-nav {
+            opacity: 0.85;
+        }
+        .tarjeta-foto-nav:hover {
+            opacity: 1 !important;
+            background: rgba(0,0,0,0.75);
+        }
+        .tarjeta-foto-prev { left: 6px; }
+        .tarjeta-foto-next { right: 6px; }
+        @media (max-width: 768px) {
+            .tarjeta-foto-nav { opacity: 0.7; width: 24px; height: 24px; font-size: 16px; }
         }
         @media (max-width: 600px) {
             .tarjeta-fotos { height: 150px; }
@@ -8778,6 +8814,8 @@ font-weight: 500;
                                                                                           <div class="tarjeta-fotos-strip">
                                                                                             ${_getFotosHTML(d)}
                                                                                           </div>
+                                                                                          <button class="tarjeta-foto-nav tarjeta-foto-prev" aria-label="Anterior">&#8249;</button>
+                                                                                          <button class="tarjeta-foto-nav tarjeta-foto-next" aria-label="Siguiente">&#8250;</button>
                                                                                           <span class="tarjeta-foto-counter"></span>
                                                                                         </div>
                                                                                         <div class="contenido">
@@ -8831,54 +8869,82 @@ font-weight: 500;
 
                         // 8.1. Volver a enlazar listeners para abrir modal al hacer click o Enter
                         document.querySelectorAll(".tarjeta").forEach(card => {
-                            card.addEventListener("click", () => abrirModal(card.dataset.codigo));
+                            card.addEventListener("click", () => {
+                                if (card._preventModal) return;
+                                abrirModal(card.dataset.codigo);
+                            });
                             card.addEventListener("keydown", e => {
                                 if (e.key === "Enter" || e.key === " ") {
                                     e.preventDefault();
                                     abrirModal(card.dataset.codigo);
                                 }
                             });
-                            // Swipe en foto de tarjeta → cambiar foto sin abrir modal
+                            // Swipe & nav en foto de tarjeta
                             if (!card._swipeInit) {
                                 card._swipeInit = true;
                                 (function(el) {
                                     var fotosEl = el.querySelector('.tarjeta-fotos');
                                     if (!fotosEl) return;
                                     var slides = fotosEl.querySelectorAll('.tarjeta-foto-slide');
-                                    if (slides.length <= 1) return;
                                     var counter = fotosEl.querySelector('.tarjeta-foto-counter');
+                                    var btnPrev = fotosEl.querySelector('.tarjeta-foto-prev');
+                                    var btnNext = fotosEl.querySelector('.tarjeta-foto-next');
+
+                                    if (slides.length <= 1) {
+                                        if (counter) counter.style.display = 'none';
+                                        if (btnPrev) btnPrev.style.display = 'none';
+                                        if (btnNext) btnNext.style.display = 'none';
+                                        return;
+                                    }
+
                                     var idx = 0;
-                                    // Show counter
-                                    if (counter) { counter.style.display = 'block'; counter.textContent = '1 / ' + slides.length; }
-                                    function irFoto(n) {
+                                    if (counter) {
+                                        counter.style.display = 'block';
+                                        counter.textContent = '1 / ' + slides.length;
+                                    }
+
+                                    function irFoto(n, e) {
+                                        if (e) {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                        }
+                                        el._preventModal = true;
+                                        setTimeout(function(){ el._preventModal = false; }, 100);
+
                                         var next = ((n % slides.length) + slides.length) % slides.length;
-                                        // Preload next image to avoid black flash
                                         var nextImg = slides[next];
                                         if (nextImg.getAttribute('loading') === 'lazy') {
                                             nextImg.setAttribute('loading', 'eager');
-                                            nextImg.src = nextImg.src; // force load
+                                            nextImg.src = nextImg.src;
                                         }
                                         slides[idx].classList.remove('activa');
                                         idx = next;
                                         slides[idx].classList.add('activa');
-                                        if (counter) counter.textContent = (idx+1) + ' / ' + slides.length;
+                                        if (counter) counter.textContent = (idx + 1) + ' / ' + slides.length;
                                     }
-                                    var sx=0, sy=0, moved=false;
+
+                                    if (btnPrev) btnPrev.onclick = function(e){ irFoto(idx - 1, e); };
+                                    if (btnNext) btnNext.onclick = function(e){ irFoto(idx + 1, e); };
+
+                                    var sx = 0, sy = 0, moved = false;
                                     fotosEl.addEventListener('touchstart', function(e){
-                                        sx = e.touches[0].clientX;
-                                        sy = e.touches[0].clientY;
-                                        moved = false;
+                                        if (e.touches.length === 1) {
+                                            sx = e.touches[0].clientX;
+                                            sy = e.touches[0].clientY;
+                                            moved = false;
+                                        }
                                     }, { passive: true });
                                     fotosEl.addEventListener('touchmove', function(e){
-                                        if (Math.abs(e.touches[0].clientX - sx) > 8) moved = true;
+                                        if (e.touches.length === 1 && Math.abs(e.touches[0].clientX - sx) > 8) {
+                                            moved = true;
+                                        }
                                     }, { passive: true });
                                     fotosEl.addEventListener('touchend', function(e){
                                         if (!moved) return;
                                         var dx = e.changedTouches[0].clientX - sx;
                                         var dy = e.changedTouches[0].clientY - sy;
-                                        if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
-                                        e.stopPropagation(); // no abrir modal
-                                        irFoto(idx + (dx < 0 ? 1 : -1));
+                                        if (Math.abs(dx) < 30 || Math.abs(dy) > Math.abs(dx)) return;
+                                        irFoto(idx + (dx < 0 ? 1 : -1), e);
                                     }, { passive: true });
                                 })(card);
                             }
