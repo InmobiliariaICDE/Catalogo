@@ -1060,10 +1060,12 @@ function doLogout(){
 }
 
 function getFrecInfo(){
-  const cnt=filtrarProps(nuevoLead.filtros).length, max=nuevoLead.maxPorEnvio||4;
-  const lotes=Math.ceil(cnt/max)||0;
-  const ft={diaria:'día',semanal:'semana',quincenal:'15 días',mensual:'mes'}[nuevoLead.frecuencia]||nuevoLead.frecuencia;
-  return `Con <strong>${cnt}</strong> propiedades → <strong>${max}</strong> por <strong>${ft}</strong> → <strong>${lotes} envíos</strong>.`;
+  const hasSel = typeof selectedProps !== 'undefined' && selectedProps.length > 0;
+  const fProps = filtrarProps(nuevoLead.filtros);
+  const cnt = hasSel ? selectedProps.length : fProps.length, max = nuevoLead.maxPorEnvio || 4;
+  const lotes = Math.ceil(cnt/max) || 0;
+  const ft = {diaria:'día',semanal:'semana',quincenal:'15 días',mensual:'mes'}[nuevoLead.frecuencia] || nuevoLead.frecuencia;
+  return `Con <strong>${cnt}</strong> ${hasSel?'propiedades seleccionadas':'propiedades'} → <strong>${max}</strong> por <strong>${ft}</strong> → <strong>${lotes} envíos</strong>.`;
 }
 
 function setTipo(tipo){
@@ -1088,10 +1090,12 @@ function deselProp(cod){ selectedProps=selectedProps.filter(c=>c!==cod); renderN
 }
 
 function getFrecInfo(){
-  const cnt=filtrarProps(nuevoLead.filtros).length, max=nuevoLead.maxPorEnvio||4;
-  const lotes=Math.ceil(cnt/max)||0;
-  const ft={diaria:'día',semanal:'semana',quincenal:'15 días',mensual:'mes'}[nuevoLead.frecuencia]||nuevoLead.frecuencia;
-  return `Con <strong>${cnt}</strong> propiedades → <strong>${max}</strong> por <strong>${ft}</strong> → <strong>${lotes} envíos</strong>.`;
+  const hasSel = typeof selectedProps !== 'undefined' && selectedProps.length > 0;
+  const fProps = filtrarProps(nuevoLead.filtros);
+  const cnt = hasSel ? selectedProps.length : fProps.length, max = nuevoLead.maxPorEnvio || 4;
+  const lotes = Math.ceil(cnt/max) || 0;
+  const ft = {diaria:'día',semanal:'semana',quincenal:'15 días',mensual:'mes'}[nuevoLead.frecuencia] || nuevoLead.frecuencia;
+  return `Con <strong>${cnt}</strong> ${hasSel?'propiedades seleccionadas':'propiedades'} → <strong>${max}</strong> por <strong>${ft}</strong> → <strong>${lotes} envíos</strong>.`;
 }
 
 function setTipo(tipo){
@@ -1146,6 +1150,7 @@ function toggleProp(cod,el){
   if(idx>=0){ selectedProps.splice(idx,1); el.classList.remove('selected'); el.querySelector('.prop-card-check').style.display='none'; }
   else       { selectedProps.push(cod);    el.classList.add('selected');    el.querySelector('.prop-card-check').style.display='flex'; }
   const c=document.getElementById('selCnt'); if(c) c.textContent=`${selectedProps.length} seleccionadas`;
+  const fi=document.getElementById('frecInfo'); if(fi){ fi.style.display=nuevoLead.frecuencia==='manual'?'none':''; fi.innerHTML=getFrecInfo(); }
 }
 
 /* ═══════════════════════════════════════════════

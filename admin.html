@@ -244,10 +244,11 @@ html.is-logged-in #app { display: flex !important; flex-direction: column !impor
 .carrusel-prev { left:10px; }
 .carrusel-next { right:10px; }
 .carrusel-counter { position:absolute; top:12px; left:12px; bottom:auto; right:auto; background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; color:#fff; font-size:11px; font-weight:600; z-index:10; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.18); }
-.carrusel-miniaturas { display:flex; flex-wrap:nowrap; overflow-x:auto; gap:2px; margin-top:2px; background:transparent; padding:0; width:100%; scrollbar-width:none; }
+.carrusel-miniaturas { display:flex; flex-wrap:nowrap; overflow-x:auto; overflow-y:hidden; gap:2px; margin-top:2px; background:transparent; padding:0; width:100%; scrollbar-width:none; -ms-overflow-style:none; -webkit-overflow-scrolling:touch; touch-action:pan-x; cursor:grab; user-select:none; }
 .carrusel-miniaturas::-webkit-scrollbar { display:none; }
-.carrusel-min { flex:0 0 calc(25% - 2px); width:calc(25% - 2px); height:52px; object-fit:cover; border-radius:4px; cursor:pointer; opacity:0.4; display:block; transition:opacity 0.3s; border:none; box-sizing:border-box; }
-.carrusel-min.activa { opacity:1; border:none; }
+.carrusel-miniaturas.grabbing { cursor:grabbing; }
+.carrusel-min { flex:0 0 calc((100% - 6px) / 4); width:calc((100% - 6px) / 4); min-width:calc((100% - 6px) / 4); max-width:calc((100% - 6px) / 4); height:62px; object-fit:cover; border-radius:6px; cursor:pointer; opacity:0.4; display:block; transition:opacity 0.3s; border:none; box-sizing:border-box; margin:0px 0px 0px 0px !important; user-select:none; -webkit-user-drag:none; }
+.carrusel-min.activa { opacity:1; border:none; margin:0px 0px 0px 0px !important; }
 .carrusel-min:hover { opacity:0.75; }
 .carrusel-expand { position:absolute; bottom:12px; right:12px; top:auto; left:auto; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.18); border-radius:8px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; color:#fff; transition:all 0.2s; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
 .carrusel-expand:hover { background:var(--gold); color:#000; }
@@ -287,8 +288,8 @@ html.is-logged-in #app { display: flex !important; flex-direction: column !impor
   .modal-col-izq::-webkit-scrollbar { display:none !important; }
   .modal-col-der{ border-left:none !important; border-top:none !important; padding:6px 0px 6px 6px !important; overflow-y:visible; } 
   .carrusel-principal { height:220px !important; border-radius:0 !important; width:100% !important; }
-  .carrusel-miniaturas { display:flex !important; flex-wrap:nowrap !important; overflow-x:auto !important; gap:2px !important; margin-top:2px !important; padding:0 !important; width:100% !important; background:transparent !important; scrollbar-width:none !important; }
-  .carrusel-min { flex:0 0 calc(25% - 2px) !important; width:calc(25% - 2px) !important; height:52px !important; border-radius:4px !important; border:none !important; }
+  .carrusel-miniaturas { display:flex !important; flex-wrap:nowrap !important; overflow-x:auto !important; overflow-y:hidden !important; gap:2px !important; margin-top:2px !important; padding:0 !important; width:100% !important; background:transparent !important; scrollbar-width:none !important; -ms-overflow-style:none !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-x !important; cursor:grab !important; user-select:none !important; }
+  .carrusel-min { flex:0 0 calc((100% - 6px) / 4) !important; width:calc((100% - 6px) / 4) !important; min-width:calc((100% - 6px) / 4) !important; max-width:calc((100% - 6px) / 4) !important; height:52px !important; border-radius:6px !important; border:none !important; margin:0px 0px 0px 0px !important; }
   .modal-prop-info { padding:6px 0px 6px 6px !important; }
   .modal-prop-footer { padding:6px 0px 6px 6px !important; gap:8px !important; justify-content:space-between !important; position:sticky; bottom:0; background:#09090b; }
   .modal-box { padding:6px 0px 6px 6px !important; }
@@ -7230,10 +7231,11 @@ function getFrecInfo(){
       return isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0;
     });
   }
-  const cnt = f.length;
+  const hasSel = typeof selectedProps !== 'undefined' && selectedProps.length > 0;
+  const cnt = hasSel ? selectedProps.length : f.length;
   const ft={diaria:'día',semanal:'semana',quincenal:'15 días',mensual:'mes'}[nuevoLead.frecuencia]||nuevoLead.frecuencia;
-  if(nuevoLead.frecuencia==='manual') return `Con <strong>${cnt}</strong> propiedades → <strong>Envío manual</strong>.`;
-  return `Con <strong>${cnt}</strong> propiedades → Se enviarán todas las propiedades encontradas cada <strong>${ft}</strong>.`;
+  if(nuevoLead.frecuencia==='manual') return `Con <strong>${cnt}</strong> ${hasSel?'propiedades seleccionadas':'propiedades'} → <strong>Envío manual</strong>.`;
+  return `Con <strong>${cnt}</strong> ${hasSel?'propiedades seleccionadas':'propiedades'} → ${hasSel?'Se enviarán las propiedades seleccionadas':'Se enviarán todas las propiedades encontradas'} cada <strong>${ft}</strong>.`;
 }
 
 function updateFrec(){
@@ -7408,6 +7410,7 @@ function toggleProp(cod,el){
   // Actualizar contador
   const c=document.getElementById('selCnt'); 
   if(c) c.textContent=`${selectedProps.length} seleccionadas`;
+  updateFrec();
   
   // Actualizar chips bar en todos los lugares donde haya una grilla activa (tab principal o modal)
   const grids = ['propsGrid', 'editFiltrosGrid'];
@@ -7494,7 +7497,7 @@ function guardarLead(enviarAhora, btn){
     filtros:JSON.parse(JSON.stringify(nuevoLead.filtros)),
     frecuencia:nuevoLead.frecuencia, maxPorEnvio:max,
     nombreInmobiliaria:nuevoLead.nombreInmobiliaria, nombreAgente:nuevoLead.nombreAgente,
-    propsFiltradas:filtradas.map(d=>d['Código']),
+    propsFiltradas:(typeof selectedProps !== 'undefined' && selectedProps.length > 0) ? [...selectedProps] : filtradas.map(d=>d['Código']),
     propsEnviadas:[], proximosEnvios:generarProximosCheck(nuevoLead.frecuencia),
     historialEnvios:[], visitas:[], creadoEn:new Date().toISOString()
   };
@@ -8059,7 +8062,7 @@ function renderSidePanel(lead){
     <button class="btn ${pend.length>0?'btn-green':'btn-primary'} btn-sm" style="flex:1;" onclick="abrirEnvioModal('${lead.id}')">
       ${pend.length>0 ? `📤 Enviar ${pend.length} Novedades` : '📤 Enviar Propuestas'}
     </button>
-    <a id="panelWhatsAppBtn" href="https://wa.me/57${lead.celular}" target="_blank" class="btn btn-secondary btn-sm" style="flex:0.5; text-decoration:none; color:inherit; display:flex; align-items:center; justify-content:center; gap:6px;">💬 WhatsApp</a>
+    <a id="panelWhatsAppBtn" href="https://web.whatsapp.com/send?phone=57${lead.celular}" target="whatsapp_icde" class="btn btn-secondary btn-sm" style="flex:0.5; text-decoration:none; color:inherit; display:flex; align-items:center; justify-content:center; gap:6px;">💬 WhatsApp</a>
   </div>
 
 
@@ -8258,7 +8261,7 @@ function updLead(id,campo,val){
     if(pn) pn.innerText = val;
   } else if(campo==='celular') {
     const wa = document.getElementById('panelWhatsAppBtn');
-    if(wa) wa.href = `https://wa.me/57${val}`;
+    if(wa) wa.href = `https://web.whatsapp.com/send?phone=57${val}`;
   }
   
   if(currentTab==='leads') renderLeadsBody(leads); 
@@ -8724,15 +8727,15 @@ function confirmarEnvio(btn){
         if (r.ok) {
           toast(`Enviado automáticamente ✓`, 'success');
         } else {
-          window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
+      window.open(`https://web.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
         }
       }).catch(() => {
-        window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
+        window.open(`https://web.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
       }).finally(() => {
         if(btn) btn.disabled = false;
       });
     } else {
-      window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
+      window.open(`https://web.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
       if(btn) btn.disabled = false;
     }
 
@@ -9068,13 +9071,13 @@ function guardarFiltrosEditados(marcarComoEnviadas = false){
         if (r.ok) {
           toast(`Enviado automáticamente ✓`, 'success');
         } else {
-          window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
+          window.open(`https://web.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
         }
       }).catch(() => {
-        window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
+        window.open(`https://web.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
       });
     } else {
-      window.open(`https://api.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
+      window.open(`https://web.whatsapp.com/send?phone=${waBase}&text=${encodeURIComponent(msg)}`, WA_WIN_NAME);
     }
   }
 
@@ -11824,7 +11827,8 @@ function renderWppLinkCard(action) {
   const msgTexto = `${saludoCliente}te comparto este enlace exclusivo con la selección de propiedades de **ICDE Inmobiliaria** (${descripcionFiltros}):\n\n👉 ${linkPersonalizado}\n\nQuedo atento a tus comentarios para agendar una visita physical sin compromiso. ¡Un saludo!`;
 
   const cleanNum = celular.replace(/\D/g, '');
-  const wppUrl = cleanNum ? `https://wa.me/57${cleanNum}?text=${encodeURIComponent(msgTexto)}` : `https://wa.me/?text=${encodeURIComponent(msgTexto)}`;
+  const cleanNum2 = cleanNum.startsWith('57') ? cleanNum : '57' + cleanNum;
+  const wppUrl = cleanNum ? `https://web.whatsapp.com/send?phone=${cleanNum2}&text=${encodeURIComponent(msgTexto)}` : `https://web.whatsapp.com/send?text=${encodeURIComponent(msgTexto)}`;
 
   const html = `
     <div class="gemini-card" id="wppCard-${id}">
@@ -11839,7 +11843,7 @@ function renderWppLinkCard(action) {
       <textarea id="txtWppMsg-${id}" style="width:100%; height:85px; font-size:11px; background:#18181c; color:#fff; border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px; resize:none; outline:none; font-family:sans-serif; margin-bottom:8px;">${msgTexto}</textarea>
 
       <div class="gemini-card-footer" style="display:flex; gap:6px;">
-        <a href="${wppUrl}" target="_blank" class="btn btn-primary btn-sm" style="flex:1.2; text-decoration:none; background:#25D366; color:#fff; font-weight:700; border:none; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+        <a href="${wppUrl}" target="whatsapp_icde" class="btn btn-primary btn-sm" style="flex:1.2; text-decoration:none; background:#25D366; color:#fff; font-weight:700; border:none; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
           💬 Abrir WhatsApp
         </a>
         <button class="btn btn-secondary btn-sm" style="flex:1; font-size:11px;" onclick="navigator.clipboard.writeText(document.getElementById('txtWppMsg-${id}').value); toast('Mensaje copiado ✓', 'success');">
@@ -16194,25 +16198,40 @@ function mpCarruselDetener() {
   clearTimeout(mpCarruselTimer);
 }
 
-function mpCarruselActualizarMiniaturas() {
-  const n = mpCarruselFotos.length;
-  if (!n) return;
+function mpCarruselConstruirMiniaturas() {
   const minDiv = document.getElementById('mpCarruselMiniaturas');
   if (!minDiv) return;
-
-  if (n <= 4) {
-    minDiv.innerHTML = mpCarruselFotos.map((u, i) => 
-      `<img src="${u}" class="carrusel-min ${i === mpCarruselIdx ? 'activa' : ''}" onclick="mpCarruselIrA(${i})"/>`
-    ).join('');
-  } else {
-    let start = Math.max(0, mpCarruselIdx - 1);
-    if (start + 4 > n) start = Math.max(0, n - 4);
-    const ventana = [];
-    for (let i = start; i < start + 4 && i < n; i++) ventana.push(i);
-    minDiv.innerHTML = ventana.map(i => 
-      `<img src="${mpCarruselFotos[i]}" class="carrusel-min ${i === mpCarruselIdx ? 'activa' : ''}" onclick="mpCarruselIrA(${i})"/>`
-    ).join('');
+  const fotos = mpCarruselFotos || [];
+  if (fotos.length <= 1) {
+    minDiv.style.display = 'none';
+    minDiv.innerHTML = '';
+    return;
   }
+  minDiv.style.display = 'flex';
+  minDiv.innerHTML = '';
+  fotos.forEach((url, i) => {
+    const img = document.createElement('img');
+    img.src = url;
+    img.className = 'carrusel-min' + (i === mpCarruselIdx ? ' activa' : '');
+    img.loading = 'lazy';
+    img.draggable = false;
+    img.alt = 'Foto miniatura ' + (i + 1);
+    img.onerror = function() { this.src = 'https://i.imgur.com/Pc9M3I8.png'; };
+    img.addEventListener('click', () => {
+      if (minDiv._wasDragging) return;
+      mpCarruselIrA(i);
+    });
+    minDiv.appendChild(img);
+  });
+}
+
+function mpCarruselActualizarMiniaturas() {
+  const minDiv = document.getElementById('mpCarruselMiniaturas');
+  if (!minDiv) return;
+  const minis = minDiv.querySelectorAll('.carrusel-min');
+  minis.forEach((img, i) => {
+    img.classList.toggle('activa', i === mpCarruselIdx);
+  });
 }
 
 function abrirModalProp(codigoOrProp){
@@ -16423,7 +16442,7 @@ function mpCarruselInit(){
     principal.addEventListener('pointercancel', () => { pDown = false; });
   }
   
-  mpCarruselActualizarMiniaturas();
+  mpCarruselConstruirMiniaturas();
   document.getElementById('mpCarruselCounter').textContent = `1 / ${mpCarruselFotos.length}`;
   mpCarruselReiniciarProgreso();
 }
@@ -16444,6 +16463,79 @@ function mpCarruselIrA(idx, reiniciarTimer = true){
   document.getElementById('mpCarruselCounter').textContent = `${mpCarruselIdx+1} / ${n}`;
   if (reiniciarTimer) mpCarruselReiniciarProgreso();
 }
+
+// ── DRAG SCROLL MINIATURAS PANEL ──
+(function(){
+  function initMpMinDrag() {
+    var el = document.getElementById('mpCarruselMiniaturas');
+    if (!el || el._minDragInited) return;
+    el._minDragInited = true;
+    var down = false, startX = 0, scrollLeft = 0, moved = false;
+
+    el.addEventListener('mousedown', function(e){
+      down = true;
+      moved = false;
+      el._wasDragging = false;
+      startX = e.pageX - el.offsetLeft;
+      scrollLeft = el.scrollLeft;
+      el.classList.add('grabbing');
+    });
+
+    document.addEventListener('mouseup', function(){
+      if (down) {
+        down = false;
+        el.classList.remove('grabbing');
+        if (moved) {
+          el._wasDragging = true;
+          setTimeout(function(){ el._wasDragging = false; }, 80);
+        }
+      }
+    });
+
+    document.addEventListener('mousemove', function(e){
+      if (!down) return;
+      e.preventDefault();
+      var x = e.pageX - el.offsetLeft;
+      var walk = (x - startX) * 1.5;
+      if (Math.abs(walk) > 5) moved = true;
+      el.scrollLeft = scrollLeft - walk;
+    });
+
+    var touchStartX = 0, touchMoved = false;
+    el.addEventListener('touchstart', function(e){
+      if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchMoved = false;
+        el._wasDragging = false;
+      }
+    }, {passive: true});
+
+    el.addEventListener('touchmove', function(e){
+      if (e.touches.length === 1) {
+        if (Math.abs(e.touches[0].clientX - touchStartX) > 8) {
+          touchMoved = true;
+          el._wasDragging = true;
+        }
+      }
+    }, {passive: true});
+
+    el.addEventListener('touchend', function(){
+      if (touchMoved) {
+        setTimeout(function(){ el._wasDragging = false; }, 80);
+      }
+    }, {passive: true});
+  }
+
+  var ov = document.getElementById('modalPropOverlay');
+  if (ov) new MutationObserver(function(){ initMpMinDrag(); })
+    .observe(ov, {attributes:true, attributeFilter:['style','class']});
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMpMinDrag);
+  } else {
+    initMpMinDrag();
+  }
+})();
 
 function cerrarModalProp(){
   mpCarruselDetener();
