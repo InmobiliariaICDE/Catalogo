@@ -5528,39 +5528,6 @@ font-weight: 500;
             pointer-events: none;
             line-height: 1.3;
         }
-        .tarjeta-foto-nav {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0,0,0,0.45);
-            color: #fff;
-            border: none;
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            cursor: pointer;
-            z-index: 6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            line-height: 1;
-            opacity: 0;
-            transition: opacity 0.2s ease, background 0.2s ease;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .tarjeta-fotos:hover .tarjeta-foto-nav {
-            opacity: 0.85;
-        }
-        .tarjeta-foto-nav:hover {
-            opacity: 1 !important;
-            background: rgba(0,0,0,0.75);
-        }
-        .tarjeta-foto-prev { left: 6px; }
-        .tarjeta-foto-next { right: 6px; }
-        @media (max-width: 768px) {
-            .tarjeta-foto-nav { opacity: 0.7; width: 24px; height: 24px; font-size: 16px; }
-        }
         @media (max-width: 600px) {
             .tarjeta-fotos { height: 150px; }
         }
@@ -8814,8 +8781,6 @@ font-weight: 500;
                                                                                           <div class="tarjeta-fotos-strip">
                                                                                             ${_getFotosHTML(d)}
                                                                                           </div>
-                                                                                          <button class="tarjeta-foto-nav tarjeta-foto-prev" aria-label="Anterior">&#8249;</button>
-                                                                                          <button class="tarjeta-foto-nav tarjeta-foto-next" aria-label="Siguiente">&#8250;</button>
                                                                                           <span class="tarjeta-foto-counter"></span>
                                                                                         </div>
                                                                                         <div class="contenido">
@@ -8879,7 +8844,7 @@ font-weight: 500;
                                     abrirModal(card.dataset.codigo);
                                 }
                             });
-                            // Swipe & nav en foto de tarjeta
+                            // Swipe en foto de tarjeta
                             if (!card._swipeInit) {
                                 card._swipeInit = true;
                                 (function(el) {
@@ -8887,13 +8852,9 @@ font-weight: 500;
                                     if (!fotosEl) return;
                                     var slides = fotosEl.querySelectorAll('.tarjeta-foto-slide');
                                     var counter = fotosEl.querySelector('.tarjeta-foto-counter');
-                                    var btnPrev = fotosEl.querySelector('.tarjeta-foto-prev');
-                                    var btnNext = fotosEl.querySelector('.tarjeta-foto-next');
 
                                     if (slides.length <= 1) {
                                         if (counter) counter.style.display = 'none';
-                                        if (btnPrev) btnPrev.style.display = 'none';
-                                        if (btnNext) btnNext.style.display = 'none';
                                         return;
                                     }
 
@@ -8922,9 +8883,6 @@ font-weight: 500;
                                         slides[idx].classList.add('activa');
                                         if (counter) counter.textContent = (idx + 1) + ' / ' + slides.length;
                                     }
-
-                                    if (btnPrev) btnPrev.onclick = function(e){ irFoto(idx - 1, e); };
-                                    if (btnNext) btnNext.onclick = function(e){ irFoto(idx + 1, e); };
 
                                     var sx = 0, sy = 0, moved = false;
                                     fotosEl.addEventListener('touchstart', function(e){
