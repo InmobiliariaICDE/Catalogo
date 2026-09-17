@@ -2768,7 +2768,7 @@ const CONT_CAT_ICONS = {
   'Venta de Inmueble':'\uD83C\uDFE0','Separan Inmueble':'\uD83D\uDD11','Arriendo':'\uD83D\uDD11','Aval\u00FAos':'\uD83D\uDCCB',
   'Remodelaci\u00F3n':'\uD83D\uDD28','Reparaci\u00F3n':'\uD83D\uDD27','Arquitectura':'\uD83D\uDCD0',
   'Gesti\u00F3n/Administraci\u00F3n':'\uD83D\uDCBC','Consultor\u00EDa':'\uD83D\uDCA1','Otro Servicio':'\u2B50',
-  'N\u00F3mina/Personal':'\uD83D\uDC65','Arriendo Oficina':'\uD83C\uDFE2','Marketing':'\uD83D\uDCE3',
+  'N\u00F3mina/Personal':'\uD83D\uDC65','Colaboradores':'👨‍🔧','👨‍🔧Colaboradores':'👨‍🔧','Arriendo Oficina':'\uD83C\uDFE2','Marketing':'\uD83D\uDCE3',
   'Servicios P\u00FAblicos':'\uD83D\uDCA1','Impuestos':'\uD83D\uDCDD','Software/Tecnolog\u00EDa':'\uD83D\uDCBB',
   'Inversi\u00F3n':'\uD83D\uDCC8','Aseo/Mantenimiento':'\uD83E\uDDF9','Cafeter\u00EDa':'\u2615','Deudas':'\uD83D\uDCB8','Transporte':'\uD83D\uDE97','Papeler\u00EDa':'\uD83D\uDCCE','Otro Gasto':'\u274C'
 };
@@ -3906,7 +3906,7 @@ function contEditarMovimiento(id){
 function contToggleTipo(){
   const tipo=document.getElementById('contMovTipo').value;
   const catSel=document.getElementById('contMovCat');
-  const egresosCats=['N\u00F3mina/Personal','Arriendo Oficina','Marketing','Servicios P\u00FAblicos','Impuestos','Software/Tecnolog\u00EDa','Inversi\u00F3n','Aseo/Mantenimiento','Cafeter\u00EDa','Deudas','Transporte','Papeler\u00EDa','Otro Gasto'];
+  const egresosCats=['N\u00F3mina/Personal','Colaboradores','Arriendo Oficina','Marketing','Servicios P\u00FAblicos','Impuestos','Software/Tecnolog\u00EDa','Inversi\u00F3n','Aseo/Mantenimiento','Cafeter\u00EDa','Deudas','Transporte','Papeler\u00EDa','Otro Gasto'];
   const ingresosCats=['Venta de Inmueble','Separan Inmueble','Arriendo','Aval\u00FAos','Remodelaci\u00F3n','Reparaci\u00F3n','Arquitectura','Gesti\u00F3n/Administraci\u00F3n','Consultor\u00EDa','Otro Servicio'];
   Array.from(catSel.options).forEach(function(opt){
     if(tipo==='egreso')opt.style.display=egresosCats.includes(opt.value)?'':'none';

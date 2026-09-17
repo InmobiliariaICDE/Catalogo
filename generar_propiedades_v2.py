@@ -370,27 +370,19 @@ def build_html(p: dict, slug: str) -> str:
         else:
             galeria_html = f'<button class="galeria-expand" onclick="abrirLightbox(0)" title="Expandir">&#x26F6;</button>{galeria_html}'
 
-    # ── CHIPS (iconos rápidos) ──
-    chips = []
-    campos_chip = [
-        ("Habitaciones", ICONOS["hab"],    "hab."),
-        ("Baños",        ICONOS["bano"],   "baños"),
-        ("Garaje",       ICONOS["garaje"], "garaje"),
-        ("Pisos",        ICONOS["pisos"],  "pisos"),
-        ("Cocina",       ICONOS["cocina"], ""),
-        ("Área lote",    ICONOS["lote"],   "m²"),
+    # ── ETIQUETAS (modal-etiqueta idénticas al index.html) ──
+    etiquetas = [
+        f'<span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/ykKdGwE.png" alt="Habitaciones" class="icono-etiqueta" /> Habitaciones {esc(str(p.get("Habitaciones") or "-").strip())}</span>',
+        f'<span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/h9NqA32.png" alt="Baños" class="icono-etiqueta" /> Baños {esc(str(p.get("Baños") or "-").strip())}</span>',
+        f'<span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/4Yixa77.png" alt="Garaje" class="icono-etiqueta" /> Garaje {esc(str(p.get("Garaje") or "-").strip())}</span>',
+        f'<span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/rH6cXMa.png" alt="Cocina" class="icono-etiqueta" /> Cocina {esc(str(p.get("Cocina") or "-").strip())}</span>',
+        f'<span class="modal-etiqueta">Pisos {esc(str(p.get("Pisos") or "-").strip())}</span>',
+        f'<span class="modal-etiqueta"><img loading="lazy" src="https://i.imgur.com/rz72lGC.png" alt="Área lote" class="icono-etiqueta" /> Lote {esc(str(p.get("Área lote") or "-").strip())} m²</span>',
     ]
-    for campo, ico, sufijo in campos_chip:
-        val = p.get(campo, "").strip()
-        if val and val not in ("0", "No aplica", "No tiene"):
-            if campo == "Cocina":
-                label = ("Cocina " + val).strip() if val.lower() not in ("si","sí","yes","1") else "Cocina integral"
-            elif sufijo:
-                label = f"{val} {sufijo}".strip()
-            else:
-                label = val
-            chips.append(f'<span class="chip">{ico}{label}</span>')
-    chips_html = f'<div class="chips">{"".join(chips)}</div>' if chips else ""
+    rent_val = str(p.get("Rentabilidad") or "").strip()
+    if rent_val and rent_val != "-":
+        etiquetas.append(f'<span class="modal-etiqueta">{esc(rent_val)}</span>')
+    etiquetas_html = f'<div class="modal-etiquetas">{"".join(etiquetas)}</div>'
 
     # ── TABLA CARACTERÍSTICAS ──
     char_campos = [
@@ -763,27 +755,31 @@ body{{
   margin: 8px 0;
 }}
 
-.chips, .modal-etiquetas{{
+.modal-etiquetas{{
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 4px;
+  margin-top: 10px;
 }}
 
-.chip, .modal-etiqueta-pill{{
-  background: rgba(212,168,75,0.05);
-  border: 1px solid rgba(212,168,75,0.15);
-  color: #fff;
+.modal-etiqueta{{
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgb(151 151 151 / 8%);
+  border: 1px solid rgb(145 145 145 / 20%);
+  color: rgba(255,255,255,0.75);
   font-size: 11px;
   padding: 4px 10px;
   border-radius: 20px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
 }}
 
-.chip svg, .modal-etiqueta-pill svg{{
-  color: var(--gold);
+.modal-etiqueta .icono-etiqueta{{
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  border-radius: 0;
+  filter: brightness(0) invert(1);
 }}
 
 /* ── COLUMNA DERECHA ── */
@@ -1076,7 +1072,7 @@ body{{
         <p class="tipo">{tipo}</p>
         <p class="modalCodigo"><strong>Código:</strong> {esc(str(p.get("Código","")))}</p>
         <p class="precio">{precio}</p>
-        {chips_html}
+        {etiquetas_html}
       </div>
     </div>
 
