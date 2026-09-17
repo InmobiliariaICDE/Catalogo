@@ -5429,22 +5429,15 @@ font-weight: 500;
         }
 
         .carrusel-miniaturas {
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             gap: 2px;
             margin-top: 2px;
             background: transparent;
-            width: 100%;
-            scrollbar-width: none;
-        }
-        .carrusel-miniaturas::-webkit-scrollbar {
-            display: none;
         }
 
         .carrusel-min {
-            flex: 0 0 calc(25% - 2px);
-            width: calc(25% - 2px);
+            width: 100%;
             height: 62px;
             object-fit: cover;
             border-radius: 0;
@@ -5452,10 +5445,8 @@ font-weight: 500;
             opacity: 0.4;
             display: block;
             transition: opacity 0.3s;
-            border: none;
-            box-sizing: border-box;
         }
-        .carrusel-min.activa { opacity: 1; border: none; }
+        .carrusel-min.activa { opacity: 1; }
         .carrusel-min:hover { opacity: 0.75; }
 
 
@@ -9324,20 +9315,20 @@ font-weight: 500;
                         const n = window.carruselFotos.length;
                         if (n <= 1) return;
                         const minDiv = document.getElementById('carruselMiniaturas');
-                        if (!minDiv) return;
+                        // Calcular ventana de 4 fotos centrada en actual
+                        let start = Math.max(0, window.carruselIdx - 1);
+                        if (start + 4 > n) start = Math.max(0, n - 4);
+                        const ventana = [];
+                        for (let i = start; i < start + 4 && i < n; i++) ventana.push(i);
                         minDiv.innerHTML = '';
-                        window.carruselFotos.forEach((src, i) => {
+                        ventana.forEach(i => {
                             const img = document.createElement('img');
-                            img.src = src;
+                            img.src = window.carruselFotos[i];
                             img.className = 'carrusel-min' + (i === window.carruselIdx ? ' activa' : '');
                             img.loading = 'lazy';
                             img.addEventListener('click', () => carruselIr(i));
                             minDiv.appendChild(img);
                         });
-                        const activeThumb = minDiv.children[window.carruselIdx];
-                        if (activeThumb) {
-                            activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
                     }
 
                     function carruselReiniciarProgreso() {
