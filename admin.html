@@ -16225,18 +16225,13 @@ function mpCarruselActualizarMiniaturas() {
   const minDiv = document.getElementById('mpCarruselMiniaturas');
   if (!minDiv) return;
 
-  if (n <= 4) {
-    minDiv.innerHTML = mpCarruselFotos.map((u, i) => 
-      `<img src="${u}" class="carrusel-min ${i === mpCarruselIdx ? 'activa' : ''}" onclick="mpCarruselIrA(${i})"/>`
-    ).join('');
-  } else {
-    let start = Math.max(0, mpCarruselIdx - 1);
-    if (start + 4 > n) start = Math.max(0, n - 4);
-    const ventana = [];
-    for (let i = start; i < start + 4 && i < n; i++) ventana.push(i);
-    minDiv.innerHTML = ventana.map(i => 
-      `<img src="${mpCarruselFotos[i]}" class="carrusel-min ${i === mpCarruselIdx ? 'activa' : ''}" onclick="mpCarruselIrA(${i})"/>`
-    ).join('');
+  minDiv.innerHTML = mpCarruselFotos.map((u, i) => 
+    `<img src="${u}" class="carrusel-min ${i === mpCarruselIdx ? 'activa' : ''}" onclick="mpCarruselIrA(${i})"/>`
+  ).join('');
+
+  const activeThumb = minDiv.children[mpCarruselIdx];
+  if (activeThumb) {
+    activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }
 }
 
