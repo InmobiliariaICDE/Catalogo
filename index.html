@@ -9526,7 +9526,7 @@ font-weight: 500;
                         document.getElementById("modalDescripcion").textContent = inmueble["Descripción"];
                         window._modalGoogleFotos = inmueble["Google Fotos"] || "";
                         document.getElementById("modalPuntosClave").textContent = inmueble["Puntos Clave"];
-                        actualizarBotonWhatsapp();
+                        actualizarBotonWhatsapp(inmueble);
                         // Bloque etiquetas (columna izq)
                         const etiquetasCont = document.getElementById("modalEtiquetas");
                         etiquetasCont.innerHTML = `
@@ -9848,14 +9848,23 @@ document.head.appendChild(schemaScript);
                         return "$" + Number(numero).toLocaleString("es-CO").replace(/,/g, "'");
                     }
 
-                    function actualizarBotonWhatsapp() {
-                        const codigo = document.getElementById("modalCodigo")?.textContent?.trim();
-                        if (!codigo) return;
+                    function actualizarBotonWhatsapp(inmueble) {
+                        if (!inmueble) {
+                            const codigo = document.getElementById("modalCodigo")?.textContent?.trim();
+                            if (!codigo) return;
+                            inmueble = (typeof datos !== 'undefined' ? datos : []).find(d => String(d["Código"]).trim() === String(codigo).trim());
+                        }
+                        if (!inmueble) return;
 
-                        const mensaje = `Hola, quiero agendar una visita para ver el inmueble ${codigo}`;
+                        const cod = String(inmueble["Código"] || "").trim();
+                        const nombre = (inmueble["Nombre"] || "Inmueble").trim();
+                        const precio = formatearPrecio(inmueble["Precio"]);
+
+                        const mensaje = `Hola ICDE Inmobiliaria 🏠, quiero agendar una visita para ver el inmueble\n\n${nombre} (Cód. ${cod}) - ${precio}\n\n🔗 Mi catálogo personalizado:\nhttps://icdeinmobiliaria.com/?ids=${cod}\n\n¿Cuándo podríamos coordinar?`;
+
                         const url = `https://wa.me/573208762117?text=${encodeURIComponent(mensaje)}`;
-
-                        document.getElementById("modalBotonWhatsapp").href = url;
+                        const btn = document.getElementById("modalBotonWhatsapp");
+                        if (btn) btn.href = url;
                     }
 
                     function mostrarAlertaComparacion() {
