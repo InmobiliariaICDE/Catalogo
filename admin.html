@@ -8438,7 +8438,7 @@ function renderPropChecklist(leadId, cod, currentStage) {
 
         return `
           <div style="position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; flex:1; cursor:pointer; min-width:0; padding:0 1px;"
-               onclick="event.stopPropagation(); cambiarEtapaPropiedad('${leadId}', '${cod}', ${p.num})"
+               onclick="event.preventDefault(); event.stopPropagation(); cambiarEtapaPropiedad(event, '${leadId}', '${cod}', ${p.num})"
                title="Marcar paso ${p.num}: ${p.label}">
             <div style="width:20px; height:20px; border-radius:50%; background:${circleBg}; border:1.5px solid ${circleBorder}; color:${circleColor}; font-size:9.5px; font-weight:700; display:flex; align-items:center; justify-content:center; box-shadow:${shadow}; transition:all 0.25s ease;">
               ${circleContent}
@@ -8453,7 +8453,12 @@ function renderPropChecklist(leadId, cod, currentStage) {
   `;
 }
 
-function cambiarEtapaPropiedad(leadId, cod, nuevaEtapa) {
+function cambiarEtapaPropiedad(evt, leadId, cod, nuevaEtapa) {
+  if (evt) {
+    if (typeof evt.stopPropagation === 'function') evt.stopPropagation();
+    if (typeof evt.preventDefault === 'function') evt.preventDefault();
+  }
+
   const lead = leads.find(l => l.id === leadId);
   if (!lead) return;
   if (!lead.propEtapas) lead.propEtapas = {};
@@ -8505,9 +8510,6 @@ function cambiarEtapaPropiedad(leadId, cod, nuevaEtapa) {
   saveLeads();
   const el = document.getElementById('panelEnviadas');
   if (el) el.innerHTML = renderPanelPropsEnviadas(lead);
-  if (typeof renderLeadsBody === 'function' && typeof currentTab !== 'undefined' && currentTab === 'leads') {
-    renderLeadsBody(leads);
-  }
   const nombresPasos = ['', 'Disponible', 'Solicitó visita', 'Visita agendada', 'Visitó', 'OK', 'Proceso de venta'];
   toast(`Etapa de venta: ${nombresPasos[nuevaEtapa] || nuevaEtapa} ✓`, 'success');
 }

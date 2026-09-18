@@ -9893,10 +9893,20 @@ font-weight: 500;
                         // 3) Actualizar los href de los botones con tu función existente
                         const mensajeA = `Hola, quiero agendar una visita para ver el inmueble ${a["Código"]} `;
                         const mensajeB = `Hola, quiero agendar una visita para ver el inmueble ${b["Código"]} `;
-                        document.getElementById('compararWhatsappA').href =
-                            `https://wa.me/573208762117?text=${encodeURIComponent(mensajeA)}`;
-                        document.getElementById('compararWhatsappB').href =
-                            `https://wa.me/573208762117?text=${encodeURIComponent(mensajeB)}`;
+                        const btnCompA = document.getElementById('compararWhatsappA');
+                        const btnCompB = document.getElementById('compararWhatsappB');
+                        if (btnCompA) {
+                            btnCompA.onclick = function(e) {
+                                e.preventDefault();
+                                abrirModalAgendarVisita(a);
+                            };
+                        }
+                        if (btnCompB) {
+                            btnCompB.onclick = function(e) {
+                                e.preventDefault();
+                                abrirModalAgendarVisita(b);
+                            };
+                        }
                     }
 
                     function limpiarComparaciones() {
@@ -10564,10 +10574,14 @@ document.head.appendChild(schemaScript);
                         // Actualizar tag de inmueble
                         const tagNombre = document.getElementById("agendarInmuebleNombre");
                         if (tagNombre && inmueble) {
-                            const cod = String(inmueble["Código"] || "").trim();
-                            const nom = (inmueble["Nombre"] || "Inmueble").trim();
-                            const precio = typeof formatearPrecio === 'function' ? formatearPrecio(inmueble["Precio"]) : inmueble["Precio"];
-                            tagNombre.innerHTML = `📍 <strong>${nom}</strong> (Cód. ${cod}) — ${precio}`;
+                            if (inmueble.esFavoritos) {
+                                tagNombre.innerHTML = `📍 <strong>${inmueble.favs.length} Propiedad(es) Favorita(s)</strong> (Códs. ${inmueble.favs.join(', ')})`;
+                            } else {
+                                const cod = String(inmueble["Código"] || "").trim();
+                                const nom = (inmueble["Nombre"] || "Inmueble").trim();
+                                const precio = typeof formatearPrecio === 'function' ? formatearPrecio(inmueble["Precio"]) : inmueble["Precio"];
+                                tagNombre.innerHTML = `📍 <strong>${nom}</strong> (Cód. ${cod}) — ${precio}`;
+                            }
                         } else if (tagNombre) {
                             tagNombre.innerHTML = `📍 <strong>Inmueble ICDE</strong>`;
                         }
@@ -10700,31 +10714,49 @@ document.head.appendChild(schemaScript);
                         const houseEmoji = String.fromCodePoint(0x1F3E0);
                         const linkEmoji = String.fromCodePoint(0x1F517);
 
-                        let nombreInmueble = "Inmueble";
-                        let codInmueble = "";
-                        let precioInmueble = "";
+                        let msg = "";
 
-                        if (inmuebleAgendarActual) {
-                            codInmueble = String(inmuebleAgendarActual["Código"] || "").trim();
-                            nombreInmueble = (inmuebleAgendarActual["Nombre"] || "Inmueble").trim();
-                            precioInmueble = typeof formatearPrecio === 'function' ? formatearPrecio(inmuebleAgendarActual["Precio"]) : inmuebleAgendarActual["Precio"];
+                        if (inmuebleAgendarActual && inmuebleAgendarActual.esFavoritos) {
+                            msg += `Hola ICDE Inmobiliaria ${houseEmoji}
+
+`;
+                            msg += `Me interesan las siguientes propiedades y me gustaría *agendar una visita*:
+
+`;
+                            msg += inmuebleAgendarActual.lineas.join('
+');
+                            msg += `
+
+${linkEmoji} *Mi catálogo personalizado:*
+${inmuebleAgendarActual.catalogoURL}
+
+`;
                         } else {
-                            codInmueble = document.getElementById("modalCodigo")?.textContent?.trim() || "";
-                            nombreInmueble = document.getElementById("modalTitle")?.textContent?.trim() || "Inmueble";
-                            precioInmueble = document.getElementById("modalPrecio")?.textContent?.trim() || "";
-                        }
+                            let nombreInmueble = "Inmueble";
+                            let codInmueble = "";
+                            let precioInmueble = "";
 
-                        // Construcción del mensaje de WhatsApp
-                        let msg = `Hola ICDE Inmobiliaria ${houseEmoji}, quiero agendar una visita para ver el inmueble
+                            if (inmuebleAgendarActual) {
+                                codInmueble = String(inmuebleAgendarActual["Código"] || "").trim();
+                                nombreInmueble = (inmuebleAgendarActual["Nombre"] || "Inmueble").trim();
+                                precioInmueble = typeof formatearPrecio === 'function' ? formatearPrecio(inmuebleAgendarActual["Precio"]) : inmuebleAgendarActual["Precio"];
+                            } else {
+                                codInmueble = document.getElementById("modalCodigo")?.textContent?.trim() || "";
+                                nombreInmueble = document.getElementById("modalTitle")?.textContent?.trim() || "Inmueble";
+                                precioInmueble = document.getElementById("modalPrecio")?.textContent?.trim() || "";
+                            }
+
+                            msg += `Hola ICDE Inmobiliaria ${houseEmoji}, quiero agendar una visita para ver el inmueble
 
 `;
-                        msg += `${nombreInmueble} (Cód. ${codInmueble}) - ${precioInmueble}
+                            msg += `${nombreInmueble} (Cód. ${codInmueble}) - ${precioInmueble}
 
 `;
-                        msg += `${linkEmoji} Mi catálogo personalizado:
+                            msg += `${linkEmoji} Mi catálogo personalizado:
 https://icdeinmobiliaria.com/?ids=${codInmueble}
 
 `;
+                        }
                         msg += `Nombre completo:
 ${nombre}
 `;
@@ -12413,7 +12445,7 @@ function agendarVisitaFavs() {
 
     var datosRef = (typeof datos !== 'undefined') ? datos : [];
     var lineas = favs.map(function(cod) {
-        var prop = datosRef.find(function(d) { return d['Código'] === cod; });
+        var prop = datosRef.find(function(d) { return String(d['Código'] || '').trim() === String(cod).trim(); });
         if (!prop) return '• Código: ' + cod;
         var precio = prop['Precio'] || '';
         if (precio && typeof formatearPrecio === 'function') precio = formatearPrecio(precio);
@@ -12422,13 +12454,16 @@ function agendarVisitaFavs() {
 
     var catalogoURL = 'https://icdeinmobiliaria.com/?ids=' + favs.join(',');
 
-    var msg = 'Hola ICDE Inmobiliaria 🏠\n\n';
-    msg += 'Me interesan las siguientes propiedades y me gustaría *agendar una visita*:\n\n';
-    msg += lineas.join('\n');
-    msg += '\n\n🔗 *Mi catálogo personalizado:*\n' + catalogoURL;
-    msg += '\n\n¿Cuándo podríamos coordinar?';
+    var objetoFavs = {
+        esFavoritos: true,
+        favs: favs,
+        lineas: lineas,
+        catalogoURL: catalogoURL
+    };
 
-    window.open('https://api.whatsapp.com/send?phone=573208762117&text=' + encodeURIComponent(msg), '_blank');
+    if (typeof abrirModalAgendarVisita === 'function') {
+        abrirModalAgendarVisita(objetoFavs);
+    }
 }
 
 // Inicializar panel al cargar
