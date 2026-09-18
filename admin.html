@@ -8111,6 +8111,20 @@ function closeSidePanel(){
 }
 
 function renderSidePanel(lead){
+  // Record open collapsible sections before re-rendering so autoSync or updates do not collapse open sections
+  const openSections = new Set();
+  document.querySelectorAll('#sidePanelContent .panel-section').forEach(sec => {
+    if (!sec.classList.contains('collapsed')) {
+      const titleEl = sec.querySelector('.panel-section-title');
+      if (titleEl) openSections.add(titleEl.textContent.trim());
+    }
+  });
+
+  const isSeguimientoOpen = openSections.size === 0 || Array.from(openSections).some(t => t.includes('Seguimiento de Propiedades'));
+  const isPerfilOpen = Array.from(openSections).some(t => t.includes('Perfil y Contacto'));
+  const isInteresesOpen = Array.from(openSections).some(t => t.includes('Intereses y Filtros'));
+  const isPendientesOpen = Array.from(openSections).some(t => t.includes('Propiedades Pendientes'));
+
   const currentMatches = filtrarProps(lead.filtros);
   const pend = currentMatches.filter(d => !(lead.propsEnviadas || []).includes(d['Código']));
   const total = currentMatches.length, env = (lead.propsEnviadas || []).length;
@@ -8143,7 +8157,7 @@ function renderSidePanel(lead){
 
 
 
-  <div class="panel-section collapsible collapsed">
+  <div class="panel-section collapsible ${isPerfilOpen ? '' : 'collapsed'}">
     <div class="panel-section-title" onclick="toggleSection(this)">👤 Perfil y Contacto</div>
     <div class="section-content">
       <div class="form-grid" style="margin-top:16px;">
@@ -8201,7 +8215,7 @@ function renderSidePanel(lead){
     </div>
   </div>
 
-  <div class="panel-section collapsible collapsed">
+  <div class="panel-section collapsible ${isInteresesOpen ? '' : 'collapsed'}">
     <div class="panel-section-title" onclick="toggleSection(this)"><span>🎯 Intereses y Filtros</span> <button class="btn btn-gold btn-sm" style="padding:8px 18px; font-size:13px; font-weight:700;" onclick="event.stopPropagation();abrirEditFiltros('${lead.id}')">Editar</button></div>
     <div class="section-content">
       <div style="margin-top:16px;">
@@ -8213,7 +8227,7 @@ function renderSidePanel(lead){
   </div>
 
 
-  <div class="panel-section collapsible collapsed">
+  <div class="panel-section collapsible ${isSeguimientoOpen ? '' : 'collapsed'}">
     <div class="panel-section-title" onclick="toggleSection(this)">📋 Seguimiento de Propiedades</div>
     <div class="section-content">
       <!-- A. PROGRESO -->
@@ -8265,7 +8279,7 @@ function renderSidePanel(lead){
     </div>
   </div>
 
-  <div class="panel-section collapsible collapsed">
+  <div class="panel-section collapsible ${isPendientesOpen ? '' : 'collapsed'}">
     <div class="panel-section-title" onclick="toggleSection(this)">⏳ Propiedades Pendientes (${pend.length})</div>
     <div class="section-content">
       <div id="panelPendientes" style="margin-top:12px;">${renderPanelPendientes(lead, pend)}</div>
