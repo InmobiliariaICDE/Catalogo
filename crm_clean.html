@@ -460,10 +460,16 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
 <!-- MODAL TARJETA DE PRESENTACIÓN DE CITA -->
 <div class="modal-overlay" id="tarjetaCitaModal" onclick="if(event.target===this) closeModal('tarjetaCitaModal')">
   <div class="modal-box" style="width:min(520px, 95%); padding: 0; overflow: hidden; border-radius: 20px; border: 1px solid rgba(212,168,75,0.3); background: #0e0d0b; box-shadow: 0 20px 60px rgba(0,0,0,0.85);">
-    <!-- Encabezado de la tarjeta -->
-    <div style="padding: 14px 20px; background: linear-gradient(135deg, rgba(212,168,75,0.12) 0%, rgba(20,18,16,0.95) 100%); border-bottom: 1px solid rgba(212,168,75,0.2); display: flex; align-items: center; justify-content: space-between;">
-      <div id="tarjetaCitaEstadoBadge"></div>
-      <button class="panel-close" onclick="closeModal('tarjetaCitaModal')" style="width: 32px; height: 32px; font-size: 20px; font-weight:400; border-radius:10px; display:flex; align-items:center; justify-content:center;">×</button>
+    <!-- Encabezado de la tarjeta con inmueble a la izquierda y estado + X a la derecha -->
+    <div style="padding: 14px 18px; background: linear-gradient(135deg, rgba(212,168,75,0.14) 0%, rgba(20,18,16,0.95) 100%); border-bottom: 1px solid rgba(212,168,75,0.2); display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+      <!-- Propiedad subida al encabezado -->
+      <div id="tarjetaCitaPropHeader" style="flex: 1; min-width: 0;"></div>
+
+      <!-- Estado y X en la derecha -->
+      <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+        <div id="tarjetaCitaEstadoBadge"></div>
+        <button class="panel-close" onclick="closeModal('tarjetaCitaModal')" style="width: 32px; height: 32px; font-size: 20px; font-weight:400; border-radius:10px; display:flex; align-items:center; justify-content:center;">×</button>
+      </div>
     </div>
 
     <!-- Cuerpo de la tarjeta -->
@@ -1800,6 +1806,23 @@ function abrirTarjetaCitaModal(citaId) {
   const propPrecio = (prop && typeof formatP === 'function') ? formatP(prop['Precio']) : '';
   const propZona = prop ? (prop['Zona'] || prop['Barrio'] || '') : '';
 
+  const propHeaderEl = document.getElementById('tarjetaCitaPropHeader');
+  if (propHeaderEl) {
+    propHeaderEl.innerHTML = `
+      <div style="display:flex; gap:12px; align-items:center;">
+        <img src="${propImg}" style="width:68px; height:60px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,0.15); flex-shrink:0;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:10.5px; font-weight:800; color:var(--gold); text-transform:uppercase; letter-spacing:0.05em;">Cód: ${cita.codigo || '—'}</span>
+            ${prop ? `<button class="btn btn-sm btn-secondary" style="padding:1px 7px; font-size:10px; border-radius:6px; line-height:1.2;" onclick="closeModal('tarjetaCitaModal'); abrirModalProp('${cita.codigo}')">👁 Ver Ficha</button>` : ''}
+          </div>
+          <div style="font-size:13.5px; font-weight:700; color:#fff; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${propNombre}">${propNombre}</div>
+          ${propPrecio ? `<div style="font-size:12px; font-weight:700; color:#22c55e; margin-top:1px;">${propPrecio}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
   let fechaFmt = cita.fecha || 'Sin fecha';
   if (cita.fecha) {
     try {
@@ -1831,16 +1854,6 @@ function abrirTarjetaCitaModal(citaId) {
   const bodyEl = document.getElementById('tarjetaCitaBody');
   if (bodyEl) {
     bodyEl.innerHTML = `
-      <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(212,168,75,0.25); border-radius:14px; padding:12px 14px; display:flex; gap:14px; align-items:center;">
-        <img src="${propImg}" style="width:85px; height:75px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,0.1);" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
-        <div style="flex:1; min-width:0;">
-          <div style="font-size:11px; font-weight:800; color:var(--gold); text-transform:uppercase; letter-spacing:0.05em;">Cód: ${cita.codigo || '—'}</div>
-          <div style="font-size:14px; font-weight:700; color:#fff; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${propNombre}">${propNombre}</div>
-          ${propPrecio ? `<div style="font-size:13.5px; font-weight:700; color:#22c55e; margin-top:2px;">${propPrecio}</div>` : ''}
-          ${propZona ? `<div style="font-size:11px; color:#aaa; margin-top:2px;">📍 ${propZona}</div>` : ''}
-        </div>
-      </div>
-
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:12px;">
           <div style="font-size:10px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">👤 Cliente</div>
