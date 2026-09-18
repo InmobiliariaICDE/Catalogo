@@ -1382,8 +1382,9 @@ function renderSidePanel(lead){
           <div id="headerEnviadasAcciones">
             ${(lead.propsEnviadas && lead.propsEnviadas.length > 0) ? `
               <div style="display:flex; gap:6px; align-items:center;">
-                <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer;" onclick="event.stopPropagation(); toggleSeleccionarTodasEnviadas('${lead.id}')" title="Seleccionar / Deseleccionar todas">
-                  ☑️ Seleccionar todas
+                <button class="btn btn-sm btn-secondary" id="btnSeleccionarTodasEnviadas" style="display:flex; align-items:center; gap:6px; padding:4px 10px; font-size:11px; font-weight:600; cursor:pointer;" onclick="event.stopPropagation(); toggleSeleccionarTodasEnviadas('${lead.id}')" title="Seleccionar / Deseleccionar todas">
+                  <input type="checkbox" id="chkMaestroEnviadas" style="accent-color:var(--gold); width:13px; height:13px; cursor:pointer; pointer-events:none;" tabindex="-1"/>
+                  Seleccionar todas
                 </button>
                 <button class="btn btn-sm btn-danger" id="btnEliminarEnviadasSel" disabled style="padding:4px 8px; font-size:11px; background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.15); color:rgba(239,68,68,0.35); font-weight:600; cursor:not-allowed; opacity:0.5;" onclick="event.stopPropagation(); eliminarSeleccionadasEnviadas('${lead.id}')" title="Selecciona propiedades para eliminar">
                   🗑 Eliminar
@@ -1537,6 +1538,9 @@ function toggleSeleccionarTodasEnviadas(leadId) {
   if(!chks.length) return;
   const allChecked = Array.from(chks).every(c => c.checked);
   chks.forEach(c => c.checked = !allChecked);
+  // Sincronizar checkbox maestro
+  const maestro = document.getElementById('chkMaestroEnviadas');
+  if (maestro) maestro.checked = !allChecked;
   actualizarBotonEliminarEnviadas(leadId);
 }
 
@@ -1544,6 +1548,13 @@ function actualizarBotonEliminarEnviadas(leadId) {
   const chks = document.querySelectorAll('.chk-prop-enviada');
   const count = Array.from(chks).filter(c => c.checked).length;
   const btn = document.getElementById('btnEliminarEnviadasSel');
+  // Sincronizar estado del checkbox maestro (indeterminado si parcial)
+  const maestro = document.getElementById('chkMaestroEnviadas');
+  if (maestro) {
+    if (count === 0) { maestro.checked = false; maestro.indeterminate = false; }
+    else if (count === chks.length) { maestro.checked = true; maestro.indeterminate = false; }
+    else { maestro.checked = false; maestro.indeterminate = true; }
+  }
   if (btn) {
     if (count > 0) {
       btn.disabled = false;
