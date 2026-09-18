@@ -8156,7 +8156,21 @@ function renderSidePanel(lead){
 
       <!-- B. PROPIEDADES ENVIADAS Y AGENDAMIENTO -->
       <div style="margin-top:20px; border-top:1px solid var(--glass-border); padding-top:15px;">
-        <div style="font-size:12px; color:var(--gold); font-weight:600; text-transform:uppercase; margin-bottom:10px;">Propiedades e Interés</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <div style="font-size:12px; color:var(--gold); font-weight:600; text-transform:uppercase;">Propiedades e Interés</div>
+          <div id="headerEnviadasAcciones">
+            ${(lead.propsEnviadas && lead.propsEnviadas.length > 0) ? `
+              <div style="display:flex; gap:6px; align-items:center;">
+                <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer;" onclick="event.stopPropagation(); toggleSeleccionarTodasEnviadas('${lead.id}')" title="Seleccionar / Deseleccionar todas">
+                  ☑️ Seleccionar todas
+                </button>
+                <button class="btn btn-sm btn-danger" id="btnEliminarEnviadasSel" style="padding:4px 8px; font-size:11px; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; font-weight:600; cursor:pointer;" onclick="event.stopPropagation(); eliminarSeleccionadasEnviadas('${lead.id}')" title="Eliminar propiedades seleccionadas">
+                  🗑 Eliminar todas (${lead.propsEnviadas.length})
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        </div>
         <div id="panelEnviadas">${renderPanelPropsEnviadas(lead)}</div>
       </div>
 
@@ -8301,7 +8315,8 @@ function renderPanelPropsEnviadas(lead){
       if(v.oferto==='si') badges += ` <span class="badge badge-oferta">Oferta</span>`;
     }
     return `
-      <div class="enviada-item" style="display:flex; gap:12px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:10px; margin-bottom:8px; transition: all 0.2s;">
+      <div class="enviada-item" style="display:flex; gap:10px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:10px; margin-bottom:8px; transition: all 0.2s;">
+        <input type="checkbox" class="chk-prop-enviada" value="${cod}" checked style="accent-color:var(--gold); width:16px; height:16px; cursor:pointer; flex-shrink:0;" onchange="actualizarBotonEliminarEnviadas('${lead.id}')"/>
         <div style="display:flex; flex:1; align-items:center; gap:12px; cursor:pointer; min-width:0;" onclick="abrirModalProp('${eq(cod)}')">
           <img src="${img}" style="width:60px; height:60px; object-fit:cover; border-radius:8px;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
           <div style="flex:1; min-width:0;">
@@ -8408,6 +8423,57 @@ function eliminarPropEnviada(leadId, cod){
   renderSidePanel(lead);
   if(currentTab==='leads') renderLeads();
   toast('Propiedad eliminada de la lista ✓','success');
+}
+
+function toggleSeleccionarTodasEnviadas(leadId) {
+  const chks = document.querySelectorAll('.chk-prop-enviada');
+  if(!chks.length) return;
+  const allChecked = Array.from(chks).every(c => c.checked);
+  chks.forEach(c => c.checked = !allChecked);
+  actualizarBotonEliminarEnviadas(leadId);
+}
+
+function actualizarBotonEliminarEnviadas(leadId) {
+  const chks = document.querySelectorAll('.chk-prop-enviada');
+  const count = Array.from(chks).filter(c => c.checked).length;
+  const btn = document.getElementById('btnEliminarEnviadasSel');
+  if (btn) {
+    if (count === chks.length) {
+      btn.innerText = `🗑 Eliminar todas (${count})`;
+    } else if (count > 0) {
+      btn.innerText = `🗑 Eliminar (${count})`;
+    } else {
+      btn.innerText = `🗑 Eliminar`;
+    }
+  }
+}
+
+function eliminarSeleccionadasEnviadas(leadId) {
+  const lead = leads.find(l => String(l.id) === String(leadId));
+  if(!lead || !(lead.propsEnviadas || []).length) return;
+  
+  const chks = document.querySelectorAll('.chk-prop-enviada');
+  const seleccionados = Array.from(chks).filter(c => c.checked).map(c => c.value);
+  
+  if (!seleccionados.length) {
+    toast('Selecciona al menos una propiedad para eliminar', 'warning');
+    return;
+  }
+  
+  const esTodas = seleccionados.length === lead.propsEnviadas.length;
+  const msj = esTodas 
+    ? `¿Estás seguro de eliminar TODAS las ${seleccionados.length} propiedades enviadas de este cliente?`
+    : `¿Estás seguro de eliminar las ${seleccionados.length} propiedades seleccionadas?`;
+    
+  if (!confirm(msj)) return;
+  
+  lead.propsEnviadas = (lead.propsEnviadas || []).filter(cod => !seleccionados.includes(String(cod)));
+  
+  saveLeads();
+  syncSheets(lead);
+  renderSidePanel(lead);
+  if(typeof currentTab !== 'undefined' && currentTab==='leads') renderLeads();
+  toast(esTodas ? 'Todas las propiedades fueron eliminadas de la lista ✓' : 'Propiedades seleccionadas eliminadas ✓', 'success');
 }
 
 function addNota(lid,idx){ 
