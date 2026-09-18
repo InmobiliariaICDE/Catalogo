@@ -1763,12 +1763,27 @@ function abrirTarjetaCitaModal(citaId) {
   if (!citaId) return;
   currentCitaId = citaId;
 
-  const cita = (typeof citas !== 'undefined' && Array.isArray(citas)) ? citas.find(c => String(c.id) === citaId) : null;
-  if (!cita) return;
+  let cita = null;
+  if (typeof citas !== 'undefined' && Array.isArray(citas)) {
+    cita = citas.find(c => c && c.id && String(c.id).trim() === citaId);
+    if (!cita) {
+      cita = citas.find(c => c && (String(c.codigo||'').trim() === citaId || String(c.cliente||'').trim() === citaId));
+    }
+  }
 
-  const lead = (typeof leads !== 'undefined' && Array.isArray(leads)) 
-    ? leads.find(l => (l.visitas || []).some(v => String(v.id) === citaId || (v.codigo === cita.codigo && v.fecha === cita.fecha && v.celular === cita.celular))) 
-    : null;
+  let lead = null;
+  if (typeof leads !== 'undefined' && Array.isArray(leads)) {
+    lead = leads.find(l => (l.visitas || []).some(v => v && (String(v.id) === citaId || String(v.codigo) === citaId)));
+    if (!cita && lead) {
+      cita = lead.visitas.find(v => v && (String(v.id) === citaId || String(v.codigo) === citaId));
+    }
+  }
+
+  if (!cita) {
+    console.warn("abrirTarjetaCitaModal: Cita no encontrada:", citaId);
+    abrirVisitaModal(lead ? lead.id : null, citaId, citaId);
+    return;
+  }
 
   const prop = (typeof allProps !== 'undefined' && Array.isArray(allProps)) 
     ? allProps.find(p => String(p['Código']||'').trim() === String(cita.codigo||'').trim()) 
