@@ -8164,8 +8164,8 @@ function renderSidePanel(lead){
                 <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer;" onclick="event.stopPropagation(); toggleSeleccionarTodasEnviadas('${lead.id}')" title="Seleccionar / Deseleccionar todas">
                   ☑️ Seleccionar todas
                 </button>
-                <button class="btn btn-sm btn-danger" id="btnEliminarEnviadasSel" style="padding:4px 8px; font-size:11px; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; font-weight:600; cursor:pointer;" onclick="event.stopPropagation(); eliminarSeleccionadasEnviadas('${lead.id}')" title="Eliminar propiedades seleccionadas">
-                  🗑 Eliminar todas (${lead.propsEnviadas.length})
+                <button class="btn btn-sm btn-danger" id="btnEliminarEnviadasSel" disabled style="padding:4px 8px; font-size:11px; background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.15); color:rgba(239,68,68,0.35); font-weight:600; cursor:not-allowed; opacity:0.5;" onclick="event.stopPropagation(); eliminarSeleccionadasEnviadas('${lead.id}')" title="Selecciona propiedades para eliminar">
+                  🗑 Eliminar
                 </button>
               </div>
             ` : ''}
@@ -8316,7 +8316,7 @@ function renderPanelPropsEnviadas(lead){
     }
     return `
       <div class="enviada-item" style="display:flex; gap:10px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:10px; margin-bottom:8px; transition: all 0.2s;">
-        <input type="checkbox" class="chk-prop-enviada" value="${cod}" checked style="accent-color:var(--gold); width:16px; height:16px; cursor:pointer; flex-shrink:0;" onchange="actualizarBotonEliminarEnviadas('${lead.id}')"/>
+        <input type="checkbox" class="chk-prop-enviada" value="${cod}" style="accent-color:var(--gold); width:16px; height:16px; cursor:pointer; flex-shrink:0;" onchange="actualizarBotonEliminarEnviadas('${lead.id}')"/>
         <div style="display:flex; flex:1; align-items:center; gap:12px; cursor:pointer; min-width:0;" onclick="abrirModalProp('${eq(cod)}')">
           <img src="${img}" style="width:60px; height:60px; object-fit:cover; border-radius:8px;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
           <div style="flex:1; min-width:0;">
@@ -8438,12 +8438,24 @@ function actualizarBotonEliminarEnviadas(leadId) {
   const count = Array.from(chks).filter(c => c.checked).length;
   const btn = document.getElementById('btnEliminarEnviadasSel');
   if (btn) {
-    if (count === chks.length) {
-      btn.innerText = `🗑 Eliminar todas (${count})`;
-    } else if (count > 0) {
-      btn.innerText = `🗑 Eliminar (${count})`;
+    if (count > 0) {
+      btn.disabled = false;
+      btn.style.background = 'rgba(239,68,68,0.2)';
+      btn.style.border = '1px solid rgba(239,68,68,0.4)';
+      btn.style.color = '#ef4444';
+      btn.style.cursor = 'pointer';
+      btn.style.opacity = '1';
+      btn.innerText = count === chks.length
+        ? `\uD83D\uDDD1 Eliminar todas (${count})`
+        : `\uD83D\uDDD1 Eliminar (${count})`;
     } else {
-      btn.innerText = `🗑 Eliminar`;
+      btn.disabled = true;
+      btn.style.background = 'rgba(239,68,68,0.05)';
+      btn.style.border = '1px solid rgba(239,68,68,0.15)';
+      btn.style.color = 'rgba(239,68,68,0.35)';
+      btn.style.cursor = 'not-allowed';
+      btn.style.opacity = '0.5';
+      btn.innerText = '\uD83D\uDDD1 Eliminar';
     }
   }
 }
