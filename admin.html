@@ -4023,6 +4023,43 @@ html, body {
   </div>
 </div>
 
+<!-- MODAL TARJETA DE PRESENTACIÓN DE CITA -->
+<div class="modal-overlay" id="tarjetaCitaModal" onclick="if(event.target===this) closeModal('tarjetaCitaModal')">
+  <div class="modal-box" style="width:min(520px, 95%); padding: 0; overflow: hidden; border-radius: 20px; border: 1px solid rgba(212,168,75,0.3); background: #0e0d0b; box-shadow: 0 20px 60px rgba(0,0,0,0.85);">
+    <!-- Encabezado de la tarjeta -->
+    <div style="padding: 18px 24px; background: linear-gradient(135deg, rgba(212,168,75,0.18) 0%, rgba(20,18,16,0.95) 100%); border-bottom: 1px solid rgba(212,168,75,0.25); display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(212,168,75,0.15); border: 1px solid rgba(212,168,75,0.3); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+          🗓
+        </div>
+        <div>
+          <div style="font-size: 11px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em;">Tarjeta de Cita</div>
+          <div id="tarjetaCitaTitulo" style="font-size: 16px; font-weight: 700; color: #fff; margin-top: 1px;">Visita Programada</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div id="tarjetaCitaEstadoBadge"></div>
+        <button class="panel-close" onclick="closeModal('tarjetaCitaModal')" style="width: 32px; height: 32px; font-size: 20px; font-weight:400; border-radius:10px; display:flex; align-items:center; justify-content:center;">×</button>
+      </div>
+    </div>
+
+    <!-- Cuerpo de la tarjeta -->
+    <div id="tarjetaCitaBody" style="padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; max-height: 70vh; overflow-y: auto;">
+      <!-- Dinámico por JS -->
+    </div>
+
+    <!-- Pie de acciones -->
+    <div style="padding: 16px 24px; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('tarjetaCitaModal')" style="padding: 9px 16px;">Cerrar</button>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button class="btn btn-primary btn-sm" id="btnEditarDesdeTarjeta" style="padding: 9px 20px; font-weight: 700; gap: 8px; background: linear-gradient(135deg, #d4a84b, #a47b2a);">
+          ✏️ Editar Cita
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL NUEVO LEAD -->
 <div class="modal-overlay" id="nuevoLeadModal" onclick="if(event.target===this) closeModal('nuevoLeadModal')">
   <div class="modal-box large" style="max-width: 650px; animation: zoomIn 0.25s ease;">
@@ -8943,8 +8980,13 @@ function abrirVisitaModal(lid, prefilledCod, citaId){
     })();
     setVal('visitaEstado', v ? v.estado : 'agendada');
     setVal('visitaOferto', v ? v.oferto : 'no');
-    setVal('visitaOferta', v ? v.oferta : '');
-    setVal('visitaNotas', v ? v.notas : '');
+    let rawO = v ? v.oferta : '';
+    if (rawO === 'undefined' || rawO === 'null') rawO = '';
+    setVal('visitaOferta', rawO);
+
+    let rawN = v ? (v.notas || v.comentarios || '') : '';
+    if (rawN === 'undefined' || rawN === 'null') rawN = '';
+    setVal('visitaNotas', rawN);
     
     const elCalendar = document.getElementById('visitaCalendar');
     if (elCalendar) elCalendar.checked = false;
@@ -10133,13 +10175,151 @@ function abrirEditarCita(citaId) {
     }
   });
 
-  const cita = citas.find(c => String(c.id) === String(citaId));
+  abrirTarjetaCitaModal(citaId);
+}
+
+function abrirTarjetaCitaModal(citaId) {
+  citaId = String(citaId || '').trim();
+  if (!citaId) return;
+  currentCitaId = citaId;
+
+  const cita = (typeof citas !== 'undefined' && Array.isArray(citas)) ? citas.find(c => String(c.id) === citaId) : null;
   if (!cita) return;
-  
-  // Buscar si esta cita pertenece a algún lead
-  let lead = leads.find(l => (l.visitas || []).some(v => v.id === citaId || (v.codigo === cita.codigo && v.fecha === cita.fecha && v.celular === cita.celular)));
-  
-  abrirVisitaModal(lead ? lead.id : null, cita.codigo, citaId);
+
+  const lead = (typeof leads !== 'undefined' && Array.isArray(leads)) 
+    ? leads.find(l => (l.visitas || []).some(v => String(v.id) === citaId || (v.codigo === cita.codigo && v.fecha === cita.fecha && v.celular === cita.celular))) 
+    : null;
+
+  const prop = (typeof allProps !== 'undefined' && Array.isArray(allProps)) 
+    ? allProps.find(p => String(p['Código']||'').trim() === String(cita.codigo||'').trim()) 
+    : null;
+
+  // Estado badge
+  const estadoMap = {
+    'agendada':       { text: 'Agendada', bg: 'rgba(212,168,75,0.18)', color: '#d4a84b', border: 'rgba(212,168,75,0.4)' },
+    'realizada':      { text: 'Visitada', bg: 'rgba(34,197,94,0.18)', color: '#22c55e', border: 'rgba(34,197,94,0.4)' },
+    'solicito_visita':{ text: 'Solicitó Visita', bg: 'rgba(59,130,246,0.18)', color: '#3b82f6', border: 'rgba(59,130,246,0.4)' },
+    'cancelada':      { text: 'Cancelada', bg: 'rgba(239,68,68,0.18)', color: '#ef4444', border: 'rgba(239,68,68,0.4)' }
+  };
+  const stInfo = estadoMap[cita.estado] || estadoMap['agendada'];
+  const badgeEl = document.getElementById('tarjetaCitaEstadoBadge');
+  if (badgeEl) {
+    badgeEl.innerHTML = `<span style="background:${stInfo.bg}; color:${stInfo.color}; border:1px solid ${stInfo.border}; padding:4px 12px; border-radius:20px; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">${stInfo.text}</span>`;
+  }
+
+  const tituloEl = document.getElementById('tarjetaCitaTitulo');
+  if (tituloEl) {
+    tituloEl.textContent = cita.codigo ? `Visita Inmobiliaria: ${cita.codigo}` : 'Detalle de la Cita';
+  }
+
+  // Property info
+  const propImg = prop ? ((prop['Imagenes']||'').split('|')[0].trim() || prop['Image'] || 'https://i.imgur.com/Pc9M3I8.png') : 'https://i.imgur.com/Pc9M3I8.png';
+  const propNombre = prop ? (prop['Nombre'] || cita.codigo) : (cita.codigo || 'Propiedad sin código');
+  const propPrecio = (prop && typeof formatP === 'function') ? formatP(prop['Precio']) : '';
+  const propZona = prop ? (prop['Zona'] || prop['Barrio'] || '') : '';
+
+  // Formatear Fecha
+  let fechaFmt = cita.fecha || 'Sin fecha';
+  if (cita.fecha) {
+    try {
+      const parts = cita.fecha.split('-');
+      if (parts.length === 3) {
+        const dObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        const diasSem = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+        const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        fechaFmt = `${diasSem[dObj.getDay()]}, ${dObj.getDate()} de ${meses[dObj.getMonth()]} de ${dObj.getFullYear()}`;
+      }
+    } catch(e) {}
+  }
+
+  // Formatear Hora
+  const horaFmt = (cita.hora && typeof formatHoraStr12 === 'function') ? formatHoraStr12(cita.hora) : (cita.hora || 'Sin hora');
+
+  // Formatear Notas
+  let rawNotas = cita.notas || cita.comentarios || '';
+  if (rawNotas === 'undefined' || rawNotas === 'null') rawNotas = '';
+  const notasTexto = String(rawNotas).trim();
+
+  // Formatear Oferta
+  const tieneOferta = cita.oferto === 'si';
+  let rawOferta = cita.oferta || '';
+  if (rawOferta === 'undefined' || rawOferta === 'null') rawOferta = '';
+  const montoOferta = String(rawOferta).trim();
+
+  // Cliente info
+  const clienteNombre = cita.cliente || (lead ? lead.nombre : 'Sin especificar');
+  const clienteCelular = cita.celular || (lead ? lead.celular : '');
+  const numLimpio = clienteCelular.replace(/\D/g, '');
+
+  const bodyEl = document.getElementById('tarjetaCitaBody');
+  if (bodyEl) {
+    bodyEl.innerHTML = `
+      <!-- FICHA DE PROPIEDAD -->
+      <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(212,168,75,0.25); border-radius:14px; padding:12px 14px; display:flex; gap:14px; align-items:center;">
+        <img src="${propImg}" style="width:85px; height:75px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,0.1);" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11px; font-weight:800; color:var(--gold); text-transform:uppercase; letter-spacing:0.05em;">Cód: ${cita.codigo || '—'}</span>
+            ${prop ? `<button class="btn btn-sm btn-secondary" style="padding:3px 10px; font-size:11px; border-radius:8px;" onclick="closeModal('tarjetaCitaModal'); abrirModalProp('${eq(cita.codigo)}')">👁 Ver Ficha</button>` : ''}
+          </div>
+          <div style="font-size:14px; font-weight:700; color:#fff; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${propNombre}">${propNombre}</div>
+          ${propPrecio ? `<div style="font-size:13.5px; font-weight:700; color:#22c55e; margin-top:2px;">${propPrecio}</div>` : ''}
+          ${propZona ? `<div style="font-size:11px; color:#aaa; margin-top:2px;">📍 ${propZona}</div>` : ''}
+        </div>
+      </div>
+
+      <!-- GRID CLIENTE Y FECHA/HORA -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <!-- CLIENTE -->
+        <div style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:12px;">
+          <div style="font-size:10px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">👤 Cliente</div>
+          <div style="font-size:13.5px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${clienteNombre}">${clienteNombre}</div>
+          ${clienteCelular ? `<div style="font-size:12px; color:#aaa; margin-top:4px;">📱 ${clienteCelular}</div>` : ''}
+          ${numLimpio ? `
+            <div style="margin-top:10px; display:flex; gap:6px;">
+              <a href="https://wa.me/${numLimpio.startsWith('57')?numLimpio:'57'+numLimpio}" target="_blank" class="btn btn-green btn-sm" style="padding:4px 8px; font-size:11px; text-decoration:none; gap:4px;">💬 WhatsApp</a>
+              <a href="tel:${numLimpio}" class="btn btn-secondary btn-sm" style="padding:4px 8px; font-size:11px; text-decoration:none; gap:4px;">📞 Llamar</a>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- FECHA Y HORA -->
+        <div style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:12px;">
+          <div style="font-size:10px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">📅 Horario</div>
+          <div style="font-size:13.5px; font-weight:700; color:#fff;">🕒 ${horaFmt}</div>
+          <div style="font-size:12px; color:#aaa; margin-top:4px; line-height:1.3;">${fechaFmt}</div>
+        </div>
+      </div>
+
+      ${tieneOferta ? `
+        <!-- OFERTA -->
+        <div style="background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.25); border-radius:12px; padding:12px;">
+          <div style="font-size:10px; font-weight:700; color:#a855f7; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">💰 Oferta Registrada</div>
+          <div style="font-size:13.5px; font-weight:800; color:#fff;">El cliente realizó una oferta${montoOferta ? `: <span style="color:#22c55e;">${montoOferta}</span>` : ''}</div>
+        </div>
+      ` : ''}
+
+      <!-- OBSERVACIONES / NOTAS -->
+      <div style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:12px;">
+        <div style="font-size:10px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">📝 Observaciones / Notas</div>
+        <div style="font-size:12.5px; color:${notasTexto ? '#e0ddd8' : '#777'}; line-height:1.5; white-space:pre-wrap;">${notasTexto || 'Sin observaciones adicionales'}</div>
+      </div>
+    `;
+  }
+
+  const btnEdit = document.getElementById('btnEditarDesdeTarjeta');
+  if (btnEdit) {
+    btnEdit.onclick = () => {
+      closeModal('tarjetaCitaModal');
+      abrirVisitaModal(lead ? lead.id : null, cita.codigo, citaId);
+    };
+  }
+
+  const modal = document.getElementById('tarjetaCitaModal');
+  if (modal) {
+    modal.classList.add('open');
+    modal.classList.add('active');
+  }
 }
 
 function filterCitas(tipo, btn){
