@@ -4728,6 +4728,7 @@ let searchTermCitas = '';
 let citasActiveFilterType = 'hoy';
 let citasActiveFilterValue = '';
 let citasGrillaWeekOffset = 0; // 0 = current week, -1 = last week, +1 = next week
+let citasCalendarVisible = localStorage.getItem('icde_citas_calendar_visible') !== 'false';
 
 // Helper de normalización global para evitar duplicados por acentos, mayúsculas, espacios, puntos o caracteres especiales
 const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, "").replace(/\s+/g, " ").trim();
@@ -9399,6 +9400,12 @@ function toggleCitasGrilla() {
   renderCitas();
 }
 
+function toggleCitasCalendarWrap() {
+  citasCalendarVisible = !citasCalendarVisible;
+  localStorage.setItem('icde_citas_calendar_visible', citasCalendarVisible ? 'true' : 'false');
+  renderCitas();
+}
+
 function cambiarSemanaGrilla(offset) {
   citasGrillaWeekOffset += offset;
   renderCitasGrilla();
@@ -9646,6 +9653,10 @@ function renderCitas(){
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             Horario
           </button>
+          <button class="chip-filtro ${citasCalendarVisible ? 'sel' : ''}" onclick="toggleCitasCalendarWrap()" title="Mostrar/ocultar calendario y estadísticas" style="gap:4px; display:flex; align-items:center;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Calendario
+          </button>
         </div>
 
         <!-- BUSCADOR Y ACCIONES (DERECHA) -->
@@ -9668,7 +9679,8 @@ function renderCitas(){
       </div>
     </div>
     
-    <div class="citas-layout-nuevo" style="display:grid; grid-template-columns: 320px 1fr; gap:24px; align-items:start;">
+    <div class="citas-layout-nuevo" style="display:grid; grid-template-columns: ${citasCalendarVisible ? '320px 1fr' : '1fr'}; gap:24px; align-items:start;">
+      ${citasCalendarVisible ? `
       <div id="calendarContainerWrap" style="display: flex; flex-direction: column; gap: 20px;">
         <div id="calendarContainer"></div>
         <!-- TOP INMUEBLES MÁS VISITADOS -->
@@ -9692,7 +9704,7 @@ function renderCitas(){
             <div style="color:var(--muted); font-size:13px; text-align:center; padding:20px 0;">Calculando...</div>
           </div>
         </div>
-      </div>
+      </div>` : ''}
       <div id="listContainer">
 
         <!-- TABLA DE CITAS O GRILLA -->
