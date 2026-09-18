@@ -7298,8 +7298,44 @@ function toggleMetodo(m,el){
   else nuevoLead.metodoPago=nuevoLead.metodoPago.filter(x=>x!==m);
   el.closest('.check-item').classList.toggle('active',el.checked);
 }
-function deselProp(cod){ selectedProps=selectedProps.filter(c=>c!==cod); renderNuevo(); }
-function borrarSeleccion(){ if(!selectedProps.length) return; selectedProps=[]; renderNuevo(); toast('Selección borrada','success'); }
+function deselProp(cod){ 
+  selectedProps = selectedProps.filter(c=>c!==cod); 
+  if (document.getElementById('propsGrid')) renderPropsGrid();
+  if (document.getElementById('editFiltrosGrid') && typeof tempFiltros !== 'undefined') renderEditFiltrosGrid(filtrarProps(tempFiltros));
+  const c = document.getElementById('selCnt'); if(c) c.textContent = `${selectedProps.length} seleccionadas`;
+  updateFrec();
+  const grids = ['propsGrid', 'editFiltrosGrid'];
+  grids.forEach(gid => {
+    const grid = document.getElementById(gid);
+    if(!grid) return;
+    let bar = grid.parentElement.querySelector('.selected-bar');
+    if(selectedProps.length > 0){
+      const chipsHtml = selectedProps.map(s=>`<span class="sel-chip">${s}<button onclick="deselProp('${s}')">\u00d7</button></span>`).join('');
+      if(bar){
+        const chipsEl = bar.querySelector('.selected-chips');
+        if(chipsEl) chipsEl.innerHTML = chipsHtml;
+      }
+    } else {
+      if(bar) bar.remove();
+    }
+  });
+}
+function borrarSeleccion(){ 
+  if(!selectedProps.length) return; 
+  selectedProps = []; 
+  if (document.getElementById('propsGrid')) renderPropsGrid();
+  if (document.getElementById('editFiltrosGrid') && typeof tempFiltros !== 'undefined') renderEditFiltrosGrid(filtrarProps(tempFiltros));
+  const c = document.getElementById('selCnt'); if(c) c.textContent = `0 seleccionadas`;
+  updateFrec();
+  const grids = ['propsGrid', 'editFiltrosGrid'];
+  grids.forEach(gid => {
+    const grid = document.getElementById(gid);
+    if(!grid) return;
+    let bar = grid.parentElement.querySelector('.selected-bar');
+    if(bar) bar.remove();
+  });
+  toast('Selección borrada','success'); 
+}
 
 /* ═══════════════════════════════════════════════
    PROPS GRID
@@ -9099,12 +9135,14 @@ function abrirEditFiltros(leadId){
   currentLeadId = leadId;
   const lead=leads.find(l=>String(l.id)===String(leadId)); if(!lead) return;
   tempFiltros=JSON.parse(JSON.stringify(lead.filtros||{}));
+  selectedProps = [...new Set([...(lead.propsEnviadas || []), ...(lead.propsFiltradas || [])])];
   document.getElementById('editFiltrosCount').textContent=`${filtrarProps(tempFiltros).length} propiedades encontradas`;
   document.getElementById('editFiltrosContent').innerHTML=`<div id="efWrap"></div>`;
   document.getElementById('editFiltrosModal').classList.add('open');
   setTimeout(()=>{
     buildFiltrosBar('efWrap','ef',tempFiltros);
     setSort(criterioOrden); // Sincronizar etiquetas de orden
+    renderEditFiltrosGrid(filtrarProps(tempFiltros));
   },0);
 }
 function guardarFiltrosEditados(marcarComoEnviadas = false){
@@ -9118,7 +9156,11 @@ function guardarFiltrosEditados(marcarComoEnviadas = false){
     }
   });
   lead.filtros=JSON.parse(JSON.stringify(tempFiltros));
-  lead.propsFiltradas=filtrarProps(lead.filtros).map(d=>d['Código']);
+  const autoFiltradas = filtrarProps(lead.filtros).map(d=>d['Código']);
+  lead.propsFiltradas = [...new Set([...autoFiltradas, ...selectedProps])];
+  
+  // Registrar las propiedades seleccionadas en propsEnviadas para que aparezcan en Propiedades e Interés
+  lead.propsEnviadas = [...new Set([...(lead.propsEnviadas || []), ...selectedProps])];
   
   if(marcarComoEnviadas){
     lead.propsEnviadas = [...new Set([...(lead.propsEnviadas||[]), ...lead.propsFiltradas])];
@@ -9178,7 +9220,7 @@ function guardarFiltrosEditados(marcarComoEnviadas = false){
   saveLeads(); 
   syncSheets(lead);
   closeModal('editFiltrosModal'); 
-  toast('Filtros actualizados ✓','success');
+  toast('Filtros y propiedades de interés actualizados ✓','success');
   renderSidePanel(lead);
 }
 
@@ -9362,6 +9404,31 @@ function cambiarSemanaGrilla(offset) {
   renderCitasGrilla();
 }
 
+function formatHora12(h) {
+  const period = h >= 12 ? 'PM' : 'AM';
+  let h12 = h % 12;
+  if (h12 === 0) h12 = 12;
+  return `${String(h12).padStart(2, '0')}:00 ${period}`;
+}
+
+function formatHoraStr12(horaStr) {
+  if (!horaStr) return '--:--';
+  const str = String(horaStr).trim();
+  if (str.toUpperCase().includes('AM') || str.toUpperCase().includes('PM')) {
+    return str;
+  }
+  const parts = str.split(':');
+  let h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1] || '0', 10);
+  if (isNaN(h)) return str;
+  const period = h >= 12 ? 'PM' : 'AM';
+  h = h % 12;
+  if (h === 0) h = 12;
+  const mStr = String(m).padStart(2, '0');
+  const hStr = String(h).padStart(2, '0');
+  return `${hStr}:${mStr} ${period}`;
+}
+
 function renderCitasGrilla() {
   const container = document.getElementById('citasMainContent');
   if (!container) return;
@@ -9461,15 +9528,15 @@ function renderCitasGrilla() {
       rowHTML += `
         <!-- Lunch separator -->
         <div style="grid-column:1; grid-row:${gridRow}; height:${LUNCH_H}px; background:linear-gradient(135deg, rgba(30,25,0,0.9), rgba(20,15,0,0.8)); border-right:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; position:sticky; left:0; z-index:10;">
-          <span style="font-size:9px; color:rgba(212,168,75,0.6); font-weight:700;">12:00</span>
+          <span style="font-size:8.5px; color:rgba(212,168,75,0.7); font-weight:700;">12:00 PM</span>
           <span style="font-size:7px; color:rgba(255,255,255,0.2);">↓</span>
-          <span style="font-size:9px; color:rgba(212,168,75,0.6); font-weight:700;">14:00</span>
+          <span style="font-size:8.5px; color:rgba(212,168,75,0.7); font-weight:700;">02:00 PM</span>
         </div>
         ${weekDays.map((day, i) => `
           <div style="grid-column:${i+2}; grid-row:${gridRow}; height:${LUNCH_H}px; background:linear-gradient(135deg, rgba(30,25,0,0.9), rgba(20,15,0,0.8)); border-right:1px solid rgba(255,255,255,0.04); position:relative; overflow:hidden;">
             <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;">
               <div style="display:flex; align-items:center; gap:6px; color:rgba(212,168,75,0.45); font-size:10px; font-weight:600; letter-spacing:0.06em;">
-                ☕ <span>12:00 — 14:00 &nbsp;·&nbsp; Almuerzo</span>
+                ☕ <span>12:00 PM — 02:00 PM &nbsp;·&nbsp; Almuerzo</span>
               </div>
             </div>
             <div style="position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg, transparent, rgba(212,168,75,0.3), transparent);"></div>
@@ -9480,14 +9547,15 @@ function renderCitasGrilla() {
     } else {
       // ═══ NORMAL HOUR ROW ═══
       const h = row.h;
-      const hLabel = `${String(h).padStart(2,'0')}:00`;
+      const hLabel24 = `${String(h).padStart(2,'0')}:00`;
+      const hLabel12 = formatHora12(h);
       const isMorning = h < LUNCH_START;
       const rowBg = h % 2 === 0 ? 'rgba(255,255,255,0.012)' : 'rgba(0,0,0,0.04)';
 
       rowHTML += `
         <!-- Hour ${h} - hour label -->
         <div style="grid-column:1; grid-row:${gridRow}; height:${ROW_H}px; background:${rowBg}; border-right:1px solid rgba(255,255,255,0.06); border-bottom:1px solid rgba(255,255,255,0.04); display:flex; align-items:flex-start; justify-content:center; padding-top:6px; position:sticky; left:0; z-index:10; box-sizing:border-box;">
-          <span style="font-size:10px; font-weight:700; color:rgba(255,255,255,0.3); letter-spacing:0.03em; white-space:nowrap;">${hLabel}</span>
+          <span style="font-size:9.5px; font-weight:700; color:rgba(255,255,255,0.35); letter-spacing:0.01em; white-space:nowrap;">${hLabel12}</span>
         </div>`;
 
       weekDays.forEach((day, di) => {
@@ -9496,7 +9564,7 @@ function renderCitasGrilla() {
         const cellBorder = isToday ? 'rgba(212,168,75,0.08)' : 'rgba(255,255,255,0.04)';
 
         const cellContent = dayApps.length === 0
-          ? `<div onclick="abrirVisitaModalConFecha('${day.iso}', '${hLabel}')" style="position:absolute; inset:4px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.15s;" onmouseover="this.style.opacity='1'; this.style.background='rgba(255,255,255,0.03)'; this.style.border='1px dashed rgba(255,255,255,0.12)';" onmouseout="this.style.opacity='0'; this.style.background=''; this.style.border='none';">
+          ? `<div onclick="abrirVisitaModalConFecha('${day.iso}', '${hLabel24}')" style="position:absolute; inset:4px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.15s;" onmouseover="this.style.opacity='1'; this.style.background='rgba(255,255,255,0.03)'; this.style.border='1px dashed rgba(255,255,255,0.12)';" onmouseout="this.style.opacity='0'; this.style.background=''; this.style.border='none';">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </div>`
           : dayApps.map(c => {
@@ -9506,7 +9574,7 @@ function renderCitasGrilla() {
               const topPct = (minuteOffset / 60) * 100;
               return `<div onclick="abrirEditarCita('${c.id}')" style="position:relative; margin:2px 3px; cursor:pointer; background:${col.bg}; border:1px solid ${col.border}; border-left:3px solid ${col.text}; border-radius:7px; padding:4px 6px; transition:all 0.15s; overflow:hidden;" onmouseover="this.style.filter='brightness(1.2)'; this.style.transform='scale(1.02)';" onmouseout="this.style.filter=''; this.style.transform='';">
                 <div style="display:flex; align-items:center; gap:4px; margin-bottom:2px;">
-                  <span style="font-size:10px; font-weight:800; color:${col.text};">${c.hora || '--:--'}</span>
+                  <span style="font-size:10px; font-weight:800; color:${col.text};">${formatHoraStr12(c.hora)}</span>
                   <span style="font-size:8px; font-weight:700; color:${col.text}; opacity:0.8; background:${col.bg}; border:1px solid ${col.border}; border-radius:10px; padding:0 4px;">${badgeText}</span>
                 </div>
                 <div style="font-size:11px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${c.cliente||''}">${c.cliente || '—'}</div>
@@ -9542,7 +9610,7 @@ function renderCitasGrilla() {
     </div>
     <!-- Timetable grid -->
     <div id="citasHorarioGrid" style="overflow:auto; max-height:calc(100vh - 240px); border-radius:10px; border:1px solid rgba(255,255,255,0.07); background:#111113; box-shadow:0 4px 20px rgba(0,0,0,0.4);">
-      <div style="display:grid; grid-template-columns:52px repeat(7,1fr); grid-template-rows:auto; min-width:640px;">
+      <div style="display:grid; grid-template-columns:68px repeat(7,1fr); grid-template-rows:auto; min-width:680px;">
         ${dayHeadersHTML}
         ${rowHTML}
       </div>
@@ -10012,7 +10080,7 @@ function renderCitasBody(lista){
 
     const isSelected = String(c.id).trim() === String(currentCitaId).trim();
     return `<tr class="clickable ${isSelected ? 'active-cita-row' : ''}" data-cita-id="${String(c.id).trim()}" onclick="abrirEditarCita('${c.id}')">
-      <td class="col-citas-fecha" style="padding-left: 20px;"><div class="citas-time">${c.hora || '--:--'}</div><div class="citas-weekday">${isNaN(d.getDay()) ? '—' : diasSem[d.getDay()]} ${isoFecha || c.fecha}</div></td>
+      <td class="col-citas-fecha" style="padding-left: 20px;"><div class="citas-time">${formatHoraStr12(c.hora)}</div><div class="citas-weekday">${isNaN(d.getDay()) ? '—' : diasSem[d.getDay()]} ${isoFecha || c.fecha}</div></td>
       <td class="col-citas-cliente">
         <div class="citas-cliente-flex" style="display:flex; justify-content:space-between; align-items:flex-start;">
           <div>

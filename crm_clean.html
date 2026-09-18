@@ -1773,21 +1773,25 @@ function guardarVisita(){
    MODAL EDITAR FILTROS
 ═══════════════════════════════════════════════ */
 function abrirEditFiltros(leadId){
-  const lead=leads.find(l=>l.id===leadId); if(!lead) return;
+  currentLeadId = leadId;
+  const lead=leads.find(l=>String(l.id)===String(leadId)); if(!lead) return;
   tempFiltros=JSON.parse(JSON.stringify(lead.filtros||{}));
+  selectedProps = [...new Set([...(lead.propsEnviadas || []), ...(lead.propsFiltradas || [])])];
   document.getElementById('editFiltrosCount').textContent=`${filtrarProps(tempFiltros).length} propiedades encontradas`;
   document.getElementById('editFiltrosContent').innerHTML=`<div id="efWrap"></div>`;
   document.getElementById('editFiltrosModal').classList.add('open');
   setTimeout(()=>buildFiltrosBar('efWrap','ef',tempFiltros),0);
 }
 function guardarFiltrosEditados(){
-  const lead=leads.find(l=>l.id===currentLeadId); if(!lead) return;
+  const lead=leads.find(l=>String(l.id)===String(currentLeadId)); if(!lead) return;
   const efSt=getFSt('ef'); Object.keys(efSt).forEach(k=>{ tempFiltros[k]=[...(efSt[k]||[])]; });
   lead.filtros=JSON.parse(JSON.stringify(tempFiltros));
-  lead.propsFiltradas=filtrarProps(lead.filtros).map(d=>d['Código']);
+  const autoFiltradas = filtrarProps(lead.filtros).map(d=>d['Código']);
+  lead.propsFiltradas = [...new Set([...autoFiltradas, ...selectedProps])];
+  lead.propsEnviadas = [...new Set([...(lead.propsEnviadas||[]), ...selectedProps])];
   const pend=lead.propsFiltradas.filter(c=>!(lead.propsEnviadas||[]).includes(c));
   if(lead.frecuencia!=='manual') lead.proximosEnvios=generarProximos(pend.map(c=>({Código:c})),lead.frecuencia,lead.maxPorEnvio,[]);
-  saveLeads(); closeModal('editFiltrosModal'); toast('Filtros actualizados ✓','success');
+  saveLeads(); closeModal('editFiltrosModal'); toast('Filtros y propiedades de interés actualizados ✓','success');
   renderSidePanel(lead);
 }
 
