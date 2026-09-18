@@ -124,6 +124,7 @@ function getLeads() {
   const metodoPagoIdx = nh('Método Pago');
   const presupuestoIdx= nh('Presupuesto');
   const frecuenciaIdx = nh('Frecuencia');
+  const procesoVentaIdx = nh('Proceso Venta') !== -1 ? nh('Proceso Venta') : (nh('Proceso de Venta') !== -1 ? nh('Proceso de Venta') : (nh('Proceso venta') !== -1 ? nh('Proceso venta') : nh('Proceso')));
 
   const leads = data.slice(1).map(row => {
     let lead = {};
@@ -140,6 +141,33 @@ function getLeads() {
     if (etiquetaIdx !== -1 && row[etiquetaIdx] !== undefined) lead.etiqueta = String(row[etiquetaIdx]);
     if (notasIdx !== -1 && row[notasIdx] !== undefined) lead.notas = String(row[notasIdx]);
     if (frecuenciaIdx !== -1 && row[frecuenciaIdx] !== undefined) lead.frecuencia = String(row[frecuenciaIdx]);
+
+    if (procesoVentaIdx !== -1 && row[procesoVentaIdx] !== undefined && row[procesoVentaIdx] !== '') {
+      const pvStr = String(row[procesoVentaIdx]).trim();
+      if (pvStr) {
+        if (!lead.propEtapas) lead.propEtapas = {};
+        pvStr.split('|').forEach(part => {
+          const sub = part.split(':');
+          if (sub.length === 2) {
+            const cod = sub[0].trim();
+            const valTxt = sub[1].trim();
+            let etapaNum = parseInt(valTxt.match(/\d+/)?.[0] || '0', 10);
+            if (!etapaNum) {
+              const vLower = valTxt.toLowerCase();
+              if (vLower.includes('disponible')) etapaNum = 1;
+              else if (vLower.includes('solicit')) etapaNum = 2;
+              else if (vLower.includes('agendad')) etapaNum = 3;
+              else if (vLower.includes('visito') || vLower.includes('visitó')) etapaNum = 4;
+              else if (vLower.includes('ok')) etapaNum = 5;
+              else if (vLower.includes('proceso')) etapaNum = 6;
+            }
+            if (etapaNum && cod) {
+              lead.propEtapas[cod] = etapaNum;
+            }
+          }
+        });
+      }
+    }
     
     if (metodoPagoIdx !== -1 && row[metodoPagoIdx] !== undefined) {
       const val = String(row[metodoPagoIdx]).trim();
@@ -176,7 +204,7 @@ function saveLeadToSheet(lead) {
     'ID', 'Fecha Actualización', 'Nombre', 'Celular', 'Tipo',
     'Inmobiliaria/Agente', 'Estado', 'Etiqueta', 'Notas',
     'Preferencias (Filtros)', 'Método Pago', 'Presupuesto', 'Frecuencia',
-    'Total Enviadas', 'Historial (Resumen)', 'Full_JSON'
+    'Total Enviadas', 'Historial (Resumen)', 'Proceso Venta', 'Full_JSON'
   ];
 
   if (!sheet) {
@@ -210,6 +238,42 @@ function saveLeadToSheet(lead) {
 
   const historialTxt = (lead.historialEnvios || [])
     .map(h => h.fecha + ' (' + (h.codigos || []).length + ')').join(' | ');
+
+  const nombresEtapas = {
+    1: '1. Disponible',
+    2: '2. Solicito visita',
+    3: '3. Visita agendada',
+    4: '4. Visito',
+    5: '5. OK',
+    6: '6. Proceso de venta'
+  };
+
+  let procesoVentaParts = [];
+  if (lead.propEtapas && typeof lead.propEtapas === 'object') {
+    Object.keys(lead.propEtapas).forEach(cod => {
+      const etapaNum = Number(lead.propEtapas[cod]);
+      const label = nombresEtapas[etapaNum] || ('Etapa ' + etapaNum);
+      procesoVentaParts.push(cod + ': ' + label);
+    });
+  }
+
+  if (procesoVentaParts.length === 0 && Array.isArray(lead.visitas) && lead.visitas.length > 0) {
+    lead.visitas.forEach(v => {
+      let st = '1. Disponible';
+      if (v.procesoVenta || v.estado === 'proceso_venta') st = '6. Proceso de venta';
+      else if (v.oferto === 'si' || v.estado === 'ok') st = '5. OK';
+      else if (v.estado === 'realizada') st = '4. Visito';
+      else if (v.estado === 'agendada') st = '3. Visita agendada';
+      else if (v.estado === 'solicito_visita') st = '2. Solicito visita';
+      procesoVentaParts.push((v.codigo || 'Prop') + ': ' + st);
+    });
+  }
+
+  if (procesoVentaParts.length === 0 && (lead.estado === 'proceso' || lead.estado === 'proceso_venta')) {
+    procesoVentaParts.push('En proceso de venta');
+  }
+
+  const procesoVentaTxt = procesoVentaParts.join(' | ');
 
   // Leer cabeceras actuales UNA SOLA VEZ (después de haber añadido las que faltan)
   const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(h => String(h).trim());
@@ -253,6 +317,10 @@ function saveLeadToSheet(lead) {
     [normalizeHeader('Frecuencia')]:             (lead.frecuencia || ''),
     [normalizeHeader('Total Enviadas')]:         (lead.propsEnviadas || []).length,
     [normalizeHeader('Historial (Resumen)')]:    historialTxt,
+    [normalizeHeader('Proceso Venta')]:          procesoVentaTxt,
+    [normalizeHeader('Proceso de Venta')]:       procesoVentaTxt,
+    [normalizeHeader('Proceso Venda')]:          procesoVentaTxt,
+    [normalizeHeader('Proceso')]:                procesoVentaTxt,
     [normalizeHeader('Full_JSON')]:              JSON.stringify(lead),
   };
 
