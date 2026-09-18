@@ -6248,6 +6248,441 @@ font-weight: 500;
             #modalTitle { font-size: 19px !important; }
         }
 
+/* ==========================================================================
+   MODAL DE AGENDAMIENTO DE VISITAS (NEUROVENTAS & WHATSAPP)
+   ========================================================================== */
+.modal-agendar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(4, 4, 6, 0.82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 10500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s;
+}
+
+.modal-agendar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-agendar-card {
+    background: linear-gradient(150deg, #18181c 0%, #0d0d10 100%);
+    border: 1px solid rgba(212, 168, 75, 0.35);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 40px rgba(212, 168, 75, 0.12);
+    font-family: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #f3f4f6;
+    overflow: hidden;
+    position: relative;
+    transform: translateY(20px) scale(0.96);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-agendar-overlay.active .modal-agendar-card {
+    transform: translateY(0) scale(1);
+}
+
+.modal-agendar-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #d4a84b 0%, #fef08a 50%, #d4a84b 100%);
+    z-index: 5;
+}
+
+.modal-agendar-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #e5e7eb;
+    font-size: 22px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.modal-agendar-close:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #f87171;
+    transform: rotate(90deg);
+}
+
+.modal-agendar-header {
+    padding: 22px 24px 16px;
+    background: linear-gradient(180deg, rgba(212, 168, 75, 0.12) 0%, rgba(24, 24, 28, 0) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-agendar-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(212, 168, 75, 0.15);
+    border: 1px solid rgba(212, 168, 75, 0.4);
+    color: #f59e0b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+}
+
+.modal-agendar-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 10px 0;
+    line-height: 1.25;
+}
+
+.modal-agendar-inmueble-tag {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(212, 168, 75, 0.35);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    color: #d1d5db;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.35;
+}
+
+.modal-agendar-inmueble-tag strong {
+    color: #f59e0b;
+}
+
+.modal-agendar-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.modal-agendar-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+.modal-agendar-body::-webkit-scrollbar-thumb {
+    background: rgba(212, 168, 75, 0.3);
+    border-radius: 4px;
+}
+
+.form-group-agendar {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-label-agendar {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.form-label-agendar .label-icon {
+    font-size: 15px;
+}
+
+.form-label-agendar .required-star {
+    color: #f87171;
+}
+
+.form-label-agendar .label-hint {
+    font-size: 11.5px;
+    font-weight: 400;
+    color: #9ca3af;
+}
+
+.form-input-agendar {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: #ffffff;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-input-agendar:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #d4a84b;
+    box-shadow: 0 0 12px rgba(212, 168, 75, 0.25);
+}
+
+.form-input-agendar::placeholder {
+    color: #6b7280;
+}
+
+.phone-input-wrapper {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.phone-input-wrapper:focus-within {
+    border-color: #d4a84b;
+    box-shadow: 0 0 12px rgba(212, 168, 75, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.phone-prefix {
+    padding: 11px 12px;
+    background: rgba(212, 168, 75, 0.15);
+    color: #f59e0b;
+    font-weight: 700;
+    font-size: 13.5px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.phone-input-wrapper .input-phone {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}
+
+.phone-input-wrapper .input-phone:focus {
+    box-shadow: none;
+}
+
+/* Chips Método de Pago */
+.chips-pago-container {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.chip-pago {
+    flex: 1;
+    min-width: 120px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1.5px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    padding: 11px 14px;
+    color: #d1d5db;
+    font-weight: 600;
+    font-size: 13.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
+}
+
+.chip-pago:hover {
+    background: rgba(212, 168, 75, 0.08);
+    border-color: rgba(212, 168, 75, 0.4);
+    color: #ffffff;
+}
+
+.chip-pago.selected {
+    background: linear-gradient(135deg, rgba(212, 168, 75, 0.25) 0%, rgba(180, 130, 40, 0.15) 100%);
+    border-color: #d4a84b;
+    color: #fbbf24;
+    box-shadow: 0 4px 15px rgba(212, 168, 75, 0.25);
+    transform: translateY(-1px);
+}
+
+/* Panel Condicional Crédito */
+.panel-credito-condicional {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.3s ease, margin 0.3s ease;
+    margin-top: 0;
+}
+
+.panel-credito-condicional.open {
+    max-height: 380px;
+    opacity: 1;
+    margin-top: 4px;
+}
+
+.panel-credito-box {
+    background: rgba(212, 168, 75, 0.05);
+    border: 1px solid rgba(212, 168, 75, 0.25);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.chips-preaprobado-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chip-sub {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 9.5px 12px;
+    color: #d1d5db;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.chip-sub:hover {
+    background: rgba(212, 168, 75, 0.1);
+    color: #fff;
+}
+
+.chip-sub.selected {
+    background: rgba(212, 168, 75, 0.22);
+    border-color: #d4a84b;
+    color: #fbbf24;
+    font-weight: 600;
+}
+
+/* Atajos de Día y Hora */
+.dia-selection-wrapper, .hora-selection-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chips-dia-shortcuts, .chips-hora-shortcuts {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.chip-shortcut, .chip-shortcut-hora {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 6px 12px;
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chip-shortcut:hover, .chip-shortcut-hora:hover {
+    background: rgba(212, 168, 75, 0.15);
+    color: #fbbf24;
+    border-color: rgba(212, 168, 75, 0.4);
+}
+
+.chip-shortcut.active, .chip-shortcut-hora.active {
+    background: rgba(212, 168, 75, 0.25);
+    color: #fbbf24;
+    border-color: #d4a84b;
+    font-weight: 600;
+}
+
+.time-custom-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.time-custom-label {
+    font-size: 12px;
+    color: #9ca3af;
+    white-space: nowrap;
+}
+
+/* Footer / CTA */
+.modal-agendar-footer {
+    padding: 16px 24px 22px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(13, 13, 16, 0.95);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-confirmar-agendar {
+    width: 100%;
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 50px;
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.35);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-confirmar-agendar:hover {
+    background: linear-gradient(135deg, #28e16e 0%, #15a090 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(37, 211, 102, 0.45);
+}
+
+.btn-confirmar-agendar:active {
+    transform: translateY(0);
+}
+
+.modal-agendar-security-note {
+    text-align: center;
+    font-size: 11.5px;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+
 </style>
 
 
@@ -6676,6 +7111,140 @@ font-weight: 500;
             </div>
         </div>
     </div>
+
+    <!-- MODAL AGENDAR VISITA (NEUROVENTAS & WHATSAPP) -->
+    <div id="modalAgendarVisitaOverlay" class="modal-agendar-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="titleAgendarVisita">
+        <div class="modal-agendar-card">
+            <!-- Botón Cerrar -->
+            <button type="button" class="modal-agendar-close" id="closeModalAgendarVisita" aria-label="Cerrar modal">&times;</button>
+            
+            <!-- Encabezado -->
+            <div class="modal-agendar-header">
+                <div class="modal-agendar-badge">⚡ Reserva Prioritaria • ICDE</div>
+                <h3 id="titleAgendarVisita" class="modal-agendar-title">Agendar Visita Guiada 🏠</h3>
+                <div class="modal-agendar-inmueble-tag" id="agendarInmuebleInfo">
+                    <span id="agendarInmuebleNombre">Cargando información del inmueble...</span>
+                </div>
+            </div>
+
+            <!-- Cuerpo del Formulario -->
+            <div class="modal-agendar-body">
+                
+                <!-- Campo 1: Nombre completo -->
+                <div class="form-group-agendar">
+                    <label for="agendarNombreInput" class="form-label-agendar">
+                        <span class="label-icon">👤</span> Nombre completo <span class="required-star">*</span>
+                    </label>
+                    <input type="text" id="agendarNombreInput" class="form-input-agendar" placeholder="Ej. Juan Pérez" required autocomplete="name" />
+                </div>
+
+                <!-- Campo 2: WhatsApp -->
+                <div class="form-group-agendar">
+                    <label for="agendarPhoneInput" class="form-label-agendar">
+                        <span class="label-icon">🟢</span> WhatsApp <span class="required-star">*</span>
+                    </label>
+                    <div class="phone-input-wrapper">
+                        <span class="phone-prefix">+57</span>
+                        <input type="tel" id="agendarPhoneInput" class="form-input-agendar input-phone" placeholder="Ej. 300 123 4567" required autocomplete="tel" />
+                    </div>
+                </div>
+
+                <!-- Campo 3: Método de pago (Selección múltiple) -->
+                <div class="form-group-agendar">
+                    <label class="form-label-agendar">
+                        <span class="label-icon">💳</span> Método de pago <span class="required-star">*</span>
+                        <span class="label-hint">(Selección múltiple)</span>
+                    </label>
+                    <div class="chips-pago-container" id="chipsPagoContainer">
+                        <button type="button" class="chip-pago" data-val="Efectivo💰">
+                            <span class="chip-icon">💰</span> Efectivo
+                        </button>
+                        <button type="button" class="chip-pago" data-val="Crédito 🏦">
+                            <span class="chip-icon">🏦</span> Crédito
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Panel Condicional Crédito (Preaprobado & Banco) -->
+                <div id="panelCreditoContainer" class="panel-credito-condicional">
+                    <div class="panel-credito-box">
+                        <div class="form-group-agendar">
+                            <label class="form-label-agendar">
+                                <span class="label-icon">✅</span> Cuenta con la carta de preaprobado <span class="required-star">*</span>
+                            </label>
+                            <div class="chips-preaprobado-container" id="chipsPreaprobadoContainer">
+                                <button type="button" class="chip-sub" data-val="Sí ✅">
+                                    Sí, cuento con preaprobado ✅
+                                </button>
+                                <button type="button" class="chip-sub" data-val="En trámite ⏳">
+                                    En trámite ⏳
+                                </button>
+                                <button type="button" class="chip-sub" data-val="No aún / Asesoría 💡">
+                                    No aún / Deseo asesoría 💡
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group-agendar mb-0">
+                            <label for="agendarBancoInput" class="form-label-agendar">
+                                <span class="label-icon">🏛️</span> ¿Con qué banco o entidad? <span class="required-star">*</span>
+                            </label>
+                            <input type="text" id="agendarBancoInput" class="form-input-agendar" placeholder="Ej. Bancolombia, Davivienda, FNA, etc." />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Campo 4: Día de la Visita -->
+                <div class="form-group-agendar">
+                    <label for="agendarFechaInput" class="form-label-agendar">
+                        <span class="label-icon">📅</span> Seleccione día de la visita <span class="required-star">*</span>
+                    </label>
+                    <div class="dia-selection-wrapper">
+                        <div class="chips-dia-shortcuts" id="chipsDiaShortcuts">
+                            <button type="button" class="chip-shortcut" data-day="hoy">Hoy</button>
+                            <button type="button" class="chip-shortcut" data-day="manana">Mañana</button>
+                            <button type="button" class="chip-shortcut" data-day="finsemana">Fin de semana</button>
+                        </div>
+                        <input type="date" id="agendarFechaInput" class="form-input-agendar input-date" required />
+                    </div>
+                </div>
+
+                <!-- Campo 5: Hora de la Visita -->
+                <div class="form-group-agendar">
+                    <label for="agendarHoraInput" class="form-label-agendar">
+                        <span class="label-icon">⌚</span> Hora de la visita <span class="required-star">*</span>
+                    </label>
+                    <div class="hora-selection-wrapper">
+                        <div class="chips-hora-shortcuts" id="chipsHoraShortcuts">
+                            <button type="button" class="chip-shortcut-hora" data-hora="Mañana (8:00 AM - 12:00 PM)">🌅 Mañana (8am - 12pm)</button>
+                            <button type="button" class="chip-shortcut-hora" data-hora="Tarde (2:00 PM - 5:00 PM)">☀️ Tarde (2pm - 5pm)</button>
+                            <button type="button" class="chip-shortcut-hora" data-hora="Atardecer (5:00 PM - 6:30 PM)">🌇 Atardecer (5pm - 6:30pm)</button>
+                        </div>
+                        <div class="time-custom-input-wrapper">
+                            <span class="time-custom-label">O define hora exacta:</span>
+                            <input type="time" id="agendarHoraInput" class="form-input-agendar input-time" />
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer con Botón de Enviar a WhatsApp -->
+            <div class="modal-agendar-footer">
+                <button type="button" id="btnConfirmarAgendamientoWA" class="btn-confirmar-agendar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                        <path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.846.497 3.576 1.362 5.065L2 22l5.07-1.33A9.953 9.953 0 0012 22c5.522 0 10-4.477 10-10S17.521 2 11.999 2zm.001 18a7.963 7.963 0 01-4.184-1.188l-.3-.178-3.012.79.803-2.93-.196-.31A7.944 7.944 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/>
+                    </svg>
+                    Confirmar y Agendar por WhatsApp
+                </button>
+                <div class="modal-agendar-security-note">
+                    🔒 <span>Respuesta prioritaria en menos de 15 minutos.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- NUEVO: Banner inferior de comparación -->
     <div id="bannerComparar" class="banner-comparar hidden">
         <!-- Miniaturas a la izquierda -->
@@ -9849,6 +10418,7 @@ document.head.appendChild(schemaScript);
                     }
 
                     function actualizarBotonWhatsapp(inmueble) {
+                        window._inmuebleActualModal = inmueble;
                         if (!inmueble) {
                             const codigo = document.getElementById("modalCodigo")?.textContent?.trim();
                             if (!codigo) return;
@@ -9869,6 +10439,330 @@ document.head.appendChild(schemaScript);
                         const btn = document.getElementById("modalBotonWhatsapp");
                         if (btn) btn.href = url;
                     }
+
+                    // ─────────────────────────────────────────────────
+                    // TARJETA DE AGENDAMIENTO DE VISITAS (NEUROVENTAS & WHATSAPP)
+                    // ─────────────────────────────────────────────────
+                    let inmuebleAgendarActual = null;
+                    let metodosPagoSeleccionados = new Set();
+                    let preaprobadoSeleccionado = "";
+
+                    function inicializarModalAgendarVisita() {
+                        const overlay = document.getElementById("modalAgendarVisitaOverlay");
+                        const closeBtn = document.getElementById("closeModalAgendarVisita");
+                        const btnConfirmar = document.getElementById("btnConfirmarAgendamientoWA");
+                        
+                        if (!overlay) return;
+
+                        // Cierre al dar clic en botón X o backdrop
+                        closeBtn?.addEventListener("click", cerrarModalAgendarVisita);
+                        overlay.addEventListener("click", (e) => {
+                            if (e.target === overlay) cerrarModalAgendarVisita();
+                        });
+
+                        // Interceptar click en el botón "Agendar visita" del modal principal
+                        const btnPrincipal = document.getElementById("modalBotonWhatsapp");
+                        if (btnPrincipal) {
+                            btnPrincipal.addEventListener("click", (e) => {
+                                e.preventDefault();
+                                const inmueble = window._inmuebleActualModal || null;
+                                abrirModalAgendarVisita(inmueble);
+                            });
+                        }
+
+                        // Configurar Chips de Método de Pago (Multiselección)
+                        document.querySelectorAll("#chipsPagoContainer .chip-pago").forEach(chip => {
+                            chip.addEventListener("click", () => {
+                                const val = chip.getAttribute("data-val");
+                                if (chip.classList.contains("selected")) {
+                                    chip.classList.remove("selected");
+                                    metodosPagoSeleccionados.delete(val);
+                                } else {
+                                    chip.classList.add("selected");
+                                    metodosPagoSeleccionados.add(val);
+                                }
+                                actualizarPanelCredito();
+                            });
+                        });
+
+                        // Configurar Chips de Carta de Preaprobado
+                        document.querySelectorAll("#chipsPreaprobadoContainer .chip-sub").forEach(chip => {
+                            chip.addEventListener("click", () => {
+                                document.querySelectorAll("#chipsPreaprobadoContainer .chip-sub").forEach(c => c.classList.remove("selected"));
+                                chip.classList.add("selected");
+                                preaprobadoSeleccionado = chip.getAttribute("data-val");
+                            });
+                        });
+
+                        // Configurar Atajos de Día
+                        const fechaInput = document.getElementById("agendarFechaInput");
+                        if (fechaInput) {
+                            const todayStr = new Date().toISOString().split("T")[0];
+                            fechaInput.min = todayStr;
+                        }
+
+                        document.querySelectorAll("#chipsDiaShortcuts .chip-shortcut").forEach(chip => {
+                            chip.addEventListener("click", () => {
+                                document.querySelectorAll("#chipsDiaShortcuts .chip-shortcut").forEach(c => c.classList.remove("active"));
+                                chip.classList.add("active");
+                                
+                                const dayType = chip.getAttribute("data-day");
+                                const d = new Date();
+                                if (dayType === "manana") {
+                                    d.setDate(d.getDate() + 1);
+                                } else if (dayType === "finsemana") {
+                                    const dayOfWeek = d.getDay(); // 0 is Sun, 6 is Sat
+                                    const daysUntilSaturday = (6 - dayOfWeek + 7) % 7 || 7;
+                                    d.setDate(d.getDate() + daysUntilSaturday);
+                                }
+                                if (fechaInput) {
+                                    fechaInput.value = d.toISOString().split("T")[0];
+                                }
+                            });
+                        });
+
+                        // Configurar Atajos de Hora
+                        document.querySelectorAll("#chipsHoraShortcuts .chip-shortcut-hora").forEach(chip => {
+                            chip.addEventListener("click", () => {
+                                document.querySelectorAll("#chipsHoraShortcuts .chip-shortcut-hora").forEach(c => c.classList.remove("active"));
+                                chip.classList.add("active");
+                                const horaCustomInput = document.getElementById("agendarHoraInput");
+                                if (horaCustomInput) horaCustomInput.value = ""; // limpia custom time si se usa franja
+                            });
+                        });
+
+                        // Evento Confirmar Agendamiento
+                        btnConfirmar?.addEventListener("click", procesarYEnviarAgendamientoWA);
+                    }
+
+                    function actualizarPanelCredito() {
+                        const panel = document.getElementById("panelCreditoContainer");
+                        if (!panel) return;
+                        
+                        const tieneCredito = Array.from(metodosPagoSeleccionados).some(m => m.includes("Crédito"));
+                        if (tieneCredito) {
+                            panel.classList.add("open");
+                        } else {
+                            panel.classList.remove("open");
+                            preaprobadoSeleccionado = "";
+                            document.querySelectorAll("#chipsPreaprobadoContainer .chip-sub").forEach(c => c.classList.remove("selected"));
+                            const bancoInput = document.getElementById("agendarBancoInput");
+                            if (bancoInput) bancoInput.value = "";
+                        }
+                    }
+
+                    function abrirModalAgendarVisita(inmueble) {
+                        if (!inmueble) {
+                            const codigo = document.getElementById("modalCodigo")?.textContent?.trim();
+                            if (codigo && typeof datos !== 'undefined') {
+                                inmueble = datos.find(d => String(d["Código"] || "").trim() === String(codigo).trim());
+                            }
+                        }
+
+                        inmuebleAgendarActual = inmueble;
+
+                        // Actualizar tag de inmueble
+                        const tagNombre = document.getElementById("agendarInmuebleNombre");
+                        if (tagNombre && inmueble) {
+                            const cod = String(inmueble["Código"] || "").trim();
+                            const nom = (inmueble["Nombre"] || "Inmueble").trim();
+                            const precio = typeof formatearPrecio === 'function' ? formatearPrecio(inmueble["Precio"]) : inmueble["Precio"];
+                            tagNombre.innerHTML = `📍 <strong>${nom}</strong> (Cód. ${cod}) — ${precio}`;
+                        } else if (tagNombre) {
+                            tagNombre.innerHTML = `📍 <strong>Inmueble ICDE</strong>`;
+                        }
+
+                        // Limpiar / resetear form
+                        metodosPagoSeleccionados.clear();
+                        preaprobadoSeleccionado = "";
+                        document.querySelectorAll("#chipsPagoContainer .chip-pago").forEach(c => c.classList.remove("selected"));
+                        document.querySelectorAll("#chipsPreaprobadoContainer .chip-sub").forEach(c => c.classList.remove("selected"));
+                        document.querySelectorAll("#chipsDiaShortcuts .chip-shortcut").forEach(c => c.classList.remove("active"));
+                        document.querySelectorAll("#chipsHoraShortcuts .chip-shortcut-hora").forEach(c => c.classList.remove("active"));
+                        
+                        const panel = document.getElementById("panelCreditoContainer");
+                        if (panel) panel.classList.remove("open");
+
+                        const nombreInput = document.getElementById("agendarNombreInput");
+                        const phoneInput = document.getElementById("agendarPhoneInput");
+                        const fechaInput = document.getElementById("agendarFechaInput");
+                        const horaInput = document.getElementById("agendarHoraInput");
+                        const bancoInput = document.getElementById("agendarBancoInput");
+
+                        if (nombreInput) nombreInput.value = "";
+                        if (phoneInput) phoneInput.value = "";
+                        if (bancoInput) bancoInput.value = "";
+
+                        // Seleccionar por defecto "Mañana" en fecha
+                        if (fechaInput) {
+                            const d = new Date();
+                            d.setDate(d.getDate() + 1);
+                            fechaInput.value = d.toISOString().split("T")[0];
+                            const chipManana = document.querySelector('#chipsDiaShortcuts .chip-shortcut[data-day="manana"]');
+                            if (chipManana) chipManana.classList.add("active");
+                        }
+
+                        // Seleccionar por defecto la primera franja horaria
+                        const chipHoraDef = document.querySelector('#chipsHoraShortcuts .chip-shortcut-hora');
+                        if (chipHoraDef) chipHoraDef.classList.add("active");
+                        if (horaInput) horaInput.value = "";
+
+                        // Abrir overlay
+                        const overlay = document.getElementById("modalAgendarVisitaOverlay");
+                        if (overlay) {
+                            overlay.style.display = "flex";
+                            requestAnimationFrame(() => overlay.classList.add("active"));
+                        }
+                    }
+
+                    function cerrarModalAgendarVisita() {
+                        const overlay = document.getElementById("modalAgendarVisitaOverlay");
+                        if (overlay) {
+                            overlay.classList.remove("active");
+                            setTimeout(() => {
+                                overlay.style.display = "none";
+                            }, 300);
+                        }
+                    }
+
+                    function procesarYEnviarAgendamientoWA() {
+                        const nombreInput = document.getElementById("agendarNombreInput");
+                        const phoneInput = document.getElementById("agendarPhoneInput");
+                        const fechaInput = document.getElementById("agendarFechaInput");
+                        const horaInput = document.getElementById("agendarHoraInput");
+                        const bancoInput = document.getElementById("agendarBancoInput");
+
+                        const nombre = nombreInput?.value.trim() || "";
+                        const phone = phoneInput?.value.trim() || "";
+                        const fecha = fechaInput?.value || "";
+                        
+                        // Obtener franja o hora personalizada
+                        const chipHoraActivo = document.querySelector("#chipsHoraShortcuts .chip-shortcut-hora.active");
+                        let horaFinal = horaInput?.value ? horaInput.value : (chipHoraActivo ? chipHoraActivo.getAttribute("data-hora") : "");
+
+                        // Validaciones básicas
+                        if (!nombre) {
+                            alert("Por favor ingrese su Nombre completo.");
+                            nombreInput?.focus();
+                            return;
+                        }
+                        if (!phone) {
+                            alert("Por favor ingrese su número de WhatsApp.");
+                            phoneInput?.focus();
+                            return;
+                        }
+                        if (metodosPagoSeleccionados.size === 0) {
+                            alert("Por favor seleccione al menos un método de pago.");
+                            return;
+                        }
+
+                        const tieneCredito = Array.from(metodosPagoSeleccionados).some(m => m.includes("Crédito"));
+                        if (tieneCredito) {
+                            if (!preaprobadoSeleccionado) {
+                                alert("Por favor indique si cuenta con la carta de preaprobado.");
+                                return;
+                            }
+                            if (!bancoInput?.value.trim()) {
+                                alert("Por favor escriba con qué banco o entidad.");
+                                bancoInput?.focus();
+                                return;
+                            }
+                        }
+
+                        if (!fecha) {
+                            alert("Por favor seleccione el día de la visita.");
+                            fechaInput?.focus();
+                            return;
+                        }
+                        if (!horaFinal) {
+                            alert("Por favor seleccione o escriba la hora de la visita.");
+                            return;
+                        }
+
+                        // Formatear Método de Pago
+                        let metodoPagoTexto = "";
+                        const arrayMetodos = Array.from(metodosPagoSeleccionados);
+                        const tieneEfectivo = arrayMetodos.some(m => m.includes("Efectivo"));
+                        
+                        if (tieneEfectivo && tieneCredito) {
+                            metodoPagoTexto = "Efectivo y crédito 💳";
+                        } else if (tieneEfectivo) {
+                            metodoPagoTexto = "Efectivo💰";
+                        } else if (tieneCredito) {
+                            metodoPagoTexto = "Crédito 🏦";
+                        }
+
+                        // Formatear Fecha
+                        const fechaPartes = fecha.split("-");
+                        const fechaFormateada = fechaPartes.length === 3 ? `${fechaPartes[2]}/${fechaPartes[1]}/${fechaPartes[0]}` : fecha;
+
+                        // Datos del inmueble
+                        const houseEmoji = String.fromCodePoint(0x1F3E0);
+                        const linkEmoji = String.fromCodePoint(0x1F517);
+
+                        let nombreInmueble = "Inmueble";
+                        let codInmueble = "";
+                        let precioInmueble = "";
+
+                        if (inmuebleAgendarActual) {
+                            codInmueble = String(inmuebleAgendarActual["Código"] || "").trim();
+                            nombreInmueble = (inmuebleAgendarActual["Nombre"] || "Inmueble").trim();
+                            precioInmueble = typeof formatearPrecio === 'function' ? formatearPrecio(inmuebleAgendarActual["Precio"]) : inmuebleAgendarActual["Precio"];
+                        } else {
+                            codInmueble = document.getElementById("modalCodigo")?.textContent?.trim() || "";
+                            nombreInmueble = document.getElementById("modalTitle")?.textContent?.trim() || "Inmueble";
+                            precioInmueble = document.getElementById("modalPrecio")?.textContent?.trim() || "";
+                        }
+
+                        // Construcción del mensaje de WhatsApp
+                        let msg = `Hola ICDE Inmobiliaria ${houseEmoji}, quiero agendar una visita para ver el inmueble
+
+`;
+                        msg += `${nombreInmueble} (Cód. ${codInmueble}) - ${precioInmueble}
+
+`;
+                        msg += `${linkEmoji} Mi catálogo personalizado:
+https://icdeinmobiliaria.com/?ids=${codInmueble}
+
+`;
+                        msg += `Nombre completo:
+${nombre}
+`;
+                        msg += `🟢WhatsApp:
+${phone}
+
+`;
+                        msg += `Método de pago:
+${metodoPagoTexto}
+`;
+
+                        if (tieneCredito) {
+                            msg += `Cuenta con la carta de preaprobado ✅: ${preaprobadoSeleccionado}
+`;
+                            msg += `Banco / Entidad: ${bancoInput.value.trim()}
+`;
+                        }
+
+                        msg += `
+📅 Seleccione día de la visita: ${fechaFormateada}
+`;
+                        msg += `⌚ Hora de la visita: ${horaFinal}`;
+
+                        // Enviar a WhatsApp
+                        const urlWA = `https://api.whatsapp.com/send?phone=573208762117&text=${encodeURIComponent(msg)}`;
+                        window.open(urlWA, "_blank", "noopener,noreferrer");
+
+                        // Cerrar modal
+                        cerrarModalAgendarVisita();
+                    }
+
+                    // Inicializar eventos
+                    if (document.readyState === "loading") {
+                        document.addEventListener("DOMContentLoaded", inicializarModalAgendarVisita);
+                    } else {
+                        inicializarModalAgendarVisita();
+                    }
+
 
                     function mostrarAlertaComparacion() {
                         const alerta = document.getElementById("alerta-comparacion");
