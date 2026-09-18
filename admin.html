@@ -8376,6 +8376,142 @@ function toggleLeadMetodo(id, m, el) {
   if (currentTab === 'leads') renderLeadsBody(leads);
 }
 
+function obtenerEtapaPropiedad(lead, cod) {
+  if (lead && lead.propEtapas && lead.propEtapas[cod]) {
+    return Number(lead.propEtapas[cod]);
+  }
+  const v = ((lead ? lead.visitas : []) || []).find(x => x.codigo === cod);
+  if (!v) return 1; // 1: Disponible
+  if (v.procesoVenta || v.estado === 'proceso_venta') return 6; // 6: Proceso de venta
+  if (v.oferto === 'si' || v.estado === 'ok') return 5; // 5: OK
+  if (v.estado === 'realizada') return 4; // 4: Visitó
+  if (v.estado === 'agendada') return 3; // 3: Visita agendada
+  if (v.estado === 'solicito_visita') return 2; // 2: Solicitó visita
+  return 1;
+}
+
+function renderPropChecklist(leadId, cod, currentStage) {
+  const pasos = [
+    { num: 1, label: 'Disponible' },
+    { num: 2, label: 'Solicitó visita' },
+    { num: 3, label: 'Visita agendada' },
+    { num: 4, label: 'Visitó' },
+    { num: 5, label: 'OK' },
+    { num: 6, label: 'Proceso de venta' }
+  ];
+
+  const pct = Math.max(0, Math.min(100, ((currentStage - 1) / (pasos.length - 1)) * 100));
+
+  return `
+    <div class="prop-stepper-container" style="position:relative; display:flex; align-items:flex-start; justify-content:space-between; margin-top:8px; padding:8px 6px 4px 6px; background:rgba(0,0,0,0.3); border-radius:10px; border:1px solid rgba(212,168,75,0.15); width:100%; box-sizing:border-box;">
+      <!-- Línea conectora de fondo -->
+      <div style="position:absolute; top:17px; left:20px; right:20px; height:2px; background:rgba(255,255,255,0.1); z-index:1;"></div>
+      <div style="position:absolute; top:17px; left:20px; width:calc((100% - 40px) * ${pct / 100}); height:2px; background:linear-gradient(90deg, #22c55e, #d4a84b); z-index:1; transition:width 0.3s ease;"></div>
+
+      ${pasos.map(p => {
+        const isCompleted = p.num < currentStage;
+        const isActive = p.num === currentStage;
+
+        let circleBg = 'rgba(25,25,30,0.95)';
+        let circleBorder = 'rgba(255,255,255,0.18)';
+        let circleColor = '#777';
+        let labelColor = '#777';
+        let labelWeight = '500';
+        let circleContent = p.num;
+        let shadow = 'none';
+
+        if (isCompleted) {
+          circleBg = '#22c55e';
+          circleBorder = '#22c55e';
+          circleColor = '#fff';
+          labelColor = '#22c55e';
+          labelWeight = '600';
+          circleContent = '✓';
+        } else if (isActive) {
+          circleBg = 'var(--gold)';
+          circleBorder = '#ffe89c';
+          circleColor = '#000';
+          labelColor = 'var(--gold)';
+          labelWeight = '700';
+          shadow = '0 0 10px rgba(212,168,75,0.5)';
+        }
+
+        return `
+          <div style="position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; flex:1; cursor:pointer; min-width:0; padding:0 1px;"
+               onclick="event.stopPropagation(); cambiarEtapaPropiedad('${leadId}', '${cod}', ${p.num})"
+               title="Marcar paso ${p.num}: ${p.label}">
+            <div style="width:20px; height:20px; border-radius:50%; background:${circleBg}; border:1.5px solid ${circleBorder}; color:${circleColor}; font-size:9.5px; font-weight:700; display:flex; align-items:center; justify-content:center; box-shadow:${shadow}; transition:all 0.25s ease;">
+              ${circleContent}
+            </div>
+            <span style="font-size:9px; color:${labelColor}; font-weight:${labelWeight}; margin-top:3px; text-align:center; line-height:1.15; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+              ${p.label}
+            </span>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function cambiarEtapaPropiedad(leadId, cod, nuevaEtapa) {
+  const lead = leads.find(l => l.id === leadId);
+  if (!lead) return;
+  if (!lead.propEtapas) lead.propEtapas = {};
+  lead.propEtapas[cod] = nuevaEtapa;
+
+  lead.visitas = lead.visitas || [];
+  let v = lead.visitas.find(x => x.codigo === cod);
+
+  if (nuevaEtapa === 1) {
+    if (v && v.estado === 'solicito_visita') v.estado = 'enviada';
+  } else if (nuevaEtapa === 2) {
+    if (!v) {
+      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'solicito_visita', cliente: lead.nombre, celular: lead.celular };
+      lead.visitas.push(v);
+    } else {
+      v.estado = 'solicito_visita';
+    }
+  } else if (nuevaEtapa === 3) {
+    if (!v) {
+      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'agendada', cliente: lead.nombre, celular: lead.celular };
+      lead.visitas.push(v);
+    } else {
+      v.estado = 'agendada';
+    }
+  } else if (nuevaEtapa === 4) {
+    if (!v) {
+      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'realizada', cliente: lead.nombre, celular: lead.celular };
+      lead.visitas.push(v);
+    } else {
+      v.estado = 'realizada';
+    }
+  } else if (nuevaEtapa === 5) {
+    if (!v) {
+      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'realizada', oferto: 'si', cliente: lead.nombre, celular: lead.celular };
+      lead.visitas.push(v);
+    } else {
+      v.estado = 'realizada';
+      v.oferto = 'si';
+    }
+  } else if (nuevaEtapa === 6) {
+    if (!v) {
+      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'realizada', oferto: 'si', procesoVenta: true, cliente: lead.nombre, celular: lead.celular };
+      lead.visitas.push(v);
+    } else {
+      v.procesoVenta = true;
+    }
+  }
+
+  saveLeads();
+  const el = document.getElementById('panelEnviadas');
+  if (el) el.innerHTML = renderPanelPropsEnviadas(lead);
+  if (typeof renderLeadsBody === 'function' && typeof currentTab !== 'undefined' && currentTab === 'leads') {
+    renderLeadsBody(leads);
+  }
+  const nombresPasos = ['', 'Disponible', 'Solicitó visita', 'Visita agendada', 'Visitó', 'OK', 'Proceso de venta'];
+  toast(`Etapa de venta: ${nombresPasos[nuevaEtapa] || nuevaEtapa} ✓`, 'success');
+}
+
 function renderPanelPropsEnviadas(lead){
   const env = lead.propsEnviadas || [];
   if(!env.length) return '<div style="color:#555;font-size:13px;padding:12px 0;">No se han enviado propiedades aún</div>';
@@ -8390,27 +8526,34 @@ function renderPanelPropsEnviadas(lead){
       else badges = `<span class="badge badge-agendada">Agendada</span>`;
       if(v.oferto==='si') badges += ` <span class="badge badge-oferta">Oferta</span>`;
     }
+
+    const currentStage = obtenerEtapaPropiedad(lead, cod);
+    const stepperHTML = renderPropChecklist(lead.id, cod, currentStage);
+
     return `
-      <div class="enviada-item" style="display:flex; gap:10px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:10px; margin-bottom:8px; transition: all 0.2s;">
-        <input type="checkbox" class="chk-prop-enviada" value="${cod}" style="accent-color:var(--gold); width:16px; height:16px; cursor:pointer; flex-shrink:0;" onchange="actualizarBotonEliminarEnviadas('${lead.id}')"/>
-        <div style="display:flex; flex:1; align-items:center; gap:12px; cursor:pointer; min-width:0;" onclick="abrirModalProp('${eq(cod)}')">
-          <img src="${img}" style="width:60px; height:60px; object-fit:cover; border-radius:8px;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
-          <div style="flex:1; min-width:0;">
-            <div style="font-weight:700; color:#fff; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cod} ${p ? `· ${p['Nombre']}` : ''}</div>
-            <div style="display:flex; gap:6px; margin-top:4px; align-items:center; flex-wrap:wrap;">
-              ${badges}
-              ${p && (p['Inmobiliaria']||p['Inmobiliaria / Aliado']||p['inmobiliaria']||p['Inmob']) ? `<span class="badge-inmobiliaria" style="background:rgba(212,168,75,0.08); border:1px solid rgba(212,168,75,0.4); color:var(--gold); font-size:10px; font-weight:700; border-radius:6px; padding:2px 8px; text-transform:uppercase; letter-spacing:0.04em; display:inline-flex; align-items:center;">${(p['Inmobiliaria']||p['Inmobiliaria / Aliado']||p['inmobiliaria']||p['Inmob']).trim()}</span>` : ''}
+      <div class="enviada-item" style="display:flex; flex-direction:column; gap:6px; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:10px; margin-bottom:10px; transition: all 0.2s;">
+        <div style="display:flex; gap:10px; align-items:center; width:100%;">
+          <input type="checkbox" class="chk-prop-enviada" value="${cod}" style="accent-color:var(--gold); width:16px; height:16px; cursor:pointer; flex-shrink:0;" onchange="actualizarBotonEliminarEnviadas('${lead.id}')"/>
+          <div style="display:flex; flex:1; align-items:center; gap:12px; cursor:pointer; min-width:0;" onclick="abrirModalProp('${eq(cod)}')">
+            <img src="${img}" style="width:55px; height:55px; object-fit:cover; border-radius:8px;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+            <div style="flex:1; min-width:0;">
+              <div style="font-weight:700; color:#fff; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cod} ${p ? `· ${p['Nombre']}` : ''}</div>
+              <div style="display:flex; gap:6px; margin-top:4px; align-items:center; flex-wrap:wrap;">
+                ${badges}
+                ${p && (p['Inmobiliaria']||p['Inmobiliaria / Aliado']||p['inmobiliaria']||p['Inmob']) ? `<span class="badge-inmobiliaria" style="background:rgba(212,168,75,0.08); border:1px solid rgba(212,168,75,0.4); color:var(--gold); font-size:10px; font-weight:700; border-radius:6px; padding:2px 8px; text-transform:uppercase; letter-spacing:0.04em; display:inline-flex; align-items:center;">${(p['Inmobiliaria']||p['Inmobiliaria / Aliado']||p['inmobiliaria']||p['Inmob']).trim()}</span>` : ''}
+              </div>
             </div>
           </div>
+          <div style="display:flex; gap:6px; flex-shrink:0;">
+            <button class="btn btn-sm ${v?'btn-secondary':'btn-primary'}" style="padding:6px; min-width:32px;" onclick="event.stopPropagation();abrirVisitaModal('${lead.id}','${cod}')" title="${v ? 'Editar visita' : 'Agendar visita'}">
+              ${v ? '✏️' : '🗓'}
+            </button>
+            <button class="btn btn-sm btn-danger" style="padding:6px; min-width:32px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#ef4444;" onclick="event.stopPropagation(); eliminarPropEnviada('${lead.id}','${cod}')" title="Eliminar de enviadas">
+              🗑
+            </button>
+          </div>
         </div>
-        <div style="display:flex; gap:6px;">
-          <button class="btn btn-sm ${v?'btn-secondary':'btn-primary'}" style="padding:6px; min-width:32px;" onclick="event.stopPropagation();abrirVisitaModal('${lead.id}','${cod}')" title="${v ? 'Editar visita' : 'Agendar visita'}">
-            ${v ? '✏️' : '🗓'}
-          </button>
-          <button class="btn btn-sm btn-danger" style="padding:6px; min-width:32px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#ef4444;" onclick="event.stopPropagation(); eliminarPropEnviada('${lead.id}','${cod}')" title="Eliminar de enviadas">
-            🗑
-          </button>
-        </div>
+        ${stepperHTML}
       </div>`;
   }).join('');
 }
