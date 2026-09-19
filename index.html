@@ -6800,19 +6800,27 @@ font-weight: 500;
 }
 
 
-/* ── ADAPTACIÓN CENTRADA PERFECTA MODAL AGENDAR VISITA ── */
+/* ── ADAPTACIÓN CENTRADA Y Z-INDEX SUPERIOR MÁXIMO ── */
 .modal-agendar-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: 10000;
-    display: flex;
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 99999 !important;
+    display: none;
     align-items: center;
     justify-content: center;
     padding: 16px;
     box-sizing: border-box;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal-agendar-overlay.active {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .modal-agendar-card {
@@ -10942,10 +10950,11 @@ document.head.appendChild(schemaScript);
                         // Seleccionar por defecto la primera franja horaria
                         if (horaInput) horaInput.value = "09:00";
 
-                        // Abrir overlay
+                        // Abrir overlay en frente absoluto
                         const overlay = document.getElementById("modalAgendarVisitaOverlay");
                         if (overlay) {
                             overlay.style.display = "flex";
+                            overlay.style.zIndex = "99999";
                             requestAnimationFrame(() => overlay.classList.add("active"));
                         }
                     }
