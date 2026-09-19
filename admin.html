@@ -4035,7 +4035,11 @@ html, body {
     <div class="modal-title">🏠 Añadir Visita</div>
     <input type="hidden" id="visitaId"/>
     <div class="form-grid">
-      <div class="form-group"><label class="form-label">Código Casa</label><input class="form-input" id="visitaCodigo" placeholder="ej: 222"/></div>
+      <div class="form-group full" style="grid-column: 1 / -1;">
+        <label class="form-label">Código Casa</label>
+        <input class="form-input" id="visitaCodigo" placeholder="ej: 38" oninput="autocompletarInfoVisitaPorCodigo(this.value)" onchange="autocompletarInfoVisitaPorCodigo(this.value)"/>
+        <div id="visitaPropPreview" style="display:none; margin-top:6px; padding:8px 10px; background:rgba(212,168,75,0.08); border:1px solid rgba(212,168,75,0.3); border-radius:8px; align-items:center; gap:10px;"></div>
+      </div>
       <div class="form-group"><label class="form-label">Cliente</label><input class="form-input" id="visitaCliente" placeholder="Nombre del cliente"/></div>
       <div class="form-group"><label class="form-label">WhatsApp / Celular</label><input class="form-input" id="visitaCelular" placeholder="3001234567"/></div>
       <div class="form-group"><label class="form-label">Fecha</label><input class="form-input" type="date" id="visitaFecha"/></div>
@@ -9337,6 +9341,78 @@ function generarProximosCheck(frec){
 }
 
 
+function buscarPropiedadGlobal(cod) {
+  if (!cod || typeof allProps === 'undefined' || !Array.isArray(allProps)) return null;
+  const target = String(cod).trim().toLowerCase().replace(/^(cód|cod|código|codigo)[:\s-]*/i, '');
+  if (!target) return null;
+
+  return allProps.find(p => {
+    if (!p) return false;
+    for (const key of ['Código', 'Codigo', 'CÓDIGO', 'cód', 'cod', 'ID', 'id']) {
+      const val = String(p[key] || '').trim().toLowerCase();
+      if (val && (val === target || val.replace(/^0+/, '') === target.replace(/^0+/, ''))) {
+        return true;
+      }
+    }
+    return false;
+  }) || null;
+}
+
+function autocompletarInfoVisitaPorCodigo(val) {
+  const previewEl = document.getElementById('visitaPropPreview');
+  if (!val || !val.trim()) {
+    if (previewEl) { previewEl.style.display = 'none'; previewEl.innerHTML = ''; }
+    return;
+  }
+
+  const prop = buscarPropiedadGlobal(val);
+  if (prop) {
+    const codReal = prop['Código'] || prop['Codigo'] || prop['CÓDIGO'] || val;
+    const nombre = prop['Nombre'] || prop['nombre'] || `Propiedad Cód. ${codReal}`;
+    const precio = (typeof formatP === 'function') ? formatP(prop['Precio']) : (prop['Precio'] ? `$${prop['Precio']}` : '');
+    const inmob = prop['Inmobiliaria'] || prop['Inmobiliaria / Aliado'] || prop['inmobiliaria'] || '';
+    const img = ((prop['Imagenes']||'').split('|')[0].trim() || prop['Image'] || 'https://i.imgur.com/Pc9M3I8.png');
+
+    if (previewEl) {
+      previewEl.style.display = 'flex';
+      previewEl.innerHTML = `
+        <img src="${img}" style="width:40px; height:40px; border-radius:6px; object-fit:cover; flex-shrink:0;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:12px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${nombre}</div>
+          <div style="font-size:11px; color:var(--gold); font-weight:600; margin-top:1px;">Cód: ${codReal} ${precio ? '· ' + precio : ''} ${inmob ? '· ('+inmob+')' : ''}</div>
+        </div>
+      `;
+    }
+
+    // Auto-completar cliente y teléfono si el campo cliente está vacío
+    const clientInput = document.getElementById('visitaCliente');
+    const phoneInput = document.getElementById('visitaCelular');
+    if (clientInput && !clientInput.value.trim() && typeof leads !== 'undefined' && Array.isArray(leads)) {
+      const codStr = String(codReal).trim();
+      const interestedLead = leads.find(l => {
+        if (!l || l.id === 'LEAD-AGENDA-GLOBAL') return false;
+        const enviadas = l.propsEnviadas || [];
+        const visitas = l.visitas || [];
+        return enviadas.includes(codStr) || visitas.some(v => String(v.codigo).trim() === codStr);
+      });
+      if (interestedLead) {
+        if (clientInput) clientInput.value = interestedLead.nombre || '';
+        if (phoneInput && !phoneInput.value.trim()) phoneInput.value = interestedLead.celular || '';
+        visitaLeadId = interestedLead.id;
+      }
+    }
+  } else {
+    if (previewEl) {
+      previewEl.style.display = 'flex';
+      previewEl.innerHTML = `
+        <div style="font-size:11.5px; color:#f87171; padding:2px 4px; font-weight:600;">
+          ⚠️ Código "${val}" no encontrado en el catálogo de propiedades.
+        </div>
+      `;
+    }
+  }
+}
+
 /* ═══════════════════════════════════════════════
    MODAL VISITA
 ═══════════════════════════════════════════════ */
@@ -9357,7 +9433,9 @@ function abrirVisitaModal(lid, prefilledCod, citaId){
       if (el) el.value = val;
     };
 
-    setVal('visitaCodigo', v ? v.codigo : (prefilledCod || ''));
+    const initialCod = v ? v.codigo : (prefilledCod || '');
+    setVal('visitaCodigo', initialCod);
+    autocompletarInfoVisitaPorCodigo(initialCod);
     setVal('visitaCliente', v ? v.cliente : (lead ? lead.nombre : ''));
     setVal('visitaCelular', v ? v.celular : (lead ? lead.celular : ''));
     
@@ -10570,7 +10648,7 @@ function renderCitasBody(lista){
   b.innerHTML = ordenada.map(c => {
     const isoFecha = getFechaISO(c.fecha);
     const d = new Date((isoFecha || c.fecha) + 'T12:00:00');
-    const prop = allProps.find(p => String(p['Código']).trim() === String(c.codigo).trim());
+    const prop = buscarPropiedadGlobal(c.codigo);
     const inmobProp = prop ? (prop['Inmobiliaria'] || '') : '';
     let stBadge = '';
     if(c.estado === 'realizada') stBadge = `<span class="badge badge-visita">Visitada</span>`;
@@ -10647,9 +10725,7 @@ function abrirTarjetaCitaModal(citaId) {
     return;
   }
 
-  const prop = (typeof allProps !== 'undefined' && Array.isArray(allProps)) 
-    ? allProps.find(p => String(p['Código']||'').trim() === String(cita.codigo||'').trim()) 
-    : null;
+  const prop = buscarPropiedadGlobal(cita.codigo);
 
   // Estado badge
   const estadoMap = {
@@ -10671,8 +10747,8 @@ function abrirTarjetaCitaModal(citaId) {
 
   // Property info
   const propImg = prop ? ((prop['Imagenes']||'').split('|')[0].trim() || prop['Image'] || 'https://i.imgur.com/Pc9M3I8.png') : 'https://i.imgur.com/Pc9M3I8.png';
-  const propNombre = prop ? (prop['Nombre'] || cita.codigo) : (cita.codigo || 'Propiedad sin código');
-  const propPrecio = (prop && typeof formatP === 'function') ? formatP(prop['Precio']) : '';
+  const propNombre = prop ? (prop['Nombre'] || prop['nombre'] || `Propiedad Cód. ${cita.codigo}`) : (cita.codigo ? `Propiedad Cód. ${cita.codigo}` : 'Propiedad sin código');
+  const propPrecio = (prop && typeof formatP === 'function') ? formatP(prop['Precio']) : (prop && prop['Precio'] ? `$${prop['Precio']}` : '');
   const propZona = prop ? (prop['Zona'] || prop['Barrio'] || '') : '';
 
   // Formatear Fecha
