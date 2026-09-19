@@ -7364,13 +7364,13 @@ font-weight: 500;
 
                 <!-- Campo 5: Hora de la Visita -->
                 <div class="form-group-agendar">
-                    <label for="agendarHoraInput" class="form-label-agendar">
+                    <label class="form-label-agendar">
                         <span class="label-icon">⌚</span> Hora de la visita <span class="required-star">*</span>
                     </label>
                     <div class="hora-selection-wrapper">
                         <!-- Horarios Frecuentes Mañana -->
                         <div class="time-block-section">
-                            <span class="time-section-subtitle">🌅 Mañana</span>
+                            <span class="time-section-subtitle">🌅 MAÑANA</span>
                             <div class="chips-hora-grid" id="chipsHoraManana">
                                 <button type="button" class="chip-hora-exacta" data-hora="08:00">8:00 AM</button>
                                 <button type="button" class="chip-hora-exacta active" data-hora="09:00">9:00 AM</button>
@@ -7380,8 +7380,8 @@ font-weight: 500;
                         </div>
 
                         <!-- Horarios Frecuentes Tarde -->
-                        <div class="time-block-section" style="margin-top: 6px;">
-                            <span class="time-section-subtitle">☀️ Tarde</span>
+                        <div class="time-block-section" style="margin-top: 8px;">
+                            <span class="time-section-subtitle">☀️ TARDE</span>
                             <div class="chips-hora-grid" id="chipsHoraTarde">
                                 <button type="button" class="chip-hora-exacta" data-hora="14:00">2:00 PM</button>
                                 <button type="button" class="chip-hora-exacta" data-hora="15:00">3:00 PM</button>
@@ -7391,14 +7391,7 @@ font-weight: 500;
                             </div>
                         </div>
 
-                        <!-- Abrir Reloj Personalizado -->
-                        <div class="time-custom-input-wrapper" style="margin-top: 8px; position: relative;">
-                            <button type="button" class="btn-abrir-reloj" id="btnAbrirReloj">
-                                <span class="reloj-icon">🕒</span>
-                                <span id="txtHoraSeleccionada">O definir hora exacta en reloj</span>
-                            </button>
-                            <input type="time" id="agendarHoraInput" class="input-time-hidden" value="09:00" />
-                        </div>
+                        <input type="hidden" id="agendarHoraInput" value="09:00" />
                     </div>
                 </div>
 
@@ -10722,46 +10715,9 @@ document.head.appendChild(schemaScript);
                             chip.addEventListener("click", () => {
                                 document.querySelectorAll(".chip-hora-exacta").forEach(c => c.classList.remove("active"));
                                 chip.classList.add("active");
-                                
                                 const horaInput = document.getElementById("agendarHoraInput");
-                                const btnReloj = document.getElementById("btnAbrirReloj");
-                                const txtHora = document.getElementById("txtHoraSeleccionada");
-                                
                                 if (horaInput) horaInput.value = chip.getAttribute("data-hora") || "";
-                                if (btnReloj) btnReloj.classList.remove("active-custom");
-                                if (txtHora) txtHora.textContent = "O definir hora exacta en reloj";
                             });
-                        });
-
-                        // Botón Abrir Reloj Nativo
-                        const btnReloj = document.getElementById("btnAbrirReloj");
-                        const horaInput = document.getElementById("agendarHoraInput");
-
-                        btnReloj?.addEventListener("click", () => {
-                            if (horaInput) {
-                                if (typeof horaInput.showPicker === "function") {
-                                    try {
-                                        horaInput.showPicker();
-                                    } catch (e) {
-                                        horaInput.focus();
-                                        horaInput.click();
-                                    }
-                                } else {
-                                    horaInput.focus();
-                                    horaInput.click();
-                                }
-                            }
-                        });
-
-                        horaInput?.addEventListener("change", () => {
-                            const val = horaInput.value;
-                            const txtHora = document.getElementById("txtHoraSeleccionada");
-                            if (val) {
-                                document.querySelectorAll(".chip-hora-exacta").forEach(c => c.classList.remove("active"));
-                                btnReloj?.classList.add("active-custom");
-                                const horaFormateada = formatTime12h(val);
-                                if (txtHora) txtHora.textContent = `🕒 Hora seleccionada: ${horaFormateada}`;
-                            }
                         });
 
                         // Evento Confirmar Agendamiento
@@ -10846,10 +10802,6 @@ document.head.appendChild(schemaScript);
                         document.querySelectorAll(".chip-hora-exacta").forEach(c => c.classList.remove("active"));
                         const defaultChip = document.querySelector('.chip-hora-exacta[data-hora="09:00"]');
                         if (defaultChip) defaultChip.classList.add("active");
-                        const btnRelojReset = document.getElementById("btnAbrirReloj");
-                        const txtHoraReset = document.getElementById("txtHoraSeleccionada");
-                        if (btnRelojReset) btnRelojReset.classList.remove("active-custom");
-                        if (txtHoraReset) txtHoraReset.textContent = "O definir hora exacta en reloj";
                         
                         const panel = document.getElementById("panelCreditoContainer");
                         if (panel) panel.classList.remove("open");
