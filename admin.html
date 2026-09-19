@@ -9359,15 +9359,16 @@ function buscarPropiedadGlobal(cod) {
 }
 
 function autocompletarInfoVisitaPorCodigo(val) {
+  const valStr = String(val || '').trim();
   const previewEl = document.getElementById('visitaPropPreview');
-  if (!val || !val.trim()) {
+  if (!valStr) {
     if (previewEl) { previewEl.style.display = 'none'; previewEl.innerHTML = ''; }
     return;
   }
 
-  const prop = buscarPropiedadGlobal(val);
+  const prop = buscarPropiedadGlobal(valStr);
   if (prop) {
-    const codReal = prop['Código'] || prop['Codigo'] || prop['CÓDIGO'] || val;
+    const codReal = prop['Código'] || prop['Codigo'] || prop['CÓDIGO'] || valStr;
     const nombre = prop['Nombre'] || prop['nombre'] || `Propiedad Cód. ${codReal}`;
     const precio = (typeof formatP === 'function') ? formatP(prop['Precio']) : (prop['Precio'] ? `$${prop['Precio']}` : '');
     const inmob = prop['Inmobiliaria'] || prop['Inmobiliaria / Aliado'] || prop['inmobiliaria'] || '';
@@ -9387,17 +9388,17 @@ function autocompletarInfoVisitaPorCodigo(val) {
     // Auto-completar cliente y teléfono si el campo cliente está vacío
     const clientInput = document.getElementById('visitaCliente');
     const phoneInput = document.getElementById('visitaCelular');
-    if (clientInput && !clientInput.value.trim() && typeof leads !== 'undefined' && Array.isArray(leads)) {
-      const codStr = String(codReal).trim();
+    if (clientInput && !String(clientInput.value || '').trim() && typeof leads !== 'undefined' && Array.isArray(leads)) {
+      const codCheck = String(codReal).trim();
       const interestedLead = leads.find(l => {
         if (!l || l.id === 'LEAD-AGENDA-GLOBAL') return false;
-        const enviadas = l.propsEnviadas || [];
+        const enviadas = (l.propsEnviadas || []).map(x => String(x).trim());
         const visitas = l.visitas || [];
-        return enviadas.includes(codStr) || visitas.some(v => String(v.codigo).trim() === codStr);
+        return enviadas.includes(codCheck) || visitas.some(v => String(v.codigo || '').trim() === codCheck);
       });
       if (interestedLead) {
         if (clientInput) clientInput.value = interestedLead.nombre || '';
-        if (phoneInput && !phoneInput.value.trim()) phoneInput.value = interestedLead.celular || '';
+        if (phoneInput && !String(phoneInput.value || '').trim()) phoneInput.value = interestedLead.celular || '';
         visitaLeadId = interestedLead.id;
       }
     }
@@ -9406,7 +9407,7 @@ function autocompletarInfoVisitaPorCodigo(val) {
       previewEl.style.display = 'flex';
       previewEl.innerHTML = `
         <div style="font-size:11.5px; color:#f87171; padding:2px 4px; font-weight:600;">
-          ⚠️ Código "${val}" no encontrado en el catálogo de propiedades.
+          ⚠️ Código "${valStr}" no encontrado en el catálogo de propiedades.
         </div>
       `;
     }
