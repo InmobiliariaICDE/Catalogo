@@ -7201,7 +7201,6 @@ font-weight: 500;
                     </label>
                     <div class="dia-selection-wrapper">
                         <div class="chips-dia-shortcuts" id="chipsDiaShortcuts">
-                            <button type="button" class="chip-shortcut" data-day="hoy">Hoy</button>
                             <button type="button" class="chip-shortcut" data-day="manana">Mañana</button>
                             <button type="button" class="chip-shortcut" data-day="finsemana">Fin de semana</button>
                         </div>
@@ -10506,8 +10505,9 @@ document.head.appendChild(schemaScript);
                         // Configurar Atajos de Día
                         const fechaInput = document.getElementById("agendarFechaInput");
                         if (fechaInput) {
-                            const todayStr = new Date().toISOString().split("T")[0];
-                            fechaInput.min = todayStr;
+                            const tomorrow = new Date();
+                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            fechaInput.min = tomorrow.toISOString().split("T")[0];
                         }
 
                         document.querySelectorAll("#chipsDiaShortcuts .chip-shortcut").forEach(chip => {
