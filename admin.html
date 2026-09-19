@@ -17367,9 +17367,12 @@ function abrirModalProp(codigoOrProp){
     p = codigoOrProp;
     isPreview = true;
   } else {
-    p = allProps.find(x=>x['Código']===codigoOrProp);
+    p = buscarPropiedadGlobal(codigoOrProp);
   }
-  if(!p) return;
+  if(!p) {
+    if (typeof toast === 'function') toast(`No se encontró la ficha del inmueble (${codigoOrProp})`, 'warning');
+    return;
+  }
   
   document.getElementById('mpTitle').textContent = p['Nombre'];
   document.getElementById('mpType').textContent = p['Tipo de inmueble'] || 'Inmueble';
