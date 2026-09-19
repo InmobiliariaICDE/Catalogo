@@ -10215,13 +10215,17 @@ function renderCitasGrilla() {
             const col = ESTADO_COLORS[c.estado] || ESTADO_COLORS['agendada'];
             const badgeText = estadoBadgeText[c.estado] || 'Agendada';
             const targetId = c.id || c.codigo || c.cliente || '';
+            const propObj = c.codigo ? buscarPropiedadGlobal(c.codigo) : null;
+            const propNom = propObj ? (propObj['Nombre'] || propObj['nombre'] || `Cód: ${c.codigo}`) : (c.codigo ? `Cód. ${c.codigo}` : '—');
+            const fullTitle = propObj ? `[Cód. ${c.codigo}] ${propNom}` : (c.codigo ? `Cód. ${c.codigo}` : '—');
+
             return `<div onclick="event.stopPropagation(); abrirEditarCita('${eq(targetId)}')" style="position:relative; margin:2px 3px; cursor:pointer; background:${col.bg}; border:1px solid ${col.border}; border-left:3px solid ${col.text}; border-radius:7px; padding:4px 6px; transition:all 0.15s; overflow:hidden;" onmouseover="this.style.filter='brightness(1.2)'; this.style.transform='scale(1.02)';" onmouseout="this.style.filter=''; this.style.transform='';">
               <div style="display:flex; align-items:center; gap:4px; margin-bottom:2px; padding-right:18px;">
                 <span style="font-size:10px; font-weight:800; color:${col.text};">${formatHoraStr12(c.hora)}</span>
                 <span style="font-size:8px; font-weight:700; color:${col.text}; opacity:0.8; background:${col.bg}; border:1px solid ${col.border}; border-radius:10px; padding:0 4px;">${badgeText}</span>
               </div>
               <div style="font-size:11px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${c.cliente||''}">${c.cliente || '—'}</div>
-              <div style="font-size:9.5px; color:var(--gold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; margin-top:1px;" title="${c.codigo||''}">${c.codigo || '—'}</div>
+              <div style="font-size:9.5px; color:var(--gold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; margin-top:1px;" title="${fullTitle}">${propNom}</div>
             </div>`;
           }).join('');
 
@@ -10757,6 +10761,7 @@ function renderCitasBody(lista){
     const isoFecha = getFechaISO(c.fecha);
     const d = new Date((isoFecha || c.fecha) + 'T12:00:00');
     const prop = buscarPropiedadGlobal(c.codigo);
+    const nombreProp = prop ? (prop['Nombre'] || prop['nombre'] || `Cód. ${c.codigo}`) : (c.codigo ? `Cód. ${c.codigo}` : '—');
     const inmobProp = prop ? (prop['Inmobiliaria'] || '') : '';
     let stBadge = '';
     if(c.estado === 'realizada') stBadge = `<span class="badge badge-visita">Visitada</span>`;
@@ -10778,8 +10783,8 @@ function renderCitasBody(lista){
         <div class="citas-cliente-inmob" style="font-size:10px;color:var(--gold);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;" title="${c.inmobiliaria||'Directo'}">🏢 ${c.inmobiliaria || 'Directo'}</div>
       </td>
       <td class="col-citas-inmueble">
-        <div style="font-weight:600;color:var(--gold);">${c.codigo}</div>
-        <div class="citas-inm-sub" style="font-size:10px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px;" title="${inmobProp}">${inmobProp || '—'}</div>
+        <div style="font-weight:600;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;" title="${nombreProp}">${nombreProp}</div>
+        <div class="citas-inm-sub" style="font-size:10px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;" title="Cód: ${c.codigo || '—'}">${c.codigo ? 'Cód: ' + c.codigo : ''} ${inmobProp ? '· ' + inmobProp : ''}</div>
       </td>
       <td class="col-citas-obs" style="padding-right: 20px; font-size:12px;color:#aaa;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${c.observaciones||c.notas||''}">${c.observaciones || c.notas || ''}</td>
     </tr>`;
