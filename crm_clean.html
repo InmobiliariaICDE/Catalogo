@@ -1546,13 +1546,39 @@ function activarEtapaLeadDesdeTabla(evt, id, etapaTarget) {
 
   if (!lead.propEtapas) lead.propEtapas = {};
 
+  const maxActual = obtenerEtapaMaximaLead(lead);
+
+  let nuevaEtapa = etapaTarget;
+  let msg = '';
+
+  if (etapaTarget === 6) {
+    if (maxActual === 6) {
+      nuevaEtapa = 5;
+      msg = `Etapa 6 desactivada para ${lead.nombre} (Regresó a Etapa 5: OK) ✓`;
+    } else {
+      nuevaEtapa = 6;
+      msg = `Etapa 6: Proceso de venta activada para ${lead.nombre} ✓`;
+    }
+  } else if (etapaTarget === 5) {
+    if (maxActual === 5) {
+      nuevaEtapa = 4;
+      msg = `Etapa 5 desactivada para ${lead.nombre} ✓`;
+    } else if (maxActual === 6) {
+      nuevaEtapa = 5;
+      msg = `Lead ${lead.nombre} regresado a Etapa 5: OK ✓`;
+    } else {
+      nuevaEtapa = 5;
+      msg = `Etapa 5: OK activada para ${lead.nombre} ✓`;
+    }
+  }
+
   if (lead.propsEnviadas && Array.isArray(lead.propsEnviadas) && lead.propsEnviadas.length > 0) {
     lead.propsEnviadas.forEach(cod => {
-      lead.propEtapas[cod] = etapaTarget;
+      lead.propEtapas[cod] = nuevaEtapa;
       
       lead.visitas = lead.visitas || [];
       let v = lead.visitas.find(x => x.codigo === cod);
-      if (etapaTarget === 6) {
+      if (nuevaEtapa === 6) {
         if (!v) {
           v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'realizada', oferto: 'si', procesoVenta: true, cliente: lead.nombre, celular: lead.celular };
           lead.visitas.push(v);
@@ -1561,7 +1587,7 @@ function activarEtapaLeadDesdeTabla(evt, id, etapaTarget) {
           v.oferto = 'si';
           v.estado = 'realizada';
         }
-      } else if (etapaTarget === 5) {
+      } else if (nuevaEtapa === 5) {
         if (!v) {
           v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'realizada', oferto: 'si', cliente: lead.nombre, celular: lead.celular };
           lead.visitas.push(v);
@@ -1570,20 +1596,31 @@ function activarEtapaLeadDesdeTabla(evt, id, etapaTarget) {
           v.oferto = 'si';
           v.estado = 'realizada';
         }
+      } else {
+        if (v) {
+          v.procesoVenta = false;
+          v.oferto = 'no';
+        }
       }
     });
   } else {
-    lead.propEtapas['_general'] = etapaTarget;
+    lead.propEtapas['_general'] = nuevaEtapa;
   }
 
-  lead.estado = 'proceso';
+  if (nuevaEtapa >= 5) {
+    lead.estado = 'proceso';
+  } else {
+    if (lead.estado === 'proceso') {
+      lead.estado = 'visita';
+    }
+  }
+
   lead._localEditedAt = new Date().toISOString();
 
   saveLeads();
   syncSheets(lead);
 
-  const nombresEtapa = { 5: '5 (OK)', 6: '6 (Proceso de venta)' };
-  toast(`Etapa ${nombresEtapa[etapaTarget] || etapaTarget} activada para ${lead.nombre} ✓`, 'success');
+  toast(msg, 'success');
 
   if (typeof currentTab !== 'undefined' && currentTab === 'leads') {
     renderLeadsBody(leads);
