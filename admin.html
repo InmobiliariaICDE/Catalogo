@@ -7996,10 +7996,12 @@ function renderLeadsBody(lista){
   const ordenEstado = { visita: 1, enviando: 2, proceso: 3, banco: 4, inactivo: 5 };
   
   listaFiltrada.sort((a,b) => {
-    // 0. Super Primario: Estado Proceso de venta (proceso) primero indiscutiblemente
-    const isProcA = a.estado === 'proceso' ? 1 : 0;
-    const isProcB = b.estado === 'proceso' ? 1 : 0;
-    if (isProcA !== isProcB) return isProcB - isProcA;
+    // 0. Prioridad Absoluta: Leads en Etapa 6 o Etapa 5 primero (Etapa 6 > Etapa 5 > Demás)
+    const stA = typeof obtenerEtapaMaximaLead === 'function' ? obtenerEtapaMaximaLead(a) : 1;
+    const stB = typeof obtenerEtapaMaximaLead === 'function' ? obtenerEtapaMaximaLead(b) : 1;
+    const pA = stA >= 5 ? stA : 0;
+    const pB = stB >= 5 ? stB : 0;
+    if (pA !== pB) return pB - pA;
 
     // 1. Primario: Etiqueta (Activo > Tibio > Inactivo)
     const oEtA = ordenEtiqueta[a.etiqueta] || 99;
