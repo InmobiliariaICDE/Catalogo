@@ -10980,10 +10980,10 @@ document.head.appendChild(schemaScript);
                         const paisSelect = document.getElementById("agendarPaisSelect");
                         const codigoPais = paisSelect ? paisSelect.value : "+57";
                         const phoneRaw = phoneInput?.value.trim() || "";
-                        const phone = phoneRaw ? `${codigoPais} ${phoneRaw}` : "";
+                        const phone = phoneRaw ? (phoneRaw.startsWith("+") ? phoneRaw : (codigoPais === "+57" ? phoneRaw : `${codigoPais} ${phoneRaw}`)) : "";
                         const fecha = fechaInput?.value || "";
                         
-                        // Obtener franja o hora personalizada
+                        // Obtener franja u hora seleccionada
                         const chipHoraActivo = document.querySelector(".chip-hora-exacta.active");
                         let horaFinal = "";
                         if (chipHoraActivo) {
@@ -11046,30 +11046,60 @@ document.head.appendChild(schemaScript);
                             metodoPagoTexto = "Crédito 🏦";
                         }
 
-                        // Formatear Fecha
-                        const fechaPartes = fecha.split("-");
-                        const fechaFormateada = fechaPartes.length === 3 ? `${fechaPartes[2]}/${fechaPartes[1]}/${fechaPartes[0]}` : fecha;
+                        // Formatear Fecha (DíaSemana DD/MM/YYYY)
+                        let fechaFormateada = fecha;
+                        if (fecha && fecha.includes("-")) {
+                            const [yr, mo, dy] = fecha.split("-").map(Number);
+                            const dateObj = new Date(yr, mo - 1, dy);
+                            const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+                            const diaNombre = diasSemana[dateObj.getDay()] || "";
+                            const pad = n => String(n).padStart(2, "0");
+                            fechaFormateada = `${diaNombre} ${pad(dy)}/${pad(mo)}/${yr}`;
+                        }
 
-                        // Datos del inmueble
-                        const houseEmoji = String.fromCodePoint(0x1F3E0);
-                        const linkEmoji = String.fromCodePoint(0x1F517);
+                        // Formatear Hora / Franja Horaria
+                        let horaFormateada = horaFinal;
+                        if (!horaFormateada.toLowerCase().includes("mañana") && !horaFormateada.toLowerCase().includes("tarde")) {
+                            if (horaFinal === "8:00 AM") {
+                                horaFormateada = "En la mañana (8:00 AM - 12:00 PM)";
+                            } else if (horaFinal === "2:00 PM") {
+                                horaFormateada = "En la tarde (2:00 PM - 6:00 PM)";
+                            } else if (horaFinal.toUpperCase().includes("AM")) {
+                                horaFormateada = `En la mañana (${horaFinal})`;
+                            } else if (horaFinal.toUpperCase().includes("PM")) {
+                                horaFormateada = `En la tarde (${horaFinal})`;
+                            }
+                        }
 
-                        let msg = "";
+                        let msg = `Hola ICDE Inmobiliaria 🏠\n\n`;
 
                         if (inmuebleAgendarActual && inmuebleAgendarActual.esFavoritos) {
-                            msg += `Hola ICDE Inmobiliaria ${houseEmoji}
+                            let lineasPropiedades = [];
+                            const idsArr = inmuebleAgendarActual.favs || [];
+                            
+                            if (inmuebleAgendarActual.lineas && inmuebleAgendarActual.lineas.length) {
+                                lineasPropiedades = inmuebleAgendarActual.lineas.map(l => {
+                                    let limpia = l.replace(/^\*+/g, '').replace(/\*+$/g, '').trim();
+                                    if (limpia.startsWith("✅")) return limpia;
+                                    return `✅${limpia}`;
+                                });
+                            } else if (idsArr.length && typeof datos !== 'undefined') {
+                                lineasPropiedades = idsArr.map(cod => {
+                                    const prop = datos.find(d => String(d["Código"]).trim() === String(cod).trim());
+                                    if (prop) {
+                                        const nom = (prop["Nombre"] || "Inmueble").trim();
+                                        const prc = typeof formatearPrecio === 'function' ? formatearPrecio(prop["Precio"]) : prop["Precio"];
+                                        return `✅${nom} (Cód. ${cod}) - ${prc}`;
+                                    }
+                                    return `✅Inmueble (Cód. ${cod})`;
+                                });
+                            }
 
-`;
-                            msg += `Me interesan las siguientes propiedades y me gustaría *agendar una visita*:
+                            const catalogoURL = `https://icdeinmobiliaria.com/?ids=${idsArr.join(',')}`;
 
-`;
-                            msg += inmuebleAgendarActual.lineas.join('\n');
-                            msg += `
-
-${linkEmoji} *Mi catálogo personalizado:*
-${inmuebleAgendarActual.catalogoURL}
-
-`;
+                            msg += `Me interesan las siguientes propiedades y me gustaría agendar una visita:\n\n`;
+                            msg += `${lineasPropiedades.join('\n')}\n\n`;
+                            msg += `🔗 Mi catálogo personalizado:\n${catalogoURL}\n\n`;
                         } else {
                             let nombreInmueble = "Inmueble";
                             let codInmueble = "";
@@ -11085,39 +11115,22 @@ ${inmuebleAgendarActual.catalogoURL}
                                 precioInmueble = document.getElementById("modalPrecio")?.textContent?.trim() || "";
                             }
 
-                            msg += `Hola ICDE Inmobiliaria ${houseEmoji}, quiero agendar una visita para ver el inmueble
-
-`;
-                            msg += `${nombreInmueble} (Cód. ${codInmueble}) - ${precioInmueble}
-
-`;
-                            msg += `${linkEmoji} Mi catálogo personalizado:
-https://icdeinmobiliaria.com/?ids=${codInmueble}
-
-`;
+                            msg += `Me interesan las siguientes propiedades y me gustaría agendar una visita:\n\n`;
+                            msg += `✅${nombreInmueble} (Cód. ${codInmueble}) - ${precioInmueble}\n\n`;
+                            msg += `🔗 Mi catálogo personalizado:\nhttps://icdeinmobiliaria.com/?ids=${codInmueble}\n\n`;
                         }
-                        msg += `Nombre completo:
-${nombre}
-`;
-                        msg += `🟢WhatsApp:
-${phone}
 
-`;
-                        msg += `Método de pago:
-${metodoPagoTexto}
-`;
+                        msg += `Nombre completo:\n${nombre}\n`;
+                        msg += `🟢WhatsApp:\n${phone}\n\n`;
+                        msg += `Método de pago:\n${metodoPagoTexto}\n`;
 
                         if (tieneCredito) {
-                            msg += `Cuenta con la carta de preaprobado ✅: ${preaprobadoSeleccionado}
-`;
-                            msg += `Banco / Entidad: ${bancoInput.value.trim()}
-`;
+                            msg += `Cuenta con la carta de preaprobado ✅: ${preaprobadoSeleccionado}\n`;
+                            msg += `Banco / Entidad: ${bancoInput.value.trim()}\n`;
                         }
 
-                        msg += `
-📅 Seleccione día de la visita: ${fechaFormateada}
-`;
-                        msg += `⌚ Hora de la visita: ${horaFinal}`;
+                        msg += `\n📅 ${fechaFormateada}\n`;
+                        msg += `⌚ ${horaFormateada}`;
 
                         // Enviar a WhatsApp
                         const urlWA = `https://api.whatsapp.com/send?phone=573208762117&text=${encodeURIComponent(msg)}`;
