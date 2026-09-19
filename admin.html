@@ -4112,29 +4112,32 @@ html, body {
 
 <!-- MODAL TARJETA DE PRESENTACIÓN DE CITA -->
 <div class="modal-overlay" id="tarjetaCitaModal" onclick="if(event.target===this) closeModal('tarjetaCitaModal')">
-  <div class="modal-box" style="width:min(520px, 95%); padding: 0; overflow: hidden; border-radius: 20px; border: 1px solid rgba(212,168,75,0.3); background: #0e0d0b; box-shadow: 0 20px 60px rgba(0,0,0,0.85);">
-    <!-- Encabezado de la tarjeta con inmueble a la izquierda y estado + X a la derecha -->
-    <div style="padding: 14px 18px; background: linear-gradient(135deg, rgba(212,168,75,0.14) 0%, rgba(20,18,16,0.95) 100%); border-bottom: 1px solid rgba(212,168,75,0.2); display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-      <!-- Propiedad subida al encabezado -->
-      <div id="tarjetaCitaPropHeader" style="flex: 1; min-width: 0;"></div>
-
-      <!-- Estado y X en la derecha -->
-      <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
-        <div id="tarjetaCitaEstadoBadge"></div>
-        <button class="panel-close" onclick="closeModal('tarjetaCitaModal')" style="width: 32px; height: 32px; font-size: 20px; font-weight:400; border-radius:10px; display:flex; align-items:center; justify-content:center;">×</button>
+  <div class="modal-box" style="width:min(520px, 94%); padding: 0; overflow: hidden; border-radius: 20px; border: 1px solid rgba(212,168,75,0.35); background: #0e0d0b; box-shadow: 0 20px 60px rgba(0,0,0,0.85);">
+    <!-- Encabezado de la tarjeta -->
+    <div style="padding: 16px 18px; background: linear-gradient(135deg, rgba(212,168,75,0.16) 0%, rgba(20,18,16,0.98) 100%); border-bottom: 1px solid rgba(212,168,75,0.25);">
+      <!-- Row 1: Estado Badge + Botón Ver Ficha + X -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+        <div id="tarjetaCitaEstadoBadge" style="display:flex; align-items:center; gap:8px;"></div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+          <div id="tarjetaCitaAccionFicha"></div>
+          <button class="panel-close" onclick="closeModal('tarjetaCitaModal')" style="width: 30px; height: 30px; font-size: 18px; font-weight:400; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#fff; cursor:pointer; line-height:1;">×</button>
+        </div>
       </div>
+
+      <!-- Row 2: Info de la Propiedad -->
+      <div id="tarjetaCitaPropHeader"></div>
     </div>
 
     <!-- Cuerpo de la tarjeta -->
-    <div id="tarjetaCitaBody" style="padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; max-height: 70vh; overflow-y: auto;">
+    <div id="tarjetaCitaBody" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; max-height: 70vh; overflow-y: auto;">
       <!-- Dinámico por JS -->
     </div>
 
     <!-- Pie de acciones -->
-    <div style="padding: 16px 24px; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
-      <button class="btn btn-secondary btn-sm" onclick="closeModal('tarjetaCitaModal')" style="padding: 9px 16px;">Cerrar</button>
+    <div style="padding: 14px 20px; background: rgba(0,0,0,0.45); border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('tarjetaCitaModal')" style="padding: 8px 18px; border-radius:10px;">Cerrar</button>
       <div style="display: flex; gap: 8px; align-items: center;">
-        <button class="btn btn-primary btn-sm" id="btnEditarDesdeTarjeta" style="padding: 9px 20px; font-weight: 700; gap: 8px; background: linear-gradient(135deg, #d4a84b, #a47b2a);">
+        <button class="btn btn-primary btn-sm" id="btnEditarDesdeTarjeta" style="padding: 8px 22px; font-weight: 700; gap: 8px; border-radius:10px; background: linear-gradient(135deg, #d4a84b, #a47b2a); border:none; box-shadow:0 4px 15px rgba(212,168,75,0.3);">
           ✏️ Editar Cita
         </button>
       </div>
@@ -10738,7 +10741,12 @@ function abrirTarjetaCitaModal(citaId) {
   const stInfo = estadoMap[cita.estado] || estadoMap['agendada'];
   const badgeEl = document.getElementById('tarjetaCitaEstadoBadge');
   if (badgeEl) {
-    badgeEl.innerHTML = `<span style="background:${stInfo.bg}; color:${stInfo.color}; border:1px solid ${stInfo.border}; padding:4px 12px; border-radius:20px; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">${stInfo.text}</span>`;
+    badgeEl.innerHTML = `<span style="background:${stInfo.bg}; color:${stInfo.color}; border:1px solid ${stInfo.border}; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; display:inline-block;">${stInfo.text}</span>`;
+  }
+
+  const accionFichaEl = document.getElementById('tarjetaCitaAccionFicha');
+  if (accionFichaEl) {
+    accionFichaEl.innerHTML = prop ? `<button class="btn btn-sm btn-secondary" style="padding:4px 10px; font-size:11px; border-radius:8px; font-weight:600; background:rgba(212,168,75,0.15); color:var(--gold); border:1px solid rgba(212,168,75,0.35); display:inline-flex; align-items:center; gap:4px; cursor:pointer; white-space:nowrap; transition:all 0.2s;" onclick="closeModal('tarjetaCitaModal'); abrirModalProp('${eq(cita.codigo)}')">👁 Ver Ficha</button>` : '';
   }
 
   const tituloEl = document.getElementById('tarjetaCitaTitulo');
@@ -10785,19 +10793,19 @@ function abrirTarjetaCitaModal(citaId) {
   const clienteCelular = String(cita.celular || (lead ? lead.celular : '') || '');
   const numLimpio = clienteCelular.replace(/\D/g, '');
 
-  // Llenar Ficha de Propiedad en el Encabezado (Arriba a la izquierda)
+  // Llenar Ficha de Propiedad en el Encabezado
   const propHeaderEl = document.getElementById('tarjetaCitaPropHeader');
   if (propHeaderEl) {
     propHeaderEl.innerHTML = `
-      <div style="display:flex; gap:12px; align-items:center;">
-        <img src="${propImg}" style="width:68px; height:60px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,0.15); flex-shrink:0;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+      <div style="display:flex; gap:14px; align-items:center;">
+        <img src="${propImg}" style="width:64px; height:64px; object-fit:cover; border-radius:12px; border:1px solid rgba(212,168,75,0.35); flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.4);" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
         <div style="flex:1; min-width:0;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:10.5px; font-weight:800; color:var(--gold); text-transform:uppercase; letter-spacing:0.05em;">Cód: ${cita.codigo || '—'}</span>
-            ${prop ? `<button class="btn btn-sm btn-secondary" style="padding:1px 7px; font-size:10px; border-radius:6px; line-height:1.2;" onclick="closeModal('tarjetaCitaModal'); abrirModalProp('${eq(cita.codigo)}')">👁 Ver Ficha</button>` : ''}
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px; flex-wrap:wrap;">
+            <span style="font-size:10px; font-weight:800; background:rgba(212,168,75,0.18); color:var(--gold); border:1px solid rgba(212,168,75,0.35); padding:2px 7px; border-radius:6px; text-transform:uppercase; letter-spacing:0.05em;">Cód: ${cita.codigo || '—'}</span>
+            ${propZona ? `<span style="font-size:11px; color:#aaa; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📍 ${propZona}</span>` : ''}
           </div>
-          <div style="font-size:13.5px; font-weight:700; color:#fff; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${propNombre}">${propNombre}</div>
-          ${propPrecio ? `<div style="font-size:12px; font-weight:700; color:#22c55e; margin-top:1px;">${propPrecio}</div>` : ''}
+          <div style="font-size:13.5px; font-weight:700; color:#fff; line-height:1.35; margin-top:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;" title="${propNombre}">${propNombre}</div>
+          ${propPrecio ? `<div style="font-size:12.5px; font-weight:800; color:#22c55e; margin-top:3px;">${propPrecio}</div>` : ''}
         </div>
       </div>
     `;
@@ -10807,7 +10815,7 @@ function abrirTarjetaCitaModal(citaId) {
   if (bodyEl) {
     bodyEl.innerHTML = `
       <!-- GRID CLIENTE Y FECHA/HORA -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
         <!-- CLIENTE -->
         <div style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:12px;">
           <div style="font-size:10px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">👤 Cliente</div>
