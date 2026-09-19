@@ -4035,10 +4035,11 @@ html, body {
     <div class="modal-title">🏠 Añadir Visita</div>
     <input type="hidden" id="visitaId"/>
     <div class="form-grid">
-      <div class="form-group full" style="grid-column: 1 / -1;">
-        <label class="form-label">Código Casa</label>
-        <input class="form-input" id="visitaCodigo" placeholder="ej: 38" oninput="autocompletarInfoVisitaPorCodigo(this.value)" onchange="autocompletarInfoVisitaPorCodigo(this.value)"/>
-        <div id="visitaPropPreview" style="display:none; margin-top:6px; padding:8px 10px; background:rgba(212,168,75,0.08); border:1px solid rgba(212,168,75,0.3); border-radius:8px; align-items:center; gap:10px;"></div>
+      <div class="form-group full" style="grid-column: 1 / -1; position: relative;" id="groupVisitaCodigo">
+        <label class="form-label">Código o Nombre del Inmueble</label>
+        <input class="form-input" id="visitaCodigo" placeholder="ej: 38 o Casa Primera Avenida" oninput="autocompletarInfoVisitaPorCodigo(this.value)" onfocus="autocompletarInfoVisitaPorCodigo(this.value)" autocomplete="off"/>
+        <div id="visitaPropSugerencias" style="display:none; position:absolute; top:calc(100% - 2px); left:0; right:0; z-index:99999; background:#161412; border:1px solid rgba(212,168,75,0.4); border-radius:10px; max-height:220px; overflow-y:auto; box-shadow:0 12px 30px rgba(0,0,0,0.9); margin-top:2px;"></div>
+        <div id="visitaPropPreview" style="display:none; margin-top:8px; padding:10px 12px; background:rgba(212,168,75,0.08); border:1px solid rgba(212,168,75,0.3); border-radius:10px; align-items:center; gap:12px;"></div>
       </div>
       <div class="form-group"><label class="form-label">Cliente</label><input class="form-input" id="visitaCliente" placeholder="Nombre del cliente"/></div>
       <div class="form-group"><label class="form-label">WhatsApp / Celular</label><input class="form-input" id="visitaCelular" placeholder="3001234567"/></div>
@@ -9361,61 +9362,150 @@ function buscarPropiedadGlobal(cod) {
   }) || null;
 }
 
-function autocompletarInfoVisitaPorCodigo(val) {
-  const valStr = String(val || '').trim();
-  const previewEl = document.getElementById('visitaPropPreview');
-  if (!valStr) {
-    if (previewEl) { previewEl.style.display = 'none'; previewEl.innerHTML = ''; }
-    return;
+function buscarSugerenciasPropiedad(term) {
+  if (!term || typeof allProps === 'undefined' || !Array.isArray(allProps)) return [];
+  const q = String(term).trim().toLowerCase();
+  if (!q) return [];
+  const words = q.split(/\s+/).filter(w => w.length > 0);
+
+  return allProps.filter(p => {
+    if (!p) return false;
+    const cod = String(p['Código'] || p['Codigo'] || p['CÓDIGO'] || p['id'] || '').toLowerCase();
+    const nom = String(p['Nombre'] || p['nombre'] || '').toLowerCase();
+    const bar = String(p['Barrio'] || p['barrio'] || '').toLowerCase();
+    const zon = String(p['Zona'] || p['zona'] || '').toLowerCase();
+    const inm = String(p['Inmobiliaria'] || p['inmobiliaria'] || '').toLowerCase();
+    const con = String(p['Conjunto'] || p['conjunto'] || '').toLowerCase();
+    const fullText = `${cod} ${nom} ${bar} ${zon} ${inm} ${con}`;
+
+    return words.every(word => fullText.includes(word));
+  }).slice(0, 7);
+}
+
+function seleccionarPropiedadVisita(cod, nombre) {
+  const inputEl = document.getElementById('visitaCodigo');
+  if (inputEl) {
+    inputEl.value = cod;
   }
+  const sugEl = document.getElementById('visitaPropSugerencias');
+  if (sugEl) { sugEl.style.display = 'none'; sugEl.innerHTML = ''; }
 
-  const prop = buscarPropiedadGlobal(valStr);
+  const prop = buscarPropiedadGlobal(cod);
   if (prop) {
-    const codReal = prop['Código'] || prop['Codigo'] || prop['CÓDIGO'] || valStr;
-    const nombre = prop['Nombre'] || prop['nombre'] || `Propiedad Cód. ${codReal}`;
-    const precio = (typeof formatP === 'function') ? formatP(prop['Precio']) : (prop['Precio'] ? `$${prop['Precio']}` : '');
-    const inmob = prop['Inmobiliaria'] || prop['Inmobiliaria / Aliado'] || prop['inmobiliaria'] || '';
-    const img = ((prop['Imagenes']||'').split('|')[0].trim() || prop['Image'] || 'https://i.imgur.com/Pc9M3I8.png');
+    mostrarPreviewVisitaProp(prop, cod);
+  }
+}
 
-    if (previewEl) {
-      previewEl.style.display = 'flex';
-      previewEl.innerHTML = `
-        <img src="${img}" style="width:40px; height:40px; border-radius:6px; object-fit:cover; flex-shrink:0;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
-        <div style="flex:1; min-width:0;">
-          <div style="font-size:12px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${nombre}</div>
-          <div style="font-size:11px; color:var(--gold); font-weight:600; margin-top:1px;">Cód: ${codReal} ${precio ? '· ' + precio : ''} ${inmob ? '· ('+inmob+')' : ''}</div>
-        </div>
-      `;
-    }
+function mostrarPreviewVisitaProp(prop, valStr) {
+  const previewEl = document.getElementById('visitaPropPreview');
+  if (!previewEl || !prop) return;
 
-    // Auto-completar cliente y teléfono si el campo cliente está vacío
-    const clientInput = document.getElementById('visitaCliente');
-    const phoneInput = document.getElementById('visitaCelular');
-    if (clientInput && !String(clientInput.value || '').trim() && typeof leads !== 'undefined' && Array.isArray(leads)) {
-      const codCheck = String(codReal).trim();
-      const interestedLead = leads.find(l => {
-        if (!l || l.id === 'LEAD-AGENDA-GLOBAL') return false;
-        const enviadas = (l.propsEnviadas || []).map(x => String(x).trim());
-        const visitas = l.visitas || [];
-        return enviadas.includes(codCheck) || visitas.some(v => String(v.codigo || '').trim() === codCheck);
-      });
-      if (interestedLead) {
-        if (clientInput) clientInput.value = interestedLead.nombre || '';
-        if (phoneInput && !String(phoneInput.value || '').trim()) phoneInput.value = interestedLead.celular || '';
-        visitaLeadId = interestedLead.id;
-      }
-    }
-  } else {
-    if (previewEl) {
-      previewEl.style.display = 'flex';
-      previewEl.innerHTML = `
-        <div style="font-size:11.5px; color:#f87171; padding:2px 4px; font-weight:600;">
-          ⚠️ Código "${valStr}" no encontrado en el catálogo de propiedades.
-        </div>
-      `;
+  const codReal = prop['Código'] || prop['Codigo'] || prop['CÓDIGO'] || valStr;
+  const nombre = prop['Nombre'] || prop['nombre'] || `Propiedad Cód. ${codReal}`;
+  const precio = (typeof formatP === 'function') ? formatP(prop['Precio']) : (prop['Precio'] ? `$${prop['Precio']}` : '');
+  const inmob = prop['Inmobiliaria'] || prop['Inmobiliaria / Aliado'] || prop['inmobiliaria'] || '';
+  const img = ((prop['Imagenes']||'').split('|')[0].trim() || prop['Image'] || 'https://i.imgur.com/Pc9M3I8.png');
+
+  previewEl.style.display = 'flex';
+  previewEl.innerHTML = `
+    <img src="${img}" style="width:42px; height:42px; border-radius:8px; object-fit:cover; flex-shrink:0; border:1px solid rgba(212,168,75,0.4);" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+    <div style="flex:1; min-width:0;">
+      <div style="font-size:12px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${nombre}">${nombre}</div>
+      <div style="font-size:11px; color:var(--gold); font-weight:600; margin-top:2px;">Cód: ${codReal} ${precio ? '· <span style="color:#22c55e; font-weight:700;">'+precio+'</span>' : ''} ${inmob ? '· ('+inmob+')' : ''}</div>
+    </div>
+  `;
+
+  // Auto-completar cliente y teléfono si el campo cliente está vacío
+  const clientInput = document.getElementById('visitaCliente');
+  const phoneInput = document.getElementById('visitaCelular');
+  if (clientInput && !String(clientInput.value || '').trim() && typeof leads !== 'undefined' && Array.isArray(leads)) {
+    const codCheck = String(codReal).trim();
+    const interestedLead = leads.find(l => {
+      if (!l || l.id === 'LEAD-AGENDA-GLOBAL') return false;
+      const enviadas = (l.propsEnviadas || []).map(x => String(x).trim());
+      const visitas = l.visitas || [];
+      return enviadas.includes(codCheck) || visitas.some(v => String(v.codigo || '').trim() === codCheck);
+    });
+    if (interestedLead) {
+      if (clientInput) clientInput.value = interestedLead.nombre || '';
+      if (phoneInput && !String(phoneInput.value || '').trim()) phoneInput.value = interestedLead.celular || '';
+      visitaLeadId = interestedLead.id;
     }
   }
 }
+
+function autocompletarInfoVisitaPorCodigo(val, forceExact = false) {
+  const valStr = String(val || '').trim();
+  const previewEl = document.getElementById('visitaPropPreview');
+  const sugEl = document.getElementById('visitaPropSugerencias');
+
+  if (!valStr) {
+    if (previewEl) { previewEl.style.display = 'none'; previewEl.innerHTML = ''; }
+    if (sugEl) { sugEl.style.display = 'none'; sugEl.innerHTML = ''; }
+    return;
+  }
+
+  // 1. Intentar código exacto
+  const propExacta = buscarPropiedadGlobal(valStr);
+  if (propExacta) {
+    if (sugEl) { sugEl.style.display = 'none'; sugEl.innerHTML = ''; }
+    mostrarPreviewVisitaProp(propExacta, valStr);
+    return;
+  }
+
+  // 2. Si no es código exacto, buscar sugerencias por nombre/barrio/palabras clave
+  if (!forceExact) {
+    const sugerencias = buscarSugerenciasPropiedad(valStr);
+    if (sugerencias.length > 0) {
+      if (previewEl) { previewEl.style.display = 'none'; previewEl.innerHTML = ''; }
+      if (sugEl) {
+        sugEl.style.display = 'block';
+        sugEl.innerHTML = `
+          <div style="font-size:10px; font-weight:800; color:var(--gold); padding:6px 12px; background:rgba(212,168,75,0.12); border-bottom:1px solid rgba(212,168,75,0.2); text-transform:uppercase; letter-spacing:0.05em;">
+            🔍 Sugerencias encontradas (${sugerencias.length})
+          </div>
+          ` + sugerencias.map(p => {
+          const cod = p['Código'] || p['Codigo'] || p['CÓDIGO'] || '';
+          const nom = p['Nombre'] || p['nombre'] || `Cód. ${cod}`;
+          const precio = (typeof formatP === 'function') ? formatP(p['Precio']) : (p['Precio'] ? `$${p['Precio']}` : '');
+          const img = ((p['Imagenes']||'').split('|')[0].trim() || p['Image'] || 'https://i.imgur.com/Pc9M3I8.png');
+          const barrio = p['Barrio'] || p['Zona'] || '';
+
+          return `
+            <div class="sug-prop-item" onclick="seleccionarPropiedadVisita('${eq(cod)}', '${eq(nom)}')" style="display:flex; align-items:center; gap:10px; padding:8px 12px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.06); transition:background 0.2s;" onmouseover="this.style.background='rgba(212,168,75,0.2)'" onmouseout="this.style.background='transparent'">
+              <img src="${img}" style="width:36px; height:36px; border-radius:6px; object-fit:cover; flex-shrink:0; border:1px solid rgba(255,255,255,0.1);" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:12px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${nom}</div>
+                <div style="font-size:11px; color:var(--gold); font-weight:600; margin-top:1px;">Cód: ${cod} ${precio ? '· <span style="color:#22c55e;">'+precio+'</span>' : ''} ${barrio ? '· 📍'+barrio : ''}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      return;
+    }
+  }
+
+  // 3. No hubo coincidencia
+  if (sugEl) { sugEl.style.display = 'none'; sugEl.innerHTML = ''; }
+  if (previewEl) {
+    previewEl.style.display = 'flex';
+    previewEl.innerHTML = `
+      <div style="font-size:11.5px; color:#f87171; padding:2px 4px; font-weight:600;">
+        ⚠️ No se encontró la propiedad "${valStr}". Intenta con el código o nombre del barrio.
+      </div>
+    `;
+  }
+}
+
+// Ocultar sugerencias al hacer clic fuera del campo de búsqueda
+document.addEventListener('click', function(e) {
+  const grp = document.getElementById('groupVisitaCodigo');
+  const sug = document.getElementById('visitaPropSugerencias');
+  if (grp && sug && !grp.contains(e.target)) {
+    sug.style.display = 'none';
+  }
+});
 
 /* ═══════════════════════════════════════════════
    MODAL VISITA
