@@ -10031,6 +10031,7 @@ function toggleCitasCalendarWrap() {
 }
 
 function cambiarSemanaGrilla(offset) {
+  window._lastHorarioScrollLeft = 0;
   citasGrillaWeekOffset += offset;
   renderCitasGrilla();
 }
@@ -10237,6 +10238,9 @@ function renderCitasGrilla() {
     }
   });
 
+  const oldGrid = document.getElementById('citasHorarioGrid');
+  const prevScrollLeft = oldGrid ? oldGrid.scrollLeft : (window._lastHorarioScrollLeft || 0);
+
   container.innerHTML = `
     <style>
       #citasHorarioGrid { 
@@ -10266,6 +10270,16 @@ function renderCitasGrilla() {
       </div>
     </div>
   `;
+
+  const newGrid = document.getElementById('citasHorarioGrid');
+  if (newGrid) {
+    if (prevScrollLeft > 0) {
+      newGrid.scrollLeft = prevScrollLeft;
+    }
+    newGrid.addEventListener('scroll', function() {
+      window._lastHorarioScrollLeft = newGrid.scrollLeft;
+    }, { passive: true });
+  }
 }
 
 
