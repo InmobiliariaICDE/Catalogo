@@ -9462,7 +9462,7 @@ function guardarVisita(){
       const formVisitaId = document.getElementById('visitaId')?.value?.trim() || null;
       const collision = citas.find(c => c.fecha === fecha && c.hora === hora && (!formVisitaId || String(c.id) !== String(formVisitaId)));
       if (collision) {
-        if (!confirm(`¡Atención! Ya tienes otra cita programada para el ${fecha} a las ${hora} (Cód: ${collision.codigo || '?'}). ¿Deseas guardar esta cita de todos modos?`)) {
+        if (!confirm(`¡Nota! Ya tienes una cita programada el ${fecha} a las ${hora} (${collision.cliente ? collision.cliente + ' - ' : ''}Cód: ${collision.codigo || '?'}). ¿Deseas agendar esta cita adicional a la misma hora?`)) {
           return;
         }
       }
@@ -10022,26 +10022,41 @@ function renderCitasGrilla() {
         const dayApps = (citasByDay[day.iso][h] || []).sort((a,b) => (a.hora||'').localeCompare(b.hora||''));
         const cellBorder = isToday ? 'rgba(212,168,75,0.08)' : 'rgba(255,255,255,0.04)';
 
-        const cellContent = dayApps.length === 0
-          ? `<div onclick="abrirVisitaModalConFecha('${day.iso}', '${hLabel24}')" style="position:absolute; inset:4px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.15s;" onmouseover="this.style.opacity='1'; this.style.background='rgba(255,255,255,0.03)'; this.style.border='1px dashed rgba(255,255,255,0.12)';" onmouseout="this.style.opacity='0'; this.style.background=''; this.style.border='none';">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </div>`
-          : dayApps.map(c => {
-              const col = ESTADO_COLORS[c.estado] || ESTADO_COLORS['agendada'];
-              const badgeText = estadoBadgeText[c.estado] || 'Agendada';
-              const targetId = c.id || c.codigo || c.cliente || '';
-              return `<div onclick="event.stopPropagation(); abrirEditarCita('${eq(targetId)}')" style="position:relative; margin:2px 3px; cursor:pointer; background:${col.bg}; border:1px solid ${col.border}; border-left:3px solid ${col.text}; border-radius:7px; padding:4px 6px; transition:all 0.15s; overflow:hidden;" onmouseover="this.style.filter='brightness(1.2)'; this.style.transform='scale(1.02)';" onmouseout="this.style.filter=''; this.style.transform='';">
-                <div style="display:flex; align-items:center; gap:4px; margin-bottom:2px;">
-                  <span style="font-size:10px; font-weight:800; color:${col.text};">${formatHoraStr12(c.hora)}</span>
-                  <span style="font-size:8px; font-weight:700; color:${col.text}; opacity:0.8; background:${col.bg}; border:1px solid ${col.border}; border-radius:10px; padding:0 4px;">${badgeText}</span>
-                </div>
-                <div style="font-size:11px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${c.cliente||''}">${c.cliente || '—'}</div>
-                <div style="font-size:9.5px; color:var(--gold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; margin-top:1px;" title="${c.codigo||''}">${c.codigo || '—'}</div>
-              </div>`;
-            }).join('');
+        const btnAddMore = `
+          <button type="button" 
+                  onclick="event.stopPropagation(); abrirVisitaModalConFecha('${day.iso}', '${hLabel24}')" 
+                  title="Agregar otra cita a las ${hLabel12}" 
+                  style="position:absolute; top:3px; right:3px; z-index:15; width:20px; height:20px; border-radius:50%; background:#22c55e; border:1px solid #16a34a; color:#000; font-size:15px; font-weight:900; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.5); transition:all 0.15s ease;" 
+                  onmouseover="this.style.transform='scale(1.2)'; this.style.background='#16a34a';" 
+                  onmouseout="this.style.transform='scale(1)'; this.style.background='#22c55e';">
+            +
+          </button>`;
+
+        let cellContent = '';
+        if (dayApps.length === 0) {
+          cellContent = `<div onclick="abrirVisitaModalConFecha('${day.iso}', '${hLabel24}')" style="position:absolute; inset:2px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.15s;" onmouseover="this.style.opacity='1'; this.style.background='rgba(255,255,255,0.03)'; this.style.border='1px dashed rgba(255,255,255,0.12)';" onmouseout="this.style.opacity='0'; this.style.background=''; this.style.border='none';" title="Agregar cita a las ${hLabel12}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </div>`;
+        } else {
+          const cardsHTML = dayApps.map(c => {
+            const col = ESTADO_COLORS[c.estado] || ESTADO_COLORS['agendada'];
+            const badgeText = estadoBadgeText[c.estado] || 'Agendada';
+            const targetId = c.id || c.codigo || c.cliente || '';
+            return `<div onclick="event.stopPropagation(); abrirEditarCita('${eq(targetId)}')" style="position:relative; margin:2px 3px; cursor:pointer; background:${col.bg}; border:1px solid ${col.border}; border-left:3px solid ${col.text}; border-radius:7px; padding:4px 6px; transition:all 0.15s; overflow:hidden;" onmouseover="this.style.filter='brightness(1.2)'; this.style.transform='scale(1.02)';" onmouseout="this.style.filter=''; this.style.transform='';">
+              <div style="display:flex; align-items:center; gap:4px; margin-bottom:2px; padding-right:18px;">
+                <span style="font-size:10px; font-weight:800; color:${col.text};">${formatHoraStr12(c.hora)}</span>
+                <span style="font-size:8px; font-weight:700; color:${col.text}; opacity:0.8; background:${col.bg}; border:1px solid ${col.border}; border-radius:10px; padding:0 4px;">${badgeText}</span>
+              </div>
+              <div style="font-size:11px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${c.cliente||''}">${c.cliente || '—'}</div>
+              <div style="font-size:9.5px; color:var(--gold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; margin-top:1px;" title="${c.codigo||''}">${c.codigo || '—'}</div>
+            </div>`;
+          }).join('');
+
+          cellContent = btnAddMore + cardsHTML;
+        }
 
         rowHTML += `
-          <div style="grid-column:${di+2}; grid-row:${gridRow}; height:${ROW_H}px; background:${isToday ? 'rgba(212,168,75,0.025)' : rowBg}; border-right:1px solid ${cellBorder}; border-bottom:1px solid rgba(255,255,255,0.04); box-sizing:border-box; position:relative; overflow:hidden;">
+          <div onclick="abrirVisitaModalConFecha('${day.iso}', '${hLabel24}')" style="grid-column:${di+2}; grid-row:${gridRow}; min-height:${ROW_H}px; max-height:160px; overflow-y:auto; background:${isToday ? 'rgba(212,168,75,0.025)' : rowBg}; border-right:1px solid ${cellBorder}; border-bottom:1px solid rgba(255,255,255,0.04); box-sizing:border-box; position:relative; cursor:pointer;">
             ${cellContent}
           </div>`;
       });
@@ -10090,6 +10105,23 @@ function abrirVisitaModalConFecha(fecha, hora) {
     if (fechaInput && fecha) fechaInput.value = fecha;
     const horaInput = document.getElementById('visitaHora');
     if (horaInput && hora) horaInput.value = hora;
+
+    if (hora) {
+      const elHH = document.getElementById('visitaHoraHH');
+      const elMM = document.getElementById('visitaHoraMM');
+      const elAP = document.getElementById('visitaHoraAP');
+      if (elHH && elMM && elAP) {
+        const parts = hora.split(':');
+        let h = parseInt(parts[0], 10);
+        const m = parts[1] ? parts[1].padStart(2, '0') : '00';
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        if (h === 0) h = 12;
+        else if (h > 12) h = h - 12;
+        elHH.value = String(h).padStart(2, '0');
+        elMM.value = m;
+        elAP.value = ampm;
+      }
+    }
   }, 100);
 }
 
