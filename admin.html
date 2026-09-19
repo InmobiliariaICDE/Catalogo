@@ -8776,8 +8776,9 @@ function cambiarEtapaPropiedad(evt, leadId, cod, nuevaEtapa) {
 }
 
 function renderPanelPropsEnviadas(lead){
-  const env = lead.propsEnviadas || [];
-  if(!env.length) return '<div style="color:#555;font-size:13px;padding:12px 0;">No se han enviado propiedades aún</div>';
+  const envRaw = lead.propsEnviadas || [];
+  if(!envRaw.length) return '<div style="color:#555;font-size:13px;padding:12px 0;">No se han enviado propiedades aún</div>';
+  const env = [...envRaw].sort((a, b) => obtenerEtapaPropiedad(lead, b) - obtenerEtapaPropiedad(lead, a));
   return env.map(cod => {
     const p = allProps.find(d => d['Código'] === cod);
     const v = (lead.visitas || []).find(x => x.codigo === cod);
