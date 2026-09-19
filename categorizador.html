@@ -549,7 +549,7 @@
 
     const CATEGORIES = [
       "Venta de Inmueble", "Arriendo", "Avalúos", "Remodelación", "Reparación", "Arquitectura",
-      "Gestión/Administración", "Consultoría", "Otro Servicio", "Nómina/Personal", "Colaboradores", "Arriendo Oficina",
+      "Gestión/Administración", "Consultoría", "Diagnóstico", "Recaudo de cartera", "Otro Servicio", "Nómina/Personal", "Colaboradores", "Arriendo Oficina",
       "Marketing", "Servicios Públicos", "Impuestos", "Software/Tecnología", "Inversión",
       "Aseo/Mantenimiento", "Cafetería", "Deudas", "Transporte", "Otro Gasto"
     ];
@@ -572,6 +572,8 @@
       { cat: "Arriendo", keywords: ["arriendo", "arrendamiento", "canon"] },
       { cat: "Venta de Inmueble", keywords: ["venta", "comision venta", "promesa compraventa"] },
       { cat: "Arquitectura", keywords: ["planos", "diseño", "arquitectura", "arquitecto"] },
+      { cat: "Consultoría", keywords: ["consultoria", "consultoría", "asesoria", "asesoría"] },
+      { cat: "Diagnóstico", keywords: ["diagnostico", "diagnóstico", "estudio", "revision", "revisión"] },
       { cat: "Deudas", keywords: ["prestamo", "préstamo", "deuda", "cxp"] },
       { cat: "Transporte", keywords: ["gasolina", "transporte", "pasaje", "taxi", "uber", "peaje", "viaje"] }
     ];
@@ -589,7 +591,7 @@
       // Filter rules depending on Type (ingreso/egreso)
       // Egresos categories vs Ingresos categories
       const egresosCats = ['Nómina/Personal', 'Colaboradores', 'Arriendo Oficina', 'Marketing', 'Servicios Públicos', 'Impuestos', 'Software/Tecnología', 'Inversión', 'Aseo/Mantenimiento', 'Cafetería', 'Deudas', 'Transporte', 'Otro Gasto'];
-      const ingresosCats = ['Venta de Inmueble', 'Arriendo', 'Avalúos', 'Remodelación', 'Reparación', 'Arquitectura', 'Gestión/Administración', 'Consultoría', 'Otro Servicio'];
+      const ingresosCats = ['Venta de Inmueble', 'Arriendo', 'Avalúos', 'Remodelación', 'Reparación', 'Arquitectura', 'Gestión/Administración', 'Consultoría', 'Diagnóstico', 'Recaudo de cartera', 'Otro Servicio'];
 
       for (const rule of CLASSIFICATION_RULES) {
         if (tipo === 'ingreso' && !ingresosCats.includes(rule.cat)) continue;
@@ -674,7 +676,7 @@
 
         // Options for categories list based on type
         const categoriesOptions = (tx.tipo === 'ingreso' 
-          ? ['Venta de Inmueble', 'Arriendo', 'Avalúos', 'Remodelación', 'Reparación', 'Arquitectura', 'Gestión/Administración', 'Consultoría', 'Otro Servicio']
+          ? ['Venta de Inmueble', 'Arriendo', 'Avalúos', 'Remodelación', 'Reparación', 'Arquitectura', 'Gestión/Administración', 'Consultoría', 'Diagnóstico', 'Recaudo de cartera', 'Otro Servicio']
           : ['Nómina/Personal', 'Colaboradores', 'Arriendo Oficina', 'Marketing', 'Servicios Públicos', 'Impuestos', 'Software/Tecnología', 'Inversión', 'Aseo/Mantenimiento', 'Cafetería', 'Deudas', 'Transporte', 'Otro Gasto']
         ).map(cat => `<option value="${cat}" ${tx.category === cat ? 'selected' : ''}>${cat}</option>`).join('');
 
