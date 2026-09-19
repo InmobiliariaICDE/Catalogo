@@ -6467,6 +6467,33 @@ font-weight: 500;
     background: rgba(255, 255, 255, 0.08);
 }
 
+.phone-prefix-select {
+    padding: 11px 8px 11px 12px;
+    background: rgba(212, 168, 75, 0.15);
+    color: #f59e0b;
+    font-weight: 700;
+    font-size: 13.5px;
+    border: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    outline: none;
+    cursor: pointer;
+    font-family: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23f59e0b' d='M0 0l5 6 5-6z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 22px;
+}
+
+.phone-prefix-select option {
+    background: #1c1c20;
+    color: #ffffff;
+    font-size: 13.5px;
+    padding: 8px;
+}
+
 .phone-prefix {
     padding: 11px 12px;
     background: rgba(212, 168, 75, 0.15);
@@ -7143,7 +7170,35 @@ font-weight: 500;
                         <img src="https://i.imgur.com/MA961il.png" alt="WhatsApp" style="width:19px;height:19px;vertical-align:-3px;margin-right:5px;display:inline-block;" />WhatsApp <span class="required-star">*</span>
                     </label>
                     <div class="phone-input-wrapper">
-                        <span class="phone-prefix">+57</span>
+                        <select id="agendarPaisSelect" class="phone-prefix-select" aria-label="Código de país">
+                            <option value="+57" selected>🇨🇴 +57 (Colombia)</option>
+                            <option value="+1">🇺🇸/🇨🇦 +1 (EE.UU. / Canadá)</option>
+                            <option value="+34">🇪🇸 +34 (España)</option>
+                            <option value="+52">🇲🇽 +52 (México)</option>
+                            <option value="+58">🇻🇪 +58 (Venezuela)</option>
+                            <option value="+593">🇪🇨 +593 (Ecuador)</option>
+                            <option value="+51">🇵🇪 +51 (Perú)</option>
+                            <option value="+56">🇨🇱 +56 (Chile)</option>
+                            <option value="+54">🇦🇷 +54 (Argentina)</option>
+                            <option value="+507">🇵🇦 +507 (Panamá)</option>
+                            <option value="+506">🇨🇷 +506 (Costa Rica)</option>
+                            <option value="+503">🇸🇻 +503 (El Salvador)</option>
+                            <option value="+502">🇬🇹 +502 (Guatemala)</option>
+                            <option value="+504">🇭🇳 +504 (Honduras)</option>
+                            <option value="+505">🇳🇮 +505 (Nicaragua)</option>
+                            <option value="+1">🇵🇷 +1 (Puerto Rico)</option>
+                            <option value="+598">🇺🇾 +598 (Uruguay)</option>
+                            <option value="+591">🇧🇴 +591 (Bolivia)</option>
+                            <option value="+595">🇵🇾 +595 (Paraguay)</option>
+                            <option value="+55">🇧🇷 +55 (Brasil)</option>
+                            <option value="+44">🇬🇧 +44 (Reino Unido)</option>
+                            <option value="+33">🇫🇷 +33 (Francia)</option>
+                            <option value="+49">🇩🇪 +49 (Alemania)</option>
+                            <option value="+39">🇮🇹 +39 (Italia)</option>
+                            <option value="+41">🇨🇭 +41 (Suiza)</option>
+                            <option value="+31">🇳🇱 +31 (Países Bajos)</option>
+                            <option value="+61">🇦🇺 +61 (Australia)</option>
+                        </select>
                         <input type="tel" id="agendarPhoneInput" class="form-input-agendar input-phone" placeholder="Ej. 300 123 4567" required autocomplete="tel" />
                     </div>
                 </div>
@@ -10642,7 +10697,10 @@ document.head.appendChild(schemaScript);
                         const bancoInput = document.getElementById("agendarBancoInput");
 
                         const nombre = nombreInput?.value.trim() || "";
-                        const phone = phoneInput?.value.trim() || "";
+                        const paisSelect = document.getElementById("agendarPaisSelect");
+                        const codigoPais = paisSelect ? paisSelect.value : "+57";
+                        const phoneRaw = phoneInput?.value.trim() || "";
+                        const phone = phoneRaw ? `${codigoPais} ${phoneRaw}` : "";
                         const fecha = fechaInput?.value || "";
                         
                         // Obtener franja o hora personalizada
