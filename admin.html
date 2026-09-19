@@ -370,9 +370,10 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 .lead-stage-badges {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  vertical-align: middle;
-  margin-left: 6px;
+  gap: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin-left: auto;
 }
 .badge-stage-item {
   display: inline-flex;
@@ -8046,7 +8047,7 @@ function renderLeadsBody(lista){
             const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
             const isSelected = String(l.id).trim() === String(currentLeadId).trim();
             return `<tr class="clickable ${isSelected ? 'active-lead-row' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead(\'${String(l.id).trim()}\', \'${String(l.celular).trim()}\')">
-              <td style="padding-left: 20px;"><div class="leads-row-name" style="display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;"><span>${l.nombre}</span>${renderEtapasLeadBadges(l)}</div><div class="leads-row-phone">📱 ${l.celular}</div></td>
+              <td style="padding-left: 20px; padding-right: 15px;"><div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;"><div style="min-width: 0; flex: 1;"><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">📱 ${l.celular}</div></div>${renderEtapasLeadBadges(l)}</div></td>
               <td>${l.tipo==='inmobiliaria'?'<span class="badge badge-inmobiliaria">🏢</span>':'<span style="opacity:0.5;">👤</span>'}</td>
               <td onclick="event.stopPropagation()">
                 <select class="estado-badge estado-${l.estado}" style="border:none;outline:none;cursor:pointer;max-width:120px;"
@@ -8096,12 +8097,15 @@ function renderLeadsBody(lista){
         const isSelected = String(l.id).trim() === String(currentLeadId).trim();
         return `
         <div class="lead-card ${isSelected ? 'active-lead-card' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead(\'${String(l.id).trim()}\', \'${String(l.celular).trim()}\')">
-          <div class="lc-header">
+          <div class="lc-header" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
             <div>
-              <div class="lc-name" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;"><span>${l.nombre}</span>${renderEtapasLeadBadges(l)}</div>
+              <div class="lc-name">${l.nombre}</div>
               <div class="lc-phone">📱 ${l.celular}</div>
             </div>
-            <span class="badge badge-${l.etiqueta}">${l.etiqueta}</span>
+            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+              ${renderEtapasLeadBadges(l)}
+              <span class="badge badge-${l.etiqueta}">${l.etiqueta}</span>
+            </div>
           </div>
           <div style="margin-bottom:12px;"><span class="estado-badge estado-${l.estado}">${estadoLbl(l.estado)}</span></div>
           <div class="lc-stats">
