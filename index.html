@@ -6822,6 +6822,18 @@ font-weight: 500;
     transform: translateY(0);
 }
 
+.btn-confirmar-agendar:disabled,
+.btn-confirmar-agendar.disabled {
+    background: #2a2a30 !important;
+    color: #6b7280 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+    opacity: 0.55 !important;
+    transform: none !important;
+    pointer-events: none !important;
+}
+
 
 /* ── ADAPTACIÓN CENTRADA Y Z-INDEX SUPERIOR MÁXIMO ── */
 .modal-agendar-overlay {
@@ -10801,6 +10813,7 @@ document.head.appendChild(schemaScript);
                                     metodosPagoSeleccionados.add(val);
                                 }
                                 actualizarPanelCredito();
+                                validarFormularioAgendar();
                             });
                         });
 
@@ -10810,6 +10823,7 @@ document.head.appendChild(schemaScript);
                                 document.querySelectorAll("#chipsPreaprobadoContainer .chip-sub").forEach(c => c.classList.remove("selected"));
                                 chip.classList.add("selected");
                                 preaprobadoSeleccionado = chip.getAttribute("data-val");
+                                validarFormularioAgendar();
                             });
                         });
 
@@ -10838,6 +10852,7 @@ document.head.appendChild(schemaScript);
                                 if (fechaInput) {
                                     fechaInput.value = d.toISOString().split("T")[0];
                                 }
+                                validarFormularioAgendar();
                             });
                         });
 
@@ -10861,7 +10876,17 @@ document.head.appendChild(schemaScript);
                                 chip.classList.add("active");
                                 const horaInput = document.getElementById("agendarHoraInput");
                                 if (horaInput) horaInput.value = chip.getAttribute("data-hora") || "";
+                                validarFormularioAgendar();
                             });
+                        });
+
+                        // Escuchadores en inputs de texto/fecha para validación en tiempo real
+                        ["agendarNombreInput", "agendarPhoneInput", "agendarBancoInput", "agendarFechaInput"].forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) {
+                                el.addEventListener("input", validarFormularioAgendar);
+                                el.addEventListener("change", validarFormularioAgendar);
+                            }
                         });
 
                         // Evento Confirmar Agendamiento
@@ -10972,6 +10997,9 @@ document.head.appendChild(schemaScript);
                         // Seleccionar por defecto la primera franja horaria
                         if (horaInput) horaInput.value = "09:00";
 
+                        // Validar estado inicial del formulario
+                        validarFormularioAgendar();
+
                         // Abrir overlay en frente absoluto
                         const overlay = document.getElementById("modalAgendarVisitaOverlay");
                         if (overlay) {
@@ -10991,7 +11019,46 @@ document.head.appendChild(schemaScript);
                         }
                     }
 
+                    function validarFormularioAgendar() {
+                        const btnConfirmar = document.getElementById("btnConfirmarAgendamientoWA");
+                        if (!btnConfirmar) return false;
+
+                        const nombre = document.getElementById("agendarNombreInput")?.value.trim() || "";
+                        const phoneRaw = document.getElementById("agendarPhoneInput")?.value.trim() || "";
+                        const phoneClean = phoneRaw.replace(/\D/g, "");
+
+                        const tienePago = typeof metodosPagoSeleccionados !== 'undefined' && metodosPagoSeleccionados.size > 0;
+
+                        const tieneCredito = typeof metodosPagoSeleccionados !== 'undefined' && Array.from(metodosPagoSeleccionados).some(m => m.includes("Crédito"));
+                        let creditoValido = true;
+                        if (tieneCredito) {
+                            const tienePreaprobado = typeof preaprobadoSeleccionado !== 'undefined' && !!preaprobadoSeleccionado;
+                            const banco = document.getElementById("agendarBancoInput")?.value.trim() || "";
+                            creditoValido = tienePreaprobado && banco.length > 0;
+                        }
+
+                        const fecha = document.getElementById("agendarFechaInput")?.value || "";
+
+                        const chipHoraActivo = document.querySelector(".chip-hora-exacta.active");
+                        const horaVal = document.getElementById("agendarHoraInput")?.value || "";
+                        const tieneHora = !!(chipHoraActivo || horaVal);
+
+                        const esValido = nombre.length > 0 && phoneClean.length >= 7 && tienePago && creditoValido && fecha.length > 0 && tieneHora;
+
+                        if (esValido) {
+                            btnConfirmar.disabled = false;
+                            btnConfirmar.classList.remove("disabled");
+                        } else {
+                            btnConfirmar.disabled = true;
+                            btnConfirmar.classList.add("disabled");
+                        }
+
+                        return esValido;
+                    }
+
                     function procesarYEnviarAgendamientoWA() {
+                        if (!validarFormularioAgendar()) return;
+
                         const nombreInput = document.getElementById("agendarNombreInput");
                         const phoneInput = document.getElementById("agendarPhoneInput");
                         const fechaInput = document.getElementById("agendarFechaInput");
