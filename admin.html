@@ -375,6 +375,15 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
   white-space: nowrap;
   margin-left: auto;
 }
+
+.badge-stage-item {
+  cursor: pointer !important;
+}
+.badge-stage-item:hover {
+  transform: scale(1.08);
+  filter: brightness(1.25);
+}
+
 .badge-stage-item {
   display: inline-flex;
   align-items: center;
@@ -8498,6 +8507,62 @@ function obtenerEtapaMaximaLead(lead) {
   return maxStage;
 }
 
+
+function activarEtapaLeadDesdeTabla(evt, id, etapaTarget) {
+  if (evt) {
+    if (typeof evt.stopPropagation === 'function') evt.stopPropagation();
+    if (typeof evt.preventDefault === 'function') evt.preventDefault();
+  }
+  const tid = String(id || '').trim();
+  const lead = leads.find(x => String(x.id || '').trim() === tid);
+  if (!lead) return;
+
+  if (!lead.propEtapas) lead.propEtapas = {};
+
+  if (lead.propsEnviadas && Array.isArray(lead.propsEnviadas) && lead.propsEnviadas.length > 0) {
+    lead.propsEnviadas.forEach(cod => {
+      lead.propEtapas[cod] = etapaTarget;
+      
+      lead.visitas = lead.visitas || [];
+      let v = lead.visitas.find(x => x.codigo === cod);
+      if (etapaTarget === 6) {
+        if (!v) {
+          v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'realizada', oferto: 'si', procesoVenta: true, cliente: lead.nombre, celular: lead.celular };
+          lead.visitas.push(v);
+        } else {
+          v.procesoVenta = true;
+          v.oferto = 'si';
+          v.estado = 'realizada';
+        }
+      } else if (etapaTarget === 5) {
+        if (!v) {
+          v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'realizada', oferto: 'si', cliente: lead.nombre, celular: lead.celular };
+          lead.visitas.push(v);
+        } else {
+          v.procesoVenta = false;
+          v.oferto = 'si';
+          v.estado = 'realizada';
+        }
+      }
+    });
+  } else {
+    lead.propEtapas['_general'] = etapaTarget;
+  }
+
+  lead.estado = 'proceso';
+  lead._localEditedAt = new Date().toISOString();
+
+  saveLeads();
+  syncSheets(lead);
+
+  const nombresEtapa = { 5: '5 (OK)', 6: '6 (Proceso de venta)' };
+  toast(`Etapa ${nombresEtapa[etapaTarget] || etapaTarget} activada para ${lead.nombre} ✓`, 'success');
+
+  if (typeof currentTab !== 'undefined' && currentTab === 'leads') {
+    renderLeadsBody(leads);
+  }
+}
+
 function renderEtapasLeadBadges(lead) {
   const maxEtapa = obtenerEtapaMaximaLead(lead);
   if (maxEtapa < 5) return '';
@@ -8516,12 +8581,12 @@ function renderEtapasLeadBadges(lead) {
   let cls6 = isE6Active ? 'badge-stage-item stage-active-6' : 'badge-stage-item stage-pending';
 
   return `
-    <div class="lead-stage-badges" onclick="event.stopPropagation();" title="Etapas de proceso de venta (5: OK, 6: Proceso de venta)">
-      <span class="${cls5}" title="Etapa 5: OK (Ofertó / Candidato a cierre)">
+    <div class="lead-stage-badges" onclick="event.stopPropagation();" title="Haz clic en cualquier etapa para activarla">
+      <span class="${cls5}" onclick="event.stopPropagation(); activarEtapaLeadDesdeTabla(event, '${String(lead.id).trim()}', 5)" title="Haz clic para activar Etapa 5: OK">
         <span class="stage-num">${num5}</span>
         <span class="stage-lbl">OK</span>
       </span>
-      <span class="${cls6}" title="Etapa 6: Proceso de venta (Cierre en marcha)">
+      <span class="${cls6}" onclick="event.stopPropagation(); activarEtapaLeadDesdeTabla(event, '${String(lead.id).trim()}', 6)" title="Haz clic para activar Etapa 6: Proceso de venta">
         <span class="stage-num">6</span>
         <span class="stage-lbl">Proceso de venta</span>
       </span>
