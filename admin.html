@@ -8440,6 +8440,7 @@ function updLead(id,campo,val){
   const l=leads.find(x=>String(x.id || '').trim()===tid); 
   if(!l) return; 
   l[campo]=val;
+  if(campo==='estado' && val!=='proceso') l.estadoPrevio=val;
   l._localEditedAt = new Date().toISOString(); // marca de tiempo de edición local
   saveLeads(); 
   syncSheets(l);
@@ -8527,19 +8528,29 @@ function activarEtapaLeadDesdeTabla(evt, id, etapaTarget) {
   if (etapaTarget === 6) {
     if (maxActual === 6) {
       nuevaEtapa = 5;
-      msg = `Etapa 6 desactivada para ${lead.nombre} (Regresó a Etapa 5: OK) ✓`;
+      lead.estado = lead.estadoPrevio || 'visita';
+      msg = `Etapa 6 desactivada para ${lead.nombre} (Estado restaurado a ${estadoLbl(lead.estado)}) ✓`;
     } else {
+      if (lead.estado !== 'proceso') {
+        lead.estadoPrevio = lead.estado || 'visita';
+      }
       nuevaEtapa = 6;
+      lead.estado = 'proceso';
       msg = `Etapa 6: Proceso de venta activada para ${lead.nombre} ✓`;
     }
   } else if (etapaTarget === 5) {
     if (maxActual === 5) {
       nuevaEtapa = 4;
-      msg = `Etapa 5 desactivada para ${lead.nombre} ✓`;
+      lead.estado = lead.estadoPrevio || 'visita';
+      msg = `Etapa 5 desactivada para ${lead.nombre} (Estado restaurado a ${estadoLbl(lead.estado)}) ✓`;
     } else if (maxActual === 6) {
       nuevaEtapa = 5;
-      msg = `Lead ${lead.nombre} regresado a Etapa 5: OK ✓`;
+      lead.estado = lead.estadoPrevio || 'visita';
+      msg = `Lead ${lead.nombre} regresado a Etapa 5: OK (Estado restaurado a ${estadoLbl(lead.estado)}) ✓`;
     } else {
+      if (!lead.estadoPrevio) {
+        lead.estadoPrevio = lead.estado || 'visita';
+      }
       nuevaEtapa = 5;
       msg = `Etapa 5: OK activada para ${lead.nombre} ✓`;
     }
@@ -8578,14 +8589,6 @@ function activarEtapaLeadDesdeTabla(evt, id, etapaTarget) {
     });
   } else {
     lead.propEtapas['_general'] = nuevaEtapa;
-  }
-
-  if (nuevaEtapa >= 5) {
-    lead.estado = 'proceso';
-  } else {
-    if (lead.estado === 'proceso') {
-      lead.estado = 'visita';
-    }
   }
 
   lead._localEditedAt = new Date().toISOString();
