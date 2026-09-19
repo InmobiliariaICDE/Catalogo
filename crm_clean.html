@@ -1277,7 +1277,7 @@ function renderLeadsBody(lista){
           const pend=(l.propsFiltradas||[]).length-(l.propsEnviadas||[]).length;
           const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
           return `<tr class="clickable" onclick="abrirLead('${l.id}')">
-            <td><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">📱 ${l.celular}</div></td>
+            <td><div class="leads-row-name" style="display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;"><span>${l.nombre}</span>${renderEtapasLeadBadges(l)}</div><div class="leads-row-phone">📱 ${l.celular}</div></td>
             <td>${l.tipo==='inmobiliaria'?'<span class="badge badge-inmobiliaria">🏢</span>':'<span style="opacity:0.5;">👤</span>'}</td>
             <td><span class="estado-badge estado-${l.estado}">${estadoLbl(l.estado)}</span></td>
             <td><span class="badge badge-${l.etiqueta}">${l.etiqueta}</span></td>
@@ -1300,7 +1300,7 @@ function renderLeadsBody(lista){
         <div class="lead-card" onclick="abrirLead('${l.id}')">
           <div class="lc-header">
             <div>
-              <div class="lc-name">${l.nombre}</div>
+              <div class="lc-name" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;"><span>${l.nombre}</span>${renderEtapasLeadBadges(l)}</div>
               <div class="lc-phone">📱 ${l.celular}</div>
             </div>
             <span class="badge badge-${l.etiqueta}">${l.etiqueta}</span>
@@ -1479,6 +1479,68 @@ function toggleSection(el){
 
 function updLead(id,campo,val){ const l=leads.find(x=>x.id===id); if(!l) return; l[campo]=val; saveLeads(); toast(`${campo} actualizado ✓`,'success'); if(currentTab==='leads') renderLeadsBody(leads); }
 
+
+function obtenerEtapaMaximaLead(lead) {
+  if (!lead) return 1;
+  let maxStage = 1;
+
+  if (lead.propEtapas && typeof lead.propEtapas === 'object') {
+    for (let cod in lead.propEtapas) {
+      const st = Number(lead.propEtapas[cod]);
+      if (!isNaN(st) && st > maxStage) maxStage = st;
+    }
+  }
+
+  if (lead.visitas && Array.isArray(lead.visitas)) {
+    for (let v of lead.visitas) {
+      let st = 1;
+      if (v.procesoVenta || v.estado === 'proceso_venta') st = 6;
+      else if (v.oferto === 'si' || v.estado === 'ok') st = 5;
+      else if (v.estado === 'realizada') st = 4;
+      else if (v.estado === 'agendada') st = 3;
+      else if (v.estado === 'solicito_visita') st = 2;
+      if (st > maxStage) maxStage = st;
+    }
+  }
+
+  if (lead.estado === 'proceso' && maxStage < 5) {
+    maxStage = 5;
+  }
+
+  return maxStage;
+}
+
+function renderEtapasLeadBadges(lead) {
+  const maxEtapa = obtenerEtapaMaximaLead(lead);
+  if (maxEtapa < 5) return '';
+
+  const isE5Done = maxEtapa > 5;
+  const isE5Active = maxEtapa >= 5;
+  const isE6Active = maxEtapa >= 6;
+
+  let cls5 = 'badge-stage-item stage-active-5';
+  let num5 = '5';
+  if (isE5Done) {
+    cls5 = 'badge-stage-item stage-done';
+    num5 = '✓';
+  }
+
+  let cls6 = isE6Active ? 'badge-stage-item stage-active-6' : 'badge-stage-item stage-pending';
+
+  return `
+    <div class="lead-stage-badges" onclick="event.stopPropagation();" title="Etapas de proceso de venta (5: OK, 6: Proceso de venta)">
+      <span class="${cls5}" title="Etapa 5: OK (Ofertó / Candidato a cierre)">
+        <span class="stage-num">${num5}</span>
+        <span class="stage-lbl">OK</span>
+      </span>
+      <span class="${cls6}" title="Etapa 6: Proceso de venta (Cierre en marcha)">
+        <span class="stage-num">6</span>
+        <span class="stage-lbl">Proceso de venta</span>
+      </span>
+    </div>
+  `;
+}
+
 function obtenerEtapaPropiedad(lead, cod) {
   if (lead && lead.propEtapas && lead.propEtapas[cod]) {
     return Number(lead.propEtapas[cod]);
@@ -1615,6 +1677,7 @@ function cambiarEtapaPropiedad(evt, leadId, cod, nuevaEtapa) {
   if (el) el.innerHTML = renderPanelPropsEnviadas(lead);
   const nombresPasos = ['', 'Disponible', 'Solicitó visita', 'Visita agendada', 'Visitó', 'OK', 'Proceso de venta'];
   toast(`Etapa de venta: ${nombresPasos[nuevaEtapa] || nuevaEtapa} ✓`, 'success');
+  if (typeof currentTab !== 'undefined' && currentTab === 'leads') renderLeadsBody(leads);
 }
 
 function renderPanelPropsEnviadas(lead){

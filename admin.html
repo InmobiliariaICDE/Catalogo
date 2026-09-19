@@ -366,6 +366,77 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 .badge-visita{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3);}
 .badge-solicito{background:rgba(168,85,247,.15);color:#a855f7;border:1px solid rgba(168,85,247,.3);}
 
+/* BADGES ETAPAS DE VENTA (5 y 6) JUNTO AL NOMBRE DEL LEAD */
+.lead-stage-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+.badge-stage-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.badge-stage-item .stage-num {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9.5px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.badge-stage-item.stage-active-5 {
+  background: rgba(212, 168, 75, 0.18);
+  border: 1px solid rgba(212, 168, 75, 0.6);
+  color: #ffe082;
+  box-shadow: 0 0 8px rgba(212, 168, 75, 0.3);
+}
+.badge-stage-item.stage-active-5 .stage-num {
+  background: var(--gold, #d4a84b);
+  color: #000;
+}
+.badge-stage-item.stage-done {
+  background: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  color: #4ade80;
+}
+.badge-stage-item.stage-done .stage-num {
+  background: #22c55e;
+  color: #fff;
+}
+.badge-stage-item.stage-active-6 {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.6);
+  color: #93c5fd;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+.badge-stage-item.stage-active-6 .stage-num {
+  background: #3b82f6;
+  color: #fff;
+}
+.badge-stage-item.stage-pending {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.4);
+}
+.badge-stage-item.stage-pending .stage-num {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+
 /* CHAT STYLES */
 .chat-section { 
   display: flex !important;
@@ -7975,7 +8046,7 @@ function renderLeadsBody(lista){
             const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
             const isSelected = String(l.id).trim() === String(currentLeadId).trim();
             return `<tr class="clickable ${isSelected ? 'active-lead-row' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead(\'${String(l.id).trim()}\', \'${String(l.celular).trim()}\')">
-              <td style="padding-left: 20px;"><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">📱 ${l.celular}</div></td>
+              <td style="padding-left: 20px;"><div class="leads-row-name" style="display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;"><span>${l.nombre}</span>${renderEtapasLeadBadges(l)}</div><div class="leads-row-phone">📱 ${l.celular}</div></td>
               <td>${l.tipo==='inmobiliaria'?'<span class="badge badge-inmobiliaria">🏢</span>':'<span style="opacity:0.5;">👤</span>'}</td>
               <td onclick="event.stopPropagation()">
                 <select class="estado-badge estado-${l.estado}" style="border:none;outline:none;cursor:pointer;max-width:120px;"
@@ -8027,7 +8098,7 @@ function renderLeadsBody(lista){
         <div class="lead-card ${isSelected ? 'active-lead-card' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead(\'${String(l.id).trim()}\', \'${String(l.celular).trim()}\')">
           <div class="lc-header">
             <div>
-              <div class="lc-name">${l.nombre}</div>
+              <div class="lc-name" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;"><span>${l.nombre}</span>${renderEtapasLeadBadges(l)}</div>
               <div class="lc-phone">📱 ${l.celular}</div>
             </div>
             <span class="badge badge-${l.etiqueta}">${l.etiqueta}</span>
@@ -8390,6 +8461,68 @@ function toggleLeadMetodo(id, m, el) {
   if (currentTab === 'leads') renderLeadsBody(leads);
 }
 
+
+function obtenerEtapaMaximaLead(lead) {
+  if (!lead) return 1;
+  let maxStage = 1;
+
+  if (lead.propEtapas && typeof lead.propEtapas === 'object') {
+    for (let cod in lead.propEtapas) {
+      const st = Number(lead.propEtapas[cod]);
+      if (!isNaN(st) && st > maxStage) maxStage = st;
+    }
+  }
+
+  if (lead.visitas && Array.isArray(lead.visitas)) {
+    for (let v of lead.visitas) {
+      let st = 1;
+      if (v.procesoVenta || v.estado === 'proceso_venta') st = 6;
+      else if (v.oferto === 'si' || v.estado === 'ok') st = 5;
+      else if (v.estado === 'realizada') st = 4;
+      else if (v.estado === 'agendada') st = 3;
+      else if (v.estado === 'solicito_visita') st = 2;
+      if (st > maxStage) maxStage = st;
+    }
+  }
+
+  if (lead.estado === 'proceso' && maxStage < 5) {
+    maxStage = 5;
+  }
+
+  return maxStage;
+}
+
+function renderEtapasLeadBadges(lead) {
+  const maxEtapa = obtenerEtapaMaximaLead(lead);
+  if (maxEtapa < 5) return '';
+
+  const isE5Done = maxEtapa > 5;
+  const isE5Active = maxEtapa >= 5;
+  const isE6Active = maxEtapa >= 6;
+
+  let cls5 = 'badge-stage-item stage-active-5';
+  let num5 = '5';
+  if (isE5Done) {
+    cls5 = 'badge-stage-item stage-done';
+    num5 = '✓';
+  }
+
+  let cls6 = isE6Active ? 'badge-stage-item stage-active-6' : 'badge-stage-item stage-pending';
+
+  return `
+    <div class="lead-stage-badges" onclick="event.stopPropagation();" title="Etapas de proceso de venta (5: OK, 6: Proceso de venta)">
+      <span class="${cls5}" title="Etapa 5: OK (Ofertó / Candidato a cierre)">
+        <span class="stage-num">${num5}</span>
+        <span class="stage-lbl">OK</span>
+      </span>
+      <span class="${cls6}" title="Etapa 6: Proceso de venta (Cierre en marcha)">
+        <span class="stage-num">6</span>
+        <span class="stage-lbl">Proceso de venta</span>
+      </span>
+    </div>
+  `;
+}
+
 function obtenerEtapaPropiedad(lead, cod) {
   if (lead && lead.propEtapas && lead.propEtapas[cod]) {
     return Number(lead.propEtapas[cod]);
@@ -8527,6 +8660,7 @@ function cambiarEtapaPropiedad(evt, leadId, cod, nuevaEtapa) {
   if (el) el.innerHTML = renderPanelPropsEnviadas(lead);
   const nombresPasos = ['', 'Disponible', 'Solicitó visita', 'Visita agendada', 'Visitó', 'OK', 'Proceso de venta'];
   toast(`Etapa de venta: ${nombresPasos[nuevaEtapa] || nuevaEtapa} ✓`, 'success');
+  if (typeof currentTab !== 'undefined' && currentTab === 'leads') renderLeadsBody(leads);
 }
 
 function renderPanelPropsEnviadas(lead){
