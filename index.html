@@ -6366,28 +6366,40 @@ font-weight: 500;
 .modal-agendar-inmueble-tag {
     background: rgba(255, 255, 255, 0.05);
     border: 1px dashed rgba(212, 168, 75, 0.35);
-    border-radius: 10px;
-    padding: 9px 12px;
+    border-radius: 12px;
+    padding: 10px 14px;
     font-size: 12.5px;
     color: #d1d5db;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     line-height: 1.35;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .modal-agendar-inmueble-tag strong {
     color: #f59e0b;
+    font-weight: 600;
 }
 
 .agendar-inmueble-thumb {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
     border-radius: 8px;
     object-fit: cover;
     flex-shrink: 0;
     border: 1px solid rgba(212, 168, 75, 0.5);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.agendar-inmueble-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
 }
 
 .modal-agendar-body {
@@ -11315,21 +11327,33 @@ document.head.appendChild(schemaScript);
 
                         inmuebleAgendarActual = inmueble;
 
-                        // Actualizar tag de inmueble con miniatura si es propiedad individual
+                        // Actualizar tag de inmueble con miniatura a la izquierda y texto a la derecha
                         const tagNombre = document.getElementById("agendarInmuebleNombre");
                         if (tagNombre && inmueble) {
                             if (inmueble.esFavoritos) {
-                                tagNombre.innerHTML = `📍 <span><strong>${inmueble.favs.length} Propiedad(es) Favorita(s)</strong> (Códs. ${inmueble.favs.join(', ')})</span>`;
+                                tagNombre.style.display = "flex";
+                                tagNombre.style.alignItems = "center";
+                                tagNombre.style.gap = "10px";
+                                tagNombre.style.width = "100%";
+                                tagNombre.innerHTML = `<span style="font-size:18px;flex-shrink:0;">📍</span> <div class="agendar-inmueble-text"><strong>${inmueble.favs.length} Propiedad(es) Favorita(s)</strong> <span style="font-size:11.5px;color:#9ca3af;">(Códs. ${inmueble.favs.join(', ')})</span></div>`;
                             } else {
                                 const cod = String(inmueble["Código"] || "").trim();
                                 const nom = (inmueble["Nombre"] || "Inmueble").trim();
                                 const precio = typeof formatearPrecio === 'function' ? formatearPrecio(inmueble["Precio"]) : inmueble["Precio"];
                                 const thumbUrl = obtenerImagenPrincipalInmueble(inmueble);
-                                const iconOrThumb = thumbUrl ? `<img src="${thumbUrl}" alt="${nom}" class="agendar-inmueble-thumb" />` : `📍`;
-                                tagNombre.innerHTML = `${iconOrThumb} <span><strong>${nom}</strong> (Cód. ${cod}) — ${precio}</span>`;
+                                const iconOrThumb = thumbUrl ? `<img src="${thumbUrl}" alt="${nom}" class="agendar-inmueble-thumb" />` : `<span style="font-size:18px;flex-shrink:0;">📍</span>`;
+                                tagNombre.style.display = "flex";
+                                tagNombre.style.alignItems = "center";
+                                tagNombre.style.gap = "12px";
+                                tagNombre.style.width = "100%";
+                                tagNombre.innerHTML = `${iconOrThumb} <div class="agendar-inmueble-text"><strong>${nom}</strong> <span style="font-size:11.5px;color:#9ca3af;">(Cód. ${cod}) — ${precio}</span></div>`;
                             }
                         } else if (tagNombre) {
-                            tagNombre.innerHTML = `📍 <span><strong>Inmueble ICDE</strong></span>`;
+                            tagNombre.style.display = "flex";
+                            tagNombre.style.alignItems = "center";
+                            tagNombre.style.gap = "10px";
+                            tagNombre.style.width = "100%";
+                            tagNombre.innerHTML = `<span style="font-size:18px;flex-shrink:0;">📍</span> <div class="agendar-inmueble-text"><strong>Inmueble ICDE</strong></div>`;
                         }
 
                         // Limpiar / resetear form
