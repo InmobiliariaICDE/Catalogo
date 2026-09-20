@@ -6834,6 +6834,134 @@ font-weight: 500;
     pointer-events: none !important;
 }
 
+/* ==========================================================================
+   STEPPER & WIZARD NAVEGACIÓN EN 3 PASOS
+   ========================================================================== */
+.modal-agendar-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding: 0 4px;
+    position: relative;
+}
+
+.stepper-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    z-index: 2;
+    transition: all 0.25s ease;
+    user-select: none;
+}
+
+.stepper-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+
+.stepper-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #9ca3af;
+    transition: all 0.25s ease;
+}
+
+.stepper-step.active .stepper-circle {
+    background: #d4a84b;
+    border-color: #fef08a;
+    color: #0d0d10;
+    box-shadow: 0 0 12px rgba(212, 168, 75, 0.6);
+    transform: scale(1.1);
+}
+
+.stepper-step.active .stepper-label {
+    color: #fef08a;
+    font-weight: 700;
+}
+
+.stepper-step.completed .stepper-circle {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: #22c55e;
+    color: #22c55e;
+}
+
+.stepper-step.completed .stepper-label {
+    color: #22c55e;
+}
+
+.stepper-line {
+    flex: 1;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.12);
+    margin: 0 8px;
+    margin-bottom: 16px;
+    position: relative;
+    border-radius: 2px;
+    transition: background 0.3s ease;
+}
+
+.stepper-line.active {
+    background: linear-gradient(90deg, #d4a84b 0%, #22c55e 100%);
+}
+
+.agendar-step-content {
+    display: none;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.agendar-step-content.active {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.step-footer-actions {
+    display: none;
+    width: 100%;
+    align-items: center;
+    gap: 10px;
+}
+
+.step-footer-actions.active {
+    display: flex;
+}
+
+.btn-nav-anterior {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e5e7eb;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50px;
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-nav-anterior:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
 
 /* ── ADAPTACIÓN CENTRADA Y Z-INDEX SUPERIOR MÁXIMO ── */
 .modal-agendar-overlay {
@@ -7396,7 +7524,7 @@ font-weight: 500;
         </div>
     </div>
 
-    <!-- MODAL AGENDAR VISITA (NEUROVENTAS & WHATSAPP) -->
+    <!-- MODAL AGENDAR VISITA (NEUROVENTAS & WHATSAPP) - 3 PASOS -->
     <div id="modalAgendarVisitaOverlay" class="modal-agendar-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="titleAgendarVisita">
         <div class="modal-agendar-card">
             <!-- Botón Cerrar -->
@@ -7408,160 +7536,208 @@ font-weight: 500;
                 <div class="modal-agendar-inmueble-tag" id="agendarInmuebleInfo">
                     <span id="agendarInmuebleNombre">Cargando información del inmueble...</span>
                 </div>
+
+                <!-- STEPPER (INDICADOR DE 3 PASOS) -->
+                <div class="modal-agendar-stepper" id="stepperAgendarVisita">
+                    <div class="stepper-step active" data-step="1">
+                        <div class="stepper-circle">1</div>
+                        <span class="stepper-label">Datos</span>
+                    </div>
+                    <div class="stepper-line" id="stepperLine1"></div>
+                    <div class="stepper-step" data-step="2">
+                        <div class="stepper-circle">2</div>
+                        <span class="stepper-label">Pago</span>
+                    </div>
+                    <div class="stepper-line" id="stepperLine2"></div>
+                    <div class="stepper-step" data-step="3">
+                        <div class="stepper-circle">3</div>
+                        <span class="stepper-label">Fecha y Hora</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Cuerpo del Formulario -->
+            <!-- Cuerpo del Formulario en 3 Pasos -->
             <div class="modal-agendar-body">
                 
-                <!-- Campo 1: Nombre completo -->
-                <div class="form-group-agendar">
-                    <label for="agendarNombreInput" class="form-label-agendar">
-                        <span class="label-icon">👤</span> Nombre completo <span class="required-star">*</span>
-                    </label>
-                    <input type="text" id="agendarNombreInput" class="form-input-agendar" placeholder="Ej. Juan Pérez" required autocomplete="name" />
-                </div>
+                <!-- PASO 1: Datos Personales (Nombre y WhatsApp) -->
+                <div class="agendar-step-content active" data-step="1">
+                    <!-- Campo 1: Nombre completo -->
+                    <div class="form-group-agendar">
+                        <label for="agendarNombreInput" class="form-label-agendar">
+                            <span class="label-icon">👤</span> Nombre completo <span class="required-star">*</span>
+                        </label>
+                        <input type="text" id="agendarNombreInput" class="form-input-agendar" placeholder="Ej. Juan Pérez" required autocomplete="name" />
+                    </div>
 
-                <!-- Campo 2: WhatsApp -->
-                <div class="form-group-agendar">
-                    <label for="agendarPhoneInput" class="form-label-agendar">
-                        <img src="https://i.imgur.com/MA961il.png" alt="WhatsApp" style="width:19px;height:19px;vertical-align:-3px;margin-right:5px;display:inline-block;" />WhatsApp <span class="required-star">*</span>
-                    </label>
-                    <div class="phone-input-wrapper">
-                        <select id="agendarPaisSelect" class="phone-prefix-select" aria-label="Código de país">
-                            <option value="+57" data-short="CO +57" data-full="CO +57 Colombia" selected>CO +57</option>
-                            <option value="+1" data-short="US +1" data-full="US/CA +1 EE.UU. / Canadá">US +1</option>
-                            <option value="+34" data-short="ES +34" data-full="ES +34 España">ES +34</option>
-                            <option value="+52" data-short="MX +52" data-full="MX +52 México">MX +52</option>
-                            <option value="+58" data-short="VE +58" data-full="VE +58 Venezuela">VE +58</option>
-                            <option value="+593" data-short="EC +593" data-full="EC +593 Ecuador">EC +593</option>
-                            <option value="+51" data-short="PE +51" data-full="PE +51 Perú">PE +51</option>
-                            <option value="+56" data-short="CL +56" data-full="CL +56 Chile">CL +56</option>
-                            <option value="+54" data-short="AR +54" data-full="AR +54 Argentina">AR +54</option>
-                            <option value="+507" data-short="PA +507" data-full="PA +507 Panamá">PA +507</option>
-                            <option value="+506" data-short="CR +506" data-full="CR +506 Costa Rica">CR +506</option>
-                            <option value="+503" data-short="SV +503" data-full="SV +503 El Salvador">SV +503</option>
-                            <option value="+502" data-short="GT +502" data-full="GT +502 Guatemala">GT +502</option>
-                            <option value="+504" data-short="HN +504" data-full="HN +504 Honduras">HN +504</option>
-                            <option value="+505" data-short="NI +505" data-full="NI +505 Nicaragua">NI +505</option>
-                            <option value="+1" data-short="PR +1" data-full="PR +1 Puerto Rico">PR +1</option>
-                            <option value="+598" data-short="UY +598" data-full="UY +598 Uruguay">UY +598</option>
-                            <option value="+591" data-short="BO +591" data-full="BO +591 Bolivia">BO +591</option>
-                            <option value="+595" data-short="PY +595" data-full="PY +595 Paraguay">PY +595</option>
-                            <option value="+55" data-short="BR +55" data-full="BR +55 Brasil">BR +55</option>
-                            <option value="+44" data-short="GB +44" data-full="GB +44 Reino Unido">GB +44</option>
-                            <option value="+33" data-short="FR +33" data-full="FR +33 Francia">FR +33</option>
-                            <option value="+49" data-short="DE +49" data-full="DE +49 Alemania">DE +49</option>
-                            <option value="+39" data-short="IT +39" data-full="IT +39 Italia">IT +39</option>
-                            <option value="+41" data-short="CH +41" data-full="CH +41 Suiza">CH +41</option>
-                            <option value="+31" data-short="NL +31" data-full="NL +31 Países Bajos">NL +31</option>
-                            <option value="+61" data-short="AU +61" data-full="AU +61 Australia">AU +61</option>
-                        </select>
-                        <input type="tel" id="agendarPhoneInput" class="form-input-agendar input-phone" placeholder="Ej. 300 123 4567" required autocomplete="tel" />
+                    <!-- Campo 2: WhatsApp -->
+                    <div class="form-group-agendar">
+                        <label for="agendarPhoneInput" class="form-label-agendar">
+                            <img src="https://i.imgur.com/MA961il.png" alt="WhatsApp" style="width:19px;height:19px;vertical-align:-3px;margin-right:5px;display:inline-block;" />WhatsApp <span class="required-star">*</span>
+                        </label>
+                        <div class="phone-input-wrapper">
+                            <select id="agendarPaisSelect" class="phone-prefix-select" aria-label="Código de país">
+                                <option value="+57" data-short="CO +57" data-full="CO +57 Colombia" selected>CO +57</option>
+                                <option value="+1" data-short="US +1" data-full="US/CA +1 EE.UU. / Canadá">US +1</option>
+                                <option value="+34" data-short="ES +34" data-full="ES +34 España">ES +34</option>
+                                <option value="+52" data-short="MX +52" data-full="MX +52 México">MX +52</option>
+                                <option value="+58" data-short="VE +58" data-full="VE +58 Venezuela">VE +58</option>
+                                <option value="+593" data-short="EC +593" data-full="EC +593 Ecuador">EC +593</option>
+                                <option value="+51" data-short="PE +51" data-full="PE +51 Perú">PE +51</option>
+                                <option value="+56" data-short="CL +56" data-full="CL +56 Chile">CL +56</option>
+                                <option value="+54" data-short="AR +54" data-full="AR +54 Argentina">AR +54</option>
+                                <option value="+507" data-short="PA +507" data-full="PA +507 Panamá">PA +507</option>
+                                <option value="+506" data-short="CR +506" data-full="CR +506 Costa Rica">CR +506</option>
+                                <option value="+503" data-short="SV +503" data-full="SV +503 El Salvador">SV +503</option>
+                                <option value="+502" data-short="GT +502" data-full="GT +502 Guatemala">GT +502</option>
+                                <option value="+504" data-short="HN +504" data-full="HN +504 Honduras">HN +504</option>
+                                <option value="+505" data-short="NI +505" data-full="NI +505 Nicaragua">NI +505</option>
+                                <option value="+1" data-short="PR +1" data-full="PR +1 Puerto Rico">PR +1</option>
+                                <option value="+598" data-short="UY +598" data-full="UY +598 Uruguay">UY +598</option>
+                                <option value="+591" data-short="BO +591" data-full="BO +591 Bolivia">BO +591</option>
+                                <option value="+595" data-short="PY +595" data-full="PY +595 Paraguay">PY +595</option>
+                                <option value="+55" data-short="BR +55" data-full="BR +55 Brasil">BR +55</option>
+                                <option value="+44" data-short="GB +44" data-full="GB +44 Reino Unido">GB +44</option>
+                                <option value="+33" data-short="FR +33" data-full="FR +33 Francia">FR +33</option>
+                                <option value="+49" data-short="DE +49" data-full="DE +49 Alemania">DE +49</option>
+                                <option value="+39" data-short="IT +39" data-full="IT +39 Italia">IT +39</option>
+                                <option value="+41" data-short="CH +41" data-full="CH +41 Suiza">CH +41</option>
+                                <option value="+31" data-short="NL +31" data-full="NL +31 Países Bajos">NL +31</option>
+                                <option value="+61" data-short="AU +61" data-full="AU +61 Australia">AU +61</option>
+                            </select>
+                            <input type="tel" id="agendarPhoneInput" class="form-input-agendar input-phone" placeholder="Ej. 300 123 4567" required autocomplete="tel" />
+                        </div>
                     </div>
                 </div>
 
-                <!-- Campo 3: Método de pago (Selección múltiple) -->
-                <div class="form-group-agendar">
-                    <label class="form-label-agendar">
-                        <span class="label-icon">💳</span> Método de pago <span class="required-star">*</span>
-                        <span class="label-hint">(Selección múltiple)</span>
-                    </label>
-                    <div class="chips-pago-container" id="chipsPagoContainer">
-                        <button type="button" class="chip-pago" data-val="Efectivo💰">
-                            <span class="chip-icon">💰</span> Efectivo
-                        </button>
-                        <button type="button" class="chip-pago" data-val="Crédito 🏦">
-                            <span class="chip-icon">🏦</span> Crédito
-                        </button>
+                <!-- PASO 2: Método de Pago y Crédito -->
+                <div class="agendar-step-content" data-step="2">
+                    <!-- Campo: Método de pago (Selección múltiple) -->
+                    <div class="form-group-agendar">
+                        <label class="form-label-agendar">
+                            <span class="label-icon">💳</span> Método de pago <span class="required-star">*</span>
+                            <span class="label-hint">(Selección múltiple)</span>
+                        </label>
+                        <div class="chips-pago-container" id="chipsPagoContainer">
+                            <button type="button" class="chip-pago" data-val="Efectivo💰">
+                                <span class="chip-icon">💰</span> Efectivo
+                            </button>
+                            <button type="button" class="chip-pago" data-val="Crédito 🏦">
+                                <span class="chip-icon">🏦</span> Crédito
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Panel Condicional Crédito (Preaprobado & Banco) -->
-                <div id="panelCreditoContainer" class="panel-credito-condicional">
-                    <div class="panel-credito-box">
-                        <div class="form-group-agendar">
-                            <label class="form-label-agendar">
-                                <span class="label-icon">✅</span> Cuenta con la carta de preaprobado <span class="required-star">*</span>
-                            </label>
-                            <div class="chips-preaprobado-container" id="chipsPreaprobadoContainer">
-                                <button type="button" class="chip-sub" data-val="Sí ✅">
-                                    Sí, cuento con preaprobado ✅
-                                </button>
-                                <button type="button" class="chip-sub" data-val="En trámite ⏳">
-                                    En trámite ⏳
-                                </button>
-                                <button type="button" class="chip-sub" data-val="No aún / Asesoría 💡">
-                                    No aún / Deseo asesoría 💡
-                                </button>
+                    <!-- Panel Condicional Crédito (Preaprobado & Banco) -->
+                    <div id="panelCreditoContainer" class="panel-credito-condicional">
+                        <div class="panel-credito-box">
+                            <div class="form-group-agendar">
+                                <label class="form-label-agendar">
+                                    <span class="label-icon">✅</span> Cuenta con la carta de preaprobado <span class="required-star">*</span>
+                                </label>
+                                <div class="chips-preaprobado-container" id="chipsPreaprobadoContainer">
+                                    <button type="button" class="chip-sub" data-val="Sí ✅">
+                                        Sí, cuento con preaprobado ✅
+                                    </button>
+                                    <button type="button" class="chip-sub" data-val="En trámite ⏳">
+                                        En trámite ⏳
+                                    </button>
+                                    <button type="button" class="chip-sub" data-val="No aún / Asesoría 💡">
+                                        No aún / Deseo asesoría 💡
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="form-group-agendar mb-0">
+                                <label for="agendarBancoInput" class="form-label-agendar">
+                                    <span class="label-icon">🏛️</span> ¿Con qué banco o entidad? <span class="required-star">*</span>
+                                </label>
+                                <input type="text" id="agendarBancoInput" class="form-input-agendar" placeholder="Ej. Bancolombia, Davivienda, FNA, etc." />
                             </div>
                         </div>
-
-                        <div class="form-group-agendar mb-0">
-                            <label for="agendarBancoInput" class="form-label-agendar">
-                                <span class="label-icon">🏛️</span> ¿Con qué banco o entidad? <span class="required-star">*</span>
-                            </label>
-                            <input type="text" id="agendarBancoInput" class="form-input-agendar" placeholder="Ej. Bancolombia, Davivienda, FNA, etc." />
-                        </div>
                     </div>
                 </div>
 
-                <!-- Campo 4: Día de la Visita -->
-                <div class="form-group-agendar">
-                    <label for="agendarFechaInput" class="form-label-agendar">
-                        <span class="label-icon">📅</span> Seleccione día de la visita <span class="required-star">*</span>
-                    </label>
-                    <div class="dia-selection-wrapper">
-                        <div class="chips-dia-shortcuts" id="chipsDiaShortcuts">
-                            <button type="button" class="chip-shortcut" data-day="manana">Mañana</button>
-                            <button type="button" class="chip-shortcut" data-day="finsemana">Fin de semana</button>
+                <!-- PASO 3: Fecha y Hora de la Visita -->
+                <div class="agendar-step-content" data-step="3">
+                    <!-- Campo: Día de la Visita -->
+                    <div class="form-group-agendar">
+                        <label for="agendarFechaInput" class="form-label-agendar">
+                            <span class="label-icon">📅</span> Seleccione día de la visita <span class="required-star">*</span>
+                        </label>
+                        <div class="dia-selection-wrapper">
+                            <div class="chips-dia-shortcuts" id="chipsDiaShortcuts">
+                                <button type="button" class="chip-shortcut" data-day="manana">Mañana</button>
+                                <button type="button" class="chip-shortcut" data-day="finsemana">Fin de semana</button>
+                            </div>
+                            <input type="date" id="agendarFechaInput" class="form-input-agendar input-date" required />
                         </div>
-                        <input type="date" id="agendarFechaInput" class="form-input-agendar input-date" required />
                     </div>
-                </div>
 
-                <!-- Campo 5: Hora de la Visita -->
-                <div class="form-group-agendar">
-                    <label class="form-label-agendar">
-                        <span class="label-icon">⌚</span> Hora de la visita <span class="required-star">*</span>
-                    </label>
-                    <div class="hora-selection-wrapper">
-                        <!-- Horarios Frecuentes Mañana -->
-                        <div class="time-block-section">
-                            <span class="time-section-subtitle">🌅 En la mañana</span>
-                            <div class="chips-hora-grid" id="chipsHoraManana">
-                                <button type="button" class="chip-hora-exacta" data-hora="08:00">8:00 AM</button>
-                                <button type="button" class="chip-hora-exacta" data-hora="09:00">9:00 AM</button>
-                                <button type="button" class="chip-hora-exacta" data-hora="10:00">10:00 AM</button>
-                                <button type="button" class="chip-hora-exacta" data-hora="11:00">11:00 AM</button>
+                    <!-- Campo: Hora de la Visita -->
+                    <div class="form-group-agendar">
+                        <label class="form-label-agendar">
+                            <span class="label-icon">⌚</span> Hora de la visita <span class="required-star">*</span>
+                        </label>
+                        <div class="hora-selection-wrapper">
+                            <!-- Horarios Frecuentes Mañana -->
+                            <div class="time-block-section">
+                                <span class="time-section-subtitle">🌅 En la mañana</span>
+                                <div class="chips-hora-grid" id="chipsHoraManana">
+                                    <button type="button" class="chip-hora-exacta" data-hora="08:00">8:00 AM</button>
+                                    <button type="button" class="chip-hora-exacta" data-hora="09:00">9:00 AM</button>
+                                    <button type="button" class="chip-hora-exacta" data-hora="10:00">10:00 AM</button>
+                                    <button type="button" class="chip-hora-exacta" data-hora="11:00">11:00 AM</button>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Horarios Frecuentes Tarde -->
-                        <div class="time-block-section" style="margin-top: 8px;">
-                            <span class="time-section-subtitle">☀️ En la tarde</span>
-                            <div class="chips-hora-grid" id="chipsHoraTarde">
-                                <button type="button" class="chip-hora-exacta" data-hora="14:00">2:00 PM</button>
-                                <button type="button" class="chip-hora-exacta" data-hora="15:00">3:00 PM</button>
-                                <button type="button" class="chip-hora-exacta" data-hora="16:00">4:00 PM</button>
-                                <button type="button" class="chip-hora-exacta" data-hora="17:00">5:00 PM</button>
+                            <!-- Horarios Frecuentes Tarde -->
+                            <div class="time-block-section" style="margin-top: 8px;">
+                                <span class="time-section-subtitle">☀️ En la tarde</span>
+                                <div class="chips-hora-grid" id="chipsHoraTarde">
+                                    <button type="button" class="chip-hora-exacta" data-hora="14:00">2:00 PM</button>
+                                    <button type="button" class="chip-hora-exacta" data-hora="15:00">3:00 PM</button>
+                                    <button type="button" class="chip-hora-exacta" data-hora="16:00">4:00 PM</button>
+                                    <button type="button" class="chip-hora-exacta" data-hora="17:00">5:00 PM</button>
+                                </div>
                             </div>
-                        </div>
 
-                        <input type="hidden" id="agendarHoraInput" value="" />
+                            <input type="hidden" id="agendarHoraInput" value="" />
+                        </div>
                     </div>
                 </div>
 
             </div>
 
-            <!-- Footer con Botón de Enviar a WhatsApp -->
-            <div class="modal-agendar-footer">
-                <button type="button" id="btnConfirmarAgendamientoWA" class="btn-confirmar-agendar">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                        <path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.846.497 3.576 1.362 5.065L2 22l5.07-1.33A9.953 9.953 0 0012 22c5.522 0 10-4.477 10-10S17.521 2 11.999 2zm.001 18a7.963 7.963 0 01-4.184-1.188l-.3-.178-3.012.79.803-2.93-.196-.31A7.944 7.944 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/>
-                    </svg>
-                    Confirmar y Agendar por WhatsApp
-                </button>
+            <!-- Footer con Botones de Navegación por Paso -->
+            <div class="modal-agendar-footer" id="agendarModalFooter">
+                <!-- Paso 1 Nav -->
+                <div class="step-footer-actions active" data-step-footer="1">
+                    <button type="button" id="btnSiguienteStep1" class="btn-confirmar-agendar">
+                        Siguiente paso ➔
+                    </button>
+                </div>
+                <!-- Paso 2 Nav -->
+                <div class="step-footer-actions" data-step-footer="2">
+                    <button type="button" id="btnAnteriorStep2" class="btn-nav-anterior">
+                        ← Anterior
+                    </button>
+                    <button type="button" id="btnSiguienteStep2" class="btn-confirmar-agendar flex-1">
+                        Siguiente paso ➔
+                    </button>
+                </div>
+                <!-- Paso 3 Nav -->
+                <div class="step-footer-actions" data-step-footer="3">
+                    <button type="button" id="btnAnteriorStep3" class="btn-nav-anterior">
+                        ← Anterior
+                    </button>
+                    <button type="button" id="btnConfirmarAgendamientoWA" class="btn-confirmar-agendar flex-1">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                            <path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.846.497 3.576 1.362 5.065L2 22l5.07-1.33A9.953 9.953 0 0012 22c5.522 0 10-4.477 10-10S17.521 2 11.999 2zm.001 18a7.963 7.963 0 01-4.184-1.188l-.3-.178-3.012.79.803-2.93-.196-.31A7.944 7.944 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/>
+                        </svg>
+                        Confirmar y Agendar por WhatsApp
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -10716,85 +10892,68 @@ document.head.appendChild(schemaScript);
 
                         // Anterior
                         paginacion.appendChild(
-                            crearBoton("〈 Anterior", paginaActual - 1, paginaActual === 1)
-                        );
-
-                        // Página 1 siempre
-                        const btn1 = crearBoton("1", 1, false);
-                        if (paginaActual === 1) btn1.classList.add("pagina-actual");
-                        paginacion.appendChild(btn1);
-
-                        // Si estamos en página 3 o más, metemos puntos antes del bloque central
-                        if (paginaActual >= 3) {
-                            const dots = document.createElement("span");
-                            dots.textContent = "…";
-                            dots.classList.add("puntos-paginacion");
-                            paginacion.appendChild(dots);
-                        }
-
-                        // Bloque de páginas: vecinos de la actual
-                        // Siempre mostramos current-1, current, current+1 si existen y no son 1 ni > total
-                        const start = Math.max(2, paginaActual - 1);
-                        const end = Math.min(totalPaginas - 1, paginaActual + 1);
-                        for (let p = start; p <= end; p++) {
-                            if (p === 1) continue;
-                            const btn = crearBoton(p.toString(), p);
-                            if (p === paginaActual) btn.classList.add("pagina-actual");
-                            paginacion.appendChild(btn);
-                        }
-
-                        // Siguiente
-                        paginacion.appendChild(
-                            crearBoton("Siguiente 〉", paginaActual + 1, paginaActual === totalPaginas)
-                        );
-                    }
-
-                    function actualizarContador() {
-                        const total = listaFiltrada.length;
-                        if (total === 0) {
-                            document.getElementById('contador').textContent = "0 de 0";
-                            return;
-                        }
-
-                        const inicio = (paginaActual - 1) * tarjetasPorPagina + 1;
-                        const fin = Math.min(paginaActual * tarjetasPorPagina, total);
-
-                        document.getElementById('contador').textContent = `${inicio}–${fin} / ${total}`;
-                    }
-
-                    function formatearPrecio(numero) {
-                        return "$" + Number(numero).toLocaleString("es-CO").replace(/,/g, "'");
-                    }
-
-                    function actualizarBotonWhatsapp(inmueble) {
-                        window._inmuebleActualModal = inmueble;
-                        if (!inmueble) {
-                            const codigo = document.getElementById("modalCodigo")?.textContent?.trim();
-                            if (!codigo) return;
-                            inmueble = (typeof datos !== 'undefined' ? datos : []).find(d => String(d["Código"] || "").trim() === String(codigo).trim());
-                        }
-                        if (!inmueble) return;
-
-                        const cod = String(inmueble["Código"] || "").trim();
-                        const nombre = (inmueble["Nombre"] || "Inmueble").trim();
-                        const precio = formatearPrecio(inmueble["Precio"]);
-
-                        const houseEmoji = String.fromCodePoint(0x1F3E0);
-                        const linkEmoji = String.fromCodePoint(0x1F517);
-
-                        const mensaje = `Hola ICDE Inmobiliaria ${houseEmoji}, quiero agendar una visita para ver el inmueble\n\n${nombre} (Cód. ${cod}) - ${precio}\n\n${linkEmoji} Mi catálogo personalizado:\nhttps://icdeinmobiliaria.com/?ids=${cod}\n\n¿Cuándo podríamos coordinar?`;
-
-                        const url = `https://api.whatsapp.com/send?phone=573208762117&text=${encodeURIComponent(mensaje)}`;
-                        const btn = document.getElementById("modalBotonWhatsapp");
-                        if (btn) btn.href = url;
-                    }
-
-                    // ─────────────────────────────────────────────────
-                    // TARJETA DE AGENDAMIENTO DE VISITAS (NEUROVENTAS & WHATSAPP)
+                     // ─────────────────────────────────────────────────
+                    // TARJETA DE AGENDAMIENTO DE VISITAS (NEUROVENTAS & WHATSAPP) - 3 PASOS
                     // ─────────────────────────────────────────────────
                     let inmuebleAgendarActual = null;
                     let metodosPagoSeleccionados = new Set();
                     let preaprobadoSeleccionado = "";
+                    let pasoActualAgendar = 1;
+
+                    function mostrarPasoAgendar(paso) {
+                        if (paso < 1) paso = 1;
+                        if (paso > 3) paso = 3;
+
+                        pasoActualAgendar = paso;
+
+                        // Visibilidad de contenidos de paso
+                        document.querySelectorAll(".agendar-step-content").forEach(el => {
+                            if (parseInt(el.getAttribute("data-step"), 10) === paso) {
+                                el.classList.add("active");
+                            } else {
+                                el.classList.remove("active");
+                            }
+                        });
+
+                        // Visibilidad de botones footer
+                        document.querySelectorAll(".step-footer-actions").forEach(el => {
+                            if (parseInt(el.getAttribute("data-step-footer"), 10) === paso) {
+                                el.classList.add("active");
+                            } else {
+                                el.classList.remove("active");
+                            }
+                        });
+
+                        // Actualizar indicador Stepper
+                        document.querySelectorAll("#stepperAgendarVisita .stepper-step").forEach(stepEl => {
+                            const stepNum = parseInt(stepEl.getAttribute("data-step"), 10);
+                            const circle = stepEl.querySelector(".stepper-circle");
+                            
+                            if (stepNum < paso) {
+                                stepEl.classList.remove("active");
+                                stepEl.classList.add("completed");
+                                if (circle) circle.textContent = "✓";
+                            } else if (stepNum === paso) {
+                                stepEl.classList.add("active");
+                                stepEl.classList.remove("completed");
+                                if (circle) circle.textContent = stepNum;
+                            } else {
+                                stepEl.classList.remove("active", "completed");
+                                if (circle) circle.textContent = stepNum;
+                            }
+                        });
+
+                        const line1 = document.getElementById("stepperLine1");
+                        const line2 = document.getElementById("stepperLine2");
+                        if (line1) line1.classList.toggle("active", paso >= 2);
+                        if (line2) line2.classList.toggle("active", paso >= 3);
+
+                        // Scroll arriba en el body del modal al cambiar de paso
+                        const bodyEl = document.querySelector("#modalAgendarVisitaOverlay .modal-agendar-body");
+                        if (bodyEl) bodyEl.scrollTop = 0;
+
+                        validarFormularioAgendar();
+                    }
 
                     function inicializarModalAgendarVisita() {
                         const overlay = document.getElementById("modalAgendarVisitaOverlay");
@@ -10818,6 +10977,37 @@ document.head.appendChild(schemaScript);
                                 abrirModalAgendarVisita(inmueble);
                             });
                         }
+
+                        // Botones de Navegación del Wizard
+                        const btnNext1 = document.getElementById("btnSiguienteStep1");
+                        const btnNext2 = document.getElementById("btnSiguienteStep2");
+                        const btnPrev2 = document.getElementById("btnAnteriorStep2");
+                        const btnPrev3 = document.getElementById("btnAnteriorStep3");
+
+                        btnNext1?.addEventListener("click", () => {
+                            if (validarPasoAgendar1()) mostrarPasoAgendar(2);
+                        });
+
+                        btnNext2?.addEventListener("click", () => {
+                            if (validarPasoAgendar2()) mostrarPasoAgendar(3);
+                        });
+
+                        btnPrev2?.addEventListener("click", () => mostrarPasoAgendar(1));
+                        btnPrev3?.addEventListener("click", () => mostrarPasoAgendar(2));
+
+                        // Clics directos en los pasos del Stepper
+                        document.querySelectorAll("#stepperAgendarVisita .stepper-step").forEach(stepEl => {
+                            stepEl.addEventListener("click", () => {
+                                const targetStep = parseInt(stepEl.getAttribute("data-step"), 10);
+                                if (targetStep === 1) {
+                                    mostrarPasoAgendar(1);
+                                } else if (targetStep === 2 && validarPasoAgendar1()) {
+                                    mostrarPasoAgendar(2);
+                                } else if (targetStep === 3 && validarPasoAgendar1() && validarPasoAgendar2()) {
+                                    mostrarPasoAgendar(3);
+                                }
+                            });
+                        });
 
                         // Configurar Chips de Método de Pago (Multiselección)
                         document.querySelectorAll("#chipsPagoContainer .chip-pago").forEach(chip => {
@@ -10907,8 +11097,7 @@ document.head.appendChild(schemaScript);
                             }
                         });
 
-                        // Evento Confirmar Agendamiento
-                        // Selector dinámico de indicativos (Corto en botón cerrado, completo en lista desplegable)
+                        // Selector dinámico de indicativos
                         const selPais = document.getElementById("agendarPaisSelect");
                         if (selPais) {
                             const setShortLabel = () => {
@@ -11013,8 +11202,8 @@ document.head.appendChild(schemaScript);
                         // Hora de la visita inicia sin seleccionar
                         if (horaInput) horaInput.value = "";
 
-                        // Validar estado inicial del formulario
-                        validarFormularioAgendar();
+                        // Mostrar Paso 1 e iniciar estado del modal
+                        mostrarPasoAgendar(1);
 
                         // Abrir overlay en frente absoluto
                         const overlay = document.getElementById("modalAgendarVisitaOverlay");
@@ -11035,16 +11224,22 @@ document.head.appendChild(schemaScript);
                         }
                     }
 
-                    function validarFormularioAgendar() {
-                        const btnConfirmar = document.getElementById("btnConfirmarAgendamientoWA");
-                        if (!btnConfirmar) return false;
-
+                    function validarPasoAgendar1() {
                         const nombre = document.getElementById("agendarNombreInput")?.value.trim() || "";
                         const phoneRaw = document.getElementById("agendarPhoneInput")?.value.trim() || "";
                         const phoneClean = phoneRaw.replace(/\D/g, "");
+                        
+                        const esValido = nombre.length > 0 && phoneClean.length >= 7;
+                        const btnNext1 = document.getElementById("btnSiguienteStep1");
+                        if (btnNext1) {
+                            btnNext1.disabled = !esValido;
+                            btnNext1.classList.toggle("disabled", !esValido);
+                        }
+                        return esValido;
+                    }
 
+                    function validarPasoAgendar2() {
                         const tienePago = typeof metodosPagoSeleccionados !== 'undefined' && metodosPagoSeleccionados.size > 0;
-
                         const tieneCredito = typeof metodosPagoSeleccionados !== 'undefined' && Array.from(metodosPagoSeleccionados).some(m => m.includes("Crédito"));
                         let creditoValido = true;
                         if (tieneCredito) {
@@ -11053,23 +11248,35 @@ document.head.appendChild(schemaScript);
                             creditoValido = tienePreaprobado && banco.length > 0;
                         }
 
-                        const fecha = document.getElementById("agendarFechaInput")?.value || "";
+                        const esValido = tienePago && creditoValido;
+                        const btnNext2 = document.getElementById("btnSiguienteStep2");
+                        if (btnNext2) {
+                            btnNext2.disabled = !esValido;
+                            btnNext2.classList.toggle("disabled", !esValido);
+                        }
+                        return esValido;
+                    }
 
+                    function validarPasoAgendar3() {
+                        const fecha = document.getElementById("agendarFechaInput")?.value || "";
                         const chipHoraActivo = document.querySelector(".chip-hora-exacta.active");
                         const horaVal = document.getElementById("agendarHoraInput")?.value || "";
                         const tieneHora = !!(chipHoraActivo || horaVal);
 
-                        const esValido = nombre.length > 0 && phoneClean.length >= 7 && tienePago && creditoValido && fecha.length > 0 && tieneHora;
-
-                        if (esValido) {
-                            btnConfirmar.disabled = false;
-                            btnConfirmar.classList.remove("disabled");
-                        } else {
-                            btnConfirmar.disabled = true;
-                            btnConfirmar.classList.add("disabled");
+                        const esValido = fecha.length > 0 && tieneHora;
+                        const btnWA = document.getElementById("btnConfirmarAgendamientoWA");
+                        if (btnWA) {
+                            btnWA.disabled = !esValido;
+                            btnWA.classList.toggle("disabled", !esValido);
                         }
-
                         return esValido;
+                    }
+
+                    function validarFormularioAgendar() {
+                        const p1 = validarPasoAgendar1();
+                        const p2 = validarPasoAgendar2();
+                        const p3 = validarPasoAgendar3();
+                        return p1 && p2 && p3;
                     }
 
                     function procesarYEnviarAgendamientoWA() {
