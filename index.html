@@ -10892,7 +10892,95 @@ document.head.appendChild(schemaScript);
 
                         // Anterior
                         paginacion.appendChild(
-                     // ─────────────────────────────────────────────────
+                            crearBoton("〈 Anterior", paginaActual - 1, paginaActual === 1)
+                        );
+
+                        // Página 1 siempre
+                        const btn1 = crearBoton("1", 1, false);
+                        if (paginaActual === 1) btn1.classList.add("pagina-actual");
+                        paginacion.appendChild(btn1);
+
+                        // Si estamos en página 3 o más, metemos puntos antes del bloque central
+                        if (paginaActual >= 3) {
+                            const dots = document.createElement("span");
+                            dots.textContent = "…";
+                            dots.classList.add("puntos-paginacion");
+                            paginacion.appendChild(dots);
+                        }
+
+                        // Bloque de páginas: vecinos de la actual
+                        // Siempre mostramos current-1, current, current+1 si existen y no son 1 ni > total
+                        const start = Math.max(2, paginaActual - 1);
+                        const end = Math.min(totalPaginas - 1, paginaActual + 1);
+                        for (let p = start; p <= end; p++) {
+                            if (p === 1) continue;
+                            const btn = crearBoton(p.toString(), p);
+                            if (p === paginaActual) btn.classList.add("pagina-actual");
+                            paginacion.appendChild(btn);
+                        }
+
+                        // Puntos antes de la última página si estamos lejos
+                        if (paginaActual <= totalPaginas - 2) {
+                            const dots = document.createElement("span");
+                            dots.textContent = "…";
+                            dots.classList.add("puntos-paginacion");
+                            paginacion.appendChild(dots);
+                        }
+
+                        // Última página
+                        if (totalPaginas > 1) {
+                            const btnLast = crearBoton(totalPaginas.toString(), totalPaginas);
+                            if (paginaActual === totalPaginas) btnLast.classList.add("pagina-actual");
+                            paginacion.appendChild(btnLast);
+                        }
+
+                        // Siguiente
+                        paginacion.appendChild(
+                            crearBoton("Siguiente 〉", paginaActual + 1, paginaActual === totalPaginas)
+                        );
+                    }
+
+                    function actualizarContador() {
+                        const total = listaFiltrada.length;
+                        if (total === 0) {
+                            document.getElementById('contador').textContent = "0 de 0";
+                            return;
+                        }
+
+                        const inicio = (paginaActual - 1) * tarjetasPorPagina + 1;
+                        const fin = Math.min(paginaActual * tarjetasPorPagina, total);
+
+                        document.getElementById('contador').textContent = `${inicio}–${fin} / ${total}`;
+                    }
+
+                    function formatearPrecio(numero) {
+                        return "$" + Number(numero).toLocaleString("es-CO").replace(/,/g, "'");
+                    }
+
+                    function actualizarBotonWhatsapp(inmueble) {
+                        window._inmuebleActualModal = inmueble;
+                        if (!inmueble) {
+                            const codigo = document.getElementById("modalCodigo")?.textContent?.trim();
+                            if (!codigo) return;
+                            inmueble = (typeof datos !== 'undefined' ? datos : []).find(d => String(d["Código"] || "").trim() === String(codigo).trim());
+                        }
+                        if (!inmueble) return;
+
+                        const cod = String(inmueble["Código"] || "").trim();
+                        const nombre = (inmueble["Nombre"] || "Inmueble").trim();
+                        const precio = formatearPrecio(inmueble["Precio"]);
+
+                        const houseEmoji = String.fromCodePoint(0x1F3E0);
+                        const linkEmoji = String.fromCodePoint(0x1F517);
+
+                        const mensaje = `Hola ICDE Inmobiliaria ${houseEmoji}, quiero agendar una visita para ver el inmueble\n\n${nombre} (Cód. ${cod}) - ${precio}\n\n${linkEmoji} Mi catálogo personalizado:\nhttps://icdeinmobiliaria.com/?ids=${cod}\n\n¿Cuándo podríamos coordinar?`;
+
+                        const url = `https://api.whatsapp.com/send?phone=573208762117&text=${encodeURIComponent(mensaje)}`;
+                        const btn = document.getElementById("modalBotonWhatsapp");
+                        if (btn) btn.href = url;
+                    }
+
+                    // ─────────────────────────────────────────────────
                     // TARJETA DE AGENDAMIENTO DE VISITAS (NEUROVENTAS & WHATSAPP) - 3 PASOS
                     // ─────────────────────────────────────────────────
                     let inmuebleAgendarActual = null;
