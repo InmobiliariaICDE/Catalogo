@@ -6380,6 +6380,16 @@ font-weight: 500;
     color: #f59e0b;
 }
 
+.agendar-inmueble-thumb {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid rgba(212, 168, 75, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
 .modal-agendar-body {
     padding: 20px 24px;
     overflow-y: auto;
@@ -11269,6 +11279,32 @@ document.head.appendChild(schemaScript);
                         }
                     }
 
+                    function obtenerImagenPrincipalInmueble(inmueble) {
+                        if (!inmueble) return '';
+                        if (inmueble["Imagenes"]) {
+                            const raw = String(inmueble["Imagenes"]).replace(/\r/g, '').replace(/\n/g, '');
+                            const urls = raw.split('|').map(u => u.trim()).filter(u => u.length > 5);
+                            if (urls.length > 0) return urls[0];
+                        }
+                        if (inmueble["Image"] && String(inmueble["Image"]).length > 5) {
+                            return inmueble["Image"];
+                        }
+                        if (inmueble["Fotos"]) {
+                            const urls = String(inmueble["Fotos"]).split(',').map(u => u.trim()).filter(u => u.length > 5);
+                            if (urls.length > 0) return urls[0];
+                        }
+                        if (inmueble["FotoMain"] && String(inmueble["FotoMain"]).length > 5) {
+                            return inmueble["FotoMain"];
+                        }
+                        if (window.carruselFotos && window.carruselFotos.length > 0 && String(window.carruselFotos[0]).length > 5) {
+                            return window.carruselFotos[0];
+                        }
+                        const carruselImg = document.querySelector("#carruselPrincipal img")?.src;
+                        if (carruselImg && carruselImg.length > 5) return carruselImg;
+
+                        return '';
+                    }
+
                     function abrirModalAgendarVisita(inmueble) {
                         if (!inmueble) {
                             const codigo = document.getElementById("modalCodigo")?.textContent?.trim();
@@ -11279,19 +11315,21 @@ document.head.appendChild(schemaScript);
 
                         inmuebleAgendarActual = inmueble;
 
-                        // Actualizar tag de inmueble
+                        // Actualizar tag de inmueble con miniatura si es propiedad individual
                         const tagNombre = document.getElementById("agendarInmuebleNombre");
                         if (tagNombre && inmueble) {
                             if (inmueble.esFavoritos) {
-                                tagNombre.innerHTML = `📍 <strong>${inmueble.favs.length} Propiedad(es) Favorita(s)</strong> (Códs. ${inmueble.favs.join(', ')})`;
+                                tagNombre.innerHTML = `📍 <span><strong>${inmueble.favs.length} Propiedad(es) Favorita(s)</strong> (Códs. ${inmueble.favs.join(', ')})</span>`;
                             } else {
                                 const cod = String(inmueble["Código"] || "").trim();
                                 const nom = (inmueble["Nombre"] || "Inmueble").trim();
                                 const precio = typeof formatearPrecio === 'function' ? formatearPrecio(inmueble["Precio"]) : inmueble["Precio"];
-                                tagNombre.innerHTML = `📍 <strong>${nom}</strong> (Cód. ${cod}) — ${precio}`;
+                                const thumbUrl = obtenerImagenPrincipalInmueble(inmueble);
+                                const iconOrThumb = thumbUrl ? `<img src="${thumbUrl}" alt="${nom}" class="agendar-inmueble-thumb" />` : `📍`;
+                                tagNombre.innerHTML = `${iconOrThumb} <span><strong>${nom}</strong> (Cód. ${cod}) — ${precio}</span>`;
                             }
                         } else if (tagNombre) {
-                            tagNombre.innerHTML = `📍 <strong>Inmueble ICDE</strong>`;
+                            tagNombre.innerHTML = `📍 <span><strong>Inmueble ICDE</strong></span>`;
                         }
 
                         // Limpiar / resetear form
