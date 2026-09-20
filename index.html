@@ -3676,59 +3676,193 @@ font-weight: 500;
                 font-size: 1rem;
             }
 
+            /* Botón comparar directo en cada tarjeta */
+            .btn-card-comparar {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                z-index: 5;
+                height: 32px;
+                padding: 0 10px;
+                border-radius: 20px;
+                background: rgba(0, 0, 0, 0.55);
+                backdrop-filter: blur(6px);
+                -webkit-backdrop-filter: blur(6px);
+                border: 1.5px solid rgba(255, 255, 255, 0.2);
+                color: #fff;
+                font-family: "Outfit", sans-serif;
+                font-size: 11px;
+                font-weight: 600;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                transition: all 0.25s ease;
+            }
+            .btn-card-comparar:hover {
+                background: rgba(0, 0, 0, 0.8);
+                border-color: rgba(212, 168, 75, 0.8);
+                color: #d4a84b;
+                transform: scale(1.05);
+            }
+            .btn-card-comparar.active {
+                background: rgba(212, 168, 75, 0.9);
+                border-color: #d4a84b;
+                color: #000;
+                font-weight: 700;
+                box-shadow: 0 2px 10px rgba(212, 168, 75, 0.4);
+            }
+
+            /* Margen e inferencia cuando el banner de comparación está activo */
+            body.has-banner-comparar .modal-overlay {
+                padding-bottom: 110px !important;
+            }
+            body.has-banner-comparar .modal-contenido {
+                margin-bottom: 40px !important;
+            }
+            body.has-banner-comparar #tarjetas {
+                padding-bottom: 90px !important;
+            }
+
+            /* Banner Flotante Comparar */
             #bannerComparar {
                 position: fixed;
-                bottom: 5px;
+                bottom: 12px;
                 left: 50%;
                 transform: translateX(-50%);
-                background-color: #d4a84b;
-                
-                padding: 5px 24px;
-                border-radius: 12px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                z-index: 10002;
-                font-weight: 400;
-                max-width: 90%;
-                width: 1000px;
-                text-align: center;
+                background: linear-gradient(135deg, rgba(28, 22, 15, 0.96) 0%, rgba(12, 10, 7, 0.98) 100%);
+                border: 1.5px solid rgba(212, 168, 75, 0.6);
+                padding: 8px 16px;
+                border-radius: 16px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                z-index: 10008;
+                color: #fff;
+                max-width: 92%;
+                width: 850px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .banner-comparar-body {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                width: 100%;
+                gap: 10px;
+            }
+
+            .btn-toggle-banner {
+                background: rgba(212, 168, 75, 0.2);
+                border: 1px solid rgba(212, 168, 75, 0.4);
+                color: #d4a84b;
+                border-radius: 50%;
+                width: 26px;
+                height: 26px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                flex-shrink: 0;
+                transition: all 0.2s ease;
+            }
+            .btn-toggle-banner:hover {
+                background: rgba(212, 168, 75, 0.4);
+                transform: scale(1.1);
+            }
+
+            #bannerComparar.minimized {
+                padding: 6px 14px;
+                width: auto;
+                border-radius: 30px;
+                background: rgba(28, 22, 15, 0.94);
+            }
+            #bannerComparar.minimized .miniaturas-comparar,
+            #bannerComparar.minimized #btnLimpiarComparar {
+                display: none !important;
+            }
+            #bannerComparar.minimized #btnComparar {
+                padding: 4px 12px;
+                font-size: 0.82rem;
+            }
+            #bannerComparar.minimized #iconToggleBanner {
+                transform: rotate(180deg);
             }
 
             #btnComparar {
-                background-color: white;
-                color: #d4a84b;
-                padding: 10px 20px;
-                border-radius: 6px;
+                background-color: #d4a84b;
+                color: #000;
+                padding: 8px 18px;
+                border-radius: 8px;
                 font-weight: 700;
-                font-size: 1rem;
+                font-size: 0.9rem;
                 border: none;
                 cursor: pointer;
-                transition: transform 0.2s;
-                width: 140px;
+                transition: all 0.2s ease;
             }
-
-                #btnComparar:hover {
-                    transform: scale(1.05);
-                }
+            #btnComparar:hover {
+                background-color: #e5b95c;
+                transform: translateY(-1px);
+            }
 
             #btnLimpiarComparar {
-                background-color: white;
-                color: #d4a84b;
-                padding: 10px 20px;
-                border-radius: 6px;
-                font-weight: 700;
-                font-size: 1rem;
-                border: none;
+                background: rgba(255, 255, 255, 0.1);
+                color: #e2e2e2;
+                padding: 8px 14px;
+                border-radius: 8px;
+                font-weight: 600;
+                font-size: 0.85rem;
+                border: 1px solid rgba(255, 255, 255, 0.2);
                 cursor: pointer;
-                transition: transform 0.2s;
-                width: 140px;
+                transition: all 0.2s ease;
+            }
+            #btnLimpiarComparar:hover {
+                background: rgba(255, 255, 255, 0.2);
+                color: #fff;
             }
 
-                #btnLimpiarComparar:hover {
-                    transform: scale(1.05);
+            @media (max-width: 600px) {
+                .btn-card-comparar {
+                    height: 28px;
+                    padding: 0 8px;
+                    font-size: 10px;
+                    top: 6px;
+                    right: 6px;
                 }
+                .btn-fav {
+                    top: 6px;
+                    left: 6px;
+                }
+                #bannerComparar {
+                    bottom: 8px;
+                    padding: 8px 10px;
+                    border-radius: 14px;
+                    max-width: 95%;
+                }
+                .banner-comparar-body {
+                    gap: 6px;
+                    flex-wrap: wrap;
+                }
+                #textoComparar {
+                    font-size: 0.82rem;
+                    font-weight: 600;
+                    color: #d4a84b;
+                }
+                .botonescontainer {
+                    display: flex;
+                    gap: 6px;
+                    width: 100%;
+                }
+                #btnComparar, #btnLimpiarComparar {
+                    flex: 1;
+                    padding: 7px 8px;
+                    font-size: 0.82rem;
+                    text-align: center;
+                }
+            }
 
             @media (min-width: 768px) {
                 .comparar-tabla tfoot tr td {
@@ -7568,8 +7702,25 @@ font-weight: 500;
 
     <!-- NUEVO: Banner inferior de comparación -->
     <div id="bannerComparar" class="banner-comparar hidden">
-        <!-- Miniaturas a la izquierda -->
-        <div id="miniaturasComparar" class="miniaturas-comparar flex-shrink-0"></div>
+        <button id="btnToggleBannerComparar" class="btn-toggle-banner" title="Minimizar / Expandir banner" aria-label="Minimizar" onclick="toggleMinimizarBannerComparar()">
+            <svg id="iconToggleBanner" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="bannerCompararBody" class="banner-comparar-body">
+            <!-- Miniaturas a la izquierda -->
+            <div id="miniaturasComparar" class="miniaturas-comparar flex-shrink-0"></div>
+
+            <!-- Texto centrado -->
+            <div class="flex-1 text-center">
+                <span id="textoComparar" class="block">Has seleccionado 0 propiedades</span>
+            </div>
+
+            <!-- Botones a la derecha -->
+            <div class="botonescontainer flex gap-2">
+                <button id="btnComparar" class="btn-comparar flex-1">Comparar</button>
+                <button id="btnLimpiarComparar" class="btn-limpiare flex-1">Limpiar</button>
+            </div>
+        </div>
+    </div>
 
         <!-- Texto centrado -->
         <div class="flex-1 text-center">
@@ -9667,6 +9818,10 @@ font-weight: 500;
                                                                                           <button class="btn-fav ${isFav ? 'active' : ''}" data-codigo="${cod}" onclick="event.stopPropagation(); toggleFav('${cod}')" title="Agregar a favoritos" aria-label="Favorito">
                                                                                             <svg viewBox="0 0 24 24"><path class="fav-outline" d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/><path class="fav-filled" d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
                                                                                           </button>
+                                                                                           <button class="btn-card-comparar ${comparaciones.includes(String(cod)) ? 'active' : ''}" data-codigo="${cod}" onclick="event.stopPropagation(); toggleCompararCard('${cod}')" title="${comparaciones.includes(String(cod)) ? 'Quitar de comparación' : 'Comparar esta propiedad'}" aria-label="Comparar">
+                                                                                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 3h5v5M4 21h17M4 14h10M4 7h7"/></svg>
+                                                                                             <span class="btn-card-comparar-text">${comparaciones.includes(String(cod)) ? 'En comparación' : 'Comparar'}</span>
+                                                                                           </button>
                                                                                           <div class="tarjeta-fotos-strip">
                                                                                             ${_getFotosHTML(d)}
                                                                                           </div>
@@ -9812,112 +9967,111 @@ font-weight: 500;
                     let comparaciones = [];
                     const propiedades = {}; // Aquí guardaremos las propiedades por código
 
-                    function enlazarComparar() {
-                        const banner = document.getElementById('bannerComparar');
-                        const texto = document.getElementById('textoComparar');
-                        const btn = document.getElementById('btnComparar');
-
-                        // Evitar que se abra el modal al hacer clic en checkbox o etiqueta
-                        document.querySelectorAll('.checkbox-comparar, .comparar-label').forEach(el => {
-                            el.addEventListener('click', e => e.stopPropagation());
-                        });
-
-                        // Mapear propiedades para fácil acceso por código
-                        document.querySelectorAll('.checkbox-comparar').forEach(chk => {
-                            const tarjeta = chk.closest('.tarjeta'); // o el contenedor que tenga los datos
-                            const codigo = chk.dataset.codigo;
-
-                            // Puedes adaptar esto si ya tienes una lista `data` de todas las propiedades
-                            propiedades[codigo] = {
-                                codigo,
-                                nombre: tarjeta?.querySelector('.modal-titulo')?.textContent || 'Propiedad',
-                                imagen: tarjeta?.querySelector('img')?.src || '',
-                                tipo: tarjeta?.querySelector('.tipo')?.textContent || 'Inmueble',
-                            };
-
-                            chk.addEventListener('change', e => {
-                                const id = e.target.dataset.codigo;
-
-                                if (e.target.checked) {
-                                    if (comparaciones.length < 2) {
-                                        comparaciones.push(id);
-                                    } else {
-                                        e.target.checked = false;
-                                        alert('Solo puedes comparar 2 propiedades.');
-                                    }
-                                } else {
-                                    comparaciones = comparaciones.filter(c => c !== id);
-                                }
-
-                                actualizarBanner();
-                            });
-                        });
-
-                        btn.onclick = () => mostrarComparacion(comparaciones);
-                        document.getElementById('btnLimpiarComparar').addEventListener('click', limpiarComparaciones);
+                    function toggleCompararCard(codigo) {
+                        const cod = String(codigo);
+                        if (comparaciones.includes(cod)) {
+                            comparaciones = comparaciones.filter(c => c !== cod);
+                        } else {
+                            if (comparaciones.length >= 2) {
+                                alert('Solo puedes comparar hasta 2 propiedades a la vez.');
+                                return;
+                            }
+                            comparaciones.push(cod);
+                        }
+                        sincronizarCompararUI();
                     }
 
-                    function actualizarBanner() {
+                    function toggleMinimizarBannerComparar() {
+                        const banner = document.getElementById('bannerComparar');
+                        if (banner) {
+                            banner.classList.toggle('minimized');
+                        }
+                    }
+
+                    function sincronizarCompararUI() {
                         const banner = document.getElementById('bannerComparar');
                         const texto = document.getElementById('textoComparar');
+                        const count = comparaciones.length;
 
-                        texto.textContent = `Has seleccionado ${comparaciones.length} propiedad(es)`;
-                        banner.classList.toggle('hidden', comparaciones.length === 0);
+                        document.body.classList.toggle('has-banner-comparar', count > 0);
+
+                        if (texto) {
+                            texto.textContent = `Has seleccionado ${count} propiedad(es)`;
+                        }
+
+                        if (banner) {
+                            banner.classList.toggle('hidden', count === 0);
+                        }
+
+                        // Actualizar botones de tarjetas
+                        document.querySelectorAll('.btn-card-comparar').forEach(btn => {
+                            const c = String(btn.dataset.codigo);
+                            const active = comparaciones.includes(c);
+                            btn.classList.toggle('active', active);
+                            const txtEl = btn.querySelector('.btn-card-comparar-text');
+                            if (txtEl) txtEl.textContent = active ? 'En comparación' : 'Comparar';
+                            btn.title = active ? 'Quitar de comparación' : 'Comparar esta propiedad';
+                        });
+
+                        // Actualizar checkbox en modal de detalle si está abierto
+                        const _btnComparar = document.getElementById('modalChkComparar');
+                        const _textoComparar = document.getElementById('modalCompararTexto');
+                        if (_btnComparar) {
+                            const _codActual = String(window._codigoActualModal || _btnComparar.dataset.codigo || '');
+                            if (_codActual) {
+                                const active = comparaciones.includes(_codActual);
+                                _btnComparar.checked = active;
+                                if (_textoComparar) {
+                                    _textoComparar.textContent = active ? 'En comparación' : 'Comparar';
+                                }
+                            }
+                        }
 
                         actualizarMiniaturas();
                     }
 
+                    function enlazarComparar() {
+                        const btn = document.getElementById('btnComparar');
+                        const btnLimpiar = document.getElementById('btnLimpiarComparar');
+
+                        if (btn) btn.onclick = () => mostrarComparacion(comparaciones);
+                        if (btnLimpiar) btnLimpiar.onclick = limpiarComparaciones;
+
+                        sincronizarCompararUI();
+                    }
+
+                    function actualizarBanner() {
+                        sincronizarCompararUI();
+                    }
+
                     function actualizarMiniaturas() {
                         const contenedor = document.getElementById('miniaturasComparar');
+                        if (!contenedor) return;
                         contenedor.innerHTML = '';
 
                         comparaciones.forEach(codigo => {
-                            const prop = propiedades[codigo];
+                            const codStr = String(codigo);
+                            const propObj = (Array.isArray(datos) ? datos.find(d => String(d["Código"]) === codStr) : null) || propiedades[codStr] || {};
+                            
+                            let imgUrl = propObj["Image"] || propObj.imagen || '';
+                            if (!imgUrl && propObj["Imagenes"]) {
+                                imgUrl = propObj["Imagenes"].split('').filter(c => c !== '\r' && c !== '\n').join('').split('|')[0].trim();
+                            }
+                            const nombreProp = propObj["Nombre"] || propObj.nombre || 'Propiedad ' + codStr;
+
                             const div = document.createElement('div');
-                            div.className = 'relative group';
-
+                            div.className = 'chip-miniatura flex items-center';
+                            div.style.cssText = 'background: rgba(212,168,75,0.2); padding: 3px 8px; border-radius: 8px; border: 1px solid rgba(212,168,75,0.4);';
                             div.innerHTML = `
-                                                                                            <div class="group relative inline-block">
-                                                                                                <!-- TOOLTIP FLOTÁNTE -->
-                                                                                                <div class="tooltip-miniatura">
-                                                                                                    <img loading="lazy" src="${prop.imagen}" alt="${prop.nombre}" class="w-24 h-24 object-cover rounded mb-2">
-                                                                                                </div>
-                                                                                                <!-- CHIP -->
-                                                                                                <div class="chip-miniatura flex items-center">
-                                                                                                    <!-- Bloque imagen + código (en columna) -->
-                                                                                                    <div class="chip-imagen">
-                                                                                                        <img loading="lazy" src="${prop.imagen}" alt="${prop.titulo || 'Propiedad en Neiva'}" class="chip-thumb mb-1" width="300" height="200" />
-                                                                                                        <span class="chip-code text-white font-semibold">${codigo}</span>
-                                                                                                    </div>
-                                                                                                    <div class="chip-separator"></div>
-                                                                                                    <button class="btn-x-tooltip ml-2" data-codigo="${codigo}">&times;</button>
-                                                                                                </div>
-
-
-                                                                                            </div>
-                                                                                            `;
-
+                                <img loading="lazy" src="${imgUrl}" alt="${nombreProp}" class="chip-thumb" style="width: 28px; height: 28px; object-fit: cover; border-radius: 4px;" />
+                                <span class="chip-code text-white font-semibold" style="margin: 0 5px; font-size: 11px;">#${codStr}</span>
+                                <button class="btn-x-tooltip" data-codigo="${codStr}" onclick="event.stopPropagation(); toggleCompararCard('${codStr}')" style="background:none; border:none; color:#e11d48; font-size:16px; font-weight:bold; cursor:pointer; padding: 0 2px;">&times;</button>
+                            `;
                             contenedor.appendChild(div);
                         });
-
-                        // Evento para eliminar desde la X
-                        contenedor.querySelectorAll('.btn-x-tooltip, .btn-x-tooltip-interno')
-                            .forEach(btn => {
-                                btn.addEventListener('click', e => {
-                                    const cod = e.target.dataset.codigo;
-                                    comparaciones = comparaciones.filter(c => c !== cod);
-                                    document.querySelector(`.checkbox-comparar[data-codigo="${cod}"]`).checked = false;
-                                    actualizarMiniaturas();
-                                    actualizarBanner();
-
-
-                                    const banner = document.getElementById('bannerComparar');
-                                    banner.classList.toggle('hidden', comparaciones.length === 0);
-                                });
-                            });
                     }
 
-                    function mostrarComparacion(ids) {
+                    function mostrarComparacion(ids) {function mostrarComparacion(ids) {
                         const seleccionadas = datos.filter(d => ids.includes(d["Código"]));
                         const [a, b] = seleccionadas;
 
@@ -10490,29 +10644,15 @@ font-weight: 500;
                         var _labelComparar = document.getElementById('modalLabelComparar');
                         var _textoComparar = document.getElementById('modalCompararTexto');
                         if (_btnComparar && _labelComparar) {
-                            var _codigoActual = codigo;
-                            // Sincronizar estado visual al abrir modal
+                            var _codigoActual = String(codigo);
+                            window._codigoActualModal = _codigoActual;
+                            _btnComparar.dataset.codigo = _codigoActual;
                             _btnComparar.checked = comparaciones.includes(_codigoActual);
                             if (_textoComparar) _textoComparar.textContent = _btnComparar.checked ? 'En comparación' : 'Comparar';
                             _btnComparar.onchange = function() {
-                                var activo = _btnComparar.checked;
-                                if (activo) {
-                                    if (comparaciones.length >= 2) {
-                                        alert('Solo puedes comparar hasta 2 propiedades a la vez.');
-                                        _btnComparar.checked = false;
-                                        return;
-                                    }
-                                    comparaciones.push(_codigoActual);
-                                } else {
-                                    comparaciones = comparaciones.filter(function(c){ return c !== _codigoActual; });
-                                }
-                                if (_textoComparar) _textoComparar.textContent = _btnComparar.checked ? 'En comparación' : 'Comparar';
-                                // Actualizar banner inferior
-                                var banner = document.getElementById('bannerComparar');
-                                var texto = document.getElementById('textoComparar');
-                                if (texto) texto.textContent = 'Has seleccionado ' + comparaciones.length + ' propiedad(es)';
-                                if (banner) banner.classList.toggle('hidden', comparaciones.length === 0);
+                                toggleCompararCard(_codigoActual);
                             };
+                        }
                         }
                         var _bp = document.querySelector('.carrusel-prev');
                         var _bn = document.querySelector('.carrusel-next');
