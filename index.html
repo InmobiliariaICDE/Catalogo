@@ -9867,12 +9867,27 @@ font-weight: 500;
                         actualizarMiniaturas();
                     }
 
+                                        function getPropImagen(d) {
+                        if (!d) return '';
+                        if (d["Image"]) return d["Image"];
+                        if (d["imagen"]) return d["imagen"];
+                        if (d["Imagenes"]) {
+                            const raw = String(d["Imagenes"]).replace(/\r/g, '').replace(/\n/g, '');
+                            const urls = raw.split('|').map(u => u.trim()).filter(u => u.length > 5);
+                            if (urls.length > 0) return urls[0];
+                        }
+                        return '';
+                    }
+
                     function actualizarMiniaturas() {
                         const contenedor = document.getElementById('miniaturasComparar');
                         contenedor.innerHTML = '';
 
                         comparaciones.forEach(codigo => {
-                            const prop = propiedades[codigo];
+                            const codStr = String(codigo);
+                            const propObj = (typeof datos !== 'undefined' && Array.isArray(datos) ? datos.find(d => String(d["Código"]) === codStr) : null) || propiedades[codStr] || {};
+                            const imgUrl = getPropImagen(propObj) || (propiedades[codStr] && propiedades[codStr].imagen) || '';
+                            const nombreProp = propObj["Nombre"] || propObj.nombre || (propiedades[codStr] && propiedades[codStr].nombre) || 'Propiedad ' + codStr;
                             const div = document.createElement('div');
                             div.className = 'relative group';
 
@@ -9880,17 +9895,17 @@ font-weight: 500;
                                                                                             <div class="group relative inline-block">
                                                                                                 <!-- TOOLTIP FLOTÁNTE -->
                                                                                                 <div class="tooltip-miniatura">
-                                                                                                    <img loading="lazy" src="${prop.imagen}" alt="${prop.nombre}" class="w-24 h-24 object-cover rounded mb-2">
+                                                                                                    <img loading="lazy" src="${imgUrl}" alt="${nombreProp}" class="w-24 h-24 object-cover rounded mb-2">
                                                                                                 </div>
                                                                                                 <!-- CHIP -->
                                                                                                 <div class="chip-miniatura flex items-center">
                                                                                                     <!-- Bloque imagen + código (en columna) -->
                                                                                                     <div class="chip-imagen">
-                                                                                                        <img loading="lazy" src="${prop.imagen}" alt="${prop.titulo || 'Propiedad en Neiva'}" class="chip-thumb mb-1" width="300" height="200" />
-                                                                                                        <span class="chip-code text-white font-semibold">${codigo}</span>
+                                                                                                        <img loading="lazy" src="${imgUrl}" alt="${nombreProp}" class="chip-thumb mb-1" width="300" height="200" />
+                                                                                                        <span class="chip-code text-white font-semibold">${codStr}</span>
                                                                                                     </div>
                                                                                                     <div class="chip-separator"></div>
-                                                                                                    <button class="btn-x-tooltip ml-2" data-codigo="${codigo}">&times;</button>
+                                                                                                    <button class="btn-x-tooltip ml-2" data-codigo="${codStr}">&times;</button>
                                                                                                 </div>
 
 
@@ -9905,7 +9920,7 @@ font-weight: 500;
                             .forEach(btn => {
                                 btn.addEventListener('click', e => {
                                     const cod = e.target.dataset.codigo;
-                                    comparaciones = comparaciones.filter(c => c !== cod);
+                                    comparaciones = comparaciones.filter(c => String(c) !== String(cod));
                                     document.querySelector(`.checkbox-comparar[data-codigo="${cod}"]`).checked = false;
                                     actualizarMiniaturas();
                                     actualizarBanner();
@@ -9918,8 +9933,11 @@ font-weight: 500;
                     }
 
                     function mostrarComparacion(ids) {
-                        const seleccionadas = datos.filter(d => ids.includes(d["Código"]));
+                        const seleccionadas = datos.filter(d => ids.map(String).includes(String(d["Código"])));
                         const [a, b] = seleccionadas;
+                        if (!a || !b) return;
+                        const imgA = getPropImagen(a);
+                        const imgB = getPropImagen(b);
 
                         function determinarMejorPropiedad(prop, a, b) {
                             const limpiarNumero = v =>
@@ -10041,7 +10059,7 @@ font-weight: 500;
                                                                                   </tr>
                                                                                   <tr class="fila-imagenes" style="width: 100%;">
                                                                                     <th style="width: 50%; padding: 5px;">
-                                                                                      <img loading="lazy" src="${a.Image}" alt="${a.Nombre}" class="modal-imagen-comparar" style="max-width: 100%; height: auto; display: block; margin: 0 auto;"/>
+                                                                                      <img loading="lazy" src="${imgA}" alt="${a.Nombre}" class="modal-imagen-comparar" style="max-width: 100%; height: auto; display: block; margin: 0 auto;"/>
                                                                                       <div style="text-align: center; margin-top: 5px;">
                                                                                         <a href="${a["Google Fotos"]}" target="_blank" rel="noopener noreferrer" class="boton-fotos" style="background-color: #d4a84b; color: white; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block;">
                                                                                           📷 Ver más fotos
@@ -10049,7 +10067,7 @@ font-weight: 500;
                                                                                       </div>
                                                                                     </th>
                                                                                     <th style="width: 50%; padding: 5px;">
-                                                                                      <img loading="lazy" src="${b.Image}" alt="${b.Nombre}" class="modal-imagen-comparar" style="max-width: 100%; height: auto; display: block; margin: 0 auto;"/>
+                                                                                      <img loading="lazy" src="${imgB}" alt="${b.Nombre}" class="modal-imagen-comparar" style="max-width: 100%; height: auto; display: block; margin: 0 auto;"/>
                                                                                       <div style="text-align: center; margin-top: 5px;">
                                                                                         <a href="${b["Google Fotos"]}" target="_blank" rel="noopener noreferrer" class="boton-fotos" style="background-color: #d4a84b; color: white; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block;">
                                                                                           📷 Ver más fotos
@@ -10111,8 +10129,8 @@ font-weight: 500;
                                                                                   </tr>
                                                                                   <tr class="fila-imagenes">
                                                                                     <th></th>
-                                                                                    <th><img loading="lazy" src="${a.Image}" alt="${a.Nombre}" class="modal-imagen-comparar"/></th>
-                                                                                    <th><img loading="lazy" src="${b.Image}" alt="${b.Nombre}" class="modal-imagen-comparar"/></th>
+                                                                                    <th><img loading="lazy" src="${imgA}" alt="${a.Nombre}" class="modal-imagen-comparar"/></th>
+                                                                                    <th><img loading="lazy" src="${imgB}" alt="${b.Nombre}" class="modal-imagen-comparar"/></th>
                                                                                   </tr>
                                                                                   <tr class="fila-info">
                                                                                     <th></th>
