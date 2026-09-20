@@ -6938,6 +6938,10 @@ font-weight: 500;
     transition: background 0.3s ease;
 }
 
+.stepper-line.completed {
+    background: #22c55e;
+}
+
 .stepper-line.active {
     background: linear-gradient(90deg, #22c55e 0%, #d4a84b 100%);
 }
@@ -11076,8 +11080,14 @@ document.head.appendChild(schemaScript);
 
                         const line1 = document.getElementById("stepperLine1");
                         const line2 = document.getElementById("stepperLine2");
-                        if (line1) line1.classList.toggle("active", paso >= 2);
-                        if (line2) line2.classList.toggle("active", paso >= 3);
+                        if (line1) {
+                            line1.classList.toggle("completed", paso > 2);
+                            line1.classList.toggle("active", paso === 2);
+                        }
+                        if (line2) {
+                            line2.classList.toggle("completed", paso > 3);
+                            line2.classList.toggle("active", paso === 3);
+                        }
 
                         // Scroll arriba en el body del modal al cambiar de paso
                         const bodyEl = document.querySelector("#modalAgendarVisitaOverlay .modal-agendar-body");
