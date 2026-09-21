@@ -8705,6 +8705,52 @@ function activarEtapaLeadDesdeTabla(evt, id, etapaTarget) {
   }
 }
 
+function obtenerInmobiliariaPrincipalLead(lead) {
+  if (!lead) return '';
+
+  let targetCod = null;
+
+  // 1. Buscar propiedad en etapa 6 o 5 (Proceso de venta u OK)
+  if (lead.propEtapas) {
+    for (const [cod, et] of Object.entries(lead.propEtapas)) {
+      if (Number(et) >= 5) {
+        targetCod = cod;
+        break;
+      }
+    }
+  }
+
+  // 2. Si no hay en propEtapas, buscar en visitas
+  if (!targetCod && lead.visitas && lead.visitas.length > 0) {
+    const v6 = lead.visitas.find(v => v && (v.procesoVenta || v.estado === 'proceso_venta'));
+    if (v6) targetCod = v6.codigo;
+    else {
+      const v5 = lead.visitas.find(v => v && (v.oferto === 'si' || v.estado === 'ok'));
+      if (v5) targetCod = v5.codigo;
+      else if (lead.visitas[0]) targetCod = lead.visitas[0].codigo;
+    }
+  }
+
+  // 3. Buscar en propsEnviadas (la última enviada)
+  if (!targetCod && lead.propsEnviadas && lead.propsEnviadas.length > 0) {
+    targetCod = lead.propsEnviadas[lead.propsEnviadas.length - 1];
+  }
+
+  // 4. Si tenemos targetCod, obtener inmobiliaria del objeto propiedad global
+  if (targetCod && typeof buscarPropiedadGlobal === 'function') {
+    const prop = buscarPropiedadGlobal(targetCod);
+    if (prop) {
+      const inmob = (prop['Inmobiliaria'] || prop['Inmobiliaria / Aliado'] || prop['inmobiliaria'] || prop['Inmob'] || prop['Aliado'] || '').trim();
+      if (inmob) return inmob;
+    }
+  }
+
+  // 5. Fallback a lead.inmobiliaria si existe
+  if (lead.inmobiliaria) return String(lead.inmobiliaria).trim();
+
+  return 'DIRECTO';
+}
+
 function renderEtapasLeadBadges(lead) {
   const maxEtapa = obtenerEtapaMaximaLead(lead);
   if (maxEtapa < 5) return '';
@@ -8722,16 +8768,21 @@ function renderEtapasLeadBadges(lead) {
 
   let cls6 = isE6Active ? 'badge-stage-item stage-active-6' : 'badge-stage-item stage-pending';
 
+  const inmob = obtenerInmobiliariaPrincipalLead(lead);
+
   return `
-    <div class="lead-stage-badges" onclick="event.stopPropagation();" title="Haz clic en cualquier etapa para activarla">
-      <span class="${cls5}" onclick="event.stopPropagation(); activarEtapaLeadDesdeTabla(event, '${String(lead.id).trim()}', 5)" title="Haz clic para activar Etapa 5: OK">
-        <span class="stage-num">${num5}</span>
-        <span class="stage-lbl">OK</span>
-      </span>
-      <span class="${cls6}" onclick="event.stopPropagation(); activarEtapaLeadDesdeTabla(event, '${String(lead.id).trim()}', 6)" title="Haz clic para activar Etapa 6: Proceso de venta">
-        <span class="stage-num">6</span>
-        <span class="stage-lbl">Proceso de venta</span>
-      </span>
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
+      <div class="lead-stage-badges" onclick="event.stopPropagation();" title="Haz clic en cualquier etapa para activarla">
+        <span class="${cls5}" onclick="event.stopPropagation(); activarEtapaLeadDesdeTabla(event, '${String(lead.id).trim()}', 5)" title="Haz clic para activar Etapa 5: OK">
+          <span class="stage-num">${num5}</span>
+          <span class="stage-lbl">OK</span>
+        </span>
+        <span class="${cls6}" onclick="event.stopPropagation(); activarEtapaLeadDesdeTabla(event, '${String(lead.id).trim()}', 6)" title="Haz clic para activar Etapa 6: Proceso de venta">
+          <span class="stage-num">6</span>
+          <span class="stage-lbl">Proceso de venta</span>
+        </span>
+      </div>
+      ${inmob ? `<span class="badge-inmobiliaria-lead" style="display:inline-flex; align-items:center; justify-content:center; background:rgba(212,168,75,0.12); border:1px solid rgba(212,168,75,0.55); color:#d4a84b; font-size:9.5px; font-weight:800; border-radius:12px; padding:2px 10px; text-transform:uppercase; letter-spacing:0.06em; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; box-shadow:0 2px 6px rgba(0,0,0,0.3);" title="Inmobiliaria del inmueble: ${inmob}">${inmob}</span>` : ''}
     </div>
   `;
 }
