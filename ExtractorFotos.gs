@@ -549,7 +549,8 @@ var CAMPOS_FB = [
   'Buscar', 'Cocina', 'Contrato', 'Inmobiliaria', 'Imagenes', 'Publicar',
   'CELULAR', 'CELULAR 2', 'PROPIETARIO', 'RENTAB.', 'Dimensiones',
   'Aire Acondicionado', 'Antigüedad del Inmueble', 'Ascensor', 'Número de Cortinas',
-  'Reja Antejardín', 'Patio', 'Inventario', 'DIRECCIÓN', 'Latitud', 'Longitud'
+  'Reja Antejardín', 'Patio', 'Inventario', 'DIRECCIÓN', 'Latitud', 'Longitud',
+  'Hipoteca', 'Permuta', 'Habitacion en 1er piso'
 ];
  
 function buildHeaderIndex(headers) {
@@ -611,6 +612,9 @@ function buildHeaderIndex(headers) {
       else if (nh === 'patio') { idx['Patio'] = i; idx['PATIO'] = i; }
       else if (nh === 'inventario') { idx['Inventario'] = i; }
       else if (nh === 'direccion') { idx['DIRECCIÓN'] = i; }
+      else if (nh === 'hipoteca') { idx['Hipoteca'] = i; }
+      else if (nh === 'permuta') { idx['Permuta'] = i; }
+      else if (nh === 'habitacion en 1er piso' || nh === 'habitacion 1er piso' || nh.indexOf('1er piso') >= 0 || nh.indexOf('primer piso') >= 0) { idx['Habitacion en 1er piso'] = i; }
     }
   });
   return idx;
@@ -955,6 +959,9 @@ function doPost(e) {
         if (nk === 'antiguedad del inmueble' || nk === 'antiguedad') return prop['Antigüedad del Inmueble'] || '';
         if (nk === 'patio') return prop['Patio'] || '';
         if (nk === 'dimensiones') return prop['Dimensiones'] || '';
+        if (nk === 'hipoteca') return prop['Hipoteca'] || '';
+        if (nk === 'permuta') return prop['Permuta'] || '';
+        if (nk === 'habitacion en 1er piso' || nk === 'habitacion 1er piso' || nk.indexOf('1er piso') >= 0 || nk.indexOf('primer piso') >= 0) return prop['Habitacion en 1er piso'] || prop['Habitación en 1er piso'] || '';
         if (nk === 'publicar') return prop['Publicar'] || '';
         if (nk === 'destacada') return prop['Destacada'] || '';
         if (nk === 'descripcion' || nk === 'detalle') return prop['Descripción'] || '';
