@@ -8131,7 +8131,6 @@ function renderLeadsBody(lista){
           <tr style="background: rgba(212, 168, 75, 0.04);">
             <th style="padding-left: 20px; color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25); min-width: 480px; width: 42%;">Cliente</th>
             <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Tipo</th>
-            <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Estado</th>
             <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Etiqueta</th>
             <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Presupuesto</th>
             <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Enviadas</th>
@@ -8150,18 +8149,6 @@ function renderLeadsBody(lista){
             return `<tr class="clickable ${isSelected ? 'active-lead-row' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead('${String(l.id).trim()}', '${String(l.celular).trim()}')">
               <td style="padding-left: 20px; padding-right: 15px; min-width: 480px;"><div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%;"><div style="min-width: 0; flex: 1;"><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">${renderLeadPhoneWA(l)}</div></div><div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">${renderPropMiniaturaLead(l)}${renderEtapasLeadBadges(l)}</div></div></td>
               <td>${l.tipo==='inmobiliaria'?'<span class="badge badge-inmobiliaria">🏢</span>':'<span style="opacity:0.5;">👤</span>'}</td>
-              <td onclick="event.stopPropagation()">
-                <select class="estado-badge estado-${l.estado}" style="border:none;outline:none;cursor:pointer;max-width:120px;"
-                  onfocus="Array.from(this.options).forEach(o=>o.text=o.getAttribute('data-emoji')+' '+o.getAttribute('data-short'))"
-                  onblur="Array.from(this.options).forEach(o=>o.text=o.getAttribute('data-short'))"
-                  onchange="updLead('${String(l.id).trim()}','estado',this.value); this.blur();">
-                  <option value="visita"   data-emoji="🟢" data-short="Pdte. visita" ${l.estado==='visita'?'selected':''}>Pdte. visita</option>
-                  <option value="enviando" data-emoji="🟠" data-short="Enviando" ${l.estado==='enviando'?'selected':''}>Enviando</option>
-                  <option value="proceso"  data-emoji="🔵" data-short="Proceso venta" ${l.estado==='proceso'?'selected':''}>Proceso venta</option>
-                  <option value="banco"    data-emoji="🟣" data-short="Banco" ${l.estado==='banco'?'selected':''}>Banco</option>
-                  <option value="inactivo" data-emoji="⚫" data-short="Inactivo" ${l.estado==='inactivo'?'selected':''}>Inactivo</option>
-                </select>
-              </td>
               <td onclick="event.stopPropagation()">
                 <select class="badge badge-${l.etiqueta}" style="border:none;outline:none;cursor:pointer;"
                   onfocus="Array.from(this.options).forEach(o=>o.text=o.getAttribute('data-emoji')+' '+o.getAttribute('data-short'))"
