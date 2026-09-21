@@ -11708,42 +11708,6 @@ document.head.appendChild(schemaScript);
                             msg += confirmUrl;
                         }
 
-                        // Guardar la solicitud de cita en localStorage (icde_citas)
-                        let codInmueble = "";
-                        let nombreInmueble = "Inmueble";
-                        if (inmuebleAgendarActual && inmuebleAgendarActual.esFavoritos) {
-                            const idsArr = inmuebleAgendarActual.favs || [];
-                            codInmueble = idsArr.join(", ");
-                            nombreInmueble = `Catálogo Favoritos (${idsArr.length} inmuebles)`;
-                        } else if (inmuebleAgendarActual) {
-                            codInmueble = String(inmuebleAgendarActual["Código"] || inmuebleAgendarActual["codigo"] || "").trim();
-                            nombreInmueble = (inmuebleAgendarActual["Nombre"] || "Inmueble").trim();
-                        } else {
-                            codInmueble = document.getElementById("modalCodigo")?.textContent?.trim() || "";
-                            nombreInmueble = document.getElementById("modalTitle")?.textContent?.trim() || "Inmueble";
-                        }
-
-                        const nuevaCitaSolicitud = {
-                            id: "CIT-" + Date.now(),
-                            codigo: codInmueble,
-                            cliente: nombre,
-                            celular: phone,
-                            fecha: fecha,
-                            hora: horaFinal,
-                            pago: metodoPagoTexto,
-                            origen: "WhatsApp / Catálogo Web",
-                            estado: "solicito_visita",
-                            notas: `Propiedad: ${nombreInmueble}${codInmueble ? ` (Cód. ${codInmueble})` : ''}\nMétodo de pago: ${metodoPagoTexto}`
-                        };
-
-                        try {
-                            const listCitas = JSON.parse(localStorage.getItem("icde_citas") || "[]");
-                            listCitas.push(nuevaCitaSolicitud);
-                            localStorage.setItem("icde_citas", JSON.stringify(listCitas));
-                        } catch(errCitas) {
-                            console.error("Error guardando cita en localStorage:", errCitas);
-                        }
-
                         // Enviar a WhatsApp de ICDE
                         const urlWA = `https://api.whatsapp.com/send?phone=573208762117&text=${encodeURIComponent(msg)}`;
                         window.open(urlWA, "_blank", "noopener,noreferrer");
