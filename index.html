@@ -11615,6 +11615,130 @@ document.head.appendChild(schemaScript);
                         msg += `\n📅 ${fechaFormateada}\n`;
                         msg += `⌚ ${horaFormateada}`;
 
+                        // ── GUARDAR EN LOCALSTORAGE & SINK EN LA NUBE PARA APARICIÓN EN EL HORARIO DEL PANEL ──
+                        try {
+                            const CRM_URL_CLOUD = "https://script.google.com/macros/s/AKfycbyvZg9LqnWm1n1iXe3eFgj-PtUbKTumrIJdA8BnJXpH9H4e8OXJcC7-fpmhbQJA5TvX/exec";
+                            const idCita = "VIS-" + Date.now();
+
+                            function convertirHoraA24h(strVal) {
+                                if (!strVal) return "09:00";
+                                let s = strVal.trim().toUpperCase();
+                                if (s.includes("AM") || s.includes("PM")) {
+                                    let isPM = s.includes("PM");
+                                    let clean = s.replace(/(AM|PM)/g, "").trim();
+                                    let parts = clean.split(":");
+                                    let h = parseInt(parts[0], 10) || 9;
+                                    let m = parts[1] ? parts[1].trim() : "00";
+                                    if (isPM && h < 12) h += 12;
+                                    if (!isPM && h === 12) h = 0;
+                                    return `${String(h).padStart(2, '0')}:${m}`;
+                                }
+                                if (s.includes(":")) {
+                                    let parts = s.split(":");
+                                    let h = parseInt(parts[0], 10) || 9;
+                                    let m = parts[1] ? parts[1].trim() : "00";
+                                    return `${String(h).padStart(2, '0')}:${m}`;
+                                }
+                                return "09:00";
+                            }
+
+                            const hora24h = convertirHoraA24h(horaFinal);
+                            let codInmuebleFinal = "";
+                            if (inmuebleAgendarActual && inmuebleAgendarActual.esFavoritos && inmuebleAgendarActual.favs) {
+                                codInmuebleFinal = inmuebleAgendarActual.favs[0] || "";
+                            } else if (inmuebleAgendarActual && inmuebleAgendarActual["Código"]) {
+                                codInmuebleFinal = String(inmuebleAgendarActual["Código"]).trim();
+                            } else {
+                                codInmuebleFinal = document.getElementById("modalCodigo")?.textContent?.trim() || "";
+                            }
+
+                            const preaprobadoVal = (typeof preaprobadoSeleccionado !== 'undefined' ? preaprobadoSeleccionado : "");
+                            const bancoVal = (bancoInput && bancoInput.value) ? bancoInput.value.trim() : "";
+
+                            const nuevaCita = {
+                                id: idCita,
+                                codigo: codInmuebleFinal,
+                                cliente: nombre,
+                                celular: phoneDisplay,
+                                fecha: fecha,
+                                hora: hora24h,
+                                estado: "agendada",
+                                metodoPago: metodoPagoTexto,
+                                preaprobado: preaprobadoVal,
+                                banco: bancoVal,
+                                procesoVenta: false,
+                                oferto: "no",
+                                creadoEn: new Date().toISOString()
+                            };
+
+                            // 1. Guardar en icde_citas
+                            let citasStore = [];
+                            try { citasStore = JSON.parse(localStorage.getItem('icde_citas') || '[]'); } catch(e) { citasStore = []; }
+                            if (!Array.isArray(citasStore)) citasStore = [];
+                            
+                            const existIdx = citasStore.findIndex(c => c.celular === phoneDisplay && c.fecha === fecha && c.hora === hora24h);
+                            if (existIdx >= 0) {
+                                citasStore[existIdx] = Object.assign({}, citasStore[existIdx], nuevaCita);
+                            } else {
+                                citasStore.push(nuevaCita);
+                            }
+                            localStorage.setItem('icde_citas', JSON.stringify(citasStore));
+
+                            // 2. Guardar en icde_leads
+                            let leadsStore = [];
+                            try { leadsStore = JSON.parse(localStorage.getItem('icde_leads') || '[]'); } catch(e) { leadsStore = []; }
+                            if (!Array.isArray(leadsStore)) leadsStore = [];
+
+                            const celNum = phoneDisplay.replace(/\D/g, '');
+                            let targetLead = leadsStore.find(l => {
+                                const c = String(l.celular || '').replace(/\D/g, '');
+                                return c && celNum && (c === celNum || c.endsWith(celNum) || celNum.endsWith(c));
+                            });
+
+                            if (targetLead) {
+                                if (targetLead.estado === 'inactivo' || !targetLead.estado) targetLead.estado = 'visita';
+                                if (!Array.isArray(targetLead.visitas)) targetLead.visitas = [];
+                                targetLead.visitas.push(nuevaCita);
+                                if (codInmuebleFinal) {
+                                    if (!Array.isArray(targetLead.propsEnviadas)) targetLead.propsEnviadas = [];
+                                    if (!targetLead.propsEnviadas.includes(codInmuebleFinal)) targetLead.propsEnviadas.push(codInmuebleFinal);
+                                }
+                                targetLead._localEditedAt = new Date().toISOString();
+                            } else {
+                                targetLead = {
+                                    id: "LEAD-" + Date.now(),
+                                    tipo: "particular",
+                                    nombre: nombre,
+                                    celular: phoneDisplay,
+                                    estado: "visita",
+                                    etiqueta: "activo",
+                                    metodoPago: metodoPagoTexto ? [metodoPagoTexto] : [],
+                                    propsEnviadas: codInmuebleFinal ? [codInmuebleFinal] : [],
+                                    visitas: [nuevaCita],
+                                    creadoEn: new Date().toISOString()
+                                };
+                                leadsStore.push(targetLead);
+                            }
+                            localStorage.setItem('icde_leads', JSON.stringify(leadsStore));
+
+                            // Disparar evento storage para sincronización entre pestañas
+                            try { window.dispatchEvent(new Event('storage')); } catch(e) {}
+
+                            // 3. Enviar a la nube (Google Apps Script) de forma asíncrona
+                            if (CRM_URL_CLOUD) {
+                                fetch(CRM_URL_CLOUD, {
+                                    method: 'POST',
+                                    body: JSON.stringify({ action: 'saveCita', cita: JSON.stringify(nuevaCita) })
+                                }).catch(() => {});
+                                fetch(CRM_URL_CLOUD, {
+                                    method: 'POST',
+                                    body: JSON.stringify({ action: 'saveLead', lead: JSON.stringify(targetLead) })
+                                }).catch(() => {});
+                            }
+                        } catch (errSync) {
+                            console.error("Error sincronizando cita solicitada:", errSync);
+                        }
+
                         // Enviar a WhatsApp
                         const urlWA = `https://api.whatsapp.com/send?phone=573208762117&text=${encodeURIComponent(msg)}`;
                         window.open(urlWA, "_blank", "noopener,noreferrer");

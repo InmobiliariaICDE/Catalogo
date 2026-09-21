@@ -4855,6 +4855,27 @@ if (settings.contScriptUrl === "https://script.google.com/macros/s/AKfycbyeB0qDF
   localStorage.setItem('icde_settings', JSON.stringify(settings));
 }
 
+function rechargerCitasYLeadsLocal() {
+  try {
+    const localCitas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
+    if (Array.isArray(localCitas)) citas = localCitas;
+    const localLeads = JSON.parse(localStorage.getItem('icde_leads') || '[]');
+    if (Array.isArray(localLeads)) leads = localLeads;
+    if (typeof currentTab !== 'undefined' && currentTab === 'citas' && typeof renderCitas === 'function') {
+      renderCitas();
+    } else if (typeof currentTab !== 'undefined' && currentTab === 'leads' && typeof renderLeadsBody === 'function') {
+      renderLeadsBody(leads);
+    }
+  } catch(e) {}
+}
+
+window.addEventListener('storage', (e) => {
+  if (!e || !e.key || e.key === 'icde_citas' || e.key === 'icde_leads') {
+    rechargerCitasYLeadsLocal();
+  }
+});
+window.addEventListener('focus', rechargerCitasYLeadsLocal);
+
 
 let currentTab = 'nuevo';
 let selectedProps = [];
