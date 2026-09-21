@@ -4862,7 +4862,7 @@ const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u030
 function freshLead(){
   return {
     tipo:'cliente', nombre:'', celular:'', notas:'', metodoPago:[], estado:'visita', etiqueta:'activo',
-    buscar:'', filtros:{tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[]},
+    buscar:'', filtros:{tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],via:[],reja:[],piscina:[],habitacion1erPiso:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[]},
     frecuencia:'semanal', maxPorEnvio:4, nombreInmobiliaria:'', nombreAgente:'',
     propsFiltradas:[], propsEnviadas:[], proximosEnvios:[], historialEnvios:[], visitas:[]
   };
@@ -4887,8 +4887,14 @@ const FCAMPOS = [
     ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="18" rx="1"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/><line x1="8" y1="3" x2="8" y2="21"/></svg>' },
   { key:'ubicacion', campo:'Ubicación', lbl:'Ubicación',
     ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>' },
+  { key:'via', campo:'Vía', lbl:'Vía',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19L9 5M20 19l-5-14M12 5v2M12 11v2M12 17v2"/></svg>' },
+  { key:'reja', campo:'Reja', lbl:'Reja',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v16M8 4v16M12 4v16M16 4v16M20 4v16M2 8h20M2 16h20"/></svg>' },
   { key:'piscina', campo:'Piscina', lbl:'Piscina',
     ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 6c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1c.6-.5 1.2-1 2.5-1s1.9.5 2.5 1c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1"/><path d="M2 12c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1c.6-.5 1.2-1 2.5-1s1.9.5 2.5 1c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1"/><path d="M2 18c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1c.6-.5 1.2-1 2.5-1s1.9.5 2.5 1c.6.5 1.2 1 2.5 1s1.9-.5 2.5-1"/></svg>' },
+  { key:'habitacion1erPiso', campo:'Habitacion en 1er piso', lbl:'Habitación 1er piso',
+    ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h18M3 12V7a1 1 0 011-1h4a1 1 0 011 1v5M3 12v5h18v-5"/><path d="M7 16h10"/></svg>' },
   { key:'cocina', campo:'Cocina', lbl:'Cocina',
     ico:'<svg class="fn-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 13.8V4a2 2 0 012-2h4a2 2 0 012 2v9.8a3 3 0 11-8 0z"/><path d="M9 22v-4M15 22v-4"/><path d="M18 5v10a2 2 0 01-2 2h-1"/></svg>' },
 
@@ -4909,7 +4915,10 @@ function getUniqueVals(campo){
   const consolidated = new Map();
   // Filtramos isKmzOnly para que el menú de filtros solo muestre datos reales del catálogo Excel
   allProps.filter(d => !d.isKmzOnly).forEach(d => {
-    const raw = String(d[campo] || "").trim();
+    let raw = String(d[campo] || "").trim();
+    if (!raw && campo === 'Habitacion en 1er piso') raw = String(d['Habitación en 1er piso'] || "").trim();
+    if (!raw && campo === 'Vía') raw = String(d['Via'] || "").trim();
+    if (!raw && campo === 'Reja') raw = String(d['Reja Antejardín'] || d['Reja antejardin'] || "").trim();
     if (!raw) return;
     const n = norm(raw);
     if (!consolidated.has(n)) {
@@ -4967,7 +4976,10 @@ function filtrarProps(f, returnAllIfEmpty = true, incluirVirtuales = false){
     if(f.garaje?.length       && !f.garaje.includes(String(d['Garaje'] || "").trim()))             return false;
     if(f.pisos?.length        && !f.pisos.includes(String(d['Pisos'] || "").trim()))               return false;
     if(f.ubicacion?.length    && !f.ubicacion.includes(String(d['Ubicación'] || "").trim()))       return false;
+    if(f.via?.length          && !f.via.some(v => norm(v) === norm(d['Vía'] || d['Via'] || "")))    return false;
+    if(f.reja?.length         && !f.reja.some(v => norm(v) === norm(d['Reja'] || d['Reja Antejardín'] || d['Reja antejardin'] || ""))) return false;
     if(f.piscina?.length      && !f.piscina.includes(String(d['Piscina'] || "").trim()))           return false;
+    if(f.habitacion1erPiso?.length && !f.habitacion1erPiso.some(v => norm(v) === norm(d['Habitacion en 1er piso'] || d['Habitación en 1er piso'] || ""))) return false;
     if(f.cocina?.length       && !f.cocina.includes(String(d['Cocina'] || "").trim()))             return false;
     if(f.barrio?.length       && !f.barrio.some(v => norm(v) === norm(d['Barrio'])))               return false;
     if(f.conjunto?.length     && !f.conjunto.some(v => norm(v) === norm(d['Conjunto'])))           return false;
@@ -5150,7 +5162,7 @@ function eq(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 
 /* Construye la barra de filtros completa dentro de #containerId */
 function buildFiltrosBar(containerId, pfx, initVals){
-  setFSt(pfx, initVals || {tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],piscina:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[], mapActive: false});
+  setFSt(pfx, initVals || {tipoInmueble:[],rangoPrecio:[],zona:[],habitaciones:[],garaje:[],pisos:[],ubicacion:[],via:[],reja:[],piscina:[],habitacion1erPiso:[],cocina:[],barrio:[],conjunto:[],minPrice:null,maxPrice:null,kmzCategory:[], mapActive: false});
   const wrap = document.getElementById(containerId);
   if(!wrap) return;
 
@@ -5559,7 +5571,10 @@ function getSearchLinkFromFilters(st, ids, leadId){
     if(st.garaje?.length)       p.set('garaje', st.garaje.join(','));
     if(st.pisos?.length)        p.set('pisos', st.pisos.join(','));
     if(st.ubicacion?.length)    p.set('ubicacion', st.ubicacion.join(','));
+    if(st.via?.length)          p.set('via', st.via.join(','));
+    if(st.reja?.length)         p.set('reja', st.reja.join(','));
     if(st.piscina?.length)      p.set('piscina', st.piscina.join(','));
+    if(st.habitacion1erPiso?.length) p.set('hab1er', st.habitacion1erPiso.join(','));
     if(st.cocina?.length)       p.set('cocina', st.cocina.join(','));
     if(st.barrio?.length)       p.set('barrio', st.barrio.join(','));
     if(st.conjunto?.length)     p.set('conjunto', st.conjunto.join(','));
@@ -12573,7 +12588,7 @@ function executeGeminiAction(action) {
         if (typeof getFSt === 'function') {
           const st = getFSt('nl');
           if (st) {
-            const filterKeys = ['tipoInmueble', 'zona', 'conjunto', 'barrio', 'ubicacion', 'piscina', 'cocina', 'habitaciones', 'garaje', 'pisos'];
+            const filterKeys = ['tipoInmueble', 'zona', 'conjunto', 'barrio', 'ubicacion', 'via', 'reja', 'piscina', 'habitacion1erPiso', 'cocina', 'habitaciones', 'garaje', 'pisos'];
             filterKeys.forEach(k => {
               if (action[k]) {
                 let vals = Array.isArray(action[k]) ? action[k].map(String) : [String(action[k])];
