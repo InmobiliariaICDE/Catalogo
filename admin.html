@@ -8111,8 +8111,8 @@ function renderLeadsBody(lista){
             const pend = currentMatches.filter(d => !(l.propsEnviadas || []).includes(d['Código'])).length;
             const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
             const isSelected = String(l.id).trim() === String(currentLeadId).trim();
-            return `<tr class="clickable ${isSelected ? 'active-lead-row' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead(\'${String(l.id).trim()}\', \'${String(l.celular).trim()}\')">
-              <td style="padding-left: 20px; padding-right: 15px;"><div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;"><div style="min-width: 0; flex: 1;"><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">📱 ${l.celular}</div></div>${renderEtapasLeadBadges(l)}</div></td>
+            return `<tr class="clickable ${isSelected ? 'active-lead-row' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead('${String(l.id).trim()}', '${String(l.celular).trim()}')">
+              <td style="padding-left: 20px; padding-right: 15px;"><div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;"><div style="min-width: 0; flex: 1;"><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">📱 ${l.celular}</div></div><div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">${renderPropMiniaturaLead(l)}${renderEtapasLeadBadges(l)}</div></div></td>
               <td>${l.tipo==='inmobiliaria'?'<span class="badge badge-inmobiliaria">🏢</span>':'<span style="opacity:0.5;">👤</span>'}</td>
               <td onclick="event.stopPropagation()">
                 <select class="estado-badge estado-${l.estado}" style="border:none;outline:none;cursor:pointer;max-width:120px;"
@@ -8135,6 +8135,43 @@ function renderLeadsBody(lista){
                   <option value="tibio"    data-emoji="🟡" data-short="TIBIO" ${l.etiqueta==='tibio'?'selected':''}>TIBIO</option>
                   <option value="inactivo" data-emoji="⚫" data-short="INACTIVO" ${l.etiqueta==='inactivo'?'selected':''}>INACTIVO</option>
                 </select>
+              </td>
+              <td><div style="font-weight:700; color:var(--gold);">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div><div style="font-size:10px;color:#888;margin-top:2px;">${(l.metodoPago || []).join(', ') || '—'}</div></td>
+              <td style="color:#22c55e;font-weight:700;">${(l.propsEnviadas||[]).length}</td>
+              <td>${(l.visitas||[]).filter(v=>v.oferto==='si').length > 0 ? `<span class="badge badge-oferta">${(l.visitas||[]).filter(v=>v.oferto==='si').length}</span>` : '<span style="opacity:0.2;">0</span>'}</td>
+              <td style="color:${pend>0?'#f97316':'#888'}; font-weight:700;">
+                ${pend > 0 ? `<span class="badge badge-tibio" style="font-size:10px;">${pend} NUEVAS</span>` : '0'}
+              </td>
+              <td style="font-size:12px;color:#888;">${prox?prox.fecha:'—'}</td>
+              <td style="padding-right: 20px;" onclick="event.stopPropagation()"><div style="display:flex;gap:6px;">
+                <button class="btn btn-sm ${pend>0?'btn-green':'btn-secondary'}" onclick="abrirEnvioModal('${l.id}')" title="Enviar propuestas">${pend>0?'📤':'✓'}</button>
+                <button class="btn btn-sm btn-danger" onclick="eliminarLead('${l.id}')" title="Eliminar lead">🗑</button>
+              </div></td>
+            </tr>`;
+
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  } else {
+    container.innerHTML=`<div class="lead-cards-grid">
+      ${listaFiltrada.map(l=>{
+        const currentMatches = filtrarProps(l.filtros);
+        const pend = currentMatches.filter(d => !(l.propsEnviadas || []).includes(d['Código'])).length;
+        const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
+        const isSelected = String(l.id).trim() === String(currentLeadId).trim();
+        return `
+        <div class="lead-card ${isSelected ? 'active-lead-card' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead('${String(l.id).trim()}', '${String(l.celular).trim()}')">
+          <div class="lc-header" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div>
+              <div class="lc-name">${l.nombre}</div>
+              <div class="lc-phone">📱 ${l.celular}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+              ${renderPropMiniaturaLead(l)}
+              ${renderEtapasLeadBadges(l)}
+              <span class="badge badge-${l.etiqueta}">${l.etiqueta}</span>
+            </div>
               </td>
               <td><div style="font-weight:700; color:var(--gold);">${l.filtros?.maxPrice ? formatShortPrice(l.filtros.maxPrice) : '—'}</div><div style="font-size:10px;color:#888;margin-top:2px;">${(l.metodoPago || []).join(', ') || '—'}</div></td>
               <td style="color:#22c55e;font-weight:700;">${(l.propsEnviadas||[]).length}</td>
@@ -8704,8 +8741,8 @@ function activarEtapaLeadDesdeTabla(evt, id, etapaTarget) {
   }
 }
 
-function obtenerInmobiliariaPrincipalLead(lead) {
-  if (!lead) return '';
+function obtenerPropiedadPrincipalLead(lead) {
+  if (!lead) return null;
 
   let targetCod = null;
 
@@ -8735,16 +8772,41 @@ function obtenerInmobiliariaPrincipalLead(lead) {
     targetCod = lead.propsEnviadas[lead.propsEnviadas.length - 1];
   }
 
-  // 4. Si tenemos targetCod, obtener inmobiliaria del objeto propiedad global
-  if (targetCod && typeof buscarPropiedadGlobal === 'function') {
-    const prop = buscarPropiedadGlobal(targetCod);
-    if (prop) {
-      const inmob = (prop['Inmobiliaria'] || prop['Inmobiliaria / Aliado'] || prop['inmobiliaria'] || prop['Inmob'] || prop['Aliado'] || '').trim();
-      if (inmob) return inmob;
-    }
+  if (targetCod) {
+    const codClean = String(targetCod).trim();
+    const prop = typeof buscarPropiedadGlobal === 'function' ? buscarPropiedadGlobal(codClean) : null;
+    return { cod: codClean, prop };
   }
 
-  // 5. Fallback a lead.inmobiliaria si existe
+  return null;
+}
+
+function renderPropMiniaturaLead(lead) {
+  const item = obtenerPropiedadPrincipalLead(lead);
+  if (!item || !item.cod) return '';
+
+  const prop = item.prop;
+  const img = prop ? ((prop['Imagenes']||'').split('|')[0].trim() || prop['Image'] || 'https://i.imgur.com/Pc9M3I8.png') : 'https://i.imgur.com/Pc9M3I8.png';
+  const nombre = prop ? (prop['Nombre'] || prop['nombre'] || `Cód. ${item.cod}`) : `Cód. ${item.cod}`;
+
+  return `
+    <div style="display:flex; flex-direction:column; align-items:center; gap:2px; flex-shrink:0; cursor:pointer;" onclick="event.stopPropagation(); abrirModalProp('${eq(item.cod)}')" title="Ver Ficha Cód. ${item.cod}: ${nombre}">
+      <img src="${img}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; border:1px solid rgba(212,168,75,0.4); box-shadow:0 3px 8px rgba(0,0,0,0.5); transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.08)';" onmouseout="this.style.transform='scale(1)';" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
+      <span style="font-size:9.5px; font-weight:800; color:var(--gold); letter-spacing:0.02em; white-space:nowrap; margin-top:1px;">Código: ${item.cod}</span>
+    </div>
+  `;
+}
+
+function obtenerInmobiliariaPrincipalLead(lead) {
+  if (!lead) return '';
+
+  const item = obtenerPropiedadPrincipalLead(lead);
+  if (item && item.prop) {
+    const p = item.prop;
+    const inmob = (p['Inmobiliaria'] || p['Inmobiliaria / Aliado'] || p['inmobiliaria'] || p['Inmob'] || p['Aliado'] || '').trim();
+    if (inmob) return inmob;
+  }
+
   if (lead.inmobiliaria) return String(lead.inmobiliaria).trim();
 
   return 'DIRECTO';
