@@ -1266,7 +1266,7 @@ function renderLeadsBody(lista){
   const ordenEtiqueta = { activo: 1, tibio: 2, inactivo: 3 };
   const ordenEstado = { visita: 1, enviando: 2, proceso: 3, banco: 4, inactivo: 5 };
   
-  const getNumPropsLead = l => (l.propsEnviadas || []).length + (l.propsFiltradas || []).length + (l.visitas || []).length;
+  const getNumPropsLead = l => (l.propsEnviadas || []).length + (l.visitas || []).length + (l.propEtapas && typeof l.propEtapas === 'object' ? Object.keys(l.propEtapas).length : 0);
 
   lista.sort((a,b) => {
     // 0. Prioridad Absoluta: Ordenar por Etapa del Proceso (6 > 5 > 4 > 3 > 2 > 1 > 0)
@@ -1514,7 +1514,6 @@ function obtenerEtapaMaximaLead(lead) {
   if (!lead) return 0;
 
   const hasProps = (lead.propsEnviadas && lead.propsEnviadas.length > 0) ||
-                   (lead.propsFiltradas && lead.propsFiltradas.length > 0) ||
                    (lead.visitas && lead.visitas.length > 0) ||
                    (lead.propEtapas && typeof lead.propEtapas === 'object' && Object.keys(lead.propEtapas).length > 0);
 
