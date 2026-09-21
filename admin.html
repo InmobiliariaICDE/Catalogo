@@ -8574,21 +8574,34 @@ function obtenerEtapaMaximaLead(lead) {
 
   const isLeadInactivo = lead.etiqueta === 'inactivo' || lead.estado === 'inactivo';
 
-  // ─── PRIORIDAD: propEtapas (Seguimiento de Propiedades) ───────────────────
-  // Si existen datos en propEtapas, esa es la fuente de verdad. No se mezcla
-  // con visitas ni con citas para evitar inconsistencias.
-  if (lead.propEtapas && typeof lead.propEtapas === 'object' && Object.keys(lead.propEtapas).length > 0) {
-    // Ignorar la clave '_general' cuando existen claves reales de propiedades,
-    // para que el badge refleje la etapa real del seguimiento de propiedades.
+  // ─── PRIORIDAD: primera propiedad de "Propiedades e Interés" ─────────────
+  // El badge muestra la etapa de la primera propiedad que aparece en el panel
+  // "Propiedades e Interés" (ordenadas por etapa descendente, igual que el panel).
+  // Se ignora '_general' cuando hay propiedades reales enviadas.
+  if (lead.propsEnviadas && Array.isArray(lead.propsEnviadas) && lead.propsEnviadas.length > 0) {
+    // Ordenar igual que renderPanelPropsEnviadas: mayor etapa primero
+    const sorted = [...lead.propsEnviadas].sort((a, b) =>
+      obtenerEtapaPropiedad(lead, b) - obtenerEtapaPropiedad(lead, a)
+    );
+    // La etapa de la primera propiedad del listado es la que se muestra
+    const firstStage = obtenerEtapaPropiedad(lead, sorted[0]);
+    if (isLeadInactivo && firstStage < 5) return 0;
+    return firstStage;
+  }
+
+  // Si no hay propsEnviadas pero sí propEtapas con claves reales, usarlas
+  if (lead.propEtapas && typeof lead.propEtapas === 'object') {
     const realKeys = Object.keys(lead.propEtapas).filter(k => k !== '_general');
     const keysToUse = realKeys.length > 0 ? realKeys : Object.keys(lead.propEtapas);
-    let maxStage = 1;
-    for (let cod of keysToUse) {
-      const st = Number(lead.propEtapas[cod]);
-      if (!isNaN(st) && st > maxStage) maxStage = st;
+    if (keysToUse.length > 0) {
+      let maxStage = 1;
+      for (let cod of keysToUse) {
+        const st = Number(lead.propEtapas[cod]);
+        if (!isNaN(st) && st > maxStage) maxStage = st;
+      }
+      if (isLeadInactivo && maxStage < 5) return 0;
+      return maxStage;
     }
-    if (isLeadInactivo && maxStage < 5) return 0;
-    return maxStage;
   }
 
   // ─── FALLBACK: no hay propEtapas, usar visitas y citas ────────────────────
