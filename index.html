@@ -11657,7 +11657,58 @@ document.head.appendChild(schemaScript);
                         msg += `\n📅 ${fechaFormateada}\n`;
                         msg += `⌚ ${horaFormateada}`;
 
-                        // Enviar a WhatsApp
+                        // ── Construir mensaje de CONFIRMACIÓN para enviar al cliente ──
+                        const clientNumRaw = phoneRaw.replace(/\D/g, "");
+                        const clientNumWA = (clientNumRaw.length === 10 && !clientNumRaw.startsWith("57"))
+                            ? "57" + clientNumRaw
+                            : clientNumRaw;
+
+                        let confirmMsg = `Hola ${nombre}! 😊\n\n`;
+                        confirmMsg += `Tu solicitud de visita ha sido *CONFIRMADA* ✅\n\n`;
+
+                        if (inmuebleAgendarActual && inmuebleAgendarActual.esFavoritos) {
+                            const idsArr = inmuebleAgendarActual.favs || [];
+                            if (inmuebleAgendarActual.lineas && inmuebleAgendarActual.lineas.length) {
+                                inmuebleAgendarActual.lineas.forEach(l => {
+                                    let limpia = l.replace(/^\*+|\*+$/g, "").replace(/^\u2705/, "").trim();
+                                    confirmMsg += `📍 ${limpia}\n`;
+                                });
+                            } else {
+                                idsArr.forEach(cod => {
+                                    const pr = typeof datos !== "undefined"
+                                        ? datos.find(d => String(d["ÉÓdigo"] || d["C\u00f3digo"] || d["Codigo"] || "").trim() === String(cod).trim())
+                                        : null;
+                                    if (pr) {
+                                        const nom = (pr["Nombre"] || "Inmueble").trim();
+                                        const prc = typeof formatearPrecio === "function" ? formatearPrecio(pr["Precio"]) : (pr["Precio"] || "");
+                                        confirmMsg += `📍 *${nom}* (C\u00f3d. ${cod})${prc ? ` · ${prc}` : ""}\n`;
+                                    } else {
+                                        confirmMsg += `📍 C\u00f3d. ${cod}\n`;
+                                    }
+                                });
+                            }
+                        } else if (inmuebleAgendarActual) {
+                            const cod = String(inmuebleAgendarActual["C\u00f3digo"] || "").trim();
+                            const nom = (inmuebleAgendarActual["Nombre"] || "Inmueble").trim();
+                            const prc = typeof formatearPrecio === "function" ? formatearPrecio(inmuebleAgendarActual["Precio"]) : (inmuebleAgendarActual["Precio"] || "");
+                            if (cod) confirmMsg += `📍 *${nom}* (C\u00f3d. ${cod})${prc ? ` · ${prc}` : ""}\n`;
+                        }
+
+                        confirmMsg += `📅 *Fecha:* ${fechaFormateada}\n`;
+                        confirmMsg += `⌚ *Hora:* ${horaFormateada}\n`;
+                        confirmMsg += `\n¡Te esperamos! 🏠\n`;
+                        confirmMsg += `_Equipo ICDE Inmobiliaria_\n`;
+                        confirmMsg += `📞 +57 320 876 2117`;
+
+                        // Añadir link de confirmación al final del mensaje que llega a ICDE
+                        if (clientNumWA) {
+                            const confirmUrl = `https://wa.me/${clientNumWA}?text=${encodeURIComponent(confirmMsg)}`;
+                            msg += `\n\n━━━━━━━━━━━━━━━━━━━━\n`;
+                            msg += `✅ *CONFIRMAR CITA AL CLIENTE:*\n`;
+                            msg += confirmUrl;
+                        }
+
+                        // Enviar a WhatsApp de ICDE
                         const urlWA = `https://api.whatsapp.com/send?phone=573208762117&text=${encodeURIComponent(msg)}`;
                         window.open(urlWA, "_blank", "noopener,noreferrer");
 
