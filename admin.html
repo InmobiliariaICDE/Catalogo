@@ -8578,8 +8578,12 @@ function obtenerEtapaMaximaLead(lead) {
   // Si existen datos en propEtapas, esa es la fuente de verdad. No se mezcla
   // con visitas ni con citas para evitar inconsistencias.
   if (lead.propEtapas && typeof lead.propEtapas === 'object' && Object.keys(lead.propEtapas).length > 0) {
+    // Ignorar la clave '_general' cuando existen claves reales de propiedades,
+    // para que el badge refleje la etapa real del seguimiento de propiedades.
+    const realKeys = Object.keys(lead.propEtapas).filter(k => k !== '_general');
+    const keysToUse = realKeys.length > 0 ? realKeys : Object.keys(lead.propEtapas);
     let maxStage = 1;
-    for (let cod in lead.propEtapas) {
+    for (let cod of keysToUse) {
       const st = Number(lead.propEtapas[cod]);
       if (!isNaN(st) && st > maxStage) maxStage = st;
     }
