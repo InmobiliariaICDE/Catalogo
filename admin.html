@@ -11332,6 +11332,85 @@ function confirmarCitaSolicitada(citaId) {
 }
 
 // ═══════════════════════════════════════════════════════
+// EXTRAER NÚMERO DE TELÉFONO DE LA INMOBILIARIA ALIADA DESDE LA BD
+// ═══════════════════════════════════════════════════════
+function obtenerCelularInmobiliariaAliada(prop, nombreAliado) {
+  const norm = str => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const cleanPhone = raw => {
+    if (!raw) return '';
+    const str = String(raw).trim();
+    if (!str || str === '0') return '';
+    const match = str.match(/(?:57)?(3\d{9})/);
+    if (match) return match[1];
+    const digits = str.replace(/\D/g, '');
+    if (digits.length >= 7 && digits !== '0') return digits;
+    return '';
+  };
+
+  // 1. Extraer directamente de la propiedad (prop) desde la BD (Columnas CELULAR, CELULAR 2, Celular 1, etc.)
+  if (prop) {
+    const campos = [
+      prop['CELULAR'], prop['CELULAR 1'], prop['CELULAR 2'], prop['Celular 1'], prop['Celular 2'],
+      prop['Celulares'], prop['celular'], prop['celulares'], prop['Celular Propietario'], prop['Telefono']
+    ];
+    for (const val of campos) {
+      const num = cleanPhone(val);
+      if (num) return num;
+    }
+  }
+
+  const targetNorm = norm(nombreAliado);
+
+  // 2. Buscar en OTRAS propiedades de 'datos' que pertenezcan a la misma Inmobiliaria Aliada
+  if (targetNorm && typeof datos !== 'undefined' && Array.isArray(datos)) {
+    for (const p of datos) {
+      if (!p) continue;
+      const inmobP = norm(p['Inmobiliaria'] || p['Inmobiliaria / Aliado'] || p['inmobiliaria'] || p['Inmob'] || p['Aliado'] || '');
+      if (inmobP && targetNorm && (inmobP.includes(targetNorm) || targetNorm.includes(inmobP))) {
+        const campos = [
+          p['CELULAR'], p['CELULAR 1'], p['CELULAR 2'], p['Celular 1'], p['Celular 2'],
+          p['Celulares'], p['celular'], p['celulares'], p['Celular Propietario'], p['Telefono']
+        ];
+        for (const val of campos) {
+          const num = cleanPhone(val);
+          if (num) return num;
+        }
+      }
+    }
+  }
+
+  // 3. Buscar en leads de tipo 'inmobiliaria'
+  if (targetNorm && typeof leads !== 'undefined' && Array.isArray(leads)) {
+    const leadAliado = leads.find(l => {
+      if (l.tipo !== 'inmobiliaria') return false;
+      const nInm = norm(l.nombreInmobiliaria || l.nombre);
+      return nInm && targetNorm && (nInm.includes(targetNorm) || targetNorm.includes(nInm));
+    });
+    if (leadAliado && leadAliado.celular) {
+      const num = cleanPhone(leadAliado.celular);
+      if (num) return num;
+    }
+  }
+
+  // 4. Buscar en directorio de aliados (icde_aliados)
+  if (targetNorm) {
+    let aliadosStore = [];
+    try { aliadosStore = JSON.parse(localStorage.getItem('icde_aliados') || '[]'); } catch(e){}
+    if (Array.isArray(aliadosStore)) {
+      const matchAlly = aliadosStore.find(a => a && a.nombre && (norm(a.nombre).includes(targetNorm) || targetNorm.includes(norm(a.nombre))));
+      if (matchAlly) {
+        for (const val of [matchAlly.telefono, matchAlly.celular, matchAlly.whatsapp]) {
+          const num = cleanPhone(val);
+          if (num) return num;
+        }
+      }
+    }
+  }
+
+  return '';
+}
+
+// ═══════════════════════════════════════════════════════
 // SOLICITAR CONFIRMACIÓN A INMOBILIARIA ALIADA (JOVEL, ETC)
 // ═══════════════════════════════════════════════════════
 function solicitarConfirmacionAliado(citaId) {
@@ -11344,41 +11423,12 @@ function solicitarConfirmacionAliado(citaId) {
   const propInmob = prop ? (prop['Inmobiliaria'] || prop['Inmobiliaria / Aliado'] || prop['inmobiliaria'] || prop['Inmob'] || prop['Aliado'] || cita.inmobiliaria || '').trim() : (cita.inmobiliaria || '').trim();
   const nombreAliado = propInmob || 'Inmobiliaria Aliada';
 
-  let numLimpio = '';
+  // Extraer el teléfono de la inmobiliaria directamente de la base de datos (columnas CELULAR, CELULAR 2, etc.)
+  let numLimpio = obtenerCelularInmobiliariaAliada(prop, nombreAliado);
 
-  // 1. Buscar en leads de tipo 'inmobiliaria'
-  if (typeof leads !== 'undefined' && Array.isArray(leads)) {
-    const targetNorm = nombreAliado.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const leadAliado = leads.find(l => {
-      if (l.tipo !== 'inmobiliaria') return false;
-      const nInm = (l.nombreInmobiliaria || l.nombre || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      return nInm && targetNorm && (nInm.includes(targetNorm) || targetNorm.includes(nInm));
-    });
-    if (leadAliado && leadAliado.celular) {
-      numLimpio = String(leadAliado.celular).replace(/\D/g, '');
-    }
-  }
-
-  // 2. Buscar en directorio de aliados
+  // Respaldo únicamente si la BD no tiene teléfono para esa inmobiliaria
   if (!numLimpio) {
-    let aliadosStore = [];
-    try { aliadosStore = JSON.parse(localStorage.getItem('icde_aliados') || '[]'); } catch(e){}
-    if (Array.isArray(aliadosStore)) {
-      const targetNorm = nombreAliado.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const matchAlly = aliadosStore.find(a => {
-        if (!a || !a.nombre) return false;
-        const aNorm = a.nombre.toLowerCase().replace(/[^a-z0-9]/g, '');
-        return aNorm && targetNorm && (aNorm.includes(targetNorm) || targetNorm.includes(aNorm));
-      });
-      if (matchAlly && (matchAlly.telefono || matchAlly.celular || matchAlly.whatsapp)) {
-        numLimpio = String(matchAlly.telefono || matchAlly.celular || matchAlly.whatsapp).replace(/\D/g, '');
-      }
-    }
-  }
-
-  // 3. Si no se tiene el número, pedirlo en prompt
-  if (!numLimpio) {
-    const ing = prompt(`Ingresa el número de WhatsApp de la inmobiliaria aliada (${nombreAliado}):`);
+    const ing = prompt(`No se encontró teléfono para ${nombreAliado} en la BD. Ingresa el WhatsApp:`);
     if (!ing) return;
     numLimpio = ing.replace(/\D/g, '');
     if (!numLimpio) { toast('Número de WhatsApp no válido', 'error'); return; }
@@ -11416,7 +11466,7 @@ function solicitarConfirmacionAliado(citaId) {
   const msg = encodeURIComponent(msgTexto);
   const waUrl = `https://api.whatsapp.com/send?phone=${waNumDest}&text=${msg}`;
   window.open(waUrl, '_blank');
-  toast(`✅ Solicitud enviada por WhatsApp a ${nombreAliado}`, 'success');
+  toast(`✅ Solicitud enviada por WhatsApp a ${nombreAliado} (${numLimpio})`, 'success');
 }
 
 function filterCitas(tipo, btn){
