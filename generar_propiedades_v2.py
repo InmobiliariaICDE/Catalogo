@@ -388,6 +388,8 @@ def build_html(p: dict, slug: str) -> str:
         ("Zona",                  p.get("Zona","")),
         ("Estrato",               p.get("Estrato","")),
         ("Ubicación",             p.get("Ubicación","")),
+        ("Vía",                   p.get("Vía") or p.get("Via","")),
+        ("Reja",                  p.get("Reja") or p.get("Reja Antejardín","")),
         ("Área construida",       p.get("Área Construida","")),
         ("Habitación en 1er piso", p.get("Habitacion en 1er piso") or p.get("Habitación en 1er piso","")),
         ("Área lote",             p.get("Área lote","")),
@@ -397,8 +399,6 @@ def build_html(p: dict, slug: str) -> str:
         ("Rentabilidad",          p.get("Rentabilidad","")),
         ("Hipoteca",              p.get("Hipoteca","")),
         ("Permuta",               p.get("Permuta","")),
-        ("Vía",                   p.get("Vía") or p.get("Via","")),
-        ("Reja",                  p.get("Reja") or p.get("Reja Antejardín","")),
     ]
     filas = ""
     for label, val in char_campos:
