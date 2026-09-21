@@ -8574,100 +8574,24 @@ function obtenerEtapaMaximaLead(lead) {
 
   const isLeadInactivo = lead.etiqueta === 'inactivo' || lead.estado === 'inactivo';
 
-  // ─── PRIORIDAD: primera propiedad de "Propiedades e Interés" ─────────────
-  // El badge muestra la etapa de la primera propiedad que aparece en el panel
-  // "Propiedades e Interés" (ordenadas por etapa descendente, igual que el panel).
-  // Se ignora '_general' cuando hay propiedades reales enviadas.
-  if (lead.propsEnviadas && Array.isArray(lead.propsEnviadas) && lead.propsEnviadas.length > 0) {
-    // Ordenar igual que renderPanelPropsEnviadas: mayor etapa primero
-    const sorted = [...lead.propsEnviadas].sort((a, b) =>
-      obtenerEtapaPropiedad(lead, b) - obtenerEtapaPropiedad(lead, a)
-    );
-    // La etapa de la primera propiedad del listado es la que se muestra
-    const firstStage = obtenerEtapaPropiedad(lead, sorted[0]);
-    if (isLeadInactivo && firstStage < 5) return 0;
-    return firstStage;
+  // ─── FUENTE ÚNICA: "Propiedades e Interés" ────────────────────────────────
+  // El badge refleja SOLO lo que aparece en el panel "Propiedades e Interés".
+  // Si no hay propiedades enviadas → sin badge (0).
+  if (!lead.propsEnviadas || !Array.isArray(lead.propsEnviadas) || lead.propsEnviadas.length === 0) {
+    return 0;
   }
 
-  // Si no hay propsEnviadas pero sí propEtapas con claves reales, usarlas
-  if (lead.propEtapas && typeof lead.propEtapas === 'object') {
-    const realKeys = Object.keys(lead.propEtapas).filter(k => k !== '_general');
-    const keysToUse = realKeys.length > 0 ? realKeys : Object.keys(lead.propEtapas);
-    if (keysToUse.length > 0) {
-      let maxStage = 1;
-      for (let cod of keysToUse) {
-        const st = Number(lead.propEtapas[cod]);
-        if (!isNaN(st) && st > maxStage) maxStage = st;
-      }
-      if (isLeadInactivo && maxStage < 5) return 0;
-      return maxStage;
-    }
-  }
+  // Ordenar igual que renderPanelPropsEnviadas: mayor etapa primero.
+  // La etapa de la PRIMERA propiedad del listado es la que se muestra en el badge.
+  const sorted = [...lead.propsEnviadas].sort((a, b) =>
+    obtenerEtapaPropiedad(lead, b) - obtenerEtapaPropiedad(lead, a)
+  );
+  const firstStage = obtenerEtapaPropiedad(lead, sorted[0]);
 
-  // ─── FALLBACK: no hay propEtapas, usar visitas y citas ────────────────────
-  const hasProps = (lead.propsEnviadas && lead.propsEnviadas.length > 0) ||
-                   (lead.visitas && lead.visitas.length > 0);
-
-  let maxStage = hasProps ? 1 : 0;
-
-  if (lead.visitas && Array.isArray(lead.visitas)) {
-    for (let v of lead.visitas) {
-      let st = 1;
-      const est = String(v.estado || '').toLowerCase();
-      if (v.procesoVenta || est === 'proceso_venta' || est === 'proceso') st = 6;
-      else if (String(v.oferto || '').toLowerCase() === 'si' || est === 'ok') st = 5;
-      else if (est === 'realizada' || est === 'visitado') st = 4;
-      else if (est === 'agendada' || est === 'confirmada') st = 3;
-      else if (est === 'solicito_visita' || est === 'solicitado') st = 2;
-      if (st > maxStage) maxStage = st;
-    }
-  }
-
-  if (!isLeadInactivo && typeof citas !== 'undefined' && Array.isArray(citas)) {
-    const lCel = String(lead.celular || '').replace(/\D/g, '');
-    const lNom = norm(lead.nombre || '');
-    const lId = String(lead.id || '').trim();
-    for (let c of citas) {
-      if (!c) continue;
-      const cEst = String(c.estado || '').toLowerCase();
-      if (cEst === 'cancelada' || cEst === 'inactivo' || cEst === 'borrado') continue;
-
-      const cCel = String(c.celular || '').replace(/\D/g, '');
-      const cNom = norm(c.cliente || '');
-      const cId = String(c.leadId || c.id || '').trim();
-
-      let match = false;
-      if (lId && cId === lId) match = true;
-      else if (lCel && lCel.length >= 7 && cCel && (lCel === cCel || cCel.includes(lCel) || lCel.includes(cCel))) match = true;
-      else if (lNom && lNom.length >= 4 && cNom && lNom === cNom) match = true;
-
-      if (match) {
-        let st = 1;
-        if (c.procesoVenta || cEst === 'proceso_venta' || cEst === 'proceso') st = 6;
-        else if (String(c.oferto || '').toLowerCase() === 'si' || cEst === 'ok') st = 5;
-        else if (cEst === 'realizada' || cEst === 'visitado') st = 4;
-        else if (cEst === 'agendada' || cEst === 'confirmada' || c.fecha) st = 3;
-        else if (cEst === 'solicito_visita' || cEst === 'pendiente') st = 2;
-        if (st > maxStage) maxStage = st;
-      }
-    }
-  }
-
-  const estL = String(lead.estado || '').toLowerCase();
-  if (estL === 'proceso' && maxStage < 6) {
-    maxStage = 6;
-  } else if ((estL === 'visita' || estL === 'agendada') && maxStage < 3) {
-    maxStage = hasProps ? 3 : 0;
-  } else if (estL === 'enviando' && maxStage < 2) {
-    maxStage = hasProps ? 2 : 0;
-  }
-
-  if (isLeadInactivo && maxStage < 5) {
-    maxStage = 0;
-  }
-
-  return maxStage;
+  if (isLeadInactivo && firstStage < 5) return 0;
+  return firstStage;
 }
+
 
 
 function activarEtapaLeadDesdeTabla(evt, id, etapaTarget) {
