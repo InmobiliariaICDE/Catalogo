@@ -10322,9 +10322,21 @@ function renderCitasGrilla() {
   citas.forEach(c => {
     const iso = getFechaISO(c.fecha);
     if (!citasByDay[iso]) return;
-    const hr = c.hora ? parseInt(c.hora.split(':')[0], 10) : -1;
-    if (!citasByDay[iso][hr]) citasByDay[iso][hr] = [];
-    citasByDay[iso][hr].push(c);
+    let hr = -1;
+    if (c.hora) {
+      const parts = String(c.hora).trim().split(':');
+      let hVal = parseInt(parts[0], 10);
+      if (!isNaN(hVal)) {
+        const isPM = c.hora.toUpperCase().includes('PM');
+        const isAM = c.hora.toUpperCase().includes('AM');
+        if (isPM && hVal < 12) hVal += 12;
+        if (isAM && hVal === 12) hVal = 0;
+        hr = hVal;
+      }
+    }
+    if (hr >= 0 && citasByDay[iso][hr] !== undefined) {
+      citasByDay[iso][hr].push(c);
+    }
   });
 
   const fmtDate = (d) => `${String(d.date.getDate()).padStart(2,'0')}/${String(d.date.getMonth()+1).padStart(2,'0')}`;
