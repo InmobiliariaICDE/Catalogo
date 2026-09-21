@@ -11214,23 +11214,35 @@ function abrirTarjetaCitaModal(citaId) {
       </div>
 
       ${cita.estado === 'solicito_visita' ? `
-      <!-- BANNER + BOTÓN CONFIRMAR CITA -->
+      <!-- BANNER + BOTONES CONFIRMAR Y SOLICITAR A ALIADO -->
       <div style="background:linear-gradient(135deg, rgba(236,72,153,0.18), rgba(236,72,153,0.08)); border:1.5px solid rgba(236,72,153,0.55); border-radius:14px; padding:14px 16px; margin-top:4px;">
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
           <span style="font-size:18px;">🔔</span>
           <div>
             <div style="font-size:12px; font-weight:800; color:#f9a8d4; text-transform:uppercase; letter-spacing:0.06em;">Solicitud de Cita Pendiente</div>
-            <div style="font-size:11px; color:rgba(249,168,212,0.75); margin-top:2px;">El cliente solicitó esta visita. Confírmala para notificarlo por WhatsApp.</div>
+            <div style="font-size:11px; color:rgba(249,168,212,0.85); margin-top:2px;">
+              ${propInmob ? `Inmobiliaria Aliada: <strong style="color:#fff;">${propInmob}</strong>. Solicita confirmación al aliado o confírmala.` : 'El cliente solicitó esta visita. Confírmala para notificarlo por WhatsApp.'}
+            </div>
           </div>
         </div>
-        <button onclick="confirmarCitaSolicitada('${String(cita.id || '').replace(/'/g,"\\'")}')"
-          style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#ec4899,#be185d); border:none; color:#fff; font-size:13px; font-weight:800; cursor:pointer; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(236,72,153,0.45); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px;"
-          onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(236,72,153,0.6)';"
-          onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(236,72,153,0.45)';"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          Confirmar Cita y Notificar al Cliente
-        </button>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button onclick="solicitarConfirmacionAliado('${String(cita.id || '').replace(/'/g,"\\'")}')"
+            style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#3b82f6,#1d4ed8); border:none; color:#fff; font-size:13px; font-weight:800; cursor:pointer; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(59,130,246,0.35); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px;"
+            onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(59,130,246,0.55)';"
+            onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(59,130,246,0.35)';"
+          >
+            <span style="font-size:15px;">🏢</span>
+            Solicitar Confirmación a ${propInmob || 'Inmobiliaria Aliada'}
+          </button>
+          <button onclick="confirmarCitaSolicitada('${String(cita.id || '').replace(/'/g,"\\'")}')"
+            style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#ec4899,#be185d); border:none; color:#fff; font-size:13px; font-weight:800; cursor:pointer; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(236,72,153,0.45); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px;"
+            onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(236,72,153,0.6)';"
+            onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(236,72,153,0.45)';"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Confirmar Cita y Notificar al Cliente
+          </button>
+        </div>
       </div>
       ` : ''}
     `;
@@ -11317,6 +11329,94 @@ function confirmarCitaSolicitada(citaId) {
   }
 
   if (currentTab === 'citas') renderCitas();
+}
+
+// ═══════════════════════════════════════════════════════
+// SOLICITAR CONFIRMACIÓN A INMOBILIARIA ALIADA (JOVEL, ETC)
+// ═══════════════════════════════════════════════════════
+function solicitarConfirmacionAliado(citaId) {
+  citaId = String(citaId || '').trim();
+  const cIdx = citas.findIndex(c => c && String(c.id).trim() === citaId);
+  if (cIdx < 0) { toast('No se encontró la cita', 'error'); return; }
+
+  const cita = citas[cIdx];
+  const prop = cita.codigo ? buscarPropiedadGlobal(cita.codigo) : null;
+  const propInmob = prop ? (prop['Inmobiliaria'] || prop['Inmobiliaria / Aliado'] || prop['inmobiliaria'] || prop['Inmob'] || prop['Aliado'] || cita.inmobiliaria || '').trim() : (cita.inmobiliaria || '').trim();
+  const nombreAliado = propInmob || 'Inmobiliaria Aliada';
+
+  let numLimpio = '';
+
+  // 1. Buscar en leads de tipo 'inmobiliaria'
+  if (typeof leads !== 'undefined' && Array.isArray(leads)) {
+    const targetNorm = nombreAliado.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const leadAliado = leads.find(l => {
+      if (l.tipo !== 'inmobiliaria') return false;
+      const nInm = (l.nombreInmobiliaria || l.nombre || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return nInm && targetNorm && (nInm.includes(targetNorm) || targetNorm.includes(nInm));
+    });
+    if (leadAliado && leadAliado.celular) {
+      numLimpio = String(leadAliado.celular).replace(/\D/g, '');
+    }
+  }
+
+  // 2. Buscar en directorio de aliados
+  if (!numLimpio) {
+    let aliadosStore = [];
+    try { aliadosStore = JSON.parse(localStorage.getItem('icde_aliados') || '[]'); } catch(e){}
+    if (Array.isArray(aliadosStore)) {
+      const targetNorm = nombreAliado.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const matchAlly = aliadosStore.find(a => {
+        if (!a || !a.nombre) return false;
+        const aNorm = a.nombre.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return aNorm && targetNorm && (aNorm.includes(targetNorm) || targetNorm.includes(aNorm));
+      });
+      if (matchAlly && (matchAlly.telefono || matchAlly.celular || matchAlly.whatsapp)) {
+        numLimpio = String(matchAlly.telefono || matchAlly.celular || matchAlly.whatsapp).replace(/\D/g, '');
+      }
+    }
+  }
+
+  // 3. Si no se tiene el número, pedirlo en prompt
+  if (!numLimpio) {
+    const ing = prompt(`Ingresa el número de WhatsApp de la inmobiliaria aliada (${nombreAliado}):`);
+    if (!ing) return;
+    numLimpio = ing.replace(/\D/g, '');
+    if (!numLimpio) { toast('Número de WhatsApp no válido', 'error'); return; }
+  }
+
+  const diasSem = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  let fechaLeg = cita.fecha || '';
+  try {
+    const parts = (cita.fecha||'').split('-');
+    if (parts.length === 3) {
+      const d = new Date(parseInt(parts[0],10), parseInt(parts[1],10)-1, parseInt(parts[2],10));
+      fechaLeg = `${diasSem[d.getDay()]}, ${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
+    }
+  } catch(e){}
+
+  const horaLeg = (cita.hora && typeof formatHoraStr12 === 'function') ? formatHoraStr12(cita.hora) : (cita.hora || '');
+  const propNom = prop ? (prop['Nombre'] || prop['nombre'] || `Propiedad Cód. ${cita.codigo}`) : (cita.codigo ? `Propiedad Cód. ${cita.codigo}` : 'el inmueble');
+  const propPrecio = (prop && typeof formatP === 'function') ? formatP(prop['Precio']) : (prop && prop['Precio'] ? `$${prop['Precio']}` : '');
+  const clienteNom = cita.cliente || 'Cliente interesado';
+
+  const waNumDest = numLimpio.startsWith('57') ? numLimpio : '57' + numLimpio;
+
+  const msgTexto = 
+    `\u00A1Hola ${nombreAliado}! \u{1F3E2}\n\n` +
+    `Tenemos un cliente interesado en agendar visita para la siguiente propiedad de su inventario:\n\n` +
+    `\u{1F3E1} *Inmueble:* ${propNom} (C\u00F3d. ${cita.codigo || '\u2014'})\n` +
+    (propPrecio ? `\u{1F4B0} *Precio:* ${propPrecio}\n` : '') +
+    `\u{1F4C5} *Fecha solicitada:* ${fechaLeg}\n` +
+    `\u{1F552} *Hora solicitada:* ${horaLeg}\n` +
+    `\u{1F464} *Cliente:* ${clienteNom}\n\n` +
+    `\u00BFNos confirmas por favor si est\u00E1 disponible en este horario para agendar con el cliente? \u00A1Muchas gracias!\n` +
+    `\u2014 *ICDE Inmobiliaria*`;
+
+  const msg = encodeURIComponent(msgTexto);
+  const waUrl = `https://api.whatsapp.com/send?phone=${waNumDest}&text=${msg}`;
+  window.open(waUrl, '_blank');
+  toast(`✅ Solicitud enviada por WhatsApp a ${nombreAliado}`, 'success');
 }
 
 function filterCitas(tipo, btn){
