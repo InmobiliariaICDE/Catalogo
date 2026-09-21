@@ -550,7 +550,8 @@ var CAMPOS_FB = [
   'CELULAR', 'CELULAR 2', 'PROPIETARIO', 'RENTAB.', 'Dimensiones',
   'Aire Acondicionado', 'Antigüedad del Inmueble', 'Ascensor', 'Número de Cortinas',
   'Reja Antejardín', 'Patio', 'Inventario', 'DIRECCIÓN', 'Latitud', 'Longitud',
-  'Hipoteca', 'Permuta', 'Habitacion en 1er piso'
+  'Hipoteca', 'Permuta', 'Habitacion en 1er piso',
+  'Vía', 'Reja'
 ];
  
 function buildHeaderIndex(headers) {
@@ -607,7 +608,7 @@ function buildHeaderIndex(headers) {
       if (nh === 'ascenso' || nh === 'ascensor') { idx['Ascensor'] = i; idx['ASCENSO'] = i; }
       else if (nh === 'cortinas' || nh === 'cortina' || nh.indexOf('cortina') >= 0) { idx['Número de Cortinas'] = i; idx['CORTINAS'] = i; }
       else if (nh === 'aire' || nh === 'aire acondicionado' || nh.indexOf('aire') >= 0) { idx['Aire Acondicionado'] = i; idx['AIRE'] = i; }
-      else if (nh === 'reja' || nh === 'reja/' || nh.indexOf('reja') >= 0) { idx['Reja Antejardín'] = i; idx['REJA/'] = i; }
+      else if (nh === 'reja' || nh === 'reja/' || nh.indexOf('reja') >= 0) { idx['Reja'] = i; idx['Reja Antejardín'] = i; idx['REJA/'] = i; }
       else if (nh === 'antiguedad' || nh.indexOf('antig') >= 0) { idx['Antigüedad del Inmueble'] = i; idx['ANTIGÜEDAD'] = i; }
       else if (nh === 'patio') { idx['Patio'] = i; idx['PATIO'] = i; }
       else if (nh === 'inventario') { idx['Inventario'] = i; }
@@ -615,6 +616,7 @@ function buildHeaderIndex(headers) {
       else if (nh === 'hipoteca') { idx['Hipoteca'] = i; }
       else if (nh === 'permuta') { idx['Permuta'] = i; }
       else if (nh === 'habitacion en 1er piso' || nh === 'habitacion 1er piso' || nh.indexOf('1er piso') >= 0 || nh.indexOf('primer piso') >= 0) { idx['Habitacion en 1er piso'] = i; }
+      else if (nh === 'via' || nh === 'vía') { idx['Vía'] = i; idx['Via'] = i; }
     }
   });
   return idx;
@@ -955,7 +957,8 @@ function doPost(e) {
         if (nk === 'ascensor' || nk === 'ascenso') return prop['Ascensor'] || '';
         if (nk === 'numero de cortinas' || nk === 'cortinas') return prop['Número de Cortinas'] || '';
         if (nk === 'aire acondicionado' || nk === 'aire') return prop['Aire Acondicionado'] || '';
-        if (nk === 'reja antejardin' || nk === 'reja' || nk === 'reja/') return prop['Reja Antejardín'] || '';
+        if (nk === 'reja antejardin' || nk === 'reja' || nk === 'reja/') return prop['Reja'] || prop['Reja Antejardín'] || '';
+        if (nk === 'via' || nk === 'vía') return prop['Vía'] || prop['Via'] || '';
         if (nk === 'antiguedad del inmueble' || nk === 'antiguedad') return prop['Antigüedad del Inmueble'] || '';
         if (nk === 'patio') return prop['Patio'] || '';
         if (nk === 'dimensiones') return prop['Dimensiones'] || '';
