@@ -8054,12 +8054,10 @@ function renderLeadsBody(lista){
   const ordenEstado = { visita: 1, enviando: 2, proceso: 3, banco: 4, inactivo: 5 };
   
   listaFiltrada.sort((a,b) => {
-    // 0. Prioridad Absoluta: Leads en Etapa 6 o Etapa 5 primero (Etapa 6 > Etapa 5 > Demás)
+    // 0. Prioridad Absoluta: Ordenar por Etapa del Proceso (6 > 5 > 4 > 3 > 2 > 1)
     const stA = typeof obtenerEtapaMaximaLead === 'function' ? obtenerEtapaMaximaLead(a) : 1;
     const stB = typeof obtenerEtapaMaximaLead === 'function' ? obtenerEtapaMaximaLead(b) : 1;
-    const priA = stA >= 5 ? stA : 0;
-    const priB = stB >= 5 ? stB : 0;
-    if (priA !== priB) return priB - priA;
+    if (stA !== stB) return stB - stA;
 
     // 1. Primario: Etiqueta (Activo > Tibio > Inactivo)
     const oEtA = ordenEtiqueta[a.etiqueta] || 99;
@@ -8541,17 +8539,41 @@ function obtenerEtapaMaximaLead(lead) {
   if (lead.visitas && Array.isArray(lead.visitas)) {
     for (let v of lead.visitas) {
       let st = 1;
-      if (v.procesoVenta || v.estado === 'proceso_venta') st = 6;
+      if (v.procesoVenta || v.estado === 'proceso_venta' || v.estado === 'proceso') st = 6;
       else if (v.oferto === 'si' || v.estado === 'ok') st = 5;
-      else if (v.estado === 'realizada') st = 4;
-      else if (v.estado === 'agendada') st = 3;
-      else if (v.estado === 'solicito_visita') st = 2;
+      else if (v.estado === 'realizada' || v.estado === 'visitado') st = 4;
+      else if (v.estado === 'agendada' || v.estado === 'confirmada') st = 3;
+      else if (v.estado === 'solicito_visita' || v.estado === 'solicitado') st = 2;
       if (st > maxStage) maxStage = st;
     }
   }
 
-  if (lead.estado === 'proceso' && maxStage < 5) {
-    maxStage = 5;
+  if (typeof citas !== 'undefined' && Array.isArray(citas)) {
+    const lCel = String(lead.celular || '').replace(/\D/g, '');
+    const lNom = norm(lead.nombre || '');
+    const lId = String(lead.id || '').trim();
+    for (let c of citas) {
+      if (!c) continue;
+      const cCel = String(c.celular || '').replace(/\D/g, '');
+      const cNom = norm(c.cliente || '');
+      const cId = String(c.leadId || c.id || '').trim();
+      const match = (lId && (cId === lId)) || (lCel && lCel.length >= 7 && cCel && cCel.includes(lCel)) || (lNom && lNom.length >= 3 && cNom && (cNom.includes(lNom) || lNom.includes(cNom)));
+      if (match) {
+        let st = 1;
+        if (c.procesoVenta || c.estado === 'proceso_venta' || c.estado === 'proceso') st = 6;
+        else if (c.oferto === 'si' || c.estado === 'ok') st = 5;
+        else if (c.estado === 'realizada' || c.estado === 'visitado') st = 4;
+        else if (c.estado === 'agendada' || c.estado === 'confirmada' || c.fecha) st = 3;
+        else if (c.estado === 'solicito_visita') st = 2;
+        if (st > maxStage) maxStage = st;
+      }
+    }
+  }
+
+  if (lead.estado === 'proceso' && maxStage < 6) {
+    maxStage = 6;
+  } else if (lead.estado === 'visita' && maxStage < 2) {
+    maxStage = 2;
   }
 
   return maxStage;
