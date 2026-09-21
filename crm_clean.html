@@ -1266,18 +1266,25 @@ function renderLeadsBody(lista){
   const ordenEtiqueta = { activo: 1, tibio: 2, inactivo: 3 };
   const ordenEstado = { visita: 1, enviando: 2, proceso: 3, banco: 4, inactivo: 5 };
   
+  const getNumPropsLead = l => (l.propsEnviadas || []).length + (l.propsFiltradas || []).length + (l.visitas || []).length;
+
   lista.sort((a,b) => {
-    // 0. Prioridad Absoluta: Ordenar por Etapa del Proceso (6 > 5 > 4 > 3 > 2 > 1)
-    const stA = typeof obtenerEtapaMaximaLead === 'function' ? obtenerEtapaMaximaLead(a) : 1;
-    const stB = typeof obtenerEtapaMaximaLead === 'function' ? obtenerEtapaMaximaLead(b) : 1;
+    // 0. Prioridad Absoluta: Ordenar por Etapa del Proceso (6 > 5 > 4 > 3 > 2 > 1 > 0)
+    const stA = typeof obtenerEtapaMaximaLead === 'function' ? obtenerEtapaMaximaLead(a) : 0;
+    const stB = typeof obtenerEtapaMaximaLead === 'function' ? obtenerEtapaMaximaLead(b) : 0;
     if (stA !== stB) return stB - stA;
 
-    // 1. Primario: Etiqueta (Activo > Tibio > Inactivo)
+    // 1. Número de propiedades / interés registrado (Más propiedades arriba)
+    const npA = getNumPropsLead(a);
+    const npB = getNumPropsLead(b);
+    if (npA !== npB) return npB - npA;
+
+    // 2. Primario: Etiqueta (Activo > Tibio > Inactivo)
     const oEtA = ordenEtiqueta[a.etiqueta] || 99;
     const oEtB = ordenEtiqueta[b.etiqueta] || 99;
     if (oEtA !== oEtB) return oEtA - oEtB;
     
-    // 2. Secundario: Estado
+    // 3. Secundario: Estado
     const oEsA = ordenEstado[a.estado] || 99;
     const oEsB = ordenEstado[b.estado] || 99;
     if (oEsA !== oEsB) return oEsA - oEsB;
@@ -1504,8 +1511,16 @@ function updLead(id,campo,val){ const l=leads.find(x=>x.id===id); if(!l) return;
 
 
 function obtenerEtapaMaximaLead(lead) {
-  if (!lead) return 1;
-  let maxStage = 1;
+  if (!lead) return 0;
+
+  const hasProps = (lead.propsEnviadas && lead.propsEnviadas.length > 0) ||
+                   (lead.propsFiltradas && lead.propsFiltradas.length > 0) ||
+                   (lead.visitas && lead.visitas.length > 0) ||
+                   (lead.propEtapas && typeof lead.propEtapas === 'object' && Object.keys(lead.propEtapas).length > 0);
+
+  const isLeadInactivo = lead.etiqueta === 'inactivo' || lead.estado === 'inactivo';
+
+  let maxStage = hasProps ? 1 : 0;
 
   if (lead.propEtapas && typeof lead.propEtapas === 'object') {
     for (let cod in lead.propEtapas) {
@@ -1526,8 +1541,6 @@ function obtenerEtapaMaximaLead(lead) {
       if (st > maxStage) maxStage = st;
     }
   }
-
-  const isLeadInactivo = lead.etiqueta === 'inactivo' || lead.estado === 'inactivo';
 
   if (!isLeadInactivo && typeof citas !== 'undefined' && Array.isArray(citas)) {
     const lCel = String(lead.celular || '').replace(/\D/g, '');
@@ -1563,13 +1576,13 @@ function obtenerEtapaMaximaLead(lead) {
   if (estL === 'proceso' && maxStage < 6) {
     maxStage = 6;
   } else if ((estL === 'visita' || estL === 'agendada') && maxStage < 3) {
-    maxStage = 3;
+    maxStage = hasProps ? 3 : 0;
   } else if (estL === 'enviando' && maxStage < 2) {
-    maxStage = 2;
+    maxStage = hasProps ? 2 : 0;
   }
 
   if (isLeadInactivo && maxStage < 5) {
-    maxStage = 1;
+    maxStage = 0;
   }
 
   return maxStage;
