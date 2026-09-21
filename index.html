@@ -11505,7 +11505,7 @@ document.head.appendChild(schemaScript);
                         const paisSelect = document.getElementById("agendarPaisSelect");
                         const codigoPais = paisSelect ? paisSelect.value : "+57";
                         const phoneRaw = phoneInput?.value.trim() || "";
-                        const phone = phoneRaw ? (phoneRaw.startsWith("+") ? phoneRaw : (codigoPais === "+57" ? phoneRaw : `${codigoPais} ${phoneRaw}`)) : "";
+                        const phoneDisplay = phoneRaw ? (phoneRaw.startsWith("+") ? phoneRaw : `${codigoPais}${phoneRaw}`) : "";
                         const fecha = fechaInput?.value || "";
                         
                         // Obtener franja u hora seleccionada
@@ -11519,49 +11519,11 @@ document.head.appendChild(schemaScript);
                             horaFinal = "9:00 AM";
                         }
 
-                        // Validaciones básicas
-                        if (!nombre) {
-                            alert("Por favor ingrese su Nombre completo.");
-                            nombreInput?.focus();
-                            return;
-                        }
-                        if (!phone) {
-                            alert("Por favor ingrese su número de WhatsApp.");
-                            phoneInput?.focus();
-                            return;
-                        }
-                        if (metodosPagoSeleccionados.size === 0) {
-                            alert("Por favor seleccione al menos un método de pago.");
-                            return;
-                        }
-
-                        const tieneCredito = Array.from(metodosPagoSeleccionados).some(m => m.includes("Crédito"));
-                        if (tieneCredito) {
-                            if (!preaprobadoSeleccionado) {
-                                alert("Por favor indique si cuenta con la carta de preaprobado.");
-                                return;
-                            }
-                            if (!bancoInput?.value.trim()) {
-                                alert("Por favor escriba con qué banco o entidad.");
-                                bancoInput?.focus();
-                                return;
-                            }
-                        }
-
-                        if (!fecha) {
-                            alert("Por favor seleccione el día de la visita.");
-                            fechaInput?.focus();
-                            return;
-                        }
-                        if (!horaFinal) {
-                            alert("Por favor seleccione o escriba la hora de la visita.");
-                            return;
-                        }
-
                         // Formatear Método de Pago
                         let metodoPagoTexto = "";
                         const arrayMetodos = Array.from(metodosPagoSeleccionados);
                         const tieneEfectivo = arrayMetodos.some(m => m.includes("Efectivo"));
+                        const tieneCredito = arrayMetodos.some(m => m.includes("Crédito"));
                         
                         if (tieneEfectivo && tieneCredito) {
                             metodoPagoTexto = "Efectivo y crédito 💳";
@@ -11585,11 +11547,7 @@ document.head.appendChild(schemaScript);
                         // Formatear Hora / Franja Horaria
                         let horaFormateada = horaFinal;
                         if (!horaFormateada.toLowerCase().includes("mañana") && !horaFormateada.toLowerCase().includes("tarde")) {
-                            if (horaFinal === "8:00 AM") {
-                                horaFormateada = "En la mañana (8:00 AM - 12:00 PM)";
-                            } else if (horaFinal === "2:00 PM") {
-                                horaFormateada = "En la tarde (2:00 PM - 6:00 PM)";
-                            } else if (horaFinal.toUpperCase().includes("AM")) {
+                            if (horaFinal.toUpperCase().includes("AM")) {
                                 horaFormateada = `En la mañana (${horaFinal})`;
                             } else if (horaFinal.toUpperCase().includes("PM")) {
                                 horaFormateada = `En la tarde (${horaFinal})`;
@@ -11646,7 +11604,7 @@ document.head.appendChild(schemaScript);
                         }
 
                         msg += `Nombre completo:\n${nombre}\n`;
-                        msg += `🟢WhatsApp:\n${phone}\n\n`;
+                        msg += `🟢WhatsApp:\n${phoneDisplay}\n\n`;
                         msg += `Método de pago:\n${metodoPagoTexto}\n`;
 
                         if (tieneCredito) {
@@ -11657,58 +11615,7 @@ document.head.appendChild(schemaScript);
                         msg += `\n📅 ${fechaFormateada}\n`;
                         msg += `⌚ ${horaFormateada}`;
 
-                        // ── Construir mensaje de CONFIRMACIÓN para enviar al cliente ──
-                        const clientNumRaw = phoneRaw.replace(/\D/g, "");
-                        const clientNumWA = (clientNumRaw.length === 10 && !clientNumRaw.startsWith("57"))
-                            ? "57" + clientNumRaw
-                            : clientNumRaw;
-
-                        let confirmMsg = `Hola ${nombre}! 😊\n\n`;
-                        confirmMsg += `Tu solicitud de visita ha sido *CONFIRMADA* ✅\n\n`;
-
-                        if (inmuebleAgendarActual && inmuebleAgendarActual.esFavoritos) {
-                            const idsArr = inmuebleAgendarActual.favs || [];
-                            if (inmuebleAgendarActual.lineas && inmuebleAgendarActual.lineas.length) {
-                                inmuebleAgendarActual.lineas.forEach(l => {
-                                    let limpia = l.replace(/^\*+|\*+$/g, "").replace(/^\u2705/, "").trim();
-                                    confirmMsg += `📍 ${limpia}\n`;
-                                });
-                            } else {
-                                idsArr.forEach(cod => {
-                                    const pr = typeof datos !== "undefined"
-                                        ? datos.find(d => String(d["ÉÓdigo"] || d["C\u00f3digo"] || d["Codigo"] || "").trim() === String(cod).trim())
-                                        : null;
-                                    if (pr) {
-                                        const nom = (pr["Nombre"] || "Inmueble").trim();
-                                        const prc = typeof formatearPrecio === "function" ? formatearPrecio(pr["Precio"]) : (pr["Precio"] || "");
-                                        confirmMsg += `📍 *${nom}* (C\u00f3d. ${cod})${prc ? ` · ${prc}` : ""}\n`;
-                                    } else {
-                                        confirmMsg += `📍 C\u00f3d. ${cod}\n`;
-                                    }
-                                });
-                            }
-                        } else if (inmuebleAgendarActual) {
-                            const cod = String(inmuebleAgendarActual["C\u00f3digo"] || "").trim();
-                            const nom = (inmuebleAgendarActual["Nombre"] || "Inmueble").trim();
-                            const prc = typeof formatearPrecio === "function" ? formatearPrecio(inmuebleAgendarActual["Precio"]) : (inmuebleAgendarActual["Precio"] || "");
-                            if (cod) confirmMsg += `📍 *${nom}* (C\u00f3d. ${cod})${prc ? ` · ${prc}` : ""}\n`;
-                        }
-
-                        confirmMsg += `📅 *Fecha:* ${fechaFormateada}\n`;
-                        confirmMsg += `⌚ *Hora:* ${horaFormateada}\n`;
-                        confirmMsg += `\n¡Te esperamos! 🏠\n`;
-                        confirmMsg += `_Equipo ICDE Inmobiliaria_\n`;
-                        confirmMsg += `📞 +57 320 876 2117`;
-
-                        // Añadir link de confirmación al final del mensaje que llega a ICDE
-                        if (clientNumWA) {
-                            const confirmUrl = `https://wa.me/${clientNumWA}?text=${encodeURIComponent(confirmMsg)}`;
-                            msg += `\n\n━━━━━━━━━━━━━━━━━━━━\n`;
-                            msg += `✅ *CONFIRMAR CITA AL CLIENTE:*\n`;
-                            msg += confirmUrl;
-                        }
-
-                        // Enviar a WhatsApp de ICDE
+                        // Enviar a WhatsApp
                         const urlWA = `https://api.whatsapp.com/send?phone=573208762117&text=${encodeURIComponent(msg)}`;
                         window.open(urlWA, "_blank", "noopener,noreferrer");
 
