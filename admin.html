@@ -8691,38 +8691,16 @@ function activarEtapaLeadDesdeTabla(evt, id, etapaTarget) {
 function obtenerPropiedadPrincipalLead(lead) {
   if (!lead) return null;
 
-  let targetCod = null;
-
-  // 1. Buscar propiedad en etapa 6 o 5 (Proceso de venta u OK)
-  if (lead.propEtapas) {
-    for (const [cod, et] of Object.entries(lead.propEtapas)) {
-      if (Number(et) >= 5) {
-        targetCod = cod;
-        break;
-      }
-    }
-  }
-
-  // 2. Si no hay en propEtapas, buscar en visitas
-  if (!targetCod && lead.visitas && lead.visitas.length > 0) {
-    const v6 = lead.visitas.find(v => v && (v.procesoVenta || v.estado === 'proceso_venta'));
-    if (v6) targetCod = v6.codigo;
-    else {
-      const v5 = lead.visitas.find(v => v && (v.oferto === 'si' || v.estado === 'ok'));
-      if (v5) targetCod = v5.codigo;
-      else if (lead.visitas[0]) targetCod = lead.visitas[0].codigo;
-    }
-  }
-
-  // 3. Buscar en propsEnviadas (la última enviada)
-  if (!targetCod && lead.propsEnviadas && lead.propsEnviadas.length > 0) {
-    targetCod = lead.propsEnviadas[lead.propsEnviadas.length - 1];
-  }
-
-  if (targetCod) {
-    const codClean = String(targetCod).trim();
-    const prop = typeof buscarPropiedadGlobal === 'function' ? buscarPropiedadGlobal(codClean) : null;
-    return { cod: codClean, prop };
+  // Usar la MISMA propiedad que el badge de etapa:
+  // la primera del panel "Propiedades e Interés" (ordenada por mayor etapa primero).
+  // Así el badge de inmobiliaria y el de etapa siempre corresponden a la misma propiedad.
+  if (lead.propsEnviadas && Array.isArray(lead.propsEnviadas) && lead.propsEnviadas.length > 0) {
+    const sorted = [...lead.propsEnviadas].sort((a, b) =>
+      obtenerEtapaPropiedad(lead, b) - obtenerEtapaPropiedad(lead, a)
+    );
+    const targetCod = String(sorted[0]).trim();
+    const prop = typeof buscarPropiedadGlobal === 'function' ? buscarPropiedadGlobal(targetCod) : null;
+    return { cod: targetCod, prop };
   }
 
   return null;
