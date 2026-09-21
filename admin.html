@@ -8572,20 +8572,26 @@ function toggleLeadMetodo(id, m, el) {
 function obtenerEtapaMaximaLead(lead) {
   if (!lead) return 0;
 
-  const hasProps = (lead.propsEnviadas && lead.propsEnviadas.length > 0) ||
-                   (lead.visitas && lead.visitas.length > 0) ||
-                   (lead.propEtapas && typeof lead.propEtapas === 'object' && Object.keys(lead.propEtapas).length > 0);
-
   const isLeadInactivo = lead.etiqueta === 'inactivo' || lead.estado === 'inactivo';
 
-  let maxStage = hasProps ? 1 : 0;
-
-  if (lead.propEtapas && typeof lead.propEtapas === 'object') {
+  // ─── PRIORIDAD: propEtapas (Seguimiento de Propiedades) ───────────────────
+  // Si existen datos en propEtapas, esa es la fuente de verdad. No se mezcla
+  // con visitas ni con citas para evitar inconsistencias.
+  if (lead.propEtapas && typeof lead.propEtapas === 'object' && Object.keys(lead.propEtapas).length > 0) {
+    let maxStage = 1;
     for (let cod in lead.propEtapas) {
       const st = Number(lead.propEtapas[cod]);
       if (!isNaN(st) && st > maxStage) maxStage = st;
     }
+    if (isLeadInactivo && maxStage < 5) return 0;
+    return maxStage;
   }
+
+  // ─── FALLBACK: no hay propEtapas, usar visitas y citas ────────────────────
+  const hasProps = (lead.propsEnviadas && lead.propsEnviadas.length > 0) ||
+                   (lead.visitas && lead.visitas.length > 0);
+
+  let maxStage = hasProps ? 1 : 0;
 
   if (lead.visitas && Array.isArray(lead.visitas)) {
     for (let v of lead.visitas) {
@@ -8612,7 +8618,7 @@ function obtenerEtapaMaximaLead(lead) {
       const cCel = String(c.celular || '').replace(/\D/g, '');
       const cNom = norm(c.cliente || '');
       const cId = String(c.leadId || c.id || '').trim();
-      
+
       let match = false;
       if (lId && cId === lId) match = true;
       else if (lCel && lCel.length >= 7 && cCel && (lCel === cCel || cCel.includes(lCel) || lCel.includes(cCel))) match = true;
