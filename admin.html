@@ -11298,18 +11298,18 @@ function confirmarCitaSolicitada(citaId) {
     const horaLeg = (cita.hora && typeof formatHoraStr12 === 'function') ? formatHoraStr12(cita.hora) : (cita.hora || '');
     const prop = cita.codigo ? buscarPropiedadGlobal(cita.codigo) : null;
     const propNom = prop ? (prop['Nombre'] || prop['nombre'] || `Inmueble Cód. ${cita.codigo}`) : (cita.codigo ? `Inmueble Cód. ${cita.codigo}` : 'el inmueble');
-    const notas = (cita.notas && cita.notas !== 'undefined' && cita.notas !== 'null') ? `\n\n📝 *Notas:* ${cita.notas}` : '';
+    const notas = (cita.notas && cita.notas !== 'undefined' && cita.notas !== 'null') ? `\n\n\u{1F4DD} *Notas:* ${cita.notas}` : '';
     const waNumDest = numLimpio.startsWith('57') ? numLimpio : '57' + numLimpio;
-    const msg = encodeURIComponent(
-      `¡Hola ${cita.cliente || 'Cliente'}! 🏠\n\n` +
-      `Tu solicitud de visita ha sido *CONFIRMADA* ✅\n\n` +
-      `📅 *Fecha:* ${fechaLeg}\n` +
-      `🕒 *Hora:* ${horaLeg}\n` +
-      `🏡 *Inmueble:* ${propNom}` +
+    const msgTexto = 
+      `\u00A1Hola ${cita.cliente || 'Cliente'}! \u{1F3E0}\n\n` +
+      `Tu solicitud de visita ha sido *CONFIRMADA* \u2705\n\n` +
+      `\u{1F4C5} *Fecha:* ${fechaLeg}\n` +
+      `\u{1F552} *Hora:* ${horaLeg}\n` +
+      `\u{1F3E1} *Inmueble:* ${propNom}` +
       notas +
-      `\n\n¡Te esperamos! Ante cualquier inquietud, escríbenos.\n— *ICDE Inmobiliaria*`
-    );
-    const waUrl = `https://wa.me/${waNumDest}?text=${msg}`;
+      `\n\n\u00A1Te esperamos! Ante cualquier inquietud, escr\u00EDbenos.\n\u2014 *ICDE Inmobiliaria*`;
+    const msg = encodeURIComponent(msgTexto);
+    const waUrl = `https://api.whatsapp.com/send?phone=${waNumDest}&text=${msg}`;
     window.open(waUrl, '_blank');
     toast('✅ Cita confirmada — WhatsApp abierto para notificar al cliente', 'success');
   } else {
