@@ -364,7 +364,7 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
 .badge-enviada{background:rgba(59,130,246,.1);color:#3b82f6;border:1px solid rgba(59,130,246,.2);}
 .badge-agendada{background:rgba(212,168,75,.15);color:var(--gold);border:1px solid var(--border);}
 .badge-visita{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3);}
-.badge-solicito{background:rgba(168,85,247,.15);color:#a855f7;border:1px solid rgba(168,85,247,.3);}
+.badge-solicito{background:rgba(236,72,153,.18);color:#ec4899;border:1px solid rgba(236,72,153,.45);font-weight:700;}
 
 /* BADGES ETAPAS DE VENTA (5 y 6) JUNTO AL NOMBRE DEL LEAD */
 .lead-stage-badges {
@@ -1811,7 +1811,7 @@ textarea.gemini-card-input {
   .cal-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--gold); }
   .cal-dot.realizada { background: var(--green); }
   .cal-dot.agendada { background: var(--gold); }
-  .cal-dot.solicito_visita { background: #a855f7; }
+  .cal-dot.solicito_visita { background: #ec4899; }
   .cal-dot.cancelada { background: var(--red); }
   /* === MAPA CSS === */
   [id^="mapaContenedor_"] {
@@ -10320,10 +10320,10 @@ function renderCitasGrilla() {
   const ESTADO_COLORS = {
     'agendada':       { bg:'rgba(212,168,75,0.18)',  border:'rgba(212,168,75,0.6)',  text:'#d4a84b' },
     'realizada':      { bg:'rgba(34,197,94,0.15)',   border:'rgba(34,197,94,0.5)',   text:'#22c55e' },
-    'solicito_visita':{ bg:'rgba(59,130,246,0.15)',  border:'rgba(59,130,246,0.5)',  text:'#3b82f6' },
+    'solicito_visita':{ bg:'rgba(236,72,153,0.22)',  border:'rgba(236,72,153,0.7)',  text:'#ec4899' },
     'cancelada':      { bg:'rgba(239,68,68,0.12)',   border:'rgba(239,68,68,0.4)',   text:'#ef4444' },
   };
-  const estadoBadgeText = { 'agendada':'Agendada','realizada':'Visitada','solicito_visita':'Solicitó','cancelada':'Cancelada' };
+  const estadoBadgeText = { 'agendada':'Agendada','realizada':'Visitada','solicito_visita':'⚡ Solicitud','cancelada':'Cancelada' };
 
   // --- Time slots: 8am to 18pm (6pm), skip 12-14 which is a band ---
   const HOUR_START = 8;
@@ -10436,14 +10436,15 @@ function renderCitasGrilla() {
             const propObj = c.codigo ? buscarPropiedadGlobal(c.codigo) : null;
             const propNom = propObj ? (propObj['Nombre'] || propObj['nombre'] || `Cód: ${c.codigo}`) : (c.codigo ? `Cód. ${c.codigo}` : '—');
             const fullTitle = propObj ? `[Cód. ${c.codigo}] ${propNom}` : (c.codigo ? `Cód. ${c.codigo}` : '—');
+            const esSolicitud = c.estado === 'solicito_visita';
 
-            return `<div onclick="event.stopPropagation(); abrirEditarCita('${eq(targetId)}')" style="position:relative; margin:2px 3px; cursor:pointer; background:${col.bg}; border:1px solid ${col.border}; border-left:3px solid ${col.text}; border-radius:7px; padding:4px 6px; transition:all 0.15s; overflow:hidden;" onmouseover="this.style.filter='brightness(1.2)'; this.style.transform='scale(1.02)';" onmouseout="this.style.filter=''; this.style.transform='';">
+            return `<div onclick="event.stopPropagation(); abrirEditarCita('${eq(targetId)}')" class="${esSolicitud ? 'cita-solicitud-pendiente' : ''}" style="position:relative; margin:2px 3px; cursor:pointer; background:${col.bg}; border:1px solid ${col.border}; border-left:3px solid ${col.text}; border-radius:7px; padding:4px 6px; transition:filter 0.15s, transform 0.15s; overflow:hidden;" onmouseover="this.style.filter='brightness(1.25)'; this.style.transform='scale(1.03)';" onmouseout="this.style.filter=''; this.style.transform='';">
               <div style="display:flex; align-items:center; gap:4px; margin-bottom:2px; padding-right:18px;">
                 <span style="font-size:10px; font-weight:800; color:${col.text};">${formatHoraStr12(c.hora)}</span>
-                <span style="font-size:8px; font-weight:700; color:${col.text}; opacity:0.8; background:${col.bg}; border:1px solid ${col.border}; border-radius:10px; padding:0 4px;">${badgeText}</span>
+                <span style="font-size:8px; font-weight:700; color:${col.text}; opacity:0.9; background:${col.bg}; border:1px solid ${col.border}; border-radius:10px; padding:0 4px;">${badgeText}</span>
               </div>
               <div style="font-size:11px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${c.cliente||''}">${c.cliente || '—'}</div>
-              <div style="font-size:9.5px; color:var(--gold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; margin-top:1px;" title="${fullTitle}">${propNom}</div>
+              <div style="font-size:9.5px; color:${esSolicitud ? '#f9a8d4' : 'var(--gold)'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; margin-top:1px;" title="${fullTitle}">${propNom}</div>
             </div>`;
           }).join('');
 
@@ -10473,6 +10474,13 @@ function renderCitasGrilla() {
         display: none !important; 
         width: 0 !important; 
         height: 0 !important; 
+      }
+      @keyframes parpadeoCitaRosa {
+        0%,100% { box-shadow: 0 0 0 0 rgba(236,72,153,0); background: rgba(236,72,153,0.22); border-color: rgba(236,72,153,0.7); }
+        50%      { box-shadow: 0 0 12px 4px rgba(236,72,153,0.55); background: rgba(236,72,153,0.42); border-color: rgba(236,72,153,1); }
+      }
+      .cita-solicitud-pendiente {
+        animation: parpadeoCitaRosa 1.4s ease-in-out infinite !important;
       }
     </style>
     <!-- Week navigation header -->
@@ -11062,7 +11070,7 @@ function abrirTarjetaCitaModal(citaId) {
   const estadoMap = {
     'agendada':       { text: 'Agendada', bg: 'rgba(212,168,75,0.18)', color: '#d4a84b', border: 'rgba(212,168,75,0.4)' },
     'realizada':      { text: 'Visitada', bg: 'rgba(34,197,94,0.18)', color: '#22c55e', border: 'rgba(34,197,94,0.4)' },
-    'solicito_visita':{ text: 'Solicitó Visita', bg: 'rgba(59,130,246,0.18)', color: '#3b82f6', border: 'rgba(59,130,246,0.4)' },
+    'solicito_visita':{ text: '⚡ Solicitud Pendiente', bg: 'rgba(236,72,153,0.18)', color: '#ec4899', border: 'rgba(236,72,153,0.5)' },
     'cancelada':      { text: 'Cancelada', bg: 'rgba(239,68,68,0.18)', color: '#ef4444', border: 'rgba(239,68,68,0.4)' }
   };
   const stInfo = estadoMap[cita.estado] || estadoMap['agendada'];
@@ -11177,6 +11185,27 @@ function abrirTarjetaCitaModal(citaId) {
         <div style="font-size:10px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">📝 Observaciones / Notas</div>
         <div style="font-size:12.5px; color:${notasTexto ? '#e0ddd8' : '#777'}; line-height:1.5; white-space:pre-wrap;">${notasTexto || 'Sin observaciones adicionales'}</div>
       </div>
+
+      ${cita.estado === 'solicito_visita' ? `
+      <!-- BANNER + BOTÓN CONFIRMAR CITA -->
+      <div style="background:linear-gradient(135deg, rgba(236,72,153,0.18), rgba(236,72,153,0.08)); border:1.5px solid rgba(236,72,153,0.55); border-radius:14px; padding:14px 16px; margin-top:4px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <span style="font-size:18px;">🔔</span>
+          <div>
+            <div style="font-size:12px; font-weight:800; color:#f9a8d4; text-transform:uppercase; letter-spacing:0.06em;">Solicitud de Cita Pendiente</div>
+            <div style="font-size:11px; color:rgba(249,168,212,0.75); margin-top:2px;">El cliente solicitó esta visita. Confírmala para notificarlo por WhatsApp.</div>
+          </div>
+        </div>
+        <button onclick="confirmarCitaSolicitada('${String(cita.id || '').replace(/'/g,"\\'")}')"
+          style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#ec4899,#be185d); border:none; color:#fff; font-size:13px; font-weight:800; cursor:pointer; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(236,72,153,0.45); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px;"
+          onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(236,72,153,0.6)';"
+          onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(236,72,153,0.45)';"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Confirmar Cita y Notificar al Cliente
+        </button>
+      </div>
+      ` : ''}
     `;
   }
 
@@ -11196,6 +11225,71 @@ function abrirTarjetaCitaModal(citaId) {
     modal.style.alignItems = 'center';
     modal.style.justifyContent = 'center';
   }
+}
+
+// ═══════════════════════════════════════════════════════
+// CONFIRMAR CITA SOLICITADA → cambia estado + WhatsApp
+// ═══════════════════════════════════════════════════════
+function confirmarCitaSolicitada(citaId) {
+  citaId = String(citaId || '').trim();
+  const cIdx = citas.findIndex(c => c && String(c.id).trim() === citaId);
+  if (cIdx < 0) { toast('No se encontró la cita', 'error'); return; }
+
+  const cita = citas[cIdx];
+  cita.estado = 'agendada';
+  cita.updatedAt = Date.now();
+  citas[cIdx] = cita;
+
+  // Actualizar en el lead también
+  if (typeof leads !== 'undefined' && Array.isArray(leads)) {
+    leads.forEach(l => {
+      if (!l.visitas) return;
+      const vi = l.visitas.findIndex(v => v && String(v.id).trim() === citaId);
+      if (vi >= 0) { l.visitas[vi].estado = 'agendada'; l.visitas[vi].updatedAt = Date.now(); }
+    });
+  }
+
+  saveLeads();
+  syncCita(cita);
+
+  // Cerrar modal
+  closeModal('tarjetaCitaModal');
+
+  // Enviar WhatsApp al cliente
+  const numLimpio = String(cita.celular || '').replace(/\D/g, '');
+  if (numLimpio) {
+    const diasSem = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    let fechaLeg = cita.fecha || '';
+    try {
+      const parts = (cita.fecha||'').split('-');
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0],10), parseInt(parts[1],10)-1, parseInt(parts[2],10));
+        fechaLeg = `${diasSem[d.getDay()]} ${d.getDate()} de ${meses[d.getMonth()]}`;
+      }
+    } catch(e){}
+    const horaLeg = (cita.hora && typeof formatHoraStr12 === 'function') ? formatHoraStr12(cita.hora) : (cita.hora || '');
+    const prop = cita.codigo ? buscarPropiedadGlobal(cita.codigo) : null;
+    const propNom = prop ? (prop['Nombre'] || prop['nombre'] || `Inmueble Cód. ${cita.codigo}`) : (cita.codigo ? `Inmueble Cód. ${cita.codigo}` : 'el inmueble');
+    const notas = (cita.notas && cita.notas !== 'undefined' && cita.notas !== 'null') ? `\n\n📝 *Notas:* ${cita.notas}` : '';
+    const waNumDest = numLimpio.startsWith('57') ? numLimpio : '57' + numLimpio;
+    const msg = encodeURIComponent(
+      `¡Hola ${cita.cliente || 'Cliente'}! 🏠\n\n` +
+      `Tu solicitud de visita ha sido *CONFIRMADA* ✅\n\n` +
+      `📅 *Fecha:* ${fechaLeg}\n` +
+      `🕒 *Hora:* ${horaLeg}\n` +
+      `🏡 *Inmueble:* ${propNom}` +
+      notas +
+      `\n\n¡Te esperamos! Ante cualquier inquietud, escríbenos.\n— *ICDE Inmobiliaria*`
+    );
+    const waUrl = `https://wa.me/${waNumDest}?text=${msg}`;
+    window.open(waUrl, '_blank');
+    toast('✅ Cita confirmada — WhatsApp abierto para notificar al cliente', 'success');
+  } else {
+    toast('✅ Cita confirmada (sin celular registrado para WhatsApp)', 'success');
+  }
+
+  if (currentTab === 'citas') renderCitas();
 }
 
 function filterCitas(tipo, btn){
