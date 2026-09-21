@@ -394,6 +394,9 @@ def build_html(p: dict, slug: str) -> str:
         ("Administración",        p.get("Administración","")),
         ("Retorno de la inversión", p.get("Retorno de la Inversión","")),
         ("Rentabilidad",          p.get("Rentabilidad","")),
+        ("Hipoteca",              p.get("Hipoteca","")),
+        ("Permuta",               p.get("Permuta","")),
+        ("Habitación en 1er piso", p.get("Habitacion en 1er piso") or p.get("Habitación en 1er piso","")),
     ]
     filas = ""
     for label, val in char_campos:
