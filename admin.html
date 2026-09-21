@@ -8740,6 +8740,28 @@ function obtenerInmobiliariaPrincipalLead(lead) {
   return 'DIRECTO';
 }
 
+// Devuelve array de inmobiliarias únicas de propiedades con etapa >= 2 (Solicitó visita o más).
+function obtenerInmobiliariasActivasLead(lead) {
+  if (!lead || !lead.propsEnviadas || !Array.isArray(lead.propsEnviadas)) return [];
+  const seen = new Set();
+  const result = [];
+  // Ordenar igual que el panel (mayor etapa primero) para mantener consistencia
+  const sorted = [...lead.propsEnviadas].sort((a, b) =>
+    obtenerEtapaPropiedad(lead, b) - obtenerEtapaPropiedad(lead, a)
+  );
+  for (const cod of sorted) {
+    const stage = obtenerEtapaPropiedad(lead, cod);
+    if (stage < 2) continue; // solo propiedades con Solicitó visita o más
+    const p = typeof buscarPropiedadGlobal === 'function' ? buscarPropiedadGlobal(String(cod).trim()) : null;
+    const inmob = p ? (p['Inmobiliaria'] || p['Inmobiliaria / Aliado'] || p['inmobiliaria'] || p['Inmob'] || p['Aliado'] || '').trim() : '';
+    if (inmob && inmob !== 'DIRECTO' && !seen.has(inmob.toUpperCase())) {
+      seen.add(inmob.toUpperCase());
+      result.push(inmob);
+    }
+  }
+  return result;
+}
+
 function renderEtapasLeadBadges(lead) {
   const maxEtapa = typeof obtenerEtapaMaximaLead === 'function' ? obtenerEtapaMaximaLead(lead) : 0;
 
@@ -8753,7 +8775,10 @@ function renderEtapasLeadBadges(lead) {
       4: { num: 4, label: 'Visitó', cls: 'stage-active-4' }
     };
     const stageInfo = stageMap[maxEtapa] || stageMap[1];
-    const inmob = obtenerInmobiliariaPrincipalLead(lead);
+    const inmobs = obtenerInmobiliariasActivasLead(lead);
+    const inmobsBadges = inmobs.map(inmob =>
+      `<span class="badge-inmobiliaria-lead" style="display:inline-flex; align-items:center; justify-content:center; background:rgba(212,168,75,0.12); border:1px solid rgba(212,168,75,0.55); color:#d4a84b; font-size:9.5px; font-weight:800; border-radius:12px; padding:2px 10px; text-transform:uppercase; letter-spacing:0.06em; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; box-shadow:0 2px 6px rgba(0,0,0,0.3);" title="Inmobiliaria: ${inmob}">${inmob}</span>`
+    ).join('');
 
     return `
       <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
@@ -8763,7 +8788,7 @@ function renderEtapasLeadBadges(lead) {
             <span class="stage-lbl">${stageInfo.label}</span>
           </span>
         </div>
-        ${inmob && inmob !== 'DIRECTO' ? `<span class="badge-inmobiliaria-lead" style="display:inline-flex; align-items:center; justify-content:center; background:rgba(212,168,75,0.12); border:1px solid rgba(212,168,75,0.55); color:#d4a84b; font-size:9.5px; font-weight:800; border-radius:12px; padding:2px 10px; text-transform:uppercase; letter-spacing:0.06em; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; box-shadow:0 2px 6px rgba(0,0,0,0.3);" title="Inmobiliaria del inmueble: ${inmob}">${inmob}</span>` : ''}
+        ${inmobsBadges}
       </div>
     `;
   }
@@ -8782,7 +8807,10 @@ function renderEtapasLeadBadges(lead) {
 
   let cls6 = isE6Active ? 'badge-stage-item stage-active-6' : 'badge-stage-item stage-pending';
 
-  const inmob = obtenerInmobiliariaPrincipalLead(lead);
+  const inmobs = obtenerInmobiliariasActivasLead(lead);
+  const inmobsBadges = inmobs.map(inmob =>
+    `<span class="badge-inmobiliaria-lead" style="display:inline-flex; align-items:center; justify-content:center; background:rgba(212,168,75,0.12); border:1px solid rgba(212,168,75,0.55); color:#d4a84b; font-size:9.5px; font-weight:800; border-radius:12px; padding:2px 10px; text-transform:uppercase; letter-spacing:0.06em; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; box-shadow:0 2px 6px rgba(0,0,0,0.3);" title="Inmobiliaria: ${inmob}">${inmob}</span>`
+  ).join('');
 
   return `
     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
@@ -8796,7 +8824,7 @@ function renderEtapasLeadBadges(lead) {
           <span class="stage-lbl">Proceso de venta</span>
         </span>
       </div>
-      ${inmob ? `<span class="badge-inmobiliaria-lead" style="display:inline-flex; align-items:center; justify-content:center; background:rgba(212,168,75,0.12); border:1px solid rgba(212,168,75,0.55); color:#d4a84b; font-size:9.5px; font-weight:800; border-radius:12px; padding:2px 10px; text-transform:uppercase; letter-spacing:0.06em; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; box-shadow:0 2px 6px rgba(0,0,0,0.3);" title="Inmobiliaria del inmueble: ${inmob}">${inmob}</span>` : ''}
+      ${inmobsBadges}
     </div>
   `;
 }
