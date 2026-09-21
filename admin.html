@@ -4976,7 +4976,7 @@ function filtrarProps(f, returnAllIfEmpty = true, incluirVirtuales = false){
       if(hab1erSelected) {
         const val1 = String(d['Habitacion en 1er piso'] || d['Habitación en 1er piso'] || "").trim();
         const n1 = norm(val1);
-        const has1stFloor = (n1 === 'si' || n1 === 'sí' || (n1.length > 0 && n1 !== 'no' && n1 !== 'false'));
+        const has1stFloor = (n1 === '1' || n1 === 'si' || n1 === 'sí' || (n1.length > 0 && n1 !== '0' && n1 !== 'no' && n1 !== 'false'));
         if(!has1stFloor) return false;
       }
       if(habNums.length > 0) {
@@ -5315,7 +5315,7 @@ function fnPoblar(pfx, c){
       cnt = subset.filter(d => {
         const val1 = String(d['Habitacion en 1er piso'] || d['Habitación en 1er piso'] || "").trim();
         const n1 = norm(val1);
-        return n1 === 'si' || n1 === 'sí' || (n1.length > 0 && n1 !== 'no' && n1 !== 'false');
+        return n1 === '1' || n1 === 'si' || n1 === 'sí' || (n1.length > 0 && n1 !== '0' && n1 !== 'no' && n1 !== 'false');
       }).length;
     } else {
       cnt = subset.filter(d => norm(d[c.campo]) === nv).length;
@@ -6929,6 +6929,11 @@ function normalizarPropiedades(data) {
       else if (nk === 'ubicacion') k = 'Ubicación';
       else if (nk === 'direccion' || nk === 'dirección' || nk === 'direccion-vereda' || nk === 'direccion_vereda' || nk === 'direccin' || nk === 'direccin-vereda' || nk === 'direccin_vereda') k = 'DIRECCIÓN';
       else if (nk === 'habitaciones' || nk === 'alcobas' || nk === 'cuartos') k = 'Habitaciones';
+      else if (nk === 'habitacion en 1er piso' || nk === 'habitacion 1er piso' || nk === 'habitacion primer piso' || nk === 'habitacion en primer piso' || nk === 'habitacin en 1er piso') k = 'Habitacion en 1er piso';
+      else if (nk === 'via' || nk === 'vía') k = 'Vía';
+      else if (nk === 'reja' || nk === 'reja antejardin' || nk === 'reja antejardn') k = 'Reja';
+      else if (nk === 'hipoteca') k = 'Hipoteca';
+      else if (nk === 'permuta') k = 'Permuta';
       else if (nk === 'banos' || nk === 'sanitarios') k = 'Baños';
       else if (nk === 'garaje' || nk === 'parqueadero' || nk === 'garajes') k = 'Garaje';
       else if (nk === 'pisos' || nk === 'niveles') k = 'Pisos';
@@ -6959,14 +6964,14 @@ function normalizarPropiedades(data) {
       else if (nk === 'ascensor' || nk === 'ascenso') k = 'Ascensor';
       else if (nk === 'numero de cortinas' || nk === 'cortinas' || nk === 'nmero de cortinas') k = 'Número de Cortinas';
       else if (nk === 'aire acondicionado' || nk === 'aire') k = 'Aire Acondicionado';
-      else if (nk === 'reja antejardin' || nk === 'reja' || nk === 'reja antejardn') k = 'Reja Antejardín';
       else if (nk === 'antiguedad del inmueble' || nk === 'antiguedad' || nk === 'antiguedad inmueble' || nk === 'antigedad del inmueble' || nk === 'antigedad' || nk === 'antigedad inmueble') k = 'Antigüedad del Inmueble';
       else if (nk === 'patio') k = 'Patio';
       else if (nk === 'dimensiones') k = 'Dimensiones';
 
       // Fallbacks para términos que contienen la palabra pero no son exactos
       if (!k) {
-        if (nk.includes('codigo')) k = 'Código';
+        if (nk.includes('habitaci') && (nk.includes('1er') || nk.includes('primer'))) k = 'Habitacion en 1er piso';
+        else if (nk.includes('codigo')) k = 'Código';
         else if (nk.includes('nombre')) k = 'Nombre';
         else if (nk.includes('tipo')) k = 'Tipo de inmueble';
         else if (nk.includes('zona')) k = 'Zona';
