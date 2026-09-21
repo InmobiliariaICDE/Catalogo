@@ -8539,41 +8539,59 @@ function obtenerEtapaMaximaLead(lead) {
   if (lead.visitas && Array.isArray(lead.visitas)) {
     for (let v of lead.visitas) {
       let st = 1;
-      if (v.procesoVenta || v.estado === 'proceso_venta' || v.estado === 'proceso') st = 6;
-      else if (v.oferto === 'si' || v.estado === 'ok') st = 5;
-      else if (v.estado === 'realizada' || v.estado === 'visitado') st = 4;
-      else if (v.estado === 'agendada' || v.estado === 'confirmada') st = 3;
-      else if (v.estado === 'solicito_visita' || v.estado === 'solicitado') st = 2;
+      const est = String(v.estado || '').toLowerCase();
+      if (v.procesoVenta || est === 'proceso_venta' || est === 'proceso') st = 6;
+      else if (String(v.oferto || '').toLowerCase() === 'si' || est === 'ok') st = 5;
+      else if (est === 'realizada' || est === 'visitado') st = 4;
+      else if (est === 'agendada' || est === 'confirmada') st = 3;
+      else if (est === 'solicito_visita' || est === 'solicitado') st = 2;
       if (st > maxStage) maxStage = st;
     }
   }
 
-  if (typeof citas !== 'undefined' && Array.isArray(citas)) {
+  const isLeadInactivo = lead.etiqueta === 'inactivo' || lead.estado === 'inactivo';
+
+  if (!isLeadInactivo && typeof citas !== 'undefined' && Array.isArray(citas)) {
     const lCel = String(lead.celular || '').replace(/\D/g, '');
     const lNom = norm(lead.nombre || '');
     const lId = String(lead.id || '').trim();
     for (let c of citas) {
       if (!c) continue;
+      const cEst = String(c.estado || '').toLowerCase();
+      if (cEst === 'cancelada' || cEst === 'inactivo' || cEst === 'borrado') continue;
+
       const cCel = String(c.celular || '').replace(/\D/g, '');
       const cNom = norm(c.cliente || '');
       const cId = String(c.leadId || c.id || '').trim();
-      const match = (lId && (cId === lId)) || (lCel && lCel.length >= 7 && cCel && cCel.includes(lCel)) || (lNom && lNom.length >= 3 && cNom && (cNom.includes(lNom) || lNom.includes(cNom)));
+      
+      let match = false;
+      if (lId && cId === lId) match = true;
+      else if (lCel && lCel.length >= 7 && cCel && (lCel === cCel || cCel.includes(lCel) || lCel.includes(cCel))) match = true;
+      else if (lNom && lNom.length >= 4 && cNom && lNom === cNom) match = true;
+
       if (match) {
         let st = 1;
-        if (c.procesoVenta || c.estado === 'proceso_venta' || c.estado === 'proceso') st = 6;
-        else if (c.oferto === 'si' || c.estado === 'ok') st = 5;
-        else if (c.estado === 'realizada' || c.estado === 'visitado') st = 4;
-        else if (c.estado === 'agendada' || c.estado === 'confirmada' || c.fecha) st = 3;
-        else if (c.estado === 'solicito_visita') st = 2;
+        if (c.procesoVenta || cEst === 'proceso_venta' || cEst === 'proceso') st = 6;
+        else if (String(c.oferto || '').toLowerCase() === 'si' || cEst === 'ok') st = 5;
+        else if (cEst === 'realizada' || cEst === 'visitado') st = 4;
+        else if (cEst === 'agendada' || cEst === 'confirmada' || c.fecha) st = 3;
+        else if (cEst === 'solicito_visita' || cEst === 'pendiente') st = 2;
         if (st > maxStage) maxStage = st;
       }
     }
   }
 
-  if (lead.estado === 'proceso' && maxStage < 6) {
+  const estL = String(lead.estado || '').toLowerCase();
+  if (estL === 'proceso' && maxStage < 6) {
     maxStage = 6;
-  } else if (lead.estado === 'visita' && maxStage < 2) {
+  } else if ((estL === 'visita' || estL === 'agendada') && maxStage < 3) {
+    maxStage = 3;
+  } else if (estL === 'enviando' && maxStage < 2) {
     maxStage = 2;
+  }
+
+  if (isLeadInactivo && maxStage < 5) {
+    maxStage = 1;
   }
 
   return maxStage;
