@@ -8090,10 +8090,10 @@ function renderLeadsBody(lista){
   if(leadViewMode === 'table'){
     container.innerHTML=`
     <div class="leads-table-wrap panel-section" style="padding:0; background: rgba(255,255,255,0.04); border: none; border-radius: 16px; box-shadow: 3px 3px 6px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.1), inset -1px -1px 0px rgba(0,0,0,0.3); margin-top: 0; overflow-x: auto;">
-      <table class="leads-table" style="border: none; border-radius: 0; background: transparent;">
+      <table class="leads-table" style="border: none; border-radius: 0; background: transparent; min-width: 1150px;">
         <thead>
           <tr style="background: rgba(212, 168, 75, 0.04);">
-            <th style="padding-left: 20px; color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Cliente</th>
+            <th style="padding-left: 20px; color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25); min-width: 480px; width: 42%;">Cliente</th>
             <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Tipo</th>
             <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Estado</th>
             <th style="color: var(--gold); border-bottom: 1px solid rgba(212, 168, 75, 0.25);">Etiqueta</th>
@@ -8112,7 +8112,7 @@ function renderLeadsBody(lista){
             const prox=(l.proximosEnvios||[]).find(e=>!e.enviado);
             const isSelected = String(l.id).trim() === String(currentLeadId).trim();
             return `<tr class="clickable ${isSelected ? 'active-lead-row' : ''}" data-lead-id="${String(l.id).trim()}" onclick="abrirLead('${String(l.id).trim()}', '${String(l.celular).trim()}')">
-              <td style="padding-left: 20px; padding-right: 15px;"><div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;"><div style="min-width: 0; flex: 1;"><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">📱 ${l.celular}</div></div><div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">${renderPropMiniaturaLead(l)}${renderEtapasLeadBadges(l)}</div></div></td>
+              <td style="padding-left: 20px; padding-right: 15px; min-width: 480px;"><div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%;"><div style="min-width: 0; flex: 1;"><div class="leads-row-name">${l.nombre}</div><div class="leads-row-phone">📱 ${l.celular}</div></div><div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">${renderPropMiniaturaLead(l)}${renderEtapasLeadBadges(l)}</div></div></td>
               <td>${l.tipo==='inmobiliaria'?'<span class="badge badge-inmobiliaria">🏢</span>':'<span style="opacity:0.5;">👤</span>'}</td>
               <td onclick="event.stopPropagation()">
                 <select class="estado-badge estado-${l.estado}" style="border:none;outline:none;cursor:pointer;max-width:120px;"
