@@ -11195,9 +11195,8 @@ document.head.appendChild(schemaScript);
                         // Configurar Atajos de Día
                         const fechaInput = document.getElementById("agendarFechaInput");
                         if (fechaInput) {
-                            const tomorrow = new Date();
-                            tomorrow.setDate(tomorrow.getDate() + 1);
-                            fechaInput.min = tomorrow.toISOString().split("T")[0];
+                            const today = new Date();
+                            fechaInput.min = today.toISOString().split("T")[0];
                         }
 
                         document.querySelectorAll("#chipsDiaShortcuts .chip-shortcut").forEach(chip => {
@@ -11394,14 +11393,11 @@ document.head.appendChild(schemaScript);
                         if (phoneInput) phoneInput.value = "";
                         if (bancoInput) bancoInput.value = "";
 
-                        // Seleccionar por defecto la fecha de mañana en el selector de fecha
+                        // Fecha y hora inician sin seleccionar (el cliente debe elegir obligatoriamente)
                         if (fechaInput) {
-                            const d = new Date();
-                            d.setDate(d.getDate() + 1);
-                            fechaInput.value = d.toISOString().split("T")[0];
+                            fechaInput.value = "";
+                            fechaInput.min = new Date().toISOString().split("T")[0];
                         }
-
-                        // Hora de la visita inicia sin seleccionar
                         if (horaInput) horaInput.value = "";
 
                         // Mostrar Paso 1 e iniciar estado del modal

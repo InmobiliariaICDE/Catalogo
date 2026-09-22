@@ -7286,6 +7286,13 @@ function showTab(tab){
     if(tab==='nuevo') renderNuevo(); 
     else if(tab==='leads') renderLeads();
     else if(tab==='citas') {
+      citasAlertaDismissed = true;
+      if (typeof contarCitasPendientes === 'function') {
+        lastSeenPendingCount = contarCitasPendientes();
+      }
+      if (typeof actualizarAlertaCitasPendientes === 'function') {
+        actualizarAlertaCitasPendientes();
+      }
       citasActiveFilterType = 'hoy';
       citasActiveFilterValue = '';
       renderCitas();
@@ -11640,18 +11647,36 @@ function aplicarFiltroYBusquedaCitas(){
   }
 }
 
+let citasAlertaDismissed = false;
+let lastSeenPendingCount = 0;
+
+function contarCitasPendientes() {
+  let count = 0;
+  if (typeof citas !== 'undefined' && Array.isArray(citas)) {
+    count += citas.filter(c => c && c.estado === 'solicito_visita').length;
+  }
+  if (typeof leads !== 'undefined' && Array.isArray(leads)) {
+    leads.forEach(l => {
+      count += (l.visitas || []).filter(v => v && v.estado === 'solicito_visita').length;
+    });
+  }
+  return count;
+}
+
 function actualizarAlertaCitasPendientes() {
   try {
-    let tienePendiente = false;
-    if (typeof citas !== 'undefined' && Array.isArray(citas)) {
-      if (citas.some(c => c && c.estado === 'solicito_visita')) tienePendiente = true;
+    const currentPending = contarCitasPendientes();
+    
+    if (currentPending === 0) {
+      citasAlertaDismissed = false;
+      lastSeenPendingCount = 0;
+    } else if (currentPending > lastSeenPendingCount) {
+      citasAlertaDismissed = false;
     }
-    if (!tienePendiente && typeof leads !== 'undefined' && Array.isArray(leads)) {
-      if (leads.some(l => (l.visitas || []).some(v => v && v.estado === 'solicito_visita'))) tienePendiente = true;
-    }
+
     const tabBtn = document.getElementById('tabCitas');
     if (tabBtn) {
-      if (tienePendiente) {
+      if (currentPending > 0 && !citasAlertaDismissed && typeof currentTab !== 'undefined' && currentTab !== 'citas') {
         tabBtn.classList.add('tab-citas-alerta');
       } else {
         tabBtn.classList.remove('tab-citas-alerta');
