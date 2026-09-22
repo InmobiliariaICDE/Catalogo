@@ -6756,9 +6756,14 @@ async function autoSyncDrive() {
     ]);
     if (!Array.isArray(data)) throw new Error('Respuesta inválida');
 
-    // Cargar citas directamente desde el Excel (fuente de verdad)
+    // Cargar citas directamente desde el Excel (fuente de verdad), preservando citas creadas localmente pendientes de guardar
     if (Array.isArray(dataCitas)) {
-      citas = dataCitas;
+      const cloudCitaIds = new Set(dataCitas.map(c => String(c.id || '').trim()).filter(Boolean));
+      const localOnlyCitas = citas.filter(c => {
+        const cid = String(c.id || '').trim();
+        return cid && !cloudCitaIds.has(cid);
+      });
+      citas = [...dataCitas, ...localOnlyCitas];
     }
 
     // Fuente de verdad 100% Drive. Sin filtros locales.
@@ -10101,6 +10106,8 @@ function guardarVisita(){
     else citas.push(v);
     
     saveLeads();
+    try { localStorage.setItem('icde_citas', JSON.stringify(citas)); } catch(e){}
+    pendingWriteUntil = Date.now() + 35000;
     
     if(document.getElementById('visitaCalendar').checked){ 
       const fd=v.fecha.replace(/-/g,''); 
@@ -10114,6 +10121,7 @@ function guardarVisita(){
     
     rebuildCitas();
     if(currentTab==='citas') renderCitas();
+    if(currentTab==='leads') renderLeads();
     
     if(lead) syncSheets(lead);   // guarda el lead completo en CRM_Leads
     syncCita(v);                  // también escribe en la hoja CRM_Citas del Excel
