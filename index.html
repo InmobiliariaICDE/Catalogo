@@ -7674,6 +7674,9 @@ font-weight: 500;
                             <button type="button" class="chip-pago" data-val="Crédito 🏦">
                                 <span class="chip-icon">🏦</span> Crédito
                             </button>
+                            <button type="button" class="chip-pago" data-val="Permuta 🔄">
+                                <span class="chip-icon">🔄</span> Permuta
+                            </button>
                         </div>
                     </div>
 
@@ -11509,18 +11512,8 @@ document.head.appendChild(schemaScript);
                         }
 
                         // Formatear Método de Pago
-                        let metodoPagoTexto = "";
                         const arrayMetodos = Array.from(metodosPagoSeleccionados);
-                        const tieneEfectivo = arrayMetodos.some(m => m.includes("Efectivo"));
-                        const tieneCredito = arrayMetodos.some(m => m.includes("Crédito"));
-                        
-                        if (tieneEfectivo && tieneCredito) {
-                            metodoPagoTexto = "Efectivo y crédito 💳";
-                        } else if (tieneEfectivo) {
-                            metodoPagoTexto = "Efectivo💰";
-                        } else if (tieneCredito) {
-                            metodoPagoTexto = "Crédito 🏦";
-                        }
+                        let metodoPagoTexto = arrayMetodos.length > 0 ? arrayMetodos.join(" / ") : "";
 
                         // Formatear Fecha (DíaSemana DD/MM/YYYY)
                         let fechaFormateada = fecha;
