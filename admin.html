@@ -320,7 +320,7 @@ html.is-logged-in #app { display: flex !important; flex-direction: column !impor
 .tabs{display:flex;gap:12px;padding:12px 24px;background:var(--bg);color:#C0C0C0;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;}
 .tab, .settings-btn{height:38px;padding:0 20px;font-size:13px;font-weight:600;color:#C0C0C0;border:none;background:rgba(255,255,255,0.04);border-radius:8px;cursor:pointer;transition:all .2s ease;font-family:'Outfit',sans-serif;box-shadow:3px 3px 6px rgba(0,0,0,0.4),inset 1px 1px 0px rgba(255,255,255,0.1),inset -1px -1px 0px rgba(0,0,0,0.3);display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;}
 .settings-btn{width:38px;padding:0;font-size:16px;}
-.tab.active, .settings-btn.active{color:#fff;background:rgba(212,168,75,0.12);box-shadow:inset 3px 3px 6px rgba(0,0,0,0.5),inset -1px -1px 0px rgba(212,168,75,0.2);transform:translate(1px,1px);}
+.tab.active, .settings-btn.active{color:#fff;background:rgba(255,255,255,0.1);box-shadow:inset 3px 3px 6px rgba(0,0,0,0.5),inset -1px -1px 0px rgba(255,255,255,0.08);transform:translate(1px,1px);}
 .tab:hover:not(.active), .settings-btn:hover:not(.active){background:rgba(255,255,255,0.07);color:#ffffff;transform:translate(-1px,-1px);box-shadow:4px 4px 8px rgba(0,0,0,0.5),inset 1px 1px 0px rgba(255,255,255,0.15),inset -1px -1px 0px rgba(0,0,0,0.35);}
 .tab:active, .settings-btn:active{box-shadow:inset 3px 3px 6px rgba(0,0,0,0.6),inset -1px -1px 0px rgba(255,255,255,0.1);transform:scale(0.97);}
 .content{flex:1;overflow-y:auto;padding:24px;background:var(--bg);}
@@ -11227,6 +11227,7 @@ function abrirTarjetaCitaModal(citaId) {
         </div>
         <div style="display:flex; flex-direction:column; gap:8px;">
           <button onclick="solicitarConfirmacionAliado('${String(cita.id || '').replace(/'/g,"\\'")}')"
+            id="btnSolicitarAliado_${String(cita.id || '').replace(/[^a-z0-9]/gi,'_')}"
             style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#3b82f6,#1d4ed8); border:none; color:#fff; font-size:13px; font-weight:800; cursor:pointer; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(59,130,246,0.35); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px;"
             onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(59,130,246,0.55)';"
             onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(59,130,246,0.35)';"
@@ -11235,9 +11236,10 @@ function abrirTarjetaCitaModal(citaId) {
             Solicitar Confirmación a ${propInmob || 'Inmobiliaria Aliada'}
           </button>
           <button onclick="confirmarCitaSolicitada('${String(cita.id || '').replace(/'/g,"\\'")}')"
-            style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#ec4899,#be185d); border:none; color:#fff; font-size:13px; font-weight:800; cursor:pointer; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(236,72,153,0.45); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px;"
-            onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(236,72,153,0.6)';"
-            onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(236,72,153,0.45)';"
+            id="btnConfirmarCliente_${String(cita.id || '').replace(/[^a-z0-9]/gi,'_')}"
+            ${propInmob ? 'disabled' : ''}
+            style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#ec4899,#be185d); border:none; color:#fff; font-size:13px; font-weight:800; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(236,72,153,0.45); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px; ${propInmob ? 'opacity:0.35; cursor:not-allowed; filter:grayscale(0.4);' : 'cursor:pointer;'}"
+            ${propInmob ? '' : `onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(236,72,153,0.6)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(236,72,153,0.45)';"` }
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             Confirmar Cita y Notificar al Cliente
@@ -11524,6 +11526,18 @@ function solicitarConfirmacionAliado(citaId) {
   const waUrl = `https://api.whatsapp.com/send?phone=${waNumDest}&text=${msg}`;
   window.open(waUrl, '_blank');
   toast(`✅ Solicitud enviada por WhatsApp a ${nombreAliado} (${numLimpio})`, 'success');
+
+  // Activar el botón de confirmar al cliente ahora que ya se notificó al aliado
+  const safeId = citaId.replace(/[^a-z0-9]/gi, '_');
+  const btnConfirmar = document.getElementById('btnConfirmarCliente_' + safeId);
+  if (btnConfirmar) {
+    btnConfirmar.disabled = false;
+    btnConfirmar.style.opacity = '1';
+    btnConfirmar.style.cursor = 'pointer';
+    btnConfirmar.style.filter = 'none';
+    btnConfirmar.onmouseover = function() { this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(236,72,153,0.6)'; };
+    btnConfirmar.onmouseout  = function() { this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(236,72,153,0.45)'; };
+  }
 }
 
 function filterCitas(tipo, btn){
