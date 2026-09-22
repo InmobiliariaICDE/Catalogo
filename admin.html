@@ -11177,6 +11177,10 @@ function abrirTarjetaCitaModal(citaId) {
   const clienteNombre = cita.cliente || (lead ? lead.nombre : 'Sin especificar');
   const clienteCelular = String(cita.celular || (lead ? lead.celular : '') || '');
   const numLimpio = clienteCelular.replace(/\D/g, '');
+  let mpVal = cita.metodoPago || cita.metodopago || cita.metodo_pago || (lead ? lead.metodoPago : '') || '';
+  if (Array.isArray(mpVal)) mpVal = mpVal.join(' / ');
+  if (mpVal === 'undefined' || mpVal === 'null') mpVal = '';
+  const metodoPagoVal = String(mpVal).trim();
 
   // Llenar Ficha de Propiedad en el Encabezado
   const propHeaderEl = document.getElementById('tarjetaCitaPropHeader');
@@ -11209,6 +11213,7 @@ function abrirTarjetaCitaModal(citaId) {
           <div style="font-size:10px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">👤 Cliente</div>
           <div style="font-size:13.5px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${clienteNombre}">${clienteNombre}</div>
           ${clienteCelular ? `<div style="font-size:12px; color:#aaa; margin-top:4px;">📱 ${clienteCelular}</div>` : ''}
+          ${metodoPagoVal ? `<div style="margin-top:6px; font-size:11px; color:#38bdf8; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.25); padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:5px; font-weight:600;">💳 Pago: <strong>${metodoPagoVal}</strong></div>` : ''}
           ${numLimpio ? `
             <div style="margin-top:10px; display:flex; gap:6px;">
               <a href="https://wa.me/${numLimpio.startsWith('57')?numLimpio:'57'+numLimpio}" target="_blank" class="btn btn-green btn-sm" style="padding:4px 8px; font-size:11px; text-decoration:none; gap:4px;">💬 WhatsApp</a>
