@@ -7011,10 +7011,9 @@ function asegurarLeadsParaCitasExistentes() {
         nombreAgente: '',
         propsFiltradas: [],
         propsEnviadas: c.codigo ? [c.codigo] : [],
-        propEtapas: c.codigo ? { [c.codigo]: c.estado === 'agendada' ? 3 : (c.estado === 'realizada' ? 4 : 2) } : {},
         proximosEnvios: [],
         historialEnvios: [],
-        visitas: [{ ...c }],
+        visitas: [c],
         creadoEn: c.creadoEn || new Date().toISOString()
       };
       leads.push(lead);
@@ -7022,42 +7021,11 @@ function asegurarLeadsParaCitasExistentes() {
       if (typeof syncSheets === 'function') syncSheets(lead);
     } else {
       if (!Array.isArray(lead.visitas)) lead.visitas = [];
-      if (!Array.isArray(lead.propsEnviadas)) lead.propsEnviadas = [];
-      if (!lead.propEtapas) lead.propEtapas = {};
-
       const safeCitaId = String(c.id || '').trim();
-      let vMatch = lead.visitas.find(v => (safeCitaId && String(v.id || '').trim() === safeCitaId) || (v.codigo === c.codigo && String(v.celular || '').replace(/\D/g,'') === celularNum));
-
-      if (!vMatch) {
-        lead.visitas.push({ ...c });
+      const yaEstaInVisitas = lead.visitas.some(v => (safeCitaId && String(v.id || '').trim() === safeCitaId) || (v.codigo === c.codigo && String(v.celular || '').replace(/\D/g,'') === celularNum));
+      if (!yaEstaInVisitas) {
+        lead.visitas.push(c);
         leadsActualizados = true;
-      } else {
-        if (c.estado && vMatch.estado !== c.estado) {
-          vMatch.estado = c.estado;
-          leadsActualizados = true;
-        }
-        if (c.fecha && vMatch.fecha !== c.fecha) { vMatch.fecha = c.fecha; leadsActualizados = true; }
-        if (c.hora && vMatch.hora !== c.hora) { vMatch.hora = c.hora; leadsActualizados = true; }
-        if (c.notas && vMatch.notas !== c.notas) { vMatch.notas = c.notas; leadsActualizados = true; }
-      }
-
-      if (c.codigo && !lead.propsEnviadas.includes(c.codigo)) {
-        lead.propsEnviadas.push(c.codigo);
-        leadsActualizados = true;
-      }
-
-      if (c.codigo && c.estado) {
-        const curStage = Number(lead.propEtapas[c.codigo] || 0);
-        if (c.estado === 'agendada' && curStage !== 3) {
-          lead.propEtapas[c.codigo] = 3;
-          leadsActualizados = true;
-        } else if (c.estado === 'realizada' && curStage < 4) {
-          lead.propEtapas[c.codigo] = 4;
-          leadsActualizados = true;
-        } else if (c.estado === 'solicito_visita' && !lead.propEtapas[c.codigo]) {
-          lead.propEtapas[c.codigo] = 2;
-          leadsActualizados = true;
-        }
       }
     }
   });
@@ -9017,45 +8985,17 @@ function renderEtapasLeadBadges(lead) {
 }
 
 function obtenerEtapaPropiedad(lead, cod) {
-  if (!lead) return 1;
-
-  // 1. Buscar visita en lead.visitas o en la agenda global citas
-  let v = ((lead ? lead.visitas : []) || []).find(x => x.codigo === cod);
-  if (!v && typeof citas !== 'undefined' && Array.isArray(citas)) {
-    const lCel = String(lead.celular || '').replace(/\D/g, '');
-    const lMatchCel = lCel.length >= 7 ? lCel.slice(-10) : lCel;
-    const lNom = String(lead.nombre || '').trim().toLowerCase();
-
-    v = citas.find(c => {
-      if (!c || c.codigo !== cod) return false;
-      const cCel = String(c.celular || '').replace(/\D/g, '');
-      const cMatchCel = cCel.length >= 7 ? cCel.slice(-10) : cCel;
-      if (lMatchCel && cMatchCel && (lMatchCel === cMatchCel || lMatchCel.endsWith(cMatchCel) || cMatchCel.endsWith(lMatchCel))) {
-        return true;
-      }
-      if (lNom && c.cliente && String(c.cliente).trim().toLowerCase() === lNom) {
-        return true;
-      }
-      return false;
-    });
+  if (lead && lead.propEtapas && lead.propEtapas[cod]) {
+    return Number(lead.propEtapas[cod]);
   }
-
-  let stageFromVisita = 1;
-  if (v) {
-    if (v.procesoVenta || v.estado === 'proceso_venta') stageFromVisita = 6;
-    else if (v.oferto === 'si' || v.estado === 'ok') stageFromVisita = 5;
-    else if (v.estado === 'realizada') stageFromVisita = 4;
-    else if (v.estado === 'agendada') stageFromVisita = 3;
-    else if (v.estado === 'solicito_visita') stageFromVisita = 2;
-  }
-
-  let manualStage = 1;
-  if (lead.propEtapas && lead.propEtapas[cod]) {
-    manualStage = Number(lead.propEtapas[cod]);
-  }
-
-  // La etapa de una cita agendada, realizada o en proceso tiene siempre prioridad sobre una etapa de solicitud previa
-  return Math.max(manualStage, stageFromVisita);
+  const v = ((lead ? lead.visitas : []) || []).find(x => x.codigo === cod);
+  if (!v) return 1; // 1: Disponible
+  if (v.procesoVenta || v.estado === 'proceso_venta') return 6; // 6: Proceso de venta
+  if (v.oferto === 'si' || v.estado === 'ok') return 5; // 5: OK
+  if (v.estado === 'realizada') return 4; // 4: Visitó
+  if (v.estado === 'agendada') return 3; // 3: Visita agendada
+  if (v.estado === 'solicito_visita') return 2; // 2: Solicitó visita
+  return 1;
 }
 
 function renderPropChecklist(leadId, cod, currentStage) {
@@ -9173,13 +9113,6 @@ function cambiarEtapaPropiedad(evt, leadId, cod, nuevaEtapa) {
     } else {
       v.procesoVenta = true;
     }
-  }
-
-  if (v) {
-    let cIdx = citas.findIndex(x => String(x.id) === String(v.id));
-    if (cIdx < 0) cIdx = citas.findIndex(x => x.codigo === cod && String(x.celular || '') === String(lead.celular || ''));
-    if (cIdx >= 0) citas[cIdx] = { ...v };
-    else citas.push({ ...v });
   }
 
   saveLeads();
@@ -10164,16 +10097,6 @@ function guardarVisita(){
       if(idx < 0) idx = lead.visitas.findIndex(x => x.codigo === cod && !x.id);
       if(idx >= 0) lead.visitas[idx] = v;
       else lead.visitas.push(v);
-
-      if (!Array.isArray(lead.propsEnviadas)) lead.propsEnviadas = [];
-      if (cod && !lead.propsEnviadas.includes(cod)) lead.propsEnviadas.push(cod);
-
-      if (!lead.propEtapas) lead.propEtapas = {};
-      if (cod) {
-        if (v.estado === 'agendada') lead.propEtapas[cod] = 3;
-        else if (v.estado === 'realizada') lead.propEtapas[cod] = 4;
-        else if (v.estado === 'solicito_visita') lead.propEtapas[cod] = 2;
-      }
     }
     
     // Actualizar en agenda global — siempre buscar por ID exacto primero
@@ -11527,36 +11450,10 @@ function confirmarCitaSolicitada(citaId) {
 
   // Actualizar en el lead también
   if (typeof leads !== 'undefined' && Array.isArray(leads)) {
-    const citaCel = String(cita.celular || '').replace(/\D/g, '');
-    const cMatchCel = citaCel.length >= 7 ? citaCel.slice(-10) : citaCel;
-    const citaNom = String(cita.cliente || '').trim().toLowerCase();
-
     leads.forEach(l => {
-      const lCel = String(l.celular || '').replace(/\D/g, '');
-      const lMatchCel = lCel.length >= 7 ? lCel.slice(-10) : lCel;
-      const lNom = String(l.nombre || '').trim().toLowerCase();
-      const isMatchingLead = (cita.leadId && l.id === cita.leadId) ||
-        (lMatchCel && cMatchCel && (lMatchCel === cMatchCel || lMatchCel.endsWith(cMatchCel) || cMatchCel.endsWith(lMatchCel))) ||
-        (lNom && citaNom && lNom === citaNom) ||
-        (Array.isArray(l.visitas) && l.visitas.some(v => v && String(v.id).trim() === citaId));
-
-      if (isMatchingLead) {
-        if (!Array.isArray(l.visitas)) l.visitas = [];
-        const vi = l.visitas.findIndex(v => v && String(v.id).trim() === citaId);
-        if (vi >= 0) {
-          l.visitas[vi].estado = 'agendada';
-          l.visitas[vi].updatedAt = Date.now();
-        } else {
-          l.visitas.push({ ...cita, estado: 'agendada' });
-        }
-        if (cita.codigo) {
-          if (!Array.isArray(l.propsEnviadas)) l.propsEnviadas = [];
-          if (!l.propsEnviadas.includes(cita.codigo)) l.propsEnviadas.push(cita.codigo);
-          if (!l.propEtapas) l.propEtapas = {};
-          l.propEtapas[cita.codigo] = 3;
-        }
-        if (typeof syncSheets === 'function') syncSheets(l);
-      }
+      if (!l.visitas) return;
+      const vi = l.visitas.findIndex(v => v && String(v.id).trim() === citaId);
+      if (vi >= 0) { l.visitas[vi].estado = 'agendada'; l.visitas[vi].updatedAt = Date.now(); }
     });
   }
 
@@ -13987,12 +13884,6 @@ async function confirmarCitaGemini(codigo, fecha, hora, cliente, celular, notas)
     } else {
       lead.visitas.push(newCita);
     }
-
-    if (!Array.isArray(lead.propsEnviadas)) lead.propsEnviadas = [];
-    if (codigo && !lead.propsEnviadas.includes(codigo)) lead.propsEnviadas.push(codigo);
-
-    if (!lead.propEtapas) lead.propEtapas = {};
-    if (codigo) lead.propEtapas[codigo] = 3;
 
     const cIdx = citas.findIndex(x => x.id === existingId || (x.codigo === codigo && x.celular === finalCelular));
     if (cIdx >= 0) {
