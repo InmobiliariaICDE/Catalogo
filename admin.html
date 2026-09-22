@@ -6965,8 +6965,8 @@ function asegurarLeadsParaCitasExistentes() {
 
   citas.forEach(c => {
     if (!c) return;
-    const clienteName = (c.cliente || '').trim();
-    const celularNum = (c.celular || '').replace(/\D/g, '');
+    const clienteName = String(c.cliente || '').trim();
+    const celularNum = String(c.celular || '').replace(/\D/g, '');
     if (!clienteName && !celularNum) return;
 
     let lead = null;
@@ -9634,7 +9634,7 @@ function confirmarEnvio(btn){
     closeModal('envioModal'); 
     syncSheets(lead);
     
-    const num = lead.celular.replace(/\D/g, '');
+    const num = String(lead.celular || '').replace(/\D/g, '');
     const waBase = num.startsWith('57') ? num : '57' + num;
     
     const WA_WIN_NAME = 'whatsapp_icde';
@@ -10190,7 +10190,7 @@ function guardarFiltrosEditados(marcarComoEnviadas = false){
                 link + "\r\n\r\n" +
                 "Revísalo y me cuentas qué inmueble deseas que visitemos " + emoFin + emoEstrella;
 
-    const num = lead.celular.replace(/\D/g, '');
+    const num = String(lead.celular || '').replace(/\D/g, '');
     const waBase = num.startsWith('57') ? num : '57' + num;
 
     const WA_WIN_NAME = 'whatsapp_icde';
