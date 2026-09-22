@@ -11334,8 +11334,55 @@ function confirmarCitaSolicitada(citaId) {
 // ═══════════════════════════════════════════════════════
 // EXTRAER NÚMERO DE TELÉFONO DE LA INMOBILIARIA ALIADA DESDE LA BD
 // ═══════════════════════════════════════════════════════
+const DIRECTORIO_DEFINITIVO_ALIADOS = {
+  'jovel': '3103914892',
+  'jovel munoz': '3103914892',
+  'inmobiliaria jovel munoz': '3103914892',
+  'c&c': '3133519650',
+  'c&c inmobiliaria': '3133519650',
+  'rocha': '3203612280',
+  'rocha finca raiz': '3203612280',
+  'soluciones la primavera': '3103319459',
+  'sol de primavera': '3103319459',
+  'jp escobar': '3213605848',
+  'inmobiliaria jp escobar': '3213605848',
+  'menber': '3133523454',
+  'rustik house': '3203396742',
+  'inmobiliaria rustik house': '3203396742',
+  'elite group': '3105672288',
+  'inmobiliaria elite group': '3105672288',
+  'inmob huila': '3152092988',
+  'inmob. huila - ana 50%': '3152092988',
+  'santa maria vera': '3103269000',
+  'inmobiliaria santa maria vera': '3103269000',
+  'mac negocios': '3103064593',
+  'mac negocios inmobiliarios': '3103064593',
+  'asuntos figueroa': '3124011214',
+  'elkin figueroa': '3124011214',
+  'casa honor inmobiliaria': '3124158907',
+  'casa honor': '3124158907',
+  'rediis armiento': '3114579876',
+  'rediis': '3114579876',
+  'jorge eduardo chavarro': '3102214654',
+  'jennifer garcia': '3175746312',
+  'juan pena': '3174078852',
+  'maria cristina': '3157872276',
+  'santiago': '3166963569',
+  'jaqueline rodriguez': '3182198358',
+  'jessika': '3114945846',
+  'nubia vargas': '3153381489',
+  'sandra bbva': '3138797028',
+  'tu juridica': '3125062334',
+  'inmobiliaria tu juridica': '3125062334'
+};
+
 function obtenerCelularInmobiliariaAliada(prop, nombreAliado) {
-  const norm = str => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const norm = str => {
+    return String(str || '').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '');
+  };
+
   const cleanPhone = raw => {
     if (!raw) return '';
     const str = String(raw).trim();
@@ -11347,7 +11394,19 @@ function obtenerCelularInmobiliariaAliada(prop, nombreAliado) {
     return '';
   };
 
-  // 1. Extraer directamente de la propiedad (prop) desde la BD (Columnas CELULAR, CELULAR 2, Celular 1, etc.)
+  const targetNorm = norm(nombreAliado);
+
+  // 1. Buscar primero en el Directorio Definitivo Oficial
+  if (targetNorm) {
+    for (const [key, num] of Object.entries(DIRECTORIO_DEFINITIVO_ALIADOS)) {
+      const keyNorm = norm(key);
+      if (keyNorm && (targetNorm.includes(keyNorm) || keyNorm.includes(targetNorm))) {
+        return num;
+      }
+    }
+  }
+
+  // 2. Extraer directamente de la propiedad (prop) desde la BD (Columnas CELULAR, CELULAR 2, Celular 1, etc.)
   if (prop) {
     const campos = [
       prop['CELULAR'], prop['CELULAR 1'], prop['CELULAR 2'], prop['Celular 1'], prop['Celular 2'],
@@ -11359,9 +11418,7 @@ function obtenerCelularInmobiliariaAliada(prop, nombreAliado) {
     }
   }
 
-  const targetNorm = norm(nombreAliado);
-
-  // 2. Buscar en OTRAS propiedades de 'datos' que pertenezcan a la misma Inmobiliaria Aliada
+  // 3. Buscar en OTRAS propiedades de 'datos' que pertenezcan a la misma Inmobiliaria Aliada
   if (targetNorm && typeof datos !== 'undefined' && Array.isArray(datos)) {
     for (const p of datos) {
       if (!p) continue;
