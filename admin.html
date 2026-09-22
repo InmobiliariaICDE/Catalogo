@@ -6800,9 +6800,15 @@ async function autoSyncDrive() {
           n.nombre = prev.nombre;
           n.celular = prev.celular;
           n.metodoPago = prev.metodoPago;
+          if (prev.propEtapas) n.propEtapas = prev.propEtapas;
+          if (prev.visitas) n.visitas = prev.visitas;
+          if (prev.propsEnviadas) n.propsEnviadas = prev.propsEnviadas;
+          if (prev.propsFiltradas) n.propsFiltradas = prev.propsFiltradas;
+          if (prev.filtros) n.filtros = prev.filtros;
           n._localEditedAt = prev._localEditedAt;
+        } else if (prev.propEtapas && typeof prev.propEtapas === 'object') {
+          n.propEtapas = Object.assign({}, prev.propEtapas, n.propEtapas || {});
         }
-      }
       return n;
     });
 
@@ -8985,9 +8991,8 @@ function renderEtapasLeadBadges(lead) {
 }
 
 function obtenerEtapaPropiedad(lead, cod) {
-  let manualStage = 1;
-  if (lead && lead.propEtapas && lead.propEtapas[cod]) {
-    manualStage = Number(lead.propEtapas[cod]);
+  if (lead && lead.propEtapas && typeof lead.propEtapas[cod] !== 'undefined' && lead.propEtapas[cod] !== null) {
+    return Number(lead.propEtapas[cod]);
   }
 
   let v = (lead && lead.visitas) ? lead.visitas.find(x => x && String(x.codigo||'').trim() === String(cod).trim()) : null;
@@ -9002,16 +9007,15 @@ function obtenerEtapaPropiedad(lead, cod) {
     });
   }
 
-  let citaStage = 1;
   if (v) {
-    if (v.procesoVenta || v.estado === 'proceso_venta') citaStage = 6;
-    else if (v.oferto === 'si' || v.estado === 'ok') citaStage = 5;
-    else if (v.estado === 'realizada') citaStage = 4;
-    else if (v.estado === 'agendada') citaStage = 3;
-    else if (v.estado === 'solicito_visita') citaStage = 2;
+    if (v.procesoVenta || v.estado === 'proceso_venta') return 6;
+    if (v.oferto === 'si' || v.estado === 'ok') return 5;
+    if (v.estado === 'realizada') return 4;
+    if (v.estado === 'agendada') return 3;
+    if (v.estado === 'solicito_visita') return 2;
   }
 
-  return Math.max(manualStage, citaStage);
+  return 1;
 }
 
 function renderPropChecklist(leadId, cod, currentStage) {
@@ -9083,61 +9087,106 @@ function cambiarEtapaPropiedad(evt, leadId, cod, nuevaEtapa) {
     if (typeof evt.preventDefault === 'function') evt.preventDefault();
   }
 
-  const lead = leads.find(l => l.id === leadId);
+  const lead = leads.find(l => String(l.id) === String(leadId));
   if (!lead) return;
   if (!lead.propEtapas) lead.propEtapas = {};
   lead.propEtapas[cod] = nuevaEtapa;
+  lead._localEditedAt = new Date().toISOString();
 
   lead.visitas = lead.visitas || [];
-  let v = lead.visitas.find(x => x.codigo === cod);
+  let v = lead.visitas.find(x => String(x.codigo||'').trim() === String(cod).trim());
 
-  if (nuevaEtapa === 1) {
-    if (v && v.estado === 'solicito_visita') v.estado = 'enviada';
-  } else if (nuevaEtapa === 2) {
-    if (!v) {
-      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'solicito_visita', cliente: lead.nombre, celular: lead.celular };
+  const celLead = String(lead.celular || '').replace(/\D/g, '');
+  if (!v && typeof citas !== 'undefined' && Array.isArray(citas)) {
+    const cFound = citas.find(c => String(c.codigo||'').trim() === String(cod).trim() && String(c.celular||'').replace(/\D/g,'') === celLead);
+    if (cFound) {
+      v = cFound;
       lead.visitas.push(v);
-    } else {
-      v.estado = 'solicito_visita';
-    }
-  } else if (nuevaEtapa === 3) {
-    if (!v) {
-      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'agendada', cliente: lead.nombre, celular: lead.celular };
-      lead.visitas.push(v);
-    } else {
-      v.estado = 'agendada';
-    }
-  } else if (nuevaEtapa === 4) {
-    if (!v) {
-      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'realizada', cliente: lead.nombre, celular: lead.celular };
-      lead.visitas.push(v);
-    } else {
-      v.estado = 'realizada';
-    }
-  } else if (nuevaEtapa === 5) {
-    if (!v) {
-      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'realizada', oferto: 'si', cliente: lead.nombre, celular: lead.celular };
-      lead.visitas.push(v);
-    } else {
-      v.estado = 'realizada';
-      v.oferto = 'si';
-    }
-  } else if (nuevaEtapa === 6) {
-    if (!v) {
-      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'realizada', oferto: 'si', procesoVenta: true, cliente: lead.nombre, celular: lead.celular };
-      lead.visitas.push(v);
-    } else {
-      v.procesoVenta = true;
     }
   }
 
+  if (nuevaEtapa === 1) {
+    if (v) { v.estado = 'enviada'; v.oferto = 'no'; v.procesoVenta = false; v.updatedAt = Date.now(); }
+  } else if (nuevaEtapa === 2) {
+    if (!v) {
+      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'solicito_visita', oferto: 'no', procesoVenta: false, cliente: lead.nombre, celular: lead.celular, updatedAt: Date.now() };
+      lead.visitas.push(v);
+    } else {
+      v.estado = 'solicito_visita'; v.oferto = 'no'; v.procesoVenta = false; v.updatedAt = Date.now();
+    }
+  } else if (nuevaEtapa === 3) {
+    if (!v) {
+      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'agendada', oferto: 'no', procesoVenta: false, cliente: lead.nombre, celular: lead.celular, updatedAt: Date.now() };
+      lead.visitas.push(v);
+    } else {
+      v.estado = 'agendada'; v.oferto = 'no'; v.procesoVenta = false; v.updatedAt = Date.now();
+    }
+  } else if (nuevaEtapa === 4) {
+    if (!v) {
+      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'realizada', oferto: 'no', procesoVenta: false, cliente: lead.nombre, celular: lead.celular, updatedAt: Date.now() };
+      lead.visitas.push(v);
+    } else {
+      v.estado = 'realizada'; v.oferto = 'no'; v.procesoVenta = false; v.updatedAt = Date.now();
+    }
+  } else if (nuevaEtapa === 5) {
+    if (!v) {
+      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'realizada', oferto: 'si', procesoVenta: false, cliente: lead.nombre, celular: lead.celular, updatedAt: Date.now() };
+      lead.visitas.push(v);
+    } else {
+      v.estado = 'realizada'; v.oferto = 'si'; v.procesoVenta = false; v.updatedAt = Date.now();
+    }
+  } else if (nuevaEtapa === 6) {
+    if (!v) {
+      v = { id: 'VIS-' + Date.now(), codigo: cod, fecha: new Date().toISOString().split('T')[0], hora: '10:00', estado: 'proceso_venta', oferto: 'si', procesoVenta: true, cliente: lead.nombre, celular: lead.celular, updatedAt: Date.now() };
+      lead.visitas.push(v);
+    } else {
+      v.estado = 'proceso_venta'; v.oferto = 'si'; v.procesoVenta = true; v.updatedAt = Date.now();
+    }
+  }
+
+  if (v && typeof citas !== 'undefined' && Array.isArray(citas)) {
+    const cIdx = citas.findIndex(c => String(c.id || '').trim() === String(v.id || '').trim() || (c.codigo === cod && String(c.celular||'').replace(/\D/g,'') === celLead));
+    if (cIdx >= 0) {
+      citas[cIdx] = Object.assign({}, citas[cIdx], {
+        estado: v.estado,
+        oferto: v.oferto,
+        procesoVenta: v.procesoVenta,
+        updatedAt: Date.now()
+      });
+      if (typeof syncCita === 'function') syncCita(citas[cIdx]);
+    } else if (v.id) {
+      citas.push(v);
+      if (typeof syncCita === 'function') syncCita(v);
+    }
+    try { localStorage.setItem('icde_citas', JSON.stringify(citas)); } catch(e){}
+  }
+
+  const maxStage = typeof obtenerEtapaMaximaLead === 'function' ? obtenerEtapaMaximaLead(lead) : nuevaEtapa;
+  if (maxStage === 6) lead.estado = 'proceso';
+  else if (maxStage === 5) lead.estado = 'realizada';
+  else if (maxStage === 4) lead.estado = 'realizada';
+  else if (maxStage === 3) lead.estado = 'agendada';
+  else if (maxStage === 2) lead.estado = 'visita';
+
+  pendingWriteUntil = Date.now() + 35000;
   saveLeads();
   syncSheets(lead);
-  const el = document.getElementById('panelEnviadas');
-  if (el) el.innerHTML = renderPanelPropsEnviadas(lead);
+
+  if (typeof currentLeadId !== 'undefined' && currentLeadId && String(currentLeadId) === String(lead.id)) {
+    renderSidePanel(lead);
+  } else {
+    const el = document.getElementById('panelEnviadas');
+    if (el) el.innerHTML = renderPanelPropsEnviadas(lead);
+    const elV = document.getElementById('panelVisitas');
+    if (elV) elV.innerHTML = renderPanelVisitas(lead);
+  }
+
   const nombresPasos = ['', 'Disponible', 'Solicitó visita', 'Visita agendada', 'Visitó', 'OK', 'Proceso de venta'];
   toast(`Etapa de venta: ${nombresPasos[nuevaEtapa] || nuevaEtapa} ✓`, 'success');
-  if (typeof currentTab !== 'undefined' && currentTab === 'leads') renderLeadsBody(leads);
+  if (typeof currentTab !== 'undefined' && currentTab === 'leads') {
+    if (typeof renderLeadsBody === 'function') renderLeadsBody(leads);
+    else if (typeof renderLeads === 'function') renderLeads();
+  }
 }
 
 function renderPanelPropsEnviadas(lead){
