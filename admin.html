@@ -6764,10 +6764,9 @@ async function autoSyncDrive() {
     // Fuente de verdad 100% Drive. Sin filtros locales.
     const cloudLeads = normalizarIdsLeads(data).map(l => ({ ...l, fromCloud: true }));
 
-    // Preservar solo leads recién creados localmente (U-) que aún no llegaron a la nube (nunca estuvieron en la nube)
+    // Preservar todos los leads creados localmente que aún no llegaron a la nube
     const localTemps = leads.filter(l => {
       if (l.fromCloud) return false;
-      if (!String(l.id).startsWith('U-')) return false;
       const phone = String(l.celular || '').replace(/\D/g, '');
       const yaSincronizado = cloudLeads.some(c =>
         String(c.id) === String(l.id) || (phone && String(c.celular||'').replace(/\D/g,'') === phone)
@@ -11499,6 +11498,9 @@ function descartarCitaPreservandoLead(citaId) {
   if (!citaId) return;
   if (!confirm('¿Deseas eliminar esta cita del horario? El cliente/lead se conservará perfectamente guardado en tu lista del CRM.')) return;
 
+  // Bloquear sobreescritura de autoSync por 30s mientras se procesa la eliminación en la nube
+  pendingWriteUntil = Date.now() + 30000;
+
   // 1. Eliminar la cita de la agenda global
   const cIdx = citas.findIndex(c => c && String(c.id).trim() === citaId);
   let citaTarget = null;
@@ -11522,16 +11524,46 @@ function descartarCitaPreservandoLead(citaId) {
 
     if (!leadTarget && citaTarget) {
       const celNum = String(citaTarget.celular || '').replace(/\D/g, '');
-      if (celNum) {
+      const clienteName = String(citaTarget.cliente || '').trim().toLowerCase();
+      if (celNum || clienteName) {
         leadTarget = leads.find(l => {
+          if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
           const c = String(l.celular || '').replace(/\D/g, '');
-          return c && (c === celNum || c.endsWith(celNum) || celNum.endsWith(c));
+          const matchCel = celNum && c && (c === celNum || c.endsWith(celNum) || celNum.endsWith(c));
+          const matchName = clienteName && l.nombre && l.nombre.trim().toLowerCase() === clienteName;
+          return matchCel || matchName;
         });
       }
     }
   }
 
-  // 3. Persistir Lead e informar cambios a Google Sheets / LocalStorage
+  // 3. Si por alguna razón el Lead no estaba en memoria, RE-CREAR/CONSERVAR la ficha del cliente
+  if (!leadTarget && citaTarget && (citaTarget.cliente || citaTarget.celular)) {
+    leadTarget = {
+      id: 'LEAD-' + Date.now(),
+      tipo: 'particular',
+      nombre: citaTarget.cliente || ('Cliente ' + (citaTarget.celular || citaTarget.codigo || '')),
+      celular: citaTarget.celular || '',
+      notas: 'Lead conservado tras eliminar cita' + (citaTarget.codigo ? (' (Cód. ' + citaTarget.codigo + ')') : ''),
+      metodoPago: citaTarget.metodoPago ? [citaTarget.metodoPago] : [],
+      estado: 'visita',
+      etiqueta: 'activo',
+      filtros: {},
+      frecuencia: 'manual',
+      maxPorEnvio: 4,
+      nombreInmobiliaria: '',
+      nombreAgente: '',
+      propsFiltradas: [],
+      propsEnviadas: citaTarget.codigo ? [citaTarget.codigo] : [],
+      proximosEnvios: [],
+      historialEnvios: [],
+      visitas: [],
+      creadoEn: citaTarget.creadoEn || new Date().toISOString()
+    };
+    leads.push(leadTarget);
+  }
+
+  // 4. Persistir Lead e informar cambios a Google Sheets / LocalStorage
   saveLeads();
   if (leadTarget) {
     syncSheets(leadTarget); // Garantiza que el Lead continúe guardado en CRM_Leads
@@ -11546,6 +11578,7 @@ function descartarCitaPreservandoLead(citaId) {
   toast('Cita eliminada. El lead se mantiene guardado en tu lista de Leads ✓', 'success');
 
   if (currentTab === 'citas') renderCitas();
+  if (currentTab === 'leads') renderLeads();
   if (currentLeadId && leadTarget && String(currentLeadId) === String(leadTarget.id)) renderSidePanel(leadTarget);
 }
 
