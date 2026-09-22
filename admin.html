@@ -6960,45 +6960,64 @@ function normalizarIdsLeads(data) {
 
 function rebuildCitas() {
   const allVisitas = [];
-  const seenIds  = new Set(); 
-  const seenKeys = new Set(); 
+  const mapById  = new Map();
+  const mapByKey = new Map();
 
-  // 1. Conservar TODAS las citas que vinieron directo del Excel (CRM_Citas)
-  citas.forEach(c => {
-    const vid = String(c.id || '').trim();
-    if (vid) {
-      if (seenIds.has(vid)) return;
-      seenIds.add(vid);
-    } else {
-      const k = visitaKey(c);
-      if (seenKeys.has(k)) return;
-      seenKeys.add(k);
-    }
-    allVisitas.push(c);
-  });
+  const getId = c => String(c?.id || '').trim();
 
-  // 2. LIMPIEZA DE FANTASMAS
-  let needsSave = false;
-  leads.forEach(l => {
-    if (!Array.isArray(l.visitas) || !l.visitas.length) return;
-
-    const beforeLen = l.visitas.length;
-    l.visitas = l.visitas.filter(v => {
-      const vid = String(v.id || '').trim();
-      if (vid && seenIds.has(vid)) return true;
-      const k = visitaKey(v);
-      if (k && seenKeys.has(k)) return true;
-      return false; // ¡Fantasma eliminado!
+  // 1. Indexar visitas de leads para tener los estados más actualizados (agendada, realizada, etc.)
+  const leadVisitasMap = new Map();
+  if (Array.isArray(leads)) {
+    leads.forEach(l => {
+      (l.visitas || []).forEach(v => {
+        if (!v) return;
+        const vid = getId(v);
+        const k = visitaKey(v);
+        if (vid) leadVisitasMap.set(vid, v);
+        if (k) leadVisitasMap.set(k, v);
+      });
     });
-
-    if (l.visitas.length !== beforeLen) needsSave = true;
-  });
-
-  if (needsSave) {
-    saveLeads();
   }
 
+  // 2. Indexar citas preservando y sincronizando el estado más reciente de cada visita
+  (citas || []).forEach(c => {
+    if (!c) return;
+    const vid = getId(c);
+    const k = visitaKey(c);
+
+    const matchInLead = (vid ? leadVisitasMap.get(vid) : null) || (k ? leadVisitasMap.get(k) : null);
+    if (matchInLead && matchInLead.estado && matchInLead.estado !== c.estado) {
+      c.estado = matchInLead.estado;
+    }
+
+    if (vid) {
+      if (!mapById.has(vid)) mapById.set(vid, c);
+    } else if (k) {
+      if (!mapByKey.has(k)) mapByKey.set(k, c);
+    }
+  });
+
+  // 3. Agregar visitas adicionales que estén en leads pero no en citas
+  leadVisitasMap.forEach((v, key) => {
+    const vid = getId(v);
+    if (vid && !mapById.has(vid)) {
+      mapById.set(vid, v);
+    } else if (!vid && key && !mapByKey.has(key)) {
+      mapByKey.set(key, v);
+    }
+  });
+
+  // 4. Compilar lista unificada sin duplicados
+  mapById.forEach(v => allVisitas.push(v));
+  mapByKey.forEach(v => {
+    const vid = getId(v);
+    if (!vid || !mapById.has(vid)) {
+      if (!allVisitas.includes(v)) allVisitas.push(v);
+    }
+  });
+
   citas = allVisitas;
+  saveLeads();
   setTimeout(verificarAlertasProgramadasCRM, 1000);
 }
 
@@ -7285,14 +7304,22 @@ function showTab(tab){
     else if(tab==='leads') renderLeads();
     else if(tab==='citas') {
       citasAlertaDismissed = true;
+      if (typeof rebuildCitas === 'function') rebuildCitas();
+
+      const cantPendientes = typeof contarCitasPendientes === 'function' ? contarCitasPendientes() : 0;
+      if (cantPendientes > 0) {
+        citasActiveFilterType = 'solicitudes';
+      } else if (citasActiveFilterType === 'solicitudes') {
+        citasActiveFilterType = 'hoy';
+      }
+      citasActiveFilterValue = '';
+
       if (typeof contarCitasPendientes === 'function') {
         lastSeenPendingCount = contarCitasPendientes();
       }
       if (typeof actualizarAlertaCitasPendientes === 'function') {
         actualizarAlertaCitasPendientes();
       }
-      citasActiveFilterType = 'hoy';
-      citasActiveFilterValue = '';
       renderCitas();
     }
     else if(tab==='administracion') renderAdministracion();
@@ -10598,6 +10625,10 @@ function renderCitas(){
           <button class="chip-filtro ${citasActiveFilterType === 'semana' ? 'sel' : ''}" onclick="filterCitas('semana',this)">Semana</button>
           <button class="chip-filtro ${citasActiveFilterType === 'mes' ? 'sel' : ''}" onclick="filterCitas('mes',this)">Mes</button>
           <button class="chip-filtro ${citasActiveFilterType === 'todas' ? 'sel' : ''}" onclick="filterCitas('todas',this)">Todas</button>
+          ${(() => {
+            const cantP = typeof contarCitasPendientes === 'function' ? contarCitasPendientes() : 0;
+            return cantP > 0 ? `<button class="chip-filtro ${citasActiveFilterType === 'solicitudes' ? 'sel' : ''}" onclick="filterCitas('solicitudes',this)" style="background:rgba(236,72,153,0.18); border-color:rgba(236,72,153,0.5); color:#f9a8d4; font-weight:800;">⚡ Solicitudes (${cantP})</button>` : '';
+          })()}
           <div style="width:1px; height:20px; background:rgba(255,255,255,0.1); margin:0 2px; flex-shrink:0;"></div>
           <button class="chip-filtro ${citasGrillaActive ? 'sel' : ''}" onclick="toggleCitasGrilla()" title="Vista tipo horario semanal" style="gap:4px; display:flex; align-items:center;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -11724,7 +11755,7 @@ function filterCitas(tipo, btn){
 
   const elSelFecha = document.getElementById('citasSelFecha');
   if (elSelFecha) {
-    elSelFecha.textContent = tipo === 'hoy' ? 'Mostrando citas de hoy' : '';
+    elSelFecha.textContent = tipo === 'hoy' ? 'Mostrando citas de hoy' : (tipo === 'solicitudes' ? 'Mostrando solicitudes de cita pendientes' : '');
   }
 
   aplicarFiltroYBusquedaCitas();
@@ -11753,6 +11784,8 @@ function aplicarFiltroYBusquedaCitas(){
 
   if (citasActiveFilterType === 'hoy') {
     filtered = citas.filter(c => getFechaISO(c.fecha) === localToday);
+  } else if (citasActiveFilterType === 'solicitudes') {
+    filtered = citas.filter(c => c && String(c.estado || '').trim().toLowerCase() === 'solicito_visita');
   } else if (citasActiveFilterType === 'semana') {
     const d1 = new Date(hoy);
     const start = new Date(d1.setDate(d1.getDate() - d1.getDay()));
@@ -11799,7 +11832,7 @@ let lastSeenPendingCount = 0;
 
 function contarCitasPendientes() {
   if (typeof citas === 'undefined' || !Array.isArray(citas)) return 0;
-  return citas.filter(c => c && c.estado === 'solicito_visita').length;
+  return citas.filter(c => c && String(c.estado || '').trim().toLowerCase() === 'solicito_visita').length;
 }
 
 function actualizarAlertaCitasPendientes() {
