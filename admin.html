@@ -6958,6 +6958,79 @@ function normalizarIdsLeads(data) {
 
 
 
+function asegurarLeadsParaCitasExistentes() {
+  if (typeof citas === 'undefined' || !Array.isArray(citas) || typeof leads === 'undefined' || !Array.isArray(leads)) return;
+
+  let leadsActualizados = false;
+
+  citas.forEach(c => {
+    if (!c) return;
+    const clienteName = (c.cliente || '').trim();
+    const celularNum = (c.celular || '').replace(/\D/g, '');
+    if (!clienteName && !celularNum) return;
+
+    let lead = null;
+
+    if (celularNum) {
+      const matchInput = celularNum.length >= 7 ? celularNum.slice(-10) : celularNum;
+      lead = leads.find(l => {
+        if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
+        const lRaw = String(l.celular || '').replace(/\D/g, '');
+        const lMatch = lRaw.length >= 7 ? lRaw.slice(-10) : lRaw;
+        return lMatch && (lMatch === matchInput || lMatch.endsWith(matchInput) || matchInput.endsWith(lMatch));
+      });
+    }
+
+    if (!lead && clienteName) {
+      const normName = clienteName.toLowerCase();
+      lead = leads.find(l => {
+        if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
+        return l.nombre && l.nombre.trim().toLowerCase() === normName;
+      });
+    }
+
+    if (!lead) {
+      const newLeadId = 'LEAD-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+      lead = {
+        id: newLeadId,
+        tipo: 'particular',
+        nombre: clienteName || ('Cliente ' + (c.celular || c.codigo || '')),
+        celular: c.celular || '',
+        notas: 'Creado automáticamente desde cita agendada' + (c.codigo ? (' (Cód. ' + c.codigo + ')') : ''),
+        metodoPago: c.metodoPago ? [c.metodoPago] : [],
+        estado: 'visita',
+        etiqueta: 'activo',
+        filtros: {},
+        frecuencia: 'manual',
+        maxPorEnvio: 4,
+        nombreInmobiliaria: '',
+        nombreAgente: '',
+        propsFiltradas: [],
+        propsEnviadas: c.codigo ? [c.codigo] : [],
+        proximosEnvios: [],
+        historialEnvios: [],
+        visitas: [c],
+        creadoEn: c.creadoEn || new Date().toISOString()
+      };
+      leads.push(lead);
+      leadsActualizados = true;
+      if (typeof syncSheets === 'function') syncSheets(lead);
+    } else {
+      if (!Array.isArray(lead.visitas)) lead.visitas = [];
+      const safeCitaId = String(c.id || '').trim();
+      const yaEstaInVisitas = lead.visitas.some(v => (safeCitaId && String(v.id || '').trim() === safeCitaId) || (v.codigo === c.codigo && String(v.celular || '').replace(/\D/g,'') === celularNum));
+      if (!yaEstaInVisitas) {
+        lead.visitas.push(c);
+        leadsActualizados = true;
+      }
+    }
+  });
+
+  if (leadsActualizados) {
+    saveLeads();
+  }
+}
+
 function rebuildCitas() {
   const allVisitas = [];
   const seenIds  = new Set(); 
@@ -6999,6 +7072,10 @@ function rebuildCitas() {
   }
 
   citas = allVisitas;
+
+  // 3. Crear automáticamente leads individuales para citas que no tengan lead aún
+  asegurarLeadsParaCitasExistentes();
+
   setTimeout(verificarAlertasProgramadasCRM, 1000);
 }
 
@@ -9900,20 +9977,57 @@ function guardarVisita(){
       }
     }
 
-    let lead = (visitaLeadId && typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l=>String(l.id)===String(visitaLeadId)) : null;
+    let lead = (visitaLeadId && typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l=>String(l.id)===String(visitaLeadId) && l.id !== 'LEAD-AGENDA-GLOBAL') : null;
     if(!lead && celular) {
       const cleanInput = String(celular).replace(/\D/g, '');
-      const matchInput = cleanInput.length >= 10 ? cleanInput.slice(-10) : cleanInput;
+      const matchInput = cleanInput.length >= 7 ? cleanInput.slice(-10) : cleanInput;
+      if (matchInput) {
+        lead = leads.find(l => {
+          if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
+          const lRaw = String(l.celular || '').replace(/\D/g, '');
+          const lMatch = lRaw.length >= 7 ? lRaw.slice(-10) : lRaw;
+          return lMatch && (lMatch === matchInput || lMatch.endsWith(matchInput) || matchInput.endsWith(lMatch));
+        });
+      }
+    }
+
+    if (!lead && cliente) {
+      const normName = cliente.trim().toLowerCase();
       lead = leads.find(l => {
         if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
-        const lRaw = String(l.celular || '').replace(/\D/g, '');
-        const lMatch = lRaw.length >= 10 ? lRaw.slice(-10) : lRaw;
-        return matchInput && lMatch && lMatch === matchInput;
+        return l.nombre && l.nombre.trim().toLowerCase() === normName;
       });
     }
 
+    if(!lead && (cliente || celular)) {
+       const newLeadId = 'LEAD-' + Date.now();
+       lead = {
+           id: newLeadId,
+           tipo: 'particular',
+           nombre: cliente || ('Cliente ' + (celular || cod)),
+           celular: celular || '',
+           notas: 'Creado automáticamente al agendar cita' + (cod ? (' para propiedad Cód. ' + cod) : ''),
+           metodoPago: [],
+           estado: 'visita',
+           etiqueta: 'activo',
+           filtros: {},
+           frecuencia: 'manual',
+           maxPorEnvio: 4,
+           nombreInmobiliaria: '',
+           nombreAgente: '',
+           propsFiltradas: [],
+           propsEnviadas: cod ? [cod] : [],
+           proximosEnvios: [],
+           historialEnvios: [],
+           visitas: [],
+           creadoEn: new Date().toISOString()
+       };
+       leads.push(lead);
+       saveLeads();
+    }
+
     if(!lead) {
-       // Asignar a contenedor global para sincronización
+       // Asignar a contenedor global únicamente si no hay cliente ni teléfono
        lead = leads.find(l => l.id === 'LEAD-AGENDA-GLOBAL');
        if (!lead) {
            lead = {
@@ -13617,13 +13731,50 @@ async function confirmarCitaGemini(codigo, fecha, hora, cliente, celular, notas)
     let lead = null;
     if (celular) {
       const cleanInput = String(celular).replace(/\D/g, '');
-      const matchInput = cleanInput.length >= 10 ? cleanInput.slice(-10) : cleanInput;
+      const matchInput = cleanInput.length >= 7 ? cleanInput.slice(-10) : cleanInput;
+      if (matchInput) {
+        lead = leads.find(l => {
+          if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
+          const lRaw = String(l.celular || '').replace(/\D/g, '');
+          const lMatch = lRaw.length >= 7 ? lRaw.slice(-10) : lRaw;
+          return lMatch && (lMatch === matchInput || lMatch.endsWith(matchInput) || matchInput.endsWith(lMatch));
+        });
+      }
+    }
+
+    if (!lead && cliente) {
+      const normName = cliente.trim().toLowerCase();
       lead = leads.find(l => {
         if (l.id === 'LEAD-AGENDA-GLOBAL') return false;
-        const lRaw = String(l.celular || '').replace(/\D/g, '');
-        const lMatch = lRaw.length >= 10 ? lRaw.slice(-10) : lRaw;
-        return matchInput && lMatch && lMatch === matchInput;
+        return l.nombre && l.nombre.trim().toLowerCase() === normName;
       });
+    }
+
+    if (!lead && (cliente || celular)) {
+      const newLeadId = 'LEAD-' + Date.now();
+      lead = {
+        id: newLeadId,
+        tipo: 'particular',
+        nombre: cliente || ('Cliente ' + (celular || codigo)),
+        celular: celular || '',
+        notas: 'Creado automáticamente al agendar cita por asistente',
+        metodoPago: [],
+        estado: 'visita',
+        etiqueta: 'activo',
+        filtros: {},
+        frecuencia: 'manual',
+        maxPorEnvio: 4,
+        nombreInmobiliaria: '',
+        nombreAgente: '',
+        propsFiltradas: [],
+        propsEnviadas: codigo ? [codigo] : [],
+        proximosEnvios: [],
+        historialEnvios: [],
+        visitas: [],
+        creadoEn: new Date().toISOString()
+      };
+      leads.push(lead);
+      saveLeads();
     }
 
     if (!lead) {
