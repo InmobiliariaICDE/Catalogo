@@ -1943,8 +1943,8 @@ function renderPanelPropsEnviadas(lead){
   const env = lead.propsEnviadas || [];
   if(!env.length) return '<div style="color:#555;font-size:13px;padding:12px 0;">No se han enviado propiedades aún</div>';
   return env.map(cod => {
-    const p = allProps.find(d => d['Código'] === cod);
-    const v = (lead.visitas || []).find(x => x.codigo === cod);
+    const p = (typeof buscarPropiedadGlobal === 'function') ? buscarPropiedadGlobal(cod) : allProps.find(d => d['Código'] === cod);
+    const v = (lead.visitas || []).find(x => x && (String(x.codigo||'').trim() === String(cod).trim() || (p && String(x.codigo||'').trim() === String(p['Código']||'').trim())));
     const img = p ? ((p['Imagenes']||'').split('|')[0].trim()||p['Image']||'https://i.imgur.com/Pc9M3I8.png') : 'https://i.imgur.com/Pc9M3I8.png';
     let badges = `<span class="badge badge-enviada">Enviada</span>`;
     if(v){
@@ -1955,15 +1955,16 @@ function renderPanelPropsEnviadas(lead){
 
     const currentStage = obtenerEtapaPropiedad(lead, cod);
     const stepperHTML = renderPropChecklist(lead.id, cod, currentStage);
+    const codDisp = p ? (p['Código'] || p['Codigo'] || cod) : cod;
 
     return `
       <div class="enviada-item" style="display:flex; flex-direction:column; gap:6px; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:10px; margin-bottom:10px; transition: all 0.2s;">
         <div style="display:flex; gap:10px; align-items:center; width:100%;">
           <input type="checkbox" class="chk-prop-enviada" value="${cod}" style="accent-color:var(--gold); width:16px; height:16px; cursor:pointer; flex-shrink:0;" onchange="actualizarBotonEliminarEnviadas('${lead.id}')"/>
-          <div style="display:flex; flex:1; align-items:center; gap:12px; cursor:pointer; min-width:0;" onclick="abrirModalProp('${eq(cod)}')">
+          <div style="display:flex; flex:1; align-items:center; gap:12px; cursor:pointer; min-width:0;" onclick="abrirModalProp('${eq(codDisp)}')">
             <img src="${img}" style="width:55px; height:55px; object-fit:cover; border-radius:8px;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
             <div style="flex:1; min-width:0;">
-              <div style="font-weight:700; color:#fff; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cod} ${p ? `· ${p['Nombre']}` : ''}</div>
+              <div style="font-weight:700; color:#fff; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${codDisp} ${p ? `· ${p['Nombre']}` : ''}</div>
               <div style="display:flex; gap:6px; margin-top:4px; align-items:center; flex-wrap:wrap;">
                 ${badges}
                 ${p && (p['Inmobiliaria']||p['Inmobiliaria / Aliado']||p['inmobiliaria']||p['Inmob']) ? `<span class="badge-inmobiliaria" style="background:rgba(212,168,75,0.08); border:1px solid rgba(212,168,75,0.4); color:var(--gold); font-size:10px; font-weight:700; border-radius:6px; padding:2px 8px; text-transform:uppercase; letter-spacing:0.04em; display:inline-flex; align-items:center;">${(p['Inmobiliaria']||p['Inmobiliaria / Aliado']||p['inmobiliaria']||p['Inmob']).trim()}</span>` : ''}
@@ -1971,7 +1972,7 @@ function renderPanelPropsEnviadas(lead){
             </div>
           </div>
           <div style="display:flex; gap:6px; flex-shrink:0;">
-            <button class="btn btn-sm ${v?'btn-secondary':'btn-primary'}" style="padding:6px; min-width:32px;" onclick="event.stopPropagation();abrirVisitaModal('${lead.id}','${cod}')" title="${v ? 'Editar visita' : 'Agendar visita'}">
+            <button class="btn btn-sm ${v?'btn-secondary':'btn-primary'}" style="padding:6px; min-width:32px;" onclick="event.stopPropagation();abrirVisitaModal('${lead.id}','${codDisp}')" title="${v ? 'Editar visita' : 'Agendar visita'}">
               ${v ? '✏️' : '🗓'}
             </button>
             <button class="btn btn-sm btn-danger" style="padding:6px; min-width:32px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#ef4444;" onclick="event.stopPropagation(); eliminarPropEnviada('${lead.id}','${cod}')" title="Eliminar de enviadas">
@@ -1989,12 +1990,13 @@ function renderPanelPendientes(lead, pend){
   return `
     <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(100px, 1fr)); gap:10px;">
       ${pend.map(cod => {
-        const p = allProps.find(d => d['Código'] === cod);
+        const p = (typeof buscarPropiedadGlobal === 'function') ? buscarPropiedadGlobal(cod) : allProps.find(d => d['Código'] === cod);
         const img = p ? ((p['Imagenes']||'').split('|')[0].trim()||p['Image']||'https://i.imgur.com/Pc9M3I8.png') : 'https://i.imgur.com/Pc9M3I8.png';
+        const codDisp = p ? (p['Código'] || p['Codigo'] || cod) : cod;
         return `
           <div class="prop-card" style="pointer-events:none; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:8px; overflow:hidden;">
             <img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover;" onerror="this.src='https://i.imgur.com/Pc9M3I8.png'"/>
-            <div style="padding:6px; font-size:11px; text-align:center; color:var(--gold); font-weight:700;">${cod}</div>
+            <div style="padding:6px; font-size:11px; text-align:center; color:var(--gold); font-weight:700;">${codDisp}</div>
           </div>`;
       }).join('')}
     </div>`;
@@ -2002,10 +2004,20 @@ function renderPanelPendientes(lead, pend){
 
 function renderPanelVisitas(lead){
   if(!(lead.visitas||[]).length) return '<div style="color:#555;font-size:13px;padding:12px 0;">No hay visitas agendadas</div>';
-  return lead.visitas.map(v=>`
+  return lead.visitas.map(v => {
+    const p = (typeof buscarPropiedadGlobal === 'function') ? buscarPropiedadGlobal(v.codigo) : null;
+    const pNom = p ? (p['Nombre'] || p['nombre'] || '') : '';
+    const img = p ? ((p['Imagenes']||'').split('|')[0].trim() || p['Image'] || '') : '';
+    return `
     <div class="visita-item" style="background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:12px; margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span style="font-weight:700;color:var(--gold);">${v.codigo}</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          ${img ? `<img src="${img}" style="width:28px; height:28px; border-radius:6px; object-fit:cover; border:1px solid rgba(212,168,75,0.3);" onerror="this.style.display='none'"/>` : ''}
+          <div>
+            <span style="font-weight:700;color:var(--gold);">${v.codigo}</span>
+            ${pNom ? `<span style="font-size:12px; color:#fff; font-weight:600; margin-left:6px;">· ${pNom}</span>` : ''}
+          </div>
+        </div>
         <span class="badge badge-${v.estado}">${v.estado}</span>
       </div>
       <div style="font-size:12px;color:#aaa;margin-bottom:4px;">📅 ${v.fecha} · 🕒 ${v.hora || '—'}</div>
@@ -2013,7 +2025,8 @@ function renderPanelVisitas(lead){
       <div style="margin-top:10px;display:flex;gap:8px;">
         <button class="btn btn-sm btn-secondary" style="padding:4px 10px; font-size:11px;" onclick="event.stopPropagation();abrirVisitaModal('${lead.id}','${v.codigo}')">Editar</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function renderTimeline(lead){
@@ -2406,30 +2419,49 @@ function marcarVisitaRealizada(lid, cod){
   }
 }
 function guardarVisita(){
-  const cod=document.getElementById('visitaCodigo').value.trim(); if(!cod){ toast('Ingresa el código','error'); return; }
-  const lead=leads.find(l=>l.id===visitaLeadId);
-  const v={
-    codigo:cod,
-    fecha:document.getElementById('visitaFecha').value,
-    hora:document.getElementById('visitaHora').value,
-    estado:document.getElementById('visitaEstado').value,
-    oferto:document.getElementById('visitaOferto').value,
-    oferta:document.getElementById('visitaOferta').value.trim(),
-    notas:document.getElementById('visitaNotas').value.trim(),
+  const rawCod = document.getElementById('visitaCodigo').value.trim();
+  if(!rawCod){ toast('Ingresa el código','error'); return; }
+
+  const propMatch = typeof buscarPropiedadGlobal === 'function' ? buscarPropiedadGlobal(rawCod) : null;
+  const cod = propMatch ? (propMatch['Código'] || propMatch['Codigo'] || rawCod) : rawCod;
+
+  const lead = leads.find(l => String(l.id) === String(visitaLeadId));
+  const v = {
+    id: 'VIS-' + Date.now(),
+    codigo: cod,
+    fecha: document.getElementById('visitaFecha').value,
+    hora: document.getElementById('visitaHora').value,
+    estado: document.getElementById('visitaEstado').value,
+    oferto: document.getElementById('visitaOferto').value,
+    oferta: document.getElementById('visitaOferta').value.trim(),
+    notas: document.getElementById('visitaNotas').value.trim(),
     cliente: lead ? lead.nombre : '',
     celular: lead ? lead.celular : '',
     inmobiliaria: lead && lead.tipo==='inmobiliaria' ? lead.nombreInmobiliaria : '',
+    updatedAt: Date.now()
   };
   
   if(lead){
     if(!lead.visitas) lead.visitas=[];
-    const idx = lead.visitas.findIndex(x => x.codigo === cod);
+    const idx = lead.visitas.findIndex(x => String(x.codigo||'').trim() === String(cod).trim());
     if(idx >= 0) lead.visitas[idx] = v;
     else lead.visitas.push(v);
+
+    if(!lead.propsEnviadas) lead.propsEnviadas = [];
+    if(!lead.propsEnviadas.some(p => String(p).trim() === String(cod).trim())) {
+      lead.propsEnviadas.push(cod);
+    }
+    if(!lead.propEtapas) lead.propEtapas = {};
+    let etapaVisita = 3;
+    if (v.estado === 'realizada') etapaVisita = (v.oferto === 'si') ? 5 : 4;
+    else if (v.estado === 'solicito_visita') etapaVisita = 2;
+    else if (v.estado === 'proceso_venta') etapaVisita = 6;
+    lead.propEtapas[cod] = etapaVisita;
+    lead._localEditedAt = new Date().toISOString();
   }
   
   // Actualizar en agenda global
-  const cIdx = citas.findIndex(x => x.codigo === cod && x.celular === v.celular);
+  const cIdx = citas.findIndex(x => String(x.codigo||'').trim() === String(cod).trim() && String(x.celular||'').replace(/\D/g,'') === String(v.celular||'').replace(/\D/g,''));
   if(cIdx >= 0) citas[cIdx] = v;
   else citas.push(v);
   
@@ -2443,10 +2475,10 @@ function guardarVisita(){
   }
   
   closeModal('visitaModal'); toast('Visita registrada ✓','success'); 
-  if(lead) syncSheets(lead);
+  if(lead && typeof syncSheets === 'function') syncSheets(lead);
   
-  if(currentLeadId && lead && currentLeadId===lead.id) renderSidePanel(lead);
-  if(currentTab==='citas') renderCitas();
+  if(currentLeadId && lead && String(currentLeadId) === String(lead.id)) renderSidePanel(lead);
+  if(typeof currentTab !== 'undefined' && currentTab==='citas') renderCitas();
 }
 
 /* ═══════════════════════════════════════════════
