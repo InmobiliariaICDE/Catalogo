@@ -11323,6 +11323,7 @@ function confirmarCitaSolicitada(citaId) {
 
   saveLeads();
   syncCita(cita);
+  if (typeof actualizarAlertaCitasPendientes === 'function') actualizarAlertaCitasPendientes();
 
   // Cerrar modal
   closeModal('tarjetaCitaModal');
@@ -11656,32 +11657,25 @@ let citasAlertaDismissed = false;
 let lastSeenPendingCount = 0;
 
 function contarCitasPendientes() {
-  let count = 0;
-  if (typeof citas !== 'undefined' && Array.isArray(citas)) {
-    count += citas.filter(c => c && c.estado === 'solicito_visita').length;
-  }
-  if (typeof leads !== 'undefined' && Array.isArray(leads)) {
-    leads.forEach(l => {
-      count += (l.visitas || []).filter(v => v && v.estado === 'solicito_visita').length;
-    });
-  }
-  return count;
+  if (typeof citas === 'undefined' || !Array.isArray(citas)) return 0;
+  return citas.filter(c => c && c.estado === 'solicito_visita').length;
 }
 
 function actualizarAlertaCitasPendientes() {
   try {
     const currentPending = contarCitasPendientes();
-    
+    const tabBtn = document.getElementById('tabCitas');
+    if (!tabBtn) return;
+
     if (currentPending === 0) {
       citasAlertaDismissed = false;
       lastSeenPendingCount = 0;
-    } else if (currentPending > lastSeenPendingCount) {
-      citasAlertaDismissed = false;
-    }
-
-    const tabBtn = document.getElementById('tabCitas');
-    if (tabBtn) {
-      if (currentPending > 0 && !citasAlertaDismissed && typeof currentTab !== 'undefined' && currentTab !== 'citas') {
+      tabBtn.classList.remove('tab-citas-alerta');
+    } else {
+      if (currentPending > lastSeenPendingCount) {
+        citasAlertaDismissed = false;
+      }
+      if (!citasAlertaDismissed && typeof currentTab !== 'undefined' && currentTab !== 'citas') {
         tabBtn.classList.add('tab-citas-alerta');
       } else {
         tabBtn.classList.remove('tab-citas-alerta');
