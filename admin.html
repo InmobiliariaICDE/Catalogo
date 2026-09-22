@@ -4902,18 +4902,14 @@ function rechargerCitasYLeadsLocal() {
   try {
     const localCitas = JSON.parse(localStorage.getItem('icde_citas') || '[]');
     if (Array.isArray(localCitas)) citas = localCitas;
-    const localLeads = JSON.parse(localStorage.getItem('icde_leads') || '[]');
-    if (Array.isArray(localLeads)) leads = localLeads;
     if (typeof currentTab !== 'undefined' && currentTab === 'citas' && typeof renderCitas === 'function') {
       renderCitas();
-    } else if (typeof currentTab !== 'undefined' && currentTab === 'leads' && typeof renderLeadsBody === 'function') {
-      renderLeadsBody(leads);
     }
   } catch(e) {}
 }
 
 window.addEventListener('storage', (e) => {
-  if (!e || !e.key || e.key === 'icde_citas' || e.key === 'icde_leads') {
+  if (!e || !e.key || e.key === 'icde_citas') {
     rechargerCitasYLeadsLocal();
   }
 });
@@ -11246,40 +11242,50 @@ function abrirTarjetaCitaModal(citaId) {
         <div style="font-size:12.5px; color:${notasTexto ? '#e0ddd8' : '#777'}; line-height:1.5; white-space:pre-wrap;">${notasTexto || 'Sin observaciones adicionales'}</div>
       </div>
 
-      ${cita.estado === 'solicito_visita' ? `
-      <!-- BANNER + BOTONES CONFIRMAR Y SOLICITAR A ALIADO -->
-      <div style="background:linear-gradient(135deg, rgba(236,72,153,0.18), rgba(236,72,153,0.08)); border:1.5px solid rgba(236,72,153,0.55); border-radius:14px; padding:14px 16px; margin-top:4px;">
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
-          <span style="font-size:18px;">🔔</span>
-          <div>
-            <div style="font-size:12px; font-weight:800; color:#f9a8d4; text-transform:uppercase; letter-spacing:0.06em;">Solicitud de Cita Pendiente</div>
-            <div style="font-size:11px; color:rgba(249,168,212,0.85); margin-top:2px;">
-              ${propInmob ? `Inmobiliaria Aliada: <strong style="color:#fff;">${propInmob}</strong>. Solicita confirmación al aliado o confírmala.` : 'El cliente solicitó esta visita. Confírmala para notificarlo por WhatsApp.'}
+      ${cita.estado === 'solicito_visita' ? (() => {
+        const esDirectaICDE = esPropiedadDirectaICDE(prop, propInmob);
+        const textBanner = esDirectaICDE 
+          ? 'Propiedad ICDE Directa. Solicita confirmación al propietario o confírmala.' 
+          : `Inmobiliaria Aliada: <strong style="color:#fff;">${propInmob}</strong>. Solicita confirmación al aliado o confírmala.`;
+        const textBtn = esDirectaICDE 
+          ? 'Solicitar Confirmación al Propietario' 
+          : `Solicitar Confirmación a ${propInmob || 'Inmobiliaria Aliada'}`;
+        const iconBtn = esDirectaICDE ? '👤' : '🏢';
+
+        return `
+        <!-- BANNER + BOTONES CONFIRMAR Y SOLICITAR -->
+        <div style="background:linear-gradient(135deg, rgba(236,72,153,0.18), rgba(236,72,153,0.08)); border:1.5px solid rgba(236,72,153,0.55); border-radius:14px; padding:14px 16px; margin-top:4px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <span style="font-size:18px;">🔔</span>
+            <div>
+              <div style="font-size:12px; font-weight:800; color:#f9a8d4; text-transform:uppercase; letter-spacing:0.06em;">Solicitud de Cita Pendiente</div>
+              <div style="font-size:11px; color:rgba(249,168,212,0.85); margin-top:2px;">
+                ${textBanner}
+              </div>
             </div>
           </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button onclick="solicitarConfirmacionAliado('${String(cita.id || '').replace(/'/g,"\\'")}')"
+              id="btnSolicitarAliado_${String(cita.id || '').replace(/[^a-z0-9]/gi,'_')}"
+              style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#3b82f6,#1d4ed8); border:none; color:#fff; font-size:13px; font-weight:800; cursor:pointer; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(59,130,246,0.35); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px;"
+              onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(59,130,246,0.55)';"
+              onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(59,130,246,0.35)';"
+            >
+              <span style="font-size:15px;">${iconBtn}</span>
+              ${textBtn}
+            </button>
+            <button onclick="confirmarCitaSolicitada('${String(cita.id || '').replace(/'/g,"\\'")}')"
+              id="btnConfirmarCliente_${String(cita.id || '').replace(/[^a-z0-9]/gi,'_')}"
+              disabled
+              style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#ec4899,#be185d); border:none; color:#fff; font-size:13px; font-weight:800; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(236,72,153,0.45); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px; opacity:0.35; cursor:not-allowed; filter:grayscale(0.4);"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Confirmar Cita y Notificar al Cliente
+            </button>
+          </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <button onclick="solicitarConfirmacionAliado('${String(cita.id || '').replace(/'/g,"\\'")}')"
-            id="btnSolicitarAliado_${String(cita.id || '').replace(/[^a-z0-9]/gi,'_')}"
-            style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#3b82f6,#1d4ed8); border:none; color:#fff; font-size:13px; font-weight:800; cursor:pointer; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(59,130,246,0.35); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px;"
-            onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(59,130,246,0.55)';"
-            onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(59,130,246,0.35)';"
-          >
-            <span style="font-size:15px;">🏢</span>
-            Solicitar Confirmación a ${propInmob || 'Inmobiliaria Aliada'}
-          </button>
-          <button onclick="confirmarCitaSolicitada('${String(cita.id || '').replace(/'/g,"\\'")}')"
-            id="btnConfirmarCliente_${String(cita.id || '').replace(/[^a-z0-9]/gi,'_')}"
-            ${propInmob ? 'disabled' : ''}
-            style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#ec4899,#be185d); border:none; color:#fff; font-size:13px; font-weight:800; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(236,72,153,0.45); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px; ${propInmob ? 'opacity:0.35; cursor:not-allowed; filter:grayscale(0.4);' : 'cursor:pointer;'}"
-            ${propInmob ? '' : `onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(236,72,153,0.6)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(236,72,153,0.45)';"` }
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Confirmar Cita y Notificar al Cliente
-          </button>
-        </div>
-      </div>
-      ` : ''}
+        `;
+      })() : ''}
     `;
   }
 
@@ -11474,6 +11480,40 @@ const DIRECTORIO_DEFINITIVO_ALIADOS = {
   'inmobiliaria tu juridica': '3125062334'
 };
 
+function esPropiedadDirectaICDE(prop, propInmobRaw) {
+  const raw = String(propInmobRaw || (prop ? (prop['Inmobiliaria'] || prop['Inmobiliaria / Aliado'] || prop['inmobiliaria'] || prop['Inmob'] || prop['Aliado'] || '') : '')).trim().toLowerCase();
+  const clean = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+  if (!clean) return true;
+  if (['icde', 'inmobiliariaicde', 'icdeinmobiliaria', 'directo', 'propio', 'propia', 'dueno', 'propietario'].includes(clean)) return true;
+  return false;
+}
+
+function obtenerCelularPropietario(prop) {
+  if (!prop) return '';
+  const cleanPhone = raw => {
+    if (!raw) return '';
+    const str = String(raw).trim();
+    if (!str || str === '0') return '';
+    const match = str.match(/(?:57)?(3\d{9})/);
+    if (match) return match[1];
+    const digits = str.replace(/\D/g, '');
+    if (digits.length >= 7 && digits !== '0') return digits;
+    return '';
+  };
+
+  const campos = [
+    prop.owner_phone, prop['Celular Propietario'], prop['Celular 1'], prop['Celular 2'],
+    prop['Celulares'], prop['celular'], prop['celulares'], prop['CELULAR'], prop['CELULAR 1'],
+    prop['CELULAR 2'], prop['Celular'], prop['Telefono'], prop['telefono'], prop['Teléfono']
+  ];
+
+  for (const val of campos) {
+    const num = cleanPhone(val);
+    if (num) return num;
+  }
+  return '';
+}
+
 function obtenerCelularInmobiliariaAliada(prop, nombreAliado) {
   const norm = str => {
     return String(str || '').toLowerCase()
@@ -11566,7 +11606,7 @@ function obtenerCelularInmobiliariaAliada(prop, nombreAliado) {
 }
 
 // ═══════════════════════════════════════════════════════
-// SOLICITAR CONFIRMACIÓN A INMOBILIARIA ALIADA (JOVEL, ETC)
+// SOLICITAR CONFIRMACIÓN A ALIADO O PROPIETARIO
 // ═══════════════════════════════════════════════════════
 function solicitarConfirmacionAliado(citaId) {
   citaId = String(citaId || '').trim();
@@ -11576,17 +11616,35 @@ function solicitarConfirmacionAliado(citaId) {
   const cita = citas[cIdx];
   const prop = cita.codigo ? buscarPropiedadGlobal(cita.codigo) : null;
   const propInmob = prop ? (prop['Inmobiliaria'] || prop['Inmobiliaria / Aliado'] || prop['inmobiliaria'] || prop['Inmob'] || prop['Aliado'] || cita.inmobiliaria || '').trim() : (cita.inmobiliaria || '').trim();
-  const nombreAliado = propInmob || 'Inmobiliaria Aliada';
 
-  // Extraer el teléfono de la inmobiliaria directamente de la base de datos (columnas CELULAR, CELULAR 2, etc.)
-  let numLimpio = obtenerCelularInmobiliariaAliada(prop, nombreAliado);
+  const esDirecta = esPropiedadDirectaICDE(prop, propInmob);
 
-  // Respaldo únicamente si la BD no tiene teléfono para esa inmobiliaria
-  if (!numLimpio) {
-    const ing = prompt(`No se encontró teléfono para ${nombreAliado} en la BD. Ingresa el WhatsApp:`);
-    if (!ing) return;
-    numLimpio = ing.replace(/\D/g, '');
-    if (!numLimpio) { toast('Número de WhatsApp no válido', 'error'); return; }
+  let numLimpio = '';
+  let nombreDestinatario = '';
+
+  if (esDirecta) {
+    nombreDestinatario = prop ? (prop['Nombre del Propietario'] || prop['propietario'] || prop['Nombre del propietario'] || prop['PROPIETARIO'] || prop.owner || prop['Dueño'] || prop['dueño'] || '').trim() : '';
+    numLimpio = obtenerCelularPropietario(prop);
+
+    if (!numLimpio) {
+      const promptMsg = nombreDestinatario
+        ? `No se encontró celular para el propietario (${nombreDestinatario}) en la ficha del inmueble (Cód. ${cita.codigo || ''}). Ingresa su WhatsApp:`
+        : `No se encontró celular del propietario en la ficha del inmueble (Cód. ${cita.codigo || ''}). Ingresa su WhatsApp:`;
+      const ing = prompt(promptMsg);
+      if (!ing) return;
+      numLimpio = ing.replace(/\D/g, '');
+      if (!numLimpio) { toast('Número de WhatsApp no válido', 'error'); return; }
+    }
+  } else {
+    nombreDestinatario = propInmob || 'Inmobiliaria Aliada';
+    numLimpio = obtenerCelularInmobiliariaAliada(prop, nombreDestinatario);
+
+    if (!numLimpio) {
+      const ing = prompt(`No se encontró teléfono para ${nombreDestinatario} en la BD. Ingresa el WhatsApp:`);
+      if (!ing) return;
+      numLimpio = ing.replace(/\D/g, '');
+      if (!numLimpio) { toast('Número de WhatsApp no válido', 'error'); return; }
+    }
   }
 
   const diasSem = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -11607,23 +11665,42 @@ function solicitarConfirmacionAliado(citaId) {
 
   const waNumDest = numLimpio.startsWith('57') ? numLimpio : '57' + numLimpio;
 
-  const msgTexto = 
-    `\u00A1Hola ${nombreAliado}! \u{1F3E2}\n\n` +
-    `Tenemos un cliente interesado en agendar visita para la siguiente propiedad de su inventario:\n\n` +
-    `\u{1F3E1} *Inmueble:* ${propNom} (C\u00F3d. ${cita.codigo || '\u2014'})\n` +
-    (propPrecio ? `\u{1F4B0} *Precio:* ${propPrecio}\n` : '') +
-    `\u{1F4C5} *Fecha solicitada:* ${fechaLeg}\n` +
-    `\u{1F552} *Hora solicitada:* ${horaLeg}\n` +
-    `\u{1F464} *Cliente:* ${clienteNom}\n\n` +
-    `\u00BFNos confirmas por favor si est\u00E1 disponible en este horario para agendar con el cliente? \u00A1Muchas gracias!\n` +
-    `\u2014 *ICDE Inmobiliaria*`;
+  let msgTexto = '';
+  if (esDirecta) {
+    const saludo = nombreDestinatario ? `¡Hola Sr(a). ${nombreDestinatario}!` : `¡Hola!`;
+    msgTexto = 
+      `${saludo} 👋🏼\n\n` +
+      `Le saludamos de *ICDE Inmobiliaria*. Tenemos un cliente interesado en agendar una visita a su inmueble:\n\n` +
+      `🏠 *Inmueble:* ${propNom} (Cód. ${cita.codigo || '—'})\n` +
+      (propPrecio ? `💰 *Precio:* ${propPrecio}\n` : '') +
+      `📅 *Fecha solicitada:* ${fechaLeg}\n` +
+      `⏰ *Hora solicitada:* ${horaLeg}\n` +
+      `👤 *Cliente:* ${clienteNom}\n\n` +
+      `¿Nos confirma por favor si tiene disponibilidad para atender la visita en este horario? ¡Muchas gracias!\n` +
+      `— *ICDE Inmobiliaria*`;
+  } else {
+    msgTexto = 
+      `¡Hola ${nombreDestinatario}! 🏢\n\n` +
+      `Tenemos un cliente interesado en agendar visita para la siguiente propiedad de su inventario:\n\n` +
+      `🏠 *Inmueble:* ${propNom} (Cód. ${cita.codigo || '—'})\n` +
+      (propPrecio ? `💰 *Precio:* ${propPrecio}\n` : '') +
+      `📅 *Fecha solicitada:* ${fechaLeg}\n` +
+      `⏰ *Hora solicitada:* ${horaLeg}\n` +
+      `👤 *Cliente:* ${clienteNom}\n\n` +
+      `¿Nos confirmas por favor si está disponible en este horario para agendar con el cliente? ¡Muchas gracias!\n` +
+      `— *ICDE Inmobiliaria*`;
+  }
 
   const msg = encodeURIComponent(msgTexto);
   const waUrl = `https://api.whatsapp.com/send?phone=${waNumDest}&text=${msg}`;
   window.open(waUrl, '_blank');
-  toast(`✅ Solicitud enviada por WhatsApp a ${nombreAliado} (${numLimpio})`, 'success');
 
-  // Activar el botón de confirmar al cliente ahora que ya se notificó al aliado
+  const toastLabel = esDirecta 
+    ? `al propietario (${nombreDestinatario ? nombreDestinatario + ' - ' : ''}${numLimpio})` 
+    : `a ${nombreDestinatario} (${numLimpio})`;
+  toast(`✅ Solicitud enviada por WhatsApp ${toastLabel}`, 'success');
+
+  // Activar el botón de confirmar al cliente ahora que ya se notificó
   const safeId = citaId.replace(/[^a-z0-9]/gi, '_');
   const btnConfirmar = document.getElementById('btnConfirmarCliente_' + safeId);
   if (btnConfirmar) {
