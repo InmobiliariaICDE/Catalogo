@@ -387,6 +387,25 @@ textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
   border-left: 3px solid #ec4899 !important;
 }
 
+/* ═══ PARPADEO ROSADO DEL BOTÓN DE TAB CITAS ═══ */
+@keyframes parpadeoCitasTab {
+  0%,100% { 
+    box-shadow: 3px 3px 6px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.1), inset -1px -1px 0px rgba(0,0,0,0.3), 0 0 0 0 rgba(236,72,153,0);
+    border-color: transparent;
+    color: #C0C0C0;
+  }
+  50% { 
+    box-shadow: 3px 3px 6px rgba(0,0,0,0.4), inset 1px 1px 0px rgba(255,255,255,0.1), inset -1px -1px 0px rgba(0,0,0,0.3), 0 0 18px 6px rgba(236,72,153,0.55);
+    border-color: rgba(236,72,153,0.8);
+    color: #fff;
+  }
+}
+.tab-citas-alerta {
+  animation: parpadeoCitasTab 1.4s ease-in-out infinite !important;
+  border: 1px solid transparent !important;
+  background: rgba(236,72,153,0.12) !important;
+}
+
 
 /* BADGES ETAPAS DE VENTA (5 y 6) JUNTO AL NOMBRE DEL LEAD */
 .lead-stage-badges {
@@ -4071,7 +4090,7 @@ html, body {
     <div class="tabs">
       <button class="tab active" onclick="showTab('nuevo')">🏡 Catálogo</button>
       <button class="tab" onclick="showTab('leads')">👥 Leads</button>
-      <button class="tab" onclick="showTab('citas')">📅 Citas</button>
+      <button class="tab" id="tabCitas" onclick="showTab('citas')">📅 Citas</button>
       <button class="tab" onclick="showTab('administracion')">💼 Administración</button>
       <button class="tab" onclick="showTab('contabilidad')">💰 Contabilidad</button>
     </div>
@@ -11612,6 +11631,7 @@ function aplicarFiltroYBusquedaCitas(){
     filtered = filtered.filter(c => norm(c.cliente || '').includes(normalizedTerm) || norm(c.celular || '').includes(normalizedTerm) || norm(c.codigo || '').includes(normalizedTerm));
   }
 
+  actualizarAlertaCitasPendientes();
   if (citasGrillaActive) {
     // In grid mode: just show the grid (it reads from global citas[])
     renderCitasGrilla();
@@ -11619,6 +11639,32 @@ function aplicarFiltroYBusquedaCitas(){
     renderCitasBody(filtered);
   }
 }
+
+function actualizarAlertaCitasPendientes() {
+  try {
+    let tienePendiente = false;
+    if (typeof citas !== 'undefined' && Array.isArray(citas)) {
+      if (citas.some(c => c && c.estado === 'solicito_visita')) tienePendiente = true;
+    }
+    if (!tienePendiente && typeof leads !== 'undefined' && Array.isArray(leads)) {
+      if (leads.some(l => (l.visitas || []).some(v => v && v.estado === 'solicito_visita'))) tienePendiente = true;
+    }
+    const tabBtn = document.getElementById('tabCitas');
+    if (tabBtn) {
+      if (tienePendiente) {
+        tabBtn.classList.add('tab-citas-alerta');
+      } else {
+        tabBtn.classList.remove('tab-citas-alerta');
+      }
+    }
+  } catch(e) {
+    console.error("Error en actualizarAlertaCitasPendientes:", e);
+  }
+}
+
+// Actualizar alerta del botón Citas automáticamente cada 3 segundos
+setInterval(actualizarAlertaCitasPendientes, 3000);
+
 
 function renderPedidosInmob(){
   const peds = leads.filter(l => l.tipo === 'inmobiliaria');

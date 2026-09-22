@@ -7715,10 +7715,6 @@ font-weight: 500;
                             <span class="label-icon">📅</span> Seleccione día de la visita <span class="required-star">*</span>
                         </label>
                         <div class="dia-selection-wrapper">
-                            <div class="chips-dia-shortcuts" id="chipsDiaShortcuts">
-                                <button type="button" class="chip-shortcut" data-day="manana">Mañana</button>
-                                <button type="button" class="chip-shortcut" data-day="finsemana">Fin de semana</button>
-                            </div>
                             <input type="date" id="agendarFechaInput" class="form-input-agendar input-date" required />
                         </div>
                     </div>
@@ -11383,7 +11379,6 @@ document.head.appendChild(schemaScript);
                         preaprobadoSeleccionado = "";
                         document.querySelectorAll("#chipsPagoContainer .chip-pago").forEach(c => c.classList.remove("selected"));
                         document.querySelectorAll("#chipsPreaprobadoContainer .chip-sub").forEach(c => c.classList.remove("selected"));
-                        document.querySelectorAll("#chipsDiaShortcuts .chip-shortcut").forEach(c => c.classList.remove("active"));
                         document.querySelectorAll(".chip-hora-exacta").forEach(c => c.classList.remove("active"));
                         
                         const panel = document.getElementById("panelCreditoContainer");
@@ -11399,13 +11394,11 @@ document.head.appendChild(schemaScript);
                         if (phoneInput) phoneInput.value = "";
                         if (bancoInput) bancoInput.value = "";
 
-                        // Seleccionar por defecto "Mañana" en fecha
+                        // Seleccionar por defecto la fecha de mañana en el selector de fecha
                         if (fechaInput) {
                             const d = new Date();
                             d.setDate(d.getDate() + 1);
                             fechaInput.value = d.toISOString().split("T")[0];
-                            const chipManana = document.querySelector('#chipsDiaShortcuts .chip-shortcut[data-day="manana"]');
-                            if (chipManana) chipManana.classList.add("active");
                         }
 
                         // Hora de la visita inicia sin seleccionar
