@@ -4215,7 +4215,10 @@ html, body {
     <div style="padding: 14px 20px; background: rgba(0,0,0,0.45); border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
       <button class="btn btn-secondary btn-sm" onclick="closeModal('tarjetaCitaModal')" style="padding: 8px 18px; border-radius:10px;">Cerrar</button>
       <div style="display: flex; gap: 8px; align-items: center;">
-        <button class="btn btn-primary btn-sm" id="btnEditarDesdeTarjeta" style="padding: 8px 22px; font-weight: 700; gap: 8px; border-radius:10px; background: linear-gradient(135deg, #d4a84b, #a47b2a); border:none; box-shadow:0 4px 15px rgba(212,168,75,0.3);">
+        <button class="btn btn-danger btn-sm" id="btnDescartarDesdeTarjeta" style="padding: 8px 16px; font-weight: 700; gap: 6px; border-radius:10px; background: rgba(239,68,68,0.18); border: 1px solid rgba(239,68,68,0.4); color: #f87171; cursor: pointer;">
+          🗑 Eliminar Cita
+        </button>
+        <button class="btn btn-primary btn-sm" id="btnEditarDesdeTarjeta" style="padding: 8px 22px; font-weight: 700; gap: 8px; border-radius:10px; background: linear-gradient(135deg, #d4a84b, #a47b2a); border:none; box-shadow:0 4px 15px rgba(212,168,75,0.3); cursor: pointer;">
           ✏️ Editar Cita
         </button>
       </div>
@@ -11289,6 +11292,13 @@ function abrirTarjetaCitaModal(citaId) {
     };
   }
 
+  const btnDescartar = document.getElementById('btnDescartarDesdeTarjeta');
+  if (btnDescartar) {
+    btnDescartar.onclick = () => {
+      descartarCitaPreservandoLead(citaId);
+    };
+  }
+
   const modal = document.getElementById('tarjetaCitaModal');
   if (modal) {
     modal.classList.add('open');
@@ -11363,6 +11373,61 @@ function confirmarCitaSolicitada(citaId) {
   }
 
   if (currentTab === 'citas') renderCitas();
+}
+
+function descartarCitaPreservandoLead(citaId) {
+  citaId = String(citaId || '').trim();
+  if (!citaId) return;
+  if (!confirm('¿Deseas eliminar esta cita del horario? El cliente/lead se conservará perfectamente guardado en tu lista del CRM.')) return;
+
+  // 1. Eliminar la cita de la agenda global
+  const cIdx = citas.findIndex(c => c && String(c.id).trim() === citaId);
+  let citaTarget = null;
+  if (cIdx >= 0) {
+    citaTarget = citas[cIdx];
+    citas.splice(cIdx, 1);
+  }
+
+  // 2. Buscar y mantener el Lead sin borrarlo
+  let leadTarget = null;
+  if (typeof leads !== 'undefined' && Array.isArray(leads)) {
+    leads.forEach(l => {
+      if (l.visitas) {
+        const vIdx = l.visitas.findIndex(v => v && String(v.id).trim() === citaId);
+        if (vIdx >= 0) {
+          l.visitas.splice(vIdx, 1);
+          leadTarget = l;
+        }
+      }
+    });
+
+    if (!leadTarget && citaTarget) {
+      const celNum = String(citaTarget.celular || '').replace(/\D/g, '');
+      if (celNum) {
+        leadTarget = leads.find(l => {
+          const c = String(l.celular || '').replace(/\D/g, '');
+          return c && (c === celNum || c.endsWith(celNum) || celNum.endsWith(c));
+        });
+      }
+    }
+  }
+
+  // 3. Persistir Lead e informar cambios a Google Sheets / LocalStorage
+  saveLeads();
+  if (leadTarget) {
+    syncSheets(leadTarget); // Garantiza que el Lead continúe guardado en CRM_Leads
+  }
+  syncDeleteCita(citaId); // Borra únicamente la cita de la agenda Excel CRM_Citas
+
+  if (typeof actualizarAlertaCitasPendientes === 'function') {
+    actualizarAlertaCitasPendientes();
+  }
+
+  closeModal('tarjetaCitaModal');
+  toast('Cita eliminada. El lead se mantiene guardado en tu lista de Leads ✓', 'success');
+
+  if (currentTab === 'citas') renderCitas();
+  if (currentLeadId && leadTarget && String(currentLeadId) === String(leadTarget.id)) renderSidePanel(leadTarget);
 }
 
 // ═══════════════════════════════════════════════════════
