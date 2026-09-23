@@ -1318,23 +1318,39 @@ function renderLeadsBody(lista){
   
   const getNumPropsLead = l => (l.propsEnviadas || []).length + (l.visitas || []).length + (l.propEtapas && typeof l.propEtapas === 'object' ? Object.keys(l.propEtapas).length : 0);
 
+  const getOfertasCount = l => {
+    let count = 0;
+    if (l.visitas && Array.isArray(l.visitas)) {
+      count += l.visitas.filter(v => v && (v.oferto === 'si' || (v.oferta && String(v.oferta).trim() !== ''))).length;
+    }
+    if (l.ofertas && Array.isArray(l.ofertas)) {
+      count += l.ofertas.length;
+    }
+    return count;
+  };
+
   lista.sort((a,b) => {
     // 0. Prioridad Absoluta: Ordenar por Etapa del Proceso (6 > 5 > 4 > 3 > 2 > 1 > 0)
     const stA = typeof obtenerEtapaMaximaLead === 'function' ? obtenerEtapaMaximaLead(a) : 0;
     const stB = typeof obtenerEtapaMaximaLead === 'function' ? obtenerEtapaMaximaLead(b) : 0;
     if (stA !== stB) return stB - stA;
 
-    // 1. Número de propiedades / interés registrado (Más propiedades arriba)
+    // 1. Primario dentro de la etapa: Ofertas realizadas (Con oferta primero)
+    const ofA = getOfertasCount(a);
+    const ofB = getOfertasCount(b);
+    if (ofA !== ofB) return ofB - ofA;
+
+    // 2. Secundario: Etiqueta (Activo > Tibio > Inactivo)
+    const oEtA = ordenEtiqueta[a.etiqueta] || 99;
+    const oEtB = ordenEtiqueta[b.etiqueta] || 99;
+    if (oEtA !== oEtB) return oEtA - oEtB;
+
+    // 3. Terciario: Número de propiedades / interés registrado (Más propiedades arriba)
     const npA = getNumPropsLead(a);
     const npB = getNumPropsLead(b);
     if (npA !== npB) return npB - npA;
 
-    // 2. Primario: Etiqueta (Activo > Tibio > Inactivo)
-    const oEtA = ordenEtiqueta[a.etiqueta] || 99;
-    const oEtB = ordenEtiqueta[b.etiqueta] || 99;
-    if (oEtA !== oEtB) return oEtA - oEtB;
-    
-    // 3. Secundario: Estado
+    // 4. Cuaternario: Estado
     const oEsA = ordenEstado[a.estado] || 99;
     const oEsB = ordenEstado[b.estado] || 99;
     if (oEsA !== oEsB) return oEsA - oEsB;
