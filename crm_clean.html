@@ -1810,16 +1810,32 @@ function renderEtapasLeadBadges(lead) {
 }
 
 function obtenerEtapaPropiedad(lead, cod) {
-  if (lead && lead.propEtapas && lead.propEtapas[cod]) {
+  if (!lead || !cod) return 1;
+
+  let v = ((lead ? lead.visitas : []) || []).find(x => x && String(x.codigo||'').trim() === String(cod).trim());
+  if (!v && typeof citas !== 'undefined' && Array.isArray(citas) && lead) {
+    const cel = String(lead.celular || '').replace(/\D/g, '');
+    const nom = String(lead.nombre || '').trim().toLowerCase();
+    v = citas.find(c => {
+      if (!c || String(c.codigo||'').trim() !== String(cod).trim()) return false;
+      const cCel = String(c.celular || '').replace(/\D/g, '');
+      const cNom = String(c.cliente || '').trim().toLowerCase();
+      return (cel && cCel && (cel === cCel || cel.endsWith(cCel) || cCel.endsWith(cel))) || (nom && cNom && nom === cNom);
+    });
+  }
+
+  if (v) {
+    if (v.procesoVenta || v.estado === 'proceso_venta') return 6; // 6: Proceso de venta
+    if (v.oferto === 'si' || v.estado === 'ok') return 5; // 5: OK
+    if (v.estado === 'realizada') return 4; // 4: Visitó
+    if (v.estado === 'agendada') return 3; // 3: Visita agendada
+    if (v.estado === 'solicito_visita') return 2; // 2: Solicitó visita
+  }
+
+  if (lead && lead.propEtapas && typeof lead.propEtapas[cod] !== 'undefined' && lead.propEtapas[cod] !== null) {
     return Number(lead.propEtapas[cod]);
   }
-  const v = ((lead ? lead.visitas : []) || []).find(x => x.codigo === cod);
-  if (!v) return 1; // 1: Disponible
-  if (v.procesoVenta || v.estado === 'proceso_venta') return 6; // 6: Proceso de venta
-  if (v.oferto === 'si' || v.estado === 'ok') return 5; // 5: OK
-  if (v.estado === 'realizada') return 4; // 4: Visitó
-  if (v.estado === 'agendada') return 3; // 3: Visita agendada
-  if (v.estado === 'solicito_visita') return 2; // 2: Solicitó visita
+
   return 1;
 }
 

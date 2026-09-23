@@ -8739,16 +8739,37 @@ function obtenerEtapaMaximaLead(lead) {
 
   const isLeadInactivo = lead.etiqueta === 'inactivo' || lead.estado === 'inactivo';
 
-  // ─── FUENTE ÚNICA: "Propiedades e Interés" ────────────────────────────────
-  // El badge refleja SOLO lo que aparece en el panel "Propiedades e Interés".
-  // Si no hay propiedades enviadas → sin badge (0).
-  if (!lead.propsEnviadas || !Array.isArray(lead.propsEnviadas) || lead.propsEnviadas.length === 0) {
+  // Recopilar todos los códigos de propiedades asociados al lead
+  const codsSet = new Set(lead.propsEnviadas || []);
+  if (lead.visitas && Array.isArray(lead.visitas)) {
+    lead.visitas.forEach(v => { if (v && v.codigo) codsSet.add(v.codigo); });
+  }
+  if (lead.propEtapas && typeof lead.propEtapas === 'object') {
+    Object.keys(lead.propEtapas).forEach(c => { if (c && c !== '_general') codsSet.add(c); });
+  }
+  if (typeof citas !== 'undefined' && Array.isArray(citas) && lead) {
+    const cel = String(lead.celular || '').replace(/\D/g, '');
+    const nom = String(lead.nombre || '').trim().toLowerCase();
+    citas.forEach(c => {
+      if (!c || !c.codigo) return;
+      const cCel = String(c.celular || '').replace(/\D/g, '');
+      const cNom = String(c.cliente || '').trim().toLowerCase();
+      if ((cel && cCel && (cel === cCel || cel.endsWith(cCel) || cCel.endsWith(cel))) || (nom && cNom && nom === cNom)) {
+        codsSet.add(c.codigo);
+      }
+    });
+  }
+
+  if (codsSet.size === 0) {
+    if (lead.propEtapas && lead.propEtapas['_general']) {
+      const gSt = Number(lead.propEtapas['_general']);
+      if (isLeadInactivo && gSt < 5) return 0;
+      return gSt;
+    }
     return 0;
   }
 
-  // Ordenar igual que renderPanelPropsEnviadas: mayor etapa primero.
-  // La etapa de la PRIMERA propiedad del listado es la que se muestra en el badge.
-  const sorted = [...lead.propsEnviadas].sort((a, b) =>
+  const sorted = Array.from(codsSet).sort((a, b) =>
     obtenerEtapaPropiedad(lead, b) - obtenerEtapaPropiedad(lead, a)
   );
   const firstStage = obtenerEtapaPropiedad(lead, sorted[0]);
@@ -9015,9 +9036,7 @@ function renderEtapasLeadBadges(lead) {
 }
 
 function obtenerEtapaPropiedad(lead, cod) {
-  if (lead && lead.propEtapas && typeof lead.propEtapas[cod] !== 'undefined' && lead.propEtapas[cod] !== null) {
-    return Number(lead.propEtapas[cod]);
-  }
+  if (!lead || !cod) return 1;
 
   let v = (lead && lead.visitas) ? lead.visitas.find(x => x && String(x.codigo||'').trim() === String(cod).trim()) : null;
   if (!v && typeof citas !== 'undefined' && Array.isArray(citas) && lead) {
@@ -9037,6 +9056,10 @@ function obtenerEtapaPropiedad(lead, cod) {
     if (v.estado === 'realizada') return 4;
     if (v.estado === 'agendada') return 3;
     if (v.estado === 'solicito_visita') return 2;
+  }
+
+  if (lead && lead.propEtapas && typeof lead.propEtapas[cod] !== 'undefined' && lead.propEtapas[cod] !== null) {
+    return Number(lead.propEtapas[cod]);
   }
 
   return 1;
