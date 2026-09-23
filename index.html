@@ -11790,6 +11790,34 @@ document.head.appendChild(schemaScript);
                                 return c && celNum && (c === celNum || c.endsWith(celNum) || celNum.endsWith(c));
                             });
 
+                            // Capturar filtros activos de la pagina para el perfil del cliente
+                            // Claves compatibles con filtrarProps() de admin.html
+                            const filtrosActivos = (typeof filtros !== 'undefined') ? filtros : {};
+                            const filtrosCliente = {};
+                            if (filtrosActivos['Tipo de inmueble'] && filtrosActivos['Tipo de inmueble'].length > 0)
+                                filtrosCliente.tipoInmueble = filtrosActivos['Tipo de inmueble'];
+                            if (filtrosActivos['minPrice'] != null && filtrosActivos['minPrice'] !== '')
+                                filtrosCliente.minPrice = filtrosActivos['minPrice'];
+                            if (filtrosActivos['maxPrice'] != null && filtrosActivos['maxPrice'] !== '')
+                                filtrosCliente.maxPrice = filtrosActivos['maxPrice'];
+                            if (filtrosActivos['Zona'] && filtrosActivos['Zona'].length > 0)
+                                filtrosCliente.zona = filtrosActivos['Zona'];
+                            if (filtrosActivos['Barrio'] && filtrosActivos['Barrio'].length > 0)
+                                filtrosCliente.barrio = filtrosActivos['Barrio'];
+                            if (filtrosActivos['Estrato'] && filtrosActivos['Estrato'].length > 0)
+                                filtrosCliente.estrato = filtrosActivos['Estrato'];
+                            if (filtrosActivos['Habitaciones'] && filtrosActivos['Habitaciones'].length > 0)
+                                filtrosCliente.habitaciones = filtrosActivos['Habitaciones'];
+                            if (filtrosActivos['Garaje'] && filtrosActivos['Garaje'].length > 0)
+                                filtrosCliente.garaje = filtrosActivos['Garaje'];
+                            if (filtrosActivos['Pisos'] && filtrosActivos['Pisos'].length > 0)
+                                filtrosCliente.pisos = filtrosActivos['Pisos'];
+                            if (filtrosActivos['Conjunto'] && filtrosActivos['Conjunto'].length > 0)
+                                filtrosCliente.conjunto = filtrosActivos['Conjunto'];
+                            if (metodoPagoTexto) filtrosCliente.metodoPago = arrayMetodos;
+                            if (preaprobadoVal) filtrosCliente.preaprobado = preaprobadoVal;
+                            if (bancoVal) filtrosCliente.bancoCredito = bancoVal;
+
                             if (targetLead) {
                                 if (targetLead.estado === 'inactivo' || !targetLead.estado) targetLead.estado = 'visita';
                                 if (!Array.isArray(targetLead.visitas)) targetLead.visitas = [];
@@ -11798,16 +11826,22 @@ document.head.appendChild(schemaScript);
                                     if (!Array.isArray(targetLead.propsEnviadas)) targetLead.propsEnviadas = [];
                                     if (!targetLead.propsEnviadas.includes(codInmuebleFinal)) targetLead.propsEnviadas.push(codInmuebleFinal);
                                 }
+                                if (Object.keys(filtrosCliente).length > 0) {
+                                    if (!targetLead.filtros) targetLead.filtros = {};
+                                    Object.assign(targetLead.filtros, filtrosCliente);
+                                }
+                                if (arrayMetodos.length > 0) targetLead.metodoPago = arrayMetodos;
                                 targetLead._localEditedAt = new Date().toISOString();
                             } else {
                                 targetLead = {
-                                    id: "LEAD-" + Date.now(),
-                                    tipo: "particular",
+                                    id: 'LEAD-' + Date.now(),
+                                    tipo: 'particular',
                                     nombre: nombre,
                                     celular: phoneDisplay,
-                                    estado: "visita",
-                                    etiqueta: "activo",
-                                    metodoPago: metodoPagoTexto ? [metodoPagoTexto] : [],
+                                    estado: 'visita',
+                                    etiqueta: 'activo',
+                                    metodoPago: arrayMetodos.length > 0 ? arrayMetodos : (metodoPagoTexto ? [metodoPagoTexto] : []),
+                                    filtros: filtrosCliente,
                                     propsEnviadas: codInmuebleFinal ? [codInmuebleFinal] : [],
                                     visitas: [nuevaCita],
                                     creadoEn: new Date().toISOString()
