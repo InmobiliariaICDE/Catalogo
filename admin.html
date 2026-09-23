@@ -8458,10 +8458,22 @@ function renderSidePanel(lead){
   const currentMatches = filtrarProps(lead.filtros);
   const pend = currentMatches.filter(d => !(lead.propsEnviadas || []).includes(d['Código']));
   const total = currentMatches.length, env = (lead.propsEnviadas || []).length;
-  const ftxt = Object.entries(lead.filtros||{}).filter(([,v])=>v!==undefined && v!==null && String(v).length).map(([k,v])=>{
-    const val = Array.isArray(v) ? v.join(', ') : v;
-    return `${k}: ${val}`;
-  }).join(' · ')||'Sin filtros';
+  const _fLabels = {
+    tipoInmueble:'Tipo', zona:'Zona', barrio:'Barrio', estrato:'Estrato',
+    habitaciones:'Hab.', garaje:'Garaje', pisos:'Pisos', conjunto:'Conjunto',
+    minPrice:'Precio mín.', maxPrice:'Precio máx.', metodoPago:'Pago',
+    preaprobado:'Preaprobado', bancoCredito:'Banco', buscar:'Búsqueda'
+  };
+  const _fEntries = Object.entries(lead.filtros||{}).filter(([,v])=>v!==undefined && v!==null && String(v).trim().length && !(Array.isArray(v)&&v.length===0));
+  const ftxt = _fEntries.length
+    ? _fEntries.map(([k,v])=>{
+        const label = _fLabels[k]||k;
+        const val = Array.isArray(v)
+          ? v.map(x=>`<span style="display:inline-block;background:rgba(212,168,75,0.15);color:var(--gold);padding:2px 7px;border-radius:20px;font-size:11px;margin:2px 2px 2px 0;">${x}</span>`).join('')
+          : `<span style="display:inline-block;background:rgba(212,168,75,0.1);color:var(--gold);padding:2px 7px;border-radius:20px;font-size:11px;margin:2px 2px 2px 0;">${typeof v==='number'?'$'+Number(v).toLocaleString('es-CO'):v}</span>`;
+        return `<div style="margin-bottom:6px;display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;"><span style="font-size:11px;color:#888;font-weight:600;white-space:nowrap;padding-top:3px;">${label}:</span><span style="display:flex;flex-wrap:wrap;">${val}</span></div>`;
+      }).join('')
+    : '<span style="color:#555;font-size:12px;">Sin filtros registrados</span>';
   const pct = total > 0 ? Math.round(env / total * 100) : 0;
   
   document.getElementById('sidePanelContent').innerHTML=`
