@@ -9210,6 +9210,28 @@ function renderPanelPropsEnviadas(lead){
     const stepperHTML = renderPropChecklist(lead.id, cod, currentStage);
     const codDisp = p ? (p['Código'] || p['Codigo'] || cod) : cod;
 
+    const isNotesActive = currentStage >= 4;
+    const vNotas = v ? (v.notas || v.observaciones || '') : '';
+
+    let notesBtnStyle = `padding:6px; min-width:32px; font-size:13px; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; transition:all 0.2s; `;
+    if (isNotesActive) {
+      if (vNotas) {
+        notesBtnStyle += `background:rgba(34,197,94,0.18); border:1px solid rgba(34,197,94,0.5); color:#22c55e; cursor:pointer; opacity:1; box-shadow:0 0 8px rgba(34,197,94,0.3);`;
+      } else {
+        notesBtnStyle += `background:rgba(212,168,75,0.15); border:1px solid rgba(212,168,75,0.45); color:var(--gold); cursor:pointer; opacity:1; box-shadow:0 0 6px rgba(212,168,75,0.2);`;
+      }
+    } else {
+      notesBtnStyle += `background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); color:#666; cursor:not-allowed; opacity:0.3;`;
+    }
+
+    const notesBtnTitle = isNotesActive 
+      ? (vNotas ? `Ver/editar resultado y notas de la cita: "${vNotas.substring(0,35)}..."` : 'Ver / registrar resultado y notas de la cita') 
+      : 'Notas inhabilitadas (Disponibles a partir de Etapa 4: Visitó)';
+
+    const notesBtnOnClick = isNotesActive
+      ? `event.stopPropagation(); abrirFeedbackModalPorProp('${lead.id}', '${codDisp}')`
+      : `event.stopPropagation(); toast('Las notas de la cita se activan a partir de la Etapa 4 (Visitó)', 'info')`;
+
     return `
       <div class="enviada-item" style="display:flex; flex-direction:column; gap:6px; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:10px; margin-bottom:10px; transition: all 0.2s;">
         <div style="display:flex; gap:10px; align-items:center; width:100%;">
@@ -9225,6 +9247,9 @@ function renderPanelPropsEnviadas(lead){
             </div>
           </div>
           <div style="display:flex; gap:6px; flex-shrink:0;">
+            <button class="btn btn-sm" style="${notesBtnStyle}" onclick="${notesBtnOnClick}" title="${notesBtnTitle}">
+              📝${vNotas && isNotesActive ? '<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#22c55e; margin-left:3px; vertical-align:top;"></span>' : ''}
+            </button>
             <button class="btn btn-sm ${v?'btn-secondary':'btn-primary'}" style="padding:6px; min-width:32px;" onclick="event.stopPropagation();abrirVisitaModal('${lead.id}','${codDisp}')" title="${v ? 'Editar visita' : 'Agendar visita'}">
               ${v ? '✏️' : '🗓'}
             </button>
@@ -11122,61 +11147,122 @@ function abrirFeedbackModal(cita){
   document.getElementById('feedbackCitaInfo').innerHTML = `
     <div style="font-weight:700; color:#fff; font-size:15px;">${cita.cliente}</div>
     <div style="font-size:12px; color:var(--gold); margin-top:4px; font-weight:600;">📍 Inmueble: ${cita.codigo}</div>
-    <div style="font-size:12px; color:#888; margin-top:2px;">📅 Fecha: ${cita.fecha} a las ${cita.hora || '--:--'}</div>
+    <div style="font-size:12px; color:#888; margin-top:2px;">📅 Fecha: ${cita.fecha || ''} ${cita.hora ? `a las ${cita.hora}` : ''}</div>
   `;
-  document.getElementById('feedbackNotas').value = cita.observaciones || '';
-  document.getElementById('feedbackEstado').value = 'realizada';
+  document.getElementById('feedbackNotas').value = cita.observaciones || cita.notas || '';
+  document.getElementById('feedbackEstado').value = cita.estado || 'realizada';
   document.getElementById('feedbackModal').classList.add('open');
+}
+
+function abrirFeedbackModalPorProp(leadId, cod){
+  const lead = leads.find(l => String(l.id) === String(leadId));
+  if (!lead) return;
+  const p = (typeof buscarPropiedadGlobal === 'function') ? buscarPropiedadGlobal(cod) : allProps.find(d => d['Código'] === cod);
+  const codDisp = p ? (p['Código'] || p['Codigo'] || cod) : cod;
+  if (!lead.visitas) lead.visitas = [];
+  let v = lead.visitas.find(x => x && (String(x.codigo||'').trim() === String(codDisp).trim() || String(x.codigo||'').trim() === String(cod).trim()));
+  
+  const citaId = (v && v.id) ? v.id : ('v_' + leadId + '_' + String(codDisp).replace(/\s+/g, '_'));
+  if (v && !v.id) v.id = citaId;
+
+  let cita = (citas || []).find(c => String(c.id) === String(citaId) || (String(c.leadId) === String(leadId) && String(c.codigo) === String(codDisp)));
+  if (!cita) {
+    cita = {
+      id: citaId,
+      leadId: leadId,
+      cliente: lead.nombre || 'Cliente',
+      codigo: codDisp,
+      fecha: v ? (v.fecha || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
+      hora: v ? (v.hora || '') : '',
+      observaciones: v ? (v.notas || v.observaciones || '') : '',
+      estado: v ? (v.estado || 'realizada') : 'realizada'
+    };
+    if (typeof citas !== 'undefined' && Array.isArray(citas)) citas.push(cita);
+  } else {
+    if (v) {
+      cita.observaciones = v.notas || v.observaciones || cita.observaciones || '';
+      cita.notas = cita.observaciones;
+    }
+  }
+
+  abrirFeedbackModal(cita);
 }
 
 function omitirFeedback(){
   const id = document.getElementById('feedbackCitaId').value;
-  if(!feedbackOmitidos.includes(String(id))) {
+  if(typeof feedbackOmitidos !== 'undefined' && Array.isArray(feedbackOmitidos) && !feedbackOmitidos.includes(String(id))) {
     feedbackOmitidos.push(String(id));
     localStorage.setItem('icde_feedback_omitidos', JSON.stringify(feedbackOmitidos));
   }
   closeModal('feedbackModal');
-  setTimeout(checkCitasFeedback, 1000);
+  if (typeof checkCitasFeedback === 'function') setTimeout(checkCitasFeedback, 1000);
 }
 
 async function guardarFeedback(){
   const id = document.getElementById('feedbackCitaId').value;
   const notas = document.getElementById('feedbackNotas').value;
   const estado = document.getElementById('feedbackEstado').value;
-  const cita = citas.find(c => String(c.id) === String(id));
-  if(cita){
+  let cita = (citas || []).find(c => String(c.id) === String(id));
+  let lead = null;
+  if (cita) {
     cita.observaciones = notas;
     cita.notas = notas;
     cita.estado = estado;
-    const lead = leads.find(l => String(l.id) === String(cita.leadId));
-    if(lead && lead.visitas){
-      // Buscar por id primero, luego por codigo+fecha como fallback
-      const v = lead.visitas.find(x => String(x.id) === String(id)) ||
-                lead.visitas.find(x => x.codigo === cita.codigo && x.fecha === cita.fecha);
-      if(v) {
-        v.estado = estado;
-        v.notas = notas;
-        v.observaciones = notas;
-        // Asegurar que el ID esté guardado para futuros matches
-        if(!v.id) v.id = id;
-      }
+    lead = (leads || []).find(l => String(l.id) === String(cita.leadId));
+  } else {
+    const parts = id.split('_');
+    if (parts.length >= 3 && parts[0] === 'v') {
+      const lId = parts[1];
+      lead = (leads || []).find(l => String(l.id) === String(lId));
     }
-    saveLeads();
-    syncCita(cita);
-    if(lead) {
-      syncSheets(lead);
-    }
-    if(currentTab === 'citas') renderCitas();
-    toast('Feedback guardado ✓');
   }
-  // Marcar como omitido localmente para que no vuelva a saltar en esta sesion/dispositivo
-  if(!feedbackOmitidos.includes(String(id))) {
+
+  if (lead) {
+    if (!lead.visitas) lead.visitas = [];
+    let v = lead.visitas.find(x => x && String(x.id) === String(id));
+    if (!v && cita) {
+      v = lead.visitas.find(x => x && String(x.codigo||'').trim() === String(cita.codigo||'').trim());
+    }
+    if (v) {
+      v.estado = estado;
+      v.notas = notas;
+      v.observaciones = notas;
+      if (!v.id) v.id = id;
+    } else {
+      v = {
+        id: id,
+        codigo: cita ? cita.codigo : (id.split('_')[2] || ''),
+        fecha: cita ? cita.fecha : new Date().toISOString().split('T')[0],
+        hora: cita ? cita.hora : '',
+        estado: estado,
+        notas: notas,
+        observaciones: notas
+      };
+      lead.visitas.push(v);
+    }
+    lead._localEditedAt = Date.now();
+    saveLeads();
+    if (typeof syncSheets === 'function') syncSheets(lead);
+
+    if (typeof currentLeadId !== 'undefined' && String(currentLeadId) === String(lead.id) && typeof renderSidePanel === 'function') {
+      renderSidePanel(lead);
+    }
+  }
+
+  if (cita && typeof syncCita === 'function') {
+    syncCita(cita);
+  }
+  if (typeof currentTab !== 'undefined' && currentTab === 'citas' && typeof renderCitas === 'function') {
+    renderCitas();
+  }
+  toast('Feedback guardado ✓');
+
+  if (typeof feedbackOmitidos !== 'undefined' && Array.isArray(feedbackOmitidos) && !feedbackOmitidos.includes(String(id))) {
     feedbackOmitidos.push(String(id));
     localStorage.setItem('icde_feedback_omitidos', JSON.stringify(feedbackOmitidos));
   }
   closeModal('feedbackModal');
-  // Solo volver a revisar si hay más citas pendientes (con delay para que el save se propague)
-  setTimeout(checkCitasFeedback, 3000);
+  if (typeof checkCitasFeedback === 'function') setTimeout(checkCitasFeedback, 3000);
 }
 
 function getFechaISO(fechaStr) {

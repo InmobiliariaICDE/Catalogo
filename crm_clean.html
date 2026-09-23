@@ -491,6 +491,35 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
   </div>
 </div>
 
+<!-- MODAL FEEDBACK CITAS -->
+<div class="modal-overlay" id="feedbackModal" onclick="if(event.target===this) closeModal('feedbackModal')">
+  <div class="modal-box" style="width:min(450px, 100%); border: 1px solid var(--gold);">
+    <div class="modal-title" style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+      <span style="font-size:24px;">🤔</span> ¿Cómo te fue en la cita?
+    </div>
+    <div id="feedbackCitaInfo" style="background:rgba(212,168,75,0.08); padding:15px; border-radius:12px; margin-bottom:20px; border:1px solid rgba(212,168,75,0.15);">
+    </div>
+    <input type="hidden" id="feedbackCitaId"/>
+    <div class="form-group full">
+      <label class="form-label">Resultado / Notas</label>
+      <textarea class="form-input" id="feedbackNotas" placeholder="Cuéntanos qué pasó, si le gustó, si hará oferta..." style="min-height:100px; background:rgba(255,255,255,0.03);"></textarea>
+    </div>
+    <div class="form-group full" style="margin-top:15px;">
+      <label class="form-label">Actualizar Estado</label>
+      <select class="form-input" id="feedbackEstado">
+        <option value="realizada">✅ Visitada</option>
+        <option value="solicito_visita">💜 Solicitó visita</option>
+        <option value="cancelada">❌ Cancelada</option>
+        <option value="agendada">⏳ Sigue pendiente</option>
+      </select>
+    </div>
+    <div class="modal-footer" style="margin-top:24px; display:flex; gap:10px;">
+      <button class="btn btn-secondary" style="flex:0.4;" onclick="omitirFeedback()">Más tarde</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="guardarFeedback()">Guardar Resultado</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL SETTINGS -->
 <div class="modal-overlay" id="settingsModal">
   <div class="modal-box">
@@ -1940,8 +1969,9 @@ function cambiarEtapaPropiedad(evt, leadId, cod, nuevaEtapa) {
 }
 
 function renderPanelPropsEnviadas(lead){
-  const env = lead.propsEnviadas || [];
-  if(!env.length) return '<div style="color:#555;font-size:13px;padding:12px 0;">No se han enviado propiedades aún</div>';
+  const envRaw = lead.propsEnviadas || [];
+  if(!envRaw.length) return '<div style="color:#555;font-size:13px;padding:12px 0;">No se han enviado propiedades aún</div>';
+  const env = [...envRaw].sort((a, b) => obtenerEtapaPropiedad(lead, b) - obtenerEtapaPropiedad(lead, a));
   return env.map(cod => {
     const p = (typeof buscarPropiedadGlobal === 'function') ? buscarPropiedadGlobal(cod) : allProps.find(d => d['Código'] === cod);
     const v = (lead.visitas || []).find(x => x && (String(x.codigo||'').trim() === String(cod).trim() || (p && String(x.codigo||'').trim() === String(p['Código']||'').trim())));
@@ -1949,6 +1979,7 @@ function renderPanelPropsEnviadas(lead){
     let badges = `<span class="badge badge-enviada">Enviada</span>`;
     if(v){
       if(v.estado==='realizada') badges = `<span class="badge badge-visita">Visitada</span>`;
+      else if(v.estado==='solicito_visita') badges = `<span class="badge badge-solicito">Solicitó Visita</span>`;
       else badges = `<span class="badge badge-agendada">Agendada</span>`;
       if(v.oferto==='si') badges += ` <span class="badge badge-oferta">Oferta</span>`;
     }
@@ -1956,6 +1987,28 @@ function renderPanelPropsEnviadas(lead){
     const currentStage = obtenerEtapaPropiedad(lead, cod);
     const stepperHTML = renderPropChecklist(lead.id, cod, currentStage);
     const codDisp = p ? (p['Código'] || p['Codigo'] || cod) : cod;
+
+    const isNotesActive = currentStage >= 4;
+    const vNotas = v ? (v.notas || v.observaciones || '') : '';
+
+    let notesBtnStyle = `padding:6px; min-width:32px; font-size:13px; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; transition:all 0.2s; `;
+    if (isNotesActive) {
+      if (vNotas) {
+        notesBtnStyle += `background:rgba(34,197,94,0.18); border:1px solid rgba(34,197,94,0.5); color:#22c55e; cursor:pointer; opacity:1; box-shadow:0 0 8px rgba(34,197,94,0.3);`;
+      } else {
+        notesBtnStyle += `background:rgba(212,168,75,0.15); border:1px solid rgba(212,168,75,0.45); color:var(--gold); cursor:pointer; opacity:1; box-shadow:0 0 6px rgba(212,168,75,0.2);`;
+      }
+    } else {
+      notesBtnStyle += `background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); color:#666; cursor:not-allowed; opacity:0.3;`;
+    }
+
+    const notesBtnTitle = isNotesActive 
+      ? (vNotas ? `Ver/editar resultado y notas de la cita: "${vNotas.substring(0,35)}..."` : 'Ver / registrar resultado y notas de la cita') 
+      : 'Notas inhabilitadas (Disponibles a partir de Etapa 4: Visitó)';
+
+    const notesBtnOnClick = isNotesActive
+      ? `event.stopPropagation(); abrirFeedbackModalPorProp('${lead.id}', '${codDisp}')`
+      : `event.stopPropagation(); toast('Las notas de la cita se activan a partir de la Etapa 4 (Visitó)', 'info')`;
 
     return `
       <div class="enviada-item" style="display:flex; flex-direction:column; gap:6px; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px; padding:10px; margin-bottom:10px; transition: all 0.2s;">
@@ -1972,6 +2025,9 @@ function renderPanelPropsEnviadas(lead){
             </div>
           </div>
           <div style="display:flex; gap:6px; flex-shrink:0;">
+            <button class="btn btn-sm" style="${notesBtnStyle}" onclick="${notesBtnOnClick}" title="${notesBtnTitle}">
+              📝${vNotas && isNotesActive ? '<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#22c55e; margin-left:3px; vertical-align:top;"></span>' : ''}
+            </button>
             <button class="btn btn-sm ${v?'btn-secondary':'btn-primary'}" style="padding:6px; min-width:32px;" onclick="event.stopPropagation();abrirVisitaModal('${lead.id}','${codDisp}')" title="${v ? 'Editar visita' : 'Agendar visita'}">
               ${v ? '✏️' : '🗓'}
             </button>
@@ -2479,6 +2535,129 @@ function guardarVisita(){
   
   if(currentLeadId && lead && String(currentLeadId) === String(lead.id)) renderSidePanel(lead);
   if(typeof currentTab !== 'undefined' && currentTab==='citas') renderCitas();
+}
+
+function abrirFeedbackModal(cita){
+  document.getElementById('feedbackCitaId').value = cita.id;
+  document.getElementById('feedbackCitaInfo').innerHTML = `
+    <div style="font-weight:700; color:#fff; font-size:15px;">${cita.cliente}</div>
+    <div style="font-size:12px; color:var(--gold); margin-top:4px; font-weight:600;">📍 Inmueble: ${cita.codigo}</div>
+    <div style="font-size:12px; color:#888; margin-top:2px;">📅 Fecha: ${cita.fecha || ''} ${cita.hora ? `a las ${cita.hora}` : ''}</div>
+  `;
+  document.getElementById('feedbackNotas').value = cita.observaciones || cita.notas || '';
+  document.getElementById('feedbackEstado').value = cita.estado || 'realizada';
+  document.getElementById('feedbackModal').classList.add('open');
+}
+
+function abrirFeedbackModalPorProp(leadId, cod){
+  const lead = leads.find(l => String(l.id) === String(leadId));
+  if (!lead) return;
+  const p = (typeof buscarPropiedadGlobal === 'function') ? buscarPropiedadGlobal(cod) : allProps.find(d => d['Código'] === cod);
+  const codDisp = p ? (p['Código'] || p['Codigo'] || cod) : cod;
+  if (!lead.visitas) lead.visitas = [];
+  let v = lead.visitas.find(x => x && (String(x.codigo||'').trim() === String(codDisp).trim() || String(x.codigo||'').trim() === String(cod).trim()));
+  
+  const citaId = (v && v.id) ? v.id : ('v_' + leadId + '_' + String(codDisp).replace(/\s+/g, '_'));
+  if (v && !v.id) v.id = citaId;
+
+  let cita = (citas || []).find(c => String(c.id) === String(citaId) || (String(c.leadId) === String(leadId) && String(c.codigo) === String(codDisp)));
+  if (!cita) {
+    cita = {
+      id: citaId,
+      leadId: leadId,
+      cliente: lead.nombre || 'Cliente',
+      codigo: codDisp,
+      fecha: v ? (v.fecha || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
+      hora: v ? (v.hora || '') : '',
+      observaciones: v ? (v.notas || v.observaciones || '') : '',
+      estado: v ? (v.estado || 'realizada') : 'realizada'
+    };
+    if (typeof citas !== 'undefined' && Array.isArray(citas)) citas.push(cita);
+  } else {
+    if (v) {
+      cita.observaciones = v.notas || v.observaciones || cita.observaciones || '';
+      cita.notas = cita.observaciones;
+    }
+  }
+
+  abrirFeedbackModal(cita);
+}
+
+function omitirFeedback(){
+  const id = document.getElementById('feedbackCitaId').value;
+  if(typeof feedbackOmitidos !== 'undefined' && Array.isArray(feedbackOmitidos) && !feedbackOmitidos.includes(String(id))) {
+    feedbackOmitidos.push(String(id));
+    localStorage.setItem('icde_feedback_omitidos', JSON.stringify(feedbackOmitidos));
+  }
+  closeModal('feedbackModal');
+  if (typeof checkCitasFeedback === 'function') setTimeout(checkCitasFeedback, 1000);
+}
+
+async function guardarFeedback(){
+  const id = document.getElementById('feedbackCitaId').value;
+  const notas = document.getElementById('feedbackNotas').value;
+  const estado = document.getElementById('feedbackEstado').value;
+  let cita = (citas || []).find(c => String(c.id) === String(id));
+  let lead = null;
+  if (cita) {
+    cita.observaciones = notas;
+    cita.notas = notas;
+    cita.estado = estado;
+    lead = (leads || []).find(l => String(l.id) === String(cita.leadId));
+  } else {
+    const parts = id.split('_');
+    if (parts.length >= 3 && parts[0] === 'v') {
+      const lId = parts[1];
+      lead = (leads || []).find(l => String(l.id) === String(lId));
+    }
+  }
+
+  if (lead) {
+    if (!lead.visitas) lead.visitas = [];
+    let v = lead.visitas.find(x => x && String(x.id) === String(id));
+    if (!v && cita) {
+      v = lead.visitas.find(x => x && String(x.codigo||'').trim() === String(cita.codigo||'').trim());
+    }
+    if (v) {
+      v.estado = estado;
+      v.notas = notas;
+      v.observaciones = notas;
+      if (!v.id) v.id = id;
+    } else {
+      v = {
+        id: id,
+        codigo: cita ? cita.codigo : (id.split('_')[2] || ''),
+        fecha: cita ? cita.fecha : new Date().toISOString().split('T')[0],
+        hora: cita ? cita.hora : '',
+        estado: estado,
+        notas: notas,
+        observaciones: notas
+      };
+      lead.visitas.push(v);
+    }
+    lead._localEditedAt = Date.now();
+    saveLeads();
+    if (typeof syncSheets === 'function') syncSheets(lead);
+
+    if (typeof currentLeadId !== 'undefined' && String(currentLeadId) === String(lead.id) && typeof renderSidePanel === 'function') {
+      renderSidePanel(lead);
+    }
+  }
+
+  if (cita && typeof syncCita === 'function') {
+    syncCita(cita);
+  }
+  if (typeof currentTab !== 'undefined' && currentTab === 'citas' && typeof renderCitas === 'function') {
+    renderCitas();
+  }
+  toast('Feedback guardado ✓');
+
+  if (typeof feedbackOmitidos !== 'undefined' && Array.isArray(feedbackOmitidos) && !feedbackOmitidos.includes(String(id))) {
+    feedbackOmitidos.push(String(id));
+    localStorage.setItem('icde_feedback_omitidos', JSON.stringify(feedbackOmitidos));
+  }
+  closeModal('feedbackModal');
+  if (typeof checkCitasFeedback === 'function') setTimeout(checkCitasFeedback, 3000);
 }
 
 /* ═══════════════════════════════════════════════
