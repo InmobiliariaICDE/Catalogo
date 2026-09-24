@@ -1892,7 +1892,43 @@ function cambiarEtapaPropiedad(evt, leadId, cod, nuevaEtapa) {
     if (typeof evt.preventDefault === 'function') evt.preventDefault();
   }
 
-  const lead = leads.find(l => String(l.id) === String(leadId));
+  let lead = leads.find(l => String(l.id) === String(leadId));
+  if (!lead && typeof currentCitaId !== 'undefined' && currentCitaId) {
+    const citaObj = (typeof citas !== 'undefined' && Array.isArray(citas)) ? citas.find(c => c && String(c.id).trim() === String(currentCitaId).trim()) : null;
+    if (citaObj) {
+      const cel = String(citaObj.celular || '').replace(/\D/g, '');
+      if (cel && typeof leads !== 'undefined' && Array.isArray(leads)) {
+        lead = leads.find(l => {
+          const c = String(l.celular || '').replace(/\D/g, '');
+          return c && (c === cel || c.endsWith(cel) || cel.endsWith(c));
+        });
+      }
+      if (!lead && (citaObj.cliente || citaObj.celular)) {
+        lead = {
+          id: 'LEAD-' + Date.now(),
+          tipo: 'particular',
+          nombre: citaObj.cliente || ('Cliente ' + (citaObj.celular || citaObj.codigo || '')),
+          celular: citaObj.celular || '',
+          notas: 'Lead conservado',
+          metodoPago: citaObj.metodoPago ? [citaObj.metodoPago] : [],
+          estado: 'visita',
+          etiqueta: 'activo',
+          filtros: {},
+          frecuencia: 'manual',
+          maxPorEnvio: 4,
+          nombreInmobiliaria: '',
+          nombreAgente: '',
+          propsFiltradas: [],
+          propsEnviadas: citaObj.codigo ? [citaObj.codigo] : [],
+          proximosEnvios: [],
+          historialEnvios: [],
+          visitas: [citaObj],
+          creadoEn: citaObj.creadoEn || new Date().toISOString()
+        };
+        leads.push(lead);
+      }
+    }
+  }
   if (!lead) return;
   if (!lead.propEtapas) lead.propEtapas = {};
   lead.propEtapas[cod] = nuevaEtapa;
@@ -1991,6 +2027,15 @@ function cambiarEtapaPropiedad(evt, leadId, cod, nuevaEtapa) {
   if (typeof currentTab !== 'undefined' && currentTab === 'leads') {
     if (typeof renderLeadsBody === 'function') renderLeadsBody(leads);
     else if (typeof renderLeads === 'function') renderLeads();
+  }
+  if (typeof currentTab !== 'undefined' && currentTab === 'citas' && typeof renderCitas === 'function') {
+    renderCitas();
+  }
+  const modalTarjeta = document.getElementById('tarjetaCitaModal');
+  if (modalTarjeta && (modalTarjeta.classList.contains('open') || modalTarjeta.classList.contains('active') || modalTarjeta.style.display === 'flex')) {
+    if (typeof currentCitaId !== 'undefined' && currentCitaId) {
+      abrirTarjetaCitaModal(currentCitaId);
+    }
   }
 }
 
@@ -2435,6 +2480,32 @@ function abrirTarjetaCitaModal(citaId) {
   const clienteCelular = String(cita.celular || (lead ? lead.celular : '') || '');
   const numLimpio = clienteCelular.replace(/\D/g, '');
 
+  let leadForStepper = lead;
+  if (!leadForStepper && cita && cita.celular) {
+    const cel = String(cita.celular).replace(/\D/g, '');
+    if (cel && typeof leads !== 'undefined' && Array.isArray(leads)) {
+      leadForStepper = leads.find(l => {
+        const c = String(l.celular || '').replace(/\D/g, '');
+        return c && (c === cel || c.endsWith(cel) || cel.endsWith(c));
+      });
+    }
+  }
+
+  const codProp = cita.codigo || '';
+  let currentStage = 1;
+  if (leadForStepper && codProp) {
+    currentStage = obtenerEtapaPropiedad(leadForStepper, codProp);
+  } else if (cita) {
+    if (cita.procesoVenta || cita.estado === 'proceso_venta') currentStage = 6;
+    else if (cita.oferto === 'si' || cita.estado === 'ok') currentStage = 5;
+    else if (cita.estado === 'realizada' || cita.estado === 'visitada') currentStage = 4;
+    else if (cita.estado === 'agendada') currentStage = 3;
+    else if (cita.estado === 'solicito_visita') currentStage = 2;
+  }
+
+  const leadIdParam = leadForStepper ? leadForStepper.id : '';
+  const stepperHTML = (codProp && typeof renderPropChecklist === 'function') ? renderPropChecklist(leadIdParam, codProp, currentStage) : '';
+
   const bodyEl = document.getElementById('tarjetaCitaBody');
   if (bodyEl) {
     bodyEl.innerHTML = `
@@ -2469,6 +2540,13 @@ function abrirTarjetaCitaModal(citaId) {
         <div style="font-size:10px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">📝 Observaciones / Notas</div>
         <div style="font-size:12.5px; color:${notasTexto ? '#e0ddd8' : '#777'}; line-height:1.5; white-space:pre-wrap;">${notasTexto || 'Sin observaciones adicionales'}</div>
       </div>
+
+      ${stepperHTML ? `
+        <!-- STEPPER CONTAINER DE ETAPAS -->
+        <div style="margin-top:2px;">
+          ${stepperHTML}
+        </div>
+      ` : ''}
     `;
   }
 
