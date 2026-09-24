@@ -8388,7 +8388,7 @@ function renderLeadsBody(lista){
     mainContent.scrollTop = prevMainScrollTop;
   }
 }
-function estadoLbl(e){ return {proceso:'Proceso de venta',enviando:'Enviando',agendada:'Visita agendada',visita:'Solicitó visita',solicito_visita:'Solicitó visita',banco:'Banco',inactivo:'Inactivo'}[e]||e; }
+function estadoLbl(e){ return {proceso:'Proceso de venta',enviando:'Enviando',agendada:'Visita agendada',visita:'Pdte. visita',banco:'Banco',inactivo:'Inactivo'}[e]||e; }
 
 /* ═══════════════════════════════════════════════
    PANEL LEAD
@@ -8739,54 +8739,22 @@ function obtenerEtapaMaximaLead(lead) {
 
   const isLeadInactivo = lead.etiqueta === 'inactivo' || lead.estado === 'inactivo';
 
-  let maxStage = 0;
-  if (lead.propsEnviadas && Array.isArray(lead.propsEnviadas) && lead.propsEnviadas.length > 0) {
-    const sorted = [...lead.propsEnviadas].sort((a, b) =>
-      obtenerEtapaPropiedad(lead, b) - obtenerEtapaPropiedad(lead, a)
-    );
-    maxStage = obtenerEtapaPropiedad(lead, sorted[0]);
+  // ─── FUENTE ÚNICA: "Propiedades e Interés" ────────────────────────────────
+  // El badge refleja SOLO lo que aparece en el panel "Propiedades e Interés".
+  // Si no hay propiedades enviadas → sin badge (0).
+  if (!lead.propsEnviadas || !Array.isArray(lead.propsEnviadas) || lead.propsEnviadas.length === 0) {
+    return 0;
   }
 
-  if (lead.visitas && Array.isArray(lead.visitas)) {
-    for (let v of lead.visitas) {
-      if (!v) continue;
-      const est = String(v.estado || '').toLowerCase();
-      let st = 1;
-      if (v.procesoVenta || est === 'proceso_venta' || est === 'proceso') st = 6;
-      else if (String(v.oferto || '').toLowerCase() === 'si' || est === 'ok') st = 5;
-      else if (est === 'realizada' || est === 'visitado') st = 4;
-      else if (est === 'agendada' || est === 'confirmada') st = 3;
-      else if (est === 'solicito_visita' || est === 'pendiente' || est === 'solicitado') st = 2;
-      if (st > maxStage) maxStage = st;
-    }
-  }
+  // Ordenar igual que renderPanelPropsEnviadas: mayor etapa primero.
+  // La etapa de la PRIMERA propiedad del listado es la que se muestra en el badge.
+  const sorted = [...lead.propsEnviadas].sort((a, b) =>
+    obtenerEtapaPropiedad(lead, b) - obtenerEtapaPropiedad(lead, a)
+  );
+  const firstStage = obtenerEtapaPropiedad(lead, sorted[0]);
 
-  if (!isLeadInactivo && typeof citas !== 'undefined' && Array.isArray(citas)) {
-    const cel = String(lead.celular || '').replace(/\D/g, '');
-    const nom = String(lead.nombre || '').trim().toLowerCase();
-    for (let c of citas) {
-      if (!c) continue;
-      const cEst = String(c.estado || '').toLowerCase();
-      if (cEst === 'cancelada' || cEst === 'inactivo' || cEst === 'borrado') continue;
-      const cCel = String(c.celular || '').replace(/\D/g, '');
-      const cNom = String(c.cliente || '').trim().toLowerCase();
-      let match = false;
-      if (cel && cCel && (cel === cCel || cel.endsWith(cCel) || cCel.endsWith(cel))) match = true;
-      else if (nom && cNom && nom === cNom) match = true;
-      if (match) {
-        let st = 1;
-        if (c.procesoVenta || cEst === 'proceso_venta' || cEst === 'proceso') st = 6;
-        else if (String(c.oferto || '').toLowerCase() === 'si' || cEst === 'ok') st = 5;
-        else if (cEst === 'realizada' || cEst === 'visitado') st = 4;
-        else if (cEst === 'agendada' || cEst === 'confirmada') st = 3;
-        else if (cEst === 'solicito_visita' || cEst === 'pendiente' || cEst === 'solicitado') st = 2;
-        if (st > maxStage) maxStage = st;
-      }
-    }
-  }
-
-  if (isLeadInactivo && maxStage < 5) return 0;
-  return maxStage;
+  if (isLeadInactivo && firstStage < 5) return 0;
+  return firstStage;
 }
 
 
@@ -9047,6 +9015,10 @@ function renderEtapasLeadBadges(lead) {
 }
 
 function obtenerEtapaPropiedad(lead, cod) {
+  if (lead && lead.propEtapas && typeof lead.propEtapas[cod] !== 'undefined' && lead.propEtapas[cod] !== null) {
+    return Number(lead.propEtapas[cod]);
+  }
+
   let v = (lead && lead.visitas) ? lead.visitas.find(x => x && String(x.codigo||'').trim() === String(cod).trim()) : null;
   if (!v && typeof citas !== 'undefined' && Array.isArray(citas) && lead) {
     const cel = String(lead.celular || '').replace(/\D/g, '');
@@ -9060,16 +9032,11 @@ function obtenerEtapaPropiedad(lead, cod) {
   }
 
   if (v) {
-    const est = String(v.estado || '').toLowerCase();
-    if (v.procesoVenta || est === 'proceso_venta' || est === 'proceso') return 6;
-    if (v.oferto === 'si' || est === 'ok') return 5;
-    if (est === 'realizada' || est === 'visitado') return 4;
-    if (est === 'agendada' || est === 'confirmada') return 3;
-    if (est === 'solicito_visita' || est === 'pendiente' || est === 'solicitado') return 2;
-  }
-
-  if (lead && lead.propEtapas && typeof lead.propEtapas[cod] !== 'undefined' && lead.propEtapas[cod] !== null) {
-    return Number(lead.propEtapas[cod]);
+    if (v.procesoVenta || v.estado === 'proceso_venta') return 6;
+    if (v.oferto === 'si' || v.estado === 'ok') return 5;
+    if (v.estado === 'realizada') return 4;
+    if (v.estado === 'agendada') return 3;
+    if (v.estado === 'solicito_visita') return 2;
   }
 
   return 1;
@@ -10267,10 +10234,9 @@ function guardarVisita(){
         lead.propsEnviadas.push(cod);
       }
       if(!lead.propEtapas) lead.propEtapas = {};
-      let etapaVisita = 1;
+      let etapaVisita = 3;
       if (v.estado === 'realizada') etapaVisita = (v.oferto === 'si') ? 5 : 4;
-      else if (v.estado === 'solicito_visita' || v.estado === 'pendiente' || v.estado === 'solicitado') etapaVisita = 2;
-      else if (v.estado === 'agendada' || v.estado === 'confirmada') etapaVisita = 3;
+      else if (v.estado === 'solicito_visita') etapaVisita = 2;
       else if (v.estado === 'proceso_venta') etapaVisita = 6;
       lead.propEtapas[cod] = etapaVisita;
       lead._localEditedAt = new Date().toISOString();
