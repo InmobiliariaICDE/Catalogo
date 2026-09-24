@@ -9015,10 +9015,6 @@ function renderEtapasLeadBadges(lead) {
 }
 
 function obtenerEtapaPropiedad(lead, cod) {
-  if (lead && lead.propEtapas && typeof lead.propEtapas[cod] !== 'undefined' && lead.propEtapas[cod] !== null) {
-    return Number(lead.propEtapas[cod]);
-  }
-
   let v = (lead && lead.visitas) ? lead.visitas.find(x => x && String(x.codigo||'').trim() === String(cod).trim()) : null;
   if (!v && typeof citas !== 'undefined' && Array.isArray(citas) && lead) {
     const cel = String(lead.celular || '').replace(/\D/g, '');
@@ -9031,15 +9027,22 @@ function obtenerEtapaPropiedad(lead, cod) {
     });
   }
 
+  let stageFromVisita = 1;
   if (v) {
-    if (v.procesoVenta || v.estado === 'proceso_venta') return 6;
-    if (v.oferto === 'si' || v.estado === 'ok') return 5;
-    if (v.estado === 'realizada') return 4;
-    if (v.estado === 'agendada') return 3;
-    if (v.estado === 'solicito_visita') return 2;
+    const est = String(v.estado || '').toLowerCase();
+    if (v.procesoVenta || est === 'proceso_venta' || est === 'proceso') stageFromVisita = 6;
+    else if (v.oferto === 'si' || est === 'ok' || est === 'oferta') stageFromVisita = 5;
+    else if (est === 'realizada' || est === 'visitada' || est === 'visitado') stageFromVisita = 4;
+    else if (est === 'agendada') stageFromVisita = 3;
+    else if (est === 'solicito_visita' || est === 'solicitado') stageFromVisita = 2;
   }
 
-  return 1;
+  let stageFromLeadProp = 1;
+  if (lead && lead.propEtapas && typeof lead.propEtapas[cod] !== 'undefined' && lead.propEtapas[cod] !== null) {
+    stageFromLeadProp = Number(lead.propEtapas[cod]);
+  }
+
+  return Math.max(stageFromLeadProp, stageFromVisita);
 }
 
 function renderPropChecklist(leadId, cod, currentStage) {
@@ -11600,15 +11603,19 @@ function abrirTarjetaCitaModal(citaId) {
   }
 
   const codProp = cita.codigo || '';
-  let currentStage = 1;
+  let stageFromCita = 1;
+  if (cita) {
+    const estCita = String(cita.estado || '').toLowerCase();
+    if (cita.procesoVenta || estCita === 'proceso_venta' || estCita === 'proceso') stageFromCita = 6;
+    else if (cita.oferto === 'si' || estCita === 'ok' || estCita === 'oferta') stageFromCita = 5;
+    else if (estCita === 'realizada' || estCita === 'visitada' || estCita === 'visitado') stageFromCita = 4;
+    else if (estCita === 'agendada') stageFromCita = 3;
+    else if (estCita === 'solicito_visita' || estCita === 'solicitado') stageFromCita = 2;
+  }
+
+  let currentStage = stageFromCita;
   if (leadForStepper && codProp) {
-    currentStage = obtenerEtapaPropiedad(leadForStepper, codProp);
-  } else if (cita) {
-    if (cita.procesoVenta || cita.estado === 'proceso_venta') currentStage = 6;
-    else if (cita.oferto === 'si' || cita.estado === 'ok') currentStage = 5;
-    else if (cita.estado === 'realizada' || cita.estado === 'visitada') currentStage = 4;
-    else if (cita.estado === 'agendada') currentStage = 3;
-    else if (cita.estado === 'solicito_visita') currentStage = 2;
+    currentStage = Math.max(obtenerEtapaPropiedad(leadForStepper, codProp), stageFromCita);
   }
 
   const leadIdParam = leadForStepper ? leadForStepper.id : '';
