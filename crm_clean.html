@@ -2049,7 +2049,7 @@ function cambiarEtapaPropiedad(evt, leadId, cod, nuevaEtapa) {
     renderCitas();
   }
   const modalTarjeta = document.getElementById('tarjetaCitaModal');
-  if (modalTarjeta && (modalTarjeta.classList.contains('open') || modalTarjeta.classList.contains('active') || modalTarjeta.style.display === 'flex')) {
+  if (modalTarjeta && modalTarjeta.classList.contains('open')) {
     if (typeof currentCitaId !== 'undefined' && currentCitaId) {
       abrirTarjetaCitaModal(currentCitaId);
     }
@@ -2851,7 +2851,14 @@ function guardarFiltrosEditados(){
 /* ═══════════════════════════════════════════════
    HELPERS
 ═══════════════════════════════════════════════ */
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function closeModal(id){ 
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.remove('open');
+    el.classList.remove('active');
+    el.style.display = '';
+  }
+}
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open')); });
 function formatP(p){ if(!p) return ''; const n=parseFloat(String(p).replace(/[^\d]/g,'')); if(isNaN(n)) return p; if(n>=1e9) return `$${(n/1e9).toFixed(1).replace(/\.0$/,'')}MM`; if(n>=1e6) return `$${Math.round(n/1e6)}M`; return `$${n.toLocaleString('es-CO')}`; }
 function saveLeads(){ localStorage.setItem('icde_leads',JSON.stringify(leads)); localStorage.setItem('icde_citas',JSON.stringify(citas)); }
