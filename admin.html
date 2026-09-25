@@ -4255,7 +4255,42 @@ html, body {
         <input type="text" id="nuevaTareaInput" placeholder="✍🏼 Agregar nueva tarea..." style="flex:1; min-width: 160px; background:rgba(0,0,0,0.4); border:1px solid rgba(212,168,75,0.3); border-radius:10px; padding:8px 12px; font-size:12.5px; color:#fff; outline:none;" onkeydown="if(event.key==='Enter') agregarNuevaTareaPendiente()"/>
         <div style="display:flex; gap:6px; align-items:center;">
           <input type="date" id="nuevaTareaFechaInput" style="background:rgba(0,0,0,0.4); border:1px solid rgba(212,168,75,0.3); border-radius:10px; padding:7px 8px; font-size:11.5px; color:#fff; outline:none; color-scheme:dark;" title="Fecha de la tarea"/>
-          <input type="time" id="nuevaTareaHoraInput" style="background:rgba(0,0,0,0.4); border:1px solid rgba(212,168,75,0.3); border-radius:10px; padding:7px 8px; font-size:11.5px; color:#fff; outline:none; color-scheme:dark;" title="Hora de la tarea"/>
+          <div style="display:flex; gap:3px; align-items:center; background:rgba(0,0,0,0.4); border:1px solid rgba(212,168,75,0.3); border-radius:10px; padding:5px 8px;" title="Hora de la tarea (12 horas AM/PM)">
+            <select id="nuevaTareaHora12" style="background:transparent; border:none; color:#fff; font-size:11.5px; outline:none; font-weight:700; cursor:pointer;">
+              <option value="" style="background:#181614; color:#aaa;">Hora</option>
+              <option value="01" style="background:#181614;">01</option>
+              <option value="02" style="background:#181614;">02</option>
+              <option value="03" style="background:#181614;">03</option>
+              <option value="04" style="background:#181614;">04</option>
+              <option value="05" style="background:#181614;">05</option>
+              <option value="06" style="background:#181614;">06</option>
+              <option value="07" style="background:#181614;">07</option>
+              <option value="08" style="background:#181614;">08</option>
+              <option value="09" style="background:#181614;">09</option>
+              <option value="10" style="background:#181614;">10</option>
+              <option value="11" style="background:#181614;">11</option>
+              <option value="12" style="background:#181614;">12</option>
+            </select>
+            <span style="color:var(--gold); font-weight:800; font-size:11px;">:</span>
+            <select id="nuevaTareaMinuto" style="background:transparent; border:none; color:#fff; font-size:11.5px; outline:none; font-weight:700; cursor:pointer;">
+              <option value="00" style="background:#181614;">00</option>
+              <option value="05" style="background:#181614;">05</option>
+              <option value="10" style="background:#181614;">10</option>
+              <option value="15" style="background:#181614;">15</option>
+              <option value="20" style="background:#181614;">20</option>
+              <option value="25" style="background:#181614;">25</option>
+              <option value="30" style="background:#181614;">30</option>
+              <option value="35" style="background:#181614;">35</option>
+              <option value="40" style="background:#181614;">40</option>
+              <option value="45" style="background:#181614;">45</option>
+              <option value="50" style="background:#181614;">50</option>
+              <option value="55" style="background:#181614;">55</option>
+            </select>
+            <select id="nuevaTareaAmPm" style="background:transparent; border:none; color:var(--gold); font-size:11px; outline:none; font-weight:800; cursor:pointer;">
+              <option value="AM" style="background:#181614;">AM</option>
+              <option value="PM" style="background:#181614;">PM</option>
+            </select>
+          </div>
         </div>
         <button onclick="agregarNuevaTareaPendiente()" style="padding:8px 16px; background:linear-gradient(135deg, var(--gold), #a47b2a); border:none; border-radius:10px; color:#000; font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap; transition:all 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">+ Agregar Tarea</button>
       </div>
@@ -12595,13 +12630,22 @@ function agregarNuevaTareaPendiente() {
   const input = document.getElementById('nuevaTareaInput');
   const areaSelect = document.getElementById('nuevaTareaAreaSelect');
   const fechaInput = document.getElementById('nuevaTareaFechaInput');
-  const horaInput = document.getElementById('nuevaTareaHoraInput');
+  const hora12Input = document.getElementById('nuevaTareaHora12');
+  const minutoInput = document.getElementById('nuevaTareaMinuto');
+  const amPmInput = document.getElementById('nuevaTareaAmPm');
 
   if (!input || !input.value.trim()) { toast('Ingresa el texto de la tarea', 'warning'); return; }
   
   const areaVal = areaSelect ? areaSelect.value : 'ventas';
   const fechaVal = fechaInput ? fechaInput.value : '';
-  const horaVal = horaInput ? horaInput.value : '';
+
+  let horaVal = '';
+  if (hora12Input && hora12Input.value) {
+    const h = hora12Input.value;
+    const m = (minutoInput && minutoInput.value) ? minutoInput.value : '00';
+    const ap = (amPmInput && amPmInput.value) ? amPmInput.value : 'AM';
+    horaVal = `${h}:${m} ${ap}`;
+  }
 
   if (typeof tareasCitasPendientes === 'undefined' || !Array.isArray(tareasCitasPendientes)) tareasCitasPendientes = [];
   const nueva = {
@@ -12618,7 +12662,7 @@ function agregarNuevaTareaPendiente() {
   
   input.value = '';
   if (fechaInput) fechaInput.value = '';
-  if (horaInput) horaInput.value = '';
+  if (hora12Input) hora12Input.value = '';
 
   toast('Tarea registrada ✓', 'success');
   renderActividadesPendientesModal();
