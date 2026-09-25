@@ -535,14 +535,20 @@ table.leads-table{width:100%;border-collapse:collapse;font-size:13.5px;}
       <button class="panel-close" onclick="closeModal('actividadesPendientesModal')" style="width: 32px; height: 32px; font-size: 20px; font-weight:400; border-radius:10px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#fff; cursor:pointer; line-height:1;">×</button>
     </div>
 
-    <!-- Filtros internos & Agregar nueva tarea -->
+    <!-- Filtros internos por Área & Agregar nueva tarea -->
     <div style="padding: 12px 20px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; gap: 10px;">
       <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;" id="pendientesFiltrosTabs">
         <!-- Generado por JS -->
       </div>
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <input type="text" id="nuevaTareaInput" placeholder="✍🏼 Agregar nueva tarea o actividad pendiente..." style="flex:1; background:rgba(0,0,0,0.4); border:1px solid rgba(212,168,75,0.3); border-radius:10px; padding:8px 12px; font-size:12.5px; color:#fff; outline:none;" onkeydown="if(event.key==='Enter') agregarNuevaTareaPendiente()"/>
-        <button onclick="agregarNuevaTareaPendiente()" style="padding:8px 14px; background:linear-gradient(135deg, var(--gold), #a47b2a); border:none; border-radius:10px; color:#000; font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap; transition:all 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">+ Agregar Tarea</button>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <select id="nuevaTareaAreaSelect" style="background: #181614; border: 1px solid rgba(212,168,75,0.4); border-radius: 10px; padding: 8px 10px; font-size: 12px; font-weight: 700; color: var(--gold); outline: none; cursor: pointer;">
+          <option value="ventas">🏷️ Área de Ventas</option>
+          <option value="administracion">⚙️ Administración</option>
+          <option value="publicidad">📢 Publicidad</option>
+          <option value="personal">👤 Personal</option>
+        </select>
+        <input type="text" id="nuevaTareaInput" placeholder="✍🏼 Agregar nueva tarea o actividad pendiente..." style="flex:1; min-width: 200px; background:rgba(0,0,0,0.4); border:1px solid rgba(212,168,75,0.3); border-radius:10px; padding:8px 12px; font-size:12.5px; color:#fff; outline:none;" onkeydown="if(event.key==='Enter') agregarNuevaTareaPendiente()"/>
+        <button onclick="agregarNuevaTareaPendiente()" style="padding:8px 16px; background:linear-gradient(135deg, var(--gold), #a47b2a); border:none; border-radius:10px; color:#000; font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap; transition:all 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">+ Agregar Tarea</button>
       </div>
     </div>
 
@@ -3143,39 +3149,57 @@ function renderActividadesPendientesModal() {
 
   const listCitas = (typeof citas !== 'undefined' && Array.isArray(citas)) ? citas : [];
   
+  // Citas auto-assigned to Área de Ventas
   const solicitudes = listCitas.filter(c => c && c.estado === 'solicito_visita');
   const agendadas = listCitas.filter(c => c && c.estado === 'agendada');
   const sinNotas = listCitas.filter(c => c && (c.estado === 'realizada' || c.estado === 'visitada') && !String(c.notas||c.comentarios||c.observaciones||'').trim());
-  const tareasCustom = (tareasCitasPendientes || []).filter(t => !t.completada);
 
-  const totalPendientes = solicitudes.length + agendadas.length + sinNotas.length + tareasCustom.length;
+  const citaVentasItems = [
+    ...solicitudes.map(c => ({ type: 'cita_solicitud', area: 'ventas', data: c })),
+    ...agendadas.map(c => ({ type: 'cita_agendada', area: 'ventas', data: c })),
+    ...sinNotas.map(c => ({ type: 'cita_sin_notas', area: 'ventas', data: c }))
+  ];
+
+  const tareasCustom = (tareasCitasPendientes || []).filter(t => !t.completada);
+  const tareasVentas = tareasCustom.filter(t => (t.area || 'ventas') === 'ventas');
+  const tareasAdmin = tareasCustom.filter(t => t.area === 'administracion');
+  const tareasPub = tareasCustom.filter(t => t.area === 'publicidad');
+  const tareasPers = tareasCustom.filter(t => t.area === 'personal');
+
+  const countVentas = citaVentasItems.length + tareasVentas.length;
+  const countAdmin = tareasAdmin.length;
+  const countPub = tareasPub.length;
+  const countPers = tareasPers.length;
+  const totalPendientes = countVentas + countAdmin + countPub + countPers;
 
   if (tabsEl) {
     tabsEl.innerHTML = `
-      <button onclick="filtrarPendientesTab('todas')" class="chip-filtro ${pendientesTabActive === 'todas' ? 'sel' : ''}" style="font-size:11px; padding:4px 10px;">📋 Todas (${totalPendientes})</button>
-      <button onclick="filtrarPendientesTab('solicitudes')" class="chip-filtro ${pendientesTabActive === 'solicitudes' ? 'sel' : ''}" style="font-size:11px; padding:4px 10px;">⚡ Solicitudes (${solicitudes.length})</button>
-      <button onclick="filtrarPendientesTab('agendadas')" class="chip-filtro ${pendientesTabActive === 'agendadas' ? 'sel' : ''}" style="font-size:11px; padding:4px 10px;">🗓️ Agendadas (${agendadas.length})</button>
-      <button onclick="filtrarPendientesTab('sin_notas')" class="chip-filtro ${pendientesTabActive === 'sin_notas' ? 'sel' : ''}" style="font-size:11px; padding:4px 10px;">📝 Sin Notas (${sinNotas.length})</button>
-      <button onclick="filtrarPendientesTab('tareas')" class="chip-filtro ${pendientesTabActive === 'tareas' ? 'sel' : ''}" style="font-size:11px; padding:4px 10px;">📌 Tareas (${tareasCustom.length})</button>
+      <button onclick="filtrarPendientesTab('todas')" class="chip-filtro ${pendientesTabActive === 'todas' ? 'sel' : ''}" style="font-size:11px; padding:5px 12px; font-weight:700;">📋 Todas (${totalPendientes})</button>
+      <button onclick="filtrarPendientesTab('ventas')" class="chip-filtro ${pendientesTabActive === 'ventas' ? 'sel' : ''}" style="font-size:11px; padding:5px 12px; font-weight:700;">🏷️ Área de Ventas (${countVentas})</button>
+      <button onclick="filtrarPendientesTab('administracion')" class="chip-filtro ${pendientesTabActive === 'administracion' ? 'sel' : ''}" style="font-size:11px; padding:5px 12px; font-weight:700;">⚙️ Administración (${countAdmin})</button>
+      <button onclick="filtrarPendientesTab('publicidad')" class="chip-filtro ${pendientesTabActive === 'publicidad' ? 'sel' : ''}" style="font-size:11px; padding:5px 12px; font-weight:700;">📢 Publicidad (${countPub})</button>
+      <button onclick="filtrarPendientesTab('personal')" class="chip-filtro ${pendientesTabActive === 'personal' ? 'sel' : ''}" style="font-size:11px; padding:5px 12px; font-weight:700;">👤 Personal (${countPers})</button>
     `;
   }
 
   let items = [];
 
-  if (pendientesTabActive === 'solicitudes') {
-    items = solicitudes.map(c => ({ type: 'cita_solicitud', data: c }));
-  } else if (pendientesTabActive === 'agendadas') {
-    items = agendadas.map(c => ({ type: 'cita_agendada', data: c }));
-  } else if (pendientesTabActive === 'sin_notas') {
-    items = sinNotas.map(c => ({ type: 'cita_sin_notas', data: c }));
-  } else if (pendientesTabActive === 'tareas') {
-    items = tareasCustom.map(t => ({ type: 'tarea_custom', data: t }));
-  } else {
+  if (pendientesTabActive === 'ventas') {
     items = [
-      ...tareasCustom.map(t => ({ type: 'tarea_custom', data: t })),
-      ...solicitudes.map(c => ({ type: 'cita_solicitud', data: c })),
-      ...agendadas.map(c => ({ type: 'cita_agendada', data: c })),
-      ...sinNotas.map(c => ({ type: 'cita_sin_notas', data: c }))
+      ...tareasVentas.map(t => ({ type: 'tarea_custom', area: 'ventas', data: t })),
+      ...citaVentasItems
+    ];
+  } else if (pendientesTabActive === 'administracion') {
+    items = tareasAdmin.map(t => ({ type: 'tarea_custom', area: 'administracion', data: t }));
+  } else if (pendientesTabActive === 'publicidad') {
+    items = tareasPub.map(t => ({ type: 'tarea_custom', area: 'publicidad', data: t }));
+  } else if (pendientesTabActive === 'personal') {
+    items = tareasPers.map(t => ({ type: 'tarea_custom', area: 'personal', data: t }));
+  } else {
+    // 'todas'
+    items = [
+      ...tareasCustom.map(t => ({ type: 'tarea_custom', area: t.area || 'ventas', data: t })),
+      ...citaVentasItems
     ];
   }
 
@@ -3187,8 +3211,8 @@ function renderActividadesPendientesModal() {
     bodyEl.innerHTML = `
       <div style="text-align:center; padding:32px 10px; color:#22c55e;">
         <div style="font-size:36px; margin-bottom:8px;">🎉</div>
-        <div style="font-weight:800; font-size:15px; color:#fff;">¡Sin actividades pendientes!</div>
-        <div style="font-size:12px; color:#aaa; margin-top:4px;">No tienes citas ni tareas pendientes en esta categoría.</div>
+        <div style="font-weight:800; font-size:15px; color:#fff;">¡Sin actividades pendientes en esta área!</div>
+        <div style="font-size:12px; color:#aaa; margin-top:4px;">No tienes tareas ni citas pendientes registradas en esta categoría.</div>
       </div>
     `;
     return;
@@ -3203,6 +3227,15 @@ function filtrarPendientesTab(tab) {
 }
 
 function renderPendienteItemCard(item) {
+  const AREA_BADGES = {
+    'ventas': `<span style="background:rgba(212,168,75,0.18); border:1px solid rgba(212,168,75,0.4); color:var(--gold); font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px;">🏷️ Ventas</span>`,
+    'administracion': `<span style="background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.4); color:#60a5fa; font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px;">⚙️ Administración</span>`,
+    'publicidad': `<span style="background:rgba(168,85,247,0.18); border:1px solid rgba(168,85,247,0.4); color:#c084fc; font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px;">📢 Publicidad</span>`,
+    'personal': `<span style="background:rgba(34,197,94,0.18); border:1px solid rgba(34,197,94,0.4); color:#4ade80; font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px;">👤 Personal</span>`
+  };
+
+  const areaBadge = AREA_BADGES[item.area || 'ventas'] || AREA_BADGES['ventas'];
+
   if (item.type === 'tarea_custom') {
     const t = item.data;
     return `
@@ -3210,9 +3243,12 @@ function renderPendienteItemCard(item) {
         <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
           <input type="checkbox" onchange="marcarTareaPendienteCompletada('${t.id}')" style="accent-color:var(--gold); width:18px; height:18px; cursor:pointer; flex-shrink:0;"/>
           <div style="min-width:0;">
-            <div style="font-size:11px; font-weight:800; color:var(--gold); text-transform:uppercase; letter-spacing:0.06em;">📌 Tarea Personalizada</div>
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+              ${areaBadge}
+              <span style="font-size:10px; font-weight:800; color:#aaa; text-transform:uppercase;">📌 Tarea</span>
+            </div>
             <div style="font-size:13px; font-weight:700; color:#fff; margin-top:2px;">${t.texto}</div>
-            <div style="font-size:11px; color:#aaa; margin-top:2px;">Creada: ${t.fecha || '—'}</div>
+            <div style="font-size:11px; color:#888; margin-top:2px;">Creada: ${t.fecha || '—'}</div>
           </div>
         </div>
         <button onclick="eliminarTareaPendiente('${t.id}')" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#f87171; padding:4px 8px; border-radius:6px; font-size:11px; cursor:pointer;" title="Eliminar tarea">🗑</button>
@@ -3242,7 +3278,10 @@ function renderPendienteItemCard(item) {
   return `
     <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:10px;">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-        ${badgeBanner}
+        <div style="display:flex; align-items:center; gap:6px;">
+          ${areaBadge}
+          ${badgeBanner}
+        </div>
         <span style="font-size:11px; color:#aaa; font-weight:600;">📅 ${cita.fecha || 'Sin fecha'}${horaFmt ? ` · 🕒 ${horaFmt}` : ''}</span>
       </div>
 
@@ -3277,19 +3316,26 @@ function renderPendienteItemCard(item) {
 
 function agregarNuevaTareaPendiente() {
   const input = document.getElementById('nuevaTareaInput');
+  const areaSelect = document.getElementById('nuevaTareaAreaSelect');
   if (!input || !input.value.trim()) { toast('Ingresa el texto de la tarea', 'warning'); return; }
   
+  const areaVal = areaSelect ? areaSelect.value : 'ventas';
+
   if (typeof tareasCitasPendientes === 'undefined' || !Array.isArray(tareasCitasPendientes)) tareasCitasPendientes = [];
   const nueva = {
     id: 'TASK-' + Date.now(),
     texto: input.value.trim(),
+    area: areaVal,
     fecha: new Date().toLocaleDateString('es-CO'),
     completada: false
   };
   tareasCitasPendientes.unshift(nueva);
   try { localStorage.setItem('icde_tareas_citas_pendientes', JSON.stringify(tareasCitasPendientes)); } catch(e){}
   input.value = '';
-  toast('Tarea pendiente añadida ✓', 'success');
+  toast('Tarea asignada ✓', 'success');
+  renderActividadesPendientesModal();
+  actualizarAlertaCitasPendientes();
+}
   renderActividadesPendientesModal();
   actualizarAlertaCitasPendientes();
 }
