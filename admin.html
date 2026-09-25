@@ -12360,13 +12360,10 @@ let pendientesTabActive = 'todas';
 let tareasCitasPendientes = [];
 
 function contarCitasPendientes() {
-  if (typeof citas === 'undefined' || !Array.isArray(citas)) return 0;
-  const solicitudes = citas.filter(c => c && c.estado === 'solicito_visita').length;
   if (typeof tareasCitasPendientes === 'undefined' || !Array.isArray(tareasCitasPendientes)) {
     try { tareasCitasPendientes = JSON.parse(localStorage.getItem('icde_tareas_citas_pendientes') || '[]'); } catch(e) { tareasCitasPendientes = []; }
   }
-  const tareasCustom = (tareasCitasPendientes || []).filter(t => !t.completada).length;
-  return solicitudes + tareasCustom;
+  return (tareasCitasPendientes || []).filter(t => !t.completada).length;
 }
 
 function actualizarAlertaCitasPendientes() {
@@ -12434,30 +12431,17 @@ function renderActividadesPendientesModal() {
     } catch(e) { tareasCitasPendientes = []; }
   }
 
-  const listCitas = (typeof citas !== 'undefined' && Array.isArray(citas)) ? citas : [];
-  
-  // Citas auto-assigned to Área de Ventas
-  const solicitudes = listCitas.filter(c => c && c.estado === 'solicito_visita');
-  const agendadas = listCitas.filter(c => c && c.estado === 'agendada');
-  const sinNotas = listCitas.filter(c => c && (c.estado === 'realizada' || c.estado === 'visitada') && !String(c.notas||c.comentarios||c.observaciones||'').trim());
-
-  const citaVentasItems = [
-    ...solicitudes.map(c => ({ type: 'cita_solicitud', area: 'ventas', data: c })),
-    ...agendadas.map(c => ({ type: 'cita_agendada', area: 'ventas', data: c })),
-    ...sinNotas.map(c => ({ type: 'cita_sin_notas', area: 'ventas', data: c }))
-  ];
-
   const tareasCustom = (tareasCitasPendientes || []).filter(t => !t.completada);
   const tareasVentas = tareasCustom.filter(t => (t.area || 'ventas') === 'ventas');
   const tareasAdmin = tareasCustom.filter(t => t.area === 'administracion');
   const tareasPub = tareasCustom.filter(t => t.area === 'publicidad');
   const tareasPers = tareasCustom.filter(t => t.area === 'personal');
 
-  const countVentas = citaVentasItems.length + tareasVentas.length;
+  const countVentas = tareasVentas.length;
   const countAdmin = tareasAdmin.length;
   const countPub = tareasPub.length;
   const countPers = tareasPers.length;
-  const totalPendientes = countVentas + countAdmin + countPub + countPers;
+  const totalPendientes = tareasCustom.length;
 
   if (tabsEl) {
     tabsEl.innerHTML = `
@@ -12472,10 +12456,7 @@ function renderActividadesPendientesModal() {
   let items = [];
 
   if (pendientesTabActive === 'ventas') {
-    items = [
-      ...tareasVentas.map(t => ({ type: 'tarea_custom', area: 'ventas', data: t })),
-      ...citaVentasItems
-    ];
+    items = tareasVentas.map(t => ({ type: 'tarea_custom', area: 'ventas', data: t }));
   } else if (pendientesTabActive === 'administracion') {
     items = tareasAdmin.map(t => ({ type: 'tarea_custom', area: 'administracion', data: t }));
   } else if (pendientesTabActive === 'publicidad') {
@@ -12484,10 +12465,7 @@ function renderActividadesPendientesModal() {
     items = tareasPers.map(t => ({ type: 'tarea_custom', area: 'personal', data: t }));
   } else {
     // 'todas'
-    items = [
-      ...tareasCustom.map(t => ({ type: 'tarea_custom', area: t.area || 'ventas', data: t })),
-      ...citaVentasItems
-    ];
+    items = tareasCustom.map(t => ({ type: 'tarea_custom', area: t.area || 'ventas', data: t }));
   }
 
   if (resumenEl) {
@@ -12498,8 +12476,8 @@ function renderActividadesPendientesModal() {
     bodyEl.innerHTML = `
       <div style="text-align:center; padding:32px 10px; color:#22c55e;">
         <div style="font-size:36px; margin-bottom:8px;">🎉</div>
-        <div style="font-weight:800; font-size:15px; color:#fff;">¡Sin actividades pendientes en esta área!</div>
-        <div style="font-size:12px; color:#aaa; margin-top:4px;">No tienes tareas ni citas pendientes registradas en esta categoría.</div>
+        <div style="font-weight:800; font-size:15px; color:#fff;">¡Sin tareas pendientes en esta área!</div>
+        <div style="font-size:12px; color:#aaa; margin-top:4px;">No hay actividades registradas por ahora. Agrega una nueva tarea arriba.</div>
       </div>
     `;
     return;
