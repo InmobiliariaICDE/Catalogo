@@ -13719,6 +13719,9 @@ function verificarRecordatoriosDeTareasPendientes() {
     let msgVisual = '';
     let msgHablado = '';
 
+    const horaNat = t.horaProg ? (typeof formatoHoraNatural === 'function' ? formatoHoraNatural(t.horaProg) : t.horaProg) : '';
+    const horaFmt = t.horaProg ? ((typeof formatHoraStr12 === 'function') ? formatHoraStr12(t.horaProg) : t.horaProg) : '';
+
     if (t.fechaProg) {
       if (t.fechaProg === localToday) {
         if (t.horaProg) {
@@ -13736,14 +13739,13 @@ function verificarRecordatoriosDeTareasPendientes() {
 
             if (diffMins >= -5 && diffMins <= 30) {
               shouldRemind = true;
-              const horaFmt = (typeof formatHoraStr12 === 'function') ? formatHoraStr12(t.horaProg) : t.horaProg;
               msgVisual = `📌 <strong>Pendiente (${areaNombre}):</strong> ${t.texto} <br><span style="font-size:11px; color:var(--gold);">🕒 ${horaFmt}</span>`;
-              msgHablado = `Atencion, tienes una tarea pendiente de ${areaNombre}: ${t.texto}.`;
+              msgHablado = `Atencion, tienes una tarea pendiente de ${areaNombre}: ${t.texto}${horaNat ? ' ' + horaNat : ''}.`;
             }
           } else {
             shouldRemind = true;
-            msgVisual = `📌 <strong>Pendiente para Hoy (${areaNombre}):</strong> ${t.texto}`;
-            msgHablado = `Atencion, tienes una tarea pendiente de ${areaNombre} para hoy: ${t.texto}.`;
+            msgVisual = `📌 <strong>Pendiente (${areaNombre}):</strong> ${t.texto}${horaFmt ? ` <br><span style="font-size:11px; color:var(--gold);">🕒 ${horaFmt}</span>` : ''}`;
+            msgHablado = `Atencion, tienes una tarea pendiente de ${areaNombre}: ${t.texto}${horaNat ? ' ' + horaNat : ''}.`;
           }
         } else {
           shouldRemind = true;
@@ -13754,8 +13756,8 @@ function verificarRecordatoriosDeTareasPendientes() {
     } else {
       // Tarea de trabajo sin fecha específica: se recuerda una vez por sesión
       shouldRemind = true;
-      msgVisual = `📌 <strong>Pendiente de ${areaNombre}:</strong> ${t.texto}`;
-      msgHablado = `Atencion, recuerda que tienes un pendiente de ${areaNombre}: ${t.texto}.`;
+      msgVisual = `📌 <strong>Pendiente (${areaNombre}):</strong> ${t.texto}${horaFmt ? ` <br><span style="font-size:11px; color:var(--gold);">🕒 ${horaFmt}</span>` : ''}`;
+      msgHablado = `Atencion, recuerda que tienes un pendiente de ${areaNombre}: ${t.texto}${horaNat ? ' ' + horaNat : ''}.`;
     }
 
     if (shouldRemind) {
@@ -13823,27 +13825,38 @@ async function speakRecordatorio(texto) {
 }
 
 function formatoHoraNatural(horaStr) {
-  if (!horaStr) return "";
-  const parts = horaStr.split(':');
-  if (parts.length < 2) return horaStr;
-  let hrs = parseInt(parts[0], 10);
-  const mins = parseInt(parts[1], 10);
-  
+  if (!horaStr || typeof horaStr !== 'string') return "";
+  const str = horaStr.trim();
+  const match = str.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (!match) return str;
+
+  let hrs = parseInt(match[1], 10);
+  const mins = parseInt(match[2], 10);
+  const ap = match[3] ? match[3].toUpperCase() : '';
+
+  if (ap === 'PM' && hrs < 12) hrs += 12;
+  if (ap === 'AM' && hrs === 12) hrs = 0;
+
+  let hrsDisplay = hrs;
   let periodo = "de la mañana";
+
   if (hrs === 12) {
     periodo = "del mediodía";
+    hrsDisplay = 12;
   } else if (hrs > 12 && hrs < 19) {
-    hrs = hrs - 12;
+    hrsDisplay = hrs - 12;
     periodo = "de la tarde";
   } else if (hrs >= 19) {
-    hrs = hrs - 12;
+    hrsDisplay = hrs - 12;
     periodo = "de la noche";
   } else if (hrs === 0) {
-    hrs = 12;
+    hrsDisplay = 12;
+    periodo = "de la madrugada";
   }
-  
+
+  const conector = (hrsDisplay === 1) ? "a la" : "a las";
   const minText = mins === 0 ? "" : ` y ${mins}`;
-  return `${hrs}${minText} ${periodo}`;
+  return `${conector} ${hrsDisplay}${minText} ${periodo}`;
 }
 
 function saludoEInteraccionInicial() {
@@ -13912,7 +13925,7 @@ function saludoEInteraccionInicial() {
       if (idx > 0 && c.hora === todayCitas[idx - 1].hora) {
         return "otra a la misma hora";
       }
-      return `a las ${formatoHoraNatural(c.hora)}`;
+      return `${formatoHoraNatural(c.hora)}`;
     }).join(', ').replace(/,([^,]*)$/, ' y$1');
     msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy tienes ${todayCitas.length} ${todayCitas.length === 1 ? 'cita agendada' : 'citas agendadas'}: ${listadoHoras}${parteTareas}. ¡Salgamos a ganar!`;
   } else {
