@@ -6543,6 +6543,36 @@ async function verificarAlertasProgramadasCRM() {
       }
     });
   }
+
+  // -------------------------------------------------------------
+  // 3. REVISIÓN DE TAREAS PENDIENTES (VENTAS, ADMINISTRACIÓN, PUBLICIDAD - EXCLUYENDO PERSONAL)
+  // -------------------------------------------------------------
+  if (typeof tareasCitasPendientes !== 'undefined' && Array.isArray(tareasCitasPendientes)) {
+    tareasCitasPendientes.forEach(t => {
+      if (t.completada) return;
+      const areaVal = String(t.area || 'ventas').toLowerCase().trim();
+      if (areaVal === 'personal') return; // EXCLUIR tareas del área personal
+
+      let areaNombre = 'Ventas';
+      if (areaVal === 'administracion') areaNombre = 'Administración';
+      else if (areaVal === 'publicidad') areaNombre = 'Publicidad';
+
+      if (t.fechaProg) {
+        const tDate = parseFechaISO(t.fechaProg, t.horaProg || '08:00');
+        if (tDate && !isNaN(tDate.getTime())) {
+          const keyTask = `task_notif_${t.id}_${t.fechaProg}`;
+          const diffMins = Math.round((tDate.getTime() - now.getTime()) / 60000);
+          if (diffMins >= 0 && diffMins <= 30 && !sentMem[keyTask]) {
+            guardarAlertaEnviadaMemoria(keyTask);
+            const titT = `📌 Pendiente (${areaNombre})`;
+            const cueT = `Tienes una tarea pendiente de ${areaNombre}: ${t.texto}`;
+            enviarWebPushDirecto(titT, cueT);
+            enviarNotificacionSistema(titT, cueT);
+          }
+        }
+      }
+    });
+  }
 }
 
 // Iniciar revisión continua del motor de alertas cada 2 minutos
@@ -13662,6 +13692,80 @@ function verificarRecordatoriosDeArriendo() {
   });
 }
 
+function verificarRecordatoriosDeTareasPendientes() {
+  if (typeof tareasCitasPendientes === 'undefined' || !Array.isArray(tareasCitasPendientes)) return;
+  window._tareasPendientesReminded = window._tareasPendientesReminded || new Set();
+
+  const ahora = new Date();
+  const offset = ahora.getTimezoneOffset();
+  const localToday = new Date(ahora.getTime() - (offset * 60 * 1000)).toISOString().slice(0, 10);
+
+  // Filtrar pendientes de Ventas, Administración y Publicidad. EXCLUIR área Personal.
+  const tareasInvocables = tareasCitasPendientes.filter(t => {
+    if (t.completada) return false;
+    const area = String(t.area || 'ventas').toLowerCase().trim();
+    return area !== 'personal'; // NUNCA recordar tareas de la categoría Personal
+  });
+
+  for (const t of tareasInvocables) {
+    if (window._tareasPendientesReminded.has(t.id)) continue;
+
+    const areaVal = String(t.area || 'ventas').toLowerCase().trim();
+    let areaNombre = 'Ventas';
+    if (areaVal === 'administracion') areaNombre = 'Administración';
+    else if (areaVal === 'publicidad') areaNombre = 'Publicidad';
+
+    let shouldRemind = false;
+    let msgVisual = '';
+    let msgHablado = '';
+
+    if (t.fechaProg) {
+      if (t.fechaProg === localToday) {
+        if (t.horaProg) {
+          const parts = String(t.horaProg).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+          if (parts) {
+            let h = parseInt(parts[1], 10);
+            const m = parseInt(parts[2], 10);
+            const ap = parts[3] ? parts[3].toUpperCase() : '';
+            if (ap === 'PM' && h < 12) h += 12;
+            if (ap === 'AM' && h === 12) h = 0;
+
+            const tDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), h, m, 0, 0);
+            const diffMs = tDate.getTime() - ahora.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
+
+            if (diffMins >= -5 && diffMins <= 30) {
+              shouldRemind = true;
+              const horaFmt = (typeof formatHoraStr12 === 'function') ? formatHoraStr12(t.horaProg) : t.horaProg;
+              msgVisual = `📌 <strong>Pendiente (${areaNombre}):</strong> ${t.texto} <br><span style="font-size:11px; color:var(--gold);">🕒 ${horaFmt}</span>`;
+              msgHablado = `Atencion, tienes una tarea pendiente de ${areaNombre}: ${t.texto}.`;
+            }
+          } else {
+            shouldRemind = true;
+            msgVisual = `📌 <strong>Pendiente para Hoy (${areaNombre}):</strong> ${t.texto}`;
+            msgHablado = `Atencion, tienes una tarea pendiente de ${areaNombre} para hoy: ${t.texto}.`;
+          }
+        } else {
+          shouldRemind = true;
+          msgVisual = `📌 <strong>Pendiente para Hoy (${areaNombre}):</strong> ${t.texto}`;
+          msgHablado = `Atencion, tienes un pendiente del area de ${areaNombre} para hoy: ${t.texto}.`;
+        }
+      }
+    } else {
+      // Tarea de trabajo sin fecha específica: se recuerda una vez por sesión
+      shouldRemind = true;
+      msgVisual = `📌 <strong>Pendiente de ${areaNombre}:</strong> ${t.texto}`;
+      msgHablado = `Atencion, recuerda que tienes un pendiente de ${areaNombre}: ${t.texto}.`;
+    }
+
+    if (shouldRemind) {
+      window._tareasPendientesReminded.add(t.id);
+      triggerMascotReminder(msgVisual, msgHablado, 20000);
+      break; // Recordar una tarea por intervalo para no saturar con múltiples burbujas/voces
+    }
+  }
+}
+
 function triggerMascotReminder(msgVisual, msgHablado, duration = 15000) {
   showGeminiSpeechBubble(msgVisual, duration);
   
@@ -13775,8 +13879,17 @@ function saludoEInteraccionInicial() {
         return true;
       }) 
     : [];
-    
+
+  // Pendientes de Ventas, Administración y Publicidad (EXCLUYENDO área Personal)
+  const listPendientes = (typeof tareasCitasPendientes !== 'undefined' && Array.isArray(tareasCitasPendientes)) ? tareasCitasPendientes : [];
+  const pendientesLaborales = listPendientes.filter(t => !t.completada && String(t.area || 'ventas').toLowerCase().trim() !== 'personal');
+
   let msg = "";
+  let parteTareas = "";
+  if (pendientesLaborales.length > 0) {
+    parteTareas = ` y tienes ${pendientesLaborales.length} ${pendientesLaborales.length === 1 ? 'actividad pendiente' : 'actividades pendientes'} de trabajo (Ventas, Administración o Publicidad)`;
+  }
+
   if (todayCitas.length > 0) {
     // Sort chronologically
     todayCitas.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
@@ -13786,23 +13899,27 @@ function saludoEInteraccionInicial() {
       }
       return `a las ${formatoHoraNatural(c.hora)}`;
     }).join(', ').replace(/,([^,]*)$/, ' y$1');
-    msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy tienes ${todayCitas.length} ${todayCitas.length === 1 ? 'cita agendada' : 'citas agendadas'}: ${listadoHoras}. ¡Salgamos a ganar!`;
+    msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy tienes ${todayCitas.length} ${todayCitas.length === 1 ? 'cita agendada' : 'citas agendadas'}: ${listadoHoras}${parteTareas}. ¡Salgamos a ganar!`;
   } else {
     if (hrs >= 20) { // De las 8:00 PM en adelante
       if (hrs === 20) {
-        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy fue un gran día y lo hiciste muy bien hoy, se acerca la hora de descansar.`;
+        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria.${parteTareas ? ' Tienes' + parteTareas + '.' : ''} Hoy fue un gran día y lo hiciste muy bien, se acerca la hora de descansar.`;
       } else {
-        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Lo hiciste muy bien hoy, ya es hora de descansar y recargar energías para mañana.`;
+        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria.${parteTareas ? ' Recuerda tus' + parteTareas + '.' : ''} Lo hiciste muy bien hoy, ya es hora de descansar y recargar energías para mañana.`;
       }
-    } else if (hrs >= 18) { // De las 6:00 PM a las 7:59 PM (Buenas noches antes del descanso formal)
-      msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Ya estamos cerrando la jornada laboral, ¡hoy fue un gran día! Ve preparándote para un merecido descanso.`;
+    } else if (hrs >= 18) { // De las 6:00 PM a las 7:59 PM
+      msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria.${parteTareas ? ' Tienes' + parteTareas + '.' : ''} Ya estamos cerrando la jornada laboral, ¡hoy fue un gran día! Ve preparándote para un merecido descanso.`;
     } else {
-      msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy no tienes citas en agenda. ¡Un gran día para captar nuevos clientes!`;
+      if (pendientesLaborales.length > 0) {
+        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy no tienes citas en agenda, pero tienes ${pendientesLaborales.length} ${pendientesLaborales.length === 1 ? 'pendiente de trabajo' : 'pendientes de trabajo'} de Ventas, Administración y Publicidad. ¡Vamos con todo!`;
+      } else {
+        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy no tienes citas en agenda. ¡Un gran día para captar nuevos clientes!`;
+      }
     }
   }
 
   // Show in speech bubble
-  showGeminiSpeechBubble(`🦁 <strong>Asistente:</strong> ${msg}`, 9000);
+  showGeminiSpeechBubble(`🦁 <strong>Asistente:</strong> ${msg}`, 10000);
   
   // Animate avatar
   const btnAvatar = document.getElementById('geminiBtnAvatar');
@@ -13879,6 +13996,16 @@ function initGeminiIdleActions() {
   setTimeout(() => {
     verificarRecordatoriosDeArriendo();
   }, 5000);
+
+  // Background check for pending work tasks (Ventas, Admin, Publicidad - NO Personal) (every 30 seconds)
+  setInterval(() => {
+    verificarRecordatoriosDeTareasPendientes();
+  }, 30000);
+
+  // Initial check for pending work tasks after 8 seconds
+  setTimeout(() => {
+    verificarRecordatoriosDeTareasPendientes();
+  }, 8000);
 
   // First user interaction welcome
   let firstInteractionDone = false;
@@ -14353,6 +14480,9 @@ REGLAS DE ORO DE COHERENCIA (CLASIFICACIÓN ESTRICTA):
 
 ⚠️ REGLA 3: "REGISTRAR_MOVIMIENTO_PREVIEW"
    - Si el usuario dice "registrar gasto de X", "anotar pago", "guardar ingreso" o similar, SIEMPRE utiliza "REGISTRAR_MOVIMIENTO_PREVIEW" generando la tarjeta interactiva. Rellena los datos que tengas (ej: concepto "pintura", tipo "egreso") y deja los campos faltantes vacíos o con valores sugeridos para que el usuario los ajuste y confirme en la tarjeta interactiva.
+
+⚠️ REGLA DE PENDIENTES Y TAREAS:
+   - Al listar, informar o responder sobre los pendientes o tareas del usuario, incluye ÚNICAMENTE actividades de las áreas de Ventas, Administración y Publicidad. EXCLUYE Y OMITE SIEMPRE por completo las tareas del área Personal.
 
 - "REGISTRAR_LEAD_PREVIEW": Si el usuario quiere crear, guardar o registrar un nuevo cliente/lead (ej: "agrega al cliente María Pérez cel 3101234567 interesada en casas norte", "nuevo lead Carlos cel 3009876543"). Parámetros:
     * "nombre": nombre del cliente
