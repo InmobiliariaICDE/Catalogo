@@ -12645,6 +12645,7 @@ setInterval(actualizarAlertaCitasPendientes, 3000);
 function abrirActividadesPendientesModal(tab) {
   if (tab) pendientesTabActive = tab;
   renderActividadesPendientesModal();
+  sincronizarTodosLosPendientesADrive();
   const modal = document.getElementById('actividadesPendientesModal');
   if (modal) {
     modal.classList.add('open');
@@ -12828,13 +12829,14 @@ function renderPendienteItemCard(item) {
 
 async function guardarPendienteCloud(p) {
   if (!CRM_SCRIPT_URL || !p) return;
+  if (typeof pendingWriteUntil !== 'undefined') pendingWriteUntil = Date.now() + 30000;
   try {
     await fetch(CRM_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'savePendiente', pendiente: JSON.stringify(p) })
     });
+    console.log('[PendientesCloud] Tarea enviada a Drive ✓', p.id);
   } catch (e) {
     console.warn('[PendientesCloud] Error al guardar en Drive:', e);
   }
@@ -12842,15 +12844,26 @@ async function guardarPendienteCloud(p) {
 
 async function eliminarPendienteCloud(id) {
   if (!CRM_SCRIPT_URL || !id) return;
+  if (typeof pendingWriteUntil !== 'undefined') pendingWriteUntil = Date.now() + 30000;
   try {
     await fetch(CRM_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'deletePendiente', id: String(id) })
     });
+    console.log('[PendientesCloud] Tarea eliminada de Drive ✓', id);
   } catch (e) {
     console.warn('[PendientesCloud] Error al eliminar de Drive:', e);
+  }
+}
+
+async function sincronizarTodosLosPendientesADrive() {
+  if (!CRM_SCRIPT_URL) return;
+  const list = typeof tareasCitasPendientes !== 'undefined' && Array.isArray(tareasCitasPendientes) ? tareasCitasPendientes : [];
+  if (!list.length) return;
+  console.log('[PendientesCloud] Sincronizando todos los pendientes locales a Drive (' + list.length + ')...');
+  for (const t of list) {
+    await guardarPendienteCloud(t);
   }
 }
 
