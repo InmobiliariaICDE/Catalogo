@@ -4310,6 +4310,99 @@ html, body {
   </div>
 </div>
 
+<!-- MODAL EDITAR TAREA PENDIENTE -->
+<div class="modal-overlay" id="editarTareaPendienteModal" onclick="if(event.target===this) closeModal('editarTareaPendienteModal')">
+  <div class="modal-box" style="width:min(500px, 95%); padding: 0; overflow: hidden; border-radius: 20px; border: 1px solid rgba(212,168,75,0.4); background: #0e0d0b; box-shadow: 0 20px 60px rgba(0,0,0,0.9); animation: zoomIn 0.22s ease;">
+    <!-- Header -->
+    <div style="padding: 16px 20px; background: linear-gradient(135deg, rgba(212,168,75,0.2) 0%, rgba(168,85,247,0.15) 50%, rgba(14,13,11,0.98) 100%); border-bottom: 1px solid rgba(212,168,75,0.25); display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(212,168,75,0.2); border: 1px solid rgba(212,168,75,0.5); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--gold);">✏️</div>
+        <div>
+          <div style="font-size: 15px; font-weight: 800; color: #fff; letter-spacing: 0.02em;">Editar Tarea Pendiente</div>
+          <div style="font-size: 11.5px; color: rgba(255,255,255,0.6); margin-top: 2px;">Modifica los detalles, área, fecha y hora de la tarea</div>
+        </div>
+      </div>
+      <button class="panel-close" onclick="closeModal('editarTareaPendienteModal')" style="width: 32px; height: 32px; font-size: 20px; font-weight:400; border-radius:10px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#fff; cursor:pointer; line-height:1;">×</button>
+    </div>
+
+    <!-- Body -->
+    <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+      <input type="hidden" id="editTareaId"/>
+
+      <!-- Área -->
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <label style="font-size:11.5px; font-weight:700; color:var(--gold);">Área de la Tarea</label>
+        <select id="editTareaAreaSelect" style="background: #181614; border: 1px solid rgba(212,168,75,0.4); border-radius: 10px; padding: 9px 12px; font-size: 13px; font-weight: 700; color: var(--gold); outline: none; cursor: pointer; width:100%;">
+          <option value="ventas">🏷️ Ventas</option>
+          <option value="administracion">⚙️ Administración</option>
+          <option value="publicidad">📢 Publicidad</option>
+          <option value="personal">👤 Personal</option>
+        </select>
+      </div>
+
+      <!-- Descripción -->
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <label style="font-size:11.5px; font-weight:700; color:var(--gold);">Descripción de la Tarea</label>
+        <input type="text" id="editTareaTextoInput" placeholder="Escribe la descripción..." style="background:rgba(0,0,0,0.4); border:1px solid rgba(212,168,75,0.3); border-radius:10px; padding:10px 12px; font-size:13px; color:#fff; outline:none;" onkeydown="if(event.key==='Enter') guardarEdicionTareaPendiente()"/>
+      </div>
+
+      <!-- Fecha y Hora -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font-size:11.5px; font-weight:700; color:var(--gold);">Fecha Programada</label>
+          <input type="date" id="editTareaFechaInput" style="background:rgba(0,0,0,0.4); border:1px solid rgba(212,168,75,0.3); border-radius:10px; padding:8px 10px; font-size:12px; color:#fff; outline:none; color-scheme:dark; width:100%; box-sizing:border-box;"/>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font-size:11.5px; font-weight:700; color:var(--gold);">Hora Programada (12h)</label>
+          <div style="display:flex; gap:4px; align-items:center; background:rgba(0,0,0,0.4); border:1px solid rgba(212,168,75,0.3); border-radius:10px; padding:6px 8px;">
+            <select id="editTareaHora12" style="background:transparent; border:none; color:#fff; font-size:12px; outline:none; font-weight:700; cursor:pointer; flex:1;">
+              <option value="" style="background:#181614; color:#aaa;">Hora</option>
+              <option value="01" style="background:#181614;">01</option>
+              <option value="02" style="background:#181614;">02</option>
+              <option value="03" style="background:#181614;">03</option>
+              <option value="04" style="background:#181614;">04</option>
+              <option value="05" style="background:#181614;">05</option>
+              <option value="06" style="background:#181614;">06</option>
+              <option value="07" style="background:#181614;">07</option>
+              <option value="08" style="background:#181614;">08</option>
+              <option value="09" style="background:#181614;">09</option>
+              <option value="10" style="background:#181614;">10</option>
+              <option value="11" style="background:#181614;">11</option>
+              <option value="12" style="background:#181614;">12</option>
+            </select>
+            <span style="color:var(--gold); font-weight:800; font-size:12px;">:</span>
+            <select id="editTareaMinuto" style="background:transparent; border:none; color:#fff; font-size:12px; outline:none; font-weight:700; cursor:pointer; flex:1;">
+              <option value="00" style="background:#181614;">00</option>
+              <option value="05" style="background:#181614;">05</option>
+              <option value="10" style="background:#181614;">10</option>
+              <option value="15" style="background:#181614;">15</option>
+              <option value="20" style="background:#181614;">20</option>
+              <option value="25" style="background:#181614;">25</option>
+              <option value="30" style="background:#181614;">30</option>
+              <option value="35" style="background:#181614;">35</option>
+              <option value="40" style="background:#181614;">40</option>
+              <option value="45" style="background:#181614;">45</option>
+              <option value="50" style="background:#181614;">50</option>
+              <option value="55" style="background:#181614;">55</option>
+            </select>
+            <select id="editTareaAmPm" style="background:transparent; border:none; color:var(--gold); font-size:11.5px; outline:none; font-weight:800; cursor:pointer;">
+              <option value="AM" style="background:#181614;">AM</option>
+              <option value="PM" style="background:#181614;">PM</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="padding: 12px 20px; background: rgba(0,0,0,0.45); border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: flex-end; align-items: center; gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('editarTareaPendienteModal')" style="padding: 7px 18px; border-radius:8px;">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="guardarEdicionTareaPendiente()" style="padding: 7px 20px; border-radius:8px; background:linear-gradient(135deg, var(--gold), #a47b2a); color:#000; font-weight:800; border:none;">💾 Guardar Cambios</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL NUEVO LEAD -->
 <div class="modal-overlay" id="nuevoLeadModal" onclick="if(event.target===this) closeModal('nuevoLeadModal')">
   <div class="modal-box large" style="max-width: 650px; animation: zoomIn 0.25s ease;">
@@ -12646,7 +12739,10 @@ function renderPendienteItemCard(item) {
             <div style="margin-top:3px;">${fechaHoraBadge}</div>
           </div>
         </div>
-        <button onclick="eliminarTareaPendiente('${t.id}')" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#f87171; padding:4px 8px; border-radius:6px; font-size:11px; cursor:pointer;" title="Eliminar tarea">🗑</button>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button onclick="abrirEditarTareaPendienteModal('${t.id}')" style="background:rgba(212,168,75,0.15); border:1px solid rgba(212,168,75,0.4); color:var(--gold); padding:5px 9px; border-radius:8px; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s;" onmouseover="this.style.background='rgba(212,168,75,0.3)'; this.style.transform='scale(1.08)'" onmouseout="this.style.background='rgba(212,168,75,0.15)'; this.style.transform='scale(1)'" title="Editar tarea">✏️</button>
+          <button onclick="eliminarTareaPendiente('${t.id}')" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#f87171; padding:5px 9px; border-radius:8px; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.3)'; this.style.transform='scale(1.08)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'; this.style.transform='scale(1)'" title="Eliminar tarea">🗑</button>
+        </div>
       </div>
     `;
   }
@@ -12777,6 +12873,96 @@ function eliminarTareaPendiente(id) {
   actualizarAlertaCitasPendientes();
   if (typeof renderCitasGrilla === 'function') renderCitasGrilla();
   if (typeof renderCalendario === 'function') renderCalendario();
+}
+
+function abrirEditarTareaPendienteModal(id) {
+  if (typeof tareasCitasPendientes === 'undefined' || !Array.isArray(tareasCitasPendientes)) return;
+  const t = tareasCitasPendientes.find(x => String(x.id) === String(id));
+  if (!t) return;
+
+  const idEl = document.getElementById('editTareaId');
+  const textoEl = document.getElementById('editTareaTextoInput');
+  const areaEl = document.getElementById('editTareaAreaSelect');
+  const fechaEl = document.getElementById('editTareaFechaInput');
+  const h12El = document.getElementById('editTareaHora12');
+  const minEl = document.getElementById('editTareaMinuto');
+  const ampmEl = document.getElementById('editTareaAmPm');
+
+  if (idEl) idEl.value = t.id;
+  if (textoEl) textoEl.value = t.texto || '';
+  if (areaEl) areaEl.value = t.area || 'ventas';
+  if (fechaEl) fechaEl.value = t.fechaProg || '';
+
+  let h12 = '', min = '00', ampm = 'AM';
+  if (t.horaProg) {
+    const m = String(t.horaProg).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (m) {
+      h12 = String(parseInt(m[1], 10)).padStart(2, '0');
+      min = m[2];
+      ampm = m[3].toUpperCase();
+    }
+  }
+
+  if (h12El) h12El.value = h12;
+  if (minEl) minEl.value = min;
+  if (ampmEl) ampmEl.value = ampm;
+
+  const modal = document.getElementById('editarTareaPendienteModal');
+  if (modal) {
+    modal.classList.add('open');
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+  }
+}
+
+function guardarEdicionTareaPendiente() {
+  const idEl = document.getElementById('editTareaId');
+  if (!idEl || !idEl.value) return;
+  const id = idEl.value;
+
+  const textoInput = document.getElementById('editTareaTextoInput');
+  const areaSelect = document.getElementById('editTareaAreaSelect');
+  const fechaInput = document.getElementById('editTareaFechaInput');
+  const h12Select = document.getElementById('editTareaHora12');
+  const minSelect = document.getElementById('editTareaMinuto');
+  const ampmSelect = document.getElementById('editTareaAmPm');
+
+  const texto = textoInput ? textoInput.value.trim() : '';
+  if (!texto) {
+    toast('Ingresa la descripción de la tarea', 'warning');
+    return;
+  }
+
+  const area = areaSelect ? areaSelect.value : 'ventas';
+  const fechaProg = fechaInput ? fechaInput.value : '';
+
+  let horaProg = '';
+  if (h12Select && h12Select.value) {
+    const h = h12Select.value;
+    const m = (minSelect && minSelect.value) ? minSelect.value : '00';
+    const ap = (ampmSelect && ampmSelect.value) ? ampmSelect.value : 'AM';
+    horaProg = `${h}:${m} ${ap}`;
+  }
+
+  if (typeof tareasCitasPendientes === 'undefined' || !Array.isArray(tareasCitasPendientes)) return;
+  const t = tareasCitasPendientes.find(x => String(x.id) === String(id));
+  if (t) {
+    t.texto = texto;
+    t.area = area;
+    t.fechaProg = fechaProg;
+    t.horaProg = horaProg;
+
+    try { localStorage.setItem('icde_tareas_citas_pendientes', JSON.stringify(tareasCitasPendientes)); } catch(e){}
+
+    toast('Tarea actualizada ✓', 'success');
+    closeModal('editarTareaPendienteModal');
+    renderActividadesPendientesModal();
+    actualizarAlertaCitasPendientes();
+    if (typeof renderCitasGrilla === 'function') renderCitasGrilla();
+    if (typeof renderCalendario === 'function') renderCalendario();
+  }
 }
 
 
