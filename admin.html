@@ -13880,23 +13880,29 @@ function saludoEInteraccionInicial() {
       }) 
     : [];
 
-  // Pendientes de Ventas, Administración y Publicidad (EXCLUYENDO área Personal)
+  // Obtener lista completa de tareas pendientes desde memoria y localStorage
   let listPendientes = [];
-  if (typeof tareasCitasPendientes !== 'undefined' && Array.isArray(tareasCitasPendientes) && tareasCitasPendientes.length > 0) {
-    listPendientes = tareasCitasPendientes;
-  } else {
-    try {
-      listPendientes = JSON.parse(localStorage.getItem('icde_tareas_citas_pendientes') || '[]');
-    } catch(e) { listPendientes = []; }
+  if (typeof tareasCitasPendientes !== 'undefined' && Array.isArray(tareasCitasPendientes)) {
+    listPendientes = [...tareasCitasPendientes];
   }
-  const pendientesLaborales = listPendientes.filter(t => !t.completada && String(t.area || 'ventas').toLowerCase().trim() !== 'personal');
+  try {
+    const lsData = JSON.parse(localStorage.getItem('icde_tareas_citas_pendientes') || '[]');
+    if (Array.isArray(lsData) && lsData.length > 0) {
+      const map = new Map();
+      listPendientes.forEach(t => map.set(String(t.id), t));
+      lsData.forEach(t => map.set(String(t.id), t));
+      listPendientes = Array.from(map.values());
+    }
+  } catch(e) {}
+
+  // Filtrar pendientes activos (no completados)
+  const pendientesActivos = listPendientes.filter(t => !t.completada);
+  const pendientesCount = pendientesActivos.length;
 
   let msg = "";
   let parteTareas = "";
-  if (pendientesLaborales.length > 0) {
-    parteTareas = ` y tienes ${pendientesLaborales.length} ${pendientesLaborales.length === 1 ? 'pendiente de trabajo' : 'pendientes de trabajo'} (Ventas, Administración o Publicidad)`;
-  } else {
-    parteTareas = " y no tienes pendientes de trabajo";
+  if (pendientesCount > 0) {
+    parteTareas = ` y tienes ${pendientesCount} ${pendientesCount === 1 ? 'actividad pendiente' : 'actividades pendientes'}`;
   }
 
   if (todayCitas.length > 0) {
@@ -13912,17 +13918,17 @@ function saludoEInteraccionInicial() {
   } else {
     if (hrs >= 20) { // De las 8:00 PM en adelante
       if (hrs === 20) {
-        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria.${pendientesLaborales.length > 0 ? ' Tienes ' + pendientesLaborales.length + (pendientesLaborales.length === 1 ? ' pendiente de trabajo.' : ' pendientes de trabajo.') : ' No tienes pendientes de trabajo.'} Hoy fue un gran día y lo hiciste muy bien, se acerca la hora de descansar.`;
+        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria.${pendientesCount > 0 ? ' Tienes ' + pendientesCount + (pendientesCount === 1 ? ' actividad pendiente.' : ' actividades pendientes.') : ' No tienes actividades pendientes.'} Hoy fue un gran día y lo hiciste muy bien, se acerca la hora de descansar.`;
       } else {
-        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria.${pendientesLaborales.length > 0 ? ' Recuerda tus ' + pendientesLaborales.length + (pendientesLaborales.length === 1 ? ' pendiente de trabajo.' : ' pendientes de trabajo.') : ' No tienes pendientes de trabajo.'} Lo hiciste muy bien hoy, ya es hora de descansar y recargar energías para mañana.`;
+        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria.${pendientesCount > 0 ? ' Recuerda tus ' + pendientesCount + (pendientesCount === 1 ? ' actividad pendiente.' : ' actividades pendientes.') : ' No tienes actividades pendientes.'} Lo hiciste muy bien hoy, ya es hora de descansar y recargar energías para mañana.`;
       }
     } else if (hrs >= 18) { // De las 6:00 PM a las 7:59 PM
-      msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria.${pendientesLaborales.length > 0 ? ' Tienes ' + pendientesLaborales.length + (pendientesLaborales.length === 1 ? ' pendiente de trabajo.' : ' pendientes de trabajo.') : ' No tienes pendientes de trabajo.'} Ya estamos cerrando la jornada laboral, ¡hoy fue un gran día! Ve preparándote para un merecido descanso.`;
+      msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria.${pendientesCount > 0 ? ' Tienes ' + pendientesCount + (pendientesCount === 1 ? ' actividad pendiente.' : ' actividades pendientes.') : ' No tienes actividades pendientes.'} Ya estamos cerrando la jornada laboral, ¡hoy fue un gran día! Ve preparándote para un merecido descanso.`;
     } else {
-      if (pendientesLaborales.length > 0) {
-        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy no tienes citas en agenda, pero tienes ${pendientesLaborales.length} ${pendientesLaborales.length === 1 ? 'actividad pendiente' : 'actividades pendientes'} de trabajo en las áreas de Ventas, Administración y Publicidad. ¡Vamos con todo!`;
+      if (pendientesCount > 0) {
+        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy no tienes citas en agenda, pero tienes ${pendientesCount} ${pendientesCount === 1 ? 'actividad pendiente' : 'actividades pendientes'} por atender. ¡Vamos con todo!`;
       } else {
-        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy no tienes citas en agenda ni pendientes de trabajo en Ventas, Administración o Publicidad. ¡Un gran día para captar nuevos clientes!`;
+        msg = `${saludoBase} Bienvenido de nuevo a ICDE Inmobiliaria. Hoy no tienes citas en agenda ni actividades pendientes. ¡Un gran día para captar nuevos clientes!`;
       }
     }
   }
