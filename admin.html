@@ -11124,7 +11124,7 @@ function renderCitasGrilla() {
                 ? `<span style="font-size:7.5px; font-weight:800; color:#60a5fa; background:rgba(59,130,246,0.25); border:1px solid rgba(59,130,246,0.6); border-radius:10px; padding:0 4px; letter-spacing:0.02em;">⚡ En Proceso</span>`
                 : `<span style="font-size:7.5px; font-weight:800; color:${ac.text}; background:${ac.bg}; border:1px dashed ${ac.border}; border-radius:10px; padding:0 4px; letter-spacing:0.02em;">📌 Pendiente</span>`;
               const responsableBadge = item.tomadaPor
-                ? `<div style="font-size:9px; font-weight:800; color:#93c5fd; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">👤 ${item.tomadaPor}</div>`
+                ? `<span style="font-size:9px; font-weight:800; color:#93c5fd; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">👤 ${item.tomadaPor}</span>`
                 : '';
               return `<div onclick="event.stopPropagation(); abrirActividadesPendientesModal();" title="${safeTexto}" class="tarea-pendiente-card" style="position:relative; margin:2px 3px; cursor:pointer; background:${esEnProceso ? 'rgba(59,130,246,0.12)' : ac.bg}; border:1px ${esEnProceso ? 'solid rgba(59,130,246,0.55)' : 'dashed ' + ac.border}; border-left:3px solid ${esEnProceso ? '#3b82f6' : ac.text}; border-radius:7px; padding:4px 6px; transition:filter 0.15s, transform 0.15s; overflow:hidden;" onmouseover="this.style.filter='brightness(1.3)'; this.style.transform='scale(1.03)';" onmouseout="this.style.filter=''; this.style.transform='';">
                 <div style="display:flex; align-items:center; gap:3px; margin-bottom:2px;">
@@ -11132,8 +11132,10 @@ function renderCitasGrilla() {
                   ${estadoBadge}
                 </div>
                 <div style="font-size:10.5px; font-weight:700; color:#e2d9ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.texto || 'Tarea'}</div>
-                ${responsableBadge}
-                <div style="font-size:9px; color:${esEnProceso ? '#60a5fa' : ac.text}; font-weight:600; margin-top:1px; opacity:0.85;">${ac.label}</div>
+                <div style="display:flex; align-items:center; gap:6px; margin-top:2px; min-width:0;">
+                  <span style="font-size:9px; color:${esEnProceso ? '#60a5fa' : ac.text}; font-weight:600; opacity:0.85; flex-shrink:0;">${ac.label}</span>
+                  ${responsableBadge}
+                </div>
               </div>`;
             }
 
