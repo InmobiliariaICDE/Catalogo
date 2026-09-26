@@ -819,7 +819,7 @@ function deleteCitaFromSheet(id) {
 function inicializarHojaPendientes() {
   const ss = getSpreadsheet();
   let sheet = ss.getSheetByName('Pendientes') || ss.getSheetByName('PENDIENTES');
-  const headers = ['ID', 'Texto', 'Área', 'Fecha Programada', 'Hora Programada', 'Fecha Creación', 'Completada', 'Full_JSON'];
+  const headers = ['ID', 'Texto', 'Área', 'Fecha Programada', 'Hora Programada', 'Fecha Creación', 'Estado', 'Tomada Por', 'Fecha Tomada', 'Completada', 'Full_JSON'];
 
   if (!sheet) {
     sheet = ss.insertSheet('Pendientes');
@@ -960,8 +960,12 @@ function savePendienteToSheet(pendiente) {
     [normalizeHeader('horaprog')]:           pendiente.horaProg || '',
     [normalizeHeader('fecha creación')]:    pendiente.fechaCreacion || '',
     [normalizeHeader('fechacreacion')]:      pendiente.fechaCreacion || '',
+    [normalizeHeader('estado')]:             pendiente.completada ? 'Completada' : (pendiente.enProceso ? 'En Proceso' : 'Pendiente'),
+    [normalizeHeader('tomada por')]:         pendiente.tomadaPor || '',
+    [normalizeHeader('tomadapor')]:          pendiente.tomadaPor || '',
+    [normalizeHeader('fecha tomada')]:       pendiente.fechaTomada || '',
     [normalizeHeader('completada')]:         pendiente.completada ? 'true' : 'false',
-    [normalizeHeader('Full_JSON')]:          JSON.stringify(pendiente),
+    [normalizeHeader('full_json')]:          JSON.stringify(pendiente),
   };
 
   if (rowIndex > 0) {
