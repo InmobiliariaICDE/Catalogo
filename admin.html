@@ -6928,11 +6928,23 @@ async function autoSyncDrive() {
   if (dot) { dot.style.background = '#d4a84b'; dot.style.boxShadow = '0 0 6px #d4a84b'; }
   if (txt) txt.textContent = 'Sincronizando...';
   try {
-    const [data, dataCitas] = await Promise.all([
+    const [data, dataCitas, dataPendientes] = await Promise.all([
       fetchJsonSeguro(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now()),
-      fetchJsonSeguro(CRM_SCRIPT_URL + '?action=getCitas&t=' + Date.now())
+      fetchJsonSeguro(CRM_SCRIPT_URL + '?action=getCitas&t=' + Date.now()),
+      fetchJsonSeguro(CRM_SCRIPT_URL + '?action=getPendientes&t=' + Date.now())
     ]);
     if (!Array.isArray(data)) throw new Error('Respuesta inválida');
+
+    // Cargar pendientes directamente desde la hoja Pendientes de Drive
+    if (Array.isArray(dataPendientes)) {
+      const cloudTaskIds = new Set(dataPendientes.map(t => String(t.id || '').trim()).filter(Boolean));
+      const localOnlyTasks = (tareasCitasPendientes || []).filter(t => {
+        const tid = String(t.id || '').trim();
+        return tid && !cloudTaskIds.has(tid);
+      });
+      tareasCitasPendientes = [...dataPendientes, ...localOnlyTasks];
+      try { localStorage.setItem('icde_tareas_citas_pendientes', JSON.stringify(tareasCitasPendientes)); } catch(e){}
+    }
 
     // Cargar citas directamente desde el Excel (fuente de verdad), preservando citas creadas localmente pendientes de guardar
     if (Array.isArray(dataCitas)) {
@@ -7048,13 +7060,22 @@ async function autoSyncDrive() {
 async function cargarLeads(){
   if(!CRM_SCRIPT_URL) return;
   try {
-    const [data, dataCitas] = await Promise.all([
+    const [data, dataCitas, dataPendientes] = await Promise.all([
       fetchJsonSeguro(CRM_SCRIPT_URL + '?action=getLeads&t=' + Date.now()),
-      fetchJsonSeguro(CRM_SCRIPT_URL + '?action=getCitas&t=' + Date.now())
+      fetchJsonSeguro(CRM_SCRIPT_URL + '?action=getCitas&t=' + Date.now()),
+      fetchJsonSeguro(CRM_SCRIPT_URL + '?action=getPendientes&t=' + Date.now())
     ]);
     
     if (Array.isArray(dataCitas)) {
       citas = dataCitas;
+    }
+
+    if (Array.isArray(dataPendientes)) {
+      tareasCitasPendientes = dataPendientes;
+      try { localStorage.setItem('icde_tareas_citas_pendientes', JSON.stringify(tareasCitasPendientes)); } catch(e){}
+      actualizarAlertaCitasPendientes();
+      if (typeof renderCitasGrilla === 'function') renderCitasGrilla();
+      if (typeof renderCalendario === 'function') renderCalendario();
     }
 
     if(Array.isArray(data)){
@@ -12805,6 +12826,34 @@ function renderPendienteItemCard(item) {
   `;
 }
 
+async function guardarPendienteCloud(p) {
+  if (!CRM_SCRIPT_URL || !p) return;
+  try {
+    await fetch(CRM_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'savePendiente', pendiente: JSON.stringify(p) })
+    });
+  } catch (e) {
+    console.warn('[PendientesCloud] Error al guardar en Drive:', e);
+  }
+}
+
+async function eliminarPendienteCloud(id) {
+  if (!CRM_SCRIPT_URL || !id) return;
+  try {
+    await fetch(CRM_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'deletePendiente', id: String(id) })
+    });
+  } catch (e) {
+    console.warn('[PendientesCloud] Error al eliminar de Drive:', e);
+  }
+}
+
 function agregarNuevaTareaPendiente() {
   const input = document.getElementById('nuevaTareaInput');
   const areaSelect = document.getElementById('nuevaTareaAreaSelect');
@@ -12839,6 +12888,8 @@ function agregarNuevaTareaPendiente() {
   tareasCitasPendientes.unshift(nueva);
   try { localStorage.setItem('icde_tareas_citas_pendientes', JSON.stringify(tareasCitasPendientes)); } catch(e){}
   
+  guardarPendienteCloud(nueva);
+
   input.value = '';
   if (fechaInput) fechaInput.value = '';
   if (hora12Input) hora12Input.value = '';
@@ -12856,6 +12907,7 @@ function marcarTareaPendienteCompletada(id) {
   if (t) {
     t.completada = true;
     try { localStorage.setItem('icde_tareas_citas_pendientes', JSON.stringify(tareasCitasPendientes)); } catch(e){}
+    guardarPendienteCloud(t);
     toast('Tarea completada ✓', 'success');
     renderActividadesPendientesModal();
     actualizarAlertaCitasPendientes();
@@ -12868,6 +12920,7 @@ function eliminarTareaPendiente(id) {
   if (typeof tareasCitasPendientes === 'undefined' || !Array.isArray(tareasCitasPendientes)) return;
   tareasCitasPendientes = tareasCitasPendientes.filter(x => String(x.id) !== String(id));
   try { localStorage.setItem('icde_tareas_citas_pendientes', JSON.stringify(tareasCitasPendientes)); } catch(e){}
+  eliminarPendienteCloud(id);
   toast('Tarea eliminada ✓', 'success');
   renderActividadesPendientesModal();
   actualizarAlertaCitasPendientes();
@@ -12955,6 +13008,7 @@ function guardarEdicionTareaPendiente() {
     t.horaProg = horaProg;
 
     try { localStorage.setItem('icde_tareas_citas_pendientes', JSON.stringify(tareasCitasPendientes)); } catch(e){}
+    guardarPendienteCloud(t);
 
     toast('Tarea actualizada ✓', 'success');
     closeModal('editarTareaPendienteModal');

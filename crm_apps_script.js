@@ -63,6 +63,7 @@ function doGet(e) {
     if (action === 'getData')      return getData();
     if (action === 'getLeads')     return getLeads();
     if (action === 'getCitas')     return getCitas();
+    if (action === 'getPendientes') return getPendientes();
     if (action === 'getLeadName')  return getLeadName(e.parameter.leadId);
     if (action === 'saveFeedback') return saveLeadFeedback(
       e.parameter.leadId, e.parameter.cod, e.parameter.type, e.parameter.comment
@@ -89,6 +90,8 @@ function doPost(e) {
     if (params.action === 'deleteLead')       return deleteLeadFromSheet(params.id);
     if (params.action === 'saveCita')         return saveCitaToSheet(JSON.parse(params.cita));
     if (params.action === 'deleteCita')       return deleteCitaFromSheet(params.id);
+    if (params.action === 'savePendiente')    return savePendienteToSheet(typeof params.pendiente === 'string' ? JSON.parse(params.pendiente) : params.pendiente);
+    if (params.action === 'deletePendiente')  return deletePendienteFromSheet(params.id);
     if (params.action === 'saveProperty')     return savePropertyToSheet(JSON.parse(params.property));
     if (params.action === 'saveFeedback')     return saveLeadFeedback(params.leadId, params.cod, params.type, params.comment);
     if (params.action === 'saveAdminPayment') return saveAdminPaymentToSheet(params);
@@ -790,6 +793,159 @@ function deleteCitaFromSheet(id) {
   const ss = getSpreadsheet();
   const sheet = ss.getSheetByName('CRM_Citas');
   if (!sheet) return createJsonResponse({ success: true, note: 'No CRM_Citas sheet' });
+
+  const idStr = String(id || '').trim();
+  if (!idStr) return createJsonResponse({ error: 'ID requerido' });
+
+  const data = sheet.getDataRange().getValues();
+  let deleted = 0;
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (String(data[i][0] || '').trim() === idStr) {
+      sheet.deleteRow(i + 1);
+      deleted++;
+    }
+  }
+
+  return createJsonResponse({ success: true, deleted: deleted });
+}
+
+// ─────────────────────────────────────────────────────────────
+// PENDIENTES
+// ─────────────────────────────────────────────────────────────
+function getPendientes() {
+  const ss = getSpreadsheet();
+  let sheet = ss.getSheetByName('Pendientes') || ss.getSheetByName('PENDIENTES');
+  if (!sheet) return createJsonResponse([]);
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return createJsonResponse([]);
+
+  const headers = data[0].map(h => String(h || '').trim().toLowerCase());
+  const nh = h => headers.indexOf(normalizeHeader(h));
+
+  const idIdx            = nh('id');
+  const textoIdx         = nh('texto') !== -1 ? nh('texto') : nh('descripcion');
+  const areaIdx          = nh('area');
+  const fechaProgIdx     = nh('fechaprog') !== -1 ? nh('fechaprog') : (nh('fecha programada') !== -1 ? nh('fecha programada') : nh('fecha'));
+  const horaProgIdx      = nh('horaprog') !== -1 ? nh('horaprog') : (nh('hora programada') !== -1 ? nh('hora programada') : nh('hora'));
+  const fechaCreacionIdx = nh('fechacreacion') !== -1 ? nh('fechacreacion') : nh('fecha creacion');
+  const completadaIdx    = nh('completada') !== -1 ? nh('completada') : nh('estado');
+  const jsonIdx          = nh('full_json');
+
+  const pendientes = data.slice(1).map(row => {
+    let item = {};
+    if (jsonIdx !== -1 && row[jsonIdx]) {
+      try { item = JSON.parse(row[jsonIdx]); } catch(e) {}
+    }
+
+    if (idIdx !== -1 && row[idIdx] !== undefined && row[idIdx] !== '') item.id = String(row[idIdx]);
+    if (textoIdx !== -1 && row[textoIdx] !== undefined) item.texto = String(row[textoIdx]);
+    if (areaIdx !== -1 && row[areaIdx] !== undefined) item.area = String(row[areaIdx]);
+
+    if (fechaProgIdx !== -1 && row[fechaProgIdx] !== undefined && row[fechaProgIdx] !== '') {
+      let fVal = row[fechaProgIdx];
+      if (fVal instanceof Date) {
+        const m = fVal.getMonth() + 1;
+        const d = fVal.getDate();
+        fVal = `${fVal.getFullYear()}-${m < 10 ? '0'+m : m}-${d < 10 ? '0'+d : d}`;
+      }
+      item.fechaProg = String(fVal);
+    }
+    if (horaProgIdx !== -1 && row[horaProgIdx] !== undefined && row[horaProgIdx] !== '') {
+      let hVal = row[horaProgIdx];
+      if (hVal instanceof Date) {
+        const hh = hVal.getHours();
+        const mm = hVal.getMinutes();
+        hVal = `${hh < 10 ? '0'+hh : hh}:${mm < 10 ? '0'+mm : mm}`;
+      }
+      item.horaProg = String(hVal);
+    }
+    if (fechaCreacionIdx !== -1 && row[fechaCreacionIdx] !== undefined && row[fechaCreacionIdx] !== '') {
+      item.fechaCreacion = String(row[fechaCreacionIdx]);
+    }
+    if (completadaIdx !== -1 && row[completadaIdx] !== undefined && row[completadaIdx] !== '') {
+      const valStr = String(row[completadaIdx]).trim().toLowerCase();
+      item.completada = (valStr === 'true' || valStr === 'si' || valStr === '1' || valStr === 'completada');
+    }
+
+    if (!item.id && row[0]) item.id = String(row[0]);
+    return item;
+  }).filter(p => p && p.id);
+
+  return createJsonResponse(pendientes);
+}
+
+function savePendienteToSheet(pendiente) {
+  const ss = getSpreadsheet();
+  let sheet = ss.getSheetByName('Pendientes') || ss.getSheetByName('PENDIENTES');
+
+  const headers = ['id', 'texto', 'area', 'fechaProg', 'horaProg', 'fechaCreacion', 'completada', 'Full_JSON'];
+
+  if (!sheet) {
+    sheet = ss.insertSheet('Pendientes');
+    sheet.appendRow(headers);
+    sheet.setFrozenRows(1);
+  } else {
+    const rawHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
+    const normalizedExisting = rawHeaders.map(h => normalizeHeader(h));
+    headers.forEach((h) => {
+      if (normalizedExisting.indexOf(normalizeHeader(h)) === -1) {
+        sheet.getRange(1, rawHeaders.length + 1).setValue(h);
+        rawHeaders.push(h);
+        normalizedExisting.push(normalizeHeader(h));
+      }
+    });
+  }
+
+  const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(h => String(h).trim());
+  const normalizedHeaders = currentHeaders.map(h => normalizeHeader(h));
+
+  const data = sheet.getDataRange().getValues();
+  let rowIndex = -1;
+  const targetId = String(pendiente.id || '').trim();
+  const idColIdx = normalizedHeaders.indexOf(normalizeHeader('id'));
+
+  if (targetId && idColIdx !== -1) {
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idColIdx] || '').trim() === targetId) {
+        rowIndex = i + 1;
+        break;
+      }
+    }
+  }
+
+  const fieldMap = {
+    [normalizeHeader('id')]:            pendiente.id,
+    [normalizeHeader('texto')]:         pendiente.texto || '',
+    [normalizeHeader('area')]:          pendiente.area || 'ventas',
+    [normalizeHeader('fechaProg')]:     pendiente.fechaProg || '',
+    [normalizeHeader('horaProg')]:      pendiente.horaProg || '',
+    [normalizeHeader('fechaCreacion')]: pendiente.fechaCreacion || '',
+    [normalizeHeader('completada')]:    pendiente.completada ? 'true' : 'false',
+    [normalizeHeader('Full_JSON')]:     JSON.stringify(pendiente),
+  };
+
+  if (rowIndex > 0) {
+    normalizedHeaders.forEach((nh, colIdx) => {
+      if (nh in fieldMap) {
+        sheet.getRange(rowIndex, colIdx + 1).setValue(fieldMap[nh]);
+      }
+    });
+  } else {
+    const newRow = new Array(currentHeaders.length).fill('');
+    normalizedHeaders.forEach((nh, colIdx) => {
+      if (nh in fieldMap) newRow[colIdx] = fieldMap[nh];
+    });
+    sheet.appendRow(newRow);
+  }
+
+  return createJsonResponse({ success: true });
+}
+
+function deletePendienteFromSheet(id) {
+  const ss = getSpreadsheet();
+  const sheet = ss.getSheetByName('Pendientes') || ss.getSheetByName('PENDIENTES');
+  if (!sheet) return createJsonResponse({ success: true, note: 'No Pendientes sheet' });
 
   const idStr = String(id || '').trim();
   if (!idStr) return createJsonResponse({ error: 'ID requerido' });
