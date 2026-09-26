@@ -4900,7 +4900,7 @@ html, body {
 const PASSWORD = 'icde2024';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxki98uXR_fXbFCPynfzvQN5ibiwQY23zKpLkLKTL7A26GlipdC20oQTKOrUwAMeIJ2gw/exec?action=getData';
 // CRM URL apunta al mismo script nuevo que maneja getData, getLeads, getCitas, etc.
-const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvZg9LqnWm1n1iXe3eFgj-PtUbKTumrIJdA8BnJXpH9H4e8OXJcC7-fpmhbQJA5TvX/exec';
+const CRM_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsal6Hog6hCW-87stJ6FrYY5tIucA4vTRHMcIT2rfkP_nwgT_NhOaXS5249RcK-x7dYw/exec';
 const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAUUSYRhDX6Eik4KA-B6luk74YjCNRanwv13CmmZg4La8NzVuNyBC0T5GH6f4-ke-Xig/exec';
 let CONT_SCRIPT_URL = (JSON.parse(localStorage.getItem('icde_settings') || '{}')).contScriptUrl || '';
 if (CONT_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbyeB0qDF-22AjG5wArRz5x89K6wOdGwTSBqcGqNlphDzARXFAhQ2x6GwoJ_7nfR_5qNEQ/exec" || !CONT_SCRIPT_URL) {
@@ -7071,7 +7071,12 @@ async function cargarLeads(){
     }
 
     if (Array.isArray(dataPendientes)) {
-      tareasCitasPendientes = dataPendientes;
+      const cloudTaskIds = new Set(dataPendientes.map(t => String(t.id || '').trim()).filter(Boolean));
+      const localOnlyTasks = (tareasCitasPendientes || []).filter(t => {
+        const tid = String(t.id || '').trim();
+        return tid && !cloudTaskIds.has(tid);
+      });
+      tareasCitasPendientes = [...dataPendientes, ...localOnlyTasks];
       try { localStorage.setItem('icde_tareas_citas_pendientes', JSON.stringify(tareasCitasPendientes)); } catch(e){}
       actualizarAlertaCitasPendientes();
       if (typeof renderCitasGrilla === 'function') renderCitasGrilla();
@@ -12833,7 +12838,6 @@ async function guardarPendienteCloud(p) {
   try {
     await fetch(CRM_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'savePendiente', pendiente: JSON.stringify(p) })
     });
     console.log('[PendientesCloud] Tarea enviada a Drive ✓', p.id);
@@ -12848,7 +12852,6 @@ async function eliminarPendienteCloud(id) {
   try {
     await fetch(CRM_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'deletePendiente', id: String(id) })
     });
     console.log('[PendientesCloud] Tarea eliminada de Drive ✓', id);

@@ -917,6 +917,20 @@ function getPendientes() {
 }
 
 function savePendienteToSheet(pendiente) {
+  if (typeof pendiente === 'string' && pendiente.trim().startsWith('{')) {
+    try { pendiente = JSON.parse(pendiente); } catch(e) {}
+  }
+  if (!pendiente || typeof pendiente !== 'object' || !pendiente.id) {
+    pendiente = {
+      id: 'TASK-PRUEBA',
+      texto: 'Tarea de prueba inicialización',
+      area: 'personal',
+      fechaProg: new Date().toISOString().split('T')[0],
+      horaProg: '05:00 PM',
+      fechaCreacion: new Date().toLocaleDateString('es-CO'),
+      completada: false
+    };
+  }
   const sheet = inicializarHojaPendientes();
 
   const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(h => String(h).trim());
