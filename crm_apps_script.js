@@ -64,6 +64,10 @@ function doGet(e) {
     if (action === 'getLeads')     return getLeads();
     if (action === 'getCitas')     return getCitas();
     if (action === 'getPendientes') return getPendientes();
+    if (action === 'inicializarPendientes') {
+      inicializarHojaPendientes();
+      return createJsonResponse({ success: true, message: 'Hoja Pendientes inicializada' });
+    }
     if (action === 'getLeadName')  return getLeadName(e.parameter.leadId);
     if (action === 'saveFeedback') return saveLeadFeedback(
       e.parameter.leadId, e.parameter.cod, e.parameter.type, e.parameter.comment
@@ -812,10 +816,47 @@ function deleteCitaFromSheet(id) {
 // ─────────────────────────────────────────────────────────────
 // PENDIENTES
 // ─────────────────────────────────────────────────────────────
+function inicializarHojaPendientes() {
+  const ss = getSpreadsheet();
+  let sheet = ss.getSheetByName('Pendientes') || ss.getSheetByName('PENDIENTES');
+  const headers = ['ID', 'Texto', 'Área', 'Fecha Programada', 'Hora Programada', 'Fecha Creación', 'Completada', 'Full_JSON'];
+
+  if (!sheet) {
+    sheet = ss.insertSheet('Pendientes');
+  }
+
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+
+  if (lastRow === 0 || lastCol === 0) {
+    sheet.clear();
+    sheet.appendRow(headers);
+    sheet.setFrozenRows(1);
+    return sheet;
+  }
+
+  const rawHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const normalizedExisting = rawHeaders.map(h => normalizeHeader(h));
+
+  headers.forEach((h) => {
+    if (normalizedExisting.indexOf(normalizeHeader(h)) === -1) {
+      const nextCol = sheet.getLastColumn() + 1;
+      sheet.getRange(1, nextCol).setValue(h);
+      rawHeaders.push(h);
+      normalizedExisting.push(normalizeHeader(h));
+    }
+  });
+
+  return sheet;
+}
+
 function getPendientes() {
   const ss = getSpreadsheet();
   let sheet = ss.getSheetByName('Pendientes') || ss.getSheetByName('PENDIENTES');
   if (!sheet) return createJsonResponse([]);
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return createJsonResponse([]);
 
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return createJsonResponse([]);
@@ -828,7 +869,7 @@ function getPendientes() {
   const areaIdx          = nh('area');
   const fechaProgIdx     = nh('fechaprog') !== -1 ? nh('fechaprog') : (nh('fecha programada') !== -1 ? nh('fecha programada') : nh('fecha'));
   const horaProgIdx      = nh('horaprog') !== -1 ? nh('horaprog') : (nh('hora programada') !== -1 ? nh('hora programada') : nh('hora'));
-  const fechaCreacionIdx = nh('fechacreacion') !== -1 ? nh('fechacreacion') : nh('fecha creacion');
+  const fechaCreacionIdx = nh('fechacreacion') !== -1 ? nh('fechacreacion') : (nh('fecha creacion') !== -1 ? nh('fecha creacion') : nh('fecha creación'));
   const completadaIdx    = nh('completada') !== -1 ? nh('completada') : nh('estado');
   const jsonIdx          = nh('full_json');
 
@@ -876,26 +917,7 @@ function getPendientes() {
 }
 
 function savePendienteToSheet(pendiente) {
-  const ss = getSpreadsheet();
-  let sheet = ss.getSheetByName('Pendientes') || ss.getSheetByName('PENDIENTES');
-
-  const headers = ['id', 'texto', 'area', 'fechaProg', 'horaProg', 'fechaCreacion', 'completada', 'Full_JSON'];
-
-  if (!sheet) {
-    sheet = ss.insertSheet('Pendientes');
-    sheet.appendRow(headers);
-    sheet.setFrozenRows(1);
-  } else {
-    const rawHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
-    const normalizedExisting = rawHeaders.map(h => normalizeHeader(h));
-    headers.forEach((h) => {
-      if (normalizedExisting.indexOf(normalizeHeader(h)) === -1) {
-        sheet.getRange(1, rawHeaders.length + 1).setValue(h);
-        rawHeaders.push(h);
-        normalizedExisting.push(normalizeHeader(h));
-      }
-    });
-  }
+  const sheet = inicializarHojaPendientes();
 
   const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(h => String(h).trim());
   const normalizedHeaders = currentHeaders.map(h => normalizeHeader(h));
@@ -915,14 +937,17 @@ function savePendienteToSheet(pendiente) {
   }
 
   const fieldMap = {
-    [normalizeHeader('id')]:            pendiente.id,
-    [normalizeHeader('texto')]:         pendiente.texto || '',
-    [normalizeHeader('area')]:          pendiente.area || 'ventas',
-    [normalizeHeader('fechaProg')]:     pendiente.fechaProg || '',
-    [normalizeHeader('horaProg')]:      pendiente.horaProg || '',
-    [normalizeHeader('fechaCreacion')]: pendiente.fechaCreacion || '',
-    [normalizeHeader('completada')]:    pendiente.completada ? 'true' : 'false',
-    [normalizeHeader('Full_JSON')]:     JSON.stringify(pendiente),
+    [normalizeHeader('id')]:                 pendiente.id,
+    [normalizeHeader('texto')]:              pendiente.texto || '',
+    [normalizeHeader('area')]:               pendiente.area || 'ventas',
+    [normalizeHeader('fecha programada')]:  pendiente.fechaProg || '',
+    [normalizeHeader('fechaprog')]:          pendiente.fechaProg || '',
+    [normalizeHeader('hora programada')]:   pendiente.horaProg || '',
+    [normalizeHeader('horaprog')]:           pendiente.horaProg || '',
+    [normalizeHeader('fecha creación')]:    pendiente.fechaCreacion || '',
+    [normalizeHeader('fechacreacion')]:      pendiente.fechaCreacion || '',
+    [normalizeHeader('completada')]:         pendiente.completada ? 'true' : 'false',
+    [normalizeHeader('Full_JSON')]:          JSON.stringify(pendiente),
   };
 
   if (rowIndex > 0) {
