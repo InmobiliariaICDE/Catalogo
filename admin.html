@@ -4293,6 +4293,10 @@ html, body {
             </select>
           </div>
         </div>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:#aaa; cursor:pointer; white-space:nowrap;" title="Abrir en Google Calendar al guardar">
+          <input type="checkbox" id="nuevaTareaCalendarCheck" style="accent-color:#4285F4; width:14px; height:14px; cursor:pointer;"/>
+          <span style="font-size:13px;">📅</span>
+        </label>
         <button onclick="agregarNuevaTareaPendiente()" style="padding:8px 16px; background:linear-gradient(135deg, var(--gold), #a47b2a); border:none; border-radius:10px; color:#000; font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap; transition:all 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">+ Agregar Tarea</button>
       </div>
     </div>
@@ -12891,6 +12895,7 @@ function renderPendienteItemCard(item) {
             </div>
           </div>
           <div style="display:flex; gap:6px; align-items:center; margin-top:6px;">
+            <button onclick="abrirTareaEnGoogleCalendar(tareasCitasPendientes.find(x=>String(x.id)==='${t.id}'))" style="background:rgba(66,133,244,0.12); border:1px solid rgba(66,133,244,0.3); color:#93c5fd; padding:5px 9px; border-radius:8px; font-size:12px; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='rgba(66,133,244,0.28)'" onmouseout="this.style.background='rgba(66,133,244,0.12)'" title="Agregar a Google Calendar">📅</button>
             <button onclick="eliminarTareaPendiente('${t.id}')" style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); color:#f87171; padding:5px 9px; border-radius:8px; font-size:12px; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.28)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'" title="Eliminar">🗑</button>
           </div>
         </div>
@@ -12912,6 +12917,7 @@ function renderPendienteItemCard(item) {
           </div>
         </div>
         <div style="display:flex; gap:6px; align-items:center;">
+          <button onclick="abrirTareaEnGoogleCalendar(tareasCitasPendientes.find(x=>String(x.id)==='${t.id}'))" style="background:rgba(66,133,244,0.12); border:1px solid rgba(66,133,244,0.3); color:#93c5fd; padding:5px 9px; border-radius:8px; font-size:12px; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='rgba(66,133,244,0.28)'" onmouseout="this.style.background='rgba(66,133,244,0.12)'" title="Agregar a Google Calendar">📅</button>
           <button onclick="abrirEditarTareaPendienteModal('${t.id}')" style="background:rgba(212,168,75,0.15); border:1px solid rgba(212,168,75,0.4); color:var(--gold); padding:5px 9px; border-radius:8px; font-size:12px; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='rgba(212,168,75,0.3)'; this.style.transform='scale(1.08)'" onmouseout="this.style.background='rgba(212,168,75,0.15)'; this.style.transform='scale(1)'" title="Editar">✏️</button>
           <button onclick="eliminarTareaPendiente('${t.id}')" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#f87171; padding:5px 9px; border-radius:8px; font-size:12px; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.3)'; this.style.transform='scale(1.08)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'; this.style.transform='scale(1)'" title="Eliminar">🗑</button>
         </div>
@@ -13051,6 +13057,13 @@ function agregarNuevaTareaPendiente() {
   
   guardarPendienteCloud(nueva);
 
+  // Agregar a Google Calendar si está marcado
+  const calCheck = document.getElementById('nuevaTareaCalendarCheck');
+  if (calCheck && calCheck.checked) {
+    abrirTareaEnGoogleCalendar(nueva);
+    calCheck.checked = false;
+  }
+
   input.value = '';
   if (fechaInput) fechaInput.value = '';
   if (hora12Input) hora12Input.value = '';
@@ -13060,6 +13073,63 @@ function agregarNuevaTareaPendiente() {
   actualizarAlertaCitasPendientes();
   if (typeof renderCitasGrilla === 'function') renderCitasGrilla();
   if (typeof renderCalendario === 'function') renderCalendario();
+}
+
+/**
+ * Abre Google Calendar con los datos de una tarea pendiente.
+ * Funciona con o sin fecha/hora programada.
+ */
+function abrirTareaEnGoogleCalendar(t) {
+  const texto = t.texto || 'Tarea ICDE';
+  const AREA_LABELS = {
+    ventas: 'Ventas', administracion: 'Administración', publicidad: 'Publicidad', personal: 'Personal'
+  };
+  const areaLabel = AREA_LABELS[t.area] || t.area || '';
+  const detalles = [
+    areaLabel ? `Área: ${areaLabel}` : '',
+    t.tomadaPor ? `Responsable: ${t.tomadaPor}` : '',
+    'Creado desde Panel ICDE'
+  ].filter(Boolean).join('\n');
+
+  let dateStr = '';
+  if (t.fechaProg) {
+    // Convert fechaProg (e.g. "28/09/2026" or "2026-09-28") to YYYYMMDD
+    let fd = '';
+    if (t.fechaProg.includes('-')) {
+      fd = t.fechaProg.replace(/-/g, '');
+    } else {
+      // format dd/mm/yyyy
+      const parts = t.fechaProg.split('/');
+      if (parts.length === 3) fd = parts[2] + parts[1] + parts[0];
+    }
+    if (fd && t.horaProg) {
+      // t.horaProg like "02:00 PM" → convert to 24h → HHMMSS
+      let hora24 = '';
+      const hMatch = String(t.horaProg).match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+      if (hMatch) {
+        let hh = parseInt(hMatch[1]);
+        const mm = hMatch[2];
+        const ap = hMatch[3].toUpperCase();
+        if (ap === 'PM' && hh < 12) hh += 12;
+        if (ap === 'AM' && hh === 12) hh = 0;
+        hora24 = String(hh).padStart(2,'0') + mm + '00';
+      }
+      if (hora24) {
+        // 1-hour event
+        const endHH = String(Math.min(parseInt(hora24.substring(0,2)) + 1, 23)).padStart(2,'0');
+        const endTime = endHH + hora24.substring(2);
+        dateStr = `${fd}T${hora24}/${fd}T${endTime}`;
+      } else {
+        dateStr = `${fd}/${fd}`;
+      }
+    } else if (fd) {
+      dateStr = `${fd}/${fd}`;
+    }
+  }
+
+  let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(texto)}&details=${encodeURIComponent(detalles)}`;
+  if (dateStr) url += `&dates=${dateStr}`;
+  window.open(url, '_blank');
 }
 
 // Nombres recientes para sugerencias rápidas
