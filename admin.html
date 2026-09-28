@@ -4226,6 +4226,28 @@ html, body {
   </div>
 </div>
 
+<!-- MINI-MODAL SELECCIÓN TIPO HORARIO -->
+<div id="menuAgregarHorarioOverlay" onclick="cerrarMenuAgregarHorario()" style="display:none; position:fixed; inset:0; z-index:9998;"></div>
+<div id="menuAgregarHorarioPopover" style="display:none; position:fixed; z-index:9999; background:#16141200; pointer-events:none;">
+  <div style="background:#1a1814; border:1px solid rgba(212,168,75,0.45); border-radius:16px; padding:6px; box-shadow:0 16px 48px rgba(0,0,0,0.85); pointer-events:all; min-width:200px; animation:zoomIn 0.15s ease;">
+    <div style="font-size:10px; font-weight:700; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:0.08em; padding:6px 10px 4px;">¿Qué deseas agregar?</div>
+    <button id="menuBtnCita" onclick="_menuElegirCita()" style="display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:none; border-radius:10px; padding:10px 12px; cursor:pointer; color:#fff; transition:background 0.15s;" onmouseover="this.style.background='rgba(212,168,75,0.12)'" onmouseout="this.style.background='transparent'">
+      <span style="width:32px; height:32px; border-radius:9px; background:rgba(212,168,75,0.15); border:1px solid rgba(212,168,75,0.4); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0;">🏠</span>
+      <div style="text-align:left;">
+        <div style="font-size:13px; font-weight:700;">Cita / Visita</div>
+        <div style="font-size:10.5px; color:rgba(255,255,255,0.45); margin-top:1px;">Agendar visita a inmueble</div>
+      </div>
+    </button>
+    <button id="menuBtnTarea" onclick="_menuElegirTarea()" style="display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:none; border-radius:10px; padding:10px 12px; cursor:pointer; color:#fff; transition:background 0.15s;" onmouseover="this.style.background='rgba(236,72,153,0.1)'" onmouseout="this.style.background='transparent'">
+      <span style="width:32px; height:32px; border-radius:9px; background:rgba(236,72,153,0.15); border:1px solid rgba(236,72,153,0.4); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0;">📌</span>
+      <div style="text-align:left;">
+        <div style="font-size:13px; font-weight:700;">Tarea Pendiente</div>
+        <div style="font-size:10.5px; color:rgba(255,255,255,0.45); margin-top:1px;">Agregar recordatorio / tarea</div>
+      </div>
+    </button>
+  </div>
+</div>
+
 <!-- MODAL DE ACTIVIDADES Y CITAS PENDIENTES -->
 <div class="modal-overlay" id="actividadesPendientesModal" onclick="if(event.target===this) closeModal('actividadesPendientesModal')">
   <div class="modal-box" style="width:min(680px, 95%); padding: 0; overflow: hidden; border-radius: 20px; border: 1px solid rgba(212,168,75,0.4); background: #0e0d0b; box-shadow: 0 20px 60px rgba(0,0,0,0.9); animation: zoomIn 0.22s ease;">
@@ -11098,8 +11120,8 @@ function renderCitasGrilla() {
 
         const btnAddMore = `
           <button type="button" 
-                  onclick="event.stopPropagation(); abrirVisitaModalConFecha('${day.iso}', '${hLabel24}')" 
-                  title="Agregar otra cita a las ${hLabel12}" 
+                  onclick="event.stopPropagation(); abrirMenuAgregarHorario(event, '${day.iso}', '${hLabel24}')" 
+                  title="Agregar a las ${hLabel12}" 
                   style="position:absolute; top:3px; right:3px; z-index:15; width:20px; height:20px; border-radius:50%; background:#22c55e; border:1px solid #16a34a; color:#000; font-size:15px; font-weight:900; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.5); transition:all 0.15s ease;" 
                   onmouseover="this.style.transform='scale(1.2)'; this.style.background='#16a34a';" 
                   onmouseout="this.style.transform='scale(1)'; this.style.background='#22c55e';">
@@ -11108,7 +11130,7 @@ function renderCitasGrilla() {
 
         let cellContent = '';
         if (dayApps.length === 0) {
-          cellContent = `<div onclick="abrirVisitaModalConFecha('${day.iso}', '${hLabel24}')" style="position:absolute; inset:2px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.15s;" onmouseover="this.style.opacity='1'; this.style.background='rgba(255,255,255,0.03)'; this.style.border='1px dashed rgba(255,255,255,0.12)';" onmouseout="this.style.opacity='0'; this.style.background=''; this.style.border='none';" title="Agregar cita a las ${hLabel12}">
+          cellContent = `<div onclick="event.stopPropagation(); abrirMenuAgregarHorario(event, '${day.iso}', '${hLabel24}')" style="position:absolute; inset:2px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.15s;" onmouseover="this.style.opacity='1'; this.style.background='rgba(255,255,255,0.03)'; this.style.border='1px dashed rgba(255,255,255,0.12)';" onmouseout="this.style.opacity='0'; this.style.background=''; this.style.border='none';" title="Agregar a las ${hLabel12}">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </div>`;
         } else {
@@ -11167,7 +11189,7 @@ function renderCitasGrilla() {
         }
 
         rowHTML += `
-          <div onclick="abrirVisitaModalConFecha('${day.iso}', '${hLabel24}')" style="grid-column:${di+2}; grid-row:${gridRow}; min-height:${rowH}px; background:${isToday ? 'rgba(212,168,75,0.025)' : rowBg}; border-right:1px solid ${cellBorder}; border-bottom:1px solid rgba(255,255,255,0.04); box-sizing:border-box; position:relative; cursor:pointer;">
+          <div onclick="event.stopPropagation(); abrirMenuAgregarHorario(event, '${day.iso}', '${hLabel24}')" style="grid-column:${di+2}; grid-row:${gridRow}; min-height:${rowH}px; background:${isToday ? 'rgba(212,168,75,0.025)' : rowBg}; border-right:1px solid ${cellBorder}; border-bottom:1px solid rgba(255,255,255,0.04); box-sizing:border-box; position:relative; cursor:pointer;">
             ${cellContent}
           </div>`;
       });
@@ -11234,6 +11256,75 @@ function renderCitasGrilla() {
   }
 }
 
+
+// Contexto temporal del menú de agregar en horario
+let _menuHorarioFecha = '';
+let _menuHorarioHora = '';
+
+function abrirMenuAgregarHorario(evt, fecha, hora) {
+  _menuHorarioFecha = fecha || '';
+  _menuHorarioHora  = hora  || '';
+
+  const overlay  = document.getElementById('menuAgregarHorarioOverlay');
+  const popover  = document.getElementById('menuAgregarHorarioPopover');
+  if (!overlay || !popover) {
+    // Fallback: abrir modal de visita directamente
+    abrirVisitaModalConFecha(fecha, hora);
+    return;
+  }
+
+  // Posicionar cerca del click
+  const x = evt.clientX;
+  const y = evt.clientY;
+  popover.style.display = 'block';
+  overlay.style.display  = 'block';
+
+  // Ajustar para que no salga de pantalla
+  const pw = 220, ph = 140;
+  const left = (x + pw > window.innerWidth)  ? x - pw : x + 6;
+  const top  = (y + ph > window.innerHeight) ? y - ph : y + 6;
+  popover.style.left = left + 'px';
+  popover.style.top  = top  + 'px';
+}
+
+function cerrarMenuAgregarHorario() {
+  const overlay = document.getElementById('menuAgregarHorarioOverlay');
+  const popover = document.getElementById('menuAgregarHorarioPopover');
+  if (overlay) overlay.style.display = 'none';
+  if (popover) popover.style.display = 'none';
+}
+
+function _menuElegirCita() {
+  cerrarMenuAgregarHorario();
+  abrirVisitaModalConFecha(_menuHorarioFecha, _menuHorarioHora);
+}
+
+function _menuElegirTarea() {
+  cerrarMenuAgregarHorario();
+  // Abrir modal de pendientes y pre-rellenar fecha y hora
+  abrirActividadesPendientesModal();
+  setTimeout(() => {
+    const fechaInp = document.getElementById('nuevaTareaFechaInput');
+    if (fechaInp && _menuHorarioFecha) fechaInp.value = _menuHorarioFecha;
+    const hora12  = document.getElementById('nuevaTareaHora12');
+    const minuto  = document.getElementById('nuevaTareaMinuto');
+    const amPm    = document.getElementById('nuevaTareaAmPm');
+    if (hora12 && _menuHorarioHora) {
+      const parts = _menuHorarioHora.split(':');
+      let hh = parseInt(parts[0], 10);
+      const mm = parts[1] ? parts[1].padStart(2, '0') : '00';
+      const ap = hh >= 12 ? 'PM' : 'AM';
+      if (hh === 0) hh = 12;
+      else if (hh > 12) hh -= 12;
+      hora12.value = String(hh).padStart(2, '0');
+      if (minuto) minuto.value = ['00','05','10','15','20','25','30','35','40','45','50','55'].find(v => v === mm) || '00';
+      if (amPm)   amPm.value  = ap;
+    }
+    // Focus al input de texto
+    const inp = document.getElementById('nuevaTareaInput');
+    if (inp) inp.focus();
+  }, 200);
+}
 
 function abrirVisitaModalConFecha(fecha, hora) {
   abrirVisitaModal(null, null, null);
