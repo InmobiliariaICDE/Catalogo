@@ -7031,12 +7031,14 @@ async function autoSyncDrive() {
 
     // Cargar pendientes directamente desde la hoja Pendientes de Drive
     if (Array.isArray(dataPendientes)) {
-      const cloudTaskIds = new Set(dataPendientes.map(t => String(t.id || '').trim()).filter(Boolean));
+      const deletedIds = getDeletedTaskIds();
+      const validCloudTasks = dataPendientes.filter(t => t && t.id && !deletedIds.has(String(t.id).trim()));
+      const cloudTaskIds = new Set(validCloudTasks.map(t => String(t.id || '').trim()).filter(Boolean));
       const localOnlyTasks = (tareasCitasPendientes || []).filter(t => {
         const tid = String(t.id || '').trim();
-        return tid && !cloudTaskIds.has(tid);
+        return tid && !cloudTaskIds.has(tid) && !deletedIds.has(tid);
       });
-      tareasCitasPendientes = [...dataPendientes, ...localOnlyTasks];
+      tareasCitasPendientes = [...validCloudTasks, ...localOnlyTasks];
       try { localStorage.setItem('icde_tareas_citas_pendientes', JSON.stringify(tareasCitasPendientes)); } catch(e){}
     }
 
@@ -7165,12 +7167,14 @@ async function cargarLeads(){
     }
 
     if (Array.isArray(dataPendientes)) {
-      const cloudTaskIds = new Set(dataPendientes.map(t => String(t.id || '').trim()).filter(Boolean));
+      const deletedIds = getDeletedTaskIds();
+      const validCloudTasks = dataPendientes.filter(t => t && t.id && !deletedIds.has(String(t.id).trim()));
+      const cloudTaskIds = new Set(validCloudTasks.map(t => String(t.id || '').trim()).filter(Boolean));
       const localOnlyTasks = (tareasCitasPendientes || []).filter(t => {
         const tid = String(t.id || '').trim();
-        return tid && !cloudTaskIds.has(tid);
+        return tid && !cloudTaskIds.has(tid) && !deletedIds.has(tid);
       });
-      tareasCitasPendientes = [...dataPendientes, ...localOnlyTasks];
+      tareasCitasPendientes = [...validCloudTasks, ...localOnlyTasks];
       try { localStorage.setItem('icde_tareas_citas_pendientes', JSON.stringify(tareasCitasPendientes)); } catch(e){}
       actualizarAlertaCitasPendientes();
       if (typeof renderCitasGrilla === 'function') renderCitasGrilla();
@@ -13074,8 +13078,27 @@ function renderPendienteItemCard(item) {
   `;
 }
 
+function getDeletedTaskIds() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem('icde_tareas_pendientes_eliminadas') || '[]'));
+  } catch(e) {
+    return new Set();
+  }
+}
+
+function marcarTareaPendienteEliminadaLocal(id) {
+  if (!id) return;
+  const deletedSet = getDeletedTaskIds();
+  deletedSet.add(String(id).trim());
+  try {
+    localStorage.setItem('icde_tareas_pendientes_eliminadas', JSON.stringify(Array.from(deletedSet)));
+  } catch(e){}
+}
+
 async function guardarPendienteCloud(p) {
   if (!CRM_SCRIPT_URL || !p) return;
+  const deletedIds = getDeletedTaskIds();
+  if (p.id && deletedIds.has(String(p.id).trim())) return;
   if (typeof pendingWriteUntil !== 'undefined') pendingWriteUntil = Date.now() + 30000;
   try {
     await fetch(CRM_SCRIPT_URL, {
@@ -13104,7 +13127,9 @@ async function eliminarPendienteCloud(id) {
 
 async function sincronizarTodosLosPendientesADrive() {
   if (!CRM_SCRIPT_URL) return;
-  const list = typeof tareasCitasPendientes !== 'undefined' && Array.isArray(tareasCitasPendientes) ? tareasCitasPendientes : [];
+  const deletedIds = getDeletedTaskIds();
+  const list = (typeof tareasCitasPendientes !== 'undefined' && Array.isArray(tareasCitasPendientes) ? tareasCitasPendientes : [])
+    .filter(t => t && t.id && !deletedIds.has(String(t.id).trim()));
   if (!list.length) return;
   console.log('[PendientesCloud] Sincronizando todos los pendientes locales a Drive (' + list.length + ')...');
   for (const t of list) {
@@ -13309,6 +13334,7 @@ function marcarTareaPendienteCompletada(id) {
 
 function eliminarTareaPendiente(id) {
   if (typeof tareasCitasPendientes === 'undefined' || !Array.isArray(tareasCitasPendientes)) return;
+  marcarTareaPendienteEliminadaLocal(id);
   tareasCitasPendientes = tareasCitasPendientes.filter(x => String(x.id) !== String(id));
   try { localStorage.setItem('icde_tareas_citas_pendientes', JSON.stringify(tareasCitasPendientes)); } catch(e){}
   eliminarPendienteCloud(id);

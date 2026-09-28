@@ -994,9 +994,27 @@ function deletePendienteFromSheet(id) {
   if (!idStr) return createJsonResponse({ error: 'ID requerido' });
 
   const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return createJsonResponse({ success: true, deleted: 0 });
+
+  const headers = data[0].map(h => normalizeHeader(h));
+  let idColIdx = headers.indexOf(normalizeHeader('id'));
+  const jsonIdx = headers.indexOf(normalizeHeader('full_json'));
+
   let deleted = 0;
   for (let i = data.length - 1; i >= 1; i--) {
-    if (String(data[i][0] || '').trim() === idStr) {
+    let match = false;
+    if (idColIdx !== -1 && String(data[i][idColIdx] || '').trim() === idStr) {
+      match = true;
+    } else if (String(data[i][0] || '').trim() === idStr) {
+      match = true;
+    } else if (jsonIdx !== -1 && data[i][jsonIdx]) {
+      try {
+        const item = JSON.parse(data[i][jsonIdx]);
+        if (item && String(item.id || '').trim() === idStr) match = true;
+      } catch(e) {}
+    }
+
+    if (match) {
       sheet.deleteRow(i + 1);
       deleted++;
     }
