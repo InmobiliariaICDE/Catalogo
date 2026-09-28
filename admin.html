@@ -7182,7 +7182,25 @@ async function cargarLeads(){
     }
 
     if(Array.isArray(data)){
-      leads = normalizarIdsLeads(data).map(l => ({ ...l, fromCloud: true }));
+      const deletedIds = getDeletedLeadIds();
+      const deletedPhones = getDeletedLeadPhones();
+      const filteredData = data.filter(l => {
+        if (!l) return false;
+        const rawJson = l.Full_JSON || l.full_json || l.FullJSON;
+        let item = l;
+        if (rawJson && typeof rawJson === 'string' && rawJson.trim().startsWith('{')) {
+          try { item = { ...l, ...JSON.parse(rawJson) }; } catch(e){}
+        }
+        const lid = String(item.ID || item.id || '').trim();
+        if (lid && deletedIds.has(lid)) return false;
+        const lcel = String(item.Celular || item.celular || '').replace(/\D/g, '');
+        if (lcel) {
+          if (deletedPhones.has(lcel)) return false;
+          if (lcel.length >= 10 && deletedPhones.has(lcel.slice(-10))) return false;
+        }
+        return true;
+      });
+      leads = normalizarIdsLeads(filteredData).map(l => ({ ...l, fromCloud: true }));
       rebuildCitas(); // Restaurado para garantizar que nunca quede vacía
       if(currentTab === 'leads') renderLeadsBody(leads);
       if(currentTab === 'citas') renderCitas();
@@ -9823,6 +9841,39 @@ function addNota(lid,idx){
   renderSidePanel(l); 
 }
 
+function getDeletedLeadIds() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem('icde_leads_eliminados') || '[]'));
+  } catch(e) {
+    return new Set();
+  }
+}
+
+function getDeletedLeadPhones() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem('icde_telefonos_eliminados') || '[]'));
+  } catch(e) {
+    return new Set();
+  }
+}
+
+function marcarLeadEliminadoLocal(id, celular) {
+  if (id) {
+    const ids = getDeletedLeadIds();
+    ids.add(String(id).trim());
+    try { localStorage.setItem('icde_leads_eliminados', JSON.stringify(Array.from(ids))); } catch(e){}
+  }
+  if (celular) {
+    const cleanCel = String(celular).replace(/\D/g, '');
+    if (cleanCel) {
+      const phones = getDeletedLeadPhones();
+      phones.add(cleanCel);
+      if (cleanCel.length >= 10) phones.add(cleanCel.slice(-10));
+      try { localStorage.setItem('icde_telefonos_eliminados', JSON.stringify(Array.from(phones))); } catch(e){}
+    }
+  }
+}
+
 async function eliminarLead(id){ 
   console.log('[eliminarLead] Solicitando eliminación para ID:', id);
   if(!confirm('¿Estás seguro de eliminar este cliente? Esta acción también lo eliminará de la nube y no se puede deshacer.')) return; 
@@ -9860,6 +9911,11 @@ async function eliminarLead(id){
   }
 
   console.log('[eliminarLead] Marcando para eliminación en la nube IDs:', idsABorrar);
+
+  marcarLeadEliminadoLocal(id, celularABorrar);
+  if (idsABorrar && idsABorrar.length) {
+    idsABorrar.forEach(idItem => marcarLeadEliminadoLocal(idItem, celularABorrar));
+  }
 
   // Eliminar localmente primero (por ID y por teléfono celular para barrer duplicados locales)
   leads = leads.filter(l => {
@@ -10760,8 +10816,14 @@ function toast(msg,type='success'){
   setTimeout(()=>t.remove(), 3000);
 }
 
-async function syncSheets(lead){ 
-  if(!CRM_SCRIPT_URL) return;
+async function syncSheets(lead){
+  if(!CRM_SCRIPT_URL || !lead) return;
+  const deletedIds = getDeletedLeadIds();
+  const deletedPhones = getDeletedLeadPhones();
+  const lid = String(lead.id || '').trim();
+  const lcel = String(lead.celular || '').replace(/\D/g, '');
+  if (lid && deletedIds.has(lid)) return;
+  if (lcel && (deletedPhones.has(lcel) || (lcel.length >= 10 && deletedPhones.has(lcel.slice(-10))))) return;
   // Bloquear autoSync por 30 segundos — Apps Script puede tardar hasta 20-25s en procesar
   pendingWriteUntil = Date.now() + 30000;
   try { 
