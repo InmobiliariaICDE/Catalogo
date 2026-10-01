@@ -16806,9 +16806,11 @@ function renderMatrizPagos(propertiesList) {
                 </td>
                 ${monthsFull.map(mFull => {
                   let pay = paymentsYear.find(m => m.month === mFull) || { status: 'UNSTARTED', value: 0 };
-                  // Detectar si este mes es el mes de aniversario/renovación del contrato (soporta 6, 12 meses y cualquier formato de fecha)
+                  // Detectar si este mes está dentro del periodo activo del contrato o es mes de renovación
                   let isRenovMonth = false;
                   const parsedSDate = parseAdminStartDate(p.start_date);
+                  const valUpperPay = String(pay.value || '').trim().toUpperCase();
+                  
                   if (parsedSDate && parsedSDate.month >= 1 && parsedSDate.month <= 12 && parsedSDate.year > 0) {
                     const monthsArray = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
                     const startMonthIdx = parsedSDate.month - 1;
@@ -16816,8 +16818,32 @@ function renderMatrizPagos(propertiesList) {
                     const dur = parseInt(p.duration, 10) || 12;
                     const targetMonthIdx = monthsArray.indexOf(mFull);
                     const viewYear = parseInt(currentAdminYear, 10) || new Date().getFullYear();
+                    
                     if (targetMonthIdx !== -1) {
                       const totalMonthsDiff = (viewYear - startYear) * 12 + (targetMonthIdx - startMonthIdx);
+                      
+                      // Auto-corrección para inmuebles con inquilino activo: desocupado previo no debe tapar meses de vigencia del contrato
+                      if (p.tenant_name && String(p.tenant_name).trim() !== '') {
+                        if (totalMonthsDiff >= 0 && totalMonthsDiff < dur) {
+                          if (pay.status === 'VACANT' || valUpperPay.includes('DESOCUPAD')) {
+                            if (totalMonthsDiff === dur - 1) {
+                              pay = { ...pay, status: 'PREAVISO', value: 'PREAVISO' };
+                            } else {
+                              const _now = new Date();
+                              const _nowY = _now.getFullYear();
+                              const _nowM = _now.getMonth();
+                              if (viewYear === _nowY && targetMonthIdx === _nowM) {
+                                pay = { ...pay, status: 'PENDING', value: '-' };
+                              } else if (viewYear < _nowY || (viewYear === _nowY && targetMonthIdx < _nowM)) {
+                                pay = { ...pay, status: 'PENDING', value: '-' };
+                              } else {
+                                pay = { ...pay, status: 'FUTURE', value: '-' };
+                              }
+                            }
+                          }
+                        }
+                      }
+                      
                       if (totalMonthsDiff > 0 && (totalMonthsDiff % dur) === 0) {
                         isRenovMonth = true;
                       }
@@ -16838,7 +16864,6 @@ function renderMatrizPagos(propertiesList) {
                   }
 
                   // Si es el mes de renovación y no está en un estado resuelto especial (PAGADO, PREAVISO, ENTREGA, NO RENOVARA, VACANT / DESOCUPADO), marcar como NEW_CONTRACT para mostrar la estrella ★
-                  const valUpperPay = String(pay.value || '').trim().toUpperCase();
                   if (isRenovMonth) {
                     if (!["PAID", "PREAVISO", "DELIVERY", "NO_RENEW", "VACANT"].includes(pay.status) && !valUpperPay.includes('DESOCUPAD')) {
                       pay = { ...pay, status: "NEW_CONTRACT" };
