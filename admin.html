@@ -17011,6 +17011,49 @@ function applyAdminRentIncrement(propId, newRent) {
   toast(`¡Fijado nuevo canon de ${safeFormatP(newRent)}! Presione 'Guardar' para sincronizar con Google Drive.`, 'success');
 }
 
+function updateModalEndDate() {
+  const sDate = document.getElementById('editContraStartDate')?.value;
+  const dur = document.getElementById('editContraDuration')?.value;
+  const endDateDisplay = document.getElementById('contraEndDateDisplay');
+  if (endDateDisplay) {
+    endDateDisplay.innerHTML = calculateAdminEndDate(sDate, dur) || 'N/A';
+  }
+}
+
+function openRenewContractPrompt(propId) {
+  const p = adminData.properties.find(x => x.id === propId);
+  if (!p) return;
+
+  const currentDur = parseInt(document.getElementById('editContraDuration')?.value || p.duration || 12, 10);
+  const currentStart = document.getElementById('editContraStartDate')?.value || p.start_date;
+
+  const monthsInput = prompt(`Renovación de Contrato - ${p.name}\n\nDuración actual: ${currentDur} meses.\n\n¿Cuántos meses desea AGREGAR para renovar el contrato? (Ej: 12, 6, 24):`, "12");
+  if (monthsInput === null) return;
+
+  const addMonths = parseInt(String(monthsInput).trim(), 10);
+  if (isNaN(addMonths) || addMonths <= 0) {
+    toast('Cantidad de meses no válida', 'warning');
+    return;
+  }
+
+  const newDur = currentDur + addMonths;
+  const durInp = document.getElementById('editContraDuration');
+  if (durInp) {
+    durInp.value = newDur;
+    updateModalEndDate();
+  }
+
+  const rentInfo = calculateAdminRentInfo(p);
+  if (rentInfo && rentInfo.increasedRent > (parseFloat(p.monthly_rent) || 0)) {
+    const applyRent = confirm(`¿Desea actualizar el canon mensual al valor con incremento IPC (${safeFormatP(rentInfo.increasedRent)})?`);
+    if (applyRent) {
+      applyAdminRentIncrement(propId, rentInfo.increasedRent);
+    }
+  }
+
+  toast(`¡Contrato extendido en +${addMonths} meses! (Nueva duración: ${newDur} meses). Presione 'Guardar' para sincronizar con la nube.`, 'success');
+}
+
 function _buildUnifiedModalHTML(p, monthName, year, activeTab = 'cobro') {
   const paymentsYear = p.payments[year] || [];
   const pay = paymentsYear.find(m => m.month === monthName) || { status: 'UNSTARTED', value: 0 };
@@ -17099,8 +17142,13 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab = 'cobro') {
       </div>
 
       <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:12px; margin-top:4px; display:flex; flex-direction:column; gap:11px;">
-        <div style="font-size:11px; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">
-          📄 Detalles del Contrato
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+          <div style="font-size:11px; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">
+            📄 Detalles del Contrato
+          </div>
+          <button type="button" class="btn btn-xs" style="background:rgba(59,130,246,0.15); color:#3b82f6; border:1px solid rgba(59,130,246,0.4); font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:4px; transition: all 0.2s;" onclick="openRenewContractPrompt('${p.id}')">
+            🔄 Renovar Contrato
+          </button>
         </div>
         <div>
           <label class="u-inp-label">Nombre del inquilino</label>
@@ -17114,16 +17162,16 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab = 'cobro') {
         <div class="u-modal-grid">
           <div>
             <label class="u-inp-label">Inicio Contrato</label>
-            <input type="date" id="editContraStartDate" class="u-inp" value="${p.start_date || ''}" style="height:32px; padding:4px 8px;">
+            <input type="date" id="editContraStartDate" class="u-inp" value="${p.start_date || ''}" style="height:32px; padding:4px 8px;" onchange="updateModalEndDate()">
           </div>
           <div>
             <label class="u-inp-label">Duración (Meses)</label>
-            <input type="number" id="editContraDuration" class="u-inp" value="${p.duration || ''}">
+            <input type="number" id="editContraDuration" class="u-inp" value="${p.duration || ''}" oninput="updateModalEndDate()">
           </div>
         </div>
 
         <div style="font-size:12px; font-weight:700; color:var(--gold); background:rgba(212,168,75,0.1); border:1px solid rgba(212,168,75,0.3); border-radius:6px; padding:6px 12px; margin-top:-2px; display:flex; align-items:center; gap:6px;">
-          🗓️ Fin / Vencimiento de Contrato: <strong>${calculateAdminEndDate(p.start_date, p.duration) || 'N/A'}</strong>
+          🗓️ Fin / Vencimiento de Contrato: <strong id="contraEndDateDisplay">${calculateAdminEndDate(p.start_date, p.duration) || 'N/A'}</strong>
         </div>
 
         <div class="u-modal-grid">
