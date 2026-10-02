@@ -11301,11 +11301,17 @@ document.head.appendChild(schemaScript);
                             });
                         });
 
+                        // Helper para obtener fecha mínima de agendamiento (mínimo 2 días después de hoy / 24h+ de holgura)
+                        function obtenerFechaMinimaAgendamiento() {
+                            const d = new Date();
+                            d.setDate(d.getDate() + 2);
+                            return d.toISOString().split("T")[0];
+                        }
+
                         // Configurar Atajos de Día
                         const fechaInput = document.getElementById("agendarFechaInput");
                         if (fechaInput) {
-                            const today = new Date();
-                            fechaInput.min = today.toISOString().split("T")[0];
+                            fechaInput.min = obtenerFechaMinimaAgendamiento();
                         }
 
                         document.querySelectorAll("#chipsDiaShortcuts .chip-shortcut").forEach(chip => {
@@ -11502,10 +11508,10 @@ document.head.appendChild(schemaScript);
                         if (phoneInput) phoneInput.value = "";
                         if (bancoInput) bancoInput.value = "";
 
-                        // Fecha y hora inician sin seleccionar (el cliente debe elegir obligatoriamente)
+                        // Fecha y hora inician sin seleccionar (el cliente debe elegir obligatoriamente con min 24h+ de holgura)
                         if (fechaInput) {
                             fechaInput.value = "";
-                            fechaInput.min = new Date().toISOString().split("T")[0];
+                            fechaInput.min = typeof obtenerFechaMinimaAgendamiento === 'function' ? obtenerFechaMinimaAgendamiento() : new Date().toISOString().split("T")[0];
                         }
                         if (horaInput) horaInput.value = "";
 
@@ -11576,11 +11582,13 @@ document.head.appendChild(schemaScript);
 
                     function validarPasoAgendar3() {
                         const fecha = document.getElementById("agendarFechaInput")?.value || "";
+                        const minPermitida = typeof obtenerFechaMinimaAgendamiento === 'function' ? obtenerFechaMinimaAgendamiento() : "";
                         const chipHoraActivo = document.querySelector(".chip-hora-exacta.active");
                         const horaVal = document.getElementById("agendarHoraInput")?.value || "";
                         const tieneHora = !!(chipHoraActivo || horaVal);
 
-                        const esValido = fecha.length > 0 && tieneHora;
+                        const fechaValida = fecha.length > 0 && (!minPermitida || fecha >= minPermitida);
+                        const esValido = fechaValida && tieneHora;
                         const btnWA = document.getElementById("btnConfirmarAgendamientoWA");
                         if (btnWA) {
                             btnWA.disabled = !esValido;
