@@ -11149,10 +11149,21 @@ document.head.appendChild(schemaScript);
                     let preaprobadoSeleccionado = "";
                     let pasoActualAgendar = 1;
 
-                    // Helper global para obtener fecha mínima de agendamiento (mínimo 2 días después de hoy / 24h+ de holgura)
+                    // Helper global para verificar si una fecha ISO (YYYY-MM-DD) cae en Domingo
+                    function esDomingo(fechaStr) {
+                        if (!fechaStr || !fechaStr.includes("-")) return false;
+                        const [yr, mo, dy] = fechaStr.split("-").map(Number);
+                        return new Date(yr, mo - 1, dy).getDay() === 0;
+                    }
+
+                    // Helper global para obtener fecha mínima de agendamiento (mínimo 2 días después de hoy / 24h+ de holgura, omitiendo domingos)
                     function obtenerFechaMinimaAgendamiento() {
                         const d = new Date();
                         d.setDate(d.getDate() + 2);
+                        // Si cae en domingo (0), sumamos 1 día para que sea lunes
+                        if (d.getDay() === 0) {
+                            d.setDate(d.getDate() + 1);
+                        }
                         const yr = d.getFullYear();
                         const mo = String(d.getMonth() + 1).padStart(2, '0');
                         const dy = String(d.getDate()).padStart(2, '0');
@@ -11366,13 +11377,20 @@ document.head.appendChild(schemaScript);
                         ["agendarNombreInput", "agendarPhoneInput", "agendarBancoInput", "agendarFechaInput"].forEach(id => {
                             const el = document.getElementById(id);
                             if (el) {
-                                el.addEventListener("input", () => {
+                                const HandlerValidacion = () => {
                                     if (id === "agendarBancoInput" && el.value.trim().length > 0) {
                                         el.classList.remove("input-parpadear");
                                     }
+                                    if (id === "agendarFechaInput" && el.value) {
+                                        if (typeof esDomingo === 'function' && esDomingo(el.value)) {
+                                            alert("Los domingos no realizamos visitas guiadas. Por favor seleccione una fecha de lunes a sábado.");
+                                            el.value = "";
+                                        }
+                                    }
                                     validarFormularioAgendar();
-                                });
-                                el.addEventListener("change", validarFormularioAgendar);
+                                };
+                                el.addEventListener("input", HandlerValidacion);
+                                el.addEventListener("change", HandlerValidacion);
                                 if (id === "agendarBancoInput") {
                                     el.addEventListener("focus", () => el.classList.remove("input-parpadear"));
                                 }
@@ -11590,7 +11608,8 @@ document.head.appendChild(schemaScript);
                         const horaVal = document.getElementById("agendarHoraInput")?.value || "";
                         const tieneHora = !!(chipHoraActivo || horaVal);
 
-                        const fechaValida = fecha.length > 0 && (!minPermitida || fecha >= minPermitida);
+                        const noEsDomingo = typeof esDomingo === 'function' ? !esDomingo(fecha) : true;
+                        const fechaValida = fecha.length > 0 && (!minPermitida || fecha >= minPermitida) && noEsDomingo;
                         const esValido = fechaValida && tieneHora;
                         const btnWA = document.getElementById("btnConfirmarAgendamientoWA");
                         if (btnWA) {
