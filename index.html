@@ -11149,6 +11149,16 @@ document.head.appendChild(schemaScript);
                     let preaprobadoSeleccionado = "";
                     let pasoActualAgendar = 1;
 
+                    // Helper global para obtener fecha mínima de agendamiento (mínimo 2 días después de hoy / 24h+ de holgura)
+                    function obtenerFechaMinimaAgendamiento() {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 2);
+                        const yr = d.getFullYear();
+                        const mo = String(d.getMonth() + 1).padStart(2, '0');
+                        const dy = String(d.getDate()).padStart(2, '0');
+                        return `${yr}-${mo}-${dy}`;
+                    }
+
                     function mostrarPasoAgendar(paso) {
                         if (paso < 1) paso = 1;
                         if (paso > 3) paso = 3;
@@ -11300,13 +11310,6 @@ document.head.appendChild(schemaScript);
                                 validarFormularioAgendar();
                             });
                         });
-
-                        // Helper para obtener fecha mínima de agendamiento (mínimo 2 días después de hoy / 24h+ de holgura)
-                        function obtenerFechaMinimaAgendamiento() {
-                            const d = new Date();
-                            d.setDate(d.getDate() + 2);
-                            return d.toISOString().split("T")[0];
-                        }
 
                         // Configurar Atajos de Día
                         const fechaInput = document.getElementById("agendarFechaInput");
@@ -11511,7 +11514,7 @@ document.head.appendChild(schemaScript);
                         // Fecha y hora inician sin seleccionar (el cliente debe elegir obligatoriamente con min 24h+ de holgura)
                         if (fechaInput) {
                             fechaInput.value = "";
-                            fechaInput.min = typeof obtenerFechaMinimaAgendamiento === 'function' ? obtenerFechaMinimaAgendamiento() : new Date().toISOString().split("T")[0];
+                            fechaInput.min = obtenerFechaMinimaAgendamiento();
                         }
                         if (horaInput) horaInput.value = "";
 
