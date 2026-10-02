@@ -6645,6 +6645,164 @@ font-weight: 500;
     cursor: pointer;
 }
 
+/* ── Calendario Personalizado (Custom Calendar Picker) ── */
+.custom-cal-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: #9ca3af;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.custom-cal-trigger:hover {
+    border-color: rgba(212,168,75,0.5);
+    background: rgba(255,255,255,0.07);
+}
+.custom-cal-trigger.has-value {
+    color: #ffffff;
+    border-color: rgba(212,168,75,0.45);
+}
+.custom-cal-trigger.open {
+    border-color: #d4a84b;
+    box-shadow: 0 0 12px rgba(212,168,75,0.2);
+}
+#customCalChevron.rotated { transform: rotate(180deg); }
+
+.custom-cal-panel {
+    background: #16161a;
+    border: 1px solid rgba(212,168,75,0.3);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+    margin-top: 6px;
+    animation: calFadeIn 0.18s ease;
+}
+@keyframes calFadeIn {
+    from { opacity:0; transform: translateY(-6px); }
+    to   { opacity:1; transform: translateY(0); }
+}
+
+.custom-cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.custom-cal-nav-btn {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    color: #e5e7eb;
+    font-size: 20px;
+    line-height: 1;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+    padding: 0;
+}
+.custom-cal-nav-btn:hover { background: rgba(212,168,75,0.15); color: #d4a84b; }
+
+.custom-cal-month-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #f3f4f6;
+    text-transform: capitalize;
+}
+
+.custom-cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 6px;
+}
+.custom-cal-weekdays span {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 4px 0;
+}
+.cal-domingo-header { color: #4b5563 !important; }
+
+.custom-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+}
+.cal-day {
+    text-align: center;
+    padding: 7px 2px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #e5e7eb;
+    transition: background 0.15s, color 0.15s;
+    border: 1px solid transparent;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.cal-day:hover:not(.cal-day-disabled):not(.cal-day-sunday) {
+    background: rgba(212,168,75,0.18);
+    border-color: rgba(212,168,75,0.4);
+    color: #fbbf24;
+}
+.cal-day-selected {
+    background: #d4a84b !important;
+    border-color: #d4a84b !important;
+    color: #0d0d10 !important;
+    font-weight: 700 !important;
+}
+.cal-day-today {
+    border-color: rgba(212,168,75,0.35) !important;
+    color: #d4a84b;
+}
+/* Días deshabilitados (demasiado pronto o pasados) */
+.cal-day-disabled {
+    color: #374151;
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+/* Domingos — gris apagado e inhabilitados */
+.cal-day-sunday {
+    color: #374151 !important;
+    background: rgba(55,65,81,0.18) !important;
+    cursor: not-allowed !important;
+    opacity: 0.5 !important;
+    text-decoration: line-through;
+    border-color: transparent !important;
+}
+.cal-day-empty { cursor: default; }
+
+.custom-cal-legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    font-size: 10.5px;
+    color: #6b7280;
+}
+.cal-legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 3px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+.cal-legend-disabled { background: rgba(55,65,81,0.5); opacity:0.5; }
+.cal-legend-sunday { background: rgba(55,65,81,0.5); opacity:0.5; text-decoration: line-through; }
+
 
 /* Selección de Hora Mejorada y Reloj */
 .time-block-section {
@@ -7718,13 +7876,34 @@ font-weight: 500;
 
                 <!-- PASO 3: Fecha y Hora de la Visita -->
                 <div class="agendar-step-content" data-step="3">
-                    <!-- Campo: Día de la Visita -->
+                    <!-- Campo: Día de la Visita (Calendario Personalizado) -->
                     <div class="form-group-agendar">
-                        <label for="agendarFechaInput" class="form-label-agendar">
+                        <label class="form-label-agendar">
                             <span class="label-icon">📅</span> Seleccione día de la visita <span class="required-star">*</span>
                         </label>
-                        <div class="dia-selection-wrapper">
-                            <input type="date" id="agendarFechaInput" class="form-input-agendar input-date" required />
+                        <!-- Input oculto que guarda el valor YYYY-MM-DD para el JS -->
+                        <input type="hidden" id="agendarFechaInput" />
+                        <!-- Trigger del calendario personalizado -->
+                        <div class="custom-cal-trigger" id="customCalTrigger">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.6"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            <span id="customCalTriggerText" style="flex:1;">Seleccionar fecha...</span>
+                            <svg id="customCalChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity:0.5;transition:transform 0.2s"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                        <!-- Panel del calendario -->
+                        <div class="custom-cal-panel" id="customCalPanel" style="display:none;">
+                            <div class="custom-cal-nav">
+                                <button type="button" class="custom-cal-nav-btn" id="customCalPrev">&#8249;</button>
+                                <span class="custom-cal-month-label" id="customCalMonthLabel"></span>
+                                <button type="button" class="custom-cal-nav-btn" id="customCalNext">&#8250;</button>
+                            </div>
+                            <div class="custom-cal-weekdays">
+                                <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span class="cal-domingo-header">Do</span>
+                            </div>
+                            <div class="custom-cal-grid" id="customCalGrid"></div>
+                            <div class="custom-cal-legend">
+                                <span class="cal-legend-dot cal-legend-disabled"></span><span>No disponible</span>
+                                <span class="cal-legend-dot cal-legend-sunday"></span><span>Domingo (no disponible)</span>
+                            </div>
                         </div>
                     </div>
 
@@ -11379,19 +11558,14 @@ document.head.appendChild(schemaScript);
                             });
                         });
 
-                        // Escuchadores en inputs de texto/fecha para validación en tiempo real
-                        ["agendarNombreInput", "agendarPhoneInput", "agendarBancoInput", "agendarFechaInput"].forEach(id => {
+                        // Escuchadores en inputs de texto para validación en tiempo real
+                        // (agendarFechaInput ya no es un input visible — usa el calendario personalizado)
+                        ["agendarNombreInput", "agendarPhoneInput", "agendarBancoInput"].forEach(id => {
                             const el = document.getElementById(id);
                             if (el) {
                                 const HandlerValidacion = () => {
                                     if (id === "agendarBancoInput" && el.value.trim().length > 0) {
                                         el.classList.remove("input-parpadear");
-                                    }
-                                    if (id === "agendarFechaInput" && el.value) {
-                                        if (typeof esDomingo === 'function' && esDomingo(el.value)) {
-                                            alert("Los domingos no realizamos visitas guiadas. Por favor seleccione una fecha de lunes a sábado.");
-                                            el.value = "";
-                                        }
                                     }
                                     validarFormularioAgendar();
                                 };
@@ -11433,6 +11607,153 @@ document.head.appendChild(schemaScript);
 
                         btnConfirmar?.addEventListener("click", procesarYEnviarAgendamientoWA);
                     }
+
+                    // ── Calendario personalizado (reemplaza input[type=date]) ──
+                    function inicializarCalendarioPersonalizado() {
+                        const trigger  = document.getElementById("customCalTrigger");
+                        const panel    = document.getElementById("customCalPanel");
+                        const grid     = document.getElementById("customCalGrid");
+                        const monthLbl = document.getElementById("customCalMonthLabel");
+                        const prevBtn  = document.getElementById("customCalPrev");
+                        const nextBtn  = document.getElementById("customCalNext");
+                        const triggerTxt = document.getElementById("customCalTriggerText");
+                        const chevron  = document.getElementById("customCalChevron");
+                        const hiddenInput = document.getElementById("agendarFechaInput");
+
+                        if (!trigger || !panel || !grid) return;
+
+                        const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+                        const today = new Date();
+                        today.setHours(0,0,0,0);
+
+                        // Fecha mínima (reutiliza la función global)
+                        function getMinDate() {
+                            const minStr = typeof obtenerFechaMinimaAgendamiento === 'function'
+                                ? obtenerFechaMinimaAgendamiento()
+                                : (() => { const d = new Date(); d.setDate(d.getDate()+2); return d.toISOString().split('T')[0]; })();
+                            const [y,m,d] = minStr.split('-').map(Number);
+                            const dt = new Date(y, m-1, d);
+                            dt.setHours(0,0,0,0);
+                            return dt;
+                        }
+
+                        let viewYear  = today.getFullYear();
+                        let viewMonth = today.getMonth();
+                        let selectedDate = null; // Date object
+
+                        function toISO(d) {
+                            const y = d.getFullYear();
+                            const m = String(d.getMonth()+1).padStart(2,'0');
+                            const dy= String(d.getDate()).padStart(2,'0');
+                            return `${y}-${m}-${dy}`;
+                        }
+
+                        function renderGrid() {
+                            grid.innerHTML = "";
+                            monthLbl.textContent = `${MESES[viewMonth]} ${viewYear}`;
+                            const minDate = getMinDate();
+
+                            // primer día de la semana (0=dom, ajustamos a lunes=0)
+                            const firstDay = new Date(viewYear, viewMonth, 1).getDay(); // 0=dom
+                            const startOffset = (firstDay === 0) ? 6 : firstDay - 1; // lunes primero
+                            const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+
+                            for (let i = 0; i < startOffset; i++) {
+                                const empty = document.createElement("div");
+                                empty.className = "cal-day cal-day-empty";
+                                grid.appendChild(empty);
+                            }
+
+                            for (let d = 1; d <= daysInMonth; d++) {
+                                const dt = new Date(viewYear, viewMonth, d);
+                                dt.setHours(0,0,0,0);
+                                const dow = dt.getDay(); // 0=dom
+                                const isSunday   = dow === 0;
+                                const isDisabled = dt < minDate;
+                                const isToday    = dt.getTime() === today.getTime();
+                                const isSelected = selectedDate && dt.getTime() === selectedDate.getTime();
+
+                                const cell = document.createElement("div");
+                                cell.textContent = d;
+                                let cls = "cal-day";
+                                if (isSunday)        { cls += " cal-day-sunday"; }
+                                else if (isDisabled) { cls += " cal-day-disabled"; }
+                                else {
+                                    if (isToday)    cls += " cal-day-today";
+                                    if (isSelected) cls += " cal-day-selected";
+                                    cell.addEventListener("click", () => seleccionarDia(dt));
+                                }
+                                cell.className = cls;
+                                grid.appendChild(cell);
+                            }
+                        }
+
+                        function seleccionarDia(dt) {
+                            selectedDate = dt;
+                            const iso = toISO(dt);
+                            hiddenInput.value = iso;
+                            // Texto bonito en el trigger
+                            const diasSemana = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+                            const diaN = diasSemana[dt.getDay()];
+                            const pad = n => String(n).padStart(2,'0');
+                            triggerTxt.textContent = `${diaN} ${pad(dt.getDate())}/${pad(dt.getMonth()+1)}/${dt.getFullYear()}`;
+                            trigger.classList.add("has-value");
+                            cerrarPanel();
+                            validarFormularioAgendar();
+                        }
+
+                        function abrirPanel() {
+                            renderGrid();
+                            panel.style.display = "block";
+                            trigger.classList.add("open");
+                            chevron.classList.add("rotated");
+                        }
+                        function cerrarPanel() {
+                            panel.style.display = "none";
+                            trigger.classList.remove("open");
+                            chevron.classList.remove("rotated");
+                        }
+
+                        trigger.addEventListener("click", () => {
+                            panel.style.display === "none" ? abrirPanel() : cerrarPanel();
+                        });
+                        prevBtn.addEventListener("click", (e) => {
+                            e.stopPropagation();
+                            viewMonth--;
+                            if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+                            renderGrid();
+                        });
+                        nextBtn.addEventListener("click", (e) => {
+                            e.stopPropagation();
+                            viewMonth++;
+                            if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+                            renderGrid();
+                        });
+
+                        // Cerrar al hacer clic fuera
+                        document.addEventListener("click", (e) => {
+                            if (!trigger.contains(e.target) && !panel.contains(e.target)) {
+                                cerrarPanel();
+                            }
+                        });
+
+                        // Exponer función para resetear el calendario desde abrirModalAgendarVisita
+                        window._resetCalendarioPersonalizado = function() {
+                            selectedDate = null;
+                            hiddenInput.value = "";
+                            triggerTxt.textContent = "Seleccionar fecha...";
+                            trigger.classList.remove("has-value","open");
+                            chevron.classList.remove("rotated");
+                            panel.style.display = "none";
+                            // ir al mes actual
+                            const now = new Date();
+                            viewYear  = now.getFullYear();
+                            viewMonth = now.getMonth();
+                        };
+                    }
+                    // Inicializar el calendario personalizado en cuanto el DOM esté listo
+                    inicializarCalendarioPersonalizado();
+
 
                     function actualizarPanelCredito() {
                         const panel = document.getElementById("panelCreditoContainer");
@@ -11535,10 +11856,11 @@ document.head.appendChild(schemaScript);
                         if (phoneInput) phoneInput.value = "";
                         if (bancoInput) bancoInput.value = "";
 
-                        // Fecha y hora inician sin seleccionar (el cliente debe elegir obligatoriamente con min 24h+ de holgura)
-                        if (fechaInput) {
+                        // Resetear calendario personalizado y campo de hora
+                        if (typeof window._resetCalendarioPersonalizado === 'function') {
+                            window._resetCalendarioPersonalizado();
+                        } else if (fechaInput) {
                             fechaInput.value = "";
-                            fechaInput.min = obtenerFechaMinimaAgendamiento();
                         }
                         if (horaInput) horaInput.value = "";
 
