@@ -4686,7 +4686,15 @@ html, body {
 <!-- MODAL CONTABILIDAD — AGREGAR MOVIMIENTO -->
 <div class="modal-overlay" id="modalContabilidad" style="z-index: 12000;" onclick="if(event.target===this) closeModal('modalContabilidad')">
   <div class="modal-box" style="max-width:560px;">
-    <div class="modal-title" id="contModalTitle">➕ Agregar Movimiento</div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
+      <div class="modal-title" id="contModalTitle" style="margin:0;">➕ Agregar Movimiento</div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <input type="file" id="contMovFacturaInput" accept="image/*,application/pdf" capture="environment" style="display:none;" onchange="contManejadorFacturaSeleccionada(this)"/>
+        <button type="button" class="btn" style="background:rgba(212,168,75,0.15); border:1px solid var(--gold); color:var(--gold); padding:5px 12px; font-size:12px; font-weight:600; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all 0.2s;" onclick="document.getElementById('contMovFacturaInput').click()" onmouseover="this.style.background='rgba(212,168,75,0.3)'" onmouseout="this.style.background='rgba(212,168,75,0.15)'">
+          <span>📸</span> <span>Tomar foto / Subir Factura</span>
+        </button>
+      </div>
+    </div>
     <input type="hidden" id="contMovId"/>
     <div class="cont-form-row" style="margin-bottom:12px;">
       <div class="form-group">
@@ -4758,7 +4766,26 @@ html, body {
     </div>
     <div class="form-group" style="margin-bottom:4px;">
       <label class="form-label">Notas (opcional)</label>
-      <textarea class="form-input" id="contMovNotas" placeholder="Notas adicionales..." style="min-height:70px;"></textarea>
+      <textarea class="form-input" id="contMovNotas" placeholder="Notas adicionales..." style="min-height:60px;"></textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:12px; margin-top:8px;">
+      <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>🧾 Factura / Comprobante (opcional)</span>
+        <span id="contMovFacturaEstado" style="font-size:11px; color:#888;">Sin archivo</span>
+      </label>
+      <div id="contMovFacturaPreviewContainer" style="display:none; margin-top:6px; background:rgba(255,255,255,0.03); border:1px solid rgba(212,168,75,0.25); border-radius:8px; padding:10px; align-items:center; justify-content:space-between; gap:10px;">
+        <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+          <img id="contMovFacturaPreviewImg" src="" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid rgba(212,168,75,0.4); display:none; flex-shrink:0; cursor:pointer;" onclick="contVerFacturaCompleta(contFacturaActualBase64)" title="Clic para ampliar"/>
+          <div id="contMovFacturaPreviewPdfIcon" style="display:none; font-size:24px; width:48px; height:48px; align-items:center; justify-content:center; background:rgba(239,68,68,0.15); border-radius:6px; border:1px solid rgba(239,68,68,0.4);">📄</div>
+          <div style="overflow:hidden;">
+            <div id="contMovFacturaNombre" style="font-size:12px; color:#fff; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:260px;">Factura adjunta</div>
+            <div style="display:flex; gap:12px; margin-top:4px;">
+              <button type="button" style="background:none; border:none; color:var(--gold); font-size:11px; cursor:pointer; padding:0; text-decoration:underline;" onclick="contVerFacturaCompleta(contFacturaActualBase64)">👁️ Ver completa</button>
+              <button type="button" style="background:none; border:none; color:#ef4444; font-size:11px; cursor:pointer; padding:0; text-decoration:underline;" onclick="contRemoverFactura()">🗑️ Remover</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="modal-footer" style="display:flex; gap:10px; justify-content:space-between; width:100%;">
       <button class="btn btn-danger btn-sm" id="contMovBtnEliminar" style="display:none;" onclick="contEliminarMovimiento()">🗑 Eliminar</button>
@@ -4766,6 +4793,23 @@ html, body {
         <button class="btn btn-secondary" onclick="closeModal('modalContabilidad')">Cancelar</button>
         <button class="btn btn-primary" onclick="contGuardarMovimiento()">💾 Guardar</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE VISUALIZACIÓN DE FACTURA / COMPROBANTE -->
+<div class="modal-overlay" id="modalFacturaViewer" style="z-index:13000;" onclick="if(event.target===this) closeModal('modalFacturaViewer')">
+  <div class="modal-box" style="max-width:800px; width:94%; background:#121214; padding:20px; border-radius:14px; border:1px solid rgba(212,168,75,0.3); text-align:center;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+      <h3 style="margin:0; font-size:16px; color:var(--gold); display:flex; align-items:center; gap:8px;">🧾 Factura / Comprobante</h3>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <a id="btnDescargarFactura" href="#" download="factura.jpg" class="btn btn-secondary btn-sm" style="font-size:12px; border-color:var(--gold); color:var(--gold); display:inline-flex; align-items:center; gap:4px; text-decoration:none;">📥 Descargar</a>
+        <button onclick="closeModal('modalFacturaViewer')" style="background:none; border:none; color:#aaa; font-size:20px; cursor:pointer;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">✕</button>
+      </div>
+    </div>
+    <div id="facturaViewerContainer" style="max-height:75vh; overflow:auto; display:flex; justify-content:center; align-items:center; background:#080808; border-radius:8px; padding:10px;">
+      <img id="facturaViewerImg" src="" style="max-width:100%; max-height:70vh; object-fit:contain; border-radius:6px;" />
+      <iframe id="facturaViewerPdf" src="" style="width:100%; height:68vh; border:none; display:none;"></iframe>
     </div>
   </div>
 </div>
@@ -23316,12 +23360,13 @@ function contSeleccionarMesYVerMovimientos(mes){
           const montoColor = m.tipo === 'ingreso' ? '#22c55e' : '#ef4444';
           const montoSign = m.tipo === 'ingreso' ? '+' : '-';
           const editBtn = m.isAuto ? '<span style="color:#555; font-size:11px;">Auto</span>' : 
+            (m.factura ? '<button onclick="event.stopPropagation(); contVerFacturaCompleta(\'' + m.factura.replace(/'/g, "\\'") + '\')" style="background:rgba(212,168,75,0.15); border:1px solid rgba(212,168,75,0.4); border-radius:7px; color:var(--gold); padding:3px 6px; cursor:pointer; font-size:11px; margin-right:4px;" title="Ver Factura">🧾</button>' : '') +
             '<button onclick="contEditarMovimiento(\'' + m.id + '\')" style="background:none; border:1px solid rgba(255,255,255,0.1); border-radius:7px; color:#888; padding:3px 6px; cursor:pointer; font-size:11px;" onmouseover="this.style.borderColor=\'var(--gold)\'; this.style.color=\'var(--gold)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.1)\'; this.style.color=\'#888\'">✏️</button>';
           
           return '<tr style="border-bottom:1px solid rgba(255,255,255,0.03);" onmouseover="this.style.background=\'rgba(255,255,255,0.025)\'" onmouseout="this.style.background=\'\'">' +
             '<td style="padding:8px 12px; color:#888; white-space:nowrap;">' + (m.fecha || '—') + '</td>' +
             '<td style="padding:8px 12px; color:#ccc;">' + catIcon + ' ' + m.categoria + '</td>' +
-            '<td style="padding:8px 12px; color:#fff; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + (m.descripcion || '') + '">' + (m.descripcion || '—') + '</td>' +
+            '<td style="padding:8px 12px; color:#fff; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + (m.descripcion || '') + '">' + (m.descripcion || '—') + (m.factura ? ' 🧾' : '') + '</td>' +
             '<td style="padding:8px 12px; text-align:right; color:' + montoColor + '; font-weight:700;">' + montoSign + contFmt(parseFloat(m.monto || 0)) + '</td>' +
             '<td style="padding:8px 12px; text-align:center;">' + editBtn + '</td>' +
           '</tr>';
@@ -24239,13 +24284,14 @@ function contRenderMovimientos(el){
     } else if (m.isAuto) {
       actionBtnHtml = '<span style="color:#555;font-size:11px;">Auto</span>';
     } else {
-      actionBtnHtml = '<button onclick="contEditarMovimiento(\''+m.id+'\')" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#888;padding:4px 8px;cursor:pointer;font-size:11px;" onmouseover="this.style.borderColor=\'var(--gold)\';this.style.color=\'var(--gold)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.1)\';this.style.color=\'#888\'">\u270F\uFE0F</button>';
+      let factBtn = m.factura ? '<button onclick="event.stopPropagation(); contVerFacturaCompleta(\''+m.factura.replace(/'/g, "\\'")+'\')" style="background:rgba(212,168,75,0.15);border:1px solid rgba(212,168,75,0.4);border-radius:7px;color:var(--gold);padding:4px 7px;cursor:pointer;font-size:11px;margin-right:4px;" title="Ver Factura / Comprobante">🧾 Factura</button>' : '';
+      actionBtnHtml = factBtn + '<button onclick="contEditarMovimiento(\''+m.id+'\')" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#888;padding:4px 8px;cursor:pointer;font-size:11px;" onmouseover="this.style.borderColor=\'var(--gold)\';this.style.color=\'var(--gold)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.1)\';this.style.color=\'#888\'">\u270F\uFE0F</button>';
       if (latestLog && latestLog.tipoAccion === 'Restablecido') {
         actionBtnHtml += '<div style="font-size:9.5px;color:#10b981;margin-top:4px;font-weight:600;">♻️ Restablecido</div>';
       }
     }
     
-    return '<tr style="'+rowStyle+'"><td style="padding:12px 16px;"><div style="'+textStyle+'">'+dateDisplay+'</div>'+timestampHtml+'</td><td style="padding:12px 16px;"><div style="'+textStyle+'">'+(m.categoria||'Sin cat.')+'</div></td><td style="padding:12px 16px;"><div style="'+textStyle+'">'+descDisplay+'</div></td><td style="padding:12px 16px;text-align:right;"><div style="'+textStyle+'font-weight:600;color:'+(m.tipo==='egreso'?'#ef4444':'#22c55e')+'">'+(m.tipo==='egreso'?'-':'')+contFmt(m.monto)+'</div></td><td style="padding:12px 16px;text-align:center;"><div style="'+textStyle+'">'+(m.tipo==='ingreso'?'\u2B06\uFE0F Ing.':'\u2B07\uFE0F Egr.')+'</div></td><td style="padding:12px 16px;text-align:center;">'+actionBtnHtml+'</td></tr>';
+    return '<tr style="'+rowStyle+'"><td style="padding:12px 16px;"><div style="'+textStyle+'">'+dateDisplay+'</div>'+timestampHtml+'</td><td style="padding:12px 16px;"><div style="'+textStyle+'">'+(m.categoria||'Sin cat.')+'</div></td><td style="padding:12px 16px;"><div style="'+textStyle+'">'+descDisplay+(m.factura ? ' 🧾' : '')+'</div></td><td style="padding:12px 16px;text-align:right;"><div style="'+textStyle+'font-weight:600;color:'+(m.tipo==='egreso'?'#ef4444':'#22c55e')+'">'+(m.tipo==='egreso'?'-':'')+contFmt(m.monto)+'</div></td><td style="padding:12px 16px;text-align:center;"><div style="'+textStyle+'">'+(m.tipo==='ingreso'?'\u2B06\uFE0F Ing.':'\u2B07\uFE0F Egr.')+'</div></td><td style="padding:12px 16px;text-align:center;">'+actionBtnHtml+'</td></tr>';
   }).join('')+'</tbody></table>')+'</div></div>';
 }
 function contCambiarOrden(val){
@@ -24370,6 +24416,127 @@ function contVerHistorial(id) {
 }
 
 
+let contFacturaActualBase64 = null;
+
+function contManejadorFacturaSeleccionada(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const isImage = file.type.startsWith('image/');
+  
+  if (isImage) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 1200;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        contFacturaActualBase64 = canvas.toDataURL('image/jpeg', 0.82);
+        contMostrarPreviewFactura(contFacturaActualBase64, file.name);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      contFacturaActualBase64 = e.target.result;
+      contMostrarPreviewFactura(contFacturaActualBase64, file.name, true);
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function contMostrarPreviewFactura(src, nombre = 'Factura adjunta', isPdf = false) {
+  const container = document.getElementById('contMovFacturaPreviewContainer');
+  const imgPreview = document.getElementById('contMovFacturaPreviewImg');
+  const pdfIcon = document.getElementById('contMovFacturaPreviewPdfIcon');
+  const nombreEl = document.getElementById('contMovFacturaNombre');
+  const estadoEl = document.getElementById('contMovFacturaEstado');
+
+  if (!container) return;
+
+  const isPdfCheck = isPdf || (typeof src === 'string' && src.startsWith('data:application/pdf'));
+
+  if (isPdfCheck) {
+    if (imgPreview) imgPreview.style.display = 'none';
+    if (pdfIcon) pdfIcon.style.display = 'flex';
+  } else {
+    if (pdfIcon) pdfIcon.style.display = 'none';
+    if (imgPreview) {
+      imgPreview.style.display = 'block';
+      imgPreview.src = src;
+    }
+  }
+
+  if (nombreEl) nombreEl.textContent = nombre;
+  if (estadoEl) {
+    estadoEl.textContent = '✓ Adjuntada';
+    estadoEl.style.color = '#22c55e';
+  }
+  container.style.display = 'flex';
+}
+
+function contOcultarPreviewFactura() {
+  const container = document.getElementById('contMovFacturaPreviewContainer');
+  const estadoEl = document.getElementById('contMovFacturaEstado');
+  if (container) container.style.display = 'none';
+  if (estadoEl) {
+    estadoEl.textContent = 'Sin archivo';
+    estadoEl.style.color = '#888';
+  }
+  contFacturaActualBase64 = null;
+}
+
+function contRemoverFactura() {
+  contOcultarPreviewFactura();
+  const inputFact = document.getElementById('contMovFacturaInput');
+  if (inputFact) inputFact.value = '';
+  toast('Factura removida', 'info');
+}
+
+function contVerFacturaCompleta(src) {
+  if (!src) {
+    toast('No hay factura o comprobante adjunto', 'info');
+    return;
+  }
+  const imgEl = document.getElementById('facturaViewerImg');
+  const pdfEl = document.getElementById('facturaViewerPdf');
+  const dlBtn = document.getElementById('btnDescargarFactura');
+
+  if (dlBtn) dlBtn.href = src;
+  if (src.startsWith('data:application/pdf')) {
+    if (imgEl) imgEl.style.display = 'none';
+    if (pdfEl) {
+      pdfEl.style.display = 'block';
+      pdfEl.src = src;
+    }
+    if (dlBtn) dlBtn.download = 'factura.pdf';
+  } else {
+    if (pdfEl) pdfEl.style.display = 'none';
+    if (imgEl) {
+      imgEl.style.display = 'block';
+      imgEl.src = src;
+    }
+    if (dlBtn) dlBtn.download = 'factura.jpg';
+  }
+  document.getElementById('modalFacturaViewer').classList.add('open');
+}
+
 function contAbrirModal(tipoDefault, mesDefault, anoDefault){
   document.getElementById('contModalTitle').textContent='\u2795 Agregar Movimiento';
   document.getElementById('contMovId').value='';
@@ -24378,6 +24545,11 @@ function contAbrirModal(tipoDefault, mesDefault, anoDefault){
   document.getElementById('contMovDesc').value='';
   document.getElementById('contMovMonto').value='';
   
+  contFacturaActualBase64 = null;
+  const inputFact = document.getElementById('contMovFacturaInput');
+  if (inputFact) inputFact.value = '';
+  contOcultarPreviewFactura();
+
   const targetYear = anoDefault || contAnoFiltro || new Date().getFullYear();
   const targetMonth = mesDefault || contDetalleMesActivo || (new Date().getMonth() + 1);
   const todayStr = new Date().toISOString().split('T')[0];
@@ -24412,6 +24584,16 @@ function contEditarMovimiento(id){
   document.getElementById('contMovMesesActivo').value='1';
   document.getElementById('contMovMesesActivoDiv').style.display='';
   document.getElementById('contMovNotas').value=m.notas||'';
+
+  contFacturaActualBase64 = m.factura || null;
+  const inputFact = document.getElementById('contMovFacturaInput');
+  if (inputFact) inputFact.value = '';
+  if (m.factura) {
+    contMostrarPreviewFactura(m.factura, 'Factura adjunta');
+  } else {
+    contOcultarPreviewFactura();
+  }
+
   document.getElementById('contMovBtnEliminar').style.display='inline-flex';
   contToggleTipo();
   document.getElementById('modalContabilidad').classList.add('open');
@@ -24522,6 +24704,7 @@ function contGuardarMovimiento(){
       mes: nextMes,
       ano: nextAno,
       notas: notas,
+      factura: contFacturaActualBase64 || null,
       creadoEn: new Date().toISOString(),
       isPending: !!CONT_SCRIPT_URL
     };

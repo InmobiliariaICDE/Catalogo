@@ -3856,6 +3856,127 @@ function contRenderMovimientos(el){
   }).join('')+'</tbody></table>')+'</div></div>';
 }
 
+let contFacturaActualBase64 = null;
+
+function contManejadorFacturaSeleccionada(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const isImage = file.type.startsWith('image/');
+  
+  if (isImage) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 1200;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        contFacturaActualBase64 = canvas.toDataURL('image/jpeg', 0.82);
+        contMostrarPreviewFactura(contFacturaActualBase64, file.name);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      contFacturaActualBase64 = e.target.result;
+      contMostrarPreviewFactura(contFacturaActualBase64, file.name, true);
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function contMostrarPreviewFactura(src, nombre = 'Factura adjunta', isPdf = false) {
+  const container = document.getElementById('contMovFacturaPreviewContainer');
+  const imgPreview = document.getElementById('contMovFacturaPreviewImg');
+  const pdfIcon = document.getElementById('contMovFacturaPreviewPdfIcon');
+  const nombreEl = document.getElementById('contMovFacturaNombre');
+  const estadoEl = document.getElementById('contMovFacturaEstado');
+
+  if (!container) return;
+
+  const isPdfCheck = isPdf || (typeof src === 'string' && src.startsWith('data:application/pdf'));
+
+  if (isPdfCheck) {
+    if (imgPreview) imgPreview.style.display = 'none';
+    if (pdfIcon) pdfIcon.style.display = 'flex';
+  } else {
+    if (pdfIcon) pdfIcon.style.display = 'none';
+    if (imgPreview) {
+      imgPreview.style.display = 'block';
+      imgPreview.src = src;
+    }
+  }
+
+  if (nombreEl) nombreEl.textContent = nombre;
+  if (estadoEl) {
+    estadoEl.textContent = '✓ Adjuntada';
+    estadoEl.style.color = '#22c55e';
+  }
+  container.style.display = 'flex';
+}
+
+function contOcultarPreviewFactura() {
+  const container = document.getElementById('contMovFacturaPreviewContainer');
+  const estadoEl = document.getElementById('contMovFacturaEstado');
+  if (container) container.style.display = 'none';
+  if (estadoEl) {
+    estadoEl.textContent = 'Sin archivo';
+    estadoEl.style.color = '#888';
+  }
+  contFacturaActualBase64 = null;
+}
+
+function contRemoverFactura() {
+  contOcultarPreviewFactura();
+  const inputFact = document.getElementById('contMovFacturaInput');
+  if (inputFact) inputFact.value = '';
+  toast('Factura removida', 'info');
+}
+
+function contVerFacturaCompleta(src) {
+  if (!src) {
+    toast('No hay factura o comprobante adjunto', 'info');
+    return;
+  }
+  const imgEl = document.getElementById('facturaViewerImg');
+  const pdfEl = document.getElementById('facturaViewerPdf');
+  const dlBtn = document.getElementById('btnDescargarFactura');
+
+  if (dlBtn) dlBtn.href = src;
+  if (src.startsWith('data:application/pdf')) {
+    if (imgEl) imgEl.style.display = 'none';
+    if (pdfEl) {
+      pdfEl.style.display = 'block';
+      pdfEl.src = src;
+    }
+    if (dlBtn) dlBtn.download = 'factura.pdf';
+  } else {
+    if (pdfEl) pdfEl.style.display = 'none';
+    if (imgEl) {
+      imgEl.style.display = 'block';
+      imgEl.src = src;
+    }
+    if (dlBtn) dlBtn.download = 'factura.jpg';
+  }
+  document.getElementById('modalFacturaViewer').classList.add('open');
+}
+
 function contAbrirModal(tipoDefault, mesDefault, anoDefault){
   document.getElementById('contModalTitle').textContent='\u2795 Agregar Movimiento';
   document.getElementById('contMovId').value='';
@@ -3864,6 +3985,11 @@ function contAbrirModal(tipoDefault, mesDefault, anoDefault){
   document.getElementById('contMovDesc').value='';
   document.getElementById('contMovMonto').value='';
   
+  contFacturaActualBase64 = null;
+  const inputFact = document.getElementById('contMovFacturaInput');
+  if (inputFact) inputFact.value = '';
+  contOcultarPreviewFactura();
+
   const targetYear = anoDefault || contAnoFiltro || new Date().getFullYear();
   const targetMonth = mesDefault || contDetalleMesActivo || (new Date().getMonth() + 1);
   const todayStr = new Date().toISOString().split('T')[0];
@@ -3898,6 +4024,16 @@ function contEditarMovimiento(id){
   document.getElementById('contMovMesesActivo').value='1';
   document.getElementById('contMovMesesActivoDiv').style.display='';
   document.getElementById('contMovNotas').value=m.notas||'';
+
+  contFacturaActualBase64 = m.factura || null;
+  const inputFact = document.getElementById('contMovFacturaInput');
+  if (inputFact) inputFact.value = '';
+  if (m.factura) {
+    contMostrarPreviewFactura(m.factura, 'Factura adjunta');
+  } else {
+    contOcultarPreviewFactura();
+  }
+
   document.getElementById('contMovBtnEliminar').style.display='inline-flex';
   contToggleTipo();
   document.getElementById('modalContabilidad').classList.add('open');
@@ -4008,6 +4144,7 @@ function contGuardarMovimiento(){
       mes: nextMes,
       ano: nextAno,
       notas: notas,
+      factura: contFacturaActualBase64 || null,
       creadoEn: new Date().toISOString(),
       isPending: !!CONT_SCRIPT_URL
     };
