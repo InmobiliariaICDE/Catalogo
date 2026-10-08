@@ -7641,6 +7641,7 @@ font-weight: 500;
                     <li data-value="menorPrecio">Menor precio</li>
                     <li data-value="mayorPrecio">Mayor precio</li>
                     <li data-value="rentabilidad">Mayor rentabilidad</li>
+                    <li data-value="permutas">Permutas</li>
                 </ul>
             </div>
         </div>
@@ -9509,7 +9510,7 @@ font-weight: 500;
                     let todosConjuntos = [];
                     const choiceInstances = {};
                     let primeraCarga = true; // Para controlar el primer renderizado de tarjetas
-                    let criterioOrden = "";  // "" | "menorPrecio" | "mayorPrecio" | "rentabilidad"
+                    let criterioOrden = "";  // "" | "menorPrecio" | "mayorPrecio" | "rentabilidad" | "permutas"
 
                     // ─────────────────────────────────────────────────
                     // 2. Función para cargar datos desde tu API
@@ -9586,7 +9587,7 @@ font-weight: 500;
                                     criterioOrden = val;
                                     const sortToggle = document.getElementById('sortToggle');
                                     if (sortToggle) {
-                                        const options = { 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad', 'destacadas': 'Propiedades destacadas' };
+                                        const options = { 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Mayor rentabilidad', 'destacadas': 'Destacadas', 'permutas': 'Permutas' };
                                         if (options[val]) sortToggle.textContent = options[val] + ' ▼';
                                     }
                                 } else if (filtroKey === 'Buscar') {
@@ -9833,6 +9834,29 @@ font-weight: 500;
                             // Solo propiedades destacadas, ordenadas de mayor a menor precio
                             return lista
                                 .filter(d => ["Directo", "Verbal"].includes(d["Contrato"]))
+                                .sort((a, b) => parsePrecio(b["Precio"]) - parsePrecio(a["Precio"]));
+                        }
+                        if (criterioOrden === "permutas") {
+                            // Solo propiedades que se permutan, ordenadas de mayor a menor precio
+                            const esPermuta = d => {
+                                const val = String(d["Permuta"] || d["permuta"] || "").trim().toLowerCase();
+                                if (val && val !== "-" && val !== "null" && val !== "undefined") {
+                                    if (["si", "sí", "true", "1", "acepta", "se permuta", "si."].includes(val)) return true;
+                                    if (["no", "no aplica", "false", "0", "no permuta", "sin permuta", "no."].includes(val)) return false;
+                                    if ((val.includes("si") || val.includes("sí") || val.includes("recibe") || val.includes("acepta")) && !/\b(no|sin)\b/.test(val)) return true;
+                                    if (/\b(no|sin)\b/.test(val)) return false;
+                                }
+                                const texto = ((d["Descripción"] || "") + " " + (d["Puntos Clave"] || "") + " " + (d["Nombre"] || "")).toLowerCase();
+                                if (texto.includes("permuta")) {
+                                    if (/\b(no\s+se\s+permuta|sin\s+permuta|permuta\s+no|no\s+permuta|no\s+se\s+recibe\s+permuta)\b/.test(texto)) {
+                                        return false;
+                                    }
+                                    return true;
+                                }
+                                return false;
+                            };
+                            return lista
+                                .filter(esPermuta)
                                 .sort((a, b) => parsePrecio(b["Precio"]) - parsePrecio(a["Precio"]));
                         }
                         return lista.sort((a, b) => {
