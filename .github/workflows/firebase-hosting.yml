@@ -12,6 +12,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Regenerar paginas de propiedades con datos actuales
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python generar_propiedades_v2.py
+
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
