@@ -14095,13 +14095,24 @@ sizePct: 70
         background: rgba(151,151,151,0.08); border: 1px solid rgba(145,145,145,0.22);
         color: rgba(255,255,255,0.78); font-size: 10.5px; padding: 3px 9px; border-radius: 20px; white-space: nowrap;
     }
-    .fav-card-acciones { margin-top: auto; display: flex; justify-content: flex-end; }
+    .fav-card-acciones { margin-top: auto; display: flex; gap: 8px; justify-content: space-between; align-items: center; }
     .fav-btn-ver {
         background: transparent; color: #d4a84b; border: 1px solid #d4a84b; border-radius: 20px;
         padding: 6px 16px; font-family: inherit; font-size: .75rem; font-weight: 600; cursor: pointer;
         transition: all .2s ease;
     }
     .fav-btn-ver:hover { background: #d4a84b; color: #0d0b08; }
+    .fav-btn-comparar {
+        background: transparent; color: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 20px; padding: 6px 12px; font-family: inherit; font-size: .72rem; font-weight: 600;
+        cursor: pointer; transition: all .22s ease; display: flex; align-items: center; gap: 5px; white-space: nowrap;
+    }
+    .fav-btn-comparar svg { width: 13px; height: 13px; flex-shrink: 0; }
+    .fav-btn-comparar:hover { border-color: #d4a84b; color: #d4a84b; }
+    .fav-btn-comparar.activo {
+        background: rgba(212,168,75,0.18); border-color: #d4a84b; color: #d4a84b;
+    }
+    .fav-btn-comparar.lleno { opacity: 0.4; cursor: not-allowed; }
     .fav-card-quitar {
         position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%;
         background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #aaa;
@@ -14373,7 +14384,13 @@ function favTarjetaHTML(cod) {
             (sub ? '<p class="fav-card-sub">' + favEsc(sub) + '</p>' : '') +
             '<div class="fav-card-precio">' + (p ? favPrecio(p['Precio']) : '') + '</div>' +
             (chips.length ? '<div class="fav-card-chips">' + chips.map(function(t) { return '<span class="fav-card-chip">' + favEsc(t) + '</span>'; }).join('') + '</div>' : '') +
-            '<div class="fav-card-acciones"><button class="fav-btn-ver" data-act="ver" data-cod="' + c + '">Ver más</button></div>' +
+            '<div class="fav-card-acciones">' +
+                '<button class="fav-btn-comparar" data-act="comparar" data-cod="' + c + '" aria-label="Agregar a comparar">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>' +
+                    'Comparar' +
+                '</button>' +
+                '<button class="fav-btn-ver" data-act="ver" data-cod="' + c + '">Ver más</button>' +
+            '</div>' +
         '</div>' +
     '</article>';
 }
@@ -14395,6 +14412,14 @@ function renderFavDrawer() {
         return;
     }
     lista.innerHTML = favs.map(favTarjetaHTML).join('');
+    // Sincronizar estado visual de botones comparar al abrir el drawer
+    lista.querySelectorAll('.fav-btn-comparar').forEach(function(btn) {
+        var bc = btn.getAttribute('data-cod');
+        var activo = comparaciones.includes(bc);
+        var lleno = !activo && comparaciones.length >= 2;
+        btn.classList.toggle('activo', activo);
+        btn.classList.toggle('lleno', lleno);
+    });
 }
 function abrirFavDrawer() {
     renderFavDrawer();
@@ -14428,8 +14453,34 @@ document.getElementById('favDrawerLista').addEventListener('click', function(e) 
     var el = e.target.closest('[data-act]');
     if (!el) return;
     var cod = el.getAttribute('data-cod');
-    if (el.getAttribute('data-act') === 'quitar') {
+    var accion = el.getAttribute('data-act');
+    if (accion === 'quitar') {
         favQuitar(cod);
+    } else if (accion === 'comparar') {
+        // Sincronizar con el array global comparaciones
+        var yaEsta = comparaciones.includes(cod);
+        if (yaEsta) {
+            comparaciones = comparaciones.filter(function(c) { return c !== cod; });
+        } else {
+            if (comparaciones.length >= 2) {
+                alert('Solo puedes comparar 2 propiedades a la vez.');
+                return;
+            }
+            comparaciones.push(cod);
+        }
+        // Actualizar estado visual de todos los botones comparar del drawer
+        document.querySelectorAll('#favDrawerLista .fav-btn-comparar').forEach(function(btn) {
+            var bc = btn.getAttribute('data-cod');
+            var activo = comparaciones.includes(bc);
+            var lleno = !activo && comparaciones.length >= 2;
+            btn.classList.toggle('activo', activo);
+            btn.classList.toggle('lleno', lleno);
+        });
+        // Sincronizar checkboxes de tarjetas y banner
+        document.querySelectorAll('.checkbox-comparar').forEach(function(chk) {
+            if (chk.dataset.codigo === cod) chk.checked = !yaEsta;
+        });
+        if (typeof actualizarBanner === 'function') actualizarBanner();
     } else if (typeof abrirModal === 'function') {
         // El modal de la propiedad se abre por encima; al cerrarlo se vuelve a la lista
         abrirModal(cod);
