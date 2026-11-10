@@ -6240,6 +6240,59 @@ font-weight: 500;
                 position: relative;
             }
         }
+
+        /* ── Modal ajustado a la pantalla (escritorio) ──
+           El modal nunca supera el alto del viewport; las columnas
+           hacen scroll interno y la barra de acciones queda visible. */
+        @media (min-width: 768px) {
+            #modalOverlay.modal-overlay {
+                overflow: hidden;
+                padding: 16px;
+                align-items: center;
+            }
+            #modalOverlay > .modal {
+                top: 0;
+                margin: 0 auto;
+                min-height: 0;
+                max-height: calc(100vh - 32px);
+                max-height: calc(100dvh - 32px);
+            }
+            #modalOverlay .modal-contenido {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: hidden;
+                align-items: stretch;
+            }
+            #modalOverlay .modal-columna-izq,
+            #modalOverlay .modal-columna-der-nueva {
+                min-height: 0;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(212,168,75,0.3) transparent;
+            }
+            #modalOverlay .modal-columna-izq {
+                flex: 0 0 min(420px, 44%);
+                max-width: min(420px, 44%);
+            }
+            #modalOverlay .modal-columna-der-nueva::-webkit-scrollbar,
+            #modalOverlay .modal-columna-izq::-webkit-scrollbar {
+                display: block;
+                width: 3px;
+            }
+            #modalOverlay .modal-columna-der-nueva::-webkit-scrollbar-thumb,
+            #modalOverlay .modal-columna-izq::-webkit-scrollbar-thumb {
+                background: rgba(212,168,75,0.3);
+                border-radius: 2px;
+            }
+            #modalOverlay .modal-acciones {
+                flex-shrink: 0;
+            }
+            /* La imagen se adapta en pantallas con poca altura */
+            #modalOverlay .carrusel-principal {
+                height: clamp(180px, 38vh, 300px);
+            }
+        }
         @media (max-width: 700px) {
             .modal-subtitulo-nuevo { font-size: 12px; }
             .modal-tabla-caracteristicas { font-size: 14px; }
