@@ -6294,7 +6294,7 @@ font-weight: 500;
             }
         }
 
-        /* ── Móvil: aviso "Comparar" compacto y pegado abajo con el modal abierto ── */
+        /* ── Móvil: aviso "Comparar" organizado, con miniaturas, pegado abajo con el modal abierto ── */
         @media (max-width: 767px) {
             body:has(#modalOverlay.active) #bannerComparar {
                 bottom: 0;
@@ -6303,39 +6303,122 @@ font-weight: 500;
                 width: 100%;
                 max-width: 100%;
                 border-radius: 0;
-                padding: 6px 10px;
-                gap: 8px;
-                flex-direction: row;
+                padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+                display: grid;
+                grid-template-columns: auto minmax(0, 1fr);
+                grid-template-rows: auto auto;
+                column-gap: 12px;
+                row-gap: 6px;
                 align-items: center;
-                justify-content: space-between;
             }
+            /* Miniaturas a la izquierda, ocupando las dos filas */
             body:has(#modalOverlay.active) #bannerComparar .miniaturas-comparar {
+                grid-column: 1;
+                grid-row: 1 / span 2;
+                display: flex;
+                flex-direction: row;
+                gap: 10px;
+                overflow: visible;
+                padding: 8px 8px 0 0;
+            }
+            body:has(#modalOverlay.active) #bannerComparar .tooltip-miniatura {
                 display: none;
             }
+            body:has(#modalOverlay.active) #bannerComparar .chip-miniatura {
+                background: transparent;
+                width: auto;
+                padding: 0;
+                gap: 0;
+                display: block;
+                position: relative;
+            }
+            body:has(#modalOverlay.active) #bannerComparar .chip-separator {
+                display: none;
+            }
+            body:has(#modalOverlay.active) #bannerComparar .chip-imagen {
+                position: relative;
+                display: block;
+                padding: 0;
+                width: 58px;
+                height: 58px;
+                border-radius: 8px;
+                overflow: hidden;
+                border: 2px solid #fff;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            }
+            body:has(#modalOverlay.active) #bannerComparar .chip-thumb {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                border-radius: 0;
+                object-fit: cover;
+                display: block;
+            }
+            body:has(#modalOverlay.active) #bannerComparar .chip-code {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                text-align: center;
+                font-size: 10px;
+                line-height: 1.4;
+                background: rgba(0,0,0,0.65);
+            }
+            /* Botón × como insignia sobre la esquina de la miniatura */
+            body:has(#modalOverlay.active) #bannerComparar .btn-x-tooltip {
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                width: 20px;
+                height: 20px;
+                margin: 0;
+                padding: 0;
+                border-radius: 50%;
+                background: #1f1f1f;
+                border: 1px solid #fff;
+                color: #fff;
+                font-size: 14px;
+                line-height: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2;
+            }
+            /* Texto arriba a la derecha */
             body:has(#modalOverlay.active) #bannerComparar > .flex-1 {
-                flex: 1 1 auto;
+                grid-column: 2;
+                grid-row: 1;
                 text-align: left;
-                font-size: 12px;
+                font-size: 13px;
+                font-weight: 500;
                 line-height: 1.2;
                 min-width: 0;
             }
+            body:has(#modalOverlay.active) #bannerComparar #textoComparar {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            /* Botones debajo del texto, repartidos en partes iguales */
             body:has(#modalOverlay.active) #bannerComparar .botonescontainer {
+                grid-column: 2;
+                grid-row: 2;
                 display: flex;
                 flex-direction: row;
-                gap: 6px;
-                flex-shrink: 0;
+                gap: 8px;
             }
             body:has(#modalOverlay.active) #btnComparar,
             body:has(#modalOverlay.active) #btnLimpiarComparar {
+                flex: 1 1 0;
                 width: auto;
                 height: auto;
                 margin: 0;
-                padding: 6px 12px;
-                font-size: 12px;
+                padding: 8px 10px;
+                font-size: 13px;
             }
             /* Espacio extra para que el final del modal no quede tapado */
             body:has(#modalOverlay.active) #modalOverlay > .modal {
-                padding-bottom: 52px;
+                padding-bottom: 96px;
             }
         }
         @media (max-width: 700px) {
