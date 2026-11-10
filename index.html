@@ -13984,13 +13984,178 @@ sizePct: 70
         <div class="lightbox-mins" id="lightboxMins"></div>
     </div>
 
+<!-- DRAWER: MI LISTA DE FAVORITOS -->
+<style>
+    .fav-drawer-backdrop {
+        position: fixed; inset: 0; z-index: 10000;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+        opacity: 0; visibility: hidden;
+        transition: opacity .3s ease, visibility .3s ease;
+    }
+    .fav-drawer-backdrop.abierto { opacity: 1; visibility: visible; }
+    .fav-drawer {
+        position: fixed; top: 0; right: 0; bottom: 0; z-index: 10001;
+        width: min(460px, 100vw);
+        display: flex; flex-direction: column;
+        background: linear-gradient(160deg, #1a140c 0%, #0a0907 55%, #060606 100%);
+        border-left: 1px solid rgba(212,168,75,0.28);
+        box-shadow: -20px 0 60px rgba(0,0,0,0.6);
+        transform: translateX(105%);
+        transition: transform .38s cubic-bezier(.4,0,.2,1);
+        font-family: 'Outfit', sans-serif;
+        box-sizing: border-box;
+    }
+    .fav-drawer.abierto { transform: translateX(0); }
+    .fav-drawer-head {
+        display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px;
+        padding: 16px 16px 14px;
+        border-bottom: 1px solid rgba(212,168,75,0.18);
+        flex-shrink: 0;
+    }
+    .fav-drawer-cerrar {
+        width: 44px; height: 44px; border-radius: 50%;
+        background: rgba(212,168,75,0.12);
+        border: 1px solid rgba(212,168,75,0.45);
+        color: #d4a84b; font-size: 24px; line-height: 1; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; padding: 0;
+        transition: all .2s ease;
+    }
+    .fav-drawer-cerrar:hover { background: #d4a84b; color: #0d0b08; }
+    .fav-drawer-titulos { text-align: center; min-width: 0; }
+    .fav-drawer-titulos h2 {
+        margin: 0; color: #fff; font-size: 1.15rem; font-weight: 700; letter-spacing: .01em;
+    }
+    .fav-drawer-titulos h2 span { color: #e74c6f; margin-right: 6px; }
+    .fav-drawer-titulos p { margin: 3px 0 0; color: #d4a84b; font-size: .74rem; font-weight: 500; letter-spacing: .04em; }
+    .fav-drawer-lista {
+        flex: 1 1 auto; min-height: 0; overflow-y: auto;
+        padding: 14px 14px 18px;
+        display: flex; flex-direction: column; gap: 12px;
+        overscroll-behavior: contain;
+        scrollbar-width: thin; scrollbar-color: rgba(212,168,75,0.35) transparent;
+    }
+    .fav-drawer-lista::-webkit-scrollbar { width: 4px; }
+    .fav-drawer-lista::-webkit-scrollbar-thumb { background: rgba(212,168,75,0.35); border-radius: 3px; }
+    .fav-card {
+        position: relative;
+        display: grid; grid-template-columns: 132px minmax(0, 1fr);
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(212,168,75,0.16);
+        border-radius: 14px; overflow: hidden;
+        transition: border-color .2s ease, background .2s ease, opacity .26s ease, transform .26s ease;
+    }
+    .fav-card:hover { border-color: rgba(212,168,75,0.45); background: rgba(255,255,255,0.05); }
+    .fav-card.saliendo { opacity: 0; transform: translateX(36px); pointer-events: none; }
+    .fav-card-img {
+        position: relative; cursor: pointer; background: #1b1812; min-height: 150px;
+    }
+    .fav-card-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+    .fav-card-img .fav-card-sinfoto {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        color: #d4a84b; font-size: .8rem;
+    }
+    .fav-card-cod {
+        position: absolute; left: 8px; bottom: 8px;
+        background: rgba(0,0,0,0.65); color: #fff; font-size: 10.5px; font-weight: 600;
+        padding: 3px 8px; border-radius: 20px; backdrop-filter: blur(4px);
+    }
+    .fav-card-heart {
+        position: absolute; left: 8px; top: 8px; width: 26px; height: 26px; border-radius: 50%;
+        background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+    }
+    .fav-card-heart svg { width: 14px; height: 14px; fill: #e74c6f; }
+    .fav-card-body { position: relative; padding: 12px 40px 12px 14px; display: flex; flex-direction: column; min-width: 0; }
+    .fav-card-titulo {
+        margin: 0 0 3px; color: #fff; font-size: .95rem; font-weight: 600; line-height: 1.25;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .fav-card-sub { margin: 0 0 6px; color: #9d9d9d; font-size: .75rem; }
+    .fav-card-precio { color: #22c55e; font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; text-shadow: 0 0 24px rgba(34,197,94,0.18); }
+    .fav-card-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+    .fav-card-chip {
+        background: rgba(151,151,151,0.08); border: 1px solid rgba(145,145,145,0.22);
+        color: rgba(255,255,255,0.78); font-size: 10.5px; padding: 3px 9px; border-radius: 20px; white-space: nowrap;
+    }
+    .fav-card-acciones { margin-top: auto; display: flex; justify-content: flex-end; }
+    .fav-btn-ver {
+        background: transparent; color: #d4a84b; border: 1px solid #d4a84b; border-radius: 20px;
+        padding: 6px 16px; font-family: inherit; font-size: .75rem; font-weight: 600; cursor: pointer;
+        transition: all .2s ease;
+    }
+    .fav-btn-ver:hover { background: #d4a84b; color: #0d0b08; }
+    .fav-card-quitar {
+        position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%;
+        background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #aaa;
+        font-size: 17px; line-height: 1; cursor: pointer; padding: 0;
+        display: flex; align-items: center; justify-content: center; transition: all .2s ease;
+    }
+    .fav-card-quitar:hover { border-color: #e74c6f; color: #e74c6f; background: rgba(231,76,111,0.12); }
+    .fav-drawer-vacio {
+        margin: auto; text-align: center; padding: 30px 20px; color: #bdbdbd;
+    }
+    .fav-drawer-vacio svg { width: 54px; height: 54px; stroke: #d4a84b; fill: none; stroke-width: 1.5; opacity: .85; }
+    .fav-drawer-vacio h3 { color: #fff; margin: 14px 0 6px; font-size: 1.05rem; }
+    .fav-drawer-vacio p { margin: 0 0 18px; font-size: .85rem; line-height: 1.45; }
+    .fav-drawer-foot {
+        flex-shrink: 0; display: flex; align-items: center; gap: 10px;
+        padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid rgba(212,168,75,0.18);
+        background: rgba(13,11,8,0.92);
+    }
+    .fav-drawer-foot .fav-panel-wa { flex: 1 1 auto; justify-content: center; padding: 12px 16px; }
+    .fav-drawer-foot .fav-panel-wa span { display: inline !important; }
+    .fav-drawer-foot .fav-panel-clear { padding: 11px 14px; font-size: .74rem; }
+    /* Barra inferior: acceso a la lista */
+    .fav-panel-count { cursor: pointer; }
+    .fav-panel-ver {
+        display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+        background: rgba(212,168,75,0.12); border: 1px solid rgba(212,168,75,0.55); color: #d4a84b;
+        border-radius: 10px; padding: 9px 14px; font-family: 'Outfit', sans-serif;
+        font-size: .74rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+        text-transform: uppercase; letter-spacing: .04em; transition: all .2s ease;
+    }
+    .fav-panel-ver:hover { background: #d4a84b; color: #0d0b08; }
+    .fav-panel-ver svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; }
+    @media (max-width: 600px) {
+        .fav-thumbs { display: none; }
+        .fav-panel-ver { flex: 1 1 auto; justify-content: center; padding: 8px 10px; }
+        .fav-card { grid-template-columns: 108px minmax(0, 1fr); }
+        .fav-card-img { min-height: 140px; }
+        .fav-card-body { padding: 10px 36px 10px 12px; }
+    }
+</style>
+<div class="fav-drawer-backdrop" id="favDrawerBackdrop" onclick="cerrarFavDrawer()"></div>
+<aside class="fav-drawer" id="favDrawer" role="dialog" aria-modal="true" aria-labelledby="favDrawerTitulo" aria-hidden="true">
+    <header class="fav-drawer-head">
+        <button class="fav-drawer-cerrar" onclick="cerrarFavDrawer()" aria-label="Cerrar lista de favoritos">&times;</button>
+        <div class="fav-drawer-titulos">
+            <h2 id="favDrawerTitulo"><span>♥</span>Mi lista de favoritos</h2>
+            <p id="favDrawerSub"></p>
+        </div>
+        <span></span>
+    </header>
+    <div class="fav-drawer-lista" id="favDrawerLista"></div>
+    <footer class="fav-drawer-foot" id="favDrawerFoot">
+        <button class="fav-panel-wa" onclick="agendarVisitaFavs()">
+            <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.859-4.42 9.863-9.864.002-2.637-1.023-5.116-2.887-6.981C16.584 1.897 14.1 1.872 11.998 1.872c-5.44 0-9.865 4.424-9.868 9.869-.001 1.736.469 3.43 1.36 4.952l-.991 3.616 3.702-.97z"/></svg>
+            <span>Agendar visita</span>
+        </button>
+        <button class="fav-panel-clear" onclick="favLimpiarTodo()">✕ Limpiar todo</button>
+    </footer>
+</aside>
+
 <!-- PANEL FLOTANTE DE FAVORITOS -->
 <div class="fav-panel" id="favPanel">
-    <span class="fav-panel-count">
+    <span class="fav-panel-count" role="button" tabindex="0" onclick="abrirFavDrawer()" title="Ver mi lista de favoritos">
         <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
         <span id="favCount">0</span> favoritos
     </span>
     <div class="fav-thumbs" id="favThumbs"></div>
+    <button class="fav-panel-ver" onclick="abrirFavDrawer()" aria-label="Ver mi lista de favoritos">
+        <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Ver lista
+    </button>
     <button class="fav-panel-wa" id="favWhatsapp" onclick="agendarVisitaFavs()">
         <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.859-4.42 9.863-9.864.002-2.637-1.023-5.116-2.887-6.981C16.584 1.897 14.1 1.872 11.998 1.872c-5.44 0-9.865 4.424-9.868 9.869-.001 1.736.469 3.43 1.36 4.952l-.991 3.616 3.702-.97z"/></svg>
         <span>Agendar visita</span> →
@@ -14032,6 +14197,7 @@ function renderFavPanel() {
     if (!panel) return;
 
     countEl.textContent = favs.length;
+    if (typeof renderFavDrawer === 'function') renderFavDrawer();
 
     if (favs.length === 0) {
         panel.classList.remove('visible');
@@ -14045,7 +14211,7 @@ function renderFavPanel() {
     thumbsEl.innerHTML = favs.map(function(cod) {
         var prop = datosRef.find(function(d) { return d['Código'] === cod; });
         if (!prop) return '';
-        var imgs = (prop['Fotos'] || '').split(',');
+        var imgs = [favImagen(prop)];
         var thumb = imgs[0] ? imgs[0].trim() : '';
         var nombre = prop['Nombre'] || cod;
         return '<div class="fav-thumb" title="' + nombre + '" onclick="event.stopPropagation(); toggleFav(\'' + cod + '\')">' +
@@ -14089,6 +14255,128 @@ function agendarVisitaFavs() {
         abrirModalAgendarVisita(objetoFavs);
     }
 }
+
+// ── LISTA DE FAVORITOS (DRAWER) ──
+function favImagen(p) {
+    if (!p) return '';
+    if (p['Imagenes']) {
+        var urls = String(p['Imagenes']).replace(/[\r\n]/g, '').split('|')
+            .map(function(u) { return u.trim(); })
+            .filter(function(u) { return u.length > 5; });
+        if (urls.length) return urls[0];
+    }
+    return p['Image'] ? String(p['Image']).trim() : '';
+}
+function favEsc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+function favPrecio(v) {
+    var n = Number(String(v == null ? '' : v).replace(/[^\d.]/g, ''));
+    return n > 0 ? '$' + n.toLocaleString('es-CO') : 'Consultar precio';
+}
+function favNum(v) {
+    var n = Number(String(v == null ? '' : v).replace(',', '.'));
+    return isFinite(n) && n > 0 ? n : 0;
+}
+function favTarjetaHTML(cod) {
+    var datosRef = (typeof datos !== 'undefined') ? datos : [];
+    var p = datosRef.find(function(d) { return String(d['Código'] || '').trim() === String(cod).trim(); });
+    var c = favEsc(cod);
+    var nombre = p ? (p['Nombre'] || 'Propiedad ' + cod) : 'Propiedad ' + cod;
+    var img = favImagen(p);
+    var sub = p ? [p['Tipo de inmueble'], p['Barrio'] || p['Zona']].filter(function(x) { return x && String(x).trim(); }).join(' · ') : '';
+    var chips = [];
+    if (p) {
+        var hab = favNum(p['Habitaciones']), ban = favNum(p['Baños']), gar = favNum(p['Garaje']);
+        var ac = favNum(p['Área Construida']), al = favNum(p['Área lote']);
+        if (hab) chips.push(hab + (hab === 1 ? ' habitación' : ' habitaciones'));
+        if (ban) chips.push(ban + (ban === 1 ? ' baño' : ' baños'));
+        if (gar) chips.push(gar + ' garaje' + (gar === 1 ? '' : 's'));
+        if (ac) chips.push(ac + ' m² construidos');
+        else if (al) chips.push(al + ' m² lote');
+    }
+    return '<article class="fav-card" data-cod="' + c + '">' +
+        '<div class="fav-card-img" data-act="ver" data-cod="' + c + '">' +
+            (img ? '<img src="' + favEsc(img) + '" alt="' + favEsc(nombre) + '" loading="lazy"/>' : '<div class="fav-card-sinfoto">Sin foto</div>') +
+            '<span class="fav-card-heart"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></span>' +
+            '<span class="fav-card-cod">Cód. ' + c + '</span>' +
+        '</div>' +
+        '<div class="fav-card-body">' +
+            '<button class="fav-card-quitar" data-act="quitar" data-cod="' + c + '" aria-label="Quitar de favoritos" title="Quitar de favoritos">&times;</button>' +
+            '<h3 class="fav-card-titulo">' + favEsc(nombre) + '</h3>' +
+            (sub ? '<p class="fav-card-sub">' + favEsc(sub) + '</p>' : '') +
+            '<div class="fav-card-precio">' + (p ? favPrecio(p['Precio']) : '') + '</div>' +
+            (chips.length ? '<div class="fav-card-chips">' + chips.map(function(t) { return '<span class="fav-card-chip">' + favEsc(t) + '</span>'; }).join('') + '</div>' : '') +
+            '<div class="fav-card-acciones"><button class="fav-btn-ver" data-act="ver" data-cod="' + c + '">Ver más</button></div>' +
+        '</div>' +
+    '</article>';
+}
+function renderFavDrawer() {
+    var lista = document.getElementById('favDrawerLista');
+    if (!lista) return;
+    var favs = getFavs();
+    var sub = document.getElementById('favDrawerSub');
+    var foot = document.getElementById('favDrawerFoot');
+    if (sub) sub.textContent = favs.length === 0 ? '' : (favs.length + (favs.length === 1 ? ' propiedad guardada' : ' propiedades guardadas'));
+    if (foot) foot.style.display = favs.length ? 'flex' : 'none';
+    if (!favs.length) {
+        lista.innerHTML = '<div class="fav-drawer-vacio">' +
+            '<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>' +
+            '<h3>Aún no tienes favoritos</h3>' +
+            '<p>Toca el corazón en las propiedades que te gusten y compáralas aquí para decidir más rápido.</p>' +
+            '<button class="fav-btn-ver" onclick="cerrarFavDrawer()">Explorar inmuebles</button>' +
+        '</div>';
+        return;
+    }
+    lista.innerHTML = favs.map(favTarjetaHTML).join('');
+}
+function abrirFavDrawer() {
+    renderFavDrawer();
+    document.getElementById('favDrawer').classList.add('abierto');
+    document.getElementById('favDrawer').setAttribute('aria-hidden', 'false');
+    document.getElementById('favDrawerBackdrop').classList.add('abierto');
+    document.body.style.overflow = 'hidden';
+}
+function cerrarFavDrawer() {
+    var d = document.getElementById('favDrawer');
+    if (!d) return;
+    d.classList.remove('abierto');
+    d.setAttribute('aria-hidden', 'true');
+    document.getElementById('favDrawerBackdrop').classList.remove('abierto');
+    document.body.style.overflow = '';
+}
+function favQuitar(cod) {
+    var card = document.querySelector('#favDrawerLista .fav-card[data-cod="' + cod + '"]');
+    if (card) {
+        card.classList.add('saliendo');
+        setTimeout(function() { toggleFav(cod); }, 260);
+    } else {
+        toggleFav(cod);
+    }
+}
+function favLimpiarTodo() {
+    if (!confirm('¿Quitar todas las propiedades de tu lista de favoritos?')) return;
+    clearAllFavs();
+}
+document.getElementById('favDrawerLista').addEventListener('click', function(e) {
+    var el = e.target.closest('[data-act]');
+    if (!el) return;
+    var cod = el.getAttribute('data-cod');
+    if (el.getAttribute('data-act') === 'quitar') {
+        favQuitar(cod);
+    } else if (typeof abrirModal === 'function') {
+        // El modal de la propiedad se abre por encima; al cerrarlo se vuelve a la lista
+        abrirModal(cod);
+    }
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    var d = document.getElementById('favDrawer');
+    var m = document.getElementById('modalOverlay');
+    if (d && d.classList.contains('abierto') && !(m && m.classList.contains('active'))) cerrarFavDrawer();
+}, true);
 
 // Inicializar panel al cargar
 document.addEventListener('DOMContentLoaded', function() {
