@@ -12270,14 +12270,20 @@ document.head.appendChild(schemaScript);
 
                             const hora24h = convertirHoraA24h(horaFinal);
                             let codInmuebleFinal = "";
+                            let codigosCitas = [];
                             if (inmuebleAgendarActual && inmuebleAgendarActual.esFavoritos && inmuebleAgendarActual.favs) {
                                 codInmuebleFinal = inmuebleAgendarActual.favs[0] || "";
+                                codigosCitas = inmuebleAgendarActual.favs
+                                    .map(c => String(c || "").trim())
+                                    .filter((c, i, arr) => c && arr.indexOf(c) === i);
+                                if (codigosCitas.length) codInmuebleFinal = codigosCitas[0];
                             } else if (inmuebleAgendarActual && inmuebleAgendarActual["Código"]) {
                                 codInmuebleFinal = String(inmuebleAgendarActual["Código"]).trim();
                             } else {
                                 codInmuebleFinal = document.getElementById("modalCodigo")?.textContent?.trim() || "";
                             }
 
+                            if (!codigosCitas.length) codigosCitas = [codInmuebleFinal];
                             const preaprobadoVal = (typeof preaprobadoSeleccionado !== 'undefined' ? preaprobadoSeleccionado : "");
                             const bancoVal = (bancoInput && bancoInput.value) ? bancoInput.value.trim() : "";
 
@@ -12297,17 +12303,24 @@ document.head.appendChild(schemaScript);
                                 creadoEn: new Date().toISOString()
                             };
 
+                            // Una cita por cada propiedad solicitada (favoritos => varias)
+                            const citasNuevas = codigosCitas.map((cod, i) => i === 0
+                                ? nuevaCita
+                                : Object.assign({}, nuevaCita, { id: idCita + '-' + (i + 1), codigo: cod }));
+
                             // 1. Guardar en icde_citas
                             let citasStore = [];
                             try { citasStore = JSON.parse(localStorage.getItem('icde_citas') || '[]'); } catch(e) { citasStore = []; }
                             if (!Array.isArray(citasStore)) citasStore = [];
                             
-                            const existIdx = citasStore.findIndex(c => c.celular === phoneDisplay && c.fecha === fecha && c.hora === hora24h);
+                            citasNuevas.forEach(function(nc) {
+                            const existIdx = citasStore.findIndex(c => c.celular === phoneDisplay && c.fecha === fecha && c.hora === hora24h && String(c.codigo || '') === String(nc.codigo || ''));
                             if (existIdx >= 0) {
-                                citasStore[existIdx] = Object.assign({}, citasStore[existIdx], nuevaCita);
+                                citasStore[existIdx] = Object.assign({}, citasStore[existIdx], nc);
                             } else {
-                                citasStore.push(nuevaCita);
+                                citasStore.push(nc);
                             }
+                            });
                             localStorage.setItem('icde_citas', JSON.stringify(citasStore));
 
                             // 2. Guardar en icde_leads
@@ -12352,10 +12365,10 @@ document.head.appendChild(schemaScript);
                             if (targetLead) {
                                 if (targetLead.estado === 'inactivo' || !targetLead.estado) targetLead.estado = 'visita';
                                 if (!Array.isArray(targetLead.visitas)) targetLead.visitas = [];
-                                targetLead.visitas.push(nuevaCita);
+                                citasNuevas.forEach(c => targetLead.visitas.push(c));
                                 if (codInmuebleFinal) {
                                     if (!Array.isArray(targetLead.propsEnviadas)) targetLead.propsEnviadas = [];
-                                    if (!targetLead.propsEnviadas.includes(codInmuebleFinal)) targetLead.propsEnviadas.push(codInmuebleFinal);
+                                    codigosCitas.forEach(cd => { if (cd && !targetLead.propsEnviadas.includes(cd)) targetLead.propsEnviadas.push(cd); });
                                 }
                                 if (Object.keys(filtrosCliente).length > 0) {
                                     if (!targetLead.filtros) targetLead.filtros = {};
@@ -12373,8 +12386,8 @@ document.head.appendChild(schemaScript);
                                     etiqueta: 'activo',
                                     metodoPago: arrayMetodos.length > 0 ? arrayMetodos : (metodoPagoTexto ? [metodoPagoTexto] : []),
                                     filtros: filtrosCliente,
-                                    propsEnviadas: codInmuebleFinal ? [codInmuebleFinal] : [],
-                                    visitas: [nuevaCita],
+                                    propsEnviadas: codigosCitas.filter(Boolean),
+                                    visitas: citasNuevas.slice(),
                                     creadoEn: new Date().toISOString()
                                 };
                                 leadsStore.push(targetLead);
@@ -12386,10 +12399,13 @@ document.head.appendChild(schemaScript);
 
                             // 3. Enviar a la nube (Google Apps Script) de forma asíncrona
                             if (CRM_URL_CLOUD) {
-                                fetch(CRM_URL_CLOUD, {
-                                    method: 'POST',
-                                    body: JSON.stringify({ action: 'saveCita', cita: JSON.stringify(nuevaCita) })
-                                }).catch(() => {});
+                                citasNuevas.forEach(function(nc) {
+                                    fetch(CRM_URL_CLOUD, {
+                                        method: 'POST',
+                                        keepalive: true,
+                                        body: JSON.stringify({ action: 'saveCita', cita: JSON.stringify(nc) })
+                                    }).catch(() => {});
+                                });
                                 fetch(CRM_URL_CLOUD, {
                                     method: 'POST',
                                     body: JSON.stringify({ action: 'saveLead', lead: JSON.stringify(targetLead) })
