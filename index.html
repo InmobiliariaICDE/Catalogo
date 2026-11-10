@@ -14153,6 +14153,70 @@ sizePct: 70
         .fav-card-img { min-height: 140px; }
         .fav-card-body { padding: 10px 36px 10px 12px; }
     }
+    /* ── Banner comparar DENTRO del drawer ── */
+    .fav-drawer-comparar {
+        display: none;
+        flex-shrink: 0;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: rgba(212,168,75,0.10);
+        border-top: 1px solid rgba(212,168,75,0.30);
+        border-bottom: 1px solid rgba(212,168,75,0.12);
+    }
+    .fav-drawer-comparar.visible { display: flex; }
+    .fav-drawer-comp-thumbs {
+        display: flex; gap: 6px; flex-shrink: 0;
+    }
+    .fav-drawer-comp-thumb {
+        position: relative; width: 44px; height: 44px;
+        border-radius: 8px; overflow: visible;
+        border: 2px solid #d4a84b;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        flex-shrink: 0;
+    }
+    .fav-drawer-comp-thumb img,
+    .fav-drawer-comp-thumb-empty {
+        width: 44px; height: 44px; border-radius: 6px;
+        object-fit: cover; display: block;
+    }
+    .fav-drawer-comp-thumb-empty {
+        background: rgba(212,168,75,0.12);
+        border: 2px dashed rgba(212,168,75,0.4);
+        box-sizing: border-box;
+    }
+    .fav-drawer-comp-thumb-rm {
+        position: absolute; top: -7px; right: -7px;
+        width: 18px; height: 18px; border-radius: 50%;
+        background: #1a1811; border: 1.5px solid #d4a84b; color: #d4a84b;
+        font-size: 12px; line-height: 1; display: flex;
+        align-items: center; justify-content: center;
+        cursor: pointer; padding: 0; z-index: 2;
+        transition: background .18s, color .18s;
+    }
+    .fav-drawer-comp-thumb-rm:hover { background: #d4a84b; color: #0d0b08; }
+    .fav-drawer-comp-info { flex: 1 1 auto; min-width: 0; }
+    .fav-drawer-comp-info span {
+        display: block; font-size: .72rem; color: rgba(255,255,255,0.65); margin-bottom: 6px;
+    }
+    .fav-drawer-comp-btns { display: flex; gap: 7px; }
+    .fav-drawer-comp-go {
+        flex: 1; padding: 7px 10px; border-radius: 20px; font-family: inherit;
+        font-size: .72rem; font-weight: 700; cursor: pointer;
+        background: #d4a84b; color: #0d0b08; border: none;
+        transition: opacity .2s;
+    }
+    .fav-drawer-comp-go:hover { opacity: .85; }
+    .fav-drawer-comp-clear {
+        padding: 7px 10px; border-radius: 20px; font-family: inherit;
+        font-size: .72rem; font-weight: 600; cursor: pointer;
+        background: transparent; color: rgba(255,255,255,0.5);
+        border: 1px solid rgba(255,255,255,0.18);
+        transition: all .2s;
+    }
+    .fav-drawer-comp-clear:hover { border-color: #e74c6f; color: #e74c6f; }
+    /* Cuando el drawer está abierto, ocultar el banner flotante para no duplicar */
+    body:has(#favDrawer.abierto) #bannerComparar { display: none !important; }
 </style>
 <div class="fav-drawer-backdrop" id="favDrawerBackdrop" onclick="cerrarFavDrawer()"></div>
 <aside class="fav-drawer" id="favDrawer" role="dialog" aria-modal="true" aria-labelledby="favDrawerTitulo" aria-hidden="true">
@@ -14165,6 +14229,17 @@ sizePct: 70
         <span></span>
     </header>
     <div class="fav-drawer-lista" id="favDrawerLista"></div>
+    <!-- Banner de comparar dentro del drawer -->
+    <div class="fav-drawer-comparar" id="favDrawerComparar">
+        <div class="fav-drawer-comp-thumbs" id="favDrawerCompThumbs"></div>
+        <div class="fav-drawer-comp-info">
+            <span id="favDrawerCompTexto"></span>
+            <div class="fav-drawer-comp-btns">
+                <button class="fav-drawer-comp-go" onclick="mostrarComparacion(comparaciones)">Comparar ahora</button>
+                <button class="fav-drawer-comp-clear" onclick="favDrawerLimpiarCompar()">Limpiar</button>
+            </div>
+        </div>
+    </div>
     <footer class="fav-drawer-foot" id="favDrawerFoot">
         <button class="fav-panel-wa" onclick="agendarVisitaFavs()">
             <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.859-4.42 9.863-9.864.002-2.637-1.023-5.116-2.887-6.981C16.584 1.897 14.1 1.872 11.998 1.872c-5.44 0-9.865 4.424-9.868 9.869-.001 1.736.469 3.43 1.36 4.952l-.991 3.616 3.702-.97z"/></svg>
@@ -14420,6 +14495,7 @@ function renderFavDrawer() {
         btn.classList.toggle('activo', activo);
         btn.classList.toggle('lleno', lleno);
     });
+    syncFavComparBar();
 }
 function abrirFavDrawer() {
     renderFavDrawer();
@@ -14449,6 +14525,62 @@ function favLimpiarTodo() {
     if (!confirm('¿Quitar todas las propiedades de tu lista de favoritos?')) return;
     clearAllFavs();
 }
+function syncFavComparBar() {
+    var bar = document.getElementById('favDrawerComparar');
+    var thumbsEl = document.getElementById('favDrawerCompThumbs');
+    var textoEl = document.getElementById('favDrawerCompTexto');
+    if (!bar) return;
+    var n = comparaciones.length;
+    bar.classList.toggle('visible', n > 0);
+    if (textoEl) {
+        textoEl.textContent = n === 0 ? '' :
+            (n === 1 ? '1 propiedad seleccionada para comparar' : '2 propiedades \u2014 listas para comparar');
+    }
+    if (!thumbsEl) return;
+    var datosRef = (typeof datos !== 'undefined') ? datos : [];
+    var html = '';
+    for (var i = 0; i < 2; i++) {
+        var cod = comparaciones[i];
+        if (cod) {
+            var p = datosRef.find(function(d) { return String(d['Código'] || '').trim() === String(cod).trim(); });
+            var imgSrc = p ? favImagen(p) : '';
+            html += '<div class="fav-drawer-comp-thumb">' +
+                (imgSrc ? '<img src="' + favEsc(imgSrc) + '" alt="Prop ' + favEsc(cod) + '">' :
+                    '<div class="fav-drawer-comp-thumb-empty"></div>') +
+                '<button class="fav-drawer-comp-thumb-rm" data-compquitar="' + favEsc(cod) + '" aria-label="Quitar">&times;</button>' +
+            '</div>';
+        } else {
+            html += '<div class="fav-drawer-comp-thumb-empty"></div>';
+        }
+    }
+    thumbsEl.innerHTML = html;
+}
+function favDrawerLimpiarCompar() {
+    comparaciones = [];
+    document.querySelectorAll('.checkbox-comparar').forEach(function(chk) { chk.checked = false; });
+    document.querySelectorAll('#favDrawerLista .fav-btn-comparar').forEach(function(btn) {
+        btn.classList.remove('activo', 'lleno');
+    });
+    syncFavComparBar();
+    if (typeof actualizarBanner === 'function') actualizarBanner();
+}
+// Clic en botón × de las miniaturas dentro del drawer
+document.getElementById('favDrawerComparar').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-compquitar]');
+    if (!btn) return;
+    var cod = btn.getAttribute('data-compquitar');
+    comparaciones = comparaciones.filter(function(c) { return c !== cod; });
+    document.querySelectorAll('#favDrawerLista .fav-btn-comparar').forEach(function(b) {
+        var bc = b.getAttribute('data-cod');
+        b.classList.toggle('activo', comparaciones.includes(bc));
+        b.classList.toggle('lleno', !comparaciones.includes(bc) && comparaciones.length >= 2);
+    });
+    document.querySelectorAll('.checkbox-comparar').forEach(function(chk) {
+        if (chk.dataset.codigo === cod) chk.checked = false;
+    });
+    syncFavComparBar();
+    if (typeof actualizarBanner === 'function') actualizarBanner();
+});
 document.getElementById('favDrawerLista').addEventListener('click', function(e) {
     var el = e.target.closest('[data-act]');
     if (!el) return;
@@ -14481,6 +14613,7 @@ document.getElementById('favDrawerLista').addEventListener('click', function(e) 
             if (chk.dataset.codigo === cod) chk.checked = !yaEsta;
         });
         if (typeof actualizarBanner === 'function') actualizarBanner();
+        syncFavComparBar();
     } else if (typeof abrirModal === 'function') {
         // El modal de la propiedad se abre por encima; al cerrarlo se vuelve a la lista
         abrirModal(cod);
