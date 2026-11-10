@@ -10596,15 +10596,21 @@ font-weight: 500;
                         contenedor.querySelectorAll('.btn-x-tooltip, .btn-x-tooltip-interno')
                             .forEach(btn => {
                                 btn.addEventListener('click', e => {
-                                    const cod = e.target.dataset.codigo;
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const cod = btn.dataset.codigo;
                                     comparaciones = comparaciones.filter(c => String(c) !== String(cod));
-                                    document.querySelector(`.checkbox-comparar[data-codigo="${cod}"]`).checked = false;
-                                    actualizarMiniaturas();
+                                    document.querySelectorAll('.checkbox-comparar').forEach(chk => {
+                                        if (String(chk.dataset.codigo) === String(cod)) chk.checked = false;
+                                    });
+                                    // Sincronizar el checkbox del modal si corresponde
+                                    const mChk = document.getElementById('modalChkComparar');
+                                    if (mChk && window._modalCodigoActual !== undefined && String(window._modalCodigoActual) === String(cod)) {
+                                        mChk.checked = false;
+                                        const mTxt = document.getElementById('modalCompararTexto');
+                                        if (mTxt) mTxt.textContent = 'Comparar';
+                                    }
                                     actualizarBanner();
-
-
-                                    const banner = document.getElementById('bannerComparar');
-                                    banner.classList.toggle('hidden', comparaciones.length === 0);
                                 });
                             });
                     }
@@ -11192,6 +11198,7 @@ font-weight: 500;
                         var _textoComparar = document.getElementById('modalCompararTexto');
                         if (_btnComparar && _labelComparar) {
                             var _codigoActual = codigo;
+                            window._modalCodigoActual = codigo;
                             // Sincronizar estado visual al abrir modal
                             _btnComparar.checked = comparaciones.includes(_codigoActual);
                             if (_textoComparar) _textoComparar.textContent = _btnComparar.checked ? 'En comparación' : 'Comparar';
