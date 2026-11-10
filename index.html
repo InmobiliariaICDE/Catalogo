@@ -6294,14 +6294,16 @@ font-weight: 500;
             }
         }
 
-        /* ── Móvil: aviso "Comparar" organizado, con miniaturas, pegado abajo con el modal abierto ── */
+        /* ── Móvil: aviso "Comparar" compacto y organizado (miniaturas a la izquierda, texto y botones a la derecha) ── */
         @media (max-width: 767px) {
-            body:has(#modalOverlay.active) #bannerComparar {
+            #bannerComparar {
                 bottom: 0;
                 left: 0;
                 transform: none;
                 width: 100%;
                 max-width: 100%;
+                box-sizing: border-box;
+                overflow: hidden;
                 border-radius: 0;
                 padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
                 display: grid;
@@ -6312,7 +6314,7 @@ font-weight: 500;
                 align-items: center;
             }
             /* Miniaturas a la izquierda, ocupando las dos filas */
-            body:has(#modalOverlay.active) #bannerComparar .miniaturas-comparar {
+            #bannerComparar .miniaturas-comparar {
                 grid-column: 1;
                 grid-row: 1 / span 2;
                 display: flex;
@@ -6321,10 +6323,10 @@ font-weight: 500;
                 overflow: visible;
                 padding: 8px 8px 0 0;
             }
-            body:has(#modalOverlay.active) #bannerComparar .tooltip-miniatura {
+            #bannerComparar .tooltip-miniatura {
                 display: none;
             }
-            body:has(#modalOverlay.active) #bannerComparar .chip-miniatura {
+            #bannerComparar .chip-miniatura {
                 background: transparent;
                 width: auto;
                 padding: 0;
@@ -6332,21 +6334,22 @@ font-weight: 500;
                 display: block;
                 position: relative;
             }
-            body:has(#modalOverlay.active) #bannerComparar .chip-separator {
+            #bannerComparar .chip-separator {
                 display: none;
             }
-            body:has(#modalOverlay.active) #bannerComparar .chip-imagen {
+            #bannerComparar .chip-imagen {
                 position: relative;
                 display: block;
                 padding: 0;
-                width: 58px;
-                height: 58px;
+                width: 52px;
+                height: 52px;
+                box-sizing: border-box;
                 border-radius: 8px;
                 overflow: hidden;
                 border: 2px solid #fff;
                 box-shadow: 0 2px 6px rgba(0,0,0,0.25);
             }
-            body:has(#modalOverlay.active) #bannerComparar .chip-thumb {
+            #bannerComparar .chip-thumb {
                 width: 100%;
                 height: 100%;
                 margin: 0;
@@ -6354,7 +6357,7 @@ font-weight: 500;
                 object-fit: cover;
                 display: block;
             }
-            body:has(#modalOverlay.active) #bannerComparar .chip-code {
+            #bannerComparar .chip-code {
                 position: absolute;
                 left: 0;
                 right: 0;
@@ -6365,7 +6368,7 @@ font-weight: 500;
                 background: rgba(0,0,0,0.65);
             }
             /* Botón × como insignia sobre la esquina de la miniatura */
-            body:has(#modalOverlay.active) #bannerComparar .btn-x-tooltip {
+            #bannerComparar .btn-x-tooltip {
                 position: absolute;
                 top: -8px;
                 right: -8px;
@@ -6385,7 +6388,7 @@ font-weight: 500;
                 z-index: 2;
             }
             /* Texto arriba a la derecha */
-            body:has(#modalOverlay.active) #bannerComparar > .flex-1 {
+            #bannerComparar > .flex-1 {
                 grid-column: 2;
                 grid-row: 1;
                 text-align: left;
@@ -6394,22 +6397,24 @@ font-weight: 500;
                 line-height: 1.2;
                 min-width: 0;
             }
-            body:has(#modalOverlay.active) #bannerComparar #textoComparar {
+            #bannerComparar #textoComparar {
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
             /* Botones debajo del texto, repartidos en partes iguales */
-            body:has(#modalOverlay.active) #bannerComparar .botonescontainer {
+            #bannerComparar .botonescontainer {
                 grid-column: 2;
                 grid-row: 2;
                 display: flex;
                 flex-direction: row;
                 gap: 8px;
             }
-            body:has(#modalOverlay.active) #btnComparar,
-            body:has(#modalOverlay.active) #btnLimpiarComparar {
+            #btnComparar,
+            #btnLimpiarComparar {
                 flex: 1 1 0;
+                min-width: 0;
+                box-sizing: border-box;
                 width: auto;
                 height: auto;
                 margin: 0;
