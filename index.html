@@ -14147,6 +14147,48 @@ sizePct: 70
     </footer>
 </aside>
 
+<!-- BOTÓN FLOTANTE DE FAVORITOS (MÓVIL) -->
+<style>
+    .fav-fab { display: none; }
+    @media (max-width: 767px) {
+        /* En móvil la lista se abre desde el corazón flotante; se oculta la barra inferior */
+        .fav-panel { display: none !important; }
+        .fav-fab {
+            position: fixed;
+            right: 14px;
+            bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+            z-index: 9999;
+            width: 56px; height: 56px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            padding: 0; cursor: pointer;
+            background: linear-gradient(145deg, #2a2016 0%, #0d0b08 100%);
+            border: 1.5px solid rgba(212,168,75,0.7);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.55), 0 0 0 4px rgba(212,168,75,0.10), 0 0 18px rgba(212,168,75,0.18);
+            -webkit-tap-highlight-color: transparent;
+            opacity: 0; visibility: hidden; transform: scale(.6);
+            transition: opacity .25s ease, transform .25s cubic-bezier(.34,1.56,.64,1), bottom .3s ease, visibility .25s ease;
+        }
+        .fav-fab.visible { opacity: 1; visibility: visible; transform: scale(1); }
+        .fav-fab:active { transform: scale(.93); }
+        .fav-fab svg { width: 26px; height: 26px; fill: #e74c6f; stroke: #e74c6f; stroke-width: 1.5; }
+        .fav-fab-badge {
+            position: absolute; top: -5px; right: -5px;
+            min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box;
+            border-radius: 11px; background: #d4a84b; color: #0d0b08;
+            font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 700; line-height: 22px; text-align: center;
+            border: 2px solid #0d0b08;
+        }
+        /* Si el aviso de comparar está visible, el corazón sube para no quedar tapado */
+        body:has(#bannerComparar:not(.hidden)) .fav-fab {
+            bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+        }
+    }
+</style>
+<button class="fav-fab" id="favFab" onclick="abrirFavDrawer()" aria-label="Ver mi lista de favoritos">
+    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+    <span class="fav-fab-badge" id="favFabBadge">0</span>
+</button>
+
 <!-- PANEL FLOTANTE DE FAVORITOS -->
 <div class="fav-panel" id="favPanel">
     <span class="fav-panel-count" role="button" tabindex="0" onclick="abrirFavDrawer()" title="Ver mi lista de favoritos">
@@ -14200,6 +14242,10 @@ function renderFavPanel() {
 
     countEl.textContent = favs.length;
     if (typeof renderFavDrawer === 'function') renderFavDrawer();
+    var fab = document.getElementById('favFab');
+    var fabBadge = document.getElementById('favFabBadge');
+    if (fabBadge) fabBadge.textContent = favs.length;
+    if (fab) fab.classList.toggle('visible', favs.length > 0);
 
     if (favs.length === 0) {
         panel.classList.remove('visible');
