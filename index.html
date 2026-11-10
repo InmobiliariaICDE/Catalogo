@@ -11206,8 +11206,13 @@ font-weight: 500;
                                 // Actualizar banner inferior
                                 var banner = document.getElementById('bannerComparar');
                                 var texto = document.getElementById('textoComparar');
-                                if (texto) texto.textContent = 'Has seleccionado ' + comparaciones.length + ' propiedad(es)';
-                                if (banner) banner.classList.toggle('hidden', comparaciones.length === 0);
+                                if (typeof actualizarBanner === 'function') {
+                                    // Actualiza texto, visibilidad y miniaturas del banner
+                                    actualizarBanner();
+                                } else {
+                                    if (texto) texto.textContent = 'Has seleccionado ' + comparaciones.length + ' propiedad(es)';
+                                    if (banner) banner.classList.toggle('hidden', comparaciones.length === 0);
+                                }
                             };
                         }
                         var _bp = document.querySelector('.carrusel-prev');
