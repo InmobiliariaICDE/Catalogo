@@ -3526,8 +3526,11 @@ font-weight: 500;
 
                 .comparar-tabla th:first-child,
                 .comparar-tabla td:first-child {
-                    white-space: nowrap; /* evita que el texto haga wrap */
-                    width: 1%; /* fuerza que solo ocupe lo mínimo */
+                    white-space: normal;
+                    width: 140px;    /* columna de etiquetas: ancho fijo y compacto */
+                    min-width: 140px;
+                    max-width: 140px;
+                    text-align: left;
                 }
 
             /* Ambas columnas usan ahora este bloque */
@@ -3545,27 +3548,25 @@ font-weight: 500;
             .comparar-tabla a.boton-fotos:hover {
                 background-color: #a47b2a;
             }
-            /* Columnas de datos con ancho fijo */
+            /* Columnas de datos: reparten el espacio restante en partes iguales */
             .comparar-tabla th:nth-child(2),
             .comparar-tabla td:nth-child(2),
             .comparar-tabla th:nth-child(3),
             .comparar-tabla td:nth-child(3) {
-                width: 360px; /* coincide con .modal-imagen-comparar */
+                width: auto;
                 vertical-align: top;
                 word-wrap: break-word;
             }
 
             /* Imágenes igual tamaño */
             .modal-imagen-comparar {
-                width: calc(100% - 20px); /* ocupa todo el ancho de la columna menos 20px */
-                max-width: 360px; /* en caso de que el contenedor sea más ancho */
-                height: 350px !important; /* o usa aspect-ratio si lo prefieres */
+                width: calc(100% - 10px);
+                max-width: 100%;
+                height: 220px !important;
                 object-fit: cover;
-                border-radius: 0rem; /* opcional, para redondear esquinas */
-                object-fit: cover;
-                border-radius: 0px;
-                display: block; /* elimina espacios en línea */
-                margin: 0 auto; /* centra horizontalmente */
+                border-radius: 6px;
+                display: block;
+                margin: 0 auto;
             }
             /* Espaciador vacío */
 
@@ -3598,6 +3599,12 @@ font-weight: 500;
             .comparar-tabla tfoot td {
                 text-align: center;
             }
+            /* La celda vacía del footer (espaciador de etiquetas) */
+            .comparar-tabla tfoot .solo-escritorio {
+                width: 140px;
+                min-width: 140px;
+                max-width: 140px;
+            }
 
             /* 2. Ocultar líneas solo en la fila de imágenes */
             .comparar-tabla thead tr.fila-imagenes th {
@@ -3609,7 +3616,7 @@ font-weight: 500;
                 /* Asegura que la segunda y tercera celda (imágenes) quepan justo */
                 .comparar-tabla thead tr.fila-imagenes th:nth-child(2),
                 .comparar-tabla thead tr.fila-imagenes th:nth-child(3) {
-                    width: 400px; /* o el ancho fijo que uses */
+                    width: auto;
                 }
 
             /* Mantén la imagen centrada dentro de la celda */
