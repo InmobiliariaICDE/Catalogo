@@ -16906,6 +16906,14 @@ function renderMatrizPagos(propertiesList) {
                       if (totalMonthsDiff > 0 && (totalMonthsDiff % dur) === 0) {
                         isRenovMonth = true;
                       }
+                      // Fallback: si el mes/año coincide con el vencimiento vigente del contrato actual
+                      if (!isRenovMonth && totalMonthsDiff > 0) {
+                        const _endStr = calculateAdminCurrentEndDate(p.start_date, dur, mFull, currentAdminYear);
+                        if (_endStr) {
+                          const [_ey, _em] = _endStr.split('-').map(Number);
+                          if (_ey === viewYear && (_em - 1) === targetMonthIdx) isRenovMonth = true;
+                        }
+                      }
                     }
                   }
 
@@ -17115,11 +17123,74 @@ function openRenewContractPrompt(propId) {
 
 function _buildUnifiedModalHTML(p, monthName, year, activeTab = 'cobro') {
   const paymentsYear = p.payments[year] || [];
-  const pay = paymentsYear.find(m => m.month === monthName) || { status: 'UNSTARTED', value: 0 };
+  let pay = paymentsYear.find(m => m.month === monthName) || { status: 'UNSTARTED', value: 0 };
   const dueDay = p.due_day ? Math.round(p.due_day) : 5;
   const maxDueDay = p.max_due_day ? Math.round(p.max_due_day) : 10;
   const currentActiveTab = activeTab || 'cobro';
   const rentInfo = calculateAdminRentInfo(p);
+
+  // ── Detectar si es mes de renovación/término y corregir estado si no fue guardado ──
+  (function() {
+    const _MONTHS = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+    const parsedS = parseAdminStartDate(p.start_date);
+    if (!parsedS) return;
+    const dur = parseInt(p.duration, 10) || 12;
+    const startMonthIdx = parsedS.month - 1;
+    const startYear = parsedS.year;
+    const targetMonthIdx = _MONTHS.indexOf(String(monthName).trim().toUpperCase());
+    const viewYear = parseInt(year, 10);
+    if (targetMonthIdx === -1 || !viewYear) return;
+
+    const totalMonthsDiff = (viewYear - startYear) * 12 + (targetMonthIdx - startMonthIdx);
+    const valUp = String(pay.value || '').trim().toUpperCase();
+
+    // ── Corrección: si hay inquilino y el mes cae dentro del periodo vigente,
+    //    no debe aparecer como VACANT/UNSTARTED ──
+    if (p.tenant_name && String(p.tenant_name).trim() !== '') {
+      // Calcular fin de vigencia actual respecto a este mes
+      const endDateStr = calculateAdminCurrentEndDate(p.start_date, dur, monthName, year);
+      if (endDateStr) {
+        const [ey, em] = endDateStr.split('-').map(Number);
+        const endTotal = ey * 12 + em;          // mes de vencimiento (1-indexed)
+        const startTotal = startYear * 12 + (startMonthIdx + 1);
+        const viewTotal = viewYear * 12 + (targetMonthIdx + 1);
+        // El inicio de la vigencia actual = endTotal - dur
+        const vigStart = endTotal - dur;
+        const withinVigency = viewTotal > vigStart && viewTotal <= endTotal;
+        if (withinVigency && (pay.status === 'VACANT' || pay.status === 'UNSTARTED') && !valUp.includes('DESOCUPAD')) {
+          const now = new Date();
+          const nowY = now.getFullYear(), nowM = now.getMonth(); // 0-based
+          if (viewYear < nowY || (viewYear === nowY && targetMonthIdx < nowM)) {
+            pay = { ...pay, status: 'PENDING', value: '-' };
+          } else if (viewYear === nowY && targetMonthIdx === nowM) {
+            pay = { ...pay, status: 'PENDING', value: '-' };
+          } else {
+            pay = { ...pay, status: 'FUTURE', value: '-' };
+          }
+        }
+      }
+    }
+
+    // Método 1: múltiplo exacto de la duración original
+    let isRenov = (totalMonthsDiff > 0 && (totalMonthsDiff % dur) === 0);
+
+    // Método 2 (fallback): el mes/año coincide con el vencimiento vigente calculado
+    if (!isRenov && totalMonthsDiff > 0) {
+      const endDateStr = calculateAdminCurrentEndDate(p.start_date, dur, monthName, year);
+      if (endDateStr) {
+        const [ey, em] = endDateStr.split('-').map(Number);
+        if (ey === viewYear && (em - 1) === targetMonthIdx) isRenov = true;
+      }
+    }
+
+    if (isRenov) {
+      if (!["PAID","PREAVISO","DELIVERY","NO_RENEW","VACANT"].includes(pay.status) && !valUp.includes('DESOCUPAD')) {
+        pay = { ...pay, status: 'NEW_CONTRACT' };
+      }
+    }
+  })();
+
+
 
   const tabs = [
     { id: 'cobro',       icon: '💵', label: 'Cobro y Contrato' },
