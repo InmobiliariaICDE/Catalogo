@@ -82,6 +82,21 @@ function calculateAdminEndDate(startDateStr, durationMonths) {
   return `${endYear}-${mm}-${dd}`;
 }
 
+// Vencimiento de la vigencia ACTUAL: parte del fin del contrato original y, si ya
+// pasó respecto al mes/año consultado, avanza en periodos de 12 meses (renovaciones).
+function calculateAdminCurrentEndDate(startDateStr, durationMonths, refMonthName, refYear) {
+  const base = calculateAdminEndDate(startDateStr, durationMonths);
+  if (!base) return null;
+  const mi = (typeof monthsArray !== 'undefined') ? monthsArray.indexOf(String(refMonthName || '').toUpperCase()) : -1;
+  const ry = parseInt(refYear, 10);
+  if (mi < 0 || !ry) return base;
+  const refIdx = ry * 12 + mi + 1;
+  let [y, m, d] = base.split('-').map(Number);
+  let guard = 0;
+  while ((y * 12 + m) < refIdx && guard++ < 200) y += 1;
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
 function findAdminProperty(propId, propName) {
   if (!adminData || !Array.isArray(adminData.properties)) return null;
   const targetId = (propId !== undefined && propId !== null) ? String(propId).trim() : '';
@@ -17060,7 +17075,7 @@ function updateModalEndDate() {
   const dur = document.getElementById('editContraDuration')?.value;
   const endDateDisplay = document.getElementById('contraEndDateDisplay');
   if (endDateDisplay) {
-    endDateDisplay.innerHTML = calculateAdminEndDate(sDate, dur) || 'N/A';
+    endDateDisplay.innerHTML = calculateAdminCurrentEndDate(sDate, dur, endDateDisplay.dataset.refMonth, endDateDisplay.dataset.refYear) || 'N/A';
   }
 }
 
@@ -17215,7 +17230,7 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab = 'cobro') {
         </div>
 
         <div style="font-size:12px; font-weight:700; color:var(--gold); background:rgba(212,168,75,0.1); border:1px solid rgba(212,168,75,0.3); border-radius:6px; padding:6px 12px; margin-top:-2px; display:flex; align-items:center; gap:6px;">
-          🗓️ Fin / Vencimiento de Contrato: <strong id="contraEndDateDisplay">${calculateAdminEndDate(p.start_date, p.duration) || 'N/A'}</strong>
+          🗓️ Fin / Vencimiento de Contrato: <strong id="contraEndDateDisplay" data-ref-month="${monthName}" data-ref-year="${year}">${calculateAdminCurrentEndDate(p.start_date, p.duration, monthName, year) || 'N/A'}</strong>
         </div>
 
         <div class="u-modal-grid">
