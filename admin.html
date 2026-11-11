@@ -16881,38 +16881,22 @@ function renderMatrizPagos(propertiesList) {
                     if (targetMonthIdx !== -1) {
                       const totalMonthsDiff = (viewYear - startYear) * 12 + (targetMonthIdx - startMonthIdx);
                       
-                      // ── Calcular el vencimiento real del contrato vigente ──
-                      // Avanzamos la fecha base en periodos de dur meses hasta superar el mes actual
-                      let currentEndDateStr = calculateAdminEndDate(p.start_date, dur);
-                      if (currentEndDateStr) {
-                        let [ey, em] = currentEndDateStr.split('-').map(Number);
-                        // Avanzar por renovaciones hasta que el fin supere el mes que se está pintando
-                        let guard = 0;
-                        while ((ey * 12 + em) < (viewYear * 12 + (targetMonthIdx + 1)) && guard++ < 500) {
-                          ey += 1; // renovación anual (12 meses)
-                        }
-                        const realEndIdx = ey * 12 + em; // índice absoluto (año*12+mes)
-                        const targetAbsIdx = viewYear * 12 + (targetMonthIdx + 1);
-                        const startAbsIdx = startYear * 12 + (startMonthIdx + 1);
-                        
-                        // Auto-corrección para inmuebles con inquilino activo: desocupado previo no debe tapar meses de vigencia del contrato
-                        if (p.tenant_name && String(p.tenant_name).trim() !== '') {
-                          if (targetAbsIdx >= startAbsIdx && targetAbsIdx <= realEndIdx) {
-                            if (pay.status === 'VACANT' || valUpperPay.includes('DESOCUPAD')) {
-                              // ¿Es el último mes del periodo vigente? → PREAVISO
-                              if (targetAbsIdx === realEndIdx) {
-                                pay = { ...pay, status: 'PREAVISO', value: 'PREAVISO' };
+                      // Auto-corrección para inmuebles con inquilino activo: desocupado previo no debe tapar meses de vigencia del contrato
+                      if (p.tenant_name && String(p.tenant_name).trim() !== '') {
+                        if (totalMonthsDiff >= 0 && totalMonthsDiff < dur) {
+                          if (pay.status === 'VACANT' || valUpperPay.includes('DESOCUPAD')) {
+                            if (totalMonthsDiff === dur - 1) {
+                              pay = { ...pay, status: 'PREAVISO', value: 'PREAVISO' };
+                            } else {
+                              const _now = new Date();
+                              const _nowY = _now.getFullYear();
+                              const _nowM = _now.getMonth();
+                              if (viewYear === _nowY && targetMonthIdx === _nowM) {
+                                pay = { ...pay, status: 'PENDING', value: '-' };
+                              } else if (viewYear < _nowY || (viewYear === _nowY && targetMonthIdx < _nowM)) {
+                                pay = { ...pay, status: 'PENDING', value: '-' };
                               } else {
-                                const _now = new Date();
-                                const _nowY = _now.getFullYear();
-                                const _nowM = _now.getMonth();
-                                if (viewYear === _nowY && targetMonthIdx === _nowM) {
-                                  pay = { ...pay, status: 'PENDING', value: '-' };
-                                } else if (viewYear < _nowY || (viewYear === _nowY && targetMonthIdx < _nowM)) {
-                                  pay = { ...pay, status: 'PENDING', value: '-' };
-                                } else {
-                                  pay = { ...pay, status: 'FUTURE', value: '-' };
-                                }
+                                pay = { ...pay, status: 'FUTURE', value: '-' };
                               }
                             }
                           }
