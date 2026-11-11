@@ -17064,6 +17064,22 @@ function updateModalEndDate() {
   }
 }
 
+function _getCurContract(p) {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem('curContract_' + p.id) || 'null'); } catch (e) {}
+  return {
+    start: (saved && saved.start) || p.cur_start_date || p.start_date || '',
+    duration: (saved && saved.duration) || p.cur_duration || p.duration || ''
+  };
+}
+
+function saveCurContractLocal(propId) {
+  const s = document.getElementById('editContraCurStart');
+  const d = document.getElementById('editContraCurDuration');
+  if (!s || !d) return;
+  localStorage.setItem('curContract_' + propId, JSON.stringify({ start: s.value, duration: d.value }));
+}
+
 function openRenewContractPrompt(propId) {
   const p = adminData.properties.find(x => x.id === propId);
   if (!p) return;
@@ -17081,6 +17097,13 @@ function openRenewContractPrompt(propId) {
   }
 
   const newDur = currentDur + addMonths;
+  const curStartInp = document.getElementById('editContraCurStart');
+  const curDurInp = document.getElementById('editContraCurDuration');
+  if (curStartInp && curDurInp) {
+    const prevEnd = calculateAdminEndDate(currentStart, currentDur);
+    if (prevEnd) curStartInp.value = prevEnd;
+    curDurInp.value = addMonths;
+  }
   const durInp = document.getElementById('editContraDuration');
   if (durInp) {
     durInp.value = newDur;
@@ -17211,6 +17234,17 @@ function _buildUnifiedModalHTML(p, monthName, year, activeTab = 'cobro') {
           <div>
             <label class="u-inp-label">Duración (Meses)</label>
             <input type="number" id="editContraDuration" class="u-inp" value="${p.duration || ''}" oninput="updateModalEndDate()">
+          </div>
+        </div>
+
+        <div class="u-modal-grid">
+          <div>
+            <label class="u-inp-label">Inicio Contrato Actual</label>
+            <input type="date" id="editContraCurStart" class="u-inp" value="${_getCurContract(p).start}" style="height:32px; padding:4px 8px;">
+          </div>
+          <div>
+            <label class="u-inp-label">Duración Contrato Actual (Meses)</label>
+            <input type="number" id="editContraCurDuration" class="u-inp" value="${_getCurContract(p).duration}">
           </div>
         </div>
 
@@ -18053,6 +18087,7 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
   const saveBtn = document.getElementById('btnSaveUnifiedCobro');
   if (!saveBtn) return;
 
+  saveCurContractLocal(propId);
   const elTenantName = document.getElementById('editContraTenantName');
   const elTenantPhone = document.getElementById('editContraTenantPhone');
   const elRent = document.getElementById('editContraRent');
@@ -18384,6 +18419,7 @@ async function deleteAdminProperty(propId, propName) {
 async function saveAdminContractDetails(propId, propNameOld) {
   const saveBtn = document.getElementById('btnSaveAdminContract');
   if (!saveBtn) return;
+  saveCurContractLocal(propId);
 
   const p = findAdminProperty(propId, propNameOld);
   const propName = p ? p.name : propNameOld;
