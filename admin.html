@@ -5446,6 +5446,19 @@ function filtrarProps(f, returnAllIfEmpty = true, incluirVirtuales = false){
 
 function parseP(txt){ return parseFloat(String(txt || "").replace(/[^\d]/g, "")) || 0; }
 
+// Convierte el área (ej. "14600", "14.600", "349.05", "370.000.00") a número
+function parseArea(txt){
+  let s = String(txt || "").replace(/[^\d.,]/g, "");
+  if(!s) return 0;
+  const parts = s.split(/[.,]/);
+  if(parts.length === 1) return parseFloat(parts[0]) || 0;
+  const last = parts[parts.length - 1];
+  // Un solo separador con 3 dígitos → separador de miles (ej. 14.600)
+  if(parts.length === 2 && last.length === 3) return parseFloat(parts.join("")) || 0;
+  // Si no, el último grupo son decimales
+  return parseFloat(parts.slice(0, -1).join("") + "." + last) || 0;
+}
+
 function ordenarLista(lista) {
   if (!criterioOrden) return lista;
   
@@ -5476,6 +5489,9 @@ function ordenarLista(lista) {
       const rb = parseRet(b["Retorno de la Inversión"]);
       return ra - rb;
     }
+    if (criterioOrden === "mayorArea") {
+      return parseArea(b["Área lote"] || b["Área Lote"] || b["Area lote"]) - parseArea(a["Área lote"] || a["Área Lote"] || a["Area lote"]);
+    }
     if (criterioOrden === "noUbicadas") {
       const isUbi = p => {
         const lat = parseFloat(String(p['Latitud'] || p['Lat'] || '').replace(',','.'));
@@ -5493,7 +5509,7 @@ function ordenarLista(lista) {
 }
 
 function getSortLabel(crit){
-  const labels = { 'destacadas': 'Destacadas', 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad', 'noUbicadas': 'Faltan por mapa' };
+  const labels = { 'destacadas': 'Destacadas', 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad', 'mayorArea': 'Mayor área', 'noUbicadas': 'Faltan por mapa' };
   return labels[crit] || 'Ordenar por';
 }
 
@@ -7928,6 +7944,7 @@ function renderNuevo(){
               <li onclick="setSort('menorPrecio')" class="${criterioOrden==='menorPrecio'?'st-selected':''}">Menor precio</li>
               <li onclick="setSort('mayorPrecio')" class="${criterioOrden==='mayorPrecio'?'st-selected':''}">Mayor precio</li>
               <li onclick="setSort('rentabilidad')" class="${criterioOrden==='rentabilidad'?'st-selected':''}">Mayor rentabilidad</li>
+              <li onclick="setSort('mayorArea')" class="${criterioOrden==='mayorArea'?'st-selected':''}">Mayor área</li>
               <li onclick="setSort('noUbicadas')" class="${criterioOrden==='noUbicadas'?'st-selected':''}">Faltan por mapa</li>
             </ul>
           </div>
