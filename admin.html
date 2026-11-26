@@ -12318,12 +12318,14 @@ function abrirTarjetaCitaModal(citaId) {
           <div style="display:flex; flex-direction:column; gap:8px;">
             <button onclick="solicitarConfirmacionAliado('${String(cita.id || '').trim().replace(/'/g,"\\'")}')"
               id="btnSolicitarAliado_${String(cita.id || '').trim().replace(/[^a-z0-9]/gi,'_')}"
-              style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#3b82f6,#1d4ed8); border:none; color:#fff; font-size:13px; font-weight:800; cursor:pointer; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(59,130,246,0.35); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px;"
-              onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(59,130,246,0.55)';"
-              onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(59,130,246,0.35)';"
+              data-btn-solicitar-aliado="1"
+              ${yaSolicitada ? 'title="Solicitud ya enviada. Haz clic para reenviarla."' : ''}
+              style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#3b82f6,#1d4ed8); border:none; color:#fff; font-size:13px; font-weight:800; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(59,130,246,0.35); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; opacity:${yaSolicitada ? '0.45' : '1'}; filter:${yaSolicitada ? 'grayscale(0.4)' : 'none'};"
+              onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(59,130,246,0.55)'; this.style.opacity='${yaSolicitada ? '0.85' : '1'}';"
+              onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(59,130,246,0.35)'; this.style.opacity='${yaSolicitada ? '0.45' : '1'}';"
             >
               <span style="font-size:15px;">${iconBtn}</span>
-              ${textBtn}
+              <span data-btn-solicitar-label="1">${yaSolicitada ? textBtn.replace('Solicitar Confirmación', 'Reenviar Solicitud') : textBtn}</span>
             </button>
             <button onclick="confirmarCitaSolicitada('${String(cita.id || '').trim().replace(/'/g,"\\'")}')"
               id="btnConfirmarCliente_${String(cita.id || '').trim().replace(/[^a-z0-9]/gi,'_')}"
@@ -12855,6 +12857,20 @@ function solicitarConfirmacionAliado(citaId) {
   marcarSolicitudEnviada(cita);
   syncCita(cita);
   const safeId = citaId.replace(/[^a-z0-9]/gi, '_');
+  const btnSolicitar = document.getElementById('btnSolicitarAliado_' + safeId)
+    || document.querySelector('#tarjetaCitaBody [data-btn-solicitar-aliado]');
+  if (btnSolicitar) {
+    btnSolicitar.disabled = false;
+    btnSolicitar.title = 'Solicitud ya enviada. Haz clic para reenviarla.';
+    btnSolicitar.style.opacity = '0.45';
+    btnSolicitar.style.cursor = 'pointer';
+    btnSolicitar.style.filter = 'grayscale(0.4)';
+    btnSolicitar.style.transform = '';
+    btnSolicitar.onmouseover = function() { this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(59,130,246,0.55)'; this.style.opacity='0.85'; };
+    btnSolicitar.onmouseout  = function() { this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(59,130,246,0.35)'; this.style.opacity='0.45'; };
+    const lbl = btnSolicitar.querySelector('[data-btn-solicitar-label]');
+    if (lbl) lbl.textContent = lbl.textContent.replace('Solicitar Confirmación', 'Reenviar Solicitud');
+  }
   const btnConfirmar = document.getElementById('btnConfirmarCliente_' + safeId)
     || document.querySelector('#tarjetaCitaBody [data-btn-confirmar-cliente]');
   if (btnConfirmar) {
