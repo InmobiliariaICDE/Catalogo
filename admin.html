@@ -12475,12 +12475,23 @@ function confirmarCitaSolicitada(citaId) {
     const propNom = prop ? (prop['Nombre'] || prop['nombre'] || `Inmueble Cód. ${cita.codigo}`) : (cita.codigo ? `Inmueble Cód. ${cita.codigo}` : 'el inmueble');
     const notas = (cita.notas && cita.notas !== 'undefined' && cita.notas !== 'null') ? `\n\n📝 *Notas:* ${cita.notas}` : '';
     const waNumDest = numLimpio.startsWith('57') ? numLimpio : '57' + numLimpio;
+    // Enlace público del inmueble (mismo formato que "Compartir" en index) → vista previa en WhatsApp
+    let propUrlConf = '';
+    if (typeof generarSlugPropiedad === 'function' && (prop || cita.codigo)) {
+      try {
+        const base = Object.assign({}, prop || {});
+        if (!base['Código']) base['Código'] = cita.codigo || '';
+        if (!base['Nombre'] && prop && prop['nombre']) base['Nombre'] = prop['nombre'];
+        propUrlConf = 'https://icdeinmobiliaria.com/propiedad/' + generarSlugPropiedad(base) + '.html';
+      } catch(e) { propUrlConf = ''; }
+    }
     const msgTexto = 
       `¡Hola ${cita.cliente || 'Cliente'}! 🏠\n\n` +
       `Tu solicitud de visita ha sido *CONFIRMADA* ✅\n\n` +
       `📅 *Fecha:* ${fechaLeg}\n` +
       `⏰ *Hora:* ${horaLeg}\n` +
       `🏠 *Inmueble:* ${propNom}` +
+      (propUrlConf ? `\n🔗 *Ver inmueble:* ${propUrlConf}` : '') +
       notas +
       `\n\n¡Te esperamos! Ante cualquier inquietud, escríbenos.\n— *ICDE Inmobiliaria*`;
     const msg = encodeURIComponent(msgTexto);
