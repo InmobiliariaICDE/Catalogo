@@ -12818,6 +12818,18 @@ function solicitarConfirmacionAliado(citaId) {
 
   const waNumDest = numLimpio.startsWith('57') ? numLimpio : '57' + numLimpio;
 
+  // Mismo formato que el botón "Compartir" del modal de index: /propiedad/<slug>.html
+  let propUrl = '';
+  if (typeof generarSlugPropiedad === 'function' && (prop || cita.codigo)) {
+    try {
+      const base = Object.assign({}, prop || {});
+      if (!base['Código']) base['Código'] = cita.codigo || '';
+      if (!base['Nombre'] && prop && prop['nombre']) base['Nombre'] = prop['nombre'];
+      propUrl = 'https://icdeinmobiliaria.com/propiedad/' + generarSlugPropiedad(base) + '.html';
+    } catch(e) { propUrl = ''; }
+  }
+  const lineaLink = propUrl ? `🔗 *Ver inmueble:* ${propUrl}\n` : '';
+
   let msgTexto = '';
   if (esDirecta) {
     const saludo = nombreDestinatario ? `¡Hola Sr(a). ${nombreDestinatario}!` : `¡Hola!`;
@@ -12828,7 +12840,8 @@ function solicitarConfirmacionAliado(citaId) {
       (propPrecio ? `💰 *Precio:* ${propPrecio}\n` : '') +
       `📅 *Fecha solicitada:* ${fechaLeg}\n` +
       `⏰ *Hora solicitada:* ${horaLeg}\n` +
-      `👤 *Cliente:* ${clienteNom}\n\n` +
+      `👤 *Cliente:* ${clienteNom}\n` +
+      lineaLink + `\n` +
       `¿Nos confirma por favor si tiene disponibilidad para atender la visita en este horario? ¡Muchas gracias!\n` +
       `— *ICDE Inmobiliaria*`;
   } else {
@@ -12839,7 +12852,8 @@ function solicitarConfirmacionAliado(citaId) {
       (propPrecio ? `💰 *Precio:* ${propPrecio}\n` : '') +
       `📅 *Fecha solicitada:* ${fechaLeg}\n` +
       `⏰ *Hora solicitada:* ${horaLeg}\n` +
-      `👤 *Cliente:* ${clienteNom}\n\n` +
+      `👤 *Cliente:* ${clienteNom}\n` +
+      lineaLink + `\n` +
       `¿Nos confirmas por favor si está disponible en este horario para agendar con el cliente? ¡Muchas gracias!\n` +
       `— *ICDE Inmobiliaria*`;
   }
