@@ -12292,6 +12292,9 @@ function abrirTarjetaCitaModal(citaId) {
 
       ${cita.estado === 'solicito_visita' ? (() => {
         const esDirectaICDE = esPropiedadDirectaICDE(prop, propInmob);
+        const yaSolicitada = citaSolicitudEnviada(cita);
+        const btnConfStyleOn = 'opacity:1; cursor:pointer; filter:none;';
+        const btnConfStyleOff = 'opacity:0.35; cursor:not-allowed; filter:grayscale(0.4);';
         const textBanner = esDirectaICDE 
           ? 'Propiedad ICDE Directa. Solicita confirmación al propietario o confírmala.' 
           : `Inmobiliaria Aliada: <strong style="color:#fff;">${propInmob}</strong>. Solicita confirmación al aliado o confírmala.`;
@@ -12313,8 +12316,8 @@ function abrirTarjetaCitaModal(citaId) {
             </div>
           </div>
           <div style="display:flex; flex-direction:column; gap:8px;">
-            <button onclick="solicitarConfirmacionAliado('${String(cita.id || '').replace(/'/g,"\\'")}')"
-              id="btnSolicitarAliado_${String(cita.id || '').replace(/[^a-z0-9]/gi,'_')}"
+            <button onclick="solicitarConfirmacionAliado('${String(cita.id || '').trim().replace(/'/g,"\\'")}')"
+              id="btnSolicitarAliado_${String(cita.id || '').trim().replace(/[^a-z0-9]/gi,'_')}"
               style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#3b82f6,#1d4ed8); border:none; color:#fff; font-size:13px; font-weight:800; cursor:pointer; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(59,130,246,0.35); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px;"
               onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(59,130,246,0.55)';"
               onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(59,130,246,0.35)';"
@@ -12322,10 +12325,12 @@ function abrirTarjetaCitaModal(citaId) {
               <span style="font-size:15px;">${iconBtn}</span>
               ${textBtn}
             </button>
-            <button onclick="confirmarCitaSolicitada('${String(cita.id || '').replace(/'/g,"\\'")}')"
-              id="btnConfirmarCliente_${String(cita.id || '').replace(/[^a-z0-9]/gi,'_')}"
-              disabled
-              style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#ec4899,#be185d); border:none; color:#fff; font-size:13px; font-weight:800; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(236,72,153,0.45); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px; opacity:0.35; cursor:not-allowed; filter:grayscale(0.4);"
+            <button onclick="confirmarCitaSolicitada('${String(cita.id || '').trim().replace(/'/g,"\\'")}')"
+              id="btnConfirmarCliente_${String(cita.id || '').trim().replace(/[^a-z0-9]/gi,'_')}"
+              data-btn-confirmar-cliente="1"
+              ${yaSolicitada ? '' : 'disabled'}
+              style="width:100%; padding:10px 0; border-radius:10px; background:linear-gradient(135deg,#ec4899,#be185d); border:none; color:#fff; font-size:13px; font-weight:800; letter-spacing:0.03em; box-shadow:0 4px 14px rgba(236,72,153,0.45); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:7px; ${yaSolicitada ? btnConfStyleOn : btnConfStyleOff}"
+              ${yaSolicitada ? `onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(236,72,153,0.6)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 14px rgba(236,72,153,0.45)';"` : ''}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               Confirmar Cita y Notificar al Cliente
@@ -12367,6 +12372,36 @@ function abrirTarjetaCitaModal(citaId) {
     modal.style.alignItems = 'center';
     modal.style.justifyContent = 'center';
   }
+}
+
+// ═══════════════════════════════════════════════════════
+// ESTADO PERSISTENTE: ¿ya se envió la solicitud al aliado/propietario?
+// ═══════════════════════════════════════════════════════
+function citaSolicitudEnviada(cita) {
+  if (!cita) return false;
+  if (cita.solicitudAliadoEnviada) return true;
+  try {
+    const map = JSON.parse(localStorage.getItem('icde_solicitudes_aliado') || '{}');
+    return !!map[String(cita.id || '').trim()];
+  } catch(e) { return false; }
+}
+
+function marcarSolicitudEnviada(cita) {
+  if (!cita) return;
+  const id = String(cita.id || '').trim();
+  const ts = Date.now();
+  cita.solicitudAliadoEnviada = ts;
+  try {
+    const map = JSON.parse(localStorage.getItem('icde_solicitudes_aliado') || '{}');
+    map[id] = ts;
+    localStorage.setItem('icde_solicitudes_aliado', JSON.stringify(map));
+  } catch(e) {}
+  if (typeof leads !== 'undefined' && Array.isArray(leads)) {
+    leads.forEach(l => (l.visitas || []).forEach(v => {
+      if (v && String(v.id).trim() === id) v.solicitudAliadoEnviada = ts;
+    }));
+  }
+  try { localStorage.setItem('icde_citas', JSON.stringify(citas)); } catch(e) {}
 }
 
 // ═══════════════════════════════════════════════════════
@@ -12816,9 +12851,12 @@ function solicitarConfirmacionAliado(citaId) {
     : `a ${nombreDestinatario} (${numLimpio})`;
   toast(`✅ Solicitud enviada por WhatsApp ${toastLabel}`, 'success');
 
-  // Activar el botón de confirmar al cliente ahora que ya se notificó
+  // Guardar el estado (persistente) y activar el botón de confirmar al cliente
+  marcarSolicitudEnviada(cita);
+  syncCita(cita);
   const safeId = citaId.replace(/[^a-z0-9]/gi, '_');
-  const btnConfirmar = document.getElementById('btnConfirmarCliente_' + safeId);
+  const btnConfirmar = document.getElementById('btnConfirmarCliente_' + safeId)
+    || document.querySelector('#tarjetaCitaBody [data-btn-confirmar-cliente]');
   if (btnConfirmar) {
     btnConfirmar.disabled = false;
     btnConfirmar.style.opacity = '1';
