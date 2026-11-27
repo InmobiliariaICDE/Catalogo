@@ -5002,7 +5002,6 @@ html, body {
         </div>
         <ul class="sort-options hidden">
           <li onclick="setSort('destacadas')">Exclusivas</li>
-          <li onclick="setSort('recientes')">Recién agregadas</li>
           <li onclick="setSort('menorPrecio')">Menor precio</li>
           <li onclick="setSort('mayorPrecio')">Mayor precio</li>
           <li onclick="setSort('rentabilidad')">Mayor rentabilidad</li>
@@ -5462,55 +5461,9 @@ function parseArea(txt){
   return parseFloat(parts.slice(0, -1).join("") + "." + last) || 0;
 }
 
-// Fecha de ingreso/edición de un inmueble (la hoja registra una fecha al marcar Publicar = SI).
-// Se detecta la columna por su encabezado: prioriza "edición", luego "publicación", luego cualquier "fecha".
-function parseFechaGenerica(v) {
-  if (v === null || v === undefined || v === '') return 0;
-  if (v instanceof Date) return v.getTime() || 0;
-  if (typeof v === 'number') {
-    if (v > 30000 && v < 100000) return Math.round((v - 25569) * 86400000); // serial de Excel/Sheets
-    return v > 1e11 ? v : 0;
-  }
-  const s = String(v).trim();
-  if (!s) return 0;
-  const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(?:[ T,]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([ap]\.?\s?m\.?)?)?/i);
-  if (m) {
-    let y = parseInt(m[3], 10); if (y < 100) y += 2000;
-    let h = m[4] ? parseInt(m[4], 10) : 0;
-    if (m[7]) { const pm = /^p/i.test(m[7]); if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
-    const t = new Date(y, parseInt(m[2], 10) - 1, parseInt(m[1], 10), h, m[5] ? parseInt(m[5], 10) : 0, m[6] ? parseInt(m[6], 10) : 0).getTime();
-    return isNaN(t) ? 0 : t;
-  }
-  const t = Date.parse(s);
-  return isNaN(t) ? 0 : t;
-}
-function fechaIngresoInmueble(p) {
-  if (!p) return 0;
-  const norm = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  let mejor = 0, mejorScore = 0;
-  Object.keys(p).forEach(k => {
-    const nk = norm(k);
-    if (nk === 'publicar') return;
-    let score = 0;
-    if (nk.includes('edicion')) score = 4;
-    else if (nk.includes('publicacion') || nk.includes('publicado')) score = 3;
-    else if (nk.includes('fecha') || nk.includes('timestamp') || nk.includes('marca temporal') || nk.includes('ingreso') || nk.includes('agregad')) score = 1;
-    if (!score) return;
-    const t = parseFechaGenerica(p[k]);
-    if (t && score > mejorScore) { mejor = t; mejorScore = score; }
-  });
-  return mejor;
-}
-
 function ordenarLista(lista) {
   if (!criterioOrden) return lista;
   
-  if (criterioOrden === "recientes") {
-    // Más reciente → más antigua; las que no tienen fecha van al final respetando el orden de la hoja
-    const deco = lista.map(p => ({ p, t: fechaIngresoInmueble(p), o: Number(p['_sheetOrder']) || 9999 }));
-    deco.sort((a, b) => (b.t - a.t) || (a.o - b.o));
-    return deco.map(x => x.p);
-  }
   if (criterioOrden === "destacadas") {
     // Ponemos primero las que tienen contrato "Directo" o "Verbal", SIN filtrar el resto
     return [...lista].sort((a, b) => {
@@ -5558,7 +5511,7 @@ function ordenarLista(lista) {
 }
 
 function getSortLabel(crit){
-  const labels = { 'destacadas': 'Exclusivas', 'recientes': 'Recién agregadas', 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad', 'mayorArea': 'Mayor área', 'noUbicadas': 'Faltan por mapa' };
+  const labels = { 'destacadas': 'Exclusivas', 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad', 'mayorArea': 'Mayor área', 'noUbicadas': 'Faltan por mapa' };
   return labels[crit] || 'Ordenar por';
 }
 
@@ -7990,7 +7943,6 @@ function renderNuevo(){
             </div>
             <ul class="sort-options hidden">
               <li onclick="setSort('destacadas')" class="${criterioOrden==='destacadas'?'st-selected':''}">Exclusivas</li>
-              <li onclick="setSort('recientes')" class="${criterioOrden==='recientes'?'st-selected':''}">Recién agregadas</li>
               <li onclick="setSort('menorPrecio')" class="${criterioOrden==='menorPrecio'?'st-selected':''}">Menor precio</li>
               <li onclick="setSort('mayorPrecio')" class="${criterioOrden==='mayorPrecio'?'st-selected':''}">Mayor precio</li>
               <li onclick="setSort('rentabilidad')" class="${criterioOrden==='rentabilidad'?'st-selected':''}">Mayor rentabilidad</li>
