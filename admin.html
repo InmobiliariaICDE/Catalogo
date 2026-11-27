@@ -18371,6 +18371,16 @@ async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, st
   const monthsNames = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
   const monthIdx = monthsNames.indexOf(monthName.toUpperCase());
 
+  // ── DESOCUPADO: confirmar antes de borrar el contrato ─────────────────────
+  if (status === 'VACANT') {
+    const confirmar = confirm(
+      `¿Confirmas que el inquilino entregó el inmueble?\n\n` +
+      `Esto terminará el contrato activo y marcará el inmueble como DESOCUPADO.\n` +
+      `Los datos del inquilino quedarán borrados.`
+    );
+    if (!confirmar) return;
+  }
+
   let finalValue = '';
   if (status === 'PAID') {
     const p = findAdminProperty(propId, propName);
@@ -18391,16 +18401,47 @@ async function quickSaveAdminPaymentStatus(propId, propName, monthName, year, st
     let mPay = p.payments[year].find(m => m.month === monthName);
     if (mPay) { mPay.status = status; mPay.value = finalValue; }
     else p.payments[year].push({ month: monthName, value: finalValue, status: status });
+
+    // Si es VACANT, limpiar datos del inquilino en memoria también
+    if (status === 'VACANT') {
+      p.tenant_name = '';
+      p.tenant_phone = '';
+      p.monthly_rent = 0;
+      p.deposit = '';
+      p.start_date = '';
+      p.duration = '';
+      p.increase_notes = '';
+      p.damage_notes = '';
+    }
   }
   renderAdministracion();
 
-  const payload = {
+  const payloadPay = {
     action: 'saveAdminPayment',
     propertyId: propId, propertyName: propName,
     year: year, monthIndex: monthIdx, value: finalValue, status: status
   };
 
-  const res = await sendAdminCloudAction(payload);
+  // Si es VACANT, también limpiar la propiedad en Google Drive
+  if (status === 'VACANT') {
+    const payloadProp = {
+      action: 'saveAdminProperty',
+      propertyId: propId,
+      propertyNameOld: propName,
+      name: propName,
+      tenant_name: '',
+      tenant_phone: '',
+      monthly_rent: 0,
+      deposit: '',
+      start_date: '',
+      duration: '',
+      increase_notes: '',
+      damage_notes: ''
+    };
+    await sendAdminCloudAction(payloadProp);
+  }
+
+  const res = await sendAdminCloudAction(payloadPay);
   if (res && res.success) {
     toast('¡Pago actualizado directamente en Google Drive!', 'success');
   } else {
