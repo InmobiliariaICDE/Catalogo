@@ -4999,7 +4999,7 @@ html, body {
           Ordenar por <span class="st-arrow"></span>
         </div>
         <ul class="sort-options hidden">
-          <li onclick="setSort('destacadas')">Destacadas</li>
+          <li onclick="setSort('destacadas')">Exclusivas</li>
           <li onclick="setSort('menorPrecio')">Menor precio</li>
           <li onclick="setSort('mayorPrecio')">Mayor precio</li>
           <li onclick="setSort('rentabilidad')">Mayor rentabilidad</li>
@@ -5509,7 +5509,7 @@ function ordenarLista(lista) {
 }
 
 function getSortLabel(crit){
-  const labels = { 'destacadas': 'Destacadas', 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad', 'mayorArea': 'Mayor área', 'noUbicadas': 'Faltan por mapa' };
+  const labels = { 'destacadas': 'Exclusivas', 'menorPrecio': 'Menor precio', 'mayorPrecio': 'Mayor precio', 'rentabilidad': 'Rentabilidad', 'mayorArea': 'Mayor área', 'noUbicadas': 'Faltan por mapa' };
   return labels[crit] || 'Ordenar por';
 }
 
@@ -5955,7 +5955,7 @@ function renderEditFiltrosGrid(lista){
     const isDestacada = ["Directo", "Verbal"].includes(d["Contrato"]);
     html += `
       <div class="prop-card ${sel?'selected':''} ${isDestacada?'recomendado':''}" style="min-height:auto;" onclick="abrirModalProp('${eq(cod)}')">
-        ${isDestacada ? '<div class="ribbon"><span>¡Destacada!</span></div>' : ''}
+        ${isDestacada ? '<div class="ribbon"><span>¡Exclusiva!</span></div>' : ''}
         <div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp('${eq(cod)}', this.parentElement)">${sel?'✓':'+'}</div>
         <img src="${img}" style="height:110px; width:100%; object-fit:cover; border-radius:8px;"/>
         <div class="prop-card-body" style="padding:4px 0 8px 0;">
@@ -7940,7 +7940,7 @@ function renderNuevo(){
               ${getSortLabel(criterioOrden)} <span class="st-arrow"></span>
             </div>
             <ul class="sort-options hidden">
-              <li onclick="setSort('destacadas')" class="${criterioOrden==='destacadas'?'st-selected':''}">Destacadas</li>
+              <li onclick="setSort('destacadas')" class="${criterioOrden==='destacadas'?'st-selected':''}">Exclusivas</li>
               <li onclick="setSort('menorPrecio')" class="${criterioOrden==='menorPrecio'?'st-selected':''}">Menor precio</li>
               <li onclick="setSort('mayorPrecio')" class="${criterioOrden==='mayorPrecio'?'st-selected':''}">Mayor precio</li>
               <li onclick="setSort('rentabilidad')" class="${criterioOrden==='rentabilidad'?'st-selected':''}">Mayor rentabilidad</li>
@@ -8123,7 +8123,7 @@ function renderPropsGrid(listaForzada){
     const inmob = d['Inmobiliaria'] || '';
     
     html += '<div class="prop-card' + (sel?' selected':'') + (isDestacada?' recomendado':'') + '" onclick="abrirModalProp(\'' + eq(cod) + '\')" onmouseenter="focusProperty(\'' + eq(cod) + '\')">';
-    if(isDestacada) html += '<div class="ribbon"><span>¡Destacada!</span></div>';
+    if(isDestacada) html += '<div class="ribbon"><span>¡Exclusiva!</span></div>';
     html += '<div class="prop-card-selector" onclick="event.stopPropagation(); toggleProp(\'' + eq(cod) + '\', this.parentElement)">' + (sel?'✓':'+') + '</div>';
     html += '<img src="' + img + '" loading="lazy" onerror="this.src=\'https://i.imgur.com/Pc9M3I8.png\'"/>';
     html += '<div class="prop-card-body" style="padding:6px 10px 10px 10px;">';
@@ -20954,7 +20954,7 @@ function renderNuevaPropiedad() {
         <div class="form-group"><label class="form-label">Longitud</label><input class="form-input" id="gp_lng" type="number" step="any" placeholder="-76.5321"/></div>
         
         <div class="form-group" style="display:flex; flex-direction:column; gap:8px; justify-content:center; background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; border:1px solid var(--border);">
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12.5px;"><input type="checkbox" id="gp_destacada" style="transform: scale(1.1);"/> Destacada ⭐</label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12.5px;"><input type="checkbox" id="gp_destacada" style="transform: scale(1.1);"/> Exclusiva ⭐</label>
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12.5px;"><input type="checkbox" id="gp_publicar" checked style="transform: scale(1.1);"/> Publicar en Web 👁️</label>
         </div>
         
@@ -22584,7 +22584,7 @@ function swShowReviewForm(data) {
       <div class="form-group"><label class="form-label">Longitud</label><input class="form-input" id="gp_lng" type="number" step="any" value="${emptyCheck(data.longitud)}"/></div>
       
       <div class="form-group" style="display:flex; flex-direction:column; gap:8px; justify-content:center; background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; border:1px solid var(--border);">
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12.5px;"><input type="checkbox" id="gp_destacada"/> Destacada ⭐</label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12.5px;"><input type="checkbox" id="gp_destacada"/> Exclusiva ⭐</label>
         <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12.5px;"><input type="checkbox" id="gp_publicar" checked/> Publicar en Web 👁️</label>
       </div>
       
