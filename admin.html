@@ -18226,24 +18226,39 @@ async function saveUnifiedAdminCobro(propId, propName, monthName, year) {
   else if (status === 'PENDING')       { finalValue = 'Pendiente'; }
   else { finalValue = rawValue || '-'; }
 
+  // ── DESOCUPADO: confirmar y limpiar datos del inquilino ──────────────────
+  if (status === 'VACANT') {
+    const confirmar = confirm(
+      `¿Confirmas que el inquilino entregó el inmueble?\n\n` +
+      `Esto terminará el contrato activo y marcará el inmueble como DESOCUPADO.\n` +
+      `Los datos del inquilino quedarán borrados.`
+    );
+    if (!confirmar) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = 'Guardar';
+      return;
+    }
+  }
+
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<span class="spinner" style="width:14px; height:14px; border-width:2px; display:inline-block; margin-right:6px; vertical-align:middle;"></span> Guardando en Google Drive...';
 
+  // Si es VACANT, limpiar datos del inquilino para terminar el contrato
   const payloadProp = {
     action: 'saveAdminProperty',
     propertyId: propId,
     propertyNameOld: propName,
     name:           propName,
-    tenant_name,
-    tenant_phone,
-    monthly_rent,
-    deposit,
-    start_date,
-    duration,
+    tenant_name:    status === 'VACANT' ? '' : tenant_name,
+    tenant_phone:   status === 'VACANT' ? '' : tenant_phone,
+    monthly_rent:   status === 'VACANT' ? 0  : monthly_rent,
+    deposit:        status === 'VACANT' ? '' : deposit,
+    start_date:     status === 'VACANT' ? '' : start_date,
+    duration:       status === 'VACANT' ? '' : duration,
     due_day,
     max_due_day,
-    increase_notes,
-    damage_notes
+    increase_notes: status === 'VACANT' ? '' : increase_notes,
+    damage_notes:   status === 'VACANT' ? '' : damage_notes
   };
 
   const monthsNames = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
